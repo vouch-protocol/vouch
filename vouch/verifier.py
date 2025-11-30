@@ -1,0 +1,21 @@
+import json
+import time
+from jwcrypto import jwk, jws
+
+class Verifier:
+    def __init__(self, trusted_key_json):
+        self.trusted_key = jwk.JWK.from_json(trusted_key_json)
+        self.used_nonces = set()
+
+    def check_vouch(self, token):
+        try:
+            verifier = jws.JWS()
+            verifier.deserialize(token)
+            verifier.verify(self.trusted_key)
+            payload = json.loads(verifier.payload)
+            if time.time() > payload['exp']: return False, "Expired"
+            if payload['jti'] in self.used_nonces: return False, "Replay Detected"
+            self.used_nonces.add(payload['jti'])
+            return True, payload
+        except Exception as e:
+            return False, str(e)

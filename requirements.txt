@@ -1,0 +1,4 @@
+jwcrypto
+streamlit
+requests
+pandas
