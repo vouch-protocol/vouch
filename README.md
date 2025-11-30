@@ -6,7 +6,7 @@ __      __  ____   _    _    _____   _    _
  \ \  / / | |  | || |  | | | |      | |__| |
   \ \/ /  | |__| || |__| | | |____  |  __  |
    \__/    \____/  \____/   \_____| |_|  |_|
-
+```
 ![Status](https://img.shields.io/badge/Status-Alpha-blue) ![License](https://img.shields.io/badge/License-MIT-green)
 
 **Vouch** is the open-source standard for **AI Liability & Identity**.
