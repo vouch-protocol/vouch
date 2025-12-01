@@ -2,3 +2,5 @@ jwcrypto
 streamlit
 requests
 pandas
+fastapi
+uvicorn
