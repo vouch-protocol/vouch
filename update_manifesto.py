@@ -1,14 +1,22 @@
-# VOUCH PROTOCOL
+import os
 
-```text
+# Safe code block construction
+TICK = "`" * 3
 
+# We use r""" (Raw String) so backslashes don't break the art
+ascii_art = r"""
 __      __  ____   _    _    _____   _    _ 
 \ \    / / / __ \ | |  | |  / ____| | |  | |
  \ \  / / | |  | || |  | | | |      | |__| |
   \ \/ /  | |__| || |__| | | |____  |  __  |
    \__/    \____/  \____/   \_____| |_|  |_|
+"""
 
-```
+readme_content = f"""# VOUCH PROTOCOL
+
+{TICK}text
+{ascii_art}
+{TICK}
 
 ![Status](https://img.shields.io/badge/Status-Alpha-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Standard](https://img.shields.io/badge/DID-Web-orange) ![Build](https://img.shields.io/github/actions/workflow/status/rampyg/vouch-protocol/tests.yml)
 
@@ -51,28 +59,28 @@ Vouch binds a **Reputation Key** to an **Agent Instance** via the `did:web` stan
 ## ⚡ Quick Start
 
 ### 1. Installation
-```bash
+{TICK}bash
 pip install -r requirements.txt
-```
+{TICK}
 
 ### 2. The Standard (`vouch.json`)
 Host this file at `https://your-domain.com/.well-known/vouch.json`.
 
-```json
-{
+{TICK}json
+{{
   "id": "did:web:finance-bot.example.com",
-  "verificationMethod": [{
+  "verificationMethod": [{{
       "type": "JsonWebKey2020",
-      "publicKeyJwk": { "kty": "OKP", "crv": "Ed25519", "x": "..." }
-  }]
-}
-```
+      "publicKeyJwk": {{ "kty": "OKP", "crv": "Ed25519", "x": "..." }}
+  }}]
+}}
+{TICK}
 
 ### 3. Usage (Python SDK)
 
 **For Gatekeepers (Verifying an incoming agent):**
 
-```python
+{TICK}python
 from fastapi import FastAPI, Header, HTTPException
 from vouch import Verifier
 
@@ -91,12 +99,12 @@ def protected_route(vouch_token: str = Header(alias="Vouch-Token")):
     agent_id = passport['sub']
     score = passport['vc'].get('reputation_score', 0)
     
-    return {
+    return {{
         "status": "Welcome", 
         "agent": agent_id,
         "trust_score": score
-    }
-```
+    }}
+{TICK}
 
 ---
 
@@ -110,8 +118,14 @@ def protected_route(vouch_token: str = Header(alias="Vouch-Token")):
 We are looking for adapters for LangChain and CrewAI.
 
 Run the Red Team security suite locally:
-```bash
+{TICK}bash
 python tests/red_team.py
-```
+{TICK}
 
 **License:** MIT
+"""
+
+with open("README.md", "w") as f:
+    f.write(readme_content)
+
+print("✅ Manifesto updated successfully! ASCII Art is clean.")
