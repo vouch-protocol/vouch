@@ -1,4 +1,13 @@
 {
   "id": "did:web:example.com:agent",
-  "verificationMethod": [{ "type": "JsonWebKey2020", "publicKeyJwk": {} }]
+  "verificationMethod": [
+    {
+      "type": "JsonWebKey2020",
+      "publicKeyJwk": {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": "RdFvV_fOVOZSL19W1VAgEPYr-KYUhNQkcB3w8pabD18"
+      }
+    }
+  ]
 }
