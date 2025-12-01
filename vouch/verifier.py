@@ -5,6 +5,8 @@ from jwcrypto import jwk, jws
 class Verifier:
     def __init__(self, trusted_key_json):
         self.trusted_key = jwk.JWK.from_json(trusted_key_json)
+        # ⚠️ WARNING: In-memory storage. 
+        # For production, replace 'set()' with Redis or a database.
         self.used_nonces = set()
 
     def check_vouch(self, token):
