@@ -5,13 +5,13 @@ app = FastAPI()
 # (Mock key for demo)
 verifier = Verifier('{"kty":"OKP","crv":"Ed25519","x":"..."}')
 
-# MANIFESTO COMPLIANCE: Use 'X-Vouch-Auth' instead of 'Authorization'
+# STANDARD COMPLIANCE: Use 'Vouch-Token' (RFC 6648)
 @app.post("/agent/connect")
-def connect_agent(x_vouch_auth: str = Header(None, alias="X-Vouch-Auth")):
-    if not x_vouch_auth:
-        raise HTTPException(status_code=400, detail="Missing X-Vouch-Auth header")
+def connect_agent(vouch_token: str = Header(None, alias="Vouch-Token")):
+    if not vouch_token:
+        raise HTTPException(status_code=400, detail="Missing Vouch-Token header")
         
-    is_valid, data = verifier.check_vouch(x_vouch_auth)
+    is_valid, data = verifier.check_vouch(vouch_token)
     
     if not is_valid:
         raise HTTPException(status_code=401, detail="Agent Reputation Check Failed")

@@ -8,39 +8,21 @@ __      __  ____   _    _    _____   _    _
    \__/    \____/  \____/   \_____| |_|  |_|
 ```
 
-![Status](https://img.shields.io/badge/Status-Alpha-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Standard](https://img.shields.io/badge/DID-Web-orange)
+![Status](https://img.shields.io/badge/Status-Alpha-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Standard](https://img.shields.io/badge/DID-Web-orange) ![Build](https://img.shields.io/github/actions/workflow/status/rampyg/vouch-protocol/tests.yml)
 
-> ⚠️ **v0.1 Alpha Notice:** This is an experimental protocol designed to spark discussion around AI Identity. It is **not yet audited** for production use in high-value financial systems. Contributions and security critiques are highly welcome.
+> ⚠️ **v0.1 Alpha Notice:** This is an experimental protocol. Contributions welcome.
 
 > **"The 'Green Lock' for the AI Era."**
 
-**Vouch** is the open-source standard for **AI Agent Identity & Liability**. It provides the missing infrastructure to bridge Web2 (DNS) and Web3 (Cryptography).
+**Vouch** is the open-source standard for **AI Agent Identity & Liability**.
 
----
-
-## 🛑 The Problem: The AI "Wild West"
-
-As of late 2025, millions of autonomous agents are coming online. But the infrastructure of trust hasn't kept up.
-
-1.  **No Identity:** If an agent emails you, you have no cryptographic way to verify its origin.
-2.  **No Integrity:** You cannot prove if the agent's code has been tampered with.
-3.  **No Liability:** If an agent hallucinates, there is no signed contract linking it to a legal entity.
-
-**Web2 had SSL. Web3 has Wallets. AI needs Vouch.**
-
----
-
-## 🛡️ The Solution: Three Pillars of Trust
-
-Vouch creates a standardized `vouch.json` file that acts as the root of trust.
+## 🛡️ The Solution: Three Pillars
 
 | Pillar | Concept | Technology |
 | :--- | :--- | :--- |
-| **1. Identity** | "Who owns this agent?" | **W3C DID (`did:web`)** linking Agent ID to DNS Domain. |
-| **2. Integrity** | "Is the code safe?" | **SHA-256 Hashing** of model weights & source code. |
-| **3. Liability** | "Who is responsible?" | **Verifiable Credentials** signing specific capabilities. |
-
----
+| **1. Identity** | "Who owns this agent?" | **W3C DID (`did:web`)** |
+| **2. Integrity** | "Is the code safe?" | **SHA-256 Hashing** |
+| **3. Liability** | "Who is responsible?" | **Verifiable Credentials** |
 
 ## ⚡ Quick Start
 
@@ -50,13 +32,12 @@ pip install -r requirements.txt
 ```
 
 ### 2. The Standard (`vouch.json`)
-To be compliant, an agent must host this file at `https://your-domain.com/.well-known/vouch.json`.
+Host this file at `https://your-domain.com/.well-known/vouch.json`.
 
 ```json
 {
   "id": "did:web:finance-bot.example.com",
   "verificationMethod": [{
-      "id": "#primary-key",
       "type": "JsonWebKey2020",
       "publicKeyJwk": { "kty": "OKP", "crv": "Ed25519", "x": "..." }
   }]
@@ -65,30 +46,28 @@ To be compliant, an agent must host this file at `https://your-domain.com/.well-
 
 ### 3. Usage (Python SDK)
 
-**For Gatekeepers (Verifying an incoming agent):**
+**For Gatekeepers (The Vouch-Token Header):**
 
 ```python
+from fastapi import FastAPI, Header
 from vouch import Verifier
 
-# Initialize with the agent's public key (fetched from their DID)
-gatekeeper = Verifier(trusted_key_json)
+app = FastAPI()
+verifier = Verifier(trusted_key)
 
-# Verify the token sent by the agent
-is_valid, passport = gatekeeper.check_vouch(incoming_token)
-
-if is_valid:
-    print(f"✅ Identity Confirmed: {passport['sub']}")
-else:
-    print("�� Access Denied: Untrusted Agent.")
+@app.post("/agent/connect")
+def connect(vouch_token: str = Header(alias="Vouch-Token")):
+    # 1. Look for 'Vouch-Token' (Not Authorization)
+    is_valid, passport = verifier.check_vouch(vouch_token)
+    
+    if is_valid:
+        return {"status": "Welcome", "agent": passport['sub']}
 ```
 
----
-
 ## 🤝 Contributing
+We are looking for adapters for LangChain and AutoGen.
 
-The Vouch Protocol is an open standard. We are actively looking for feedback on the security architecture.
-
-Run the security tests locally:
+Run tests:
 ```bash
 python tests/red_team.py
 ```
