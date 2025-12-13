@@ -1,6 +1,6 @@
 # Vouch Protocol
 
-[![Discord](https://img.shields.io/discord/123456789?label=discord&style=for-the-badge&color=5865F2)](https://discord.gg/RXuKJDfC)
+[![Discord](https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white)](https://discord.gg/RXuKJDfC)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
 [![Status](https://img.shields.io/badge/Status-Public_Beta-yellow)](https://github.com/vouch-protocol/vouch)
 
@@ -45,7 +45,7 @@
 
 ---
 
-## �� Integrations
+## 🔌 Integrations
 
 ### 1. Model Context Protocol (MCP)
 Vouch includes a native MCP server for Claude Desktop & Cursor.
@@ -65,8 +65,15 @@ Vouch includes a native MCP server for Claude Desktop & Cursor.
       }
     }
 
-### 2. LangChain & CrewAI
-Vouch works as a native Tool for most agent frameworks.
+### 2. LangChain Integration
+Add cryptographic identity to your LangChain tools.
+
+    from vouch.integrations.langchain.tool import VouchSignerTool
+    
+    tools = [VouchSignerTool()]
+
+### 3. CrewAI Integration
+Works natively with CrewAI agents.
 
     from vouch.integrations.crewai.tool import VouchSignerTool
 
@@ -75,6 +82,12 @@ Vouch works as a native Tool for most agent frameworks.
         tools=[VouchSignerTool()]
     )
 
+### 4. AutoGPT Integration
+Register the signer command with your agent.
+
+    # In your plugins/vouch folder
+    from vouch.integrations.autogpt import register_commands
+
 ---
 
 ## 📜 License & Legal
@@ -82,6 +95,12 @@ Vouch works as a native Tool for most agent frameworks.
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
 [View Full License](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
 
-## 🛡️ Defensive Disclosure
-This protocol includes a defensive disclosure (Prior Art) published Dec 14, 2025, to protect the ecosystem from patent trolls.
-[Read Disclosure](https://github.com/vouch-protocol/vouch/blob/main/README.md#%EF%B8%8F-defensive-disclosure-prior-art)
+## Defensive Disclosure (Prior Art)
+**Publication Date:** December 14, 2025
+**Subject:** Cryptographic Binding of AI Agent Intent via Model Context Protocol (MCP)
+
+To ensure the freedom of the ecosystem to build secure agents, we explicitly disclose the following novel method as Prior Art:
+
+1.  **The "Identity Sidecar" Pattern:** An MCP Server acting as a local "Identity Proxy" for a stateless LLM, isolating keys from application code.
+2.  **Just-in-Time (JIT) Intent Signing:** A workflow where the LLM requests a signed "Vouch-Token" for a specific action *before* execution.
+3.  **Non-Repudiation:** Generating a cryptographically verifiable audit trail binding Identity, Intent, and Time.
