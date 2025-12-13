@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vouch-protocol"
+version = "1.0.0"
+description = "The Identity & Reputation Standard for AI Agents"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Vouch Protocol Contributors", email = "hello@vouch-protocol.org"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "cryptography",
+    "pydantic",
+    "httpx",
+    "fastapi",
+    "uvicorn"
+]
+
+[project.optional-dependencies]
+langchain = ["langchain"]
+mcp = ["mcp"]
+vertex = ["google-cloud-aiplatform"]
+
+[project.urls]
+"Homepage" = "https://github.com/vouch-protocol/vouch"
+"Bug Tracker" = "https://github.com/vouch-protocol/vouch/issues"
