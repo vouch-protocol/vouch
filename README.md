@@ -1,5 +1,9 @@
 # VOUCH PROTOCOL
 
+[![Discord](https://img.shields.io/discord/123456789?label=discord&style=for-the-badge&color=5865F2)](https://discord.gg/RXuKJDfC)
+
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
 ```text
 
 __      __  ____   _    _    _____   _    _ 
@@ -115,3 +119,57 @@ python tests/red_team.py
 ```
 
 **License:** MIT
+
+## 📜 License
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
+* **Open Source:** Free to use, modify, and distribute.
+* **Network Use:** If you run Vouch as a service (SaaS), you must share your modifications.
+* **Commercial:** Contact us for commercial licensing options.
+
+## 🔌 Integrations
+
+### 1. Model Context Protocol (MCP) for Claude & Cursor
+Vouch includes a native MCP server. This allows AI Assistants (like Claude Desktop) to cryptographically sign sensitive actions before executing them.
+
+**Configuration for `claude_desktop_config.json`:**
+
+    {
+      "mcpServers": {
+        "vouch": {
+          "command": "python3",
+          "args": ["-m", "vouch.integrations.mcp.server"],
+          "env": {
+            "VOUCH_PRIVATE_KEY": "YOUR_PRIVATE_KEY",
+            "VOUCH_DID": "did:web:your-domain.com"
+          }
+        }
+      }
+    }
+
+### 2. LangChain Adapter
+
+    from vouch.integrations.langchain.tool import VouchSignerTool
+    tools = [VouchSignerTool()]
+
+### 3. AutoGPT Command
+Vouch automatically registers the `sign_with_vouch` command when installed in the AutoGPT plugins folder.
+
+## 🛡️ Defensive Disclosure (Prior Art)
+**Publication Date:** December 14, 2025
+**Subject:** Cryptographic Binding of AI Agent Intent via Model Context Protocol (MCP)
+
+To ensure the freedom of the ecosystem to build secure agents, we explicitly disclose the following novel method as Prior Art:
+
+**1. The "Identity Sidecar" Pattern**
+This protocol describes a method where an MCP Server acts as a local "Identity Proxy" for a stateless Large Language Model (LLM). Unlike traditional architectures where keys are embedded in the application code, this method isolates the cryptographic keys within the MCP interface layer.
+
+**2. Just-in-Time (JIT) Intent Signing**
+The system implements a workflow where the LLM must request a "Vouch-Token" for a specific action *before* execution. The MCP server acts as an Auditor, reviewing the `integrity_hash` of the proposed tool call. If valid, it signs the intent with a `did:web` identity.
+
+**3. Non-Repudiation of Tool Execution**
+This generates a cryptographically verifiable audit trail that binds three distinct entities:
+1. The **Identity** (The DID holding the key).
+2. The **Intent** (The specific function call and parameters).
+3. The **Time** (Nonce-protected timestamp).
+
+This disclosure is intended to prevent the patenting of "Identity-Aware Tool Execution" mechanisms by third parties.
