@@ -127,3 +127,8 @@ To ensure the freedom of the ecosystem to build secure agents, we explicitly dis
 1.  **The "Identity Sidecar" Pattern:** An MCP Server acting as a local "Identity Proxy" for a stateless LLM, isolating keys from application code.
 2.  **Just-in-Time (JIT) Intent Signing:** A workflow where the LLM requests a signed "Vouch-Token" for a specific action *before* execution.
 3.  **Non-Repudiation:** Generating a cryptographically verifiable audit trail binding Identity, Intent, and Time.
+
+### CLI
+`vouch init --domain x.com`
+`vouch sign 'msg'`
+`vouch verify 'tok'`
