@@ -679,6 +679,7 @@ Requires-Dist: pydantic
 Requires-Dist: httpx
 Requires-Dist: fastapi
 Requires-Dist: uvicorn
+Requires-Dist: redis>=5.0.0
 Provides-Extra: langchain
 Requires-Dist: langchain; extra == "langchain"
 Provides-Extra: mcp

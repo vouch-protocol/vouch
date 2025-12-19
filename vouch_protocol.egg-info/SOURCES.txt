@@ -2,10 +2,13 @@ LICENSE
 README.md
 pyproject.toml
 vouch/__init__.py
+vouch/audio.py
 vouch/auditor.py
 vouch/keys.py
+vouch/kms.py
 vouch/seal.py
 vouch/verifier.py
+vouch/integrations/google.py
 vouch/integrations/n8n.py
 vouch/integrations/autogen/__init__.py
 vouch/integrations/autogen/tool.py
