@@ -783,6 +783,29 @@ Register the signer command with your agent.
 
 ---
 
+
+### 7. n8n Integration (Low-Code Agents)
+You can use Vouch directly in n8n using the **Python Code Node**.
+
+**Prerequisite:**
+Ensure your n8n instance installs the library:
+`export EXTERNAL_PYTHON_PACKAGES=vouch-protocol`
+
+**Code Node Snippet:**
+
+    from vouch import Signer
+    import os
+
+    # 1. Initialize
+    signer = Signer(
+        private_key=os.environ.get('VOUCH_PRIVATE_KEY'), 
+        did=os.environ.get('VOUCH_DID')
+    )
+
+    # 2. Sign the incoming workflow data
+    # (Copy full snippet from vouch.integrations.n8n)
+
+
 ## 📜 License & Legal
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.

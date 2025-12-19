@@ -6,6 +6,7 @@ vouch/auditor.py
 vouch/keys.py
 vouch/seal.py
 vouch/verifier.py
+vouch/integrations/n8n.py
 vouch/integrations/autogen/__init__.py
 vouch/integrations/autogen/tool.py
 vouch/integrations/autogpt/__init__.py
