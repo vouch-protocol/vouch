@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vouch-protocol"
-version = "1.0.8"
+version = "1.0.9"
 description = "The Identity & Reputation Standard for AI Agents"
 readme = "README.md"
 requires-python = ">=3.9"
