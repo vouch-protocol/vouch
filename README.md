@@ -7,7 +7,7 @@
     __      __  ____   _    _    _____   _    _ 
     \ \    / / / __ \ | |  | |  / ____| | |  | |
      \ \  / / | |  | || |  | | | |      | |__| |
-      \ \/ /  | |__| || |__| | | |____  |  __  |
+      \ \/  / | |__| || |__| | | |____  |  __  |
        \__/    \____/  \____/   \_____| |_|  |_|
 
 > **"The 'Green Lock' for the Agentic Web."**
@@ -24,9 +24,28 @@
 
     pip install vouch-protocol
 
-### 2. Usage
+### 2. Generate Identity
 
-**For Gatekeepers (Verifying an incoming agent):**
+    # Generate a new keypair
+    vouch init --domain your-agent.com
+    
+    # Export as environment variables
+    vouch init --domain your-agent.com --env
+
+### 3. Sign a Payload
+
+    from vouch import Signer
+    import os
+
+    signer = Signer(
+        private_key=os.environ['VOUCH_PRIVATE_KEY'],
+        did=os.environ['VOUCH_DID']
+    )
+
+    token = signer.sign({'action': 'read_database', 'target': 'users'})
+    # Use token in Vouch-Token header
+
+### 4. Verify a Token (Gatekeepers)
 
     from fastapi import FastAPI, Header, HTTPException
     from vouch import Verifier
@@ -35,8 +54,10 @@
 
     @app.post("/api/resource")
     def protected_route(vouch_token: str = Header(alias="Vouch-Token")):
-        # Verify the cryptographic intent
-        is_valid, passport = Verifier.verify(vouch_token)
+        # Verify with the agent's public key
+        public_key = '{"kty":"OKP","crv":"Ed25519","x":"..."}'  # From agent's vouch.json
+        
+        is_valid, passport = Verifier.verify(vouch_token, public_key_jwk=public_key)
         
         if not is_valid:
             raise HTTPException(status_code=401, detail="Untrusted Agent")
@@ -85,11 +106,23 @@ Works natively with CrewAI agents.
 ### 4. AutoGPT Integration
 Register the signer command with your agent.
 
-    # In your plugins/vouch folder
     from vouch.integrations.autogpt import register_commands
 
----
+### 5. AutoGen Integration
+Use with Microsoft AutoGen agents.
 
+    from vouch.integrations.autogen import sign_action
+    
+    # Register as a function tool
+    assistant.register_function(sign_action)
+
+### 6. Google Vertex AI Integration
+Sign function calls in Vertex AI Agent Builder.
+
+    from vouch.integrations.google import VertexAISigner
+    
+    signer = VertexAISigner()
+    token = signer.sign_tool_call('search_database', {'query': 'test'})
 
 ### 7. n8n Integration (Low-Code Agents)
 You can use Vouch directly in n8n using the **Python Code Node**.
@@ -103,15 +136,63 @@ Ensure your n8n instance installs the library:
     from vouch import Signer
     import os
 
-    # 1. Initialize
     signer = Signer(
         private_key=os.environ.get('VOUCH_PRIVATE_KEY'), 
         did=os.environ.get('VOUCH_DID')
     )
 
-    # 2. Sign the incoming workflow data
-    # (Copy full snippet from vouch.integrations.n8n)
+    # Sign the incoming workflow data
+    for item in _input.all():
+        item.json['vouch_token'] = signer.sign(item.json)
+    
+    return _input.all()
 
+---
+
+## 🏢 Enterprise Features
+
+### Key Rotation
+
+    from vouch.kms import RotatingKeyProvider, KeyConfig
+
+    keys = [
+        KeyConfig(private_key_jwk='...', did='did:web:agent.com', key_id='key1'),
+        KeyConfig(private_key_jwk='...', did='did:web:agent.com', key_id='key2'),
+    ]
+
+    provider = RotatingKeyProvider(keys, rotation_interval_hours=24)
+    signer = provider.get_signer()  # Automatically uses active key
+
+### Voice AI Signing
+
+    from vouch import Signer
+    from vouch.audio import AudioSigner
+
+    signer = Signer(private_key='...', did='did:web:voice-ai.com')
+    audio_signer = AudioSigner(signer)
+
+    signed_frame = audio_signer.sign_frame(audio_bytes)
+    print(signed_frame.vouch_token)
+
+---
+
+## 🖥️ CLI Reference
+
+    # Generate new identity
+    vouch init --domain example.com
+    vouch init --domain example.com --env  # Output as env vars
+
+    # Sign a message
+    vouch sign "Hello World"
+    vouch sign '{"action": "test"}' --json
+    vouch sign "message" --header  # Include Vouch-Token prefix
+
+    # Verify a token
+    vouch verify <token>
+    vouch verify <token> --key '{"kty":"OKP",...}'  # With public key
+    vouch verify <token> --json  # Output as JSON
+
+---
 
 ## 📜 License & Legal
 
@@ -127,8 +208,3 @@ To ensure the freedom of the ecosystem to build secure agents, we explicitly dis
 1.  **The "Identity Sidecar" Pattern:** An MCP Server acting as a local "Identity Proxy" for a stateless LLM, isolating keys from application code.
 2.  **Just-in-Time (JIT) Intent Signing:** A workflow where the LLM requests a signed "Vouch-Token" for a specific action *before* execution.
 3.  **Non-Repudiation:** Generating a cryptographically verifiable audit trail binding Identity, Intent, and Time.
-
-### CLI
-`vouch init --domain x.com`
-`vouch sign 'msg'`
-`vouch verify 'tok'`

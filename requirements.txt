@@ -1,6 +1,12 @@
-jwcrypto
-streamlit
-requests
-pandas
-fastapi
-uvicorn
+# Vouch Protocol - Core Dependencies
+jwcrypto>=1.5.0
+pydantic>=2.0.0
+httpx>=0.24.0
+
+# Optional: Server dependencies (for running examples)
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# Optional: Development dependencies
+pytest>=7.0.0
+black>=23.0.0

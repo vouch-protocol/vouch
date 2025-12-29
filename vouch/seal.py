@@ -1,7 +1,29 @@
-import streamlit as st
+"""
+Vouch Protocol Streamlit Seal Component.
 
-def vouch_seal_component(is_verified=False, agent_name="Agent"):
-    if is_verified: 
-        st.success(f"✅ {agent_name}: VOUCHED")
-    else: 
-        st.error(f"⚠️ {agent_name}: UNVERIFIED")
+This module has been moved to vouch.integrations.streamlit.seal
+
+For backward compatibility, import from the new location:
+    from vouch.integrations.streamlit import vouch_seal_component
+"""
+
+# Backward compatibility import
+try:
+    from vouch.integrations.streamlit.seal import (
+        vouch_seal_component,
+        vouch_verification_card
+    )
+except ImportError:
+    def vouch_seal_component(*args, **kwargs):
+        raise ImportError(
+            "Streamlit integration requires streamlit. "
+            "Install with: pip install streamlit"
+        )
+    
+    def vouch_verification_card(*args, **kwargs):
+        raise ImportError(
+            "Streamlit integration requires streamlit. "
+            "Install with: pip install streamlit"
+        )
+
+__all__ = ["vouch_seal_component", "vouch_verification_card"]
