@@ -1,6 +1,12 @@
 LICENSE
 README.md
 pyproject.toml
+tests/test_async_verifier.py
+tests/test_auditor.py
+tests/test_cache.py
+tests/test_nonce.py
+tests/test_signer.py
+tests/test_verifier.py
 vouch/__init__.py
 vouch/async_verifier.py
 vouch/audio.py

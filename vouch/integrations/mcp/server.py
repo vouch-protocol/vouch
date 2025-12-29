@@ -94,7 +94,7 @@ class VouchMCPServer:
                         "capabilities": {"tools": {}},
                         "serverInfo": {
                             "name": "vouch-mcp-server",
-                            "version": "1.1.2"
+                            "version": "1.1.3"
                         }
                     }
                 }
