@@ -1,3 +1,4 @@
 venvvouch/
 __pycache__/
 *.pyc
+website/DEPLOY.md
