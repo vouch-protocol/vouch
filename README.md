@@ -1,13 +1,14 @@
 # Vouch Protocol
 
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white)](https://discord.gg/RXuKJDfC)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Multiple-blue.svg)](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
 [![Status](https://img.shields.io/badge/Status-Public_Beta-yellow)](https://github.com/vouch-protocol/vouch)
+
 
     __      __  ____   _    _    _____   _    _ 
     \ \    / / / __ \ | |  | |  / ____| | |  | |
      \ \  / / | |  | || |  | | | |      | |__| |
-      \ \/  / | |__| || |__| | | |____  |  __  |
+      \ \/ /  | |__| || |__| | | |____  |  __  |
        \__/    \____/  \____/   \_____| |_|  |_|
 
 > **"The 'Green Lock' for the Agentic Web."**
@@ -196,8 +197,13 @@ Ensure your n8n instance installs the library:
 
 ## 📜 License & Legal
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
-[View Full License](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
+This project uses a **3-layer license structure** to balance open collaboration and sustainability:
+
+1.  **Specification**: Community Specification License 1.0 (Open Standard + Patent Grants)
+2.  **Client SDK**: Apache 2.0 (Permissive for all uses)
+3.  **Server SDK**: AGPL-3.0 (Pass-forward obligation for network services)
+
+[View Full License Index](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
 
 ## Defensive Disclosure (Prior Art)
 **Publication Date:** December 14, 2025

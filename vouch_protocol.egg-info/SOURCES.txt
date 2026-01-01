@@ -5,6 +5,8 @@ tests/test_async_verifier.py
 tests/test_auditor.py
 tests/test_cache.py
 tests/test_nonce.py
+tests/test_reputation.py
+tests/test_revocation.py
 tests/test_signer.py
 tests/test_verifier.py
 vouch/__init__.py
@@ -19,6 +21,8 @@ vouch/metrics.py
 vouch/nonce.py
 vouch/ratelimit.py
 vouch/registry.py
+vouch/reputation.py
+vouch/revocation.py
 vouch/seal.py
 vouch/signer.py
 vouch/verifier.py

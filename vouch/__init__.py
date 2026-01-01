@@ -5,7 +5,7 @@ This package provides cryptographic identity binding for autonomous AI agents,
 enabling verifiable proof of intent and non-repudiation.
 """
 
-__version__ = "1.1.3"
+__version__ = "1.2.0"
 
 # Core signing/verification
 from .signer import Signer
@@ -43,6 +43,20 @@ def __getattr__(name):
     elif name in ("KeyRegistry", "AgentInfo", "get_registry"):
         from . import registry
         return getattr(registry, name)
+    # Revocation
+    elif name in ("RevocationRegistry", "RevocationRecord", "MemoryRevocationStore", "RedisRevocationStore"):
+        from . import revocation
+        return getattr(revocation, name)
+    # Reputation
+    elif name in ("ReputationEngine", "ReputationScore", "ReputationEvent", 
+                  "MemoryReputationStore", "RedisReputationStore", 
+                  "KafkaReputationStore", "KafkaReputationConsumer"):
+        from . import reputation
+        return getattr(reputation, name)
+    # Cloud KMS
+    elif name in ("CloudKMSProvider", "AWSKMSProvider", "GCPKMSProvider", "AzureKeyVaultProvider"):
+        from . import kms
+        return getattr(kms, name)
     raise AttributeError(f"module 'vouch' has no attribute '{name}'")
 
 
@@ -86,4 +100,23 @@ __all__ = [
     "KeyRegistry",
     "AgentInfo",
     "get_registry",
+    # Revocation
+    "RevocationRegistry",
+    "RevocationRecord",
+    "MemoryRevocationStore",
+    "RedisRevocationStore",
+    # Reputation
+    "ReputationEngine",
+    "ReputationScore",
+    "ReputationEvent",
+    "MemoryReputationStore",
+    "RedisReputationStore",
+    "KafkaReputationStore",
+    "KafkaReputationConsumer",
+    # Cloud KMS
+    "CloudKMSProvider",
+    "AWSKMSProvider",
+    "GCPKMSProvider",
+    "AzureKeyVaultProvider",
 ]
+
