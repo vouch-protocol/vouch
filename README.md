@@ -51,6 +51,27 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 
 ---
 
+## How It Works
+
+### The Workflow
+
+![Vouch Protocol Workflow](docs/images/how-it-works.png)
+
+**4 Simple Steps:**
+1. **Generate Identity** - Create keypair and DID
+2. **Sign Action** - Agent signs every API call
+3. **Send to API** - Include token in HTTP header
+4. **Verify** - API checks signature with public key
+
+### The Trust Model
+
+![Trust Model](docs/images/trust-model.png)
+
+**Trust = Public Key Cryptography + JWT + DID**  
+The same math that secures SSL/TLS, just for AI agents.
+
+---
+
 ## Why Vouch Protocol?
 
 ### vs. DIY JWT
