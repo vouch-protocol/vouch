@@ -8,6 +8,7 @@ tests/test_nonce.py
 tests/test_reputation.py
 tests/test_revocation.py
 tests/test_signer.py
+tests/test_signer_reputation.py
 tests/test_verifier.py
 vouch/__init__.py
 vouch/async_verifier.py
