@@ -32,6 +32,7 @@ class Passport:
         jti: JWT ID (unique nonce)
         payload: The signed intent/action data
         raw_claims: Full decoded JWT claims
+        reputation_score: Agent's reputation score (0-100) if included in token
     """
     sub: str
     iss: str
@@ -40,6 +41,7 @@ class Passport:
     jti: str
     payload: Dict[str, Any]
     raw_claims: Dict[str, Any]
+    reputation_score: Optional[int] = None
 
 
 class VerificationError(Exception):
@@ -152,6 +154,7 @@ class Verifier:
             # Extract vouch-specific payload
             vouch_data = claims.get('vouch', {})
             intent_payload = vouch_data.get('payload', {})
+            reputation_score = vouch_data.get('reputation_score')
             
             passport = Passport(
                 sub=claims.get('sub', ''),
@@ -160,7 +163,8 @@ class Verifier:
                 exp=exp,
                 jti=claims.get('jti', ''),
                 payload=intent_payload,
-                raw_claims=claims
+                raw_claims=claims,
+                reputation_score=reputation_score
             )
             
             return True, passport
