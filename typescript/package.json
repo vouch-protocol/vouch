@@ -1,6 +1,6 @@
 {
     "name": "vouch-protocol",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "description": "The Identity & Reputation Standard for AI Agents - TypeScript SDK",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
