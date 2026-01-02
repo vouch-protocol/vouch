@@ -24,6 +24,9 @@ class Signer:
     Example:
         >>> signer = Signer(private_key_jwk='{"kty":"OKP",...}', did='did:web:example.com')
         >>> token = signer.sign({'action': 'read_email'})
+        
+        # With reputation score
+        >>> token = signer.sign({'action': 'read_email'}, reputation_score=85)
     """
     
     def __init__(self, private_key: str, did: str, default_expiry_seconds: int = 300):
@@ -53,19 +56,36 @@ class Signer:
         except Exception as e:
             raise ValueError(f"Invalid JWK private key: {e}")
     
-    def sign(self, payload: Dict[str, Any], expiry_seconds: Optional[int] = None) -> str:
+    def sign(
+        self, 
+        payload: Dict[str, Any], 
+        expiry_seconds: Optional[int] = None,
+        reputation_score: Optional[int] = None
+    ) -> str:
         """
         Signs a payload and returns a Vouch-Token (JWS compact serialization).
         
         Args:
             payload: Dictionary containing the intent/action data to sign.
             expiry_seconds: Optional override for token expiry time.
+            reputation_score: Optional reputation score (0-100) to include in token.
+                             Allows servers to see the agent's trustworthiness.
             
         Returns:
             A JWS compact serialized token string (the Vouch-Token).
         """
         now = int(time.time())
         exp = expiry_seconds if expiry_seconds is not None else self.default_expiry
+        
+        # Build the vouch claim
+        vouch_claim = {
+            "version": "1.0",
+            "payload": payload
+        }
+        
+        # Add reputation if provided (clamp to valid range)
+        if reputation_score is not None:
+            vouch_claim["reputation_score"] = max(0, min(100, reputation_score))
         
         # Build the JWT claims
         claims = {
@@ -75,10 +95,7 @@ class Signer:
             "iat": now,                          # Issued at
             "nbf": now,                          # Not before
             "exp": now + exp,                    # Expiration
-            "vouch": {
-                "version": "1.0",
-                "payload": payload               # The actual intent/action data
-            }
+            "vouch": vouch_claim
         }
         
         # Create the JWS
