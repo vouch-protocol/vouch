@@ -37,10 +37,10 @@ class Auditor:
         ... })
         >>> print(cert['certificate'])
     """
-    
+
     DEFAULT_EXPIRY_SECONDS = 86400  # 24 hours
     DEFAULT_REPUTATION = 50  # Starting reputation for new agents
-    
+
     def __init__(
         self,
         private_key_json: str,
@@ -60,17 +60,17 @@ class Auditor:
         """
         if not private_key_json:
             raise ValueError("Auditor requires a private key (JWK JSON string)")
-        
+
         try:
             self._signing_key = jwk.JWK.from_json(private_key_json)
-            if self._signing_key.key_type != 'OKP':
+            if self._signing_key['kty'] != 'OKP':
                 raise ValueError("Key must be an Ed25519 key (OKP)")
         except Exception as e:
             raise ValueError(f"Invalid private key: {e}")
-        
+
         self._issuer_did = issuer_did
         self._default_expiry = default_expiry
-    
+
     def issue_vouch(
         self,
         agent_data: Dict[str, Any],
@@ -94,16 +94,16 @@ class Auditor:
         """
         if not agent_data.get('did'):
             raise ValueError("agent_data must include 'did' field")
-        
+
         now = int(time.time())
         exp = expiry_seconds if expiry_seconds is not None else self._default_expiry
-        
+
         # Extract reputation score with default
         reputation_score = agent_data.get('reputation_score', self.DEFAULT_REPUTATION)
-        
+
         # Clamp reputation to valid range
         reputation_score = max(0, min(100, reputation_score))
-        
+
         # Build the verifiable credential payload
         payload = {
             "jti": str(uuid.uuid4()),
@@ -119,29 +119,29 @@ class Auditor:
                 "credential_type": "Identity+Reputation"
             }
         }
-        
+
         # Create and sign the JWS
         token = jws.JWS(json.dumps(payload, sort_keys=True, separators=(',', ':')))
-        
+
         protected_header = {
             "alg": "EdDSA",
             "typ": "vc+jwt",
-            "kid": self._signing_key.key_id or self._issuer_did
+            "kid": self._signing_key.get('kid') or self._issuer_did
         }
-        
+
         token.add_signature(
             self._signing_key,
             None,
             json_encode(protected_header),
             None
         )
-        
+
         return {"certificate": token.serialize(compact=True)}
-    
+
     def get_public_key_jwk(self) -> str:
         """Returns the public key in JWK format for verification."""
         return self._signing_key.export_public()
-    
+
     def get_issuer_did(self) -> str:
         """Returns the issuer DID."""
         return self._issuer_did

@@ -51,7 +51,7 @@ class Signer:
 
         try:
             self._key = jwk.JWK.from_json(private_key)
-            if self._key.key_type != 'OKP' or self._key.get('crv') != 'Ed25519':
+            if self._key['kty'] != 'OKP' or self._key.get('crv') != 'Ed25519':
                 raise ValueError("Key must be an Ed25519 key (OKP with crv=Ed25519)")
         except Exception as e:
             raise ValueError(f"Invalid JWK private key: {e}")
@@ -118,7 +118,7 @@ class Signer:
         protected_header = {
             "alg": "EdDSA",
             "typ": "vouch+jwt",
-            "kid": self._key.key_id if self._key.key_id else self.did
+            "kid": self._key.get('kid') or self.did
         }
 
         token.add_signature(
