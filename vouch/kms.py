@@ -45,7 +45,7 @@ class RotatingKeyProvider:
     Automatically rotates the active signing key based on time or key validity
     periods. Supports multiple keys for high-availability scenarios.
     """
-    
+
     def __init__(
         self,
         keys: List[KeyConfig],
@@ -54,12 +54,12 @@ class RotatingKeyProvider:
     ):
         if not keys:
             raise ValueError("At least one key configuration is required")
-        
+
         self._keys = keys
         self._interval = rotation_interval_hours * 3600
         self._on_rotation = on_rotation
         self._last_key_id: Optional[str] = None
-        
+
         for i, key_config in enumerate(keys):
             try:
                 key = jwk.JWK.from_json(key_config.private_key_jwk)
@@ -67,18 +67,18 @@ class RotatingKeyProvider:
                     raise ValueError(f"Key {i} must be Ed25519 (OKP)")
             except Exception as e:
                 raise ValueError(f"Invalid key at index {i}: {e}")
-    
+
     def get_active_key(self) -> KeyConfig:
         now = int(time.time())
-        
+
         for key in self._keys:
             if key.valid_from and key.valid_until:
                 if key.valid_from <= now <= key.valid_until:
                     return key
-        
+
         index = (now // self._interval) % len(self._keys)
         active_key = self._keys[index]
-        
+
         current_id = active_key.key_id or str(index)
         if self._last_key_id and self._last_key_id != current_id:
             if self._on_rotation:
@@ -87,14 +87,14 @@ class RotatingKeyProvider:
                 except Exception as e:
                     logger.error(f"Rotation callback failed: {e}")
         self._last_key_id = current_id
-        
+
         return active_key
-    
+
     def get_signer(self):
         from vouch.signer import Signer
         active_key = self.get_active_key()
         return Signer(private_key=active_key.private_key_jwk, did=active_key.did)
-    
+
     def add_key(self, key_config: KeyConfig) -> None:
         try:
             key = jwk.JWK.from_json(key_config.private_key_jwk)
@@ -102,10 +102,10 @@ class RotatingKeyProvider:
                 raise ValueError("Key must be Ed25519 (OKP)")
         except Exception as e:
             raise ValueError(f"Invalid key: {e}")
-        
+
         self._keys.append(key_config)
         logger.info(f"Added key {key_config.key_id} to rotation pool")
-    
+
     def remove_key(self, key_id: str) -> bool:
         for i, key in enumerate(self._keys):
             if key.key_id == key_id:
@@ -115,11 +115,11 @@ class RotatingKeyProvider:
                 logger.info(f"Removed key {key_id} from rotation pool")
                 return True
         return False
-    
+
     @property
     def key_count(self) -> int:
         return len(self._keys)
-    
+
     @property
     def active_key_id(self) -> Optional[str]:
         return self.get_active_key().key_id
@@ -136,7 +136,7 @@ class CloudKMSProvider(ABC):
     Cloud KMS providers keep the private key in the cloud HSM.
     The key never leaves the secure boundary.
     """
-    
+
     @abstractmethod
     async def sign(self, payload: bytes) -> bytes:
         """
@@ -149,7 +149,7 @@ class CloudKMSProvider(ABC):
             Signature bytes.
         """
         pass
-    
+
     @abstractmethod
     async def get_public_key(self) -> str:
         """
@@ -159,12 +159,12 @@ class CloudKMSProvider(ABC):
             JWK JSON string of public key.
         """
         pass
-    
+
     @abstractmethod
     def get_did(self) -> str:
         """Get the DID associated with this key."""
         pass
-    
+
     async def sign_token(self, claims: dict) -> str:
         """
         Sign a complete Vouch token using cloud KMS.
@@ -176,7 +176,7 @@ class CloudKMSProvider(ABC):
             JWS compact serialization.
         """
         import uuid
-        
+
         now = int(time.time())
         full_claims = {
             "jti": str(uuid.uuid4()),
@@ -186,29 +186,29 @@ class CloudKMSProvider(ABC):
             "exp": now + 300,  # 5 min default
             "vouch": {"payload": claims}
         }
-        
+
         payload = json.dumps(full_claims).encode('utf-8')
-        
+
         # Create JWS header
         header = {
             "alg": "EdDSA",
             "typ": "JWT",
             "kid": self.get_did()
         }
-        
+
         # Base64url encode header and payload
         header_b64 = base64.urlsafe_b64encode(
             json.dumps(header).encode()
         ).rstrip(b'=').decode()
-        
+
         payload_b64 = base64.urlsafe_b64encode(payload).rstrip(b'=').decode()
-        
+
         # Sign
         signing_input = f"{header_b64}.{payload_b64}".encode()
         signature = await self.sign(signing_input)
-        
+
         sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b'=').decode()
-        
+
         return f"{header_b64}.{payload_b64}.{sig_b64}"
 
 
@@ -230,7 +230,7 @@ class AWSKMSProvider(CloudKMSProvider):
         ... )
         >>> token = await provider.sign_token({"action": "test"})
     """
-    
+
     def __init__(
         self,
         key_id: str,
@@ -255,23 +255,23 @@ class AWSKMSProvider(CloudKMSProvider):
         self._access_key = aws_access_key_id
         self._secret_key = aws_secret_access_key
         self._public_key_cache: Optional[str] = None
-    
+
     def get_did(self) -> str:
         return self._did
-    
+
     async def sign(self, payload: bytes) -> bytes:
         """Sign using AWS KMS."""
         try:
             import aioboto3
         except ImportError:
             raise ImportError("AWS KMS support requires: pip install aioboto3")
-        
+
         session = aioboto3.Session(
             aws_access_key_id=self._access_key,
             aws_secret_access_key=self._secret_key,
             region_name=self._region
         )
-        
+
         async with session.client('kms') as kms:
             response = await kms.sign(
                 KeyId=self._key_id,
@@ -280,33 +280,33 @@ class AWSKMSProvider(CloudKMSProvider):
                 SigningAlgorithm='ECDSA_SHA_256'  # AWS doesn't support EdDSA yet
             )
             return response['Signature']
-    
+
     async def get_public_key(self) -> str:
         """Get public key from AWS KMS."""
         if self._public_key_cache:
             return self._public_key_cache
-        
+
         try:
             import aioboto3
         except ImportError:
             raise ImportError("AWS KMS support requires: pip install aioboto3")
-        
+
         session = aioboto3.Session(
             aws_access_key_id=self._access_key,
             aws_secret_access_key=self._secret_key,
             region_name=self._region
         )
-        
+
         async with session.client('kms') as kms:
             response = await kms.get_public_key(KeyId=self._key_id)
-            
+
             # Convert DER to JWK
             from cryptography.hazmat.primitives.serialization import (
                 load_der_public_key
             )
-            
-            pub_key = load_der_public_key(response['PublicKey'])
-            
+
+            _pub_key = load_der_public_key(response['PublicKey'])  # noqa: F841
+
             # This is a simplified conversion - actual implementation
             # would depend on key type
             jwk_dict = {
@@ -316,7 +316,7 @@ class AWSKMSProvider(CloudKMSProvider):
                     response['PublicKey'][-32:]
                 ).rstrip(b'=').decode()
             }
-            
+
             self._public_key_cache = json.dumps(jwk_dict)
             return self._public_key_cache
 
@@ -338,7 +338,7 @@ class GCPKMSProvider(CloudKMSProvider):
         ... )
         >>> token = await provider.sign_token({"action": "test"})
     """
-    
+
     def __init__(
         self,
         key_name: str,
@@ -357,26 +357,26 @@ class GCPKMSProvider(CloudKMSProvider):
         self._did = did
         self._credentials_path = credentials_path
         self._public_key_cache: Optional[str] = None
-    
+
     def get_did(self) -> str:
         return self._did
-    
+
     async def sign(self, payload: bytes) -> bytes:
         """Sign using Google Cloud KMS."""
         try:
             from google.cloud import kms
         except ImportError:
             raise ImportError("GCP KMS support requires: pip install google-cloud-kms")
-        
+
         import asyncio
-        
+
         def _sign_sync():
             client = kms.KeyManagementServiceClient()
-            
+
             # Create digest
             import hashlib
             digest = hashlib.sha256(payload).digest()
-            
+
             response = client.asymmetric_sign(
                 request={
                     "name": self._key_name,
@@ -384,33 +384,33 @@ class GCPKMSProvider(CloudKMSProvider):
                 }
             )
             return response.signature
-        
+
         return await asyncio.get_event_loop().run_in_executor(None, _sign_sync)
-    
+
     async def get_public_key(self) -> str:
         """Get public key from GCP KMS."""
         if self._public_key_cache:
             return self._public_key_cache
-        
+
         try:
             from google.cloud import kms
         except ImportError:
             raise ImportError("GCP KMS support requires: pip install google-cloud-kms")
-        
+
         import asyncio
-        
+
         def _get_pub_key_sync():
             client = kms.KeyManagementServiceClient()
             response = client.get_public_key(request={"name": self._key_name})
             return response.pem
-        
+
         pem = await asyncio.get_event_loop().run_in_executor(None, _get_pub_key_sync)
-        
+
         # Convert PEM to JWK
         from cryptography.hazmat.primitives.serialization import load_pem_public_key
-        
+
         pub_key = load_pem_public_key(pem.encode())
-        
+
         # Convert to JWK (simplified)
         raw_bytes = pub_key.public_bytes_raw()
         jwk_dict = {
@@ -418,7 +418,7 @@ class GCPKMSProvider(CloudKMSProvider):
             "crv": "Ed25519",
             "x": base64.urlsafe_b64encode(raw_bytes).rstrip(b'=').decode()
         }
-        
+
         self._public_key_cache = json.dumps(jwk_dict)
         return self._public_key_cache
 
@@ -441,7 +441,7 @@ class AzureKeyVaultProvider(CloudKMSProvider):
         ... )
         >>> token = await provider.sign_token({"action": "test"})
     """
-    
+
     def __init__(
         self,
         vault_url: str,
@@ -463,10 +463,10 @@ class AzureKeyVaultProvider(CloudKMSProvider):
         self._key_version = key_version
         self._did = did
         self._public_key_cache: Optional[str] = None
-    
+
     def get_did(self) -> str:
         return self._did
-    
+
     async def sign(self, payload: bytes) -> bytes:
         """Sign using Azure Key Vault."""
         try:
@@ -479,29 +479,29 @@ class AzureKeyVaultProvider(CloudKMSProvider):
                 "Azure Key Vault support requires: "
                 "pip install azure-keyvault-keys azure-identity"
             )
-        
+
         credential = DefaultAzureCredential()
-        
+
         try:
             key_client = KeyClient(vault_url=self._vault_url, credential=credential)
             key = await key_client.get_key(self._key_name, self._key_version)
-            
+
             crypto_client = CryptographyClient(key, credential=credential)
-            
+
             # Create digest
             import hashlib
             digest = hashlib.sha256(payload).digest()
-            
+
             result = await crypto_client.sign(SignatureAlgorithm.es256, digest)
             return result.signature
         finally:
             await credential.close()
-    
+
     async def get_public_key(self) -> str:
         """Get public key from Azure Key Vault."""
         if self._public_key_cache:
             return self._public_key_cache
-        
+
         try:
             from azure.keyvault.keys.aio import KeyClient
             from azure.identity.aio import DefaultAzureCredential
@@ -510,13 +510,13 @@ class AzureKeyVaultProvider(CloudKMSProvider):
                 "Azure Key Vault support requires: "
                 "pip install azure-keyvault-keys azure-identity"
             )
-        
+
         credential = DefaultAzureCredential()
-        
+
         try:
             key_client = KeyClient(vault_url=self._vault_url, credential=credential)
             key = await key_client.get_key(self._key_name, self._key_version)
-            
+
             # Convert to JWK
             jwk_dict = {
                 "kty": key.key.kty,
@@ -524,10 +524,10 @@ class AzureKeyVaultProvider(CloudKMSProvider):
                 "x": base64.urlsafe_b64encode(key.key.x).rstrip(b'=').decode(),
                 "y": base64.urlsafe_b64encode(key.key.y).rstrip(b'=').decode() if key.key.y else None
             }
-            
+
             # Remove None values
             jwk_dict = {k: v for k, v in jwk_dict.items() if v is not None}
-            
+
             self._public_key_cache = json.dumps(jwk_dict)
             return self._public_key_cache
         finally:

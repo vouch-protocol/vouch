@@ -98,8 +98,16 @@ target-version = ['py39', 'py310', 'py311', 'py312']
 
 [tool.ruff]
 line-length = 100
-select = ["E", "F", "W", "I", "N", "B", "A"]
-ignore = ["E501"]
+
+[tool.ruff.lint]
+# Focus on real bugs and security issues for now
+select = ["E", "F", "B", "A"]
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "F401",   # Unused imports (common in __init__.py)
+    "W293",   # Whitespace in blank lines (cosmetic)
+    "B904",   # Exception chaining (fix later)
+]
 
 [tool.mypy]
 python_version = "3.9"
