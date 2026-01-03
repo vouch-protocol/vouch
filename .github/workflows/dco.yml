@@ -10,6 +10,8 @@ jobs:
   dco:
     name: DCO Sign-off Check
     runs-on: ubuntu-latest
+    # Skip DCO check for bot accounts
+    if: github.actor != 'dependabot[bot]' && github.actor != 'github-actions[bot]'
     steps:
       - name: Check DCO
         uses: dkhamsing/check-dco@v1.2.3
