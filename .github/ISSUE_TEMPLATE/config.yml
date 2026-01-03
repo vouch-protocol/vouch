@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/vouch-protocol/vouch/security/advisories/new
+    about: Report security vulnerabilities through GitHub Security Advisories
+  - name: Discussion
+    url: https://github.com/vouch-protocol/vouch/discussions
+    about: Ask questions and discuss ideas
