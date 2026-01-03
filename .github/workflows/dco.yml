@@ -1,0 +1,17 @@
+name: DCO Check
+
+on:
+  pull_request:
+    branches: [main]
+  pull_request_target:
+    branches: [main]
+
+jobs:
+  dco:
+    name: DCO Sign-off Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check DCO
+        uses: dkhamsing/check-dco@v1.2.3
+        with:
+          fail-on-missing: true
