@@ -13,6 +13,7 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-001](./PAD-001-cryptographic-agent-identity.md) | Cryptographic Agent Identity | 2025-12-28 | Published |
 | [PAD-002](./PAD-002-chain-of-custody.md) | Chain of Custody Delegation | 2026-01-03 | Published |
 | [PAD-003](./PAD-003-identity-sidecar.md) | Identity Sidecar Pattern | 2026-01-03 | Published |
+| [PAD-004](./PAD-004-liability-adjudication.md) | Liability Adjudication & Insurance | 2026-01-03 | Published |
 
 ## Format
 
