@@ -259,12 +259,15 @@ We welcome contributions! See [CONTRIBUTING.md](https://github.com/vouch-protoco
 
 ---
 
-## Defensive Disclosure (Prior Art)
-**Publication Date:** December 14, 2025  
-**Subject:** Cryptographic Binding of AI Agent Intent via Model Context Protocol (MCP)
+## 📜 Prior Art Disclosures
 
-To ensure the freedom of the ecosystem to build secure agents, we explicitly disclose the following novel method as Prior Art:
+To ensure ecosystem freedom, we publish defensive prior art disclosures for novel methods:
 
-1. **The "Identity Sidecar" Pattern:** An MCP Server acting as a local "Identity Proxy" for a stateless LLM, isolating keys from application code.
-2. **Just-in-Time (JIT) Intent Signing:** A workflow where the LLM requests a signed "Vouch-Token" for a specific action *before* execution.
-3. **Non-Repudiation:** Generating a cryptographically verifiable audit trail binding Identity, Intent, and Time.
+| ID | Title | Key Claims |
+|----|-------|------------|
+| [PAD-001](docs/disclosures/PAD-001-cryptographic-agent-identity.md) | Cryptographic Agent Identity | Intent-bound tokens, agent DIDs |
+| [PAD-002](docs/disclosures/PAD-002-chain-of-custody.md) | Chain of Custody | Recursive delegation, intent chains |
+| [PAD-003](docs/disclosures/PAD-003-identity-sidecar.md) | Identity Sidecar Pattern | LLM key isolation, JIT signing |
+| [PAD-004](docs/disclosures/PAD-004-liability-adjudication.md) | Liability Adjudication | AI insurance, automated claims |
+
+[View all disclosures →](docs/disclosures/README.md)
