@@ -9,7 +9,7 @@ __version__ = "1.3.1"
 
 # Core signing/verification
 from .signer import Signer
-from .verifier import Verifier, Passport, VerificationError
+from .verifier import Verifier, Passport, VerificationError, DelegationLink
 from .auditor import Auditor
 
 # Key management
@@ -48,8 +48,8 @@ def __getattr__(name):
         from . import revocation
         return getattr(revocation, name)
     # Reputation
-    elif name in ("ReputationEngine", "ReputationScore", "ReputationEvent", 
-                  "MemoryReputationStore", "RedisReputationStore", 
+    elif name in ("ReputationEngine", "ReputationScore", "ReputationEvent",
+                  "MemoryReputationStore", "RedisReputationStore",
                   "KafkaReputationStore", "KafkaReputationConsumer"):
         from . import reputation
         return getattr(reputation, name)
@@ -67,6 +67,7 @@ __all__ = [
     "Verifier",
     "Passport",
     "VerificationError",
+    "DelegationLink",
     "Auditor",
     # Key management
     "generate_identity",
