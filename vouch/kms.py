@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class KeyConfig:
     """
     Configuration for a signing key.
-    
+
     Attributes:
         private_key_jwk: JWK JSON string of the private key
         did: The DID associated with this key
@@ -31,6 +31,7 @@ class KeyConfig:
         valid_from: Unix timestamp when key becomes valid (optional)
         valid_until: Unix timestamp when key expires (optional)
     """
+
     private_key_jwk: str
     did: str
     key_id: Optional[str] = None
@@ -41,7 +42,7 @@ class KeyConfig:
 class RotatingKeyProvider:
     """
     Enterprise Key Management for Vouch.
-    
+
     Automatically rotates the active signing key based on time or key validity
     periods. Supports multiple keys for high-availability scenarios.
     """
@@ -50,7 +51,7 @@ class RotatingKeyProvider:
         self,
         keys: List[KeyConfig],
         rotation_interval_hours: int = 24,
-        on_rotation: Optional[Callable[[str], None]] = None
+        on_rotation: Optional[Callable[[str], None]] = None,
     ):
         if not keys:
             raise ValueError("At least one key configuration is required")
@@ -63,7 +64,7 @@ class RotatingKeyProvider:
         for i, key_config in enumerate(keys):
             try:
                 key = jwk.JWK.from_json(key_config.private_key_jwk)
-                if key.key_type != 'OKP':
+                if key.key_type != "OKP":
                     raise ValueError(f"Key {i} must be Ed25519 (OKP)")
             except Exception as e:
                 raise ValueError(f"Invalid key at index {i}: {e}")
@@ -92,13 +93,14 @@ class RotatingKeyProvider:
 
     def get_signer(self):
         from vouch.signer import Signer
+
         active_key = self.get_active_key()
         return Signer(private_key=active_key.private_key_jwk, did=active_key.did)
 
     def add_key(self, key_config: KeyConfig) -> None:
         try:
             key = jwk.JWK.from_json(key_config.private_key_jwk)
-            if key.key_type != 'OKP':
+            if key.key_type != "OKP":
                 raise ValueError("Key must be Ed25519 (OKP)")
         except Exception as e:
             raise ValueError(f"Invalid key: {e}")
@@ -129,10 +131,11 @@ class RotatingKeyProvider:
 # Cloud KMS Providers - Abstract Interface
 # =============================================================================
 
+
 class CloudKMSProvider(ABC):
     """
     Abstract interface for Cloud KMS providers.
-    
+
     Cloud KMS providers keep the private key in the cloud HSM.
     The key never leaves the secure boundary.
     """
@@ -141,10 +144,10 @@ class CloudKMSProvider(ABC):
     async def sign(self, payload: bytes) -> bytes:
         """
         Sign payload using cloud-hosted key.
-        
+
         Args:
             payload: Bytes to sign.
-            
+
         Returns:
             Signature bytes.
         """
@@ -154,7 +157,7 @@ class CloudKMSProvider(ABC):
     async def get_public_key(self) -> str:
         """
         Get public key in JWK format.
-        
+
         Returns:
             JWK JSON string of public key.
         """
@@ -168,10 +171,10 @@ class CloudKMSProvider(ABC):
     async def sign_token(self, claims: dict) -> str:
         """
         Sign a complete Vouch token using cloud KMS.
-        
+
         Args:
             claims: JWT claims to sign.
-            
+
         Returns:
             JWS compact serialization.
         """
@@ -184,30 +187,24 @@ class CloudKMSProvider(ABC):
             "sub": self.get_did(),
             "iat": now,
             "exp": now + 300,  # 5 min default
-            "vouch": {"payload": claims}
+            "vouch": {"payload": claims},
         }
 
-        payload = json.dumps(full_claims).encode('utf-8')
+        payload = json.dumps(full_claims).encode("utf-8")
 
         # Create JWS header
-        header = {
-            "alg": "EdDSA",
-            "typ": "JWT",
-            "kid": self.get_did()
-        }
+        header = {"alg": "EdDSA", "typ": "JWT", "kid": self.get_did()}
 
         # Base64url encode header and payload
-        header_b64 = base64.urlsafe_b64encode(
-            json.dumps(header).encode()
-        ).rstrip(b'=').decode()
+        header_b64 = base64.urlsafe_b64encode(json.dumps(header).encode()).rstrip(b"=").decode()
 
-        payload_b64 = base64.urlsafe_b64encode(payload).rstrip(b'=').decode()
+        payload_b64 = base64.urlsafe_b64encode(payload).rstrip(b"=").decode()
 
         # Sign
         signing_input = f"{header_b64}.{payload_b64}".encode()
         signature = await self.sign(signing_input)
 
-        sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b'=').decode()
+        sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b"=").decode()
 
         return f"{header_b64}.{payload_b64}.{sig_b64}"
 
@@ -216,12 +213,13 @@ class CloudKMSProvider(ABC):
 # AWS KMS Provider
 # =============================================================================
 
+
 class AWSKMSProvider(CloudKMSProvider):
     """
     AWS KMS provider for Ed25519 signing.
-    
+
     Requires: pip install aioboto3
-    
+
     Example:
         >>> provider = AWSKMSProvider(
         ...     key_id="alias/vouch-signing-key",
@@ -237,11 +235,11 @@ class AWSKMSProvider(CloudKMSProvider):
         did: str,
         region: str = "us-east-1",
         aws_access_key_id: Optional[str] = None,
-        aws_secret_access_key: Optional[str] = None
+        aws_secret_access_key: Optional[str] = None,
     ):
         """
         Initialize AWS KMS provider.
-        
+
         Args:
             key_id: KMS key ID, ARN, or alias.
             did: DID to use for this key.
@@ -269,17 +267,17 @@ class AWSKMSProvider(CloudKMSProvider):
         session = aioboto3.Session(
             aws_access_key_id=self._access_key,
             aws_secret_access_key=self._secret_key,
-            region_name=self._region
+            region_name=self._region,
         )
 
-        async with session.client('kms') as kms:
+        async with session.client("kms") as kms:
             response = await kms.sign(
                 KeyId=self._key_id,
                 Message=payload,
-                MessageType='RAW',
-                SigningAlgorithm='ECDSA_SHA_256'  # AWS doesn't support EdDSA yet
+                MessageType="RAW",
+                SigningAlgorithm="ECDSA_SHA_256",  # AWS doesn't support EdDSA yet
             )
-            return response['Signature']
+            return response["Signature"]
 
     async def get_public_key(self) -> str:
         """Get public key from AWS KMS."""
@@ -294,27 +292,23 @@ class AWSKMSProvider(CloudKMSProvider):
         session = aioboto3.Session(
             aws_access_key_id=self._access_key,
             aws_secret_access_key=self._secret_key,
-            region_name=self._region
+            region_name=self._region,
         )
 
-        async with session.client('kms') as kms:
+        async with session.client("kms") as kms:
             response = await kms.get_public_key(KeyId=self._key_id)
 
             # Convert DER to JWK
-            from cryptography.hazmat.primitives.serialization import (
-                load_der_public_key
-            )
+            from cryptography.hazmat.primitives.serialization import load_der_public_key
 
-            _pub_key = load_der_public_key(response['PublicKey'])  # noqa: F841
+            _pub_key = load_der_public_key(response["PublicKey"])  # noqa: F841
 
             # This is a simplified conversion - actual implementation
             # would depend on key type
             jwk_dict = {
                 "kty": "OKP",
                 "crv": "Ed25519",
-                "x": base64.urlsafe_b64encode(
-                    response['PublicKey'][-32:]
-                ).rstrip(b'=').decode()
+                "x": base64.urlsafe_b64encode(response["PublicKey"][-32:]).rstrip(b"=").decode(),
             }
 
             self._public_key_cache = json.dumps(jwk_dict)
@@ -325,12 +319,13 @@ class AWSKMSProvider(CloudKMSProvider):
 # Google Cloud KMS Provider
 # =============================================================================
 
+
 class GCPKMSProvider(CloudKMSProvider):
     """
     Google Cloud KMS provider for Ed25519 signing.
-    
+
     Requires: pip install google-cloud-kms
-    
+
     Example:
         >>> provider = GCPKMSProvider(
         ...     key_name="projects/my-project/locations/global/keyRings/vouch/cryptoKeys/signing/cryptoKeyVersions/1",
@@ -339,15 +334,10 @@ class GCPKMSProvider(CloudKMSProvider):
         >>> token = await provider.sign_token({"action": "test"})
     """
 
-    def __init__(
-        self,
-        key_name: str,
-        did: str,
-        credentials_path: Optional[str] = None
-    ):
+    def __init__(self, key_name: str, did: str, credentials_path: Optional[str] = None):
         """
         Initialize GCP KMS provider.
-        
+
         Args:
             key_name: Full resource name of the crypto key version.
             did: DID to use for this key.
@@ -375,13 +365,11 @@ class GCPKMSProvider(CloudKMSProvider):
 
             # Create digest
             import hashlib
+
             digest = hashlib.sha256(payload).digest()
 
             response = client.asymmetric_sign(
-                request={
-                    "name": self._key_name,
-                    "digest": {"sha256": digest}
-                }
+                request={"name": self._key_name, "digest": {"sha256": digest}}
             )
             return response.signature
 
@@ -416,7 +404,7 @@ class GCPKMSProvider(CloudKMSProvider):
         jwk_dict = {
             "kty": "OKP",
             "crv": "Ed25519",
-            "x": base64.urlsafe_b64encode(raw_bytes).rstrip(b'=').decode()
+            "x": base64.urlsafe_b64encode(raw_bytes).rstrip(b"=").decode(),
         }
 
         self._public_key_cache = json.dumps(jwk_dict)
@@ -427,12 +415,13 @@ class GCPKMSProvider(CloudKMSProvider):
 # Azure Key Vault Provider
 # =============================================================================
 
+
 class AzureKeyVaultProvider(CloudKMSProvider):
     """
     Azure Key Vault provider for Ed25519 signing.
-    
+
     Requires: pip install azure-keyvault-keys azure-identity
-    
+
     Example:
         >>> provider = AzureKeyVaultProvider(
         ...     vault_url="https://my-vault.vault.azure.net/",
@@ -442,16 +431,10 @@ class AzureKeyVaultProvider(CloudKMSProvider):
         >>> token = await provider.sign_token({"action": "test"})
     """
 
-    def __init__(
-        self,
-        vault_url: str,
-        key_name: str,
-        did: str,
-        key_version: Optional[str] = None
-    ):
+    def __init__(self, vault_url: str, key_name: str, did: str, key_version: Optional[str] = None):
         """
         Initialize Azure Key Vault provider.
-        
+
         Args:
             vault_url: Key Vault URL.
             key_name: Name of the key.
@@ -476,8 +459,7 @@ class AzureKeyVaultProvider(CloudKMSProvider):
             from azure.keyvault.keys.crypto import SignatureAlgorithm
         except ImportError:
             raise ImportError(
-                "Azure Key Vault support requires: "
-                "pip install azure-keyvault-keys azure-identity"
+                "Azure Key Vault support requires: pip install azure-keyvault-keys azure-identity"
             )
 
         credential = DefaultAzureCredential()
@@ -490,6 +472,7 @@ class AzureKeyVaultProvider(CloudKMSProvider):
 
             # Create digest
             import hashlib
+
             digest = hashlib.sha256(payload).digest()
 
             result = await crypto_client.sign(SignatureAlgorithm.es256, digest)
@@ -507,8 +490,7 @@ class AzureKeyVaultProvider(CloudKMSProvider):
             from azure.identity.aio import DefaultAzureCredential
         except ImportError:
             raise ImportError(
-                "Azure Key Vault support requires: "
-                "pip install azure-keyvault-keys azure-identity"
+                "Azure Key Vault support requires: pip install azure-keyvault-keys azure-identity"
             )
 
         credential = DefaultAzureCredential()
@@ -520,9 +502,11 @@ class AzureKeyVaultProvider(CloudKMSProvider):
             # Convert to JWK
             jwk_dict = {
                 "kty": key.key.kty,
-                "crv": key.key.crv if hasattr(key.key, 'crv') else "P-256",
-                "x": base64.urlsafe_b64encode(key.key.x).rstrip(b'=').decode(),
-                "y": base64.urlsafe_b64encode(key.key.y).rstrip(b'=').decode() if key.key.y else None
+                "crv": key.key.crv if hasattr(key.key, "crv") else "P-256",
+                "x": base64.urlsafe_b64encode(key.key.x).rstrip(b"=").decode(),
+                "y": base64.urlsafe_b64encode(key.key.y).rstrip(b"=").decode()
+                if key.key.y
+                else None,
             }
 
             # Remove None values

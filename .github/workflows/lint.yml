@@ -22,7 +22,7 @@ jobs:
         run: pip install ruff
       
       - name: Run ruff check
-        run: ruff check vouch/ tests/
+        run: ruff check vouch/ tests/ examples/
       
       - name: Run ruff format check
-        run: ruff format --check vouch/ tests/
+        run: ruff format --check vouch/ tests/ examples/

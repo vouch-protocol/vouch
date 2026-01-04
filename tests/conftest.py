@@ -25,7 +25,7 @@ def signer(keypair: KeyPair) -> Signer:
 @pytest.fixture
 def auditor_keypair() -> tuple:
     """Generate keypair for auditor testing."""
-    key = jwk.JWK.generate(kty='OKP', crv='Ed25519')
+    key = jwk.JWK.generate(kty="OKP", crv="Ed25519")
     return key.export_private(), key.export_public()
 
 
@@ -33,10 +33,7 @@ def auditor_keypair() -> tuple:
 def auditor(auditor_keypair: tuple) -> Auditor:
     """Create an Auditor instance for testing."""
     private_key, _ = auditor_keypair
-    return Auditor(
-        private_key_json=private_key,
-        issuer_did="did:web:test-authority.example.com"
-    )
+    return Auditor(private_key_json=private_key, issuer_did="did:web:test-authority.example.com")
 
 
 @pytest.fixture
@@ -54,11 +51,7 @@ def nonce_tracker() -> MemoryNonceTracker:
 @pytest.fixture
 def sample_payload() -> dict:
     """Sample payload for signing tests."""
-    return {
-        "action": "read_database",
-        "target": "users_table",
-        "scope": ["read", "list"]
-    }
+    return {"action": "read_database", "target": "users_table", "scope": ["read", "list"]}
 
 
 @pytest.fixture
@@ -67,5 +60,5 @@ def expired_signer(keypair: KeyPair) -> Signer:
     return Signer(
         private_key=keypair.private_key_jwk,
         did=keypair.did,
-        default_expiry_seconds=-60  # Already expired
+        default_expiry_seconds=-60,  # Already expired
     )
