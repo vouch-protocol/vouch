@@ -14,12 +14,13 @@ from jwcrypto import jwk
 class KeyPair:
     """
     Represents an Ed25519 key pair for Vouch identity.
-    
+
     Attributes:
         private_key_jwk: The private key in JWK format (JSON string)
         public_key_jwk: The public key in JWK format (JSON string)
         did: The generated DID (if domain was provided)
     """
+
     private_key_jwk: str
     public_key_jwk: str
     did: Optional[str] = None
@@ -28,13 +29,13 @@ class KeyPair:
 def generate_identity(domain: Optional[str] = None) -> KeyPair:
     """
     Generate a new Ed25519 keypair for agent identity.
-    
+
     Args:
         domain: Optional domain for did:web generation (e.g., 'example.com')
-        
+
     Returns:
         KeyPair containing private key, public key, and optional DID.
-        
+
     Example:
         >>> keys = generate_identity(domain='myagent.com')
         >>> print(keys.did)
@@ -43,26 +44,22 @@ def generate_identity(domain: Optional[str] = None) -> KeyPair:
         >>> # Publish keys.public_key_jwk in vouch.json
     """
     # Generate Ed25519 key
-    key = jwk.JWK.generate(kty='OKP', crv='Ed25519')
-    
+    key = jwk.JWK.generate(kty="OKP", crv="Ed25519")
+
     # Export keys
     private_key = key.export_private()
     public_key = key.export_public()
-    
+
     # Build DID if domain provided
     did = f"did:web:{domain}" if domain else None
-    
-    return KeyPair(
-        private_key_jwk=private_key,
-        public_key_jwk=public_key,
-        did=did
-    )
+
+    return KeyPair(private_key_jwk=private_key, public_key_jwk=public_key, did=did)
 
 
 def generate_identity_keys(domain: Optional[str] = None) -> KeyPair:
     """
     Alias for generate_identity for backward compatibility.
-    
+
     Deprecated: Use generate_identity() instead.
     """
     return generate_identity(domain)
@@ -71,10 +68,10 @@ def generate_identity_keys(domain: Optional[str] = None) -> KeyPair:
 # Run as script for quick key generation
 if __name__ == "__main__":
     import sys
-    
+
     domain = sys.argv[1] if len(sys.argv) > 1 else None
     keys = generate_identity(domain)
-    
+
     print("🔑 NEW AGENT IDENTITY GENERATED\n")
     if keys.did:
         print(f"DID: {keys.did}")

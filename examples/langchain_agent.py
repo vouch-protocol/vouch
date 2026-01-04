@@ -25,17 +25,17 @@ from vouch import generate_identity
 
 def main():
     """Run the LangChain agent with Vouch signing capability."""
-    
+
     # Option 1: Use environment variables (recommended)
     vouch_tool = VouchSignerTool()
-    
+
     # Option 2: Use explicit keys (for testing)
     # keys = generate_identity(domain='my-agent.com')
     # vouch_tool = VouchSignerTool(
     #     private_key_json=keys.private_key_jwk,
     #     agent_did=keys.did
     # )
-    
+
     # Initialize LLM (requires OPENAI_API_KEY)
     try:
         llm = ChatOpenAI(temperature=0, model="gpt-4")
@@ -43,21 +43,18 @@ def main():
         print(f"Error initializing LLM: {e}")
         print("Make sure OPENAI_API_KEY is set")
         return
-    
+
     # Create agent with Vouch tool
     tools = [vouch_tool]
-    
+
     agent = initialize_agent(
-        tools,
-        llm,
-        agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True
+        tools, llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
-    
+
     # Run the agent
     print("\n🤖 Agent Starting...")
     print("=" * 50)
-    
+
     try:
         response = agent.run(
             "I need to access a protected API. "
@@ -65,7 +62,7 @@ def main():
             "for the action 'read_customer_data'."
         )
         print(f"\n✅ Agent Response:\n{response}")
-        
+
     except Exception as e:
         print(f"❌ Error: {e}")
 

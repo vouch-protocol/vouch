@@ -19,43 +19,70 @@ from .kms import RotatingKeyProvider, KeyConfig
 # Audio signing
 from .audio import AudioSigner, SignedAudioFrame
 
+
 # Enterprise features (lazy imports to avoid requiring optional deps)
 def __getattr__(name):
     """Lazy loading of enterprise features."""
     if name == "AsyncVerifier":
         from .async_verifier import AsyncVerifier
+
         return AsyncVerifier
     elif name == "VerificationResult":
         from .async_verifier import VerificationResult
+
         return VerificationResult
     elif name in ("MemoryCache", "RedisCache", "TieredCache", "CacheInterface"):
         from . import cache
+
         return getattr(cache, name)
     elif name in ("MemoryNonceTracker", "RedisNonceTracker", "NonceTrackerInterface"):
         from . import nonce
+
         return getattr(nonce, name)
-    elif name in ("MemoryRateLimiter", "RedisRateLimiter", "CompositeRateLimiter", "RateLimitResult"):
+    elif name in (
+        "MemoryRateLimiter",
+        "RedisRateLimiter",
+        "CompositeRateLimiter",
+        "RateLimitResult",
+    ):
         from . import ratelimit
+
         return getattr(ratelimit, name)
     elif name in ("VouchMetrics", "get_metrics"):
         from . import metrics
+
         return getattr(metrics, name)
     elif name in ("KeyRegistry", "AgentInfo", "get_registry"):
         from . import registry
+
         return getattr(registry, name)
     # Revocation
-    elif name in ("RevocationRegistry", "RevocationRecord", "MemoryRevocationStore", "RedisRevocationStore"):
+    elif name in (
+        "RevocationRegistry",
+        "RevocationRecord",
+        "MemoryRevocationStore",
+        "RedisRevocationStore",
+    ):
         from . import revocation
+
         return getattr(revocation, name)
     # Reputation
-    elif name in ("ReputationEngine", "ReputationScore", "ReputationEvent",
-                  "MemoryReputationStore", "RedisReputationStore",
-                  "KafkaReputationStore", "KafkaReputationConsumer"):
+    elif name in (
+        "ReputationEngine",
+        "ReputationScore",
+        "ReputationEvent",
+        "MemoryReputationStore",
+        "RedisReputationStore",
+        "KafkaReputationStore",
+        "KafkaReputationConsumer",
+    ):
         from . import reputation
+
         return getattr(reputation, name)
     # Cloud KMS
     elif name in ("CloudKMSProvider", "AWSKMSProvider", "GCPKMSProvider", "AzureKeyVaultProvider"):
         from . import kms
+
         return getattr(kms, name)
     raise AttributeError(f"module 'vouch' has no attribute '{name}'")
 
@@ -120,4 +147,3 @@ __all__ = [
     "GCPKMSProvider",
     "AzureKeyVaultProvider",
 ]
-
