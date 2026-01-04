@@ -31,8 +31,8 @@ class TestExportSSHKey:
         # Set up a test key
         os.environ["VOUCH_PRIVATE_KEY"] = '{"kty":"OKP","crv":"Ed25519","x":"test","d":"test"}'
         os.environ["VOUCH_DID"] = "did:vouch:test123"
-        
-        with patch.object(Path, "write_text") as mock_write:
+
+        with patch.object(Path, "write_text"):
             with patch.object(Path, "chmod"):
                 with patch.object(Path, "mkdir"):
                     try:
@@ -40,7 +40,7 @@ class TestExportSSHKey:
                         _export_vouch_key_to_ssh()
                     except Exception:
                         pass  # Expected - invalid test key
-        
+
         # Clean up
         del os.environ["VOUCH_PRIVATE_KEY"]
         del os.environ["VOUCH_DID"]
@@ -50,12 +50,12 @@ class TestExportSSHKey:
         # Ensure env vars are not set
         os.environ.pop("VOUCH_PRIVATE_KEY", None)
         os.environ.pop("VOUCH_DID", None)
-        
+
         with patch.object(Path, "write_text"):
             with patch.object(Path, "chmod"):
                 with patch.object(Path, "mkdir"):
                     ssh_public, did = _export_vouch_key_to_ssh()
-        
+
         assert ssh_public.startswith("ssh-ed25519")
         assert did.startswith("did:vouch:")
 
@@ -67,12 +67,12 @@ class TestConfigureGitSigning:
         """Test that git config commands are executed."""
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
-            
+
             _configure_git_signing("/path/to/key", "did:vouch:test")
-            
+
             # Should have called git config 4 times
             assert mock_run.call_count == 4
-            
+
             # Verify the commands
             calls = [str(c) for c in mock_run.call_args_list]
             assert any("user.signingkey" in str(c) for c in calls)
@@ -89,14 +89,14 @@ class TestInstallCommitHook:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Initialize a git repo
             subprocess.run(["git", "init"], cwd=tmpdir, capture_output=True)
-            
+
             # Change to the temp dir
             original_dir = os.getcwd()
             os.chdir(tmpdir)
-            
+
             try:
                 result = _install_commit_hook(skip_trailer=False)
-                
+
                 hook_path = Path(tmpdir) / ".git" / "hooks" / "prepare-commit-msg"
                 assert hook_path.exists()
                 assert "Vouch Protocol" in hook_path.read_text()
@@ -113,17 +113,17 @@ class TestInstallCommitHook:
         """Test that hook appends to existing hook."""
         with tempfile.TemporaryDirectory() as tmpdir:
             subprocess.run(["git", "init"], cwd=tmpdir, capture_output=True)
-            
+
             # Create existing hook
             hook_path = Path(tmpdir) / ".git" / "hooks" / "prepare-commit-msg"
             hook_path.write_text("#!/bin/bash\n# Existing hook\necho 'existing'\n")
-            
+
             original_dir = os.getcwd()
             os.chdir(tmpdir)
-            
+
             try:
                 _install_commit_hook(skip_trailer=False)
-                
+
                 content = hook_path.read_text()
                 assert "Existing hook" in content
                 assert "Vouch Protocol" in content
@@ -139,14 +139,14 @@ class TestBadgeInjection:
         with tempfile.TemporaryDirectory() as tmpdir:
             readme_path = Path(tmpdir) / "README.md"
             readme_path.write_text("# My Project\n\nSome content here.\n")
-            
+
             original_dir = os.getcwd()
             os.chdir(tmpdir)
-            
+
             try:
                 with patch("builtins.input", return_value="y"):
                     result = _inject_readme_badge()
-                
+
                 content = readme_path.read_text()
                 assert "Protected by Vouch" in content
                 assert result is True
@@ -158,14 +158,14 @@ class TestBadgeInjection:
         with tempfile.TemporaryDirectory() as tmpdir:
             readme_path = Path(tmpdir) / "README.md"
             readme_path.write_text("# My Project\n")
-            
+
             original_dir = os.getcwd()
             os.chdir(tmpdir)
-            
+
             try:
                 with patch("builtins.input", return_value="n"):
                     result = _inject_readme_badge()
-                
+
                 content = readme_path.read_text()
                 assert "Protected by Vouch" not in content
                 assert result is False
@@ -177,14 +177,14 @@ class TestBadgeInjection:
         with tempfile.TemporaryDirectory() as tmpdir:
             readme_path = Path(tmpdir) / "README.md"
             readme_path.write_text(f"# My Project\n\n{VOUCH_BADGE_MARKDOWN}\n")
-            
+
             original_dir = os.getcwd()
             os.chdir(tmpdir)
-            
+
             try:
                 with patch("builtins.input", return_value="y"):
                     result = _inject_readme_badge()
-                
+
                 assert result is False  # Badge already present
             finally:
                 os.chdir(original_dir)
@@ -200,6 +200,6 @@ class TestVerifyGitHistory:
             capture_output=True,
             text=True,
         )
-        
+
         # Should run (may have 0 verified commits, but shouldn't crash)
         assert "Verifying" in result.stdout or result.returncode == 0

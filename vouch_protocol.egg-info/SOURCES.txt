@@ -4,6 +4,8 @@ pyproject.toml
 tests/test_async_verifier.py
 tests/test_auditor.py
 tests/test_cache.py
+tests/test_delegation_chain.py
+tests/test_git_workflow.py
 tests/test_nonce.py
 tests/test_reputation.py
 tests/test_revocation.py

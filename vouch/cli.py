@@ -5,6 +5,8 @@ Provides commands for initializing identity, signing messages, verifying tokens,
 and configuring git for cryptographic commit signing.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 import json
@@ -27,7 +29,7 @@ SSH_KEY_PATH = Path.home() / ".ssh" / "vouch_signing.pub"
 PRIVATE_KEY_PATH = Path.home() / ".ssh" / "vouch_signing"
 VOUCH_BADGE_MARKDOWN = """[![Protected by Vouch](https://img.shields.io/badge/Protected_by-Vouch_Protocol-00C853?style=flat&labelColor=333&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMDBDODUzIiBkPSJNMTIgMjBMMiA0aDRsNiAxMC41TDE4IDRoNEwxMiAyMHoiLz48L3N2Zz4=)](https://github.com/vouch-protocol/vouch)"""
 
-PREPARE_COMMIT_MSG_HOOK = '''#!/bin/bash
+PREPARE_COMMIT_MSG_HOOK = """#!/bin/bash
 # Vouch Protocol - Commit Trailer Hook
 # Appends Vouch identity trailer to commit messages
 
@@ -53,7 +55,7 @@ if [ -n "$VOUCH_DID" ]; then
         echo "Vouch-DID: $VOUCH_DID" >> "$COMMIT_MSG_FILE"
     fi
 fi
-'''
+"""
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -187,13 +189,13 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 def _export_vouch_key_to_ssh() -> tuple[str, str]:
     """Export Vouch identity to SSH key format.
-    
+
     Returns:
         Tuple of (public_key_ssh, did)
     """
     private_key_json = os.environ.get("VOUCH_PRIVATE_KEY")
     did = os.environ.get("VOUCH_DID")
-    
+
     if not private_key_json:
         # Generate new key if none exists
         key = jwk.JWK.generate(kty="OKP", crv="Ed25519")
@@ -201,33 +203,38 @@ def _export_vouch_key_to_ssh() -> tuple[str, str]:
         did = "did:vouch:" + hashlib.sha256(key.export_public().encode()).hexdigest()[:12]
     else:
         key = jwk.JWK.from_json(private_key_json)
-    
+
     # Convert JWK to cryptography key for SSH export
     # Export the key as JSON and parse for 'd' parameter
     key_dict = json.loads(key.export_private())
     d_bytes = base64.urlsafe_b64decode(key_dict.get("d") + "==")
-    
+
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
     private_key = Ed25519PrivateKey.from_private_bytes(d_bytes)
-    
+
     # Export to OpenSSH format
-    ssh_public = private_key.public_key().public_bytes(
-        encoding=serialization.Encoding.OpenSSH,
-        format=serialization.PublicFormat.OpenSSH
-    ).decode() + " vouch-protocol"
-    
+    ssh_public = (
+        private_key.public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.OpenSSH, format=serialization.PublicFormat.OpenSSH
+        )
+        .decode()
+        + " vouch-protocol"
+    )
+
     ssh_private = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.OpenSSH,
-        encryption_algorithm=serialization.NoEncryption()
+        encryption_algorithm=serialization.NoEncryption(),
     ).decode()
-    
+
     # Save keys
     SSH_KEY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SSH_KEY_PATH.write_text(ssh_public + "\n")
     PRIVATE_KEY_PATH.write_text(ssh_private)
     PRIVATE_KEY_PATH.chmod(0o600)
-    
+
     return ssh_public, did or "did:vouch:unknown"
 
 
@@ -245,25 +252,24 @@ def _configure_git_signing(ssh_key_path: str, did: str) -> None:
 
 def _install_commit_hook(skip_trailer: bool = False) -> bool:
     """Install prepare-commit-msg hook for Vouch trailers.
-    
+
     Returns:
         True if hook was installed, False otherwise
     """
     if skip_trailer:
         return False
-        
+
     # Find git directory
     try:
         result = subprocess.run(
-            ["git", "rev-parse", "--git-dir"],
-            capture_output=True, text=True, check=True
+            ["git", "rev-parse", "--git-dir"], capture_output=True, text=True, check=True
         )
         git_dir = Path(result.stdout.strip())
     except subprocess.CalledProcessError:
         return False  # Not in a git repo
-    
+
     hook_path = git_dir / "hooks" / "prepare-commit-msg"
-    
+
     if hook_path.exists():
         # Append to existing hook
         existing = hook_path.read_text()
@@ -274,7 +280,7 @@ def _install_commit_hook(skip_trailer: bool = False) -> bool:
         hook_path.write_text(PREPARE_COMMIT_MSG_HOOK)
         hook_path.chmod(0o755)
         print("   Installed new prepare-commit-msg hook")
-    
+
     return True
 
 
@@ -283,16 +289,16 @@ def _inject_readme_badge() -> bool:
     readme_path = Path("README.md")
     if not readme_path.exists():
         return False
-    
+
     response = input("\n🏷️  Add 'Protected by Vouch' badge to README.md? [Y/n]: ").strip().lower()
-    if response == 'n':
+    if response == "n":
         return False
-    
+
     content = readme_path.read_text()
     if "Protected by Vouch" in content:
         print("   Badge already present in README")
         return False
-    
+
     # Find first heading or add at top
     lines = content.split("\n")
     insert_idx = 0
@@ -300,11 +306,11 @@ def _inject_readme_badge() -> bool:
         if line.startswith("# "):
             insert_idx = i + 1
             break
-    
+
     lines.insert(insert_idx, "")
     lines.insert(insert_idx + 1, VOUCH_BADGE_MARKDOWN)
     lines.insert(insert_idx + 2, "")
-    
+
     readme_path.write_text("\n".join(lines))
     print("   ✅ Badge added to README.md")
     return True
@@ -318,14 +324,23 @@ def _upload_ssh_key(ssh_public: str) -> None:
         gh_available = True
     except (subprocess.CalledProcessError, FileNotFoundError):
         gh_available = False
-    
+
     if gh_available:
         print("\n🔑 Uploading signing key to GitHub...")
         try:
             result = subprocess.run(
-                ["gh", "ssh-key", "add", str(SSH_KEY_PATH), 
-                 "--type", "signing", "--title", "Vouch Protocol Identity"],
-                capture_output=True, text=True
+                [
+                    "gh",
+                    "ssh-key",
+                    "add",
+                    str(SSH_KEY_PATH),
+                    "--type",
+                    "signing",
+                    "--title",
+                    "Vouch Protocol Identity",
+                ],
+                capture_output=True,
+                text=True,
             )
             if result.returncode == 0:
                 print("   ✅ SSH key uploaded to GitHub!")
@@ -334,7 +349,7 @@ def _upload_ssh_key(ssh_public: str) -> None:
                 print(f"   ⚠️  gh upload failed: {result.stderr.strip()}")
         except Exception as e:
             print(f"   ⚠️  gh upload failed: {e}")
-    
+
     # Fallback: browser + manual
     print("\n📋 Add this SSH key to GitHub manually:")
     print("=" * 60)
@@ -349,38 +364,38 @@ def _upload_ssh_key(ssh_public: str) -> None:
 def cmd_git_init(args: argparse.Namespace) -> int:
     """Configure SSH signing and Vouch branding for git."""
     print("🚀 Vouch Git Workflow Setup\n")
-    
+
     try:
         # Step 1: Export SSH key
         print("1️⃣  Exporting Vouch identity to SSH key...")
         ssh_public, did = _export_vouch_key_to_ssh()
         print(f"   Key saved to: {SSH_KEY_PATH}")
         print(f"   DID: {did}")
-        
+
         # Step 2: Configure git
         print("\n2️⃣  Configuring git for SSH signing...")
         _configure_git_signing(str(SSH_KEY_PATH), did)
         print("   ✅ Git configured: commit.gpgsign=true, gpg.format=ssh")
-        
+
         # Step 3: Upload to GitHub
         _upload_ssh_key(ssh_public)
-        
+
         # Step 4: Install hook (optional)
         if not args.no_trailer:
             print("\n3️⃣  Installing commit trailer hook...")
             _install_commit_hook(skip_trailer=False)
-        
+
         # Step 5: Badge injection (optional)
         if not args.no_badge:
             _inject_readme_badge()
-        
+
         print("\n" + "=" * 60)
         print("✅ Vouch Git Workflow configured!")
         print("   All future commits will be signed and show ✅ Verified on GitHub")
         print("=" * 60)
-        
+
         return 0
-        
+
     except Exception as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         return 1
@@ -389,15 +404,14 @@ def cmd_git_init(args: argparse.Namespace) -> int:
 def cmd_git_status(args: argparse.Namespace) -> int:
     """Show current Vouch git signing configuration."""
     print("🔍 Vouch Git Status\n")
-    
+
     # Check SSH key
     if SSH_KEY_PATH.exists():
         print(f"✅ SSH Key: {SSH_KEY_PATH}")
         # Show fingerprint
         try:
             result = subprocess.run(
-                ["ssh-keygen", "-lf", str(SSH_KEY_PATH)],
-                capture_output=True, text=True
+                ["ssh-keygen", "-lf", str(SSH_KEY_PATH)], capture_output=True, text=True
             )
             if result.returncode == 0:
                 print(f"   Fingerprint: {result.stdout.strip()}")
@@ -405,7 +419,7 @@ def cmd_git_status(args: argparse.Namespace) -> int:
             pass
     else:
         print("❌ SSH Key: Not configured")
-    
+
     # Check git config
     configs = [
         ("user.signingkey", "Signing Key"),
@@ -413,26 +427,22 @@ def cmd_git_status(args: argparse.Namespace) -> int:
         ("commit.gpgsign", "Auto-sign"),
         ("vouch.did", "Vouch DID"),
     ]
-    
+
     print("\n📝 Git Configuration:")
     for key, label in configs:
         try:
             result = subprocess.run(
-                ["git", "config", "--global", "--get", key],
-                capture_output=True, text=True
+                ["git", "config", "--global", "--get", key], capture_output=True, text=True
             )
             value = result.stdout.strip() if result.returncode == 0 else "Not set"
             status = "✅" if result.returncode == 0 else "❌"
             print(f"   {status} {label}: {value}")
         except Exception:
             print(f"   ❌ {label}: Error checking")
-    
+
     # Check hook
     try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--git-dir"],
-            capture_output=True, text=True
-        )
+        result = subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True, text=True)
         if result.returncode == 0:
             hook_path = Path(result.stdout.strip()) / "hooks" / "prepare-commit-msg"
             if hook_path.exists() and "Vouch" in hook_path.read_text():
@@ -441,7 +451,7 @@ def cmd_git_status(args: argparse.Namespace) -> int:
                 print("\n❌ Commit Hook: Not installed")
     except Exception:
         print("\n⚠️  Commit Hook: Not in a git repository")
-    
+
     return 0
 
 
