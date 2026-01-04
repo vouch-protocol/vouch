@@ -1,11 +1,40 @@
 # Vouch Protocol
 
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11688/badge)](https://www.bestpractices.dev/projects/11688)
-[![Discord](https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white)](https://discord.gg/VxgYkjdph)
-[![Spec: Community](https://img.shields.io/badge/Spec-Community_License-green.svg)](https://github.com/vouch-protocol/vouch/blob/main/licenses/LICENSE-SPEC)
-[![Client: Apache 2.0](https://img.shields.io/badge/Client-Apache_2.0-blue.svg)](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
-[![Server: AGPL-3.0](https://img.shields.io/badge/Server-AGPL_3.0-orange.svg)](https://github.com/vouch-protocol/vouch/blob/main/licenses/LICENSE-SERVER)
-[![Status](https://img.shields.io/badge/Status-Public_Beta-yellow)](https://github.com/vouch-protocol/vouch)
+<p align="center">
+  <img src="docs/assets/vouch_hero.jpg" alt="Vouch Protocol - The Identity Layer for AI Agents" width="500">
+</p>
+
+<p align="center">
+  <strong>The Identity Layer for the Agentic Web</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/vouch-protocol/vouch"><img src="https://img.shields.io/badge/Protected_by-Vouch_Protocol-00C853?style=flat&labelColor=333&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMDBDODUzIiBkPSJNMTIgMjBMMiA0aDRsNiAxMC41TDE4IDRoNEwxMiAyMHoiLz48L3N2Zz4=" alt="Protected by Vouch"></a>
+  <a href="https://www.bestpractices.dev/projects/11688"><img src="https://www.bestpractices.dev/projects/11688/badge" alt="OpenSSF Best Practices"></a>
+  <a href="https://discord.gg/VxgYkjdph"><img src="https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white" alt="Discord"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/vouch-protocol/vouch/blob/main/licenses/LICENSE-SPEC"><img src="https://img.shields.io/badge/Spec-Community_License-green.svg" alt="Spec License"></a>
+  <a href="https://github.com/vouch-protocol/vouch/blob/main/LICENSE"><img src="https://img.shields.io/badge/Client-Apache_2.0-blue.svg" alt="Client License"></a>
+  <a href="https://github.com/vouch-protocol/vouch/blob/main/licenses/LICENSE-SERVER"><img src="https://img.shields.io/badge/Server-AGPL_3.0-orange.svg" alt="Server License"></a>
+</p>
+
+---
+
+## ⚡ Quick Start
+
+```bash
+pip install vouch-protocol
+
+# One command to configure SSH signing + Vouch branding
+vouch git init
+
+# All future commits are now signed and show ✅ Verified on GitHub
+git commit -m "Secure commit"
+```
+
+---
 
 > **The Open Standard for AI Agent Identity & Accountability**
 > 
