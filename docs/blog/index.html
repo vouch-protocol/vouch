@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vouch Protocol Blog - AI Security & Identity</title>
+    <meta name="description"
+        content="Insights on AI agent security, cryptographic identity, and the agentic web from the Vouch Protocol team.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Vouch Protocol Blog">
+    <meta property="og:description" content="AI Security, Identity, and the Agentic Web">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://blog.vouch-protocol.com">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --success: #10b981;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100vh;
+            background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        nav {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .hero {
+            padding: 4rem 2rem;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+        }
+
+        .posts {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .post-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .post-date {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .post-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .post-card h2 a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .post-card h2 a:hover {
+            color: var(--accent);
+        }
+
+        .post-card p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .read-more {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--bg-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-right: 0.5rem;
+        }
+
+        footer {
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="gradient-bg"></div>
+
+    <nav>
+        <a href="https://vouch-protocol.com" class="logo">🔐 Vouch <span>Blog</span></a>
+        <ul class="nav-links">
+            <li><a href="https://vouch-protocol.com">Home</a></li>
+            <li><a href="https://github.com/vouch-protocol/vouch">GitHub</a></li>
+            <li><a href="https://discord.gg/VxgYkjdph">Discord</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <h1>Vouch Blog</h1>
+        <p class="subtitle">Insights on AI security, cryptographic identity, and the agentic web</p>
+    </section>
+
+    <section class="posts">
+        <article class="post-card">
+            <div class="post-date">January 5, 2026</div>
+            <h2><a href="#">Introducing Vouch Git Workflow: One Command to Sign All Your Commits</a></h2>
+            <p>Supply chain security just got simple. With <code>vouch git init</code>, you can cryptographically sign
+                every git commit with your Vouch identity and get the ✅ Verified badge on GitHub.</p>
+            <div style="margin-bottom: 1rem;">
+                <span class="tag">Supply Chain</span>
+                <span class="tag">Git</span>
+                <span class="tag">Security</span>
+            </div>
+            <a href="#" class="read-more">Read more →</a>
+        </article>
+
+        <article class="post-card">
+            <div class="post-date">Coming Soon</div>
+            <h2><a href="#">Chain of Custody: Trust in Multi-Agent Systems</a></h2>
+            <p>How delegation chains enable accountability when AI agents work together. A deep dive into cryptographic
+                proof of action lineage.</p>
+            <div style="margin-bottom: 1rem;">
+                <span class="tag">Multi-Agent</span>
+                <span class="tag">Delegation</span>
+            </div>
+            <a href="#" class="read-more" style="color: var(--text-secondary);">Coming soon →</a>
+        </article>
+
+        <article class="post-card">
+            <div class="post-date">Coming Soon</div>
+            <h2><a href="#">The Agentic Web Manifesto</a></h2>
+            <p>Why cryptographic identity is the foundation of the next computing paradigm. The case for Vouch Protocol
+                as the SSL of the AI age.</p>
+            <div style="margin-bottom: 1rem;">
+                <span class="tag">Vision</span>
+                <span class="tag">Web3</span>
+            </div>
+            <a href="#" class="read-more" style="color: var(--text-secondary);">Coming soon →</a>
+        </article>
+    </section>
+
+    <footer>
+        <p>© 2024-2026 <a href="https://vouch-protocol.com">Vouch Protocol</a> Contributors. Apache 2.0 License.</p>
+    </footer>
+</body>
+
+</html>
