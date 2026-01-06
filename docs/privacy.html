@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Vouch Protocol</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .last-updated {
+            color: #64748b;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            color: #a78bfa;
+            margin: 30px 0 15px;
+            font-size: 1.4em;
+        }
+
+        p,
+        li {
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            background: rgba(124, 58, 237, 0.2);
+            border-left: 4px solid #7c3aed;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        a {
+            color: #a78bfa;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔒 Privacy Policy</h1>
+        <p class="last-updated">Last updated: January 6, 2026</p>
+
+        <div class="highlight">
+            <strong>TL;DR:</strong> We don't collect, store, or transmit any of your data. Everything happens locally on
+            your device.
+        </div>
+
+        <h2>Overview</h2>
+        <p>Vouch Protocol ("we", "our", or "us") is committed to protecting your privacy. This policy explains what data
+            our browser extension handles and how.</p>
+
+        <h2>Data We DON'T Collect</h2>
+        <ul>
+            <li>We do not collect personal information</li>
+            <li>We do not track your browsing history</li>
+            <li>We do not send data to external servers</li>
+            <li>We do not use analytics or tracking</li>
+            <li>We do not sell any data (we have none to sell)</li>
+        </ul>
+
+        <h2>Data Stored Locally</h2>
+        <p>The extension stores the following data locally on your device using Chrome's storage API:</p>
+        <ul>
+            <li><strong>Your cryptographic keypair</strong> - Generated once, stored only on your device</li>
+            <li><strong>Address Book</strong> - Email/key pairs of contacts you've verified</li>
+            <li><strong>Display name</strong> - Optional name you set for signatures</li>
+        </ul>
+        <p>This data never leaves your device unless you explicitly export it.</p>
+
+        <h2>Permissions Explained</h2>
+        <ul>
+            <li><strong>identity</strong> - To get your Google account email for signatures</li>
+            <li><strong>storage</strong> - To save your keypair and contacts locally</li>
+            <li><strong>contextMenus</strong> - To add "Sign with Vouch" to right-click menu</li>
+            <li><strong>activeTab</strong> - To read selected text on the current page</li>
+            <li><strong>clipboardWrite</strong> - To copy signed text to clipboard</li>
+        </ul>
+
+        <h2>Third-Party Services</h2>
+        <p>The extension uses <strong>TweetNaCl.js</strong> for cryptographic operations. This library runs entirely
+            locally and makes no network requests.</p>
+
+        <h2>Future Short URLs (Optional)</h2>
+        <p>When enabled, signatures may be stored on our servers to generate short verification links. This feature:</p>
+        <ul>
+            <li>Only stores the signature data you explicitly sign</li>
+            <li>Does not store passwords or private keys</li>
+            <li>Allows anyone to verify signatures via short URLs</li>
+        </ul>
+
+        <h2>Open Source</h2>
+        <p>Vouch Protocol is fully open source. You can inspect our code at:</p>
+        <p><a href="https://github.com/vouch-protocol/vouch">github.com/vouch-protocol/vouch</a></p>
+
+        <h2>Contact</h2>
+        <p>Questions? Email us at <a href="mailto:hello@vouch-protocol.com">hello@vouch-protocol.com</a></p>
+
+        <h2>Changes</h2>
+        <p>We may update this policy occasionally. Significant changes will be announced on our website.</p>
+
+        <footer>
+            <p><a href="/">← Back to Home</a></p>
+            <p style="margin-top: 10px;">© 2026 Vouch Protocol · MIT License</p>
+        </footer>
+    </div>
+</body>
+
+</html>
