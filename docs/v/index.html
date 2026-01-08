@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Signature - Vouch Protocol</title>
+    <meta name="description" content="Verify a Vouch Protocol signature - cryptographic proof of content authenticity">
+
+    <!-- TweetNaCl for client-side verification -->
+    <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl-fast.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+        }
+
+        h1 {
+            font-size: 2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #a0aec0;
+        }
+
+        /* Result Card */
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-card.verified {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .result-card.invalid {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .result-card.loading {
+            border-color: #6b7280;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .result-icon {
+            font-size: 2em;
+        }
+
+        .result-title {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .result-card.verified .result-title {
+            color: #10b981;
+        }
+
+        .result-card.invalid .result-title {
+            color: #ef4444;
+        }
+
+        .content-box {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        .meta-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .meta-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .meta-label {
+            color: #94a3b8;
+            width: 100px;
+            flex-shrink: 0;
+        }
+
+        .meta-value {
+            color: #e2e8f0;
+            word-break: break-all;
+        }
+
+        .meta-value code {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: rgba(124, 58, 237, 0.15);
+            border: 2px solid rgba(124, 58, 237, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            color: #a78bfa;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        .cta-section p {
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        .cta-features {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .cta-feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #cbd5e1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1em;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Loading State */
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #a78bfa;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error State */
+        .error-message {
+            color: #f87171;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: #a78bfa;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <img src="/assets/vouch-logo-icon.jpg" alt="Vouch Protocol" class="logo"
+                onerror="this.style.display='none'">
+            <h1>🔐 Vouch Protocol</h1>
+            <p class="subtitle">Signature Verification</p>
+        </header>
+
+        <div id="result" class="result-card loading">
+            <div class="result-header">
+                <div class="loading-spinner"></div>
+                <span class="result-title">Verifying signature...</span>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>💡 See verification badges automatically!</h2>
+            <p>Install the Vouch extension to see ✅ badges directly on any webpage—no need to click verify links.</p>
+
+            <div class="cta-features">
+                <div class="cta-feature">✅ Instant verification</div>
+                <div class="cta-feature">🔐 Ed25519 signatures</div>
+                <div class="cta-feature">🆓 Free & open source</div>
+            </div>
+
+            <a href="https://chrome.google.com/webstore" class="cta-button" id="install-btn">
+                🚀 Add to Chrome - Free
+            </a>
+        </div>
+
+        <footer>
+            <p>
+                <a href="/">← Back to Home</a> ·
+                <a href="https://github.com/anthropics/vouch-protocol">GitHub</a> ·
+                <a href="/demo.html">Try Demo</a>
+            </p>
+            <p style="margin-top: 10px;">© 2026 Vouch Protocol · Apache License 2.0</p>
+        </footer>
+    </div>
+
+    <script>
+        // =============================================================================
+        // Crypto Helpers
+        // =============================================================================
+
+        function fromBase64(base64) {
+            let padded = base64.replace(/-/g, '+').replace(/_/g, '/');
+            while (padded.length % 4) padded += '=';
+            const binString = atob(padded);
+            return new Uint8Array([...binString].map(c => c.charCodeAt(0)));
+        }
+
+        function stringToBytes(str) {
+            return new TextEncoder().encode(str);
+        }
+
+        function verifySignature(message, signatureBase64, publicKeyBase64) {
+            try {
+                const messageBytes = stringToBytes(message);
+                const signatureBytes = fromBase64(signatureBase64);
+                const publicKeyBytes = fromBase64(publicKeyBase64);
+                return nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+            } catch (e) {
+                console.error('Verification error:', e);
+                return false;
+            }
+        }
+
+        // =============================================================================
+        // API
+        // =============================================================================
+
+        async function fetchSignature(id) {
+            const response = await fetch(`/api/verify/${id}`);
+            if (!response.ok) {
+                throw new Error('Signature not found or expired');
+            }
+            return response.json();
+        }
+
+        // =============================================================================
+        // UI Rendering
+        // =============================================================================
+
+        function renderVerified(data) {
+            const resultCard = document.getElementById('result');
+            resultCard.className = 'result-card verified';
+            resultCard.innerHTML = `
+        <div class="result-header">
+          <span class="result-icon">✅</span>
+          <span class="result-title">Signature Verified!</span>
+        </div>
+        
+        <div class="content-box">${escapeHtml(data.text)}</div>
+        
+        <div class="meta-info">
+          <div class="meta-row">
+            <span class="meta-label">Signed by:</span>
+            <span class="meta-value">${escapeHtml(data.email)}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Signed on:</span>
+            <span class="meta-value">${new Date(data.created).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Public Key:</span>
+            <span class="meta-value"><code>${data.key.substring(0, 24)}...</code></span>
+          </div>
+          ${data.expiresAt ? `
+          <div class="meta-row">
+            <span class="meta-label">Expires:</span>
+            <span class="meta-value">${new Date(data.expiresAt).toLocaleDateString()}</span>
+          </div>
+          ` : ''}
+        </div>
+      `;
+        }
+
+        function renderInvalid(message) {
+            const resultCard = document.getElementById('result');
+            resultCard.className = 'result-card invalid';
+            resultCard.innerHTML = `
+        <div class="result-header">
+          <span class="result-icon">❌</span>
+          <span class="result-title">Verification Failed</span>
+        </div>
+        <p class="error-message">${escapeHtml(message)}</p>
+      `;
+        }
+
+        function renderNotFound() {
+            const resultCard = document.getElementById('result');
+            resultCard.className = 'result-card invalid';
+            resultCard.innerHTML = `
+        <div class="result-header">
+          <span class="result-icon">🔍</span>
+          <span class="result-title">Signature Not Found</span>
+        </div>
+        <p class="error-message">This signature may have expired or the link is incorrect.</p>
+      `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // =============================================================================
+        // Main
+        // =============================================================================
+
+        async function main() {
+            // Get short ID from URL path (e.g., /v/abc123)
+            const pathMatch = window.location.pathname.match(/\/v\/([a-zA-Z0-9]+)/);
+
+            if (!pathMatch) {
+                renderNotFound();
+                return;
+            }
+
+            const shortId = pathMatch[1];
+
+            try {
+                // Fetch signature data from API
+                const data = await fetchSignature(shortId);
+
+                if (!data.success) {
+                    renderNotFound();
+                    return;
+                }
+
+                // Verify the signature client-side
+                const messageToSign = `${data.text}\n---\nBy: ${data.email}`;
+                const isValid = verifySignature(messageToSign, data.sig, data.key);
+
+                if (isValid) {
+                    renderVerified(data);
+                } else {
+                    renderInvalid('The cryptographic signature is invalid. This content may have been tampered with.');
+                }
+
+            } catch (error) {
+                console.error('Verification error:', error);
+                renderNotFound();
+            }
+        }
+
+        // Run on load
+        main();
+    </script>
+</body>
+
+</html>
