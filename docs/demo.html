@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Vouch Protocol</title>
+    <meta name="description"
+        content="Try the Vouch Protocol browser extension - see cryptographic signatures verified in real-time.">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #a0aec0;
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .demo-section h2 {
+            color: #a78bfa;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .demo-section p {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+        }
+
+        .signed-block {
+            background: #1e1b4b;
+            border: 2px solid #7c3aed;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #e2e8f0;
+            margin: 20px 0;
+        }
+
+        .badge-preview {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .preview-card {
+            flex: 1;
+            min-width: 250px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .preview-card.new {
+            background: rgba(107, 114, 128, 0.2);
+            border: 2px solid #6b7280;
+        }
+
+        .preview-card.verified {
+            background: rgba(16, 185, 129, 0.2);
+            border: 2px solid #10b981;
+        }
+
+        .preview-card.conflict {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+        }
+
+        .preview-card .badge-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .preview-card h3 {
+            margin-bottom: 5px;
+        }
+
+        .preview-card p {
+            font-size: 0.85em;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .cta-section {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+        }
+
+        .note {
+            background: rgba(124, 58, 237, 0.1);
+            border-left: 4px solid #7c3aed;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px;
+            color: #64748b;
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: #a78bfa;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Vouch Protocol Demo</h1>
+            <p class="subtitle">See cryptographic signatures verified in real-time</p>
+        </header>
+
+        <div class="demo-section">
+            <h2>📝 Live Signed Block</h2>
+            <p>If you have the Vouch browser extension installed, the block below will be automatically verified:</p>
+
+            <div class="signed-block">[Signed]
+                The Open Standard for AI Agent Identity & Accountability
+                ---
+                Signed-by: vouch.protocol.official@gmail.com
+                Key: d564d45fb8897c0c4f03f35671c3093b968ea2da038f2c30134c27f204254798
+                Sig:
+                c5fc54410a3d5e3ead92e6f47e76abb210e8f495a3ea6406002ccb22000e754b92084fecf3c99cea97be072b64cacbefce07c023283edb84f0b3622200f78301
+            </div>
+
+            <div class="note">
+                <strong>👆 Look above!</strong> If the extension is installed, you'll see a colored badge showing the
+                verification status.
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🎨 Verification States</h2>
+            <p>The extension uses Trust-On-First-Use (TOFU) like SSH - here's what each badge means:</p>
+
+            <div class="badge-preview">
+                <div class="preview-card new">
+                    <div class="badge-icon">🔵</div>
+                    <h3>New Identity</h3>
+                    <p>First time seeing this signer. They've been added to your Address Book.</p>
+                </div>
+
+                <div class="preview-card verified">
+                    <div class="badge-icon">✅</div>
+                    <h3>Verified Contact</h3>
+                    <p>Email and key match a known contact. Trusted!</p>
+                </div>
+
+                <div class="preview-card conflict">
+                    <div class="badge-icon">⚠️</div>
+                    <h3>Identity Changed</h3>
+                    <p>Key is different from saved contact. Possible impersonation!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🚀 Try It Yourself</h2>
+            <p>Here's how to sign your own content:</p>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <strong>Install Extension</strong>
+                    <p>Get Vouch from Chrome Web Store</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <strong>Select Text</strong>
+                    <p>Highlight any text on a webpage</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <strong>Sign with Vouch</strong>
+                    <p>Right-click → "Sign with Vouch"</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <strong>Paste & Share</strong>
+                    <p>Your signed block is in clipboard!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <a href="https://chrome.google.com/webstore" class="cta-button">
+                🚀 Get Vouch Extension
+            </a>
+            <p style="margin-top: 15px; color: #64748b;">Free • Open Source • No Account Required</p>
+        </div>
+
+        <footer>
+            <p>
+                <a href="/">← Back to Home</a> ·
+                <a href="https://github.com/anthropics/vouch-protocol">GitHub</a> ·
+                <a href="/vouch_guide.html">Documentation</a>
+            </p>
+            <p style="margin-top: 10px;">© 2026 Vouch Protocol · Apache License 2.0</p>
+        </footer>
+    </div>
+</body>
+
+</html>
