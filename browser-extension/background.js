@@ -26,7 +26,7 @@ const CONTEXT_MENU_SCAN_ID = 'vouch-smart-scan';
 
 // API endpoint for signature storage
 // Update this to your Cloudflare Worker URL once deployed
-const API_BASE_URL = 'https://vouch-protocol.com/api';
+const API_BASE_URL = 'https://api.vouch-protocol.com';
 
 // =============================================================================
 // Key Management
