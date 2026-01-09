@@ -414,6 +414,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true });
         return true;
     }
+
+    if (message.action === 'smartScan') {
+        performSmartScan(message.selectedText);
+        sendResponse({ success: true });
+        return true;
+    }
 });
 
 function showNotification(message, type = 'info') {
@@ -499,7 +505,7 @@ const observer = new MutationObserver((mutations) => {
 
 observer.observe(document.body, { childList: true, subtree: true });
 
-// Inject CSS for animations
+// Inject CSS for animations and Smart Scan highlighting
 const style = document.createElement('style');
 style.textContent = `
   @keyframes vouch-slide-in {
@@ -510,7 +516,185 @@ style.textContent = `
     from { transform: translateX(0); opacity: 1; }
     to { transform: translateX(100%); opacity: 0; }
   }
+  
+  /* Smart Scan Highlighting */
+  .vouch-smart-scan-verified {
+    background: linear-gradient(90deg, 
+      rgba(34, 197, 94, 0.2) 0%, 
+      rgba(34, 197, 94, 0.05) 100%) !important;
+    border-left: 4px solid #22c55e !important;
+    padding-left: 12px !important;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .vouch-smart-scan-verified::before {
+    content: "✅ Verified by Vouch";
+    position: absolute;
+    top: -24px;
+    left: 0;
+    font-size: 12px;
+    color: #22c55e;
+    font-weight: bold;
+    background: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .vouch-smart-scan-unverified {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-left: 4px solid #ef4444 !important;
+    padding-left: 12px !important;
+  }
+  
+  @keyframes vouch-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  }
+  
+  .vouch-smart-scan-verified {
+    animation: vouch-pulse 2s ease-out;
+  }
 `;
 document.head.appendChild(style);
+
+// =============================================================================
+// Smart Scan Implementation
+// =============================================================================
+
+/**
+ * SHA-256 hash for text
+ */
+async function sha256Hash(text) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Normalize text for consistent hashing
+ */
+function normalizeText(text) {
+    return text
+        .trim()
+        .replace(/\s+/g, ' ')           // Collapse whitespace
+        .replace(/[\u200B-\u200D\uFEFF]/g, ''); // Remove zero-width chars
+}
+
+/**
+ * Get all text blocks from the page for scanning
+ */
+function getPageTextBlocks() {
+    const blocks = [];
+    const selectors = [
+        'h1', 'h2', 'h3', 'h4',           // Headers
+        'p',                               // Paragraphs
+        'article', 'section',              // Semantic blocks
+        '.post-content', '.article-body',  // Common content classes
+        '[data-vouch-content]',            // Explicit Vouch marking
+    ];
+
+    for (const sel of selectors) {
+        document.querySelectorAll(sel).forEach(el => {
+            // Skip already processed or very short text
+            if (el.classList.contains('vouch-processed') ||
+                el.classList.contains('vouch-smart-scan-verified')) {
+                return;
+            }
+
+            const text = el.innerText.trim();
+            if (text.length > 5) {  // Skip very short text
+                blocks.push({
+                    element: el,
+                    text: normalizeText(text),
+                    originalText: text
+                });
+            }
+        });
+    }
+
+    return blocks;
+}
+
+/**
+ * Find verified signature blocks on the page
+ */
+function findVerifiedSignatures() {
+    const signatures = [];
+    const vouchBlocks = document.querySelectorAll('.vouch-block-verified, .vouch-block-new');
+
+    vouchBlocks.forEach(block => {
+        // Try to extract the signed content from the block
+        const contentEl = block.querySelector('div[style*="white-space: pre-wrap"]');
+        if (contentEl) {
+            const signedText = contentEl.textContent.trim();
+            signatures.push({
+                text: normalizeText(signedText),
+                element: block,
+                originalText: signedText
+            });
+        }
+    });
+
+    return signatures;
+}
+
+/**
+ * Perform Smart Scan - finds and highlights verified content on the page
+ */
+async function performSmartScan(selectedText) {
+    console.log('Vouch: Starting Smart Scan...');
+
+    // 1. Find all verified signature blocks
+    const signatures = findVerifiedSignatures();
+
+    if (signatures.length === 0) {
+        showNotification('No Vouch signatures found on this page. Look for [Signed] blocks.', 'info');
+        return;
+    }
+
+    // 2. Get all text blocks on the page
+    const textBlocks = getPageTextBlocks();
+
+    // 3. Hash all signed content
+    const signedHashes = new Map();
+    for (const sig of signatures) {
+        const hash = await sha256Hash(sig.text);
+        signedHashes.set(hash, sig);
+    }
+
+    // 4. Scan page and find matches
+    let matchCount = 0;
+
+    for (const block of textBlocks) {
+        const blockHash = await sha256Hash(block.text);
+
+        if (signedHashes.has(blockHash)) {
+            // EXACT MATCH FOUND!
+            const sig = signedHashes.get(blockHash);
+            block.element.classList.add('vouch-smart-scan-verified');
+            matchCount++;
+
+            console.log('Vouch: Smart Scan match found:', block.originalText.substring(0, 50) + '...');
+        }
+    }
+
+    // 5. Show result
+    if (matchCount > 0) {
+        showNotification(`✅ Smart Scan: Found ${matchCount} verified content block(s)!`, 'success');
+    } else {
+        // Try to show hint from first signature
+        if (signatures.length > 0) {
+            const hint = signatures[0].originalText.substring(0, 40);
+            showNotification(`⚠️ Signed content not found. Looking for: "${hint}..."`, 'info');
+        } else {
+            showNotification('No matching content found on page.', 'info');
+        }
+    }
+}
 
 console.log('Vouch: Content script loaded, scanning for blocks...');
