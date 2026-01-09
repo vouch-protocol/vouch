@@ -1,0 +1,12 @@
+/* Vouch Protocol Content Script Styles */
+
+.vouch-block {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.vouch-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999999;
+}

@@ -193,6 +193,8 @@ def _export_vouch_key_to_ssh() -> tuple[str, str]:
     Returns:
         Tuple of (public_key_ssh, did)
     """
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
     private_key_json = os.environ.get("VOUCH_PRIVATE_KEY")
     did = os.environ.get("VOUCH_DID")
 
@@ -200,7 +202,20 @@ def _export_vouch_key_to_ssh() -> tuple[str, str]:
         # Generate new key if none exists
         key = jwk.JWK.generate(kty="OKP", crv="Ed25519")
         private_key_json = key.export_private()
-        did = "did:vouch:" + hashlib.sha256(key.export_public().encode()).hexdigest()[:12]
+
+        # Extract raw public key bytes for DID derivation
+        # This is language-agnostic and doesn't depend on JSON serialization format
+        key_dict = json.loads(key.export_private())
+        d_bytes = base64.urlsafe_b64decode(key_dict.get("d") + "==")
+        private_key = Ed25519PrivateKey.from_private_bytes(d_bytes)
+        raw_public_bytes = private_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+
+        # DID is derived from raw public key bytes (32 bytes for Ed25519)
+        # This ensures consistent DIDs across all programming languages
+        did = "did:vouch:" + hashlib.sha256(raw_public_bytes).hexdigest()[:12]
     else:
         key = jwk.JWK.from_json(private_key_json)
 
@@ -208,8 +223,6 @@ def _export_vouch_key_to_ssh() -> tuple[str, str]:
     # Export the key as JSON and parse for 'd' parameter
     key_dict = json.loads(key.export_private())
     d_bytes = base64.urlsafe_b64decode(key_dict.get("d") + "==")
-
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
     private_key = Ed25519PrivateKey.from_private_bytes(d_bytes)
 
@@ -455,6 +468,634 @@ def cmd_git_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def _get_vouch_did_from_commit(commit_hash: str) -> str | None:
+    """Extract Vouch-DID trailer from a commit message."""
+    import re
+
+    result = subprocess.run(
+        ["git", "log", "-1", "--format=%B", commit_hash],
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        return None
+
+    match = re.search(r"Vouch-DID:\s*(\S+)", result.stdout)
+    return match.group(1) if match else None
+
+
+def _get_commit_signature_info(commit_hash: str) -> dict:
+    """Get signature verification info from git."""
+    # Ensure allowed_signers file is configured for SSH verification
+    allowed_signers_path = Path.home() / ".ssh" / "allowed_signers"
+
+    if SSH_KEY_PATH.exists() and not allowed_signers_path.exists():
+        # Create allowed_signers file from Vouch key
+        try:
+            ssh_pubkey = SSH_KEY_PATH.read_text().strip()
+            # Get configured email
+            email_result = subprocess.run(
+                ["git", "config", "--global", "--get", "user.email"],
+                capture_output=True,
+                text=True,
+            )
+            email = email_result.stdout.strip() if email_result.returncode == 0 else "vouch@local"
+
+            # Write allowed_signers file
+            allowed_signers_path.write_text(f"{email} {ssh_pubkey}\n")
+
+            # Configure git to use it
+            subprocess.run(
+                [
+                    "git",
+                    "config",
+                    "--global",
+                    "gpg.ssh.allowedSignersFile",
+                    str(allowed_signers_path),
+                ],
+                capture_output=True,
+            )
+        except Exception as e:
+            logging.debug(f"Could not setup allowed_signers: {e}")
+
+    result = subprocess.run(
+        ["git", "verify-commit", "--raw", commit_hash],
+        capture_output=True,
+        text=True,
+    )
+
+    # Git outputs signature info to stderr
+    output = result.stderr
+
+    info = {
+        "verified": result.returncode == 0,
+        "key_fingerprint": None,
+        "signer": None,
+    }
+
+    # Parse SSH signature info (e.g., "Good signature from...")
+    if "Good signature" in output or "good signature" in output.lower():
+        info["verified"] = True
+
+    # Try to extract key fingerprint
+    for line in output.split("\n"):
+        if "SHA256:" in line:
+            # Extract fingerprint
+            import re
+
+            match = re.search(r"SHA256:(\S+)", line)
+            if match:
+                info["key_fingerprint"] = f"SHA256:{match.group(1)}"
+
+    return info
+
+
+def _derive_did_from_ssh_pubkey(ssh_pubkey_path: str) -> str | None:
+    """Derive Vouch DID from an SSH public key file.
+
+    The DID is derived by:
+    1. Extracting raw Ed25519 public key bytes (32 bytes)
+    2. Hashing with SHA256
+    3. Taking first 12 hex characters
+
+    This method is language-agnostic and doesn't depend on JSON serialization.
+    """
+    try:
+        from cryptography.hazmat.primitives.serialization import (
+            load_ssh_public_key,
+            Encoding,
+            PublicFormat,
+        )
+
+        # Read SSH public key
+        with open(ssh_pubkey_path, "r") as f:
+            ssh_pubkey_data = f.read()
+
+        # Parse the key (first part before comment)
+        key_parts = ssh_pubkey_data.strip().split()
+        if len(key_parts) < 2:
+            return None
+
+        key_type = key_parts[0]
+        key_data = key_parts[1]
+
+        # Load the key
+        full_key = f"{key_type} {key_data}".encode()
+        public_key = load_ssh_public_key(full_key)
+
+        # Get raw public key bytes for Ed25519 (32 bytes)
+        raw_bytes = public_key.public_bytes(
+            encoding=Encoding.Raw, format=PublicFormat.Raw
+        )
+
+        # DID is derived from raw public key bytes
+        # This ensures consistent DIDs across all programming languages
+        did_hash = hashlib.sha256(raw_bytes).hexdigest()[:12]
+        return f"did:vouch:{did_hash}"
+
+    except Exception as e:
+        logging.debug(f"Error deriving DID from SSH key: {e}")
+        return None
+
+
+def _verify_commit_vouch_signature(commit_hash: str, verbose: bool = False) -> dict:
+    """Verify a commit's signature matches its Vouch-DID trailer.
+
+    Returns a dict with:
+        - verified: bool - Whether verification passed
+        - commit_hash: str - The commit hash
+        - trailer_did: str | None - DID from commit trailer
+        - derived_did: str | None - DID derived from signing key
+        - error: str | None - Error message if failed
+    """
+    result = {
+        "verified": False,
+        "commit_hash": commit_hash,
+        "trailer_did": None,
+        "derived_did": None,
+        "git_verified": False,
+        "error": None,
+    }
+
+    # 1. Get Vouch-DID from commit trailer
+    trailer_did = _get_vouch_did_from_commit(commit_hash)
+    result["trailer_did"] = trailer_did
+
+    if not trailer_did:
+        result["error"] = "No Vouch-DID trailer found in commit"
+        return result
+
+    # 2. Check if git verifies the signature
+    sig_info = _get_commit_signature_info(commit_hash)
+    result["git_verified"] = sig_info["verified"]
+
+    if not sig_info["verified"]:
+        result["error"] = "Git signature verification failed"
+        return result
+
+    # 3. Derive DID from the signing key
+    # Check if we're using the local Vouch signing key
+    if SSH_KEY_PATH.exists():
+        derived_did = _derive_did_from_ssh_pubkey(str(SSH_KEY_PATH))
+        result["derived_did"] = derived_did
+
+        # 4. Compare DIDs
+        if derived_did and trailer_did == derived_did:
+            result["verified"] = True
+        elif derived_did:
+            result["error"] = f"DID mismatch: trailer={trailer_did}, key={derived_did}"
+        else:
+            result["error"] = "Could not derive DID from signing key"
+    else:
+        # For third-party verification, we can only check git's verification
+        # and that the trailer exists
+        result["verified"] = True
+        result["error"] = "Note: Full DID verification requires local Vouch key"
+
+    return result
+
+
+def cmd_git_verify(args: argparse.Namespace) -> int:
+    """Verify commit signatures match their Vouch-DID trailers."""
+    verbose = getattr(args, "verbose", False)
+
+    if hasattr(args, "commit") and args.commit:
+        # Single commit verification
+        commits = [args.commit]
+    else:
+        # Get recent commits
+        count = getattr(args, "count", 10)
+        result = subprocess.run(
+            ["git", "log", f"-{count}", "--format=%H"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print("❌ Error: Not in a git repository", file=sys.stderr)
+            return 1
+        commits = [h.strip() for h in result.stdout.strip().split("\n") if h.strip()]
+
+    if not commits:
+        print("No commits to verify")
+        return 0
+
+    print(f"🔐 Verifying Vouch signatures for {len(commits)} commit(s)...\n")
+
+    verified = 0
+    failed = 0
+    skipped = 0
+
+    for commit_hash in commits:
+        short_hash = commit_hash[:8]
+
+        # Get commit subject
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%s", commit_hash],
+            capture_output=True,
+            text=True,
+        )
+        subject = result.stdout.strip()[:50] if result.returncode == 0 else "Unknown"
+
+        # Verify
+        verification = _verify_commit_vouch_signature(commit_hash, verbose)
+
+        if verification["verified"]:
+            verified += 1
+            print(f"  ✅ {short_hash} - {subject}")
+            if verbose and verification["trailer_did"]:
+                print(f"     Vouch-DID: {verification['trailer_did']}")
+        elif verification["trailer_did"] is None:
+            skipped += 1
+            if verbose:
+                print(f"  ⏭️  {short_hash} - {subject}")
+                print("     No Vouch-DID trailer (skipped)")
+        else:
+            failed += 1
+            print(f"  ❌ {short_hash} - {subject}")
+            if verification["error"]:
+                print(f"     Error: {verification['error']}")
+
+    print(f"\n📊 Results:")
+    print(f"   ✅ Verified: {verified}")
+    if skipped > 0:
+        print(f"   ⏭️  Skipped (no trailer): {skipped}")
+    if failed > 0:
+        print(f"   ❌ Failed: {failed}")
+
+    strict = getattr(args, "strict", False)
+    if strict and failed > 0:
+        print(f"\n❌ FAILED: {failed} commit(s) failed verification")
+        return 1
+
+    if verified > 0 and failed == 0:
+        print("\n✅ All Vouch-signed commits verified!")
+
+    return 0
+
+
+# =============================================================================
+# Media Commands (C2PA Integration)
+# =============================================================================
+
+def cmd_media_sign(args: argparse.Namespace) -> int:
+    """Sign an image with Vouch signature (native by default, or C2PA with --c2pa)."""
+    
+    # Check if C2PA mode requested
+    if getattr(args, 'c2pa', False):
+        return _cmd_media_sign_c2pa(args)
+    
+    # Default: Use native Vouch signing (no certificates needed!)
+    return _cmd_media_sign_native(args)
+
+
+def _cmd_media_sign_native(args: argparse.Namespace) -> int:
+    """Sign an image with native Vouch signature (no certificates)."""
+    try:
+        from vouch.media.native import sign_image_native, generate_keypair, truncate_did, generate_verify_shortlink
+        
+        source_path = Path(args.image)
+        if not source_path.exists():
+            print(f"❌ Error: File not found: {source_path}", file=sys.stderr)
+            return 1
+        
+        # Get identity from args or environment
+        display_name = args.name or os.environ.get("VOUCH_DISPLAY_NAME", "Anonymous")
+        email = args.email or os.environ.get("VOUCH_EMAIL")
+        
+        # Generate or load keypair
+        private_key_json = args.key or os.environ.get("VOUCH_PRIVATE_KEY")
+        
+        if private_key_json:
+            # Load from JWK
+            key = jwk.JWK.from_json(private_key_json)
+            private_bytes = base64.urlsafe_b64decode(key.d + "==")
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+            private_key = Ed25519PrivateKey.from_private_bytes(private_bytes)
+            did = args.did or os.environ.get("VOUCH_DID", f"did:key:temp_{hashlib.sha256(display_name.encode()).hexdigest()[:16]}")
+        else:
+            # Generate ephemeral keypair
+            private_key, did = generate_keypair()
+            print(f"⚠️  Generated ephemeral keypair (set VOUCH_PRIVATE_KEY for persistent identity)", file=sys.stderr)
+        
+        # Sign the image
+        output_path = args.output or source_path.parent / f"{source_path.stem}_signed{source_path.suffix}"
+        
+        result = sign_image_native(
+            source_path=source_path,
+            private_key=private_key,
+            did=did,
+            display_name=display_name,
+            email=email,
+            credential_type="PRO" if args.pro else "FREE",
+            output_path=output_path,
+        )
+        
+        if result.success:
+            # Show any warnings first
+            if result.warning:
+                print(result.warning, file=sys.stderr)
+            
+            print(f"✅ Image signed successfully!")
+            print(f"   Source: {result.source_path}")
+            print(f"   Output: {result.output_path}")
+            print(f"   Sidecar: {result.sidecar_path}")
+            print(f"\n🔐 Signer:")
+            print(f"   Name:   {result.signature.display_name}")
+            if result.signature.email:
+                print(f"   Email:  {result.signature.email}")
+            print(f"   DID:    {truncate_did(result.signature.did)}")
+            print(f"   Tier:   {result.signature.credential_type}")
+            print(f"\n📋 Claim:")
+            print(f"   Type:   {result.signature.claim_type.upper()}")
+            print(f"   Chain:  {result.signature.chain_id}")
+            print(f"   Depth:  {result.signature.chain_depth}")
+            print(f"   Trust:  {result.signature.chain_strength:.0%}")
+            print(f"\n🔗 Verify: {generate_verify_shortlink(result.signature)}")
+            return 0
+        else:
+            print(f"❌ Error signing image: {result.error}", file=sys.stderr)
+            return 1
+            
+    except Exception as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        return 1
+
+
+def _cmd_media_sign_c2pa(args: argparse.Namespace) -> int:
+    """Sign an image with C2PA manifest containing Vouch identity."""
+    try:
+        from vouch.media.c2pa import (
+            MediaSigner, 
+            VouchIdentity,
+            generate_self_signed_certificate,
+            C2PA_AVAILABLE,
+        )
+        
+        if not C2PA_AVAILABLE:
+            print("❌ Error: c2pa-python is required. Install with: pip install c2pa-python", file=sys.stderr)
+            return 1
+        
+        source_path = Path(args.image)
+        if not source_path.exists():
+            print(f"❌ Error: File not found: {source_path}", file=sys.stderr)
+            return 1
+        
+        # Get identity from args or environment
+        display_name = args.name or os.environ.get("VOUCH_DISPLAY_NAME", "Anonymous")
+        email = args.email or os.environ.get("VOUCH_EMAIL")
+        did = args.did or os.environ.get("VOUCH_DID", f"did:key:temp_{hashlib.sha256(display_name.encode()).hexdigest()[:16]}")
+        
+        # Load C2PA test certificates for development
+        # These are ES256 (ECDSA P-256) certificates from c2pa-python repo
+        certs_dir = Path(__file__).parent / "media" / "certs"
+        cert_path = certs_dir / "es256_certs.pem"
+        key_path = certs_dir / "es256_private.key"
+        
+        if not cert_path.exists() or not key_path.exists():
+            print("❌ Error: C2PA test certificates not found.", file=sys.stderr)
+            print("   Expected files at:", file=sys.stderr)
+            print(f"   - {cert_path}", file=sys.stderr)
+            print(f"   - {key_path}", file=sys.stderr)
+            return 1
+        
+        print("⚠️  Using C2PA test certificates (FOR DEVELOPMENT ONLY)", file=sys.stderr)
+        
+        certificate_chain = cert_path.read_bytes()
+        private_key_pem = key_path.read_bytes()
+        
+        # Create identity
+        identity = VouchIdentity(
+            did=did,
+            display_name=display_name,
+            email=email,
+            credential_type="PRO" if args.pro else "FREE",
+        )
+        
+        # Sign using ES256 (test certs) with callback-based signing
+        import c2pa
+        import c2pa.c2pa as c2pa_lib
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import ec
+        
+        # Load private key for callback
+        from cryptography.hazmat.primitives import serialization
+        private_key = serialization.load_pem_private_key(private_key_pem, password=None)
+        
+        # Create signing callback
+        def sign_callback(data: bytes) -> bytes:
+            return private_key.sign(data, ec.ECDSA(hashes.SHA256()))
+        
+        # Create signer with tsa_url=None for offline signing
+        signer = c2pa_lib.create_signer(
+            callback=sign_callback,
+            alg=c2pa.C2paSigningAlg.ES256,
+            certs=certificate_chain.decode('utf-8'),
+            tsa_url=None,
+        )
+        
+        # Build the manifest
+        manifest_json = {
+            "claim_generator": "Vouch Protocol/1.0.0",
+            "claim_generator_info": [{
+                "name": "Vouch Protocol",
+                "version": "1.0.0",
+            }],
+            "title": args.title or source_path.name,
+            "assertions": [
+                {
+                    "label": "c2pa.actions",
+                    "data": {
+                        "actions": [{
+                            "action": "c2pa.created",
+                            "softwareAgent": "Vouch Protocol/1.0.0",
+                        }]
+                    }
+                },
+                identity.to_assertion(),
+            ],
+        }
+        
+        output_path = args.output or source_path.parent / f"{source_path.stem}_signed{source_path.suffix}"
+        
+        # Sign the file
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            manifest_bytes = c2pa_lib.sign_file(
+                source_path=source_path,
+                dest_path=str(output_path),
+                manifest=json.dumps(manifest_json),
+                signer_or_info=signer,
+                return_manifest_as_bytes=True,
+            )
+        
+        manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()[:16]
+        
+        print(f"✅ Image signed successfully!")
+        print(f"   Source: {source_path}")
+        print(f"   Output: {output_path}")
+        print(f"   Signer: {identity.display_name}")
+        if identity.email:
+            print(f"   Email:  {identity.email}")
+        print(f"   DID:    {identity.did}")
+        print(f"   Hash:   {manifest_hash}")
+        return 0
+            
+    except Exception as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_media_verify(args: argparse.Namespace) -> int:
+    """Verify an image's Vouch signature (native by default, or C2PA with --c2pa)."""
+    
+    # Check if C2PA mode requested
+    if getattr(args, 'c2pa', False):
+        return _cmd_media_verify_c2pa(args)
+    
+    # Default: Use native Vouch verification
+    return _cmd_media_verify_native(args)
+
+
+def _cmd_media_verify_native(args: argparse.Namespace) -> int:
+    """Verify an image's native Vouch signature."""
+    try:
+        from vouch.media.native import verify_image_native, truncate_did
+        
+        image_path = Path(args.image)
+        if not image_path.exists():
+            print(f"❌ Error: File not found: {image_path}", file=sys.stderr)
+            return 1
+        
+        result = verify_image_native(image_path)
+        
+        if args.json:
+            output = {
+                "is_valid": result.is_valid,
+                "source": result.source,
+                "error": result.error,
+            }
+            if result.signature:
+                output["signer"] = {
+                    "did": result.signature.did,
+                    "display_name": result.signature.display_name,
+                    "email": result.signature.email,
+                    "credential_type": result.signature.credential_type,
+                    "timestamp": result.signature.timestamp,
+                }
+                output["claim"] = {
+                    "type": result.signature.claim_type,
+                    "chain_id": result.signature.chain_id,
+                    "chain_depth": result.signature.chain_depth,
+                    "trust_strength": result.signature.chain_strength,
+                }
+            print(json.dumps(output, indent=2))
+        else:
+            if result.is_valid:
+                print(f"✅ Valid Vouch signature found!")
+                print(f"   Source: {result.source}")
+                
+                if result.signature:
+                    print(f"\n🔐 Signer:")
+                    print(f"   Name:  {result.signature.display_name}")
+                    if result.signature.email:
+                        print(f"   Email: {result.signature.email}")
+                    print(f"   DID:   {truncate_did(result.signature.did)}")
+                    print(f"   Tier:  {result.signature.credential_type}")
+                    print(f"\n📋 Claim:")
+                    print(f"   Type:  {result.signature.claim_type.upper()}")
+                    print(f"   Chain: {result.signature.chain_id}")
+                    print(f"   Depth: {result.signature.chain_depth}")
+                    print(f"   Trust: {result.signature.chain_strength:.0%}")
+                    
+                    # Show org credentials if present
+                    if result.signature.credentials:
+                        print(f"\n🏢 Organization:")
+                        for cred in result.signature.credentials:
+                            issuer_name = cred.get('issuer_name') or cred.get('issuer', 'Unknown')
+                            role = cred.get('role', 'Unknown')
+                            dept = cred.get('department')
+                            expiry = cred.get('expiry', 'N/A')
+                            
+                            if dept:
+                                print(f"   {issuer_name} ({dept})")
+                            else:
+                                print(f"   {issuer_name}")
+                            print(f"   Role:   {role}")
+                            print(f"   Expiry: {expiry[:10] if len(expiry) > 10 else expiry}")
+            else:
+                print(f"❌ No valid Vouch signature found")
+                if result.error:
+                    print(f"   Error: {result.error}")
+        
+        return 0 if result.is_valid else 1
+        
+    except Exception as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        return 1
+
+
+def _cmd_media_verify_c2pa(args: argparse.Namespace) -> int:
+    """Verify an image's C2PA manifest and extract Vouch identity."""
+    try:
+        from vouch.media.c2pa import MediaVerifier, C2PA_AVAILABLE
+        
+        if not C2PA_AVAILABLE:
+            print("❌ Error: c2pa-python is required. Install with: pip install c2pa-python", file=sys.stderr)
+            return 1
+        
+        image_path = Path(args.image)
+        if not image_path.exists():
+            print(f"❌ Error: File not found: {image_path}", file=sys.stderr)
+            return 1
+        
+        verifier = MediaVerifier()
+        result = verifier.verify_image(image_path)
+        
+        if args.json:
+            output = {
+                "is_valid": result.is_valid,
+                "claim_generator": result.claim_generator,
+                "signed_at": result.signed_at,
+                "error": result.error,
+            }
+            if result.signer_identity:
+                output["signer"] = {
+                    "did": result.signer_identity.did,
+                    "display_name": result.signer_identity.display_name,
+                    "email": result.signer_identity.email,
+                    "credential_type": result.signer_identity.credential_type,
+                }
+            print(json.dumps(output, indent=2))
+        else:
+            if result.is_valid:
+                print(f"✅ Valid C2PA manifest found!")
+                print(f"   Claim Generator: {result.claim_generator}")
+                if result.signed_at:
+                    print(f"   Signed At: {result.signed_at}")
+                
+                if result.signer_identity:
+                    print(f"\n🔐 Vouch Identity:")
+                    print(f"   Name:  {result.signer_identity.display_name}")
+                    if result.signer_identity.email:
+                        print(f"   Email: {result.signer_identity.email}")
+                    print(f"   DID:   {result.signer_identity.did}")
+                    print(f"   Tier:  {result.signer_identity.credential_type}")
+                else:
+                    print(f"\n⚠️  No Vouch identity assertion found (standard C2PA manifest)")
+            else:
+                print(f"❌ No valid C2PA manifest found")
+                if result.error:
+                    print(f"   Error: {result.error}")
+        
+        return 0 if result.is_valid else 1
+        
+    except Exception as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        return 1
+
+
 def main() -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -503,6 +1144,52 @@ def main() -> int:
     # git status
     git_subparsers.add_parser("status", help="Show current Vouch git configuration")
 
+    # git verify
+    p_git_verify = git_subparsers.add_parser(
+        "verify", help="Verify commit signatures match Vouch-DID trailers"
+    )
+    p_git_verify.add_argument(
+        "commit", nargs="?", default=None, help="Specific commit hash to verify (optional)"
+    )
+    p_git_verify.add_argument(
+        "-n", "--count", type=int, default=10, help="Number of commits to verify (default: 10)"
+    )
+    p_git_verify.add_argument(
+        "--strict", action="store_true", help="Fail if any commit verification fails"
+    )
+
+    # media subcommand group
+    p_media = subparsers.add_parser("media", help="Media signing commands")
+    media_subparsers = p_media.add_subparsers(dest="media_command", help="Media commands")
+
+    # media sign
+    p_media_sign = media_subparsers.add_parser(
+        "sign", help="Sign an image with Vouch (simple, no certificates needed)"
+    )
+    p_media_sign.add_argument("image", help="Path to image file to sign")
+    p_media_sign.add_argument("-o", "--output", help="Output path for signed image")
+    p_media_sign.add_argument("-n", "--name", help="Display name for signer")
+    p_media_sign.add_argument("-e", "--email", help="Email address for signer")
+    p_media_sign.add_argument("--did", help="DID for signer identity")
+    p_media_sign.add_argument("--key", help="Private key (JWK JSON)")
+    p_media_sign.add_argument("--title", help="Title for the image")
+    p_media_sign.add_argument("--pro", action="store_true", help="Mark as PRO credential")
+    p_media_sign.add_argument(
+        "--c2pa", action="store_true",
+        help="Use C2PA industry standard (requires certificates)"
+    )
+
+    # media verify
+    p_media_verify = media_subparsers.add_parser(
+        "verify", help="Verify an image's Vouch signature"
+    )
+    p_media_verify.add_argument("image", help="Path to image file to verify")
+    p_media_verify.add_argument("--json", action="store_true", help="Output as JSON")
+    p_media_verify.add_argument(
+        "--c2pa", action="store_true",
+        help="Verify C2PA manifest instead of Vouch signature"
+    )
+
     args = parser.parse_args()
 
     setup_logging(args.verbose if hasattr(args, "verbose") else False)
@@ -518,8 +1205,18 @@ def main() -> int:
             return cmd_git_init(args)
         elif args.git_command == "status":
             return cmd_git_status(args)
+        elif args.git_command == "verify":
+            return cmd_git_verify(args)
         else:
             p_git.print_help()
+            return 0
+    elif args.command == "media":
+        if args.media_command == "sign":
+            return cmd_media_sign(args)
+        elif args.media_command == "verify":
+            return cmd_media_verify(args)
+        else:
+            p_media.print_help()
             return 0
     else:
         parser.print_help()

@@ -1,4 +1,38 @@
-venvvouch/
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv*/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+*.whl
+
+# Local config (don't commit secrets)
+vouch.json
+.env
+.env.local
+
+# Extension builds (use GitHub Releases instead)
+*.zip
+
+# Misc
+.DS_Store
 website/DEPLOY.md
+.ruff_cache/
