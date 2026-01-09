@@ -1,7 +1,7 @@
 # Vouch Protocol
 
 <p align="center">
-  <img src="docs/assets/vouch_hero.jpg" alt="Vouch Protocol - The Identity Layer for AI Agents" width="500">
+  <img src="docs/assets/vouch-banner.png" alt="Vouch Protocol" width="400">
 </p>
 
 <p align="center">
@@ -291,12 +291,17 @@ We welcome contributions! See [CONTRIBUTING.md](https://github.com/vouch-protoco
 
 ## 📜 Prior Art Disclosures
 
-To ensure ecosystem freedom, we publish defensive prior art disclosures for novel methods:
+To ensure ecosystem freedom, we publish **8 defensive prior art disclosures** for novel methods:
 
 | ID | Title | Key Claims |
 |----|-------|------------|
 | [PAD-001](docs/disclosures/PAD-001-cryptographic-agent-identity.md) | Cryptographic Agent Identity | Intent-bound tokens, agent DIDs |
 | [PAD-002](docs/disclosures/PAD-002-chain-of-custody.md) | Chain of Custody | Recursive delegation, intent chains |
 | [PAD-003](docs/disclosures/PAD-003-identity-sidecar.md) | Identity Sidecar Pattern | LLM key isolation, JIT signing |
+| [PAD-004](docs/disclosures/PAD-004-smart-scan-verification.md) | Smart Scan Verification | DOM traversal, hash matching |
+| [PAD-005](docs/disclosures/PAD-005-reverse-lookup-registry.md) | Reverse Lookup Registry | Detached signature recovery |
+| [PAD-006](docs/disclosures/PAD-006-trust-graph-url-chaining.md) | Trust Graph URL Chaining | Credential chain in URL |
+| [PAD-007](docs/disclosures/PAD-007-ghost-signature-telemetry.md) | Ghost Signature | AI/Human provenance telemetry |
+| [PAD-008](docs/disclosures/PAD-008-hybrid-ssh-verification.md) | SSH Piggyback | Zero-config identity bootstrap |
 
 [View all disclosures →](docs/disclosures/README.md)
