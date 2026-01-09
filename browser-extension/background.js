@@ -22,6 +22,7 @@ const STORAGE_KEYS = {
 };
 
 const CONTEXT_MENU_ID = 'vouch-sign-selection';
+const CONTEXT_MENU_SCAN_ID = 'vouch-smart-scan';
 
 // API endpoint for signature storage
 // Update this to your Cloudflare Worker URL once deployed
@@ -141,13 +142,21 @@ async function storeSignature(signatureData) {
 // =============================================================================
 
 /**
- * Create the context menu item
+ * Create the context menu items
  */
 function createContextMenu() {
+    // Sign selected text
     chrome.contextMenus.create({
         id: CONTEXT_MENU_ID,
         title: '✍️ Sign with Vouch',
         contexts: ['selection'],
+    });
+
+    // Smart Scan - verify signature on page
+    chrome.contextMenus.create({
+        id: CONTEXT_MENU_SCAN_ID,
+        title: '🔍 Vouch: Smart Scan',
+        contexts: ['page', 'selection'],
     });
 }
 
@@ -244,6 +253,33 @@ async function handleContextMenuClick(info, tab) {
         }
     }
 }
+
+/**
+ * Handle Smart Scan context menu click
+ * Sends request to content script to scan the page for signed content
+ */
+async function handleSmartScanClick(info, tab) {
+    try {
+        await chrome.tabs.sendMessage(tab.id, {
+            action: 'smartScan',
+            selectedText: info.selectionText || null,
+        });
+    } catch (error) {
+        console.error('Vouch: Smart Scan error:', error);
+    }
+}
+
+// =============================================================================
+// Context Menu Click Router
+// =============================================================================
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === CONTEXT_MENU_ID) {
+        handleContextMenuClick(info, tab);
+    } else if (info.menuItemId === CONTEXT_MENU_SCAN_ID) {
+        handleSmartScanClick(info, tab);
+    }
+});
 
 // =============================================================================
 // Message Handling
@@ -368,8 +404,5 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(() => {
     createContextMenu();
 });
-
-// Handle context menu clicks
-chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 console.log('Vouch: Background service worker loaded');
