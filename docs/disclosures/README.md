@@ -16,6 +16,8 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-004](./PAD-004-smart-scan-verification.md) | DOM-Traversing Signature Matching | 2026-01-10 | Published |
 | [PAD-005](./PAD-005-reverse-lookup-registry.md) | Detached Signature Recovery | 2026-01-10 | Published |
 | [PAD-006](./PAD-006-trust-graph-url-chaining.md) | URL-Based Credential Chaining | 2026-01-10 | Published |
+| [PAD-007](./PAD-007-ghost-signature-telemetry.md) | Automated Provenance via Input Telemetry | 2026-01-10 | Published |
+| [PAD-008](./PAD-008-hybrid-ssh-verification.md) | Hybrid Identity Bootstrapping | 2026-01-10 | Published |
 
 ## Format
 
