@@ -99,7 +99,8 @@ async function handleSignature(request, env) {
         return new Response(JSON.stringify({
             success: true,
             id: shortId,
-            url: `https://vouch-protocol.com/v/${shortId}`,
+            url: `https://v.vouch-protocol.com/${shortId}`,
+            shortUrl: `https://vouch-protocol.com/v/${shortId}`,
             expiresAt: signatureData.expiresAt,
         }), {
             status: 201,
@@ -186,16 +187,32 @@ export default {
         }
 
         // Route requests
-        if (path === '/api/health' && method === 'GET') {
+        const hostname = url.hostname;
+
+        // Handle v.vouch-protocol.com shortlinks - redirect to verification page
+        if (hostname === 'v.vouch-protocol.com') {
+            const shortId = path.replace('/', '');
+            if (shortId && shortId.match(/^[a-zA-Z0-9]+$/)) {
+                // Redirect to main site verification page
+                return Response.redirect(`https://vouch-protocol.com/v/${shortId}`, 302);
+            }
+            // Root of v subdomain - redirect to main site
+            return Response.redirect('https://vouch-protocol.com', 302);
+        }
+
+        // Support both /api/* (old) and /* (new api subdomain)
+        const apiPath = path.startsWith('/api') ? path : '/api' + path;
+
+        if (apiPath === '/api/health' && method === 'GET') {
             return handleHealth();
         }
 
-        if (path === '/api/sign' && method === 'POST') {
+        if (apiPath === '/api/sign' && method === 'POST') {
             return handleSignature(request, env);
         }
 
-        // Match /api/verify/:id
-        const verifyMatch = path.match(/^\/api\/verify\/([a-zA-Z0-9]+)$/);
+        // Match /api/verify/:id or /verify/:id
+        const verifyMatch = apiPath.match(/^\/api\/verify\/([a-zA-Z0-9]+)$/);
         if (verifyMatch && method === 'GET') {
             return handleVerify(verifyMatch[1], env);
         }
