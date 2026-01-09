@@ -1,0 +1,27 @@
+{
+    "name": "Vouch Gatekeeper",
+    "url": "https://vouch-protocol.com",
+    "hook_attributes": {
+        "url": "https://gatekeeper.vouch-protocol.com/webhook",
+        "active": true
+    },
+    "redirect_url": "https://gatekeeper.vouch-protocol.com/setup/callback",
+    "callback_urls": [
+        "https://gatekeeper.vouch-protocol.com/setup/callback"
+    ],
+    "setup_url": "https://gatekeeper.vouch-protocol.com/setup/complete",
+    "description": "Enforce cryptographic identity and organizational policy on every Pull Request. Zero-friction adoption with automatic badge PRs.",
+    "public": true,
+    "default_events": [
+        "pull_request",
+        "check_suite",
+        "installation"
+    ],
+    "default_permissions": {
+        "checks": "write",
+        "contents": "write",
+        "pull_requests": "write",
+        "members": "read",
+        "metadata": "read"
+    }
+}
