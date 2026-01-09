@@ -5,12 +5,20 @@ compatibility_date = "2024-01-01"
 # KV Namespace binding - you'll need to create this in Cloudflare dashboard
 [[kv_namespaces]]
 binding = "SIGNATURES"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "08413c23ad6147b78d406ba31f52ba1e"
 
-# Routes - uncomment and configure after setting up domain
-# [routes]
-# route = "vouch-protocol.com/api/*"
-# zone_name = "vouch-protocol.com"
+# Routes - support both path and subdomain
+[[routes]]
+pattern = "vouch-protocol.com/api/*"
+zone_name = "vouch-protocol.com"
+
+[[routes]]
+pattern = "api.vouch-protocol.com/*"
+zone_name = "vouch-protocol.com"
+
+[[routes]]
+pattern = "v.vouch-protocol.com/*"
+zone_name = "vouch-protocol.com"
 
 [vars]
 ENVIRONMENT = "production"
