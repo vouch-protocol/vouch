@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Vouch Verification Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+
+        h1 {
+            color: #7c3aed;
+        }
+
+        .test-block {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔐 Vouch Verification Test</h1>
+    <p>The content script should detect and verify the signed block below:</p>
+
+    <div class="test-block">[Signed]
+        The Open Standard for AI Agent Identity & Accountability
+        ---
+        Signed-by: vouch.protocol.official@gmail.com
+        Key: d564d45fb8897c0c4f03f35671c3093b968ea2da038f2c30134c27f204254798
+        Sig:
+        c5fc54410a3d5e3ead92e6f47e76abb210e8f495a3ea6406002ccb22000e754b92084fecf3c99cea97be072b64cacbefce07c023283edb84f0b3622200f78301
+    </div>
+
+    <h2>Expected Result:</h2>
+    <ul>
+        <li>🔵 <strong>Gray badge</strong> = "New Identity" (first time seeing this signer)</li>
+        <li>✅ <strong>Green badge</strong> = "Verified Contact" (if you reload again)</li>
+    </ul>
+</body>
+
+</html>

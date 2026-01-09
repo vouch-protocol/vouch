@@ -1,0 +1,13 @@
+{
+    "name": "vouch-verify-api",
+    "version": "1.0.0",
+    "description": "Cloudflare Worker for Vouch signature storage and verification",
+    "main": "src/worker.js",
+    "scripts": {
+        "deploy": "wrangler deploy",
+        "dev": "wrangler dev"
+    },
+    "devDependencies": {
+        "wrangler": "^3.0.0"
+    }
+}

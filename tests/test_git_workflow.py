@@ -17,6 +17,9 @@ from vouch.cli import (
     _configure_git_signing,
     _install_commit_hook,
     _inject_readme_badge,
+    _derive_did_from_ssh_pubkey,
+    _get_vouch_did_from_commit,
+    _verify_commit_vouch_signature,
     VOUCH_BADGE_MARKDOWN,
     SSH_KEY_PATH,
     PRIVATE_KEY_PATH,
@@ -203,3 +206,82 @@ class TestVerifyGitHistory:
 
         # Should run (may have 0 verified commits, but shouldn't crash)
         assert "Verifying" in result.stdout or result.returncode == 0
+
+
+class TestVerifyCommit:
+    """Tests for vouch git verify functionality."""
+
+    def test_derive_did_from_ssh_pubkey(self):
+        """Test that DID can be derived from SSH public key."""
+        if SSH_KEY_PATH.exists():
+            did = _derive_did_from_ssh_pubkey(str(SSH_KEY_PATH))
+            assert did is not None
+            assert did.startswith("did:vouch:")
+            assert len(did) == len("did:vouch:") + 12  # 12 hex chars
+
+    def test_derive_did_returns_none_for_missing_file(self):
+        """Test that DID derivation returns None for missing file."""
+        did = _derive_did_from_ssh_pubkey("/nonexistent/path/to/key.pub")
+        assert did is None
+
+    def test_get_vouch_did_from_commit(self):
+        """Test extracting Vouch-DID from a commit message."""
+        # This test runs against the actual git history
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%H"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            commit_hash = result.stdout.strip()
+            # Just test that the function doesn't crash
+            did = _get_vouch_did_from_commit(commit_hash)
+            # did may be None if the commit doesn't have a trailer
+            assert did is None or did.startswith("did:vouch:")
+
+    def test_verify_commit_vouch_signature(self):
+        """Test verification of a Vouch-signed commit."""
+        # Get a recent commit that should have Vouch-DID
+        result = subprocess.run(
+            ["git", "log", "-20", "--format=%H %s"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            pytest.skip("Not in a git repository")
+
+        # Find a commit with Vouch-DID
+        for line in result.stdout.strip().split("\n"):
+            if not line:
+                continue
+            commit_hash = line.split()[0]
+            did = _get_vouch_did_from_commit(commit_hash)
+            if did:
+                # Found a Vouch-signed commit, verify it
+                verification = _verify_commit_vouch_signature(commit_hash)
+                assert "verified" in verification
+                assert "trailer_did" in verification
+                assert verification["trailer_did"] == did
+                break
+
+    def test_git_verify_command_help(self):
+        """Test that git verify --help works."""
+        result = subprocess.run(
+            ["python", "-m", "vouch.cli", "git", "verify", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert "verify" in result.stdout.lower()
+        assert "--strict" in result.stdout
+
+    def test_git_verify_command_runs(self):
+        """Test that git verify command runs successfully."""
+        result = subprocess.run(
+            ["python", "-m", "vouch.cli", "git", "verify", "-n", "3"],
+            capture_output=True,
+            text=True,
+        )
+        # Should run without error
+        assert result.returncode == 0
+        assert "Verifying" in result.stdout
