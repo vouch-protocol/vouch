@@ -1,0 +1,184 @@
+\input{../common/preamble}
+
+\title{URL-Based Credential Chaining for Transitive Trust Graphs}
+
+\author{Ramprasad Anandam Gaddam\\
+\textit{Vouch Protocol Project}\\
+\url{https://vouch-protocol.com}\\
+\texttt{ram@vouch-protocol.com}}
+
+\date{January 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper presents a method for constructing verifiable trust graphs using URL-based credential references. Credentials embed URLs pointing to issuer credentials, parent attestations, and supporting evidence. Verifiers traverse these URL chains to construct a complete trust graph, evaluating aggregate trustworthiness based on all participants' credentials. We formalize the trust graph model, define the credential schema with URL references, specify the graph traversal algorithm, and analyze security properties including cycle detection and depth limiting.
+
+\seriesnote
+\end{abstract}
+
+\textbf{Keywords:} trust graphs, credential chaining, transitive trust, web of trust, URL dereferencing
+
+\section{Introduction}
+
+Trust is inherently transitive: if Alice trusts Bob, and Bob vouches for Carol, Alice may extend partial trust to Carol. Traditional credential systems are flat---a single issuer vouches for a subject. Real-world trust involves chains of endorsements, evidence, and cross-references.
+
+We present a credential chaining system where each credential contains URL references to supporting credentials. By following these URLs, a verifier can construct a complete trust graph and compute aggregate trust scores.
+
+\subsection{Contributions}
+
+\begin{itemize}
+    \item Formal model for URL-linked trust graphs
+    \item Credential schema with embedded URL references
+    \item Graph traversal algorithm with cycle detection
+    \item Trust score aggregation framework
+\end{itemize}
+
+\section{Background}
+
+\subsection{Trust Models}
+
+\begin{definition}[Direct Trust]
+Direct trust is a binary or weighted relation $T(A, B) \in [0, 1]$ indicating A's trust in B.
+\end{definition}
+
+\begin{definition}[Transitive Trust]
+Transitive trust propagates through intermediaries:
+\begin{equation}
+T(A, C) = f(T(A, B), T(B, C))
+\end{equation}
+where $f$ is a trust propagation function (e.g., multiplication, minimum).
+\end{definition}
+
+\subsection{Web of Trust}
+
+The PGP Web of Trust \citep{zimmermann1995pgp} established transitive trust through key signatures. Our work extends this concept to action attestations with richer credential semantics.
+
+\section{Trust Graph Model}
+
+\subsection{Graph Structure}
+
+\begin{definition}[Trust Graph]
+A trust graph $G = (V, E)$ where:
+\begin{itemize}
+    \item $V$: Set of credentials (nodes)
+    \item $E$: Set of URL references (directed edges)
+\end{itemize}
+\end{definition}
+
+\subsection{Credential Schema}
+
+\begin{lstlisting}[language=json]
+{
+  "type": "attestation",
+  "claim": "completed_task_xyz",
+  "subject": "did:web:bob.example.com",
+  "issuer": "did:web:taskmanager.example.com",
+  "supporting_urls": {
+    "issuer_credential": 
+      "https://company.com/creds/tm-auth.json",
+    "parent_attestation":
+      "https://chain.com/attest/parent.json",
+    "evidence": [
+      "https://logs.com/exec/task.json"
+    ]
+  },
+  "signature": "eyJhbGciOiJFZERTQSJ9..."
+}
+\end{lstlisting}
+
+\subsection{URL Reference Types}
+
+\begin{itemize}
+    \item \textbf{issuer\_credential}: Credential authorizing the issuer to make this claim
+    \item \textbf{parent\_attestation}: Credential from which this one derives
+    \item \textbf{evidence}: Supporting documents or logs
+\end{itemize}
+
+\section{Graph Traversal Algorithm}
+
+\subsection{Recursive Fetch and Verify}
+
+\begin{enumerate}
+    \item Start with target credential $C_0$
+    \item Verify $\mathsf{signature}(C_0)$
+    \item For each URL $u$ in $C_0.\mathsf{supporting\_urls}$:
+    \begin{enumerate}
+        \item If $u \in \mathsf{visited}$: Skip (cycle detection)
+        \item Fetch credential $C_u$ from $u$
+        \item Add $u$ to $\mathsf{visited}$
+        \item Recursively traverse $C_u$
+    \end{enumerate}
+    \item If depth exceeds $\mathsf{max\_depth}$: Stop
+    \item Construct graph $G$ from traversed credentials
+\end{enumerate}
+
+\subsection{Depth Limiting}
+
+\begin{property}[Bounded Traversal]
+Traversal terminates within $O(d \cdot b)$ fetches where $d$ is max depth and $b$ is max branching factor.
+\end{property}
+
+Recommended limits: $d = 5$, $b = 10$.
+
+\section{Trust Score Computation}
+
+\subsection{Score Aggregation}
+
+Given graph $G$, compute trust score:
+\begin{equation}
+\mathsf{score}(C_0) = \sum_{p \in \mathsf{paths}(C_0, \mathsf{root})} \prod_{e \in p} w(e)
+\end{equation}
+
+where $w(e)$ is edge weight based on:
+\begin{itemize}
+    \item Issuer reputation
+    \item Credential freshness
+    \item Evidence quality
+\end{itemize}
+
+\section{Security Analysis}
+
+\begin{property}[Signature Verification]
+Every fetched credential is cryptographically verified before inclusion in the trust graph.
+\end{property}
+
+\begin{property}[Cycle Rejection]
+Circular references are detected and do not increase trust scores.
+\end{property}
+
+\textbf{Threat: Compromised URLs.} Mitigation: Signatures are verified independently of URL source.
+
+\textbf{Threat: URL availability.} Mitigation: Cache fetched credentials with TTL.
+
+\section{Related Work}
+
+\textbf{Verifiable Credentials} \citep{w3c-vc} provide the credential format; our work adds URL-based chaining.
+
+\textbf{Linked Data Signatures} enable credential linking via JSON-LD; our approach is simpler and REST-native.
+
+\textbf{DNSSEC Chain of Trust} provides hierarchical trust for DNS; our model supports arbitrary graph topologies.
+
+\section{Implementation}
+
+Reference implementation available at \url{https://github.com/vouch-protocol/vouch}.
+
+Features:
+\begin{itemize}
+    \item Recursive credential fetcher with caching
+    \item Cycle detection and depth limiting
+    \item Trust score visualization
+\end{itemize}
+
+\section{Conclusion}
+
+This paper presented URL-based credential chaining for constructing transitive trust graphs. By embedding URL references in credentials, verifiers can discover and traverse complete trust networks. The approach enables richer trust models than single-issuer credentials while maintaining cryptographic verifiability.
+
+\priorartbox
+
+\vouchsign{pad006}{Ramprasad Anandam Gaddam}{github:rampyg}
+
+\bibliography{../common/references}
+
+\end{document}

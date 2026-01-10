@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2023/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: plainnat.bst
+Database file #1: ../common/references.bib
+Warning--can't use both volume and number fields in burns2016borg
+You've used 2 entries,
+            2773 wiz_defined-function locations,
+            607 strings with 5138 characters,
+and the built_in function-call counts, 890 in all, are:
+= -- 71
+> -- 58
+< -- 3
++ -- 20
+- -- 18
+* -- 75
+:= -- 149
+add.period$ -- 7
+call.type$ -- 2
+change.case$ -- 12
+chr.to.int$ -- 2
+cite$ -- 5
+duplicate$ -- 40
+empty$ -- 65
+format.name$ -- 20
+if$ -- 174
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 1
+newline$ -- 19
+num.names$ -- 8
+pop$ -- 23
+preamble$ -- 1
+purify$ -- 10
+quote$ -- 0
+skip$ -- 29
+stack$ -- 0
+substring$ -- 4
+swap$ -- 6
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 22
+warning$ -- 1
+while$ -- 6
+width$ -- 0
+write$ -- 35
+(There was 1 warning)
