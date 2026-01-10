@@ -237,7 +237,9 @@ class TestVerifyCommit:
             # Just test that the function doesn't crash
             did = _get_vouch_did_from_commit(commit_hash)
             # did may be None if the commit doesn't have a trailer
-            assert did is None or did.startswith("did:vouch:")
+            # Accept multiple valid DID formats: did:vouch:, github:, did:web:, did:github:
+            valid_prefixes = ("did:vouch:", "github:", "did:web:", "did:github:")
+            assert did is None or did.startswith(valid_prefixes)
 
     def test_verify_commit_vouch_signature(self):
         """Test verification of a Vouch-signed commit."""
