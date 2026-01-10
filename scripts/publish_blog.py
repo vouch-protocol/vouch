@@ -8,61 +8,64 @@ OUTPUT_DIR = "/home/rampy/vouch-protocol/docs/blog"
 BLOG_INDEX = "/home/rampy/vouch-protocol/docs/blog/index.html"
 
 # --- POST METADATA (SEO Optimized) ---
+# Paper links point to GitHub blob view which renders markdown nicely
+GITHUB_DISCLOSURES = "https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures"
+
 POST_METADATA = {
     "PAD-001": {
         "slug": "who-authorized-this-problem",
         "tech_id": "tech001",
         "og_desc": "How Vouch Protocol binds AI agent identity to specific actions with cryptographic proof. Stop asking 'who are you?' and start asking 'who authorized this?'",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-001-cryptographic-agent-identity.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-001-cryptographic-agent-identity.md",
         "reading_time": "3 min read",
     },
     "PAD-002": {
         "slug": "ai-agent-delegation-chains",
         "tech_id": "tech002",
         "og_desc": "When AI agents delegate to other AI agents, who's accountable? Vouch creates an auditable chain of custody for multi-agent systems.",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-002-chain-of-custody.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-002-chain-of-custody.md",
         "reading_time": "3 min read",
     },
     "PAD-003": {
         "slug": "identity-sidecar-architecture",
         "tech_id": "tech003",
         "og_desc": "Why AI agents should never hold private keys. The Identity Sidecar pattern keeps secrets secure while agents sign requests.",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-003-identity-sidecar.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-003-identity-sidecar.md",
         "reading_time": "3 min read",
     },
     "PAD-004": {
         "slug": "ambient-verification-browser",
         "tech_id": "tech004",
         "og_desc": "Making signature verification invisible. How browser extensions can automatically verify signed content as you browse.",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-004-smart-scan-verification.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-004-smart-scan-verification.md",
         "reading_time": "3 min read",
     },
     "PAD-005": {
         "slug": "orphaned-content-signatures",
         "tech_id": "tech005",
         "og_desc": "Finding signatures for content that got copy-pasted without attribution. The Hash Registry approach for orphaned content.",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-005-reverse-lookup-registry.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-005-reverse-lookup-registry.md",
         "reading_time": "3 min read",
     },
     "PAD-006": {
         "slug": "web-of-trust-urls",
         "tech_id": "tech006",
         "og_desc": "Building decentralized trust using DNS and URLs. How did:web enables verifiable identity without blockchain.",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-006-trust-graph-url-chaining.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-006-trust-graph-url-chaining.md",
         "reading_time": "3 min read",
     },
     "PAD-007": {
         "slug": "ai-coding-assistant-signatures",
         "tech_id": "tech007",
         "og_desc": "Proving you wrote code with AI assistance. Cryptographic signatures for IDE-generated code to demonstrate human involvement.",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-007-ghost-signature-telemetry.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-007-ghost-signature-telemetry.md",
         "reading_time": "4 min read",
     },
     "PAD-008": {
         "slug": "zero-friction-ssh-identity",
         "tech_id": "tech008",
         "og_desc": "Zero-friction identity for 100M+ developers. Use your existing GitHub SSH keys to sign with Vouch instantly.",
-        "arxiv_url": "https://vouch-protocol.com/disclosures/PAD-008-hybrid-ssh-verification.md",
+        "arxiv_url": f"{GITHUB_DISCLOSURES}/PAD-008-hybrid-ssh-verification.md",
         "reading_time": "3 min read",
     },
 }
