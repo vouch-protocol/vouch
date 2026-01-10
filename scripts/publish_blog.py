@@ -7,6 +7,42 @@ SOURCE_FILE = "/home/rampy/.gemini/antigravity/brain/34db09bd-73b1-4423-9d6b-179
 OUTPUT_DIR = "/home/rampy/vouch-protocol/docs/blog"
 BLOG_INDEX = "/home/rampy/vouch-protocol/docs/blog/index.html"
 
+# --- POST METADATA ---
+POST_METADATA = {
+    "PAD-001": {
+        "og_desc": "How Vouch Protocol binds AI agent identity to specific actions with cryptographic proof. Stop asking 'who are you?' and start asking 'who authorized this?'",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-001-cryptographic-agent-identity.md"
+    },
+    "PAD-002": {
+        "og_desc": "When AI agents delegate to other AI agents, who's accountable? Vouch creates an auditable chain of custody for multi-agent systems.",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-002-delegation-chain.md"
+    },
+    "PAD-003": {
+        "og_desc": "Why AI agents should never hold private keys. The Identity Sidecar pattern keeps secrets secure while agents sign requests.",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-003-identity-sidecar.md"
+    },
+    "PAD-004": {
+        "og_desc": "Making signature verification invisible. How browser extensions can automatically verify signed content as you browse.",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-004-ambient-verification.md"
+    },
+    "PAD-005": {
+        "og_desc": "Finding signatures for content that got copy-pasted without attribution. The Hash Registry approach for orphaned content.",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-005-hash-registry.md"
+    },
+    "PAD-006": {
+        "og_desc": "Building decentralized trust using DNS and URLs. How did:web enables verifiable identity without blockchain.",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-006-web-trust.md"
+    },
+    "PAD-007": {
+        "og_desc": "Proving you wrote code with AI assistance. Cryptographic signatures for IDE-generated code to demonstrate human involvement.",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-007-ghost-signature-telemetry.md"
+    },
+    "PAD-008": {
+        "og_desc": "Zero-friction identity for 100M+ developers. Use your existing GitHub SSH keys to sign with Vouch instantly.",
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-008-hybrid-ssh-verification.md"
+    },
+}
+
 # --- TEMPLATES ---
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -14,11 +50,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title} - Vouch Protocol</title>
-    <meta name="description" content="Vouch Protocol Technical Digest: {title}">
+    <meta name="description" content="{og_description}">
     
     <!-- Open Graph -->
     <meta property="og:title" content="{title}">
-    <meta property="og:description" content="Technical Digest: {title}">
+    <meta property="og:description" content="{og_description}">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://vouch-protocol.com/blog/{filename}">
 
@@ -52,9 +88,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .nav-links a:hover {{ color: var(--text-primary); }}
         article {{ max-width: 800px; margin: 0 auto; padding: 4rem 2rem; }}
         h1 {{ font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; line-height: 1.2; }}
-        .post-meta {{ color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; }}
+        .post-meta {{ color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }}
         .verify-badge {{ background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border: 1px solid rgba(16, 185, 129, 0.2); }}
         .verify-badge:hover {{ background: rgba(16, 185, 129, 0.2); }}
+        .paper-link {{ background: rgba(99, 102, 241, 0.1); color: var(--accent); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border: 1px solid rgba(99, 102, 241, 0.2); }}
+        .paper-link:hover {{ background: rgba(99, 102, 241, 0.2); }}
         h2, h3 {{ color: var(--text-primary); margin-top: 2rem; margin-bottom: 1rem; }}
         h3 {{ color: var(--accent); font-size: 1.25rem; }}
         p, li {{ color: #d1d1db; margin-bottom: 1rem; }}
@@ -76,7 +114,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <article>
         <div class="post-meta">
             <span>January 10, 2026</span>
-            <a href="https://v.vouch-protocol.com/p/{pad_id}" class="verify-badge" target="_blank">✓ Verified {pad_id}</a>
+            <a href="{arxiv_url}" class="paper-link" target="_blank">📄 Read Full Paper</a>
         </div>
         <h1>{title}</h1>
         {content}
@@ -143,6 +181,11 @@ def main():
         pad_id = match.group(2).strip()
         body_md = match.group(3).strip()
         
+        # Get metadata for this post
+        metadata = POST_METADATA.get(pad_id, {})
+        og_description = metadata.get("og_desc", f"Technical Digest: {title}")
+        arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.com/docs/disclosures/{pad_id}.md")
+        
         # Clean title (remove "The Pain Point" etc if needed, but here we just take the first line)
         body_html = clean_md(body_md)
         filename = f"{pad_id.lower()}.html"
@@ -150,7 +193,8 @@ def main():
         # Generate HTML
         full_html = HTML_TEMPLATE.format(
             title=title,
-            pad_id=pad_id,
+            og_description=og_description,
+            arxiv_url=arxiv_url,
             filename=filename,
             content=body_html
         )
