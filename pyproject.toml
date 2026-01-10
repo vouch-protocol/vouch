@@ -69,6 +69,7 @@ tracing = [
 # Media signing (images, C2PA)
 media = [
     "Pillow>=10.0.0",
+    "base58>=2.1.0",
 ]
 
 # Development dependencies
@@ -79,6 +80,7 @@ dev = [
     "mypy>=1.0.0",
     "ruff>=0.1.0",
     "Pillow>=10.0.0",
+    "base58>=2.1.0",
 ]
 
 # All optional dependencies
