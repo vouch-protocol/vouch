@@ -1,0 +1,198 @@
+\input{../common/preamble}
+
+\title{Identity Sidecar Architecture for Autonomous AI Agents}
+
+\author{Ramprasad Anandam Gaddam\\
+\textit{Vouch Protocol Project}\\
+\url{https://vouch-protocol.com}\\
+\texttt{ram@vouch-protocol.com}}
+
+\date{January 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper presents an architectural pattern for isolating cryptographic identity operations from AI agent business logic through a dedicated sidecar service. The identity sidecar manages private key storage, signature generation, and attestation creation, enabling security hardening, centralized key rotation, and comprehensive audit logging without modifying agent implementations. We describe the architecture, define the sidecar API interface, analyze security boundaries, and discuss deployment configurations for various environments including Kubernetes, local daemon, and remote service modes.
+
+\seriesnote
+\end{abstract}
+
+\textbf{Keywords:} sidecar pattern, microservices, key management, cryptographic isolation, cloud-native
+
+\section{Introduction}
+
+The Vouch Protocol (PAD-001) requires AI agents to sign attestations using private keys. A na\"ive implementation embeds signing logic and key material directly into agent code. This approach creates several operational and security challenges:
+
+\begin{itemize}
+    \item \textbf{Key distribution:} Each agent instance requires access to private keys
+    \item \textbf{Code coupling:} Cryptographic logic must be replicated across agents
+    \item \textbf{Rotation complexity:} Key rotation requires updating all agent instances
+    \item \textbf{Audit fragmentation:} Signing operations are logged inconsistently
+\end{itemize}
+
+This paper addresses these challenges through the \textit{identity sidecar} pattern, a microservices architecture approach that isolates identity operations into a dedicated companion service.
+
+\subsection{Contributions}
+
+\begin{itemize}
+    \item Formal specification of the identity sidecar interface
+    \item Security boundary analysis for key isolation
+    \item Deployment configuration options for various environments
+    \item Integration patterns with the Vouch Protocol
+\end{itemize}
+
+\section{Background}
+
+\subsection{The Sidecar Pattern}
+
+\begin{definition}[Sidecar]
+A sidecar is an auxiliary service deployed alongside a primary application, sharing the same lifecycle and network namespace while providing specialized functionality \citep{burns2016borg}.
+\end{definition}
+
+Common sidecar use cases include logging aggregation, network proxying, and monitoring. Our contribution extends this pattern to cryptographic identity management.
+
+\subsection{Separation of Concerns}
+
+The principle of separation of concerns dictates that distinct responsibilities should be handled by distinct components. For AI agents:
+
+\begin{itemize}
+    \item \textbf{Agent responsibility:} Business logic, task execution
+    \item \textbf{Sidecar responsibility:} Key storage, signing, audit logging
+\end{itemize}
+
+\section{Identity Sidecar Architecture}
+
+\subsection{System Architecture}
+
+\begin{definition}[Identity Sidecar]
+An identity sidecar $S$ is a service providing:
+\begin{itemize}
+    \item $\mathsf{Sign}(\mathsf{payload}) \rightarrow \mathsf{token}$: Produces signed Vouch tokens
+    \item $\mathsf{GetIdentity}() \rightarrow \mathsf{DID}$: Returns the agent's decentralized identifier
+    \item $\mathsf{Rotate}() \rightarrow \mathsf{success}$: Initiates key rotation
+\end{itemize}
+\end{definition}
+
+The private key $sk$ is held exclusively by the sidecar and never exposed to the agent.
+
+\subsection{API Specification}
+
+\textbf{Sign Request:}
+\begin{lstlisting}[language=json]
+POST /sign
+{
+  "payload": {
+    "action": "transfer",
+    "amount": 100,
+    "recipient": "account_123"
+  },
+  "intent": "authorization"
+}
+\end{lstlisting}
+
+\textbf{Sign Response:}
+\begin{lstlisting}[language=json]
+{
+  "vouch_token": "eyJhbGciOiJFZERTQSJ9...",
+  "did": "did:web:agent.example.com",
+  "signature_id": "sig_12345",
+  "expires_at": "2026-01-10T12:05:00Z"
+}
+\end{lstlisting}
+
+\subsection{Security Boundaries}
+
+\begin{property}[Key Isolation]
+The private key $sk$ exists only within the sidecar's memory space and persistent storage. The agent process never has access to $sk$.
+\end{property}
+
+\begin{property}[Request Validation]
+The sidecar validates all signing requests against configured policies before producing signatures.
+\end{property}
+
+\begin{property}[Audit Completeness]
+Every signing operation is logged with timestamp, payload hash, and request context.
+\end{property}
+
+\section{Deployment Configurations}
+
+\subsection{Kubernetes Sidecar}
+
+In Kubernetes environments, the sidecar runs as a container within the same pod:
+
+\begin{lstlisting}
+spec:
+  containers:
+    - name: agent
+      image: my-ai-agent:latest
+    - name: identity-sidecar
+      image: vouch-sidecar:latest
+      volumeMounts:
+        - name: keys
+          mountPath: /keys
+          readOnly: true
+\end{lstlisting}
+
+Communication occurs over \texttt{localhost}, eliminating network exposure.
+
+\subsection{Local Daemon}
+
+For single-machine deployments, the sidecar runs as a system daemon:
+\begin{itemize}
+    \item Communication via Unix domain socket
+    \item Key storage in system keyring or HSM
+    \item Multi-tenant support for multiple agents
+\end{itemize}
+
+\subsection{Remote Signing Service}
+
+For enterprise deployments with centralized key management:
+\begin{itemize}
+    \item Communication over mTLS-authenticated channels \citep{rfc8446}
+    \item Centralized audit logging
+    \item Hardware security module (HSM) integration
+\end{itemize}
+
+\section{Security Analysis}
+
+\begin{property}[Reduced Attack Surface]
+Agent compromise does not expose private keys. Attackers must additionally compromise the sidecar.
+\end{property}
+
+\begin{property}[Centralized Rotation]
+Key rotation requires updating only the sidecar, not all agent instances.
+\end{property}
+
+\textbf{Threat:} Sidecar compromise. Mitigation: Defense in depth---HSM storage, rate limiting, anomaly detection.
+
+\section{Related Work}
+
+\textbf{SPIFFE Workload API} provides identity documents to workloads via a local socket, similar to our sidecar approach.
+
+\textbf{HashiCorp Vault Agent} provides secret injection as a sidecar; our work focuses specifically on signing operations.
+
+\textbf{Service Mesh Proxies} (Envoy, Linkerd) handle mTLS termination; our sidecar operates at the application layer for intent signing.
+
+\section{Implementation}
+
+Reference implementation available at \url{https://github.com/vouch-protocol/vouch}.
+
+Deployment options:
+\begin{itemize}
+    \item Docker image: \texttt{vouch-protocol/sidecar}
+    \item Helm chart for Kubernetes deployment
+    \item SystemD unit for Linux daemon mode
+\end{itemize}
+
+\section{Conclusion}
+
+This paper presented the identity sidecar pattern for isolating cryptographic operations from AI agent business logic. The architecture provides security benefits through key isolation, operational benefits through centralized management, and compliance benefits through comprehensive audit logging.
+
+\priorartbox
+
+\vouchsign{pad003}{Ramprasad Anandam Gaddam}{github:rampyg}
+
+\bibliography{../common/references}
+
+\end{document}

@@ -1,0 +1,54 @@
+\begin{thebibliography}{7}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Hardt(2012)]{rfc6749}
+D.~Hardt.
+\newblock {The OAuth 2.0 Authorization Framework}.
+\newblock RFC 6749, IETF, October 2012.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc6749}.
+
+\bibitem[Jones et~al.(2015{\natexlab{a}})Jones, Bradley, and Sakimura]{rfc7515}
+M.~Jones, J.~Bradley, and N.~Sakimura.
+\newblock {JSON Web Signature (JWS)}.
+\newblock RFC 7515, IETF, May 2015{\natexlab{a}}.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc7515}.
+
+\bibitem[Jones et~al.(2015{\natexlab{b}})Jones, Bradley, and Sakimura]{rfc7519}
+M.~Jones, J.~Bradley, and N.~Sakimura.
+\newblock {JSON Web Token (JWT)}.
+\newblock RFC 7519, IETF, May 2015{\natexlab{b}}.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc7519}.
+
+\bibitem[Josefsson and Liusvaara(2017)]{rfc8032}
+S.~Josefsson and I.~Liusvaara.
+\newblock {Edwards-Curve Digital Signature Algorithm (EdDSA)}.
+\newblock RFC 8032, IETF, January 2017.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc8032}.
+
+\bibitem[Rescorla(2018)]{rfc8446}
+E.~Rescorla.
+\newblock {The Transport Layer Security (TLS) Protocol Version 1.3}.
+\newblock RFC 8446, IETF, August 2018.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc8446}.
+
+\bibitem[Sporny et~al.(2022{\natexlab{a}})Sporny, Longley, Sabadello, Reed,
+  Steele, and Allen]{w3c-did-core}
+Manu Sporny, Dave Longley, Markus Sabadello, Drummond Reed, Orie Steele, and
+  Christopher Allen.
+\newblock {Decentralized Identifiers (DIDs) v1.0}.
+\newblock Recommendation, W3C, July 2022{\natexlab{a}}.
+\newblock URL \url{https://www.w3.org/TR/did-core/}.
+
+\bibitem[Sporny et~al.(2022{\natexlab{b}})Sporny, Noble, Longley, Burnett,
+  Zundel, and Hartog]{w3c-vc}
+Manu Sporny, Grant Noble, Dave Longley, Daniel Burnett, Brent Zundel, and
+  Kyle~Den Hartog.
+\newblock {Verifiable Credentials Data Model v1.1}.
+\newblock Recommendation, W3C, March 2022{\natexlab{b}}.
+\newblock URL \url{https://www.w3.org/TR/vc-data-model/}.
+
+\end{thebibliography}

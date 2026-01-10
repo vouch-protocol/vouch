@@ -1,0 +1,28 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Hardt(2012)]{rfc6749}
+D.~Hardt.
+\newblock {The OAuth 2.0 Authorization Framework}.
+\newblock RFC 6749, IETF, October 2012.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc6749}.
+
+\bibitem[Merkle(1988)]{merkle1988}
+Ralph~C. Merkle.
+\newblock {A Digital Signature Based on a Conventional Encryption Function}.
+\newblock In \emph{Advances in Cryptology --- CRYPTO '87}, pages 369--378.
+  Springer, 1988.
+
+\bibitem[Sporny et~al.(2022)Sporny, Noble, Longley, Burnett, Zundel, and
+  Hartog]{w3c-vc}
+Manu Sporny, Grant Noble, Dave Longley, Daniel Burnett, Brent Zundel, and
+  Kyle~Den Hartog.
+\newblock {Verifiable Credentials Data Model v1.1}.
+\newblock Recommendation, W3C, March 2022.
+\newblock URL \url{https://www.w3.org/TR/vc-data-model/}.
+
+\end{thebibliography}

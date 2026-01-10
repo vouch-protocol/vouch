@@ -1,0 +1,316 @@
+\input{../common/preamble}
+
+\title{Cryptographic Binding of AI Agent Identity to Stated Intent}
+
+\author{Ramprasad Anandam Gaddam\\
+\textit{Independent Researcher}\\
+Gurgaon, India\\
+\texttt{ram@vouch-protocol.com}}
+
+\date{January 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper presents the Vouch Protocol, a cryptographic framework for binding AI agent identity to stated intent using Ed25519 digital signatures in JSON Web Signature (JWS) format. Unlike existing authentication mechanisms---bearer tokens, API keys, OAuth 2.0, and mutual TLS---which provide connection-level or session-level authentication, the Vouch Protocol enables request-level attestation with cryptographic non-repudiation. We formalize the problem of intent binding in autonomous agent systems, define the protocol specification, and analyze its security properties. The protocol addresses the growing need for verifiable action attestation as AI agents increasingly operate autonomously in high-stakes environments. A reference implementation is publicly available.\footnote{This paper is part of the Vouch Protocol Defensive Disclosure Series (PAD-001). Full series: \url{https://vouch-protocol.com/docs/disclosures/}}
+\end{abstract}
+
+\textbf{Keywords:} AI agents, digital signatures, authentication, non-repudiation, decentralized identity, intent binding
+
+\section{Introduction}
+
+The proliferation of autonomous AI agents in production environments has created a fundamental authentication gap. These agents---ranging from automated trading systems to AI coding assistants---perform actions with significant consequences, yet existing authentication mechanisms fail to provide verifiable proof of both \textit{identity} (who authorized the action) and \textit{intent} (what specific action was authorized).
+
+Consider an AI agent that claims to be ``Alice's Shopping Agent'' and requests a \$500 purchase. A receiving service must answer three critical questions:
+\begin{enumerate}
+    \item \textbf{Identity verification:} Is this agent genuinely authorized by Alice?
+    \item \textbf{Intent binding:} Did the agent specifically authorize \textit{this} purchase?
+    \item \textbf{Non-repudiation:} Can Alice later deny authorization?
+\end{enumerate}
+
+Current authentication mechanisms, designed primarily for human users or static service-to-service communication, fail to address these requirements adequately.
+
+\subsection{Contributions}
+
+This paper makes the following contributions:
+\begin{itemize}
+    \item A formal problem statement for identity-intent binding in AI agent systems
+    \item The Vouch Protocol specification for cryptographic intent attestation
+    \item Security analysis demonstrating achieved properties
+    \item Comparison with existing authentication mechanisms
+    \item Reference implementation and deployment considerations
+\end{itemize}
+
+\section{Background and Preliminaries}
+
+\subsection{Cryptographic Primitives}
+
+\begin{definition}[Digital Signature Scheme]
+A digital signature scheme consists of three algorithms:
+\begin{itemize}
+    \item $\mathsf{KeyGen}() \rightarrow (sk, pk)$: Generates a secret key $sk$ and public key $pk$
+    \item $\mathsf{Sign}(sk, m) \rightarrow \sigma$: Produces signature $\sigma$ on message $m$
+    \item $\mathsf{Verify}(pk, m, \sigma) \rightarrow \{0, 1\}$: Verifies signature validity
+\end{itemize}
+\end{definition}
+
+The Vouch Protocol employs Ed25519 \citep{rfc8032}, an Edwards-curve Digital Signature Algorithm providing 128-bit security with compact 64-byte signatures.
+
+\begin{definition}[JSON Web Signature]
+A JSON Web Signature (JWS) \citep{rfc7515} represents signed content as a three-part structure:
+\begin{equation}
+\mathsf{JWS} = \mathsf{Base64Url}(\mathsf{header}) \, || \, \text{`.'} \, || \, \mathsf{Base64Url}(\mathsf{payload}) \, || \, \text{`.'} \, || \, \mathsf{Base64Url}(\sigma)
+\end{equation}
+\end{definition}
+
+\begin{definition}[Decentralized Identifier]
+A Decentralized Identifier (DID) \citep{w3c-did-core} is a URI that resolves to a DID Document containing public keys and service endpoints:
+\begin{equation}
+\mathsf{DID} \xrightarrow{\mathsf{resolve}} \mathsf{DID\ Document} \ni pk
+\end{equation}
+\end{definition}
+
+\subsection{Threat Model}
+
+We consider an adversary $\mathcal{A}$ with the following capabilities:
+\begin{itemize}
+    \item Passive observation of network traffic
+    \item Active message injection and modification
+    \item Possession of valid tokens from previous sessions
+    \item Compromise of non-target agent credentials
+\end{itemize}
+
+The adversary's goal is to impersonate a legitimate agent or cause unauthorized actions to be attributed to a victim agent.
+
+\section{Analysis of Existing Mechanisms}
+
+We analyze four prevalent authentication mechanisms with respect to identity binding, intent binding, non-repudiation, replay resistance, and support for autonomous operation.
+
+\subsection{Bearer Tokens}
+
+Bearer tokens \citep{rfc6749} grant access to any party possessing the token string.
+
+\begin{definition}[Bearer Token Authentication]
+Authentication succeeds if $\mathsf{token} \in \mathsf{ValidTokens}$, regardless of presenter identity.
+\end{definition}
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item No identity binding: Tokens are not cryptographically tied to holder
+    \item No intent binding: Token authorizes any action within scope
+    \item No non-repudiation: Token possession is shared knowledge
+    \item Replay vulnerability: Intercepted tokens remain valid
+\end{itemize}
+
+\subsection{API Keys}
+
+API keys are shared secrets known to both client and server.
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item Shared secret paradigm: Key exposure compromises all holders
+    \item Server-side storage: Requires trusted key management
+    \item No third-party verification: Only the issuing server can authenticate
+\end{itemize}
+
+\subsection{OAuth 2.0}
+
+OAuth 2.0 \citep{rfc6749} provides delegated authorization through user-interactive flows.
+
+\textbf{Limitations for AI agents:}
+\begin{itemize}
+    \item Human interaction required: Authorization flows expect browser-based consent
+    \item Coarse-grained scopes: ``access:calendar'' vs. ``create:meeting:3pm:tuesday''
+    \item Centralized dependency: Requires OAuth provider availability
+\end{itemize}
+
+\subsection{Mutual TLS}
+
+Mutual TLS \citep{rfc8446} provides bilateral certificate-based authentication at the transport layer.
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item Connection-level: Authenticates the channel, not individual requests
+    \item No intent binding: Certificate does not specify authorized actions
+    \item Certificate management complexity: Rotation and revocation overhead
+\end{itemize}
+
+\subsection{Comparative Analysis}
+
+Table~\ref{tab:comparison} summarizes the authentication properties.
+
+\begin{table}[h]
+\centering
+\caption{Authentication mechanism comparison}
+\label{tab:comparison}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Property} & \textbf{Bearer} & \textbf{API Key} & \textbf{OAuth} & \textbf{mTLS} & \textbf{Vouch} \\
+\midrule
+Identity binding & \texttimes & \texttimes & $\sim$ & \checkmark & \checkmark \\
+Intent binding & \texttimes & \texttimes & \texttimes & \texttimes & \checkmark \\
+Non-repudiation & \texttimes & \texttimes & \texttimes & $\sim$ & \checkmark \\
+Replay resistance & \texttimes & \texttimes & $\sim$ & \texttimes & \checkmark \\
+Autonomous operation & \checkmark & \checkmark & \texttimes & \checkmark & \checkmark \\
+Decentralized & \checkmark & \checkmark & \texttimes & \texttimes & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The Vouch Protocol}
+
+\subsection{Protocol Overview}
+
+The Vouch Protocol binds agent identity to specific intent through cryptographic attestation. Each request includes a signed token containing the precise action the agent authorizes.
+
+\subsection{Token Structure}
+
+\begin{definition}[Vouch Token]
+A Vouch token is a JWS with the following payload structure:
+\begin{lstlisting}[language=json]
+{
+  "jti": "<unique-identifier>",
+  "iss": "<agent-DID>",
+  "iat": <issued-timestamp>,
+  "exp": <expiration-timestamp>,
+  "vouch": {
+    "version": "1.0",
+    "payload": {
+      "action": "<action-identifier>",
+      ...action-specific-parameters
+    }
+  }
+}
+\end{lstlisting}
+\end{definition}
+
+\textbf{Field semantics:}
+\begin{itemize}
+    \item \texttt{jti}: JWT ID for replay prevention (UUID recommended)
+    \item \texttt{iss}: Issuer DID resolving to agent's public key
+    \item \texttt{iat/exp}: Temporal validity window (typically 60-300 seconds)
+    \item \texttt{vouch.payload}: The intent being attested
+\end{itemize}
+
+\subsection{Signing Process}
+
+The agent constructs and signs the token as follows:
+
+\begin{equation}
+\mathsf{token} = \mathsf{JWS.Sign}(sk_{\mathsf{agent}}, \mathsf{payload})
+\end{equation}
+
+where $sk_{\mathsf{agent}}$ is the agent's Ed25519 private key.
+
+\subsection{Verification Process}
+
+\noindent\textbf{Verification Algorithm:}
+\begin{enumerate}
+    \item Parse JWS to extract header, payload, signature
+    \item Extract \texttt{iss} (DID) from payload
+    \item Resolve DID to obtain public key $pk$
+    \item Verify: $\mathsf{Ed25519.Verify}(pk, \mathsf{payload}, \sigma) = 1$
+    \item Check: $\mathsf{now} < \mathsf{exp}$
+    \item Check: $\mathsf{jti} \notin \mathsf{SeenTokens}$
+    \item Add $\mathsf{jti}$ to $\mathsf{SeenTokens}$
+    \item Return $(\mathsf{iss}, \mathsf{vouch.payload})$
+\end{enumerate}
+
+\section{Security Analysis}
+
+\begin{property}[Authentication]
+A valid Vouch token cryptographically proves the agent possessing $sk$ authorized the request.
+\end{property}
+
+\textit{Argument:} By the unforgeability of Ed25519 under chosen-message attacks, an adversary without $sk$ cannot produce a valid signature.
+
+\begin{property}[Intent Binding]
+The signed payload includes the complete action specification, binding identity to specific intent.
+\end{property}
+
+\textit{Argument:} The \texttt{vouch.payload} is included in the signed message. Modifying any parameter invalidates the signature.
+
+\begin{property}[Non-Repudiation]
+An agent cannot deny having authorized a request for which a valid signature exists.
+\end{property}
+
+\textit{Argument:} Only the holder of $sk$ can produce valid signatures. The signature serves as cryptographic evidence.
+
+\begin{property}[Replay Resistance]
+Tokens cannot be replayed due to unique \texttt{jti} and expiration enforcement.
+\end{property}
+
+\textit{Argument:} Verifiers maintain $\mathsf{SeenTokens}$ set and reject duplicates. Short expiration windows bound the replay window.
+
+\section{Related Work}
+
+The Vouch Protocol builds upon and differentiates from several bodies of prior work.
+
+\subsection{Token-Based Authentication}
+
+JSON Web Tokens (JWT) \citep{rfc7519} provide a standardized format for claims between parties. The IETF has extensively documented JWT security considerations. Our work extends JWTs with the \texttt{vouch} claim for explicit intent binding---a concept not present in standard JWT usage patterns.
+
+Macaroons, introduced by Birgisson et al., provide contextual caveats for capability-based authorization. While macaroons support chained attenuation, they do not provide non-repudiation as signatures are HMAC-based (symmetric).
+
+\subsection{Decentralized Identity}
+
+The W3C Decentralized Identifiers (DIDs) specification \citep{w3c-did-core} enables self-sovereign identity. DID methods like \texttt{did:web} and \texttt{did:key} provide varying tradeoffs between resolution complexity and decentralization. Our protocol is DID-method agnostic, supporting any resolvable DID.
+
+Verifiable Credentials \citep{w3c-vc} provide a data model for tamper-evident credentials. While VCs focus on issued credentials (``Alice has a degree''), Vouch focuses on action attestation (``Alice's agent authorized this transfer'').
+
+\subsection{Workload Identity}
+
+SPIFFE (Secure Production Identity Framework for Everyone) provides workload identity through SVIDs (SPIFFE Verifiable Identity Documents). SPIRE implements the SPIFFE specification for Kubernetes and VM environments. These systems provide strong identity but lack per-request intent binding.
+
+\subsection{Code Signing and Attestation}
+
+Sigstore provides keyless signing for software artifacts using OIDC identity. In-toto provides software supply chain attestations. These systems focus on software artifacts rather than runtime action authorization.
+
+\subsection{Agent Authentication Protocols}
+
+Prior work on agent authentication, such as the Agent Communication Language (ACL) from FIPA, focused on message interchange formats rather than cryptographic verification. Recent work on LLM agent architectures has not yet addressed systematic authentication.
+
+\section{Limitations and Discussion}
+
+\subsection{Key Management}
+
+The protocol requires agents to securely store private keys. Key compromise enables impersonation until revocation. Companion work (PAD-003) addresses this through an identity sidecar pattern.
+
+\subsection{DID Resolution Trust}
+
+Verification requires trusting the DID resolution mechanism. Compromised DID documents could enable impersonation. Caching and multi-resolution strategies can mitigate availability and integrity concerns.
+
+\subsection{Adoption Bootstrapping}
+
+New identity systems face a ``cold start'' problem. To address this, companion work (PAD-008) enables bootstrapping from existing SSH keys registered with GitHub, providing zero-friction adoption.
+
+\subsection{Scope}
+
+This protocol addresses authentication and intent binding. Authorization policies (determining \textit{whether} an authenticated agent \textit{should} perform an action) remain the responsibility of consuming services.
+
+\section{Implementation}
+
+A reference implementation is available at \url{https://github.com/vouch-protocol/vouch}, providing:
+\begin{itemize}
+    \item Python library: \texttt{pip install vouch-protocol}
+    \item CLI tools: \texttt{vouch sign}, \texttt{vouch verify}
+    \item Browser extension for signature verification
+    \item Integration with Git for commit signing
+\end{itemize}
+
+The implementation has been tested with Ed25519 keys and supports \texttt{did:web} and \texttt{did:key} resolution methods.
+
+\section{Conclusion}
+
+This paper presented the Vouch Protocol, addressing the authentication gap for autonomous AI agents. By cryptographically binding identity to intent, the protocol provides verifiable action attestation with non-repudiation. The protocol builds on established standards (JWT, JWS, DIDs) while introducing the novel \texttt{vouch} claim for explicit intent binding.
+
+Future work includes delegation chain support (PAD-002), sidecar architecture patterns (PAD-003), and hybrid identity bootstrapping from existing SSH keys (PAD-008).
+
+\priorartbox
+
+\vouchsign{pad001}{Ramprasad Anandam Gaddam}{github:rampyg}
+
+\bibliography{../common/references}
+
+\end{document}
