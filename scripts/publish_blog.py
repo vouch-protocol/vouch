@@ -7,39 +7,63 @@ SOURCE_FILE = "/home/rampy/.gemini/antigravity/brain/34db09bd-73b1-4423-9d6b-179
 OUTPUT_DIR = "/home/rampy/vouch-protocol/docs/blog"
 BLOG_INDEX = "/home/rampy/vouch-protocol/docs/blog/index.html"
 
-# --- POST METADATA ---
+# --- POST METADATA (SEO Optimized) ---
 POST_METADATA = {
     "PAD-001": {
+        "slug": "who-authorized-this-problem",
+        "tech_id": "tech001",
         "og_desc": "How Vouch Protocol binds AI agent identity to specific actions with cryptographic proof. Stop asking 'who are you?' and start asking 'who authorized this?'",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-001-cryptographic-agent-identity.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-001-cryptographic-agent-identity.md",
+        "reading_time": "3 min read",
     },
     "PAD-002": {
+        "slug": "ai-agent-delegation-chains",
+        "tech_id": "tech002",
         "og_desc": "When AI agents delegate to other AI agents, who's accountable? Vouch creates an auditable chain of custody for multi-agent systems.",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-002-delegation-chain.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-002-delegation-chain.md",
+        "reading_time": "3 min read",
     },
     "PAD-003": {
+        "slug": "identity-sidecar-architecture",
+        "tech_id": "tech003",
         "og_desc": "Why AI agents should never hold private keys. The Identity Sidecar pattern keeps secrets secure while agents sign requests.",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-003-identity-sidecar.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-003-identity-sidecar.md",
+        "reading_time": "3 min read",
     },
     "PAD-004": {
+        "slug": "ambient-verification-browser",
+        "tech_id": "tech004",
         "og_desc": "Making signature verification invisible. How browser extensions can automatically verify signed content as you browse.",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-004-ambient-verification.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-004-ambient-verification.md",
+        "reading_time": "3 min read",
     },
     "PAD-005": {
+        "slug": "orphaned-content-signatures",
+        "tech_id": "tech005",
         "og_desc": "Finding signatures for content that got copy-pasted without attribution. The Hash Registry approach for orphaned content.",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-005-hash-registry.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-005-hash-registry.md",
+        "reading_time": "3 min read",
     },
     "PAD-006": {
+        "slug": "web-of-trust-urls",
+        "tech_id": "tech006",
         "og_desc": "Building decentralized trust using DNS and URLs. How did:web enables verifiable identity without blockchain.",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-006-web-trust.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-006-web-trust.md",
+        "reading_time": "3 min read",
     },
     "PAD-007": {
+        "slug": "ai-coding-assistant-signatures",
+        "tech_id": "tech007",
         "og_desc": "Proving you wrote code with AI assistance. Cryptographic signatures for IDE-generated code to demonstrate human involvement.",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-007-ghost-signature-telemetry.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-007-ghost-signature-telemetry.md",
+        "reading_time": "4 min read",
     },
     "PAD-008": {
+        "slug": "zero-friction-ssh-identity",
+        "tech_id": "tech008",
         "og_desc": "Zero-friction identity for 100M+ developers. Use your existing GitHub SSH keys to sign with Vouch instantly.",
-        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-008-hybrid-ssh-verification.md"
+        "arxiv_url": "https://vouch-protocol.com/docs/disclosures/PAD-008-hybrid-ssh-verification.md",
+        "reading_time": "3 min read",
     },
 }
 
@@ -51,19 +75,57 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title} - Vouch Protocol</title>
     <meta name="description" content="{og_description}">
+    <meta name="author" content="Ramprasad Anandam Gaddam">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://vouch-protocol.com/blog/{filename}">
     
     <!-- Open Graph -->
     <meta property="og:title" content="{title}">
     <meta property="og:description" content="{og_description}">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://vouch-protocol.com/blog/{filename}">
+    <meta property="og:image" content="https://vouch-protocol.com/images/og-blog-{slug}.png">
+    <meta property="og:site_name" content="Vouch Protocol">
+    <meta property="article:author" content="Ramprasad Anandam Gaddam">
+    <meta property="article:published_time" content="2026-01-10T00:00:00Z">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@vouchprotocol">
+    <meta name="twitter:title" content="{title}">
+    <meta name="twitter:description" content="{og_description}">
+    <meta name="twitter:image" content="https://vouch-protocol.com/images/og-blog-{slug}.png">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>�</text></svg>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {{
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "{title}",
+        "description": "{og_description}",
+        "author": {{
+            "@type": "Person",
+            "name": "Ramprasad Anandam Gaddam",
+            "url": "https://github.com/rampyg"
+        }},
+        "publisher": {{
+            "@type": "Organization",
+            "name": "Vouch Protocol",
+            "url": "https://vouch-protocol.com"
+        }},
+        "datePublished": "2026-01-10",
+        "mainEntityOfPage": "https://vouch-protocol.com/blog/{filename}",
+        "url": "https://vouch-protocol.com/blog/{filename}"
+    }}
+    </script>
 
     <style>
         :root {{
@@ -93,6 +155,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .verify-badge:hover {{ background: rgba(16, 185, 129, 0.2); }}
         .paper-link {{ background: rgba(99, 102, 241, 0.1); color: var(--accent); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border: 1px solid rgba(99, 102, 241, 0.2); }}
         .paper-link:hover {{ background: rgba(99, 102, 241, 0.2); }}
+        .reading-time {{ color: var(--text-secondary); font-size: 0.85rem; }}
         h2, h3 {{ color: var(--text-primary); margin-top: 2rem; margin-bottom: 1rem; }}
         h3 {{ color: var(--accent); font-size: 1.25rem; }}
         p, li {{ color: #d1d1db; margin-bottom: 1rem; }}
@@ -105,22 +168,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
     <div class="gradient-bg"></div>
     <nav>
-        <a href="https://vouch-protocol.com" class="logo">🔐 Vouch <span>Blog</span></a>
+        <a href="https://vouch-protocol.com" class="logo">🔐 Vouch <span>Protocol</span></a>
         <ul class="nav-links">
-            <li><a href="https://vouch-protocol.com/blog">Back to Blog</a></li>
+            <li><a href="https://vouch-protocol.com/blog">Blog</a></li>
             <li><a href="https://github.com/vouch-protocol/vouch">GitHub</a></li>
         </ul>
     </nav>
     <article>
         <div class="post-meta">
             <span>January 10, 2026</span>
+            <span class="reading-time">📖 {reading_time}</span>
             <a href="{arxiv_url}" class="paper-link" target="_blank">📄 Read Full Paper</a>
+            <a href="https://v.vouch-protocol.com/{tech_id}" class="verify-badge" target="_blank">✓ Verified {tech_id}</a>
         </div>
         <h1>{title}</h1>
         {content}
         <hr style="border: 0; height: 1px; background: var(--border); margin: 3rem 0;">
         <p style="text-align: center;">
-            <a href="https://vouch-protocol.com/blog" style="color: var(--accent); text-decoration: none;">← Back to Digest Series</a>
+            <a href="https://vouch-protocol.com/blog" style="color: var(--accent); text-decoration: none;">← Back to Blog</a>
         </p>
     </article>
     <footer>
@@ -132,6 +197,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 def clean_md(text):
     # Basic MD to HTML conversion
     html = text
+    # Remove "Based on [PAD-XXX: ...]" lines (we have a dedicated paper link now)
+    html = re.sub(r'^\*Based on \[PAD-\d+:.*?\]\*\n?', '', html, flags=re.MULTILINE)
     # Headers
     html = re.sub(r'^### (.*)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
     # Bold
@@ -183,18 +250,24 @@ def main():
         
         # Get metadata for this post
         metadata = POST_METADATA.get(pad_id, {})
+        slug = metadata.get("slug", pad_id.lower().replace("-", ""))
+        tech_id = metadata.get("tech_id", pad_id.lower().replace("-", ""))
         og_description = metadata.get("og_desc", f"Technical Digest: {title}")
         arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.com/docs/disclosures/{pad_id}.md")
+        reading_time = metadata.get("reading_time", "3 min read")
         
         # Clean title (remove "The Pain Point" etc if needed, but here we just take the first line)
         body_html = clean_md(body_md)
-        filename = f"{pad_id.lower()}.html"
+        filename = f"{slug}.html"  # SEO-friendly slug filename
         
         # Generate HTML
         full_html = HTML_TEMPLATE.format(
             title=title,
+            slug=slug,
+            tech_id=tech_id,
             og_description=og_description,
             arxiv_url=arxiv_url,
+            reading_time=reading_time,
             filename=filename,
             content=body_html
         )
@@ -203,8 +276,8 @@ def main():
         with open(path, "w") as f:
             f.write(full_html)
         
-        print(f"Generated {filename}")
-        generated_pages.append({"title": title, "filename": filename, "id": pad_id})
+        print(f"Generated {filename} (was {pad_id.lower()}.html)")
+        generated_pages.append({"title": title, "filename": filename, "slug": slug, "id": pad_id, "og_desc": og_description})
 
     # Update Index (Append to top)
     # We will just rewrite the blog index to define these cleanly

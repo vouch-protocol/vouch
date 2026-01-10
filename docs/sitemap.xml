@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://vouch-protocol.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Blog Index -->
+  <url>
+    <loc>https://vouch-protocol.com/blog/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Blog Posts -->
+  <url>
+    <loc>https://vouch-protocol.com/blog/who-authorized-this-problem.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vouch-protocol.com/blog/ai-agent-delegation-chains.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vouch-protocol.com/blog/identity-sidecar-architecture.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vouch-protocol.com/blog/ambient-verification-browser.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vouch-protocol.com/blog/orphaned-content-signatures.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vouch-protocol.com/blog/web-of-trust-urls.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vouch-protocol.com/blog/ai-coding-assistant-signatures.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vouch-protocol.com/blog/zero-friction-ssh-identity.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Demo Page -->
+  <url>
+    <loc>https://vouch-protocol.com/demo.html</loc>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Signing Guide -->
+  <url>
+    <loc>https://vouch-protocol.com/signing-guide.html</loc>
+    <priority>0.7</priority>
+  </url>
+</urlset>
