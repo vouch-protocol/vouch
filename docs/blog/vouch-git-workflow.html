@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introducing Vouch Git Workflow - Vouch Protocol</title>
+    <meta name="description"
+        content="One command to cryptographically sign all your git commits. Supply chain security made simple with Vouch Protocol.">
+    <meta name="author" content="Ramprasad Anandam Gaddam">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://vouch-protocol.com/blog/vouch-git-workflow.html">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Introducing Vouch Git Workflow">
+    <meta property="og:description"
+        content="One command to cryptographically sign all your git commits. Supply chain security made simple.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://vouch-protocol.com/blog/vouch-git-workflow.html">
+    <meta property="og:site_name" content="Vouch Protocol">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Introducing Vouch Git Workflow">
+    <meta name="twitter:description"
+        content="One command to cryptographically sign all your git commits. Supply chain security made simple.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --success: #10b981;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100vh;
+            background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        nav {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        article {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .post-meta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .reading-time {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        h2,
+        h3 {
+            color: var(--text-primary);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: var(--accent);
+            font-size: 1.25rem;
+        }
+
+        p,
+        li {
+            color: #d1d1db;
+            margin-bottom: 1rem;
+        }
+
+        ul,
+        ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        pre {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        p code {
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .callout {
+            background: var(--bg-secondary);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .callout strong {
+            color: var(--text-primary);
+        }
+
+        .step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: 700;
+            margin-right: 0.75rem;
+        }
+
+        .success-badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+
+        footer {
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="gradient-bg"></div>
+    <nav>
+        <a href="https://vouch-protocol.com" class="logo">🔐 Vouch <span>Protocol</span></a>
+        <ul class="nav-links">
+            <li><a href="https://vouch-protocol.com/blog">Blog</a></li>
+            <li><a href="https://github.com/vouch-protocol/vouch">GitHub</a></li>
+        </ul>
+    </nav>
+    <article>
+        <div class="post-meta">
+            <span>January 5, 2026</span>
+            <span class="reading-time">📖 5 min read</span>
+        </div>
+        <h1>Introducing Vouch Git Workflow: One Command to Sign All Your Commits</h1>
+
+        <p>Supply chain attacks are on the rise. In 2024 alone, we saw major incidents affecting millions of developers
+            through compromised dependencies and malicious commits. The solution? <strong>Cryptographically sign every
+                commit</strong> to prove it came from you.</p>
+
+        <p>With Vouch Protocol, you can set this up in <strong>under 60 seconds</strong>.</p>
+
+        <h2>🎯 What You'll Achieve</h2>
+        <ul>
+            <li>✅ Every git commit signed with your cryptographic identity</li>
+            <li>✅ GitHub shows the "Verified" badge on your commits</li>
+            <li>✅ Zero manual signing—it just works automatically</li>
+            <li>✅ Use your existing SSH key (no new keys to manage)</li>
+        </ul>
+
+        <h2>📋 Prerequisites</h2>
+        <ul>
+            <li>Python 3.8+ installed</li>
+            <li>Git configured with your name and email</li>
+            <li>An SSH key added to your GitHub account (most developers already have this)</li>
+        </ul>
+
+        <h2>🚀 Quick Start (60 seconds)</h2>
+
+        <div class="step">
+            <h3><span class="step-number">1</span> Install Vouch Protocol</h3>
+            <pre><code>pip install vouch-protocol</code></pre>
+            <p>This installs the <code>vouch</code> CLI tool globally.</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span> Initialize Your Identity</h3>
+            <pre><code>vouch init</code></pre>
+            <p>This creates your Vouch identity. You'll be prompted to set a passphrase to encrypt your private key.</p>
+            <p>Your identity is stored securely in <code>~/.vouch/keys/</code>.</p>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span> Configure Git Signing</h3>
+            <pre><code>vouch git init</code></pre>
+            <p>This command does three things automatically:</p>
+            <ul>
+                <li>Finds your SSH signing key</li>
+                <li>Configures <code>git config --global</code> to sign commits</li>
+                <li>Sets up the allowed signers file</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span> Verify It Works</h3>
+            <pre><code># Make a test commit
+git commit --allow-empty -m "test: verify vouch signing"
+
+# Check the signature
+git log --show-signature -1</code></pre>
+            <p>You should see output indicating the commit is signed.</p>
+        </div>
+
+        <div class="success-badge">✓ Done! All future commits will be automatically signed.</div>
+
+        <h2>🔍 How It Works</h2>
+
+        <p>Vouch leverages <strong>SSH signing</strong> (introduced in Git 2.34+). When you run
+            <code>vouch git init</code>, it:</p>
+
+        <ol>
+            <li>Detects your existing SSH key (typically <code>~/.ssh/id_ed25519</code> or <code>~/.ssh/id_rsa</code>)
+            </li>
+            <li>Configures Git to use this key for signing:
+                <pre><code>git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+git config --global commit.gpgsign true</code></pre>
+            </li>
+            <li>Creates an allowed signers file for verification</li>
+        </ol>
+
+        <h2>📱 GitHub Integration</h2>
+
+        <p>For GitHub to show the "Verified" badge:</p>
+
+        <ol>
+            <li>Go to <a href="https://github.com/settings/keys" style="color: var(--accent);">GitHub Settings → SSH
+                    Keys</a></li>
+            <li>Add your signing key as a <strong>Signing Key</strong> (not just Authentication)</li>
+            <li>Push a signed commit—you'll see the ✅ badge!</li>
+        </ol>
+
+        <div class="callout">
+            <strong>💡 Pro Tip:</strong> If you already added your SSH key for authentication, you can use the same key
+            for signing. Just add it again and select "Signing Key" as the type.
+        </div>
+
+        <h2>🔧 Manual Configuration (Alternative)</h2>
+
+        <p>If you prefer to configure git manually without the CLI:</p>
+
+        <pre><code># Use SSH for signing
+git config --global gpg.format ssh
+
+# Set your signing key
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+
+# Auto-sign all commits
+git config --global commit.gpgsign true
+
+# Auto-sign all tags
+git config --global tag.gpgsign true</code></pre>
+
+        <h2>🛠️ Troubleshooting</h2>
+
+        <h3>Commit fails with "error: Load key failed"</h3>
+        <p>Your SSH key might require a passphrase. Add it to your SSH agent:</p>
+        <pre><code>eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519</code></pre>
+
+        <h3>GitHub doesn't show "Verified"</h3>
+        <p>Make sure your signing key is added to GitHub as a <strong>Signing Key</strong>, not just an authentication
+            key.</p>
+
+        <h3>Check your current git signing config</h3>
+        <pre><code>git config --global --list | grep -E "(gpg|sign)"</code></pre>
+
+        <h2>🎉 What's Next?</h2>
+
+        <ul>
+            <li><a href="https://vouch-protocol.com/demo.html" style="color: var(--accent);">Try the Demo</a> - See
+                signature verification in action</li>
+            <li><a href="https://github.com/vouch-protocol/vouch" style="color: var(--accent);">Star us on GitHub</a> -
+                Help spread the word</li>
+            <li><a href="https://vouch-protocol.com/blog" style="color: var(--accent);">Read the Technical Digest</a> -
+                Deep dive into the protocol</li>
+        </ul>
+
+        <hr style="border: 0; height: 1px; background: var(--border); margin: 3rem 0;">
+        <p style="text-align: center;">
+            <a href="https://vouch-protocol.com/blog" style="color: var(--accent); text-decoration: none;">← Back to
+                Blog</a>
+        </p>
+    </article>
+    <footer>
+        <p>© 2024-2026 Vouch Protocol. Apache 2.0 License.</p>
+    </footer>
+</body>
+
+</html>
