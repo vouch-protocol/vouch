@@ -36,3 +36,16 @@ vouch.json
 .DS_Store
 website/DEPLOY.md
 .ruff_cache/
+
+# Pro module (private)
+vouch/pro/
+tests/test_pro.py
+
+# Private keys and certificates
+*.key
+*.pem
+vouch/media/certs/
+
+# Node modules
+node_modules/
+package-lock.json
