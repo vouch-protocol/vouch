@@ -66,6 +66,11 @@ tracing = [
     "opentelemetry-instrumentation-httpx>=0.40b0",
 ]
 
+# Media signing (images, C2PA)
+media = [
+    "Pillow>=10.0.0",
+]
+
 # Development dependencies
 dev = [
     "pytest>=7.0.0",
@@ -73,6 +78,7 @@ dev = [
     "black>=23.0.0",
     "mypy>=1.0.0",
     "ruff>=0.1.0",
+    "Pillow>=10.0.0",
 ]
 
 # All optional dependencies
