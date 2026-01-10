@@ -1,0 +1,13 @@
+{
+    "name": "vouch-gatekeeper",
+    "version": "2.0.0",
+    "description": "Vouch Gatekeeper GitHub App - Cloudflare Workers Edition",
+    "main": "src/worker.js",
+    "scripts": {
+        "deploy": "wrangler deploy",
+        "dev": "wrangler dev"
+    },
+    "devDependencies": {
+        "wrangler": "^3.0.0"
+    }
+}

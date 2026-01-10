@@ -14,136 +14,183 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            line-height: 1.6;
+            color: #e0e0e0;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
             min-height: 100vh;
-            color: #e2e8f0;
-            line-height: 1.8;
+            padding: 40px 20px;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 60px 20px;
+            background: rgba(30, 35, 45, 0.8);
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         h1 {
-            font-size: 2.5em;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #22c55e, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
         }
 
         .last-updated {
-            color: #64748b;
-            margin-bottom: 40px;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
         }
 
         h2 {
-            color: #a78bfa;
-            margin: 30px 0 15px;
-            font-size: 1.4em;
+            color: #22c55e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
         }
 
         p,
-        li {
-            color: #cbd5e1;
+        ul,
+        ol {
             margin-bottom: 15px;
         }
 
-        ul {
-            margin-left: 20px;
-            margin-bottom: 20px;
+        ul,
+        ol {
+            padding-left: 25px;
         }
 
-        .highlight {
-            background: rgba(124, 58, 237, 0.2);
-            border-left: 4px solid #7c3aed;
-            padding: 15px 20px;
-            border-radius: 0 8px 8px 0;
-            margin: 20px 0;
+        li {
+            margin-bottom: 8px;
         }
 
         a {
-            color: #a78bfa;
+            color: #22c55e;
+            text-decoration: none;
         }
 
-        footer {
-            text-align: center;
-            margin-top: 60px;
-            padding: 30px;
-            color: #64748b;
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .highlight {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #22c55e;
+            color: #000;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            background: #16a34a;
+            text-decoration: none;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>🔒 Privacy Policy</h1>
-        <p class="last-updated">Last updated: January 6, 2026</p>
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last updated: January 9, 2026</p>
 
         <div class="highlight">
-            <strong>TL;DR:</strong> We don't collect, store, or transmit any of your data. Everything happens locally on
-            your device.
+            <strong>TL;DR:</strong> We collect minimal data, don't sell your information, and prioritize your privacy.
+            Cryptographic keys are stored locally on your device.
         </div>
 
-        <h2>Overview</h2>
-        <p>Vouch Protocol ("we", "our", or "us") is committed to protecting your privacy. This policy explains what data
-            our browser extension handles and how.</p>
+        <h2>1. Information We Collect</h2>
 
-        <h2>Data We DON'T Collect</h2>
+        <h3 style="color: #10b981; margin-top: 20px;">Browser Extension</h3>
         <ul>
-            <li>We do not collect personal information</li>
-            <li>We do not track your browsing history</li>
-            <li>We do not send data to external servers</li>
-            <li>We do not use analytics or tracking</li>
-            <li>We do not sell any data (we have none to sell)</li>
+            <li><strong>Cryptographic Keys:</strong> Generated and stored locally in your browser. Never sent to our
+                servers.</li>
+            <li><strong>Email (optional):</strong> Only if you choose to associate an identity with your key.</li>
+            <li><strong>Signatures:</strong> When you create a shortlink, the signed content is stored on our servers.
+            </li>
         </ul>
 
-        <h2>Data Stored Locally</h2>
-        <p>The extension stores the following data locally on your device using Chrome's storage API:</p>
+        <h3 style="color: #10b981; margin-top: 20px;">Vouch Gatekeeper (GitHub App)</h3>
         <ul>
-            <li><strong>Your cryptographic keypair</strong> - Generated once, stored only on your device</li>
-            <li><strong>Address Book</strong> - Email/key pairs of contacts you've verified</li>
-            <li><strong>Display name</strong> - Optional name you set for signatures</li>
-        </ul>
-        <p>This data never leaves your device unless you explicitly export it.</p>
-
-        <h2>Permissions Explained</h2>
-        <ul>
-            <li><strong>identity</strong> - To get your Google account email for signatures</li>
-            <li><strong>storage</strong> - To save your keypair and contacts locally</li>
-            <li><strong>contextMenus</strong> - To add "Sign with Vouch" to right-click menu</li>
-            <li><strong>activeTab</strong> - To read selected text on the current page</li>
-            <li><strong>clipboardWrite</strong> - To copy signed text to clipboard</li>
+            <li><strong>Repository Access:</strong> Read access to repository contents and pull requests.</li>
+            <li><strong>Commit Data:</strong> We read commit signatures to verify identity.</li>
+            <li><strong>No Storage:</strong> We do not permanently store repository content or commit data.</li>
         </ul>
 
-        <h2>Third-Party Services</h2>
-        <p>The extension uses <strong>TweetNaCl.js</strong> for cryptographic operations. This library runs entirely
-            locally and makes no network requests.</p>
-
-        <h2>Future Short URLs (Optional)</h2>
-        <p>When enabled, signatures may be stored on our servers to generate short verification links. This feature:</p>
+        <h2>2. How We Use Information</h2>
+        <p>We use collected information to:</p>
         <ul>
-            <li>Only stores the signature data you explicitly sign</li>
-            <li>Does not store passwords or private keys</li>
-            <li>Allows anyone to verify signatures via short URLs</li>
+            <li>Verify cryptographic signatures on commits</li>
+            <li>Store and retrieve signed content for shortlinks</li>
+            <li>Improve our Services</li>
         </ul>
 
-        <h2>Open Source</h2>
-        <p>Vouch Protocol is fully open source. You can inspect our code at:</p>
-        <p><a href="https://github.com/vouch-protocol/vouch">github.com/vouch-protocol/vouch</a></p>
+        <h2>3. Data Sharing</h2>
+        <p>We do not sell, trade, or rent your personal information. We may share data only:</p>
+        <ul>
+            <li>When required by law</li>
+            <li>To protect our rights or property</li>
+            <li>With your explicit consent</li>
+        </ul>
 
-        <h2>Contact</h2>
-        <p>Questions? Email us at <a href="mailto:hello@vouch-protocol.com">hello@vouch-protocol.com</a></p>
+        <h2>4. Data Security</h2>
+        <p>We implement industry-standard security measures including:</p>
+        <ul>
+            <li>TLS encryption for all data in transit</li>
+            <li>Secure cloud infrastructure (Cloudflare Workers)</li>
+            <li>No storage of private keys on our servers</li>
+        </ul>
 
-        <h2>Changes</h2>
-        <p>We may update this policy occasionally. Significant changes will be announced on our website.</p>
+        <h2>5. Data Retention</h2>
+        <ul>
+            <li><strong>Shortlink signatures:</strong> Stored for 1 year (free tier) or indefinitely (pro tier)</li>
+            <li><strong>GitHub webhook data:</strong> Processed in real-time, not stored</li>
+            <li><strong>Local keys:</strong> Stored until you delete them from your browser</li>
+        </ul>
 
-        <footer>
-            <p><a href="/">← Back to Home</a></p>
-            <p style="margin-top: 10px;">© 2026 Vouch Protocol · Apache License 2.0</p>
-        </footer>
+        <h2>6. Your Rights</h2>
+        <p>You have the right to:</p>
+        <ul>
+            <li>Access your data</li>
+            <li>Request deletion of your data</li>
+            <li>Export your data</li>
+            <li>Opt out of optional data collection</li>
+        </ul>
+
+        <h2>7. Third-Party Services</h2>
+        <p>We use the following third-party services:</p>
+        <ul>
+            <li><strong>Cloudflare:</strong> Hosting and CDN</li>
+            <li><strong>GitHub:</strong> Repository hosting and OAuth</li>
+        </ul>
+
+        <h2>8. Cookies</h2>
+        <p>We use minimal cookies for essential functionality only. No tracking or advertising cookies are used.</p>
+
+        <h2>9. Children's Privacy</h2>
+        <p>Our Services are not directed to children under 13. We do not knowingly collect information from children.
+        </p>
+
+        <h2>10. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy periodically. Changes will be posted on this page with an updated revision
+            date.</p>
+
+        <h2>11. Contact</h2>
+        <p>For privacy-related questions, please open an issue at <a
+                href="https://github.com/vouch-protocol/vouch-protocol/issues">our GitHub repository</a>.</p>
+
+        <a href="/" class="back-link">← Back to Home</a>
     </div>
 </body>
 

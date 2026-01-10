@@ -1,0 +1,17 @@
+name = "vouch-gatekeeper"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+
+# GitHub App secrets (set via wrangler secret)
+# GITHUB_APP_ID
+# GITHUB_PRIVATE_KEY
+# GITHUB_WEBHOOK_SECRET
+
+# Routes for vouch-protocol.com
+[[routes]]
+pattern = "gatekeeper.vouch-protocol.com/*"
+zone_name = "vouch-protocol.com"
+
+[vars]
+ENVIRONMENT = "production"
+VOUCH_REGISTRY_URL = "https://api.vouch-protocol.com"
