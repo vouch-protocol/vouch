@@ -70,6 +70,7 @@ tracing = [
 media = [
     "Pillow>=10.0.0",
     "base58>=2.1.0",
+    "qrcode>=7.4.0",
 ]
 
 # Development dependencies
@@ -81,6 +82,7 @@ dev = [
     "ruff>=0.1.0",
     "Pillow>=10.0.0",
     "base58>=2.1.0",
+    "qrcode>=7.4.0",
 ]
 
 # All optional dependencies
