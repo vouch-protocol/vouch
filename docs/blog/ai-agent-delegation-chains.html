@@ -5,19 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>When AI Agents Hire AI Agents - Vouch Protocol</title>
     <meta name="description" content="When AI agents delegate to other AI agents, who's accountable? Vouch creates an auditable chain of custody for multi-agent systems.">
+    <meta name="author" content="Ramprasad Anandam Gaddam">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://vouch-protocol.com/blog/ai-agent-delegation-chains.html">
     
     <!-- Open Graph -->
     <meta property="og:title" content="When AI Agents Hire AI Agents">
     <meta property="og:description" content="When AI agents delegate to other AI agents, who's accountable? Vouch creates an auditable chain of custody for multi-agent systems.">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="https://vouch-protocol.com/blog/pad-002.html">
+    <meta property="og:url" content="https://vouch-protocol.com/blog/ai-agent-delegation-chains.html">
+    <meta property="og:image" content="https://vouch-protocol.com/images/og-blog-ai-agent-delegation-chains.png">
+    <meta property="og:site_name" content="Vouch Protocol">
+    <meta property="article:author" content="Ramprasad Anandam Gaddam">
+    <meta property="article:published_time" content="2026-01-10T00:00:00Z">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@vouchprotocol">
+    <meta name="twitter:title" content="When AI Agents Hire AI Agents">
+    <meta name="twitter:description" content="When AI agents delegate to other AI agents, who's accountable? Vouch creates an auditable chain of custody for multi-agent systems.">
+    <meta name="twitter:image" content="https://vouch-protocol.com/images/og-blog-ai-agent-delegation-chains.png">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>�</text></svg>">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "When AI Agents Hire AI Agents",
+        "description": "When AI agents delegate to other AI agents, who's accountable? Vouch creates an auditable chain of custody for multi-agent systems.",
+        "author": {
+            "@type": "Person",
+            "name": "Ramprasad Anandam Gaddam",
+            "url": "https://github.com/rampyg"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Vouch Protocol",
+            "url": "https://vouch-protocol.com"
+        },
+        "datePublished": "2026-01-10",
+        "mainEntityOfPage": "https://vouch-protocol.com/blog/ai-agent-delegation-chains.html",
+        "url": "https://vouch-protocol.com/blog/ai-agent-delegation-chains.html"
+    }
+    </script>
 
     <style>
         :root {
@@ -47,6 +85,7 @@
         .verify-badge:hover { background: rgba(16, 185, 129, 0.2); }
         .paper-link { background: rgba(99, 102, 241, 0.1); color: var(--accent); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-decoration: none; border: 1px solid rgba(99, 102, 241, 0.2); }
         .paper-link:hover { background: rgba(99, 102, 241, 0.2); }
+        .reading-time { color: var(--text-secondary); font-size: 0.85rem; }
         h2, h3 { color: var(--text-primary); margin-top: 2rem; margin-bottom: 1rem; }
         h3 { color: var(--accent); font-size: 1.25rem; }
         p, li { color: #d1d1db; margin-bottom: 1rem; }
@@ -59,21 +98,21 @@
 <body>
     <div class="gradient-bg"></div>
     <nav>
-        <a href="https://vouch-protocol.com" class="logo">🔐 Vouch <span>Blog</span></a>
+        <a href="https://vouch-protocol.com" class="logo">🔐 Vouch <span>Protocol</span></a>
         <ul class="nav-links">
-            <li><a href="https://vouch-protocol.com/blog">Back to Blog</a></li>
+            <li><a href="https://vouch-protocol.com/blog">Blog</a></li>
             <li><a href="https://github.com/vouch-protocol/vouch">GitHub</a></li>
         </ul>
     </nav>
     <article>
         <div class="post-meta">
             <span>January 10, 2026</span>
+            <span class="reading-time">📖 3 min read</span>
             <a href="https://vouch-protocol.com/docs/disclosures/PAD-002-delegation-chain.md" class="paper-link" target="_blank">📄 Read Full Paper</a>
             <a href="https://v.vouch-protocol.com/tech002" class="verify-badge" target="_blank">✓ Verified tech002</a>
         </div>
         <h1>When AI Agents Hire AI Agents</h1>
-        <em>Based on [PAD-002: Chain of Custody Delegation]</em>
-
+        
 <h3>The Pain Point</h3>
 <p>You hire a "Personal Assistant Agent." It hires a "Research Agent," which hires a "Web Scraper." If the Scraper crashes a website, who is responsible? You? The Assistant? The Scraper? Without a trail, it's a blame game.</p>
 
@@ -94,7 +133,7 @@
 <p>---</p>
         <hr style="border: 0; height: 1px; background: var(--border); margin: 3rem 0;">
         <p style="text-align: center;">
-            <a href="https://vouch-protocol.com/blog" style="color: var(--accent); text-decoration: none;">← Back to Digest Series</a>
+            <a href="https://vouch-protocol.com/blog" style="color: var(--accent); text-decoration: none;">← Back to Blog</a>
         </p>
     </article>
     <footer>

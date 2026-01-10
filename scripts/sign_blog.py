@@ -22,16 +22,16 @@ KV_NAMESPACE_ID = "08413c23ad6147b78d406ba31f52ba1e"
 AUTHOR = "Ramprasad Anandam Gaddam"
 SIGNER = "github:rampyg"
 
-# Mapping: PAD number -> tech ID
+# Mapping: SEO slug filename -> tech ID
 POST_MAPPING = {
-    "pad-001": "tech001",
-    "pad-002": "tech002",
-    "pad-003": "tech003",
-    "pad-004": "tech004",
-    "pad-005": "tech005",
-    "pad-006": "tech006",
-    "pad-007": "tech007",
-    "pad-008": "tech008",
+    "who-authorized-this-problem": "tech001",
+    "ai-agent-delegation-chains": "tech002",
+    "identity-sidecar-architecture": "tech003",
+    "ambient-verification-browser": "tech004",
+    "orphaned-content-signatures": "tech005",
+    "web-of-trust-urls": "tech006",
+    "ai-coding-assistant-signatures": "tech007",
+    "zero-friction-ssh-identity": "tech008",
 }
 
 def extract_text_content(html):
@@ -154,16 +154,19 @@ def main():
     print("🔐 Vouch Protocol - Blog Post Signing")
     print("=" * 50)
     
-    files = sorted(glob.glob(os.path.join(BLOG_DIR, "pad-*.html")))
-    
-    for filepath in files:
-        process_file(filepath)
+    # Iterate over configured SEO slugs
+    for slug, tech_id in POST_MAPPING.items():
+        filepath = os.path.join(BLOG_DIR, f"{slug}.html")
+        if os.path.exists(filepath):
+            process_file(filepath)
+        else:
+            print(f"\n⚠️  File not found: {slug}.html")
     
     print("\n" + "=" * 50)
     print("✅ Done! All posts signed and registered.")
     print("\nVerification URLs:")
-    for pad_id, tech_id in POST_MAPPING.items():
-        print(f"  {pad_id}.html -> https://v.vouch-protocol.com/p/{tech_id}")
+    for slug, tech_id in POST_MAPPING.items():
+        print(f"  {slug}.html -> https://v.vouch-protocol.com/p/{tech_id}")
 
 if __name__ == "__main__":
     main()
