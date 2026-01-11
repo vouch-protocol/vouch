@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defensive Disclosures - Vouch Protocol</title>
+    <meta name="description"
+        content="Vouch Protocol Defensive Disclosure Series (PAD) - Technical specifications for AI agent identity, attestation, and verification.">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: #12121a;
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --muted: #a0a0b0;
+            --accent: #6366f1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 2rem;
+        }
+
+        .paper {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .paper:hover {
+            border-color: var(--accent);
+        }
+
+        .paper-id {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .paper-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .paper-title a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .paper-title a:hover {
+            color: var(--accent);
+        }
+
+        .paper-desc {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .back {
+            margin-top: 2rem;
+        }
+
+        .back a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .back a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📄 Defensive Disclosure Series</h1>
+        <p class="subtitle">Technical specifications for AI agent identity, attestation, and verification</p>
+
+        <div class="paper">
+            <div class="paper-id">PAD-001</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-001-cryptographic-agent-identity.md">Cryptographic
+                    Binding of AI Agent Identity to Stated Intent</a></div>
+            <div class="paper-desc">Ed25519 digital signatures in JWS format for request-level attestation and
+                non-repudiation.</div>
+        </div>
+
+        <div class="paper">
+            <div class="paper-id">PAD-002</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-002-chain-of-custody.md">Chain
+                    of Custody for Delegated Agent Actions</a></div>
+            <div class="paper-desc">Cryptographic lineage tracking when AI agents delegate to other AI agents.</div>
+        </div>
+
+        <div class="paper">
+            <div class="paper-id">PAD-003</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-003-identity-sidecar.md">Identity
+                    Sidecar Architecture</a></div>
+            <div class="paper-desc">Separation of signing authority from agent execution for secure key management.
+            </div>
+        </div>
+
+        <div class="paper">
+            <div class="paper-id">PAD-004</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-004-smart-scan-verification.md">DOM-Based
+                    Automatic Signature Detection</a></div>
+            <div class="paper-desc">Browser-based ambient verification for signed web content.</div>
+        </div>
+
+        <div class="paper">
+            <div class="paper-id">PAD-005</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-005-reverse-lookup-registry.md">Reverse
+                    Lookup Registry for Orphaned Content</a></div>
+            <div class="paper-desc">Hash-based signature discovery for content without embedded attribution.</div>
+        </div>
+
+        <div class="paper">
+            <div class="paper-id">PAD-006</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-006-trust-graph-url-chaining.md">URL-Based
+                    Credential Chaining</a></div>
+            <div class="paper-desc">Decentralized trust graphs using did:web and DNS infrastructure.</div>
+        </div>
+
+        <div class="paper">
+            <div class="paper-id">PAD-007</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-007-ghost-signature-telemetry.md">Automated
+                    Code Provenance Signatures</a></div>
+            <div class="paper-desc">Cryptographic proof of human involvement in AI-assisted code generation.</div>
+        </div>
+
+        <div class="paper">
+            <div class="paper-id">PAD-008</div>
+            <div class="paper-title"><a
+                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-008-hybrid-ssh-verification.md">Hybrid
+                    Identity Bootstrapping via SSH</a></div>
+            <div class="paper-desc">Zero-friction identity using existing SSH keys and GitHub verification.</div>
+        </div>
+
+        <div class="back">
+            <a href="https://vouch-protocol.com">← Back to Vouch Protocol</a>
+        </div>
+    </div>
+</body>
+
+</html>
