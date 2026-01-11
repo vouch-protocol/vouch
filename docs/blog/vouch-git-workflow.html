@@ -277,8 +277,8 @@
         </ul>
 
         <div class="callout">
-            <strong>🔑 No SSH Key?</strong> No problem! If you don't have an SSH key, <code>vouch git init</code> will
-            automatically generate a new Ed25519 key for you and help you add it to GitHub.
+            <strong>🔑 No SSH Key?</strong> No problem! <code>vouch git init</code> will automatically generate a new
+            Ed25519 key and upload it to GitHub for you. Zero manual steps required.
         </div>
 
         <h2>🚀 Quick Start (60 seconds)</h2>
@@ -336,20 +336,22 @@ git config --global commit.gpgsign true</code></pre>
             <li>Creates an allowed signers file for verification</li>
         </ol>
 
-        <h2>📱 GitHub Integration</h2>
+        <h2>📱 GitHub Integration (Automatic!)</h2>
 
-        <p>For GitHub to show the "Verified" badge:</p>
+        <p><code>vouch git init</code> <strong>automatically uploads your signing key to GitHub</strong> using the
+            GitHub CLI. You don't need to do anything manually!</p>
 
-        <ol>
-            <li>Go to <a href="https://github.com/settings/keys" style="color: var(--accent);">GitHub Settings → SSH
-                    Keys</a></li>
-            <li>Add your signing key as a <strong>Signing Key</strong> (not just Authentication)</li>
-            <li>Push a signed commit—you'll see the ✅ badge!</li>
-        </ol>
+        <p>After running the command, you'll see:</p>
+        <pre><code>🔑 Uploading signing key to GitHub...
+   ✅ SSH key uploaded to GitHub!</code></pre>
+
+        <p>That's it! Push a commit and you'll see the ✅ Verified badge immediately.</p>
 
         <div class="callout">
-            <strong>💡 Pro Tip:</strong> If you already added your SSH key for authentication, you can use the same key
-            for signing. Just add it again and select "Signing Key" as the type.
+            <strong>📋 Don't have GitHub CLI?</strong> If <code>gh</code> isn't installed, Vouch will open your browser
+            to the GitHub SSH settings page and show you the key to paste. But we recommend installing
+            <a href="https://cli.github.com/" style="color: var(--accent);">GitHub CLI</a> for a fully automated
+            experience.
         </div>
 
         <h2>🔧 Manual Configuration (Alternative)</h2>
