@@ -303,11 +303,79 @@
         <div class="success-badge">✓ Done! All future commits will be automatically signed and show ✅ Verified on
             GitHub.</div>
 
+        <div class="callout">
+            <strong>🎯 Zero Extra Work!</strong> From now on, just use <code>git commit</code> as you normally would.
+            Every commit is automatically signed—no flags, no extra commands, no passphrase prompts. It just works.
+        </div>
+
         <h3>Verify It Works</h3>
         <pre><code># Make a test commit
 git commit --allow-empty -m "test: verify vouch signing"
 
 # Check on GitHub - you'll see the ✅ Verified badge!</code></pre>
+
+        <h2>📊 Why Vouch vs. Other Signing Methods</h2>
+
+        <p>There are several ways to sign Git commits. Here's how they compare:</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: var(--bg-secondary); border-bottom: 2px solid var(--accent);">
+                    <th style="padding: 12px; text-align: left;">Feature</th>
+                    <th style="padding: 12px; text-align: center;">GPG</th>
+                    <th style="padding: 12px; text-align: center;">SSH (manual)</th>
+                    <th style="padding: 12px; text-align: center; background: rgba(99,102,241,0.1);">Vouch</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px;">Setup time</td>
+                    <td style="padding: 12px; text-align: center; color: #ef4444;">15-30 min</td>
+                    <td style="padding: 12px; text-align: center; color: #f59e0b;">5-10 min</td>
+                    <td
+                        style="padding: 12px; text-align: center; color: var(--success); background: rgba(99,102,241,0.05);">
+                        <strong>30 seconds</strong></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px;">Commands needed</td>
+                    <td style="padding: 12px; text-align: center;">5-8</td>
+                    <td style="padding: 12px; text-align: center;">3-4</td>
+                    <td style="padding: 12px; text-align: center; background: rgba(99,102,241,0.05);"><strong>2</strong>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px;">GitHub upload</td>
+                    <td style="padding: 12px; text-align: center;">Manual</td>
+                    <td style="padding: 12px; text-align: center;">Manual</td>
+                    <td style="padding: 12px; text-align: center; background: rgba(99,102,241,0.05);">
+                        <strong>Automatic</strong></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px;">Key management</td>
+                    <td style="padding: 12px; text-align: center;">Complex (keyrings)</td>
+                    <td style="padding: 12px; text-align: center;">Manual</td>
+                    <td style="padding: 12px; text-align: center; background: rgba(99,102,241,0.05);"><strong>Handled
+                            for you</strong></td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px;">Passphrase prompts</td>
+                    <td style="padding: 12px; text-align: center;">Every commit</td>
+                    <td style="padding: 12px; text-align: center;">With ssh-agent</td>
+                    <td style="padding: 12px; text-align: center; background: rgba(99,102,241,0.05);">
+                        <strong>Never</strong></td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px;">GitHub Verified badge</td>
+                    <td style="padding: 12px; text-align: center;">✅</td>
+                    <td style="padding: 12px; text-align: center;">✅</td>
+                    <td style="padding: 12px; text-align: center; background: rgba(99,102,241,0.05);">✅</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Bottom line:</strong> GPG requires managing keyrings, expiration dates, and subkeys. Manual SSH setup
+            requires multiple git config commands and a trip to GitHub settings. Vouch handles everything in one
+            command.</p>
 
         <h2>🔍 How It Works</h2>
 
