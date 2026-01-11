@@ -281,43 +281,33 @@
             Ed25519 key and upload it to GitHub for you. Zero manual steps required.
         </div>
 
-        <h2>🚀 Quick Start (60 seconds)</h2>
+        <h2>🚀 Quick Start (30 seconds)</h2>
 
         <div class="step">
             <h3><span class="step-number">1</span> Install Vouch Protocol</h3>
             <pre><code>pip install vouch-protocol</code></pre>
-            <p>This installs the <code>vouch</code> CLI tool globally.</p>
         </div>
 
         <div class="step">
-            <h3><span class="step-number">2</span> Initialize Your Identity</h3>
-            <pre><code>vouch init</code></pre>
-            <p>This creates your Vouch identity. You'll be prompted to set a passphrase to encrypt your private key.</p>
-            <p>Your identity is stored securely in <code>~/.vouch/keys/</code>.</p>
-        </div>
-
-        <div class="step">
-            <h3><span class="step-number">3</span> Configure Git Signing</h3>
+            <h3><span class="step-number">2</span> Run One Command</h3>
             <pre><code>vouch git init</code></pre>
-            <p>This command does three things automatically:</p>
+            <p>That's it! This single command:</p>
             <ul>
-                <li>Finds your SSH signing key</li>
-                <li>Configures <code>git config --global</code> to sign commits</li>
-                <li>Sets up the allowed signers file</li>
+                <li>✅ Generates a new Ed25519 signing key (if you don't have one)</li>
+                <li>✅ Uploads it to GitHub automatically</li>
+                <li>✅ Configures git to sign all commits</li>
+                <li>✅ Sets up verification</li>
             </ul>
         </div>
 
-        <div class="step">
-            <h3><span class="step-number">4</span> Verify It Works</h3>
-            <pre><code># Make a test commit
+        <div class="success-badge">✓ Done! All future commits will be automatically signed and show ✅ Verified on
+            GitHub.</div>
+
+        <h3>Verify It Works</h3>
+        <pre><code># Make a test commit
 git commit --allow-empty -m "test: verify vouch signing"
 
-# Check the signature
-git log --show-signature -1</code></pre>
-            <p>You should see output indicating the commit is signed.</p>
-        </div>
-
-        <div class="success-badge">✓ Done! All future commits will be automatically signed.</div>
+# Check on GitHub - you'll see the ✅ Verified badge!</code></pre>
 
         <h2>🔍 How It Works</h2>
 
