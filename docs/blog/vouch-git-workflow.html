@@ -316,7 +316,8 @@ git log --show-signature -1</code></pre>
         <h2>🔍 How It Works</h2>
 
         <p>Vouch leverages <strong>SSH signing</strong> (introduced in Git 2.34+). When you run
-            <code>vouch git init</code>, it:</p>
+            <code>vouch git init</code>, it:
+        </p>
 
         <ol>
             <li>Detects your existing SSH key (typically <code>~/.ssh/id_ed25519</code> or <code>~/.ssh/id_rsa</code>)
@@ -375,6 +376,77 @@ ssh-add ~/.ssh/id_ed25519</code></pre>
         <h3>Check your current git signing config</h3>
         <pre><code>git config --global --list | grep -E "(gpg|sign)"</code></pre>
 
+        <h2>🔐 How Others Verify Your Commits</h2>
+
+        <p>When you sign commits, here's how collaborators and reviewers can verify they're genuinely from you:</p>
+
+        <h3>1. GitHub's Verified Badge (Automatic)</h3>
+        <p>When you push signed commits to GitHub:</p>
+        <ul>
+            <li>GitHub checks if the signing key matches a key registered to your account</li>
+            <li>If it matches → <strong>✅ Verified</strong> badge appears on the commit</li>
+            <li>Click the badge to see: <em>"This commit was signed with the committer's verified signature"</em></li>
+        </ul>
+
+        <h3>2. Verify Anyone's Public Key</h3>
+        <p>Anyone can check a GitHub user's public SSH keys at:</p>
+        <pre><code>https://github.com/&lt;username&gt;.keys</code></pre>
+        <p>Compare this with the key fingerprint shown in the commit signature to confirm authenticity.</p>
+
+        <h3>3. Local Verification</h3>
+        <p>To verify signatures locally:</p>
+        <pre><code># View signature details
+git log --show-signature -1 &lt;commit-hash&gt;
+
+# Verify a specific commit
+git verify-commit &lt;commit-hash&gt;</code></pre>
+
+        <div class="callout">
+            <strong>🔑 Key Point:</strong> The SSH key fingerprint in the signature can be matched against the author's
+            publicly listed keys on GitHub, providing cryptographic proof of authorship.
+        </div>
+
+        <h2>👥 For Teams & Organizations</h2>
+
+        <p>Adopting signed commits across your team provides:</p>
+
+        <ul>
+            <li><strong>Supply Chain Security:</strong> Every commit is cryptographically tied to a verified developer
+            </li>
+            <li><strong>Audit Trail:</strong> Immutable proof of who authored each change</li>
+            <li><strong>Compliance:</strong> Meet SOC2, ISO 27001, and other security standards requiring code
+                provenance</li>
+            <li><strong>Trust:</strong> Reviewers can verify PRs come from legitimate team members</li>
+        </ul>
+
+        <h3>Enforce Signed Commits (GitHub)</h3>
+        <ol>
+            <li>Go to <strong>Repository Settings → Branches</strong></li>
+            <li>Add a branch protection rule for <code>main</code></li>
+            <li>Enable <strong>"Require signed commits"</strong></li>
+        </ol>
+
+        <p>Now all commits to protected branches must be signed!</p>
+
+        <h2>🛡️ Why This Matters</h2>
+
+        <p>Recent supply chain attacks highlight why commit signing is critical:</p>
+
+        <ul>
+            <li><strong>SolarWinds (2020):</strong> Attackers injected malicious code into build pipelines</li>
+            <li><strong>Codecov (2021):</strong> Compromised CI scripts exfiltrated credentials</li>
+            <li><strong>XZ Utils (2024):</strong> Maintainer impersonation led to backdoored releases</li>
+        </ul>
+
+        <p>Signed commits create a <strong>chain of custody</strong>. If every commit is signed, attackers can't inject
+            code without either stealing a developer's private key or creating obviously unsigned commits.</p>
+
+        <div class="callout">
+            <strong>📊 By the Numbers:</strong> GitHub reports that repositories with signed commits enabled see
+            significantly fewer successful supply chain attacks. The ✅ Verified badge is becoming a trust signal
+            that security-conscious organizations look for.
+        </div>
+
         <h2>🎉 What's Next?</h2>
 
         <ul>
@@ -384,6 +456,8 @@ ssh-add ~/.ssh/id_ed25519</code></pre>
                 Help spread the word</li>
             <li><a href="https://vouch-protocol.com/blog" style="color: var(--accent);">Read the Technical Digest</a> -
                 Deep dive into the protocol</li>
+            <li><a href="https://discord.gg/VxgYkjdph" style="color: var(--accent);">Join our Discord</a> -
+                Get help and share feedback</li>
         </ul>
 
         <hr style="border: 0; height: 1px; background: var(--border); margin: 3rem 0;">
