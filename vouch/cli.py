@@ -23,6 +23,8 @@ from cryptography.hazmat.primitives import serialization
 
 from vouch.signer import Signer
 from vouch.verifier import Verifier
+from vouch.keys import KeyManager, generate_identity
+import getpass
 
 # Constants
 SSH_KEY_PATH = Path.home() / ".ssh" / "vouch_signing.pub"
@@ -67,29 +69,44 @@ def setup_logging(verbose: bool = False) -> None:
 def cmd_init(args: argparse.Namespace) -> int:
     """Generate a new Ed25519 keypair for agent identity."""
     try:
-        # Generate Ed25519 key
-        key = jwk.JWK.generate(kty="OKP", crv="Ed25519")
-
-        # Export keys
-        private_key = key.export_private()
-        public_key = key.export_public()
-
         # Build DID
         domain = args.domain if args.domain else "example.com"
-        did = f"did:web:{domain}"
+        
+        # Generate keys
+        keys = generate_identity(domain)
 
         if args.env:
             # Output as environment variable format
-            print(f"export VOUCH_DID='{did}'")
-            print(f"export VOUCH_PRIVATE_KEY='{private_key}'")
-            print(f"# Public Key (for vouch.json): {public_key}", file=sys.stderr)
+            print(f"export VOUCH_DID='{keys.did}'")
+            print(f"export VOUCH_PRIVATE_KEY='{keys.private_key_jwk}'")
+            print(f"# Public Key (for vouch.json): {keys.public_key_jwk}", file=sys.stderr)
         else:
             print("🔑 NEW AGENT IDENTITY GENERATED\n")
-            print(f"DID: {did}")
-            print("\n--- PRIVATE KEY (Keep Secret / Set as Env Var) ---")
-            print(private_key)
+            print(f"DID: {keys.did}")
+            
+            # Key Storage
+            km = KeyManager()
+            
+            # Prompt for passphrase
+            print("\n🔐 Secure Storage")
+            passphrase = getpass.getpass(f"Enter passphrase for {keys.did} (leave empty for no encryption): ")
+            confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+            
+            if passphrase != confirm:
+                print("❌ Error: Passphrases do not match", file=sys.stderr)
+                return 1
+                
+            try:
+                km.save_identity(keys, passphrase if passphrase else None)
+                print(f"✅ Identity saved to: {km._get_filename(keys.did)}")
+                if not passphrase:
+                    print("⚠️  Warning: Key saved in PLAIN TEXT. Use a passphrase for security.")
+            except Exception as e:
+                print(f"❌ Error saving identity: {e}", file=sys.stderr)
+                return 1
+
             print("\n--- PUBLIC KEY (Put this in vouch.json) ---")
-            print(public_key)
+            print(keys.public_key_jwk)
 
         return 0
 
@@ -103,6 +120,62 @@ def cmd_sign(args: argparse.Namespace) -> int:
     # Get credentials
     private_key = args.key or os.environ.get("VOUCH_PRIVATE_KEY")
     did = args.did or os.environ.get("VOUCH_DID")
+
+    # If key/did not in args/env, try loading from keystore
+    if not private_key:
+        km = KeyManager()
+        identities = km.list_identities()
+        
+        if not identities:
+            print("Error: No identity found. Run 'vouch init' or set VOUCH_PRIVATE_KEY", file=sys.stderr)
+            return 1
+            
+        # Select identity
+        selected_did = did
+        if not selected_did:
+            if len(identities) == 1:
+                selected_did = identities[0]["did"]
+            else:
+                print("Multiple identities found:")
+                for i, ident in enumerate(identities):
+                    print(f"{i+1}. {ident['did']}")
+                try:
+                    choice = int(input("Select identity (number): ")) - 1
+                    selected_did = identities[choice]["did"]
+                except (ValueError, IndexError):
+                    print("Invalid selection", file=sys.stderr)
+                    return 1
+        
+        # Load identity
+        try:
+            # Check if encrypted (naive check via list, or just try loading)
+            # We'll just try loading. If it fails with password error, prompt.
+            # But load_identity throws ValueError on password fail? No, if encrypted=True and password=None, it raises ValueError.
+            
+            # First, check if we need password
+            # We can't easily check without parsing JSON, but load_identity handles it.
+            # We'll assume we try with None, catch error, prompt.
+            passphrase = None
+            
+            # Check if file is encrypted to prompt nicely 
+            # (Optimization: We could peek at the JSON, but let's just try/except)
+            
+            # Actually, KeyManager.load_identity raises ValueError("Password required") if needed.
+            try:
+                keys = km.load_identity(selected_did, None)
+            except ValueError as e:
+                if "Password required" in str(e) or "Decryption" in str(e):
+                    passphrase = getpass.getpass(f"Enter passphrase for {selected_did}: ")
+                    keys = km.load_identity(selected_did, passphrase)
+                else:
+                    raise e
+            
+            private_key = keys.private_key_jwk
+            did = keys.did # Update DID if we auto-selected
+            
+        except Exception as e:
+            print(f"Error loading identity: {e}", file=sys.stderr)
+            return 1
 
     if not private_key:
         print("Error: Missing private key. Set VOUCH_PRIVATE_KEY or use --key", file=sys.stderr)
@@ -716,7 +789,7 @@ def cmd_git_verify(args: argparse.Namespace) -> int:
             if verification["error"]:
                 print(f"     Error: {verification['error']}")
 
-    print(f"\n📊 Results:")
+    print("\n📊 Results:")
     print(f"   ✅ Verified: {verified}")
     if skipped > 0:
         print(f"   ⏭️  Skipped (no trailer): {skipped}")
@@ -776,7 +849,7 @@ def _cmd_media_sign_native(args: argparse.Namespace) -> int:
         else:
             # Generate ephemeral keypair
             private_key, did = generate_keypair()
-            print(f"⚠️  Generated ephemeral keypair (set VOUCH_PRIVATE_KEY for persistent identity)", file=sys.stderr)
+            print("⚠️  Generated ephemeral keypair (set VOUCH_PRIVATE_KEY for persistent identity)", file=sys.stderr)
         
         # Sign the image
         output_path = args.output or source_path.parent / f"{source_path.stem}_signed{source_path.suffix}"
@@ -796,17 +869,17 @@ def _cmd_media_sign_native(args: argparse.Namespace) -> int:
             if result.warning:
                 print(result.warning, file=sys.stderr)
             
-            print(f"✅ Image signed successfully!")
+            print("✅ Image signed successfully!")
             print(f"   Source: {result.source_path}")
             print(f"   Output: {result.output_path}")
             print(f"   Sidecar: {result.sidecar_path}")
-            print(f"\n🔐 Signer:")
+            print("\n🔐 Signer:")
             print(f"   Name:   {result.signature.display_name}")
             if result.signature.email:
                 print(f"   Email:  {result.signature.email}")
             print(f"   DID:    {truncate_did(result.signature.did)}")
             print(f"   Tier:   {result.signature.credential_type}")
-            print(f"\n📋 Claim:")
+            print("\n📋 Claim:")
             print(f"   Type:   {result.signature.claim_type.upper()}")
             print(f"   Chain:  {result.signature.chain_id}")
             print(f"   Depth:  {result.signature.chain_depth}")
@@ -932,7 +1005,7 @@ def _cmd_media_sign_c2pa(args: argparse.Namespace) -> int:
         
         manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()[:16]
         
-        print(f"✅ Image signed successfully!")
+        print("✅ Image signed successfully!")
         print(f"   Source: {source_path}")
         print(f"   Output: {output_path}")
         print(f"   Signer: {identity.display_name}")
@@ -993,17 +1066,17 @@ def _cmd_media_verify_native(args: argparse.Namespace) -> int:
             print(json.dumps(output, indent=2))
         else:
             if result.is_valid:
-                print(f"✅ Valid Vouch signature found!")
+                print("✅ Valid Vouch signature found!")
                 print(f"   Source: {result.source}")
                 
                 if result.signature:
-                    print(f"\n🔐 Signer:")
+                    print("\n🔐 Signer:")
                     print(f"   Name:  {result.signature.display_name}")
                     if result.signature.email:
                         print(f"   Email: {result.signature.email}")
                     print(f"   DID:   {truncate_did(result.signature.did)}")
                     print(f"   Tier:  {result.signature.credential_type}")
-                    print(f"\n📋 Claim:")
+                    print("\n📋 Claim:")
                     print(f"   Type:  {result.signature.claim_type.upper()}")
                     print(f"   Chain: {result.signature.chain_id}")
                     print(f"   Depth: {result.signature.chain_depth}")
@@ -1011,7 +1084,7 @@ def _cmd_media_verify_native(args: argparse.Namespace) -> int:
                     
                     # Show org credentials if present
                     if result.signature.credentials:
-                        print(f"\n🏢 Organization:")
+                        print("\n🏢 Organization:")
                         for cred in result.signature.credentials:
                             issuer_name = cred.get('issuer_name') or cred.get('issuer', 'Unknown')
                             role = cred.get('role', 'Unknown')
@@ -1025,7 +1098,7 @@ def _cmd_media_verify_native(args: argparse.Namespace) -> int:
                             print(f"   Role:   {role}")
                             print(f"   Expiry: {expiry[:10] if len(expiry) > 10 else expiry}")
             else:
-                print(f"❌ No valid Vouch signature found")
+                print("❌ No valid Vouch signature found")
                 if result.error:
                     print(f"   Error: {result.error}")
         
@@ -1070,22 +1143,22 @@ def _cmd_media_verify_c2pa(args: argparse.Namespace) -> int:
             print(json.dumps(output, indent=2))
         else:
             if result.is_valid:
-                print(f"✅ Valid C2PA manifest found!")
+                print("✅ Valid C2PA manifest found!")
                 print(f"   Claim Generator: {result.claim_generator}")
                 if result.signed_at:
                     print(f"   Signed At: {result.signed_at}")
                 
                 if result.signer_identity:
-                    print(f"\n🔐 Vouch Identity:")
+                    print("\n🔐 Vouch Identity:")
                     print(f"   Name:  {result.signer_identity.display_name}")
                     if result.signer_identity.email:
                         print(f"   Email: {result.signer_identity.email}")
                     print(f"   DID:   {result.signer_identity.did}")
                     print(f"   Tier:  {result.signer_identity.credential_type}")
                 else:
-                    print(f"\n⚠️  No Vouch identity assertion found (standard C2PA manifest)")
+                    print("\n⚠️  No Vouch identity assertion found (standard C2PA manifest)")
             else:
-                print(f"❌ No valid C2PA manifest found")
+                print("❌ No valid C2PA manifest found")
                 if result.error:
                     print(f"   Error: {result.error}")
         
