@@ -438,7 +438,9 @@ def sign_image_native(
         # Embed in image if requested (only for PNG, not JPEG)
         if embed_in_image and PIL_AVAILABLE:
             if output_path.suffix.lower() == '.png':
-                _embed_signature_in_png(output_path, vouch_sig)
+                # TODO: Implement _embed_signature_in_png
+                # For now, embedding in PNG is not implemented - use sidecar
+                pass
             else:
                 # For JPEG, embedding changes pixel data, so we skip it
                 pass
