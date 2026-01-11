@@ -49,3 +49,6 @@ vouch/media/certs/
 # Node modules
 node_modules/
 package-lock.json
+
+# arXiv submission packages
+arxiv/submissions/

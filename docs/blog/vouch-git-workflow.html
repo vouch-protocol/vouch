@@ -316,14 +316,16 @@ git commit --allow-empty -m "test: verify vouch signing"
         </p>
 
         <ol>
-            <li>Detects your existing SSH key (typically <code>~/.ssh/id_ed25519</code> or <code>~/.ssh/id_rsa</code>)
+            <li>Generates a new Ed25519 signing key (or uses your existing one at <code>~/.ssh/id_ed25519</code>)
             </li>
-            <li>Configures Git to use this key for signing:
+            <li>Uploads the key to GitHub as a signing key (via <code>gh</code> CLI)
+            </li>
+            <li>Configures Git to sign all commits:
                 <pre><code>git config --global gpg.format ssh
-git config --global user.signingkey ~/.ssh/id_ed25519.pub
+git config --global user.signingkey ~/.vouch/keys/vouch_signing_key
 git config --global commit.gpgsign true</code></pre>
             </li>
-            <li>Creates an allowed signers file for verification</li>
+            <li>Sets up local verification with an allowed signers file</li>
         </ol>
 
         <h2>📱 GitHub Integration (Automatic!)</h2>
@@ -368,8 +370,9 @@ git config --global tag.gpgsign true</code></pre>
 ssh-add ~/.ssh/id_ed25519</code></pre>
 
         <h3>GitHub doesn't show "Verified"</h3>
-        <p>Make sure your signing key is added to GitHub as a <strong>Signing Key</strong>, not just an authentication
-            key.</p>
+        <p>This usually means the <code>gh</code> CLI upload failed silently. Check if your key is on GitHub:</p>
+        <pre><code>gh ssh-key list</code></pre>
+        <p>If not listed, re-run <code>vouch git init</code> or manually add the key at GitHub Settings → SSH Keys.</p>
 
         <h3>Check your current git signing config</h3>
         <pre><code>git config --global --list | grep -E "(gpg|sign)"</code></pre>
