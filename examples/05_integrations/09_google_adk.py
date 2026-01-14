@@ -57,10 +57,11 @@ tool_call = {
     "agent": "Banking Assistant",
     "tool": "transfer_funds",
     "args": {"from_account": "checking", "to_account": "savings", "amount": 100},
-    "model": "gemini-2.0-flash"
+    "model": "gemini-2.0-flash",
 }
 
 import json
+
 token = signer.sign(json.dumps(tool_call))
 
 print("\n📋 Signed ADK Tool Call:")
@@ -71,6 +72,7 @@ print(f"   Token: {token[:50]}...")
 
 # Verify
 from vouch import Verifier
+
 verifier = Verifier()
 result = verifier.verify(token)
 print(f"\n   ✅ Verified: {result.valid}")

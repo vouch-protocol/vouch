@@ -41,21 +41,22 @@ from vouch.integrations.adk import (
 # Define Banking Tools
 # =============================================================================
 
+
 def get_account_balance(account_id: str, **kwargs) -> dict[str, Any]:
     """Get the current balance for an account.
-    
+
     This is a LOW risk operation - read-only.
-    
+
     Args:
         account_id: The account identifier
-        
+
     Returns:
         Account balance information
     """
     # The vouch signature is injected by the integrator
     vouch_sig = kwargs.get("_vouch_signature", "none")
     print(f"  [get_account_balance] Vouch signature: {vouch_sig[:50]}...")
-    
+
     # Simulated response
     return {
         "account_id": account_id,
@@ -72,26 +73,26 @@ def transfer_funds(
     **kwargs,
 ) -> dict[str, Any]:
     """Transfer funds between accounts.
-    
+
     This is a HIGH risk operation - will be flagged and require signing.
-    
+
     Args:
         from_account: Source account ID
         to_account: Destination account ID
         amount: Amount to transfer
-        
+
     Returns:
         Transfer confirmation
     """
     vouch_sig = kwargs.get("_vouch_signature", "none")
     risk_level = kwargs.get("_vouch_risk_level", "unknown")
-    
+
     print(f"  [transfer_funds] Risk level: {risk_level}")
     print(f"  [transfer_funds] Vouch signature: {vouch_sig[:50]}...")
-    
+
     # In production, you would send the vouch_sig to your banking API
     # as proof that this action was authorized by a verified agent
-    
+
     return {
         "status": "completed",
         "from": from_account,
@@ -104,13 +105,13 @@ def transfer_funds(
 
 def delete_account(account_id: str, **kwargs) -> dict[str, Any]:
     """Delete an account permanently.
-    
+
     This is a BLOCKED operation in our policy - should not be possible
     for the agent to execute without human approval.
-    
+
     Args:
         account_id: Account to delete
-        
+
     Returns:
         Should never return - operation is blocked
     """
@@ -121,12 +122,13 @@ def delete_account(account_id: str, **kwargs) -> dict[str, Any]:
 # Main Example
 # =============================================================================
 
+
 def main():
     """Demonstrate Vouch-protected banking agent."""
     print("=" * 60)
     print("Secure Banking Agent with Vouch Protocol")
     print("=" * 60)
-    
+
     # Step 1: Configure Risk Policy
     policy = RiskPolicy(
         custom_rules={
@@ -134,23 +136,23 @@ def main():
         },
         cooldown_seconds=30.0,  # 30s cooldown between HIGH risk calls
     )
-    
+
     # Step 2: Create VouchIntegrator
     integrator = VouchIntegrator(
         risk_policy=policy,
         enable_cloud_logging=False,  # Set True in production with GCP
-        block_high_risk=False,       # Set True to require human approval
+        block_high_risk=False,  # Set True to require human approval
     )
-    
+
     # Step 3: Protect the tools
     tools = [get_account_balance, transfer_funds, delete_account]
     protected_tools = integrator.protect(tools)
-    
+
     # Get the protected versions
     protected_balance = protected_tools[0]
     protected_transfer = protected_tools[1]
     protected_delete = protected_tools[2]
-    
+
     print("\n1. Testing LOW risk operation (get_account_balance):")
     print("-" * 40)
     try:
@@ -158,7 +160,7 @@ def main():
         print(f"  Result: ${result['balance']:.2f} {result['currency']}")
     except Exception as e:
         print(f"  Error: {e}")
-    
+
     print("\n2. Testing HIGH risk operation (transfer_funds):")
     print("-" * 40)
     try:
@@ -171,7 +173,7 @@ def main():
         print(f"  Vouch verified: {result['vouch_verified']}")
     except Exception as e:
         print(f"  Error: {e}")
-    
+
     print("\n3. Testing BLOCKED operation (delete_account):")
     print("-" * 40)
     try:
@@ -181,7 +183,7 @@ def main():
         print(f"  ✅ Correctly blocked: {e}")
     except Exception as e:
         print(f"  Error: {e}")
-    
+
     print("\n4. Testing HIGH risk cooldown:")
     print("-" * 40)
     try:
@@ -196,15 +198,15 @@ def main():
         print(f"  ⏳ Cooldown active: {e}")
     except Exception as e:
         print(f"  Error: {e}")
-    
+
     print("\n" + "=" * 60)
     print("Example complete!")
     print("=" * 60)
-    
+
     # Uncomment to use with actual Google ADK:
-    # 
+    #
     # client = genai.Client()
-    # 
+    #
     # agent = client.agents.create(
     #     model="gemini-2.0-flash",
     #     name="secure_banking_agent",

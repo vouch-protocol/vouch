@@ -63,10 +63,11 @@ function_call = {
     "function": "get_weather",
     "args": {"city": "Tokyo"},
     "model": "gemini-1.5-pro",
-    "intent": "Weather query"
+    "intent": "Weather query",
 }
 
 import json
+
 token = signer.sign(json.dumps(function_call))
 
 print("\n📋 Signed Vertex AI Call:")

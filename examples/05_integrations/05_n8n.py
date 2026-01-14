@@ -24,7 +24,7 @@ webhook_data = {
     "workflow_id": "wf_abc123",
     "node": "HTTP Request",
     "action": "POST https://api.bank.com/transfer",
-    "payload": {"amount": 500, "to": "account_xyz"}
+    "payload": {"amount": 500, "to": "account_xyz"},
 }
 
 # Sign the webhook data

@@ -25,7 +25,7 @@ print("=" * 60)
 parts = token.split(".")
 if len(parts) == 3:
     header_b64, payload_b64, signature_b64 = parts
-    
+
     # Decode header
     header = json.loads(base64.urlsafe_b64decode(header_b64 + "=="))
     print("\n📋 HEADER (Algorithm & Type)")
@@ -34,7 +34,7 @@ if len(parts) == 3:
     #   "alg": "EdDSA",      <- Ed25519 algorithm
     #   "typ": "vouch+jwt"   <- Vouch token type
     # }
-    
+
     # Decode payload
     payload = json.loads(base64.urlsafe_b64decode(payload_b64 + "=="))
     print("\n📦 PAYLOAD (Claims)")
@@ -47,7 +47,7 @@ if len(parts) == 3:
     #   "iat": 1704672000,             <- Issued at (Unix timestamp)
     #   "exp": 1704675600              <- Expires at
     # }
-    
+
     print("\n✍️  SIGNATURE (Ed25519)")
     print(f"   {signature_b64[:40]}...")
     print(f"   Length: {len(signature_b64)} chars")

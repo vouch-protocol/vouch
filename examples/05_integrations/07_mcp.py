@@ -64,10 +64,11 @@ signer = Signer(name="MCP Server")
 tool_call = {
     "tool": "write_file",
     "params": {"path": "/data/output.txt", "content": "Hello World"},
-    "request_id": "req_123"
+    "request_id": "req_123",
 }
 
 import json
+
 token = signer.sign(json.dumps(tool_call))
 
 print("\n📋 Signed MCP Tool Call:")

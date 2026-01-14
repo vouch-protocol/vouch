@@ -21,7 +21,7 @@ print("Setting up key rotation...")
 
 config = KeyConfig(
     rotation_interval=timedelta(days=30),  # Rotate every 30 days
-    key_overlap=timedelta(days=7),          # Old key valid for 7 days after rotation
+    key_overlap=timedelta(days=7),  # Old key valid for 7 days after rotation
     algorithm="ed25519",
 )
 

@@ -71,7 +71,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     try:
         # Build DID
         domain = args.domain if args.domain else "example.com"
-        
+
         # Generate keys
         keys = generate_identity(domain)
 
@@ -83,19 +83,21 @@ def cmd_init(args: argparse.Namespace) -> int:
         else:
             print("🔑 NEW AGENT IDENTITY GENERATED\n")
             print(f"DID: {keys.did}")
-            
+
             # Key Storage
             km = KeyManager()
-            
+
             # Prompt for passphrase
             print("\n🔐 Secure Storage")
-            passphrase = getpass.getpass(f"Enter passphrase for {keys.did} (leave empty for no encryption): ")
+            passphrase = getpass.getpass(
+                f"Enter passphrase for {keys.did} (leave empty for no encryption): "
+            )
             confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
-            
+
             if passphrase != confirm:
                 print("❌ Error: Passphrases do not match", file=sys.stderr)
                 return 1
-                
+
             try:
                 km.save_identity(keys, passphrase if passphrase else None)
                 print(f"✅ Identity saved to: {km._get_filename(keys.did)}")
@@ -125,11 +127,14 @@ def cmd_sign(args: argparse.Namespace) -> int:
     if not private_key:
         km = KeyManager()
         identities = km.list_identities()
-        
+
         if not identities:
-            print("Error: No identity found. Run 'vouch init' or set VOUCH_PRIVATE_KEY", file=sys.stderr)
+            print(
+                "Error: No identity found. Run 'vouch init' or set VOUCH_PRIVATE_KEY",
+                file=sys.stderr,
+            )
             return 1
-            
+
         # Select identity
         selected_did = did
         if not selected_did:
@@ -138,28 +143,28 @@ def cmd_sign(args: argparse.Namespace) -> int:
             else:
                 print("Multiple identities found:")
                 for i, ident in enumerate(identities):
-                    print(f"{i+1}. {ident['did']}")
+                    print(f"{i + 1}. {ident['did']}")
                 try:
                     choice = int(input("Select identity (number): ")) - 1
                     selected_did = identities[choice]["did"]
                 except (ValueError, IndexError):
                     print("Invalid selection", file=sys.stderr)
                     return 1
-        
+
         # Load identity
         try:
             # Check if encrypted (naive check via list, or just try loading)
             # We'll just try loading. If it fails with password error, prompt.
             # But load_identity throws ValueError on password fail? No, if encrypted=True and password=None, it raises ValueError.
-            
+
             # First, check if we need password
             # We can't easily check without parsing JSON, but load_identity handles it.
             # We'll assume we try with None, catch error, prompt.
             passphrase = None
-            
-            # Check if file is encrypted to prompt nicely 
+
+            # Check if file is encrypted to prompt nicely
             # (Optimization: We could peek at the JSON, but let's just try/except)
-            
+
             # Actually, KeyManager.load_identity raises ValueError("Password required") if needed.
             try:
                 keys = km.load_identity(selected_did, None)
@@ -169,10 +174,10 @@ def cmd_sign(args: argparse.Namespace) -> int:
                     keys = km.load_identity(selected_did, passphrase)
                 else:
                     raise e
-            
+
             private_key = keys.private_key_jwk
-            did = keys.did # Update DID if we auto-selected
-            
+            did = keys.did  # Update DID if we auto-selected
+
         except Exception as e:
             print(f"Error loading identity: {e}", file=sys.stderr)
             return 1
@@ -658,9 +663,7 @@ def _derive_did_from_ssh_pubkey(ssh_pubkey_path: str) -> str | None:
         public_key = load_ssh_public_key(full_key)
 
         # Get raw public key bytes for Ed25519 (32 bytes)
-        raw_bytes = public_key.public_bytes(
-            encoding=Encoding.Raw, format=PublicFormat.Raw
-        )
+        raw_bytes = public_key.public_bytes(encoding=Encoding.Raw, format=PublicFormat.Raw)
 
         # DID is derived from raw public key bytes
         # This ensures consistent DIDs across all programming languages
@@ -811,13 +814,14 @@ def cmd_git_verify(args: argparse.Namespace) -> int:
 # Media Commands (C2PA Integration)
 # =============================================================================
 
+
 def cmd_media_sign(args: argparse.Namespace) -> int:
     """Sign an image with Vouch signature (native by default, or C2PA with --c2pa)."""
-    
+
     # Check if C2PA mode requested
-    if getattr(args, 'c2pa', False):
+    if getattr(args, "c2pa", False):
         return _cmd_media_sign_c2pa(args)
-    
+
     # Default: Use native Vouch signing (no certificates needed!)
     return _cmd_media_sign_native(args)
 
@@ -825,35 +829,49 @@ def cmd_media_sign(args: argparse.Namespace) -> int:
 def _cmd_media_sign_native(args: argparse.Namespace) -> int:
     """Sign an image with native Vouch signature (no certificates)."""
     try:
-        from vouch.media.native import sign_image_native, generate_keypair, truncate_did, generate_verify_shortlink
-        
+        from vouch.media.native import (
+            sign_image_native,
+            generate_keypair,
+            truncate_did,
+            generate_verify_shortlink,
+        )
+
         source_path = Path(args.image)
         if not source_path.exists():
             print(f"❌ Error: File not found: {source_path}", file=sys.stderr)
             return 1
-        
+
         # Get identity from args or environment
         display_name = args.name or os.environ.get("VOUCH_DISPLAY_NAME", "Anonymous")
         email = args.email or os.environ.get("VOUCH_EMAIL")
-        
+
         # Generate or load keypair
         private_key_json = args.key or os.environ.get("VOUCH_PRIVATE_KEY")
-        
+
         if private_key_json:
             # Load from JWK
             key = jwk.JWK.from_json(private_key_json)
             private_bytes = base64.urlsafe_b64decode(key.d + "==")
             from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
             private_key = Ed25519PrivateKey.from_private_bytes(private_bytes)
-            did = args.did or os.environ.get("VOUCH_DID", f"did:key:temp_{hashlib.sha256(display_name.encode()).hexdigest()[:16]}")
+            did = args.did or os.environ.get(
+                "VOUCH_DID",
+                f"did:key:temp_{hashlib.sha256(display_name.encode()).hexdigest()[:16]}",
+            )
         else:
             # Generate ephemeral keypair
             private_key, did = generate_keypair()
-            print("⚠️  Generated ephemeral keypair (set VOUCH_PRIVATE_KEY for persistent identity)", file=sys.stderr)
-        
+            print(
+                "⚠️  Generated ephemeral keypair (set VOUCH_PRIVATE_KEY for persistent identity)",
+                file=sys.stderr,
+            )
+
         # Sign the image
-        output_path = args.output or source_path.parent / f"{source_path.stem}_signed{source_path.suffix}"
-        
+        output_path = (
+            args.output or source_path.parent / f"{source_path.stem}_signed{source_path.suffix}"
+        )
+
         result = sign_image_native(
             source_path=source_path,
             private_key=private_key,
@@ -863,12 +881,12 @@ def _cmd_media_sign_native(args: argparse.Namespace) -> int:
             credential_type="PRO" if args.pro else "FREE",
             output_path=output_path,
         )
-        
+
         if result.success:
             # Show any warnings first
             if result.warning:
                 print(result.warning, file=sys.stderr)
-            
+
             print("✅ Image signed successfully!")
             print(f"   Source: {result.source_path}")
             print(f"   Output: {result.output_path}")
@@ -889,7 +907,7 @@ def _cmd_media_sign_native(args: argparse.Namespace) -> int:
         else:
             print(f"❌ Error signing image: {result.error}", file=sys.stderr)
             return 1
-            
+
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
         return 1
@@ -899,44 +917,49 @@ def _cmd_media_sign_c2pa(args: argparse.Namespace) -> int:
     """Sign an image with C2PA manifest containing Vouch identity."""
     try:
         from vouch.media.c2pa import (
-            MediaSigner, 
+            MediaSigner,
             VouchIdentity,
             generate_self_signed_certificate,
             C2PA_AVAILABLE,
         )
-        
+
         if not C2PA_AVAILABLE:
-            print("❌ Error: c2pa-python is required. Install with: pip install c2pa-python", file=sys.stderr)
+            print(
+                "❌ Error: c2pa-python is required. Install with: pip install c2pa-python",
+                file=sys.stderr,
+            )
             return 1
-        
+
         source_path = Path(args.image)
         if not source_path.exists():
             print(f"❌ Error: File not found: {source_path}", file=sys.stderr)
             return 1
-        
+
         # Get identity from args or environment
         display_name = args.name or os.environ.get("VOUCH_DISPLAY_NAME", "Anonymous")
         email = args.email or os.environ.get("VOUCH_EMAIL")
-        did = args.did or os.environ.get("VOUCH_DID", f"did:key:temp_{hashlib.sha256(display_name.encode()).hexdigest()[:16]}")
-        
+        did = args.did or os.environ.get(
+            "VOUCH_DID", f"did:key:temp_{hashlib.sha256(display_name.encode()).hexdigest()[:16]}"
+        )
+
         # Load C2PA test certificates for development
         # These are ES256 (ECDSA P-256) certificates from c2pa-python repo
         certs_dir = Path(__file__).parent / "media" / "certs"
         cert_path = certs_dir / "es256_certs.pem"
         key_path = certs_dir / "es256_private.key"
-        
+
         if not cert_path.exists() or not key_path.exists():
             print("❌ Error: C2PA test certificates not found.", file=sys.stderr)
             print("   Expected files at:", file=sys.stderr)
             print(f"   - {cert_path}", file=sys.stderr)
             print(f"   - {key_path}", file=sys.stderr)
             return 1
-        
+
         print("⚠️  Using C2PA test certificates (FOR DEVELOPMENT ONLY)", file=sys.stderr)
-        
+
         certificate_chain = cert_path.read_bytes()
         private_key_pem = key_path.read_bytes()
-        
+
         # Create identity
         identity = VouchIdentity(
             did=did,
@@ -944,55 +967,63 @@ def _cmd_media_sign_c2pa(args: argparse.Namespace) -> int:
             email=email,
             credential_type="PRO" if args.pro else "FREE",
         )
-        
+
         # Sign using ES256 (test certs) with callback-based signing
         import c2pa
         import c2pa.c2pa as c2pa_lib
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import ec
-        
+
         # Load private key for callback
         from cryptography.hazmat.primitives import serialization
+
         private_key = serialization.load_pem_private_key(private_key_pem, password=None)
-        
+
         # Create signing callback
         def sign_callback(data: bytes) -> bytes:
             return private_key.sign(data, ec.ECDSA(hashes.SHA256()))
-        
+
         # Create signer with tsa_url=None for offline signing
         signer = c2pa_lib.create_signer(
             callback=sign_callback,
             alg=c2pa.C2paSigningAlg.ES256,
-            certs=certificate_chain.decode('utf-8'),
+            certs=certificate_chain.decode("utf-8"),
             tsa_url=None,
         )
-        
+
         # Build the manifest
         manifest_json = {
             "claim_generator": "Vouch Protocol/1.0.0",
-            "claim_generator_info": [{
-                "name": "Vouch Protocol",
-                "version": "1.0.0",
-            }],
+            "claim_generator_info": [
+                {
+                    "name": "Vouch Protocol",
+                    "version": "1.0.0",
+                }
+            ],
             "title": args.title or source_path.name,
             "assertions": [
                 {
                     "label": "c2pa.actions",
                     "data": {
-                        "actions": [{
-                            "action": "c2pa.created",
-                            "softwareAgent": "Vouch Protocol/1.0.0",
-                        }]
-                    }
+                        "actions": [
+                            {
+                                "action": "c2pa.created",
+                                "softwareAgent": "Vouch Protocol/1.0.0",
+                            }
+                        ]
+                    },
                 },
                 identity.to_assertion(),
             ],
         }
-        
-        output_path = args.output or source_path.parent / f"{source_path.stem}_signed{source_path.suffix}"
-        
+
+        output_path = (
+            args.output or source_path.parent / f"{source_path.stem}_signed{source_path.suffix}"
+        )
+
         # Sign the file
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             manifest_bytes = c2pa_lib.sign_file(
@@ -1002,9 +1033,9 @@ def _cmd_media_sign_c2pa(args: argparse.Namespace) -> int:
                 signer_or_info=signer,
                 return_manifest_as_bytes=True,
             )
-        
+
         manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()[:16]
-        
+
         print("✅ Image signed successfully!")
         print(f"   Source: {source_path}")
         print(f"   Output: {output_path}")
@@ -1014,7 +1045,7 @@ def _cmd_media_sign_c2pa(args: argparse.Namespace) -> int:
         print(f"   DID:    {identity.did}")
         print(f"   Hash:   {manifest_hash}")
         return 0
-            
+
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
         return 1
@@ -1022,11 +1053,11 @@ def _cmd_media_sign_c2pa(args: argparse.Namespace) -> int:
 
 def cmd_media_verify(args: argparse.Namespace) -> int:
     """Verify an image's Vouch signature (native by default, or C2PA with --c2pa)."""
-    
+
     # Check if C2PA mode requested
-    if getattr(args, 'c2pa', False):
+    if getattr(args, "c2pa", False):
         return _cmd_media_verify_c2pa(args)
-    
+
     # Default: Use native Vouch verification
     return _cmd_media_verify_native(args)
 
@@ -1035,14 +1066,14 @@ def _cmd_media_verify_native(args: argparse.Namespace) -> int:
     """Verify an image's native Vouch signature."""
     try:
         from vouch.media.native import verify_image_native, truncate_did
-        
+
         image_path = Path(args.image)
         if not image_path.exists():
             print(f"❌ Error: File not found: {image_path}", file=sys.stderr)
             return 1
-        
+
         result = verify_image_native(image_path)
-        
+
         if args.json:
             output = {
                 "is_valid": result.is_valid,
@@ -1068,7 +1099,7 @@ def _cmd_media_verify_native(args: argparse.Namespace) -> int:
             if result.is_valid:
                 print("✅ Valid Vouch signature found!")
                 print(f"   Source: {result.source}")
-                
+
                 if result.signature:
                     print("\n🔐 Signer:")
                     print(f"   Name:  {result.signature.display_name}")
@@ -1081,16 +1112,16 @@ def _cmd_media_verify_native(args: argparse.Namespace) -> int:
                     print(f"   Chain: {result.signature.chain_id}")
                     print(f"   Depth: {result.signature.chain_depth}")
                     print(f"   Trust: {result.signature.chain_strength:.0%}")
-                    
+
                     # Show org credentials if present
                     if result.signature.credentials:
                         print("\n🏢 Organization:")
                         for cred in result.signature.credentials:
-                            issuer_name = cred.get('issuer_name') or cred.get('issuer', 'Unknown')
-                            role = cred.get('role', 'Unknown')
-                            dept = cred.get('department')
-                            expiry = cred.get('expiry', 'N/A')
-                            
+                            issuer_name = cred.get("issuer_name") or cred.get("issuer", "Unknown")
+                            role = cred.get("role", "Unknown")
+                            dept = cred.get("department")
+                            expiry = cred.get("expiry", "N/A")
+
                             if dept:
                                 print(f"   {issuer_name} ({dept})")
                             else:
@@ -1101,9 +1132,9 @@ def _cmd_media_verify_native(args: argparse.Namespace) -> int:
                 print("❌ No valid Vouch signature found")
                 if result.error:
                     print(f"   Error: {result.error}")
-        
+
         return 0 if result.is_valid else 1
-        
+
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
         return 1
@@ -1113,19 +1144,22 @@ def _cmd_media_verify_c2pa(args: argparse.Namespace) -> int:
     """Verify an image's C2PA manifest and extract Vouch identity."""
     try:
         from vouch.media.c2pa import MediaVerifier, C2PA_AVAILABLE
-        
+
         if not C2PA_AVAILABLE:
-            print("❌ Error: c2pa-python is required. Install with: pip install c2pa-python", file=sys.stderr)
+            print(
+                "❌ Error: c2pa-python is required. Install with: pip install c2pa-python",
+                file=sys.stderr,
+            )
             return 1
-        
+
         image_path = Path(args.image)
         if not image_path.exists():
             print(f"❌ Error: File not found: {image_path}", file=sys.stderr)
             return 1
-        
+
         verifier = MediaVerifier()
         result = verifier.verify_image(image_path)
-        
+
         if args.json:
             output = {
                 "is_valid": result.is_valid,
@@ -1147,7 +1181,7 @@ def _cmd_media_verify_c2pa(args: argparse.Namespace) -> int:
                 print(f"   Claim Generator: {result.claim_generator}")
                 if result.signed_at:
                     print(f"   Signed At: {result.signed_at}")
-                
+
                 if result.signer_identity:
                     print("\n🔐 Vouch Identity:")
                     print(f"   Name:  {result.signer_identity.display_name}")
@@ -1161,9 +1195,9 @@ def _cmd_media_verify_c2pa(args: argparse.Namespace) -> int:
                 print("❌ No valid C2PA manifest found")
                 if result.error:
                     print(f"   Error: {result.error}")
-        
+
         return 0 if result.is_valid else 1
-        
+
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
         return 1
@@ -1248,19 +1282,15 @@ def main() -> int:
     p_media_sign.add_argument("--title", help="Title for the image")
     p_media_sign.add_argument("--pro", action="store_true", help="Mark as PRO credential")
     p_media_sign.add_argument(
-        "--c2pa", action="store_true",
-        help="Use C2PA industry standard (requires certificates)"
+        "--c2pa", action="store_true", help="Use C2PA industry standard (requires certificates)"
     )
 
     # media verify
-    p_media_verify = media_subparsers.add_parser(
-        "verify", help="Verify an image's Vouch signature"
-    )
+    p_media_verify = media_subparsers.add_parser("verify", help="Verify an image's Vouch signature")
     p_media_verify.add_argument("image", help="Path to image file to verify")
     p_media_verify.add_argument("--json", action="store_true", help="Output as JSON")
     p_media_verify.add_argument(
-        "--c2pa", action="store_true",
-        help="Verify C2PA manifest instead of Vouch signature"
+        "--c2pa", action="store_true", help="Verify C2PA manifest instead of Vouch signature"
     )
 
     args = parser.parse_args()
