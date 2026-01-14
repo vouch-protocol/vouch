@@ -144,18 +144,21 @@ async function storeSignature(signatureData) {
  * Create the context menu items
  */
 function createContextMenu() {
-    // Sign selected text
-    chrome.contextMenus.create({
-        id: CONTEXT_MENU_ID,
-        title: '✍️ Sign with Vouch',
-        contexts: ['selection'],
-    });
+    // Remove any existing menus first (prevents duplicate ID error on reload)
+    chrome.contextMenus.removeAll(() => {
+        // Sign selected text
+        chrome.contextMenus.create({
+            id: CONTEXT_MENU_ID,
+            title: '✍️ Sign with Vouch',
+            contexts: ['selection'],
+        });
 
-    // Smart Scan - verify signature on page
-    chrome.contextMenus.create({
-        id: CONTEXT_MENU_SCAN_ID,
-        title: '🔍 Vouch: Smart Scan',
-        contexts: ['page', 'selection'],
+        // Smart Scan - verify signature on page
+        chrome.contextMenus.create({
+            id: CONTEXT_MENU_SCAN_ID,
+            title: '🔍 Vouch: Smart Scan',
+            contexts: ['page', 'selection'],
+        });
     });
 }
 
@@ -198,12 +201,8 @@ async function handleContextMenuClick(info, tab) {
         let vouchBlock;
 
         if (apiResponse && apiResponse.success) {
-            // Use short URL format (compact, user-friendly)
-            vouchBlock = formatVouchBlockShort(
-                selectedText,
-                email,
-                apiResponse.url
-            );
+            // Use compact badge format (just verification link, not the text)
+            vouchBlock = `✅ Signed by ${email}\n🔗 ${apiResponse.url}`;
         } else {
             // Fall back to full format (API unavailable)
             vouchBlock = formatVouchBlock(
