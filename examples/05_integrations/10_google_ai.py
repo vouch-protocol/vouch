@@ -60,10 +60,11 @@ signer = Signer(name="Google AI Agent")
 function_call = {
     "function": "place_order",
     "args": {"symbol": "GOOGL", "quantity": 10},
-    "model": "gemini-1.5-pro"
+    "model": "gemini-1.5-pro",
 }
 
 import json
+
 token = signer.sign(json.dumps(function_call))
 
 print("\n📋 Signed Function Call:")

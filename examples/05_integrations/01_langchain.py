@@ -23,20 +23,18 @@ signer = Signer(name="LangChain Agent", email="agent@example.com")
 # Wrap any tool to sign its calls
 from langchain_core.tools import tool
 
+
 @tool
 def transfer_funds(from_account: str, to_account: str, amount: float) -> str:
     """Transfer funds between accounts."""
     return f"Transferred ${amount} from {from_account} to {to_account}"
 
+
 # Make it sign all calls
 signed_tool = VouchSignerTool(tool=transfer_funds, signer=signer)
 
 # When invoked, the call is signed
-result = signed_tool.invoke({
-    "from_account": "12345",
-    "to_account": "67890", 
-    "amount": 100.00
-})
+result = signed_tool.invoke({"from_account": "12345", "to_account": "67890", "amount": 100.00})
 
 print(f"✅ Tool result: {result}")
 print("📝 (Call was cryptographically signed)")

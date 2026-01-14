@@ -33,26 +33,32 @@ print(f"Public Key: {agent.public_key[:20]}...")
 print("\n📊 Logging Events:")
 
 # Successful actions improve reputation
-engine.log_event(ReputationEvent(
-    agent_id=agent.public_key,
-    event_type="action_success",
-    details={"action": "trade_executed", "value": 1000},
-))
+engine.log_event(
+    ReputationEvent(
+        agent_id=agent.public_key,
+        event_type="action_success",
+        details={"action": "trade_executed", "value": 1000},
+    )
+)
 print("  ✅ Logged: trade executed successfully")
 
-engine.log_event(ReputationEvent(
-    agent_id=agent.public_key,
-    event_type="action_success",
-    details={"action": "risk_check_passed"},
-))
+engine.log_event(
+    ReputationEvent(
+        agent_id=agent.public_key,
+        event_type="action_success",
+        details={"action": "risk_check_passed"},
+    )
+)
 print("  ✅ Logged: risk check passed")
 
 # Failed actions decrease reputation
-engine.log_event(ReputationEvent(
-    agent_id=agent.public_key,
-    event_type="action_failed",
-    details={"action": "api_timeout", "severity": "low"},
-))
+engine.log_event(
+    ReputationEvent(
+        agent_id=agent.public_key,
+        event_type="action_failed",
+        details={"action": "api_timeout", "severity": "low"},
+    )
+)
 print("  ⚠️  Logged: API timeout (low severity)")
 
 # =============================================================================

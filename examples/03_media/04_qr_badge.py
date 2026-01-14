@@ -39,7 +39,8 @@ image_path = sys.argv[1] if len(sys.argv) > 1 else "sample.jpg"
 if not Path(image_path).exists():
     print("\n⚠️  Creating sample image...")
     from PIL import Image
-    img = Image.new('RGB', (800, 600), color='steelblue')
+
+    img = Image.new("RGB", (800, 600), color="steelblue")
     img.save(image_path)
 
 # Add badge
@@ -58,7 +59,7 @@ else:
 # =============================================================================
 
 print("\n📍 AVAILABLE POSITIONS:")
-positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center-bottom']
+positions = ["top-left", "top-right", "bottom-left", "bottom-right", "center-bottom"]
 
 for pos in positions:
     factory.set_position(pos)
@@ -73,13 +74,15 @@ for pos in positions:
 
 print("\n⚙️  CUSTOM OPTIONS:")
 
-custom_factory = BadgeFactory(BadgeOptions(
-    position='top-right',
-    size=128,  # Bigger QR code
-    opacity=0.8,
-    padding=24,
-    base_url='https://verify.mycompany.com',
-))
+custom_factory = BadgeFactory(
+    BadgeOptions(
+        position="top-right",
+        size=128,  # Bigger QR code
+        opacity=0.8,
+        padding=24,
+        base_url="https://verify.mycompany.com",
+    )
+)
 
 result = custom_factory.add_badge(image_path, signature_hash, "/tmp/custom_badge.jpg")
 print(f"   Custom verify URL: {result.verify_url}")

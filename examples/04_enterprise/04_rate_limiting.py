@@ -40,11 +40,11 @@ print("\n📊 Making requests...")
 
 for i in range(7):
     result = limiter.check(agent.public_key)
-    
+
     if result.allowed:
-        print(f"  Request {i+1}: ✅ Allowed ({result.remaining} remaining)")
+        print(f"  Request {i + 1}: ✅ Allowed ({result.remaining} remaining)")
     else:
-        print(f"  Request {i+1}: ❌ Blocked (retry in {result.retry_after:.0f}s)")
+        print(f"  Request {i + 1}: ❌ Blocked (retry in {result.retry_after:.0f}s)")
 
 # =============================================================================
 # Different Limits for Different Operations
@@ -74,11 +74,13 @@ print("\n📦 Composite Rate Limiter:")
 from vouch import CompositeRateLimiter
 
 # Multiple limits applied together
-composite = CompositeRateLimiter([
-    MemoryRateLimiter(max_requests=10, window_seconds=1),    # Burst: 10/sec
-    MemoryRateLimiter(max_requests=100, window_seconds=60),  # Sustained: 100/min
-    MemoryRateLimiter(max_requests=1000, window_seconds=3600), # Daily: 1000/hr
-])
+composite = CompositeRateLimiter(
+    [
+        MemoryRateLimiter(max_requests=10, window_seconds=1),  # Burst: 10/sec
+        MemoryRateLimiter(max_requests=100, window_seconds=60),  # Sustained: 100/min
+        MemoryRateLimiter(max_requests=1000, window_seconds=3600),  # Daily: 1000/hr
+    ]
+)
 
 print("  Burst: 10/second")
 print("  Sustained: 100/minute")

@@ -22,11 +22,9 @@ verifier = Verifier()
 
 # Simulate an incoming token (from previous example)
 signer = Signer(name="API Client Agent", email="agent@example.com")
-token = signer.sign(json.dumps({
-    "method": "POST",
-    "url": "https://api.bank.com/transfer",
-    "body": {"amount": 100}
-}))
+token = signer.sign(
+    json.dumps({"method": "POST", "url": "https://api.bank.com/transfer", "body": {"amount": 100}})
+)
 
 # =============================================================================
 # Basic Verification
@@ -51,25 +49,27 @@ print(f"   Public Key: {result.public_key[:20]}...")
 
 print("\n🔒 Access Control Pattern:")
 
+
 def verify_and_authorize(token: str, allowed_agents: list) -> dict:
     """Verify token and check if agent is allowed."""
     try:
         result = verifier.verify(token)
-        
+
         if not result.valid:
             return {"allowed": False, "error": "Invalid signature"}
-        
+
         if result.public_key not in allowed_agents:
             return {"allowed": False, "error": "Agent not authorized"}
-        
+
         return {
             "allowed": True,
             "agent": result.signer,
             "action": json.loads(result.payload),
         }
-        
+
     except VerificationError as e:
         return {"allowed": False, "error": str(e)}
+
 
 # Check authorization
 allowed = [signer.public_key]  # Whitelist this agent

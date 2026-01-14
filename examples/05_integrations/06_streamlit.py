@@ -9,7 +9,8 @@ Run: pip install streamlit && streamlit run 06_streamlit.py
 
 # If running as demo (not streamlit)
 import sys
-if 'streamlit' not in sys.modules:
+
+if "streamlit" not in sys.modules:
     print("📊 Streamlit + Vouch")
     print("=" * 50)
     print("Run with: streamlit run 06_streamlit.py")
@@ -21,7 +22,7 @@ from vouch import Signer, Verifier
 # Streamlit App Code
 # =============================================================================
 
-STREAMLIT_CODE = '''
+STREAMLIT_CODE = """
 import streamlit as st
 from vouch import Signer, Verifier
 from vouch.integrations.streamlit import VouchSession
@@ -65,7 +66,7 @@ if st.button("Submit (Signed)"):
 st.sidebar.header("📋 Signed Actions")
 for action in st.session_state.vouch.get_audit_log():
     st.sidebar.text(action)
-'''
+"""
 
 print("📝 Streamlit App Code:")
 print(STREAMLIT_CODE)

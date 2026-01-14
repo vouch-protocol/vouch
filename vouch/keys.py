@@ -24,6 +24,7 @@ KEYS_DIR = os.path.join(VOUCH_DIR, "keys")
 @dataclass
 class KeyPair:
     """Represents an Ed25519 key pair for Vouch identity."""
+
     private_key_jwk: str
     public_key_jwk: str
     did: Optional[str] = None
@@ -54,24 +55,24 @@ class KeyManager:
             raise ValueError("Cannot save identity without a DID")
 
         filename = self._get_filename(identity.did)
-        
+
         data = {
             "v": 1,
             "id": identity.did,
             "algo": "Ed25519",
             "public_key": identity.public_key_jwk,
-            "encrypted": False
+            "encrypted": False,
         }
 
         if password:
             # Encrypt private key
             salt = os.urandom(16)
-            
+
             # KDF: Scrypt (Standard params for interactive login)
-            n_cost = 16384 # 2^14
+            n_cost = 16384  # 2^14
             r_block = 8
             p_parallel = 1
-            
+
             kdf = Scrypt(
                 salt=salt,
                 length=32,
@@ -80,7 +81,7 @@ class KeyManager:
                 p=p_parallel,
             )
             key = kdf.derive(password.encode())
-            
+
             # Encryption: ChaCha20-Poly1305
             nonce = os.urandom(12)
             cipher = ChaCha20Poly1305(key)
@@ -90,14 +91,16 @@ class KeyManager:
             data["kdf"] = {
                 "algo": "scrypt",
                 "params": {
-                    "n": n_cost, "r": r_block, "p": p_parallel,
-                    "salt": base64.b64encode(salt).decode('utf-8')
-                }
+                    "n": n_cost,
+                    "r": r_block,
+                    "p": p_parallel,
+                    "salt": base64.b64encode(salt).decode("utf-8"),
+                },
             }
             data["cipher"] = {
                 "algo": "chacha20-poly1305",
-                "nonce": base64.b64encode(nonce).decode('utf-8'),
-                "ciphertext": base64.b64encode(ciphertext).decode('utf-8')
+                "nonce": base64.b64encode(nonce).decode("utf-8"),
+                "ciphertext": base64.b64encode(ciphertext).decode("utf-8"),
             }
         else:
             # Warning: Plain text storage
@@ -106,7 +109,7 @@ class KeyManager:
         # Write to file
         with open(filename, "w") as f:
             json.dump(data, f, indent=2)
-        
+
         # Set restricted permissions (Read/Write for user only)
         os.chmod(filename, 0o600)
 
@@ -129,7 +132,7 @@ class KeyManager:
                 # Extract KDF params
                 kdf_params = data["kdf"]["params"]
                 salt = base64.b64decode(kdf_params["salt"])
-                
+
                 # Derive key
                 kdf = Scrypt(
                     salt=salt,
@@ -139,24 +142,22 @@ class KeyManager:
                     p=kdf_params["p"],
                 )
                 key = kdf.derive(password.encode())
-                
+
                 # Decrypt
                 cipher_info = data["cipher"]
                 nonce = base64.b64decode(cipher_info["nonce"])
                 ciphertext = base64.b64decode(cipher_info["ciphertext"])
-                
+
                 cipher = ChaCha20Poly1305(key)
-                private_key_jwk = cipher.decrypt(nonce, ciphertext, None).decode('utf-8')
-                
+                private_key_jwk = cipher.decrypt(nonce, ciphertext, None).decode("utf-8")
+
             except Exception as e:
                 raise ValueError("Decryption failed. Invalid password or corrupted file.") from e
         else:
             private_key_jwk = data["private_key"]
 
         return KeyPair(
-            did=data["id"],
-            public_key_jwk=data["public_key"],
-            private_key_jwk=private_key_jwk
+            did=data["id"], public_key_jwk=data["public_key"], private_key_jwk=private_key_jwk
         )
 
     def list_identities(self) -> List[Dict[str, Any]]:
@@ -167,11 +168,13 @@ class KeyManager:
             try:
                 with open(filepath, "r") as f:
                     data = json.load(f)
-                    identities.append({
-                        "did": data["id"],
-                        "encrypted": data.get("encrypted", False),
-                        "file": filepath
-                    })
+                    identities.append(
+                        {
+                            "did": data["id"],
+                            "encrypted": data.get("encrypted", False),
+                            "file": filepath,
+                        }
+                    )
             except Exception:
                 continue
         return identities

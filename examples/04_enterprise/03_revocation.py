@@ -8,9 +8,9 @@ Run: python 03_revocation.py
 """
 
 from vouch import (
-    Signer, 
+    Signer,
     Verifier,
-    RevocationRegistry, 
+    RevocationRegistry,
     RevocationRecord,
     MemoryRevocationStore,
 )

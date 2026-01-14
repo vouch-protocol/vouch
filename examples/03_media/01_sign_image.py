@@ -31,7 +31,8 @@ image_path = sys.argv[1] if len(sys.argv) > 1 else "sample.jpg"
 if not Path(image_path).exists():
     print("⚠️  Creating sample image for demo...")
     from PIL import Image
-    img = Image.new('RGB', (800, 600), color='steelblue')
+
+    img = Image.new("RGB", (800, 600), color="steelblue")
     img.save(image_path)
 
 # Sign it!
@@ -49,7 +50,7 @@ if result.success:
     print(f"   Original:  {result.source_path}")
     print(f"   Signed:    {result.output_path}")
     print(f"   Sidecar:   {result.sidecar_path}")
-    
+
     print("\n📋 Signature Details:")
     print(f"   Version:   {result.signature.version}")
     print(f"   Signer:    {result.signature.display_name}")

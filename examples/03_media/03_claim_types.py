@@ -11,7 +11,7 @@ Run: python 03_claim_types.py
 """
 
 from vouch.media.native import (
-    sign_image_native, 
+    sign_image_native,
     generate_keypair,
     ClaimType,
     analyze_exif,
@@ -35,9 +35,9 @@ print()
 
 # Create a fake "downloaded" image (no EXIF)
 with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-    img = Image.new('RGB', (100, 100), 'red')
+    img = Image.new("RGB", (100, 100), "red")
     img.save(f.name)
-    
+
     # Analyze EXIF
     analysis = analyze_exif(f.name)
     print("EXIF Analysis:")
@@ -47,7 +47,7 @@ with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
     print(f"   Confidence: {analysis.confidence_score:.0%}")
     print(f"   Is likely original: {analysis.is_likely_original}")
     print(f"   Suggested claim: {analysis.suggested_claim_type.value}")
-    
+
     # Try to claim CAPTURED anyway
     result = sign_image_native(
         source_path=f.name,
@@ -56,7 +56,7 @@ with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
         display_name="Test",
         claim_type=ClaimType.CAPTURED,  # Force CAPTURED
     )
-    
+
     print(f"\n   ⚠️  Result: {result.signature.claim_type.upper()}")
     if result.warning:
         print(f"   Warning: {result.warning}")
@@ -72,9 +72,9 @@ print("Requires: Nothing special")
 print()
 
 with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-    img = Image.new('RGB', (100, 100), 'blue')
+    img = Image.new("RGB", (100, 100), "blue")
     img.save(f.name)
-    
+
     result = sign_image_native(
         source_path=f.name,
         private_key=private_key,
@@ -82,7 +82,7 @@ with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
         display_name="Editor",
         # claim_type not specified = auto-detect (defaults to SIGNED)
     )
-    
+
     print(f"   Claim type: {result.signature.claim_type.upper()}")
     print(f"   Chain ID: {result.signature.chain_id}")
     print(f"   Chain depth: {result.signature.chain_depth}")
@@ -100,16 +100,16 @@ print()
 # First, original signer signs
 original_key, original_did = generate_keypair()
 with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-    img = Image.new('RGB', (100, 100), 'green')
+    img = Image.new("RGB", (100, 100), "green")
     img.save(f.name)
-    
+
     original_result = sign_image_native(
         source_path=f.name,
         private_key=original_key,
         did=original_did,
         display_name="Original Creator",
     )
-    
+
     print(f"   Original signer: {original_result.signature.display_name}")
     print(f"   Original chain: {original_result.signature.chain_id}")
     print(f"   Original depth: {original_result.signature.chain_depth}")
@@ -124,7 +124,7 @@ with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
         claim_type=ClaimType.SHARED,
         parent_signature=original_result.signature,  # Link to parent!
     )
-    
+
     print(f"\n   Sharer: {shared_result.signature.display_name}")
     print(f"   Same chain: {shared_result.signature.chain_id}")
     print(f"   New depth: {shared_result.signature.chain_depth}")

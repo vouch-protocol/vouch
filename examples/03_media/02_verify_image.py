@@ -34,7 +34,7 @@ result = verify_image_native(image_path)
 if result.is_valid:
     print("✅ VALID SIGNATURE")
     print(f"   Source: {result.source}")  # 'sidecar' or 'embedded'
-    
+
     if result.signature:
         sig = result.signature
         print("\n🔐 Signer:")
@@ -43,19 +43,19 @@ if result.is_valid:
             print(f"   Email: {sig.email}")
         print(f"   DID:   {truncate_did(sig.did)}")
         print(f"   Tier:  {sig.credential_type}")
-        
+
         print("\n📋 Claim:")
         print(f"   Type:  {sig.claim_type.upper()}")
         print(f"   Chain: {sig.chain_id}")
         print(f"   Depth: {sig.chain_depth}")
         print(f"   Trust: {sig.chain_strength:.0%}")
-        
+
         # Show org credentials if present
         if sig.credentials:
             print("\n🏢 Organization:")
             for cred in sig.credentials:
-                org = cred.get('issuer_name', cred.get('issuer', 'Unknown'))
-                role = cred.get('role', 'Unknown')
+                org = cred.get("issuer_name", cred.get("issuer", "Unknown"))
+                role = cred.get("role", "Unknown")
                 print(f"   {org} - {role}")
 else:
     print("❌ INVALID OR MISSING SIGNATURE")

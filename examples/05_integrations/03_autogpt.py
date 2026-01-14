@@ -55,6 +55,7 @@ command = "file_write"
 args = {"path": "/data/report.txt", "content": "Analysis results..."}
 
 import json
+
 payload = json.dumps({"command": command, "args": args})
 token = signer.sign(payload)
 

@@ -36,7 +36,7 @@ request_intent = {
         "from": "account_123",
         "to": "account_456",
         "amount": 100.00,
-    }
+    },
 }
 
 # Sign it

@@ -47,15 +47,15 @@ print("\n⏱️ Verification Timing:")
 start = time.time()
 result1 = verifier.verify(token)
 time1 = time.time() - start
-print(f"  First verification: {time1*1000:.2f}ms (cache miss)")
+print(f"  First verification: {time1 * 1000:.2f}ms (cache miss)")
 
 # Second verification (cache hit)
 start = time.time()
 result2 = verifier.verify(token)
 time2 = time.time() - start
-print(f"  Second verification: {time2*1000:.2f}ms (cache hit)")
+print(f"  Second verification: {time2 * 1000:.2f}ms (cache hit)")
 
-print(f"  Speedup: {time1/time2:.1f}x faster")
+print(f"  Speedup: {time1 / time2:.1f}x faster")
 
 # =============================================================================
 # Cache Stats

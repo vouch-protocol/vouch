@@ -61,7 +61,7 @@ from PIL import Image
 import tempfile
 
 with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-    img = Image.new('RGB', (800, 600), color='darkgreen')
+    img = Image.new("RGB", (800, 600), color="darkgreen")
     img.save(f.name)
     photo_path = f.name
 
@@ -96,10 +96,10 @@ print(f"   Signer: {verify_result.signature.display_name}")
 # Check organization credential
 if verify_result.signature.credentials:
     cred = verify_result.signature.credentials[0]
-    org_name = cred.get('issuer_name', cred['issuer'])
-    role = cred.get('role', 'Unknown')
-    dept = cred.get('department', '')
-    
+    org_name = cred.get("issuer_name", cred["issuer"])
+    role = cred.get("role", "Unknown")
+    dept = cred.get("department", "")
+
     print(f"\n   🏢 Organization: {org_name}")
     if dept:
         print(f"   Department: {dept}")
@@ -124,11 +124,12 @@ print("=" * 50)
 
 import asyncio
 
+
 async def demo_revocation():
     # Org revokes the credential
     await manager.revoke_credential(credential, reason="employment_ended")
     print(f"   ✅ Credential revoked: {credential.credential_hash}")
-    
+
     # Now verification fails
     result = manager.verify_chain(
         signer_did=employee_did,
@@ -137,6 +138,7 @@ async def demo_revocation():
     print(f"   Chain still valid? {result.is_valid}")
     if not result.is_valid:
         print(f"   Error: {result.errors[0]}")
+
 
 asyncio.run(demo_revocation())
 

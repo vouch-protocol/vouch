@@ -72,7 +72,7 @@ for event in auditor.query(agent_id=agent.public_key, limit=10):
 print("\n   Transfer operations only:")
 for event in auditor.query(limit=10):
     payload = json.loads(event.payload)
-    if payload.get('action') == 'transfer':
+    if payload.get("action") == "transfer":
         print(f"   - Transfer ${payload['amount']} from {payload['from']} to {payload['to']}")
 
 # =============================================================================

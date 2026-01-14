@@ -15,7 +15,7 @@ from vouch.media.c2pa import (
 
 __all__ = [
     "MediaSigner",
-    "MediaVerifier", 
+    "MediaVerifier",
     "sign_image",
     "verify_image",
 ]
