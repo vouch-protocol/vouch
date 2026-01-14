@@ -250,21 +250,27 @@ export default {
         // Route requests
         const hostname = url.hostname;
 
-        // Handle v.vouch-protocol.com shortlinks - redirect to verification page
+        // Handle v.vouch-protocol.com 
         if (hostname === 'v.vouch-protocol.com') {
+            // Check if it's an API endpoint first (before shortlink handling)
+            if (path.startsWith('/api/')) {
+                // Fall through to API handling below
+            }
             // Check if it's a paper link (/p/xxx)
-            const paperMatch = path.match(/^\/p\/([a-zA-Z0-9_-]+)$/);
-            if (paperMatch) {
+            else if (path.match(/^\/p\/([a-zA-Z0-9_-]+)$/)) {
+                const paperMatch = path.match(/^\/p\/([a-zA-Z0-9_-]+)$/);
                 return handlePaperPage(paperMatch[1], env);
             }
-
-            const shortId = path.replace('/', '');
-            if (shortId && shortId.match(/^[a-zA-Z0-9]+$/)) {
-                // Redirect to main site verification page
-                return Response.redirect(`https://vouch-protocol.com/v/${shortId}`, 302);
+            // Handle shortlinks (e.g., /abc123)
+            else {
+                const shortId = path.replace('/', '');
+                if (shortId && shortId.match(/^[a-zA-Z0-9]+$/)) {
+                    // Redirect to main site verification page
+                    return Response.redirect(`https://vouch-protocol.com/v/${shortId}`, 302);
+                }
+                // Root of v subdomain - redirect to main site
+                return Response.redirect('https://vouch-protocol.com', 302);
             }
-            // Root of v subdomain - redirect to main site
-            return Response.redirect('https://vouch-protocol.com', 302);
         }
 
         // Support both /api/* (old) and /* (new api subdomain)
@@ -496,7 +502,7 @@ function handlePaperPage(id, env) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vouch Paper Verification - ${id}</title>
-    <link rel="icon" type="image/x-icon" href="https://vouch-protocol.com/favicon.ico">
+    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
