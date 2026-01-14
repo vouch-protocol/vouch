@@ -285,7 +285,7 @@ async function handleSignaturePage(id, env) {
             var isEdge = ua.indexOf('Edg/') > -1;
             var link = document.getElementById('cta-link');
             if (isEdge) {
-                link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/YOUR_EDGE_ID';
+                link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/pmplohfpimnakaokhonojcgbdppbnjak';
                 link.textContent = '✍️ Sign your own text → Get Edge Extension';
             }
         })();
@@ -735,7 +735,7 @@ function handlePaperPage(id, env) {
             var links = document.querySelectorAll('.cta-banner a');
             links.forEach(function(link) {
                 if (isEdge) {
-                    link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/YOUR_EDGE_ID';
+                    link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/pmplohfpimnakaokhonojcgbdppbnjak';
                 } else {
                     link.href = 'https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb';
                 }
