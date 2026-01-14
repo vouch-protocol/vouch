@@ -9,6 +9,7 @@
     "storage",
     "contextMenus",
     "activeTab",
+    "scripting",
     "clipboardWrite"
   ],
   "oauth2": {
