@@ -70,7 +70,7 @@ tool_call = {
 import json
 token = signer.sign(json.dumps(tool_call))
 
-print(f"\n📋 Signed MCP Tool Call:")
+print("\n📋 Signed MCP Tool Call:")
 print(f"   Tool: {tool_call['tool']}")
 print(f"   Params: {tool_call['params']}")
 print(f"   Token: {token[:50]}...")

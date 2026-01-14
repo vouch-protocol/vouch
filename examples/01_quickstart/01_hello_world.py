@@ -24,7 +24,7 @@ print(f"📝 Token: {signed_token[:80]}...")
 verifier = Verifier()
 result = verifier.verify(signed_token)
 
-print(f"\n🔍 Verification result:")
+print("\n🔍 Verification result:")
 print(f"   Valid: {result.valid}")
 print(f"   Signer: {result.signer}")
 print(f"   Message: {result.payload}")

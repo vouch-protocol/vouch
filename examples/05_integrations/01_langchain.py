@@ -39,7 +39,7 @@ result = signed_tool.invoke({
 })
 
 print(f"✅ Tool result: {result}")
-print(f"📝 (Call was cryptographically signed)")
+print("📝 (Call was cryptographically signed)")
 
 # =============================================================================
 # Option 2: With LangChain Agents

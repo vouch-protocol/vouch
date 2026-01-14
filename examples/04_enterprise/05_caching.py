@@ -31,8 +31,8 @@ cache = MemoryCache(
 # Create verifier with cache
 verifier = Verifier(cache=cache)
 
-print(f"Cache TTL: 300 seconds")
-print(f"Max entries: 1000")
+print("Cache TTL: 300 seconds")
+print("Max entries: 1000")
 
 # =============================================================================
 # Cached Verification

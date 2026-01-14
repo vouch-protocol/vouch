@@ -42,7 +42,7 @@ request_intent = {
 # Sign it
 token = signer.sign(json.dumps(request_intent))
 
-print(f"\n📝 Signed Request:")
+print("\n📝 Signed Request:")
 print(f"   Method: {request_intent['method']}")
 print(f"   URL: {request_intent['url']}")
 print(f"   Token: {token[:50]}...")

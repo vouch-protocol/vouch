@@ -66,7 +66,7 @@ function_call = {
 import json
 token = signer.sign(json.dumps(function_call))
 
-print(f"\n📋 Signed Function Call:")
+print("\n📋 Signed Function Call:")
 print(f"   Function: {function_call['function']}")
 print(f"   Args: {function_call['args']}")
 print(f"   Token: {token[:50]}...")

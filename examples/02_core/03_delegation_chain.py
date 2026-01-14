@@ -107,8 +107,8 @@ bad_action = {
 }
 
 print(f"   Worker trying: {bad_action['action']}")
-print(f"   Delegated scope: database:read only")
-print(f"   ❌ Server should reject this action")
+print("   Delegated scope: database:read only")
+print("   ❌ Server should reject this action")
 
 print("""
 📝 DELEGATION BENEFITS:

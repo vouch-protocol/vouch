@@ -57,7 +57,7 @@ with open(key_file) as f:
     loaded_key = f.read().strip()
 
 signer = Signer(name="My Agent", private_key=loaded_key)
-print(f"   ✅ Loaded key from file")
+print("   ✅ Loaded key from file")
 print(f"   Public Key: {signer.public_key[:30]}...")
 
 # =============================================================================

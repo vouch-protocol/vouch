@@ -26,7 +26,7 @@ print("=" * 50)
 
 # Organization's key (in reality, securely managed by org admin)
 org_key, org_did = generate_keypair()
-print(f"   Org DID: did:vouch:nyt")  # Registered in directory
+print("   Org DID: did:vouch:nyt")  # Registered in directory
 
 # Employee's key (on their device)
 employee_key, employee_did = generate_keypair()
@@ -44,7 +44,7 @@ credential = manager.issue_credential(
     issuer_name="The New York Times",
 )
 
-print(f"\n   ✅ Credential issued!")
+print("\n   ✅ Credential issued!")
 print(f"   Display: {credential.display_string}")
 print(f"   Expiry: {credential.expiry[:10]}")
 print(f"   Hash: {credential.credential_hash}")
@@ -76,7 +76,7 @@ result = sign_image_native(
     credentials=[credential.to_dict()],  # 👈 Attach credential!
 )
 
-print(f"   ✅ Photo signed!")
+print("   ✅ Photo signed!")
 print(f"   Signer: {result.signature.display_name}")
 print(f"   Credentials attached: {len(result.signature.credentials)}")
 
