@@ -112,7 +112,7 @@ async function storeSignature(signatureData) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-        const response = await fetch(`${API_BASE_URL}/sign`, {
+        const response = await fetch(`${API_BASE_URL}/api/sign`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
