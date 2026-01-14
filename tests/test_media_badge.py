@@ -101,7 +101,7 @@ class TestBadgeFactoryConfig:
         config = factory.get_config()
         assert config.position == 'bottom-right'
         assert config.size == 64
-        assert config.include_qr == True
+        assert config.include_qr
         assert config.base_url == "https://vouch.me"
     
     def test_custom_options(self):
