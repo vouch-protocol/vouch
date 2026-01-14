@@ -213,18 +213,47 @@ async function handleContextMenuClick(info, tab) {
             );
         }
 
-        // Copy to clipboard via content script
-        await chrome.tabs.sendMessage(tab.id, {
-            action: 'copyToClipboard',
-            text: vouchBlock,
-        });
+        // Try to copy to clipboard via content script
+        // If content script not loaded, inject it first
+        try {
+            await chrome.tabs.sendMessage(tab.id, {
+                action: 'copyToClipboard',
+                text: vouchBlock,
+            });
 
-        // Show notification
-        await chrome.tabs.sendMessage(tab.id, {
-            action: 'showNotification',
-            message: '✅ Signed and copied to clipboard!',
-            type: 'success',
-        });
+            // Show notification
+            await chrome.tabs.sendMessage(tab.id, {
+                action: 'showNotification',
+                message: '✅ Signed and copied to clipboard!',
+                type: 'success',
+            });
+        } catch (contentScriptError) {
+            // Content script not loaded - try to inject it
+            console.log('Vouch: Content script not loaded, injecting...');
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ['content.js']
+                });
+                // Now try again
+                await chrome.tabs.sendMessage(tab.id, {
+                    action: 'copyToClipboard',
+                    text: vouchBlock,
+                });
+                await chrome.tabs.sendMessage(tab.id, {
+                    action: 'showNotification',
+                    message: '✅ Signed and copied to clipboard!',
+                    type: 'success',
+                });
+            } catch (injectError) {
+                // Cannot inject (chrome:// pages, etc.) - copy via navigator.clipboard in offscreen maybe
+                // For now, just log the signed text
+                console.log('Vouch: Could not inject content script. Signed text:', vouchBlock);
+                // Try using offscreen clipboard API as fallback
+                // This requires additional setup, so for now we alert via browser action
+                console.error('Vouch: Please refresh the page and try again.');
+            }
+        }
 
     } catch (error) {
         console.error('Vouch: Signing error:', error);
