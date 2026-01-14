@@ -170,6 +170,21 @@ git push --force-with-lease
 - Join our [Discord](https://discord.gg/VxgYkjdph)
 - Check the [Documentation](https://github.com/vouch-protocol/vouch#readme)
 
+## Release Process
+
+We follow Semantic Versioning. To create a new release:
+
+1.  **Update Version**: Bump version in `pyproject.toml`
+2.  **Commit**: `git commit -m "chore: bump version to X.Y.Z"`
+3.  **Tag**: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+4.  **Push**: `git push origin main --tags`
+5.  **Build & Publish**:
+    ```bash
+    pip install build twine
+    python -m build
+    twine upload dist/*
+    ```
+
 ---
 
 Thank you for contributing to Vouch Protocol! 🙏
