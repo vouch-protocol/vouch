@@ -12,6 +12,10 @@
     "scripting",
     "clipboardWrite"
   ],
+  "host_permissions": [
+    "https://v.vouch-protocol.com/*",
+    "https://api.vouch-protocol.com/*"
+  ],
   "oauth2": {
     "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
     "scopes": [
