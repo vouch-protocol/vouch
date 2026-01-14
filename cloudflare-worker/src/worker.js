@@ -275,10 +275,21 @@ async function handleSignaturePage(id, env) {
         <div class="footer">
             <a href="https://vouch-protocol.com">vouch-protocol.com</a>
         </div>
-        <div class="cta-banner">
-            <a href="https://vouch-protocol.com">✍️ Sign your own text with Vouch Protocol → Get the Extension</a>
+        <div class="cta-banner" id="cta-banner">
+            <a id="cta-link" href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your own text with Vouch Protocol → Get the Extension</a>
         </div>
     </div>
+    <script>
+        (function() {
+            var ua = navigator.userAgent;
+            var isEdge = ua.indexOf('Edg/') > -1;
+            var link = document.getElementById('cta-link');
+            if (isEdge) {
+                link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/YOUR_EDGE_ID';
+                link.textContent = '✍️ Sign your own text → Get Edge Extension';
+            }
+        })();
+    </script>
 </body>
 </html>`;
 
@@ -288,7 +299,7 @@ async function handleSignaturePage(id, env) {
         });
 
     } catch (error) {
-        return new Response(`<h1>Error</h1><p>${error.message}</p>`, {
+        return new Response(`< h1 > Error</h1> <p>${error.message}</p>`, {
             status: 500,
             headers: { 'Content-Type': 'text/html' },
         });
@@ -513,7 +524,7 @@ async function handlePaperRegister(request, env) {
         }
 
         // Check if ID already exists
-        const existing = await env.SIGNATURES.get(`paper:${id}`);
+        const existing = await env.SIGNATURES.get(`paper:${id} `);
         if (existing) {
             return new Response(JSON.stringify({
                 error: 'Paper ID already registered. Choose a different ID.',
@@ -537,7 +548,7 @@ async function handlePaperRegister(request, env) {
         };
 
         // Store with paper: prefix
-        await env.SIGNATURES.put(`paper:${id}`, JSON.stringify(paperData));
+        await env.SIGNATURES.put(`paper:${id} `, JSON.stringify(paperData));
 
         // Return success
         return new Response(JSON.stringify({
@@ -704,7 +715,7 @@ function handlePaperPage(id, env) {
             <a href="https://vouch-protocol.com">vouch-protocol.com</a>
         </div>
         <div class="cta-banner">
-            <a href="https://vouch-protocol.com">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>
+            <a href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>
         </div>
         ` : `
         <h1 class="not-found">✗ Paper Not Found</h1>
@@ -713,10 +724,24 @@ function handlePaperPage(id, env) {
             <a href="https://vouch-protocol.com">vouch-protocol.com</a>
         </div>
         <div class="cta-banner">
-            <a href="https://vouch-protocol.com">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>
+            <a id="cta-link2" href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>
         </div>
         `}
     </div>
+    <script>
+        (function() {
+            var ua = navigator.userAgent;
+            var isEdge = ua.indexOf('Edg/') > -1;
+            var links = document.querySelectorAll('.cta-banner a');
+            links.forEach(function(link) {
+                if (isEdge) {
+                    link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/YOUR_EDGE_ID';
+                } else {
+                    link.href = 'https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb';
+                }
+            });
+        })();
+    </script>
 </body>
 </html>`;
 
