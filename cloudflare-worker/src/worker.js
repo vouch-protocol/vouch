@@ -153,6 +153,148 @@ async function handleVerify(id, env) {
     }
 }
 
+// Text signature verification HTML page (for shortlinks)
+async function handleSignaturePage(id, env) {
+    try {
+        const data = await env.SIGNATURES.get(id);
+
+        // Format date as "10 Jan 2026 10:30:45"
+        const formatDate = (isoString) => {
+            const date = new Date(isoString);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const mins = date.getMinutes().toString().padStart(2, '0');
+            const secs = date.getSeconds().toString().padStart(2, '0');
+            return `${day} ${month} ${year} ${hours}:${mins}:${secs}`;
+        };
+
+        // Escape HTML to prevent XSS
+        const escapeHtml = (str) => {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+
+        if (!data) {
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vouch Verification - Not Found</title>
+    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .not-found { color: #ef4444; }
+        h1 { margin-top: 0; }
+        .footer { margin-top: 24px; text-align: center; color: #666; font-size: 14px; }
+        a { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 class="not-found">✗ Signature Not Found</h1>
+        <p>No signature found with ID: <strong>${escapeHtml(id)}</strong></p>
+        <p>The signature may have expired or the link may be incorrect.</p>
+        <div class="footer">
+            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+        </div>
+    </div>
+</body>
+</html>`;
+            return new Response(html, {
+                status: 404,
+                headers: { 'Content-Type': 'text/html' },
+            });
+        }
+
+        const signatureData = JSON.parse(data);
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vouch Signature Verification - ${id}</title>
+    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .logo { width: 40px; height: 40px; border-radius: 8px; }
+        .verified { color: #22c55e; margin: 0; }
+        h1 { margin-top: 0; }
+        .field { margin: 16px 0; }
+        .label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .value { font-size: 16px; margin-top: 4px; word-break: break-all; }
+        .text-content { background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #22c55e; white-space: pre-wrap; font-family: inherit; }
+        .hash { font-family: monospace; font-size: 12px; background: #f0f0f0; padding: 8px; border-radius: 4px; overflow-wrap: break-word; }
+        .footer { margin-top: 24px; text-align: center; color: #666; font-size: 14px; }
+        .cta-banner { margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; text-align: center; }
+        .cta-banner a { color: white; text-decoration: none; font-weight: 600; }
+        .cta-banner a:hover { text-decoration: underline; }
+        a { color: #3b82f6; }
+        .tier-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-left: 8px; }
+        .tier-free { background: #e5e7eb; color: #374151; }
+        .tier-pro { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <img class="logo" src="https://vouch-protocol.com/vouch-logo-icon.jpg" alt="Vouch Protocol">
+            <h1 class="verified">✓ Verified Signature</h1>
+        </div>
+        <div class="field">
+            <div class="label">Signed Text</div>
+            <div class="text-content">${escapeHtml(signatureData.text)}</div>
+        </div>
+        <div class="field">
+            <div class="label">Signed By</div>
+            <div class="value">${escapeHtml(signatureData.email)} <span class="tier-badge tier-${signatureData.tier || 'free'}">${signatureData.tier || 'free'}</span></div>
+        </div>
+        <div class="field">
+            <div class="label">Signed On</div>
+            <div class="value">${formatDate(signatureData.created)}</div>
+        </div>
+        <div class="field">
+            <div class="label">Public Key</div>
+            <div class="value hash">${escapeHtml(signatureData.key)}</div>
+        </div>
+        <div class="field">
+            <div class="label">Signature</div>
+            <div class="value hash">${escapeHtml(signatureData.sig)}</div>
+        </div>
+        ${signatureData.expiresAt ? `
+        <div class="field">
+            <div class="label">Expires</div>
+            <div class="value">${formatDate(signatureData.expiresAt)}</div>
+        </div>` : ''}
+        <div class="footer">
+            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+        </div>
+        <div class="cta-banner">
+            <a href="https://vouch-protocol.com">✍️ Sign your own text with Vouch Protocol → Get the Extension</a>
+        </div>
+    </div>
+</body>
+</html>`;
+
+        return new Response(html, {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+        });
+
+    } catch (error) {
+        return new Response(`<h1>Error</h1><p>${error.message}</p>`, {
+            status: 500,
+            headers: { 'Content-Type': 'text/html' },
+        });
+    }
+}
+
 // Pro signers list - GitHub usernames who get custom ID access
 // In production, this could be stored in KV or fetched from a database
 const PRO_SIGNERS = ['rampyg']; // Add more as needed
@@ -265,8 +407,8 @@ export default {
             else {
                 const shortId = path.replace('/', '');
                 if (shortId && shortId.match(/^[a-zA-Z0-9]+$/)) {
-                    // Redirect to main site verification page
-                    return Response.redirect(`https://vouch-protocol.com/v/${shortId}`, 302);
+                    // Render verification page directly (don't redirect to GitHub Pages)
+                    return handleSignaturePage(shortId, env);
                 }
                 // Root of v subdomain - redirect to main site
                 return Response.redirect('https://vouch-protocol.com', 302);
