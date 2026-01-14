@@ -24,9 +24,8 @@ const STORAGE_KEYS = {
 const CONTEXT_MENU_ID = 'vouch-sign-selection';
 const CONTEXT_MENU_SCAN_ID = 'vouch-smart-scan';
 
-// API endpoint for signature storage
-// Update this to your Cloudflare Worker URL once deployed
-const API_BASE_URL = 'https://api.vouch-protocol.com';
+// API endpoint for signature storage (Cloudflare Worker)
+const API_BASE_URL = 'https://v.vouch-protocol.com';
 
 // =============================================================================
 // Key Management
@@ -185,45 +184,35 @@ async function handleContextMenuClick(info, tab) {
         // Sign the message (returns Base64)
         const signature = signMessage(messageToSign, keypair.secretKey);
 
-        // TODO: Uncomment when Cloudflare Worker is deployed
         // Convert public key to Base64 for API
-        // const publicKeyBase64 = toBase64(fromHex(keypair.publicKey));
+        const publicKeyBase64 = toBase64(fromHex(keypair.publicKey));
 
         // Try to store in Cloudflare and get short URL
-        // const apiResponse = await storeSignature({
-        //     text: selectedText,
-        //     email: email,
-        //     key: publicKeyBase64,
-        //     sig: signature,
-        // });
+        const apiResponse = await storeSignature({
+            text: selectedText,
+            email: email,
+            key: publicKeyBase64,
+            sig: signature,
+        });
 
         let vouchBlock;
 
-        // TODO: Uncomment when Cloudflare Worker is deployed
-        // if (apiResponse && apiResponse.success) {
-        //     // Use short URL format
-        //     vouchBlock = formatVouchBlockShort(
-        //         selectedText,
-        //         email,
-        //         apiResponse.url
-        //     );
-        // } else {
-        //     // Fall back to full format (API unavailable)
-        //     vouchBlock = formatVouchBlock(
-        //         selectedText,
-        //         email,
-        //         keypair.publicKey,
-        //         signature
-        //     );
-        // }
-
-        // For now, use full format directly
-        vouchBlock = formatVouchBlock(
-            selectedText,
-            email,
-            keypair.publicKey,
-            signature
-        );
+        if (apiResponse && apiResponse.success) {
+            // Use short URL format (compact, user-friendly)
+            vouchBlock = formatVouchBlockShort(
+                selectedText,
+                email,
+                apiResponse.url
+            );
+        } else {
+            // Fall back to full format (API unavailable)
+            vouchBlock = formatVouchBlock(
+                selectedText,
+                email,
+                keypair.publicKey,
+                signature
+            );
+        }
 
         // Copy to clipboard via content script
         await chrome.tabs.sendMessage(tab.id, {
