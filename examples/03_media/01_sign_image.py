@@ -29,7 +29,7 @@ print(f"🔑 Generated DID: {did[:40]}...")
 image_path = sys.argv[1] if len(sys.argv) > 1 else "sample.jpg"
 
 if not Path(image_path).exists():
-    print(f"⚠️  Creating sample image for demo...")
+    print("⚠️  Creating sample image for demo...")
     from PIL import Image
     img = Image.new('RGB', (800, 600), color='steelblue')
     img.save(image_path)
@@ -45,12 +45,12 @@ result = sign_image_native(
 )
 
 if result.success:
-    print(f"\n✅ Image signed successfully!")
+    print("\n✅ Image signed successfully!")
     print(f"   Original:  {result.source_path}")
     print(f"   Signed:    {result.output_path}")
     print(f"   Sidecar:   {result.sidecar_path}")
     
-    print(f"\n📋 Signature Details:")
+    print("\n📋 Signature Details:")
     print(f"   Version:   {result.signature.version}")
     print(f"   Signer:    {result.signature.display_name}")
     print(f"   DID:       {result.signature.did[:30]}...")

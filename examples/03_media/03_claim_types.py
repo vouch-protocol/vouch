@@ -40,7 +40,7 @@ with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
     
     # Analyze EXIF
     analysis = analyze_exif(f.name)
-    print(f"EXIF Analysis:")
+    print("EXIF Analysis:")
     print(f"   Has camera info: {analysis.has_camera_info}")
     print(f"   Has GPS: {analysis.has_gps}")
     print(f"   Has timestamp: {analysis.has_timestamp}")

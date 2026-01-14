@@ -24,7 +24,7 @@ auditor = Auditor()
 agent = Signer(name="Financial Agent", email="fin@example.com")
 
 print(f"Agent: {agent.name}")
-print(f"Auditor ready\n")
+print("Auditor ready\n")
 
 # =============================================================================
 # Log Actions
@@ -36,19 +36,19 @@ print("📝 Logging Actions:")
 action1 = {"action": "get_balance", "account": "12345"}
 token1 = agent.sign(json.dumps(action1))
 auditor.log(token=token1, metadata={"ip": "10.0.0.1", "department": "treasury"})
-print(f"   ✅ get_balance logged")
+print("   ✅ get_balance logged")
 
 # Action 2: Transfer funds
 action2 = {"action": "transfer", "from": "12345", "to": "67890", "amount": 500}
 token2 = agent.sign(json.dumps(action2))
 auditor.log(token=token2, metadata={"ip": "10.0.0.1", "approved_by": "manager@example.com"})
-print(f"   ✅ transfer logged")
+print("   ✅ transfer logged")
 
 # Action 3: Generate report
 action3 = {"action": "generate_report", "type": "monthly_summary"}
 token3 = agent.sign(json.dumps(action3))
 auditor.log(token=token3, metadata={"ip": "10.0.0.1"})
-print(f"   ✅ generate_report logged")
+print("   ✅ generate_report logged")
 
 # =============================================================================
 # Query Audit Log

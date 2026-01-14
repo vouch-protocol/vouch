@@ -37,7 +37,7 @@ image_path = sys.argv[1] if len(sys.argv) > 1 else "sample.jpg"
 
 # Create sample if needed
 if not Path(image_path).exists():
-    print(f"\n⚠️  Creating sample image...")
+    print("\n⚠️  Creating sample image...")
     from PIL import Image
     img = Image.new('RGB', (800, 600), color='steelblue')
     img.save(image_path)
@@ -47,7 +47,7 @@ signature_hash = "example_signature_hash_abc123"
 result = factory.add_badge(image_path, signature_hash)
 
 if result.success:
-    print(f"\n✅ Badge added!")
+    print("\n✅ Badge added!")
     print(f"   Output: {result.output_path}")
     print(f"   Verify URL: {result.verify_url}")
 else:

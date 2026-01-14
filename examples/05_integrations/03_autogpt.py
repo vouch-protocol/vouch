@@ -58,7 +58,7 @@ import json
 payload = json.dumps({"command": command, "args": args})
 token = signer.sign(payload)
 
-print(f"\n📋 Signed Command:")
+print("\n📋 Signed Command:")
 print(f"   Command: {command}")
 print(f"   Args: {args}")
 print(f"   Token: {token[:60]}...")

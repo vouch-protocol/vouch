@@ -37,7 +37,7 @@ print(f"   {token[:50]}...")
 
 result = verifier.verify(token)
 
-print(f"\n🔍 Verification Result:")
+print("\n🔍 Verification Result:")
 print(f"   Valid: {result.valid}")
 print(f"   Signer: {result.signer}")
 print(f"   Email: {result.email}")

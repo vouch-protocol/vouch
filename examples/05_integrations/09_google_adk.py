@@ -63,7 +63,7 @@ tool_call = {
 import json
 token = signer.sign(json.dumps(tool_call))
 
-print(f"\n📋 Signed ADK Tool Call:")
+print("\n📋 Signed ADK Tool Call:")
 print(f"   Agent: {tool_call['agent']}")
 print(f"   Tool: {tool_call['tool']}")
 print(f"   Amount: ${tool_call['args']['amount']}")

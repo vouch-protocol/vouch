@@ -61,7 +61,7 @@ user_proxy = Signer(name="AutoGen UserProxy")
 msg1 = assistant.sign('{"role": "assistant", "content": "Here is the code..."}')
 msg2 = user_proxy.sign('{"role": "user", "content": "Execute this code"}')
 
-print(f"\n📨 Signed Message Flow:")
+print("\n📨 Signed Message Flow:")
 print(f"   Assistant → UserProxy: {msg1[:50]}...")
 print(f"   UserProxy → Assistant: {msg2[:50]}...")
 

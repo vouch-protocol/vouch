@@ -30,7 +30,7 @@ webhook_data = {
 # Sign the webhook data
 token = signer.sign(json.dumps(webhook_data))
 
-print(f"📤 Signed Webhook:")
+print("📤 Signed Webhook:")
 print(f"   Workflow: {webhook_data['workflow_id']}")
 print(f"   Action: {webhook_data['action']}")
 print(f"   Token: {token[:60]}...")

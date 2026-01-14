@@ -29,7 +29,7 @@ limiter = MemoryRateLimiter(
 
 agent = Signer(name="Fast Agent")
 
-print(f"Rate limit: 5 requests per minute")
+print("Rate limit: 5 requests per minute")
 print(f"Agent: {agent.name}")
 
 # =============================================================================
