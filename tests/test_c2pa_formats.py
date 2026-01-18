@@ -9,12 +9,12 @@ import tempfile
 from pathlib import Path
 from PIL import Image
 
-# Check if c2pa is available
+# Check if c2pa is available (requires Python 3.10+ due to match statements)
 try:
     import c2pa
 
     C2PA_AVAILABLE = True
-except ImportError:
+except (ImportError, SyntaxError):
     C2PA_AVAILABLE = False
 
 
