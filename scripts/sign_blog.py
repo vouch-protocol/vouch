@@ -86,7 +86,7 @@ def add_verify_badge_to_html(filepath, tech_id):
     
     # Check if badge already exists
     if "verify-badge" in html and tech_id in html:
-        print(f"  ⏭️  Badge already exists")
+        print("  ⏭️  Badge already exists")
         return
     
     # Add badge after the paper-link in post-meta
@@ -101,7 +101,7 @@ def add_verify_badge_to_html(filepath, tech_id):
     with open(filepath, 'w') as f:
         f.write(new_html)
     
-    print(f"  🏷️  Added verify badge")
+    print("  🏷️  Added verify badge")
 
 def process_file(filepath):
     """Process a single blog post file."""
@@ -121,7 +121,7 @@ def process_file(filepath):
     
     text_content = extract_text_content(html)
     if not text_content:
-        print(f"  ❌ Could not extract article content")
+        print("  ❌ Could not extract article content")
         return
     
     # Compute hash

@@ -53,3 +53,4 @@ package-lock.json
 # arXiv submission packages
 arxiv/submissions/
 arxiv/
+scripts/package_arxiv.py

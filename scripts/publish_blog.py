@@ -256,7 +256,7 @@ def main():
         slug = metadata.get("slug", pad_id.lower().replace("-", ""))
         tech_id = metadata.get("tech_id", pad_id.lower().replace("-", ""))
         og_description = metadata.get("og_desc", f"Technical Digest: {title}")
-        arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.com/docs/disclosures/{pad_id}.md")
+        arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.com/disclosures/{pad_id}.md")
         reading_time = metadata.get("reading_time", "3 min read")
         
         # Clean title (remove "The Pain Point" etc if needed, but here we just take the first line)

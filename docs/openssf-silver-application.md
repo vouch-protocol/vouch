@@ -109,4 +109,4 @@ Cryptographic commit signatures serve the same purpose as DCO sign-offs but with
 
 - **Vouch Gatekeeper Webhook:** https://gatekeeper.vouch-protocol.com/webhook
 - **Documentation:** https://github.com/vouch-protocol/vouch-protocol#readme
-- **Prior Art Disclosures:** https://vouch-protocol.com/docs/disclosures/
+- **Prior Art Disclosures:** https://vouch-protocol.com/disclosures/
