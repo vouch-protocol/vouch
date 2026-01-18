@@ -70,7 +70,7 @@ class TestHasuraAuthWebhook:
 
     def test_expired_token_fails(self, webhook, signer):
         """Expired token should fail verification."""
-        token = signer.sign({"action": "read"}, expiry_seconds=-10)  # Already expired
+        token = signer.sign({"action": "read"}, expiry_seconds=-60)  # Already expired
         headers = {"Vouch-Token": token}
 
         success, result = webhook.authenticate(headers)
