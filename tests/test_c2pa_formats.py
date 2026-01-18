@@ -12,6 +12,7 @@ from PIL import Image
 # Check if c2pa is available
 try:
     import c2pa
+
     C2PA_AVAILABLE = True
 except ImportError:
     C2PA_AVAILABLE = False
@@ -28,7 +29,7 @@ SUPPORTED_FORMATS = [
 
 def create_test_image(path: Path, img_format: str) -> None:
     """Create a simple test image in the specified format."""
-    img = Image.new('RGB', (100, 100), color='blue')
+    img = Image.new("RGB", (100, 100), color="blue")
     # Add some variation
     for x in range(50):
         for y in range(50):
@@ -48,14 +49,11 @@ def test_manifest():
                 "label": "c2pa.actions",
                 "data": {
                     "actions": [
-                        {
-                            "action": "c2pa.created",
-                            "softwareAgent": "Vouch Protocol Test Suite"
-                        }
+                        {"action": "c2pa.created", "softwareAgent": "Vouch Protocol Test Suite"}
                     ]
-                }
+                },
             }
-        ]
+        ],
     }
 
 
@@ -69,19 +67,19 @@ class TestC2PAFormatSupport:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
             source = tmpdir / f"test{ext}"
-            
+
             # Create test image
             create_test_image(source, format_name)
             assert source.exists(), f"Failed to create {format_name} test image"
-            
+
             # Note: Full signing requires certificate chain
             # This test verifies the image can be created and read
             assert source.stat().st_size > 0
-            
+
             # Verify image is valid
             img = Image.open(source)
             assert img.size == (100, 100)
-            assert img.mode in ('RGB', 'P')  # GIF uses palette mode
+            assert img.mode in ("RGB", "P")  # GIF uses palette mode
 
 
 class TestC2PAManifestStructure:
@@ -110,16 +108,16 @@ class TestVouchC2PAIntegration:
     def test_vouch_identity_to_assertion(self):
         """VouchIdentity should convert to C2PA assertion format."""
         from vouch.media.c2pa import VouchIdentity
-        
+
         identity = VouchIdentity(
             did="did:web:test.vouch-protocol.com",
             display_name="Test Signer",
             email="test@vouch-protocol.com",
-            credential_type="FREE"
+            credential_type="FREE",
         )
-        
+
         assertion = identity.to_assertion()
-        
+
         assert assertion["label"] == "vouch.identity"
         assert assertion["data"]["did"] == "did:web:test.vouch-protocol.com"
         assert assertion["data"]["display_name"] == "Test Signer"
@@ -127,21 +125,18 @@ class TestVouchC2PAIntegration:
     def test_signed_media_result_dataclass(self):
         """SignedMediaResult should contain signing metadata."""
         from vouch.media.c2pa import SignedMediaResult, VouchIdentity
-        
-        identity = VouchIdentity(
-            did="did:web:test.vouch-protocol.com",
-            display_name="Test"
-        )
-        
+
+        identity = VouchIdentity(did="did:web:test.vouch-protocol.com", display_name="Test")
+
         result = SignedMediaResult(
             source_path="/path/to/source.jpg",
             output_path="/path/to/signed.jpg",
             manifest_hash="abc123",
             identity=identity,
             timestamp="2026-01-18T14:00:00Z",
-            success=True
+            success=True,
         )
-        
+
         assert result.success is True
         assert result.manifest_hash == "abc123"
         assert result.identity.did == "did:web:test.vouch-protocol.com"
@@ -149,12 +144,10 @@ class TestVouchC2PAIntegration:
     def test_verification_result_dataclass(self):
         """VerificationResult should contain verification status."""
         from vouch.media.c2pa import VerificationResult
-        
+
         result = VerificationResult(
-            is_valid=True,
-            claim_generator="Vouch Protocol/1.0",
-            signed_at="2026-01-18T14:00:00Z"
+            is_valid=True, claim_generator="Vouch Protocol/1.0", signed_at="2026-01-18T14:00:00Z"
         )
-        
+
         assert result.is_valid is True
         assert "Vouch Protocol" in result.claim_generator
