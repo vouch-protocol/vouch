@@ -155,7 +155,7 @@ def main():
     print("=" * 50)
     
     # Iterate over configured SEO slugs
-    for slug, tech_id in POST_MAPPING.items():
+    for slug, _tech_id in POST_MAPPING.items():
         filepath = os.path.join(BLOG_DIR, f"{slug}.html")
         if os.path.exists(filepath):
             process_file(filepath)
