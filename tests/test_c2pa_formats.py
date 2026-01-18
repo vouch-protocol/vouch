@@ -26,14 +26,14 @@ SUPPORTED_FORMATS = [
 ]
 
 
-def create_test_image(path: Path, format: str) -> None:
+def create_test_image(path: Path, img_format: str) -> None:
     """Create a simple test image in the specified format."""
     img = Image.new('RGB', (100, 100), color='blue')
     # Add some variation
     for x in range(50):
         for y in range(50):
             img.putpixel((x, y), (0, 200, 100))
-    img.save(path, format.upper() if format != "jpeg" else "JPEG")
+    img.save(path, img_format.upper() if img_format != "jpeg" else "JPEG")
 
 
 @pytest.fixture
@@ -69,7 +69,6 @@ class TestC2PAFormatSupport:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
             source = tmpdir / f"test{ext}"
-            output = tmpdir / f"signed{ext}"
             
             # Create test image
             create_test_image(source, format_name)
