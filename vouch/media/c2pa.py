@@ -25,7 +25,8 @@ try:
     import c2pa
 
     C2PA_AVAILABLE = True
-except ImportError:
+except (ImportError, SyntaxError):
+    # SyntaxError: c2pa-python uses match statements (Python 3.10+)
     C2PA_AVAILABLE = False
 
 from cryptography.hazmat.primitives import serialization
