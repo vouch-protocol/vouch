@@ -54,3 +54,6 @@ package-lock.json
 arxiv/submissions/
 arxiv/
 scripts/package_arxiv.py
+
+# C2PA CA private keys (NEVER commit!)
+c2pa-ca/
