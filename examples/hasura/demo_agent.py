@@ -84,7 +84,7 @@ def main():
     print("\n📋 What the Vouch webhook verifies:")
     print(f"   • Agent DID (identity): {agent_did}")
     print(f"   • Intent: {intent['action']}")
-    print(f"   • Reputation: 75 → Role: agent_writer")
+    print("   • Reputation: 75 → Role: agent_writer")
     print("   • Signature: Ed25519 (cryptographically verified)")
 
 
