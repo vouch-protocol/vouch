@@ -31,6 +31,18 @@ from fastapi import FastAPI, Request, HTTPException, Header, Response
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
 
+# Import shared verification logic from vouch package
+# This ensures consistent verification between CLI and GitHub App
+try:
+    from vouch.verification import extract_vouch_did_from_message
+except ImportError:
+    # Fallback if vouch package not installed in GitHub App environment
+    import re
+    def extract_vouch_did_from_message(message: str):
+        match = re.search(r"Vouch-DID:\s*(\S+)", message)
+        return match.group(1) if match else None
+
+
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -40,6 +52,12 @@ GITHUB_PRIVATE_KEY = os.getenv("GITHUB_PRIVATE_KEY")  # PEM format
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 VOUCH_REGISTRY_URL = os.getenv("VOUCH_REGISTRY_URL", "https://vouch-protocol.com/api")
 API_DOMAIN = os.getenv("API_DOMAIN", "https://gatekeeper.vouch-protocol.com")
+
+# Verification mode:
+#   "hybrid" (default) - Check GitHub GPG/SSH keys first, then Vouch Registry
+#   "trailer" - Check Vouch-DID trailer in commit message (enterprise mode, no GPG needed)
+VOUCH_VERIFICATION_MODE = os.getenv("VOUCH_VERIFICATION_MODE", "hybrid")
+
 
 # Known GitHub web-flow key IDs (for merge commits via UI)
 GITHUB_WEBFLOW_KEY_IDS = {
@@ -629,8 +647,114 @@ class HybridVerifier:
 
 
 # =============================================================================
+# Vouch Trailer Verifier (Enterprise - No GPG Required)
+# =============================================================================
+
+class VouchTrailerVerifier:
+    """
+    Verify commits using Vouch-DID trailers in commit messages.
+    
+    This is the enterprise-friendly verification mode that doesn't require
+    GPG key management. Instead, it looks for the Vouch-DID trailer that
+    is automatically added by `vouch git init`.
+    
+    The trailer format is:
+        Vouch-DID: did:vouch:abc123
+    
+    Verification flow:
+    1. Extract Vouch-DID trailer from commit message
+    2. Verify the commit's SSH signature is valid (GitHub already did this)
+    3. Check org membership via policy
+    """
+    
+    def __init__(self, github: GitHubClient, registry: VouchRegistryClient):
+        self.github = github
+        self.registry = registry
+    
+    async def verify_identity(
+        self, 
+        commit: Dict, 
+        repo_org: str
+    ) -> VerifiedIdentity:
+        """
+        Verify commit author identity using Vouch-DID trailer.
+        
+        Args:
+            commit: GitHub commit object
+            repo_org: Organization/owner where repo lives
+        """
+        message = commit["commit"]["message"]
+        verification = commit["commit"].get("verification", {})
+        author_login = commit.get("author", {}).get("login")
+        author_email = commit["commit"]["author"].get("email", "")
+        
+        is_verified = verification.get("verified", False)
+        signature = verification.get("signature", "")
+        
+        # Extract Vouch-DID trailer using shared verification logic
+        vouch_did = extract_vouch_did_from_message(message)
+
+        
+        # If no Vouch-DID trailer, fall back to checking if it's a verified commit
+        if not vouch_did:
+            # For backwards compatibility, accept commits that are verified
+            # but don't have a Vouch-DID trailer (e.g., existing team members)
+            if is_verified and author_login:
+                is_member = await self.github.is_org_member(repo_org, author_login)
+                if is_member:
+                    return VerifiedIdentity(
+                        verified=True,
+                        source="github_verified_fallback",
+                        username=author_login,
+                        email=author_email,
+                        is_org_member=True,
+                    )
+            
+            return VerifiedIdentity(
+                verified=False,
+                source="none",
+                error="No Vouch-DID trailer in commit message. Run 'vouch git init' to enable.",
+            )
+        
+        # Check if commit signature is valid
+        if not signature:
+            return VerifiedIdentity(
+                verified=False,
+                source="unsigned",
+                vouch_did=vouch_did,
+                error="Commit has Vouch-DID but is not signed",
+            )
+        
+        if not is_verified:
+            reason = verification.get("reason", "unknown")
+            return VerifiedIdentity(
+                verified=False,
+                source="signature_invalid",
+                vouch_did=vouch_did,
+                error=f"Commit signature verification failed: {reason}",
+            )
+        
+        # Commit is signed, verified, and has Vouch-DID
+        # Check org membership
+        is_member = False
+        if author_login:
+            is_member = await self.github.is_org_member(repo_org, author_login)
+        
+        return VerifiedIdentity(
+            verified=True,
+            source="vouch_trailer",
+            vouch_did=vouch_did,
+            username=author_login,
+            email=author_email,
+            is_org_member=is_member,
+        )
+
+
+# =============================================================================
 # Policy Engine (with Zero-Config support)
 # =============================================================================
+
+
 
 class PolicyEngine:
     """Evaluates commits against Vouch policy with Zero-Config support."""
@@ -1029,7 +1153,15 @@ async def handle_pull_request(payload: Dict) -> Dict:
     # Initialize clients
     github = GitHubClient(installation_id)
     registry = VouchRegistryClient()
-    verifier = HybridVerifier(github, registry)
+    
+    # Select verifier based on mode
+    if VOUCH_VERIFICATION_MODE == "trailer":
+        # Enterprise mode: Check Vouch-DID trailer (no GPG required)
+        verifier = VouchTrailerVerifier(github, registry)
+    else:
+        # Default hybrid mode: Check GitHub GPG/SSH keys first
+        verifier = HybridVerifier(github, registry)
+
     
     # Create in-progress check
     await github.create_check_run(

@@ -18,6 +18,13 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-006](./PAD-006-trust-graph-url-chaining.md) | URL-Based Credential Chaining | 2026-01-10 | Published |
 | [PAD-007](./PAD-007-ghost-signature-telemetry.md) | Automated Provenance via Input Telemetry | 2026-01-10 | Published |
 | [PAD-008](./PAD-008-hybrid-ssh-verification.md) | Hybrid Identity Bootstrapping | 2026-01-10 | Published |
+| [PAD-009](./PAD-009-localhost-identity-bridge.md) | Unified Local Identity via Localhost Bridge | 2026-01-20 | Published |
+| [PAD-010](./PAD-010-semantic-consent-signing.md) | Context-Adaptive Semantic Consent | 2026-01-20 | Published |
+| [PAD-011](./PAD-011-hierarchical-discovery-protocol.md) | Hierarchical Discovery Protocol | 2026-01-20 | Published |
+| [PAD-012](./PAD-012-vouch-covenant.md) | Executable Usage Covenants in Media Manifests | 2026-01-20 | Published |
+| [PAD-013](./PAD-013-vouch-airgap.md) | Air-Gapped Identity via Psychoacoustic Steganography | 2026-01-20 | Published |
+| [PAD-014](./PAD-014-vouch-sonic.md) | Robust Acoustic Provenance via Steganography | 2026-01-20 | Published |
+
 
 ## Format
 

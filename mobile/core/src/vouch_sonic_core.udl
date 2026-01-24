@@ -1,0 +1,139 @@
+// Vouch Sonic Core - UniFFI Interface Definition
+//
+// This file defines the API exposed to Swift (iOS) and Kotlin (Android).
+// UniFFI generates type-safe bindings from this definition.
+
+namespace vouch_sonic_core {
+    // Version info
+    string get_version();
+    
+    // Quick check if a buffer might contain a watermark
+    WatermarkResult detect_watermark([ByRef] sequence<u8> audio_data, u32 sample_rate);
+};
+
+// =============================================================================
+// Configuration
+// =============================================================================
+
+dictionary SonicConfig {
+    u32 sample_rate;           // Target sample rate (default: 16000)
+    u32 frame_size_ms;         // Frame size in milliseconds (default: 50)
+    f32 detection_threshold;   // Detection confidence threshold (default: 0.5)
+    u32 spreading_factor;      // Spread spectrum factor (default: 100)
+    boolean enable_chirp_sync; // Enable chirp synchronization (default: true)
+};
+
+// =============================================================================
+// Watermark Detection Results
+// =============================================================================
+
+dictionary WatermarkResult {
+    boolean detected;          // Whether watermark was detected
+    f32 confidence;            // Detection confidence (0.0 - 1.0)
+    string? signer_did;        // Signer's DID if extracted
+    u64? timestamp;            // Unix timestamp if extracted
+    string? payload_hash;      // Hash of extracted payload
+    string? covenant_json;     // Covenant data as JSON string
+    f32 audio_quality;         // Estimated audio quality (0.0 - 1.0)
+    string detection_method;   // Method used: "spread_spectrum" | "chirp" | "mock"
+};
+
+// =============================================================================
+// Listener State
+// =============================================================================
+
+enum ListenerState {
+    "Idle",
+    "Listening",
+    "Processing",
+    "Error"
+};
+
+// =============================================================================
+// Errors
+// =============================================================================
+
+[Error]
+enum SonicError {
+    "InvalidConfig",
+    "AudioInitFailed",
+    "ProcessingFailed",
+    "BufferTooShort",
+    "InvalidSampleRate",
+    "ListenerAlreadyRunning",
+    "ListenerNotRunning",
+    "InternalError"
+};
+
+// =============================================================================
+// Callbacks (for async events to UI)
+// =============================================================================
+
+callback interface WatermarkCallback {
+    void on_watermark_detected(WatermarkResult result);
+    void on_audio_level_changed(f32 level_db);
+    void on_error(string message);
+    void on_state_changed(ListenerState state);
+};
+
+// =============================================================================
+// Main Sonic Listener Object
+// =============================================================================
+
+interface SonicListener {
+    // Constructor
+    [Throws=SonicError]
+    constructor(SonicConfig config);
+    
+    // Start listening with callback
+    [Throws=SonicError]
+    void start_listening(WatermarkCallback callback);
+    
+    // Stop listening
+    [Throws=SonicError]
+    void stop_listening();
+    
+    // Process a single buffer (for testing or when UI handles audio capture)
+    [Throws=SonicError]
+    WatermarkResult process_buffer([ByRef] sequence<u8> pcm_data);
+    
+    // Process float samples directly
+    [Throws=SonicError]
+    WatermarkResult process_samples([ByRef] sequence<f32> samples);
+    
+    // Check current state
+    ListenerState get_state();
+    
+    // Check if currently listening
+    boolean is_listening();
+    
+    // Get current configuration
+    SonicConfig get_config();
+    
+    // Update detection threshold at runtime
+    void set_detection_threshold(f32 threshold);
+};
+
+// =============================================================================
+// Signature Verification
+// =============================================================================
+
+dictionary VerificationResult {
+    boolean valid;
+    string? signer_did;
+    string? error_message;
+};
+
+interface SignatureVerifier {
+    constructor();
+    
+    // Verify Ed25519 signature
+    VerificationResult verify_signature(
+        [ByRef] sequence<u8> message,
+        [ByRef] sequence<u8> signature,
+        [ByRef] sequence<u8> public_key
+    );
+    
+    // Verify payload from watermark
+    VerificationResult verify_watermark_payload(WatermarkResult result);
+};

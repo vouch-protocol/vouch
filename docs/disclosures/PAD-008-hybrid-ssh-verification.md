@@ -2,7 +2,7 @@
 
 **Disclosure ID:** PAD-008  
 **Publication Date:** January 10, 2026  
-**Author:** Vouch Protocol Maintainers  
+**Author:** Ramprasad Anandam Gaddam  
 **Status:** Public Domain / Prior Art  
 
 ---

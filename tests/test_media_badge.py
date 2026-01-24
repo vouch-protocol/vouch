@@ -105,7 +105,7 @@ class TestBadgeFactoryConfig:
         assert config.position == "bottom-right"
         assert config.size == 64
         assert config.include_qr
-        assert config.base_url == "https://vouch.me"
+        assert config.base_url == "https://vch.sh"
 
     def test_custom_options(self):
         """Custom options override defaults."""
@@ -134,14 +134,14 @@ class TestURLGeneration:
     def test_url_format(self, factory):
         """URL has correct format."""
         url = factory.generate_verify_url("test_signature")
-        assert url.startswith("https://vouch.me/v/")
+        assert url.startswith("https://vch.sh/")
         assert len(url.split("/")[-1]) == 8
 
     def test_url_with_custom_base(self):
         """URL uses custom base."""
         factory = BadgeFactory(BadgeOptions(base_url="https://custom.dev"))
         url = factory.generate_verify_url("test")
-        assert url.startswith("https://custom.dev/v/")
+        assert url.startswith("https://custom.dev/")
 
     def test_consistent_hash(self, factory):
         """Same input produces same hash."""
@@ -166,7 +166,7 @@ class TestQRCodeGeneration:
 
     def test_qr_code_created(self, factory):
         """QR code image is created."""
-        qr = factory.create_qr_code("https://vouch.me/v/abc123")
+        qr = factory.create_qr_code("https://vch.sh/abc123")
         # Will be None if qrcode not installed, otherwise Image
         if qr is not None:
             assert qr.size[0] > 0
@@ -201,7 +201,7 @@ class TestBadgeApplication:
         result = factory.add_badge(str(test_image), "sig_hash", str(output))
 
         assert result.verify_url is not None
-        assert result.verify_url.startswith("https://vouch.me/v/")
+        assert result.verify_url.startswith("https://vch.sh/")
 
     def test_add_badge_missing_source(self, factory, tmp_path):
         """add_badge handles missing source file."""

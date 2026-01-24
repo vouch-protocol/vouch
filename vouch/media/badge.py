@@ -38,7 +38,12 @@ class BadgeOptions:
     include_qr: bool = True
     include_checkmark: bool = True
     padding: int = 16
-    base_url: str = "https://vouch.me"
+    base_url: str = None  # Will use SHORTLINK_DOMAIN from config if None
+    
+    def __post_init__(self):
+        if self.base_url is None:
+            from vouch.config import SHORTLINK_DOMAIN
+            self.base_url = SHORTLINK_DOMAIN
 
 
 @dataclass
@@ -95,7 +100,8 @@ class BadgeFactory:
     def generate_verify_url(self, signature_hash: str) -> str:
         """Generate verification shortlink from signature hash."""
         short_hash = hashlib.sha256(signature_hash.encode()).hexdigest()[:8]
-        return f"{self.options.base_url}/v/{short_hash}"
+        base = self.options.base_url.rstrip("/")
+        return f"{base}/{short_hash}"
 
     def create_qr_code(self, data: str, size: int = 64) -> Optional["Image.Image"]:
         """

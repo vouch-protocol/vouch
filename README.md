@@ -8,6 +8,12 @@
   <strong>The Identity Layer for the Agentic Web</strong>
 </p>
 
+<!-- C2PA & CAI Membership Badges -->
+<p align="center">
+  <a href="https://c2pa.org"><img src="https://img.shields.io/badge/C2PA-Contributor-0891b2?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyek0xMCAMTdsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz48L3N2Zz4=" alt="C2PA Contributor"></a>
+  <a href="https://contentauthenticity.org"><img src="https://img.shields.io/badge/CAI-Member-f97316?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHptMCAyLjE4bDcgMy4xMnY1LjdjMCA0LjgzLTMuMjMgOS4zNi03IDEwLjU4VjMuMTh6Ii8+PC9zdmc+" alt="CAI Member"></a>
+</p>
+
 <p align="center">
   <a href="https://github.com/vouch-protocol/vouch"><img src="https://img.shields.io/badge/Protected_by-Vouch_Protocol-00C853?style=flat&labelColor=333&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMDBDODUzIiBkPSJNMTIgMjBMMiA0aDRsNiAxMC41TDE4IDRoNEwxMiAyMHoiLz48L3N2Zz4=" alt="Protected by Vouch"></a>
   <a href="https://www.bestpractices.dev/projects/11688"><img src="https://www.bestpractices.dev/projects/11688/badge" alt="OpenSSF Silver"></a>
@@ -16,9 +22,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vouch-protocol/vouch/blob/main/licenses/LICENSE-SPEC"><img src="https://img.shields.io/badge/Spec-Community_License-green.svg" alt="Spec License"></a>
-  <a href="https://github.com/vouch-protocol/vouch/blob/main/LICENSE"><img src="https://img.shields.io/badge/Client-Apache_2.0-blue.svg" alt="Client License"></a>
-  <a href="https://github.com/vouch-protocol/vouch/blob/main/licenses/LICENSE-SERVER"><img src="https://img.shields.io/badge/Server-AGPL_3.0-orange.svg" alt="Server License"></a>
+  <a href="https://github.com/vouch-protocol/vouch/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="Apache 2.0 License"></a>
 </p>
 
 ---
@@ -252,11 +256,11 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 
 ## 📜 License
 
-**Apache License 2.0** - See [LICENSE](https://github.com/vouch-protocol/vouch/blob/main/LICENSE) file
+**Apache License 2.0** - See [LICENSE](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
 
-**This is NOT AGPL.** You can use this in commercial, closed-source products.
+You can use this freely in commercial and open-source projects.
 
-For multi-license details (Client SDK/Server SDK/Specification), see our [3-layer license structure](https://github.com/vouch-protocol/vouch#-license--legal).
+*Note: The Vouch Protocol specification may be contributed to W3C as a separate standards track.*
 
 ---
 

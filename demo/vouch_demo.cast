@@ -1,0 +1,13 @@
+{"version": 2, "width": 87, "height": 10, "timestamp": 1768765220, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.009914, "o", "\r\n\u001b[0;36m╔══════════════════════════════════════════════════════════════╗\u001b[0m\r\n\u001b[0;36m║          \u001b[0;32mVOUCH PROTOCOL\u001b[0;36m - AI Agent Identity Demo            ║\u001b[0m\r\n\u001b[0;36m╚══════════════════════════════════════════════════════════════╝\u001b[0m\r\n\r\n"]
+[0.129794, "r", "85x10"]
+[2.020475, "o", "\u001b[1;33m━━━ Step 1: Create Agent Identity ━━━\u001b[0m\r\n\r\n$ vouch init --domain my-agent.example.com\r\n"]
+[3.300543, "o", "\u001b[0;32m✓ Generated DID: did:web:my-agent.example.com\u001b[0m\r\n\u001b[0;32m✓ Ed25519 keypair created\u001b[0m\r\n\r\n"]
+[5.327095, "o", "\u001b[1;33m━━━ Step 2: Sign an Agent Action ━━━\u001b[0m\r\n\r\nAgent wants to execute:\r\n\u001b[0;36m{\"tool\": \"read_database\", \"params\": {\"table\": \"users\"}}\u001b[0m\r\n\r\n"]
+[6.359784, "o", "$ vouch sign '$ACTION' --json\r\n"]
+[7.587238, "o", "\r\n\u001b[0;32m✓ Signed JWT Token:\u001b[0m\r\neyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDp3ZWI6bXktYWdlbnQuZXhhbXBsZS5jb20iLCJ0eXAiOiJ2...\r\n\r\n"]
+[9.59006, "o", "\u001b[1;33m━━━ Step 3: Verify the Signed Action ━━━\u001b[0m\r\n\r\n$ vouch verify '$TOKEN' --json\r\n"]
+[10.595123, "o", "\r\n"]
+[10.854415, "o", "⚠️  Warning: No public key provided, signature not verified\r\n{\r\n  \"valid\": true,\r\n  \"sub\": \"did:web:my-agent.example.com\",\r\n  \"iss\": \"did:web:my-agent.example.com\",\r\n  \"iat\": 1768765227,\r\n  \"exp\": 1768765527,\r\n  \"jti\": \"c4e605fa-e929-4308-85f9-b6b6bc31c57f\",\r\n  \"payload\": {\r\n    \"params\": {\r\n      \"table\": \"users\"\r\n    },\r\n    \"tool\": \"read_database\"\r\n  }\r\n}\r\n"]
+[10.891259, "o", "\r\n"]
+[11.893693, "o", "\u001b[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m\r\n\u001b[0;32m✓ Cryptographic proof that THIS agent authorized THIS action\u001b[0m\r\n\u001b[0;32m✓ No central authority needed - domain is the root of trust\u001b[0m\r\n\u001b[0;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\u001b[0m\r\n\r\n🔗 GitHub: https://github.com/vouch-protocol/vouch\r\n\r\n"]

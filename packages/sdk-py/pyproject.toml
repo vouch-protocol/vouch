@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vouch-sdk"
+version = "1.0.0"
+description = "Official Python SDK for Vouch Protocol - communicate with the Vouch Daemon"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Ramprasad Anandam Gaddam" }
+]
+keywords = [
+    "vouch",
+    "vouch-protocol",
+    "signing",
+    "ed25519",
+    "c2pa",
+    "content-credentials",
+    "provenance",
+    "identity",
+    "cryptography",
+    "cli",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+requires-python = ">=3.10"
+
+dependencies = [
+    "httpx>=0.25.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "c2pa-python>=0.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://vouch-protocol.com"
+Documentation = "https://github.com/vouch-protocol/vouch#readme"
+Repository = "https://github.com/vouch-protocol/vouch"
+Issues = "https://github.com/vouch-protocol/vouch/issues"
+
+[project.scripts]
+vouch = "vouch_sdk.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vouch_sdk"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

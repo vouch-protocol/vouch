@@ -7,28 +7,52 @@ Rotate signing keys automatically for security.
 Run: python 02_key_rotation.py
 """
 
-from vouch import RotatingKeyProvider, KeyConfig, Signer
-from datetime import timedelta
+from vouch import RotatingKeyProvider, KeyConfig, Signer, generate_identity
 
 print("🔄 Key Rotation")
 print("=" * 50)
 
 # =============================================================================
+# Setup Keys
+# =============================================================================
+
+print("\n🔑 Generating keys for rotation...")
+
+# Generate multiple keys for rotation
+key1_identity = generate_identity(domain="agent.example.com")
+key2_identity = generate_identity(domain="agent.example.com")
+
+# Create KeyConfig objects
+key1 = KeyConfig(
+    private_key_jwk=key1_identity.private_key_jwk,
+    did=key1_identity.did,
+    key_id="key-2026-q1",
+)
+
+key2 = KeyConfig(
+    private_key_jwk=key2_identity.private_key_jwk,
+    did=key2_identity.did,
+    key_id="key-2026-q2",
+)
+
+print(f"   Key 1 ID: {key1.key_id}")
+print(f"   Key 2 ID: {key2.key_id}")
+print(f"   DID: {key1.did}")
+
+# =============================================================================
 # Create Rotating Key Provider
 # =============================================================================
 
-print("Setting up key rotation...")
+print("\n🔄 Setting up rotation...")
 
-config = KeyConfig(
-    rotation_interval=timedelta(days=30),  # Rotate every 30 days
-    key_overlap=timedelta(days=7),  # Old key valid for 7 days after rotation
-    algorithm="ed25519",
+# Create rotating key provider with multiple keys
+provider = RotatingKeyProvider(
+    keys=[key1, key2],
+    rotation_interval_hours=24,  # Rotate every 24 hours
 )
 
-provider = RotatingKeyProvider(config=config)
-
-print(f"  Rotation interval: {config.rotation_interval.days} days")
-print(f"  Key overlap: {config.key_overlap.days} days")
+print(f"   Keys configured: {provider.key_count}")
+print(f"   Active key: {provider.active_key_id}")
 
 # =============================================================================
 # Use with Signer
@@ -36,45 +60,67 @@ print(f"  Key overlap: {config.key_overlap.days} days")
 
 print("\n🔐 Creating Signer with Rotation:")
 
-# Get current key
-current_key = provider.get_current_key()
-print(f"  Current key ID: {current_key.key_id[:20]}...")
-print(f"  Expires: {current_key.expires_at}")
-
-# Create signer with rotating provider
-signer = Signer(
-    name="Enterprise Agent",
-    key_provider=provider,
-)
+# Get a signer from the provider
+signer = provider.get_signer()
+print(f"   Got signer for DID: {signer.get_did()}")
 
 # Sign something
-token = signer.sign("Important action")
-print(f"\n  Signed with key: {signer.current_key_id[:20]}...")
+token = signer.sign({"action": "test", "data": "important"})
+print(f"   Signed token: {token[:50]}...")
 
 # =============================================================================
-# Manual Rotation
+# Key Management
 # =============================================================================
 
-print("\n🔄 Manual Key Rotation:")
+print("\n📋 Key Management:")
 
-# Force rotation (normally automatic)
-old_key_id = provider.get_current_key().key_id
-provider.rotate()
-new_key_id = provider.get_current_key().key_id
+# Get current active key
+active_key = provider.get_active_key()
+print(f"   Active key ID: {active_key.key_id}")
+print(f"   Active key DID: {active_key.did}")
 
-print(f"  Old key: {old_key_id[:20]}...")
-print(f"  New key: {new_key_id[:20]}...")
-print(f"  Old key still valid: {provider.is_valid(old_key_id)}")
+# Add a new key
+key3_identity = generate_identity(domain="agent.example.com")
+key3 = KeyConfig(
+    private_key_jwk=key3_identity.private_key_jwk,
+    did=key3_identity.did,
+    key_id="key-2026-q3",
+)
+provider.add_key(key3)
+print(f"\n   Added key: {key3.key_id}")
+print(f"   Total keys: {provider.key_count}")
+
+# Remove an old key
+provider.remove_key("key-2026-q1")
+print(f"   Removed key: key-2026-q1")
+print(f"   Remaining keys: {provider.key_count}")
 
 # =============================================================================
-# Key History
+# Production Pattern
 # =============================================================================
 
-print("\n📋 Key History:")
+print("\n🏭 Production pattern:")
 
-for key in provider.get_key_history(limit=5):
-    status = "active" if key.is_active else "expired"
-    print(f"  {key.key_id[:15]}... ({status})")
+print("""
+# In production, configure rotation callback:
+
+def on_rotation(new_key_id: str):
+    logger.info(f"Rotated to key: {new_key_id}")
+    # Update key in DID document
+    # Notify monitoring
+    
+provider = RotatingKeyProvider(
+    keys=[key1, key2, key3],
+    rotation_interval_hours=24,
+    on_rotation=on_rotation,
+)
+
+# Use with existing Signer if needed:
+signer = Signer(
+    private_key=active_key.private_key_jwk,
+    did=active_key.did,
+)
+""")
 
 # =============================================================================
 # Summary
@@ -86,15 +132,15 @@ print("""
 Security:
   • Limits exposure if key compromised
   • Automatic rotation reduces risk
-  • Overlap period ensures continuity
+  • Multiple active keys for HA
 
 Compliance:
   • Meet rotation requirements (SOC2, PCI)
-  • Full key audit trail
+  • Key versioning with key_id
   • Cryptographic key lifecycle
 
 Configuration:
-  • rotation_interval: How often to rotate
-  • key_overlap: Grace period for old keys
-  • algorithm: ed25519, rsa2048, etc.
+  • rotation_interval_hours: How often to rotate
+  • on_rotation: Callback when rotation occurs
+  • add_key/remove_key: Dynamic key management
 """)

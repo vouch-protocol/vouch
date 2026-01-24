@@ -1,6 +1,11 @@
 import re
 import os
+import sys
 import datetime
+
+# Add parent directory for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from vouch.config import SHORTLINK_DOMAIN
 
 # --- CONFIG ---
 SOURCE_FILE = "/home/rampy/.gemini/antigravity/brain/34db09bd-73b1-4423-9d6b-179f6430de81/blog_series_technical_digest.md"
@@ -182,7 +187,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <span>January 10, 2026</span>
             <span class="reading-time">📖 {reading_time}</span>
             <a href="{arxiv_url}" class="paper-link" target="_blank">📄 Read Full Paper</a>
-            <a href="https://v.vouch-protocol.com/p/{tech_id}" class="verify-badge" target="_blank">✓ Verified {tech_id}</a>
+            <a href="{shortlink_url}" class="verify-badge" target="_blank">✓ Verified {tech_id}</a>
         </div>
         <h1>{title}</h1>
         {content}
@@ -257,11 +262,15 @@ def main():
         tech_id = metadata.get("tech_id", pad_id.lower().replace("-", ""))
         og_description = metadata.get("og_desc", f"Technical Digest: {title}")
         arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.com/disclosures/{pad_id}.md")
-        reading_time = metadata.get("reading_time", "3 min read")
+        reading_time = metadata.get(\"reading_time\", \"3 min read\")
         
-        # Clean title (remove "The Pain Point" etc if needed, but here we just take the first line)
+        # Generate shortlink URL from config
+        from vouch.config import get_shortlink
+        shortlink_url = get_shortlink(tech_id)
+        
+        # Clean title (remove \"The Pain Point\" etc if needed, but here we just take the first line)
         body_html = clean_md(body_md)
-        filename = f"{slug}.html"  # SEO-friendly slug filename
+        filename = f\"{slug}.html\"  # SEO-friendly slug filename
         
         # Generate HTML
         full_html = HTML_TEMPLATE.format(
@@ -272,6 +281,7 @@ def main():
             arxiv_url=arxiv_url,
             reading_time=reading_time,
             filename=filename,
+            shortlink_url=shortlink_url,
             content=body_html
         )
         

@@ -36,7 +36,7 @@ const DEFAULT_OPTIONS: Required<BadgeOptions> = {
     opacity: 0.9,
     includeQR: true,
     includeCheckmark: true,
-    verifyUrl: 'https://vouch.me/v/',
+    verifyUrl: 'https://vch.sh/',
     padding: 16,
 };
 
@@ -64,8 +64,8 @@ export function calculatePosition(
 /**
  * Generate verification URL for QR code
  */
-export function generateVerifyUrl(signatureHash: string, baseUrl: string = 'https://vouch.me'): string {
-    return `${baseUrl}/v/${signatureHash.slice(0, 8)}`;
+export function generateVerifyUrl(signatureHash: string, baseUrl: string = 'https://vch.sh'): string {
+    return `${baseUrl.replace(/\/$/, '')}/${signatureHash.slice(0, 8)}`;
 }
 
 /**

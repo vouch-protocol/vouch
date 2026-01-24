@@ -363,13 +363,13 @@ class TestShortlinkGeneration:
     def test_shortlink_format(self, signed_image):
         """Shortlink has correct format."""
         shortlink = generate_verify_shortlink(signed_image.signature)
-        assert shortlink.startswith("https://vouch.me/v/")
+        assert shortlink.startswith("https://vch.sh/")
         assert len(shortlink.split("/")[-1]) == 8  # 8 char hash
 
     def test_shortlink_with_custom_base(self, signed_image):
         """Shortlink uses custom base URL."""
         shortlink = generate_verify_shortlink(signed_image.signature, base_url="https://custom.dev")
-        assert shortlink.startswith("https://custom.dev/v/")
+        assert shortlink.startswith("https://custom.dev/")
 
 
 # =============================================================================

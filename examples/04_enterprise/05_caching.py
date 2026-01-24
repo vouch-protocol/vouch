@@ -1,126 +1,138 @@
 #!/usr/bin/env python3
 """
-05_caching.py - Cache Verification Results
+05_caching.py - Verification Caching
 
-Speed up verification with caching.
+Cache public keys and verification results for performance.
 
 Run: python 05_caching.py
 """
 
-from vouch import (
-    Signer,
-    Verifier,
-    MemoryCache,
-    TieredCache,
-)
+from vouch import Signer, Verifier, generate_identity, MemoryCache
+import asyncio
 import time
 
 print("💾 Verification Caching")
 print("=" * 50)
 
-# =============================================================================
-# Setup Cache
-# =============================================================================
 
-# Create memory cache (use RedisCache in production)
-cache = MemoryCache(
-    ttl_seconds=300,  # Cache for 5 minutes
-    max_entries=1000,
-)
-
-# Create verifier with cache
-verifier = Verifier(cache=cache)
-
-print("Cache TTL: 300 seconds")
-print("Max entries: 1000")
-
-# =============================================================================
-# Cached Verification
-# =============================================================================
-
-agent = Signer(name="Test Agent")
-token = agent.sign("Some action")
-
-print("\n⏱️ Verification Timing:")
-
-# First verification (cache miss)
-start = time.time()
-result1 = verifier.verify(token)
-time1 = time.time() - start
-print(f"  First verification: {time1 * 1000:.2f}ms (cache miss)")
-
-# Second verification (cache hit)
-start = time.time()
-result2 = verifier.verify(token)
-time2 = time.time() - start
-print(f"  Second verification: {time2 * 1000:.2f}ms (cache hit)")
-
-print(f"  Speedup: {time1 / time2:.1f}x faster")
-
-# =============================================================================
-# Cache Stats
-# =============================================================================
-
-print("\n📊 Cache Statistics:")
-
-stats = cache.get_stats()
-print(f"  Hits: {stats.hits}")
-print(f"  Misses: {stats.misses}")
-print(f"  Hit rate: {stats.hit_rate:.1%}")
-print(f"  Entries: {stats.size}")
-
-# =============================================================================
-# Tiered Cache
-# =============================================================================
-
-print("\n🏗️ Tiered Cache (Memory + Redis):")
-
-print("""
-from vouch import MemoryCache, RedisCache, TieredCache
-
-# L1: Fast memory cache
-l1_cache = MemoryCache(ttl_seconds=60, max_entries=100)
-
-# L2: Larger Redis cache
-l2_cache = RedisCache(
-    redis_url="redis://localhost:6379",
-    ttl_seconds=300,
-)
-
-# Combined: Check L1 first, then L2
-tiered = TieredCache([l1_cache, l2_cache])
-
-verifier = Verifier(cache=tiered)
-""")
-
-print("  L1 (Memory): Fast, small (100 entries, 60s TTL)")
-print("  L2 (Redis): Slower, larger (unlimited, 300s TTL)")
-print("  Lookup: L1 → miss → L2 → miss → verify → populate both")
-
-# =============================================================================
-# Summary
-# =============================================================================
-
-print("""
+async def main():
+    # =============================================================================
+    # Setup Cache
+    # =============================================================================
+    
+    print("\n📦 Setting up cache...")
+    
+    # Create memory cache (max 1000 entries, 5 minute TTL)
+    cache = MemoryCache(max_size=1000, default_ttl=300)
+    
+    # Create an agent
+    agent_id = generate_identity(domain="api-client.example.com")
+    agent = Signer(private_key=agent_id.private_key_jwk, did=agent_id.did)
+    
+    print(f"Agent DID: {agent.get_did()}")
+    print(f"Cache config: max_size=1000, default_ttl=300s")
+    
+    # =============================================================================
+    # Cache Public Keys
+    # =============================================================================
+    
+    print("\n🔑 Caching public keys:")
+    
+    # Store public key in cache
+    await cache.set(
+        key=f"pubkey:{agent.get_did()}",
+        value=agent.get_public_key_jwk(),
+        ttl=3600  # 1 hour
+    )
+    print(f"   ✅ Cached public key for {agent.get_did()}")
+    
+    # Retrieve from cache
+    cached_key = await cache.get(f"pubkey:{agent.get_did()}")
+    if cached_key:
+        print(f"   📤 Retrieved from cache: {cached_key[:40]}...")
+    
+    # =============================================================================
+    # Verify with Cached Keys
+    # =============================================================================
+    
+    print("\n🔍 Verification with cache:")
+    
+    async def verify_with_cache(token: str, did: str, cache: MemoryCache):
+        """Verify token using cached public key."""
+        
+        # Try to get public key from cache
+        cache_key = f"pubkey:{did}"
+        public_key = await cache.get(cache_key)
+        
+        if public_key:
+            print(f"   Cache HIT for {did}")
+        else:
+            print(f"   Cache MISS for {did} - would fetch from DID document")
+            # In real implementation, resolve DID and cache the key
+            return {"valid": False, "error": "Key not in cache"}
+        
+        # Verify with cached key
+        is_valid, passport = Verifier.verify(token, public_key)
+        
+        return {"valid": is_valid, "passport": passport}
+    
+    # Sign and verify with cache
+    token = agent.sign({"action": "test"})
+    result = await verify_with_cache(token, agent.get_did(), cache)
+    print(f"   Result: valid={result.get('valid')}")
+    
+    # =============================================================================
+    # Cache Statistics
+    # =============================================================================
+    
+    print("\n📊 Cache statistics:")
+    
+    stats = cache.stats
+    print(f"   Entries: {stats.get('size', 0)}")
+    print(f"   Hits: {stats.get('hits', 0)}")
+    print(f"   Misses: {stats.get('misses', 0)}")
+    print(f"   Hit ratio: {cache.hit_ratio:.1%}")
+    
+    # =============================================================================
+    # Cache Operations
+    # =============================================================================
+    
+    print("\n🔧 Cache operations:")
+    
+    # Check existence
+    exists = await cache.exists(f"pubkey:{agent.get_did()}")
+    print(f"   Key exists: {exists}")
+    
+    # Delete
+    deleted = await cache.delete(f"pubkey:{agent.get_did()}")
+    print(f"   Key deleted: {deleted}")
+    
+    # Clear all
+    await cache.clear()
+    print("   Cache cleared")
+    
+    stats = cache.stats
+    print(f"   Entries after clear: {stats.get('size', 0)}")
+    
+    print("""
 📝 CACHING BENEFITS:
 
 Performance:
-  • 10-100x faster for cached verifications
-  • Reduces CPU load
-  • Scales better
+   • Avoid repeated DID resolution
+   • Sub-millisecond key lookups
+   • Reduce external API calls
 
-Cache Types:
-  • MemoryCache - Single instance, fast
-  • RedisCache - Distributed, persistent
-  • TieredCache - Multiple levels (L1 + L2)
-
-Configuration:
-  • ttl_seconds: How long to cache
-  • max_entries: Cache size limit
-  • Auto-eviction of old entries
+Cache Options:
+   • MemoryCache - Single instance, LRU eviction
+   • RedisCache - Distributed across instances
+   • TieredCache - L1 memory + L2 Redis
 
 Best Practices:
-  • Short TTL for security-sensitive operations
-  • Tiered cache for production
-  • Monitor hit rate for tuning
+   • Cache public keys (they don't change often)
+   • Use appropriate TTL (e.g., 1 hour)
+   • Invalidate on key rotation
 """)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

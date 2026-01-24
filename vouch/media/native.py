@@ -2,6 +2,11 @@
 """
 Native Vouch Media Signing (Certificate-Free)
 
+.. deprecated::
+    This module is DEPRECATED in favor of `vouch/media/c2pa.py` which provides
+    C2PA-compliant signing interoperable with Adobe Verify and other industry tools.
+    Use `from vouch.media.c2pa import sign_image, verify_image` instead.
+
 This module provides Ed25519-based image signing without requiring CA certificates.
 Uses EXIF/XMP metadata or sidecar files to embed signatures.
 
@@ -15,7 +20,10 @@ Claim Types:
 - CAPTURED: Photo taken by this device (requires EXIF proof)
 - SIGNED: Person vouches for this image (weaker claim)
 - SHARED: Resharing someone else's image (links to chain)
+
+⚠️  DEPRECATION NOTICE: For C2PA-compliant signing, use vouch.media.c2pa instead.
 """
+
 
 import json
 import hashlib
@@ -393,8 +401,10 @@ def sign_image_native(
 
         shutil.copy2(source_path, output_path)
 
-        # Compute hash from the OUTPUT file
-        image_hash = hashlib.sha256(output_path.read_bytes()).hexdigest()
+        # Compute hash from the OUTPUT file using pixel data (not file bytes)
+        # This ensures hash survives metadata changes
+        image_hash = compute_image_hash(output_path)
+
 
         # Get timestamp
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -615,8 +625,9 @@ def _extract_signature_from_image(image_path: Path) -> Optional[VouchMediaSignat
 
 def _verify_signature(image_path: Path, signature: VouchMediaSignature) -> bool:
     """Verify the Ed25519 signature against the image."""
-    # Compute current image hash using file bytes (same method as signing)
-    current_hash = hashlib.sha256(image_path.read_bytes()).hexdigest()
+    # Compute current image hash using pixel data (same method as signing)
+    current_hash = compute_image_hash(image_path)
+
 
     # Check if hash matches
     if current_hash != signature.image_hash:
@@ -712,7 +723,7 @@ def truncate_did(did: str, prefix_len: int = 12, suffix_len: int = 4) -> str:
 
 
 def generate_verify_shortlink(
-    signature: VouchMediaSignature, base_url: str = "https://vouch.me"
+    signature: VouchMediaSignature, base_url: str | None = None
 ) -> str:
     """
     Generate a verification shortlink for a signature.
@@ -722,11 +733,16 @@ def generate_verify_shortlink(
 
     Args:
         signature: The VouchMediaSignature object
-        base_url: Base URL for verification service
+        base_url: Base URL for shortlink (default: from VOUCH_SHORTLINK_DOMAIN env)
 
     Returns:
-        Verification shortlink (e.g., "https://vouch.me/v/abc123")
+        Verification shortlink (e.g., "https://vch.sh/abc12345")
     """
-    # Create a short ID from signature hash
+    from vouch.config import SHORTLINK_DOMAIN
+    
+    # Use provided base_url or default from config
+    domain = (base_url or SHORTLINK_DOMAIN).rstrip("/")
+    
+    # Create a short ID from signature hash (8 chars)
     sig_hash = hashlib.sha256(signature.signature.encode()).hexdigest()[:8]
-    return f"{base_url}/v/{sig_hash}"
+    return f"{domain}/{sig_hash}"

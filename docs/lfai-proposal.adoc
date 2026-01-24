@@ -1,0 +1,232 @@
+= Vouch Protocol Project Proposal
+
+== Project Proposal for LF AI & Data Foundation
+
+=== Name of Project
+Vouch Protocol
+
+=== Requested Project Maturity Level
+**Sandbox**
+
+(Seeking Sandbox entry with roadmap to Incubation within 12 months)
+
+=== Project Description
+
+**What it does:**
+Vouch Protocol is the identity layer for AI agents. It provides cryptographic identity, authentication, and non-repudiation for autonomous AI systems using Ed25519 signatures, JWK key format, and W3C DID-compatible tokens.
+
+**Why it is valuable:**
+As AI agents increasingly make real-world decisions (financial transactions, healthcare access, customer service), there is no open standard for:
+
+- **WHO** - Cryptographically proving agent identity
+- **WHAT** - Signing the intent of each action
+- **WHEN** - Timestamped, tamper-proof audit trail
+
+Vouch Protocol fills this gap, providing "SSL certificates for AI agents."
+
+**Origin and History:**
+
+- Created by Ramprasad Gaddam in Dec, 2025
+- Inspired by SSL/TLS trust model applied to AI agents
+- Open-sourced under Apache 2.0 license
+- Published to PyPI as `vouch-protocol`
+
+**Ongoing Development:**
+
+- Active development with regular releases
+- 223 passing tests, 90%+ code coverage
+- Framework integrations: LangChain, CrewAI, AutoGPT, MCP
+- Enterprise features: key rotation, revocation, reputation scoring
+- C2PA/CAI media provenance integration
+
+=== Statement on Alignment with LF AI's Mission
+
+Vouch Protocol directly aligns with LF AI & Data's mission of:
+
+1. **Supporting open source AI/ML projects** - Apache 2.0 licensed, fully open
+2. **Building trusted AI systems** - Cryptographic identity enables accountability
+3. **Enterprise readiness** - Production features (KMS, Redis, key rotation)
+4. **Interoperability** - Works with all major AI frameworks
+
+As AI agents become more autonomous, trust and accountability become critical infrastructure. Vouch Protocol provides this foundation as an open standard.
+
+=== Collaboration Opportunities with LF AI Projects
+
+|===
+|Project |Collaboration Opportunity
+
+|**ONNX**
+|Sign model provenance with Vouch tokens
+
+|**Flyte**
+|Agent identity for workflow orchestration
+
+|**Feast**
+|Authenticated feature access for ML pipelines
+
+|**OpenLineage**
+|Cryptographic provenance in data lineage
+
+|**Trusted AI (AIF360, ART)**
+|Identity layer for explainable/fair AI
+
+|**Monocle**
+|Agent tracing with cryptographic identity
+
+|**Open Voice Network**
+|Voice AI authentication and provenance
+|===
+
+=== License
+- **Name:** Apache License 2.0
+- **Version:** 2.0
+- **URL:** https://github.com/vouch-protocol/vouch/blob/main/LICENSE
+
+*Note: The Vouch Protocol specification may be contributed to W3C Verifiable Credentials Working Group as a separate standards track.*
+
+=== Source Control
+- **Platform:** GitHub
+- **URL:** https://github.com/vouch-protocol/vouch
+- **Organization:** Yes, sits in `vouch-protocol` GitHub organization
+
+=== DCO (Developer Certificate of Origin)
+- DCO app: Ready to activate upon LF AI acceptance
+- Current workflow: Commits signed with SSH keys
+
+=== Issue Tracker
+- **Platform:** GitHub Issues
+- **URL:** https://github.com/vouch-protocol/vouch/issues
+
+=== Collaboration Tools
+- **Discord:** https://discord.gg/VxgYkjdph
+- **Discussions:** GitHub Discussions enabled
+- **Twitter/X:** @Vouch_Protocol
+
+**Requested tools:**
+- LF AI Slack channel
+- LF AI mailing list
+
+=== External Dependencies
+
+|===
+|Dependency |Version |License
+
+|jwcrypto
+|>=1.5.0
+|Apache 2.0
+
+|pyyaml
+|>=6.0
+|MIT
+
+|python
+|>=3.9
+|PSF License
+
+|pillow (optional)
+|>=9.0
+|HPND
+
+|qrcode (optional)
+|>=7.0
+|BSD
+|===
+
+=== Initial Committers
+
+|===
+|Name |Email |Organization |Duration
+
+|Ramprasad Gaddam
+|ram@vouch-protocol.com
+|Vouch Protocol
+|Since project inception (Dec, 2025)
+|===
+
+=== Contributor Roles
+Defined in MAINTAINERS.md:
+
+- **Maintainer:** Full write access, release authority
+- **Committer:** Write access to specific modules
+- **Contributor:** Pull request submission
+
+=== Total Contributors
+- 1 primary maintainer
+- Open for community contributions
+
+=== Release Methodology
+Documented in RELEASES.md:
+
+- Semantic versioning (semver)
+- PyPI releases via GitHub Actions
+- Changelog maintained in CHANGELOG.md
+- Current version: 1.2.0
+
+=== Code of Conduct
+- **URL:** https://github.com/vouch-protocol/vouch/blob/main/CODE_OF_CONDUCT.md
+- **Based on:** Contributor Covenant
+- **Contact:** conduct@lfai.foundation (to be updated upon acceptance)
+
+=== CII Best Practices Badge
+- **Status:** OpenSSF Silver Badge achieved
+- **URL:** https://www.bestpractices.dev/projects/11688
+- **Evidence:** Passing criteria for security, documentation, quality
+
+=== Infrastructure Requests
+- GitHub organization transfer guidance
+- CI/CD migration support (if needed)
+- LF AI project page
+- Marketing/announcement support
+
+=== Project Website
+- **Current:** GitHub README serves as primary documentation
+- **Domain:** vouch-protocol.com (reserved)
+- **Request:** LF AI hosted project page
+
+=== Project Governance
+- **Model:** Benevolent Dictator For Life (BDFL) transitioning to Technical Steering Committee (TSC)
+- **Documentation:** To be formalized in GOVERNANCE.md upon acceptance
+- **Planned structure:**
+  - TSC with maintainer representation
+  - Open contributor meetings
+  - RFCs for major changes
+
+=== Social Media Accounts
+- **Twitter/X:** https://x.com/Vouch_Protocol
+- **Discord:** https://discord.gg/VxgYkjdph
+- **LinkedIn:** To be created
+
+=== Existing Sponsorship
+- **Current:** Self-funded by creator
+- **Affiliations:**
+  - C2PA Contributor
+  - CAI Member
+  - W3C Verifiable Credentials participation (via UnitedHealth Group)
+  - OpenSSF Badge Program participant
+
+=== Additional Information
+
+**Standards Alignment:**
+
+- W3C DIDs (Decentralized Identifiers)
+- W3C Verifiable Credentials
+- C2PA (Coalition for Content Provenance and Authenticity)
+- CAI (Content Authenticity Initiative)
+
+**Enterprise Features:**
+
+- Cloud KMS integration (AWS, GCP, Azure)
+- Key rotation and revocation
+- Reputation scoring engine
+- Rate limiting and caching
+- Redis/Kafka backends for scale
+
+**Unique Value Proposition:**
+
+Vouch Protocol is the only open-source project focused specifically on cryptographic identity for AI agents, filling a critical gap as autonomous AI systems proliferate.
+
+---
+
+_Submitted by: Ramprasad Gaddam_
+_Date: January 2026_
+_Contact: ram@vouch-protocol.com_

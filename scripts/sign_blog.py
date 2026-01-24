@@ -3,7 +3,7 @@
 Sign Blog Posts and Register in Cloudflare KV
 
 Signs each blog post using Vouch Protocol and registers the signature
-in Cloudflare KV for verification via v.vouch-protocol.com/tech00X
+in Cloudflare KV for verification via vch.sh/{tech_id}
 """
 
 import os
@@ -14,6 +14,11 @@ import json
 import subprocess
 import hashlib
 from datetime import datetime
+
+# Import centralized config
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from vouch.config import SHORTLINK_DOMAIN, get_shortlink
 
 # Config
 BLOG_DIR = "/home/rampy/vouch-protocol/docs/blog"
@@ -82,7 +87,7 @@ def add_verify_badge_to_html(filepath, tech_id):
     with open(filepath, 'r') as f:
         html = f.read()
     
-    verify_url = f"https://v.vouch-protocol.com/{tech_id}"
+    verify_url = get_shortlink(tech_id)
     
     # Check if badge already exists
     if "verify-badge" in html and tech_id in html:
@@ -166,7 +171,7 @@ def main():
     print("✅ Done! All posts signed and registered.")
     print("\nVerification URLs:")
     for slug, tech_id in POST_MAPPING.items():
-        print(f"  {slug}.html -> https://v.vouch-protocol.com/p/{tech_id}")
+        print(f"  {slug}.html -> {get_shortlink(tech_id)}")
 
 if __name__ == "__main__":
     main()
