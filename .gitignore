@@ -60,3 +60,8 @@ c2pa-ca/
 
 # Browser extension build artifacts
 browser-extension/dist/
+DEVELOPER_CONTEXT.md
+
+# Scribe Context Manager
+.scribe/
+DEVELOPER_CONTEXT.md
