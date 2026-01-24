@@ -72,7 +72,7 @@ def sign_json_document():
     # Convert to canonical JSON (sorted keys for reproducibility)
     content = json.dumps(document, sort_keys=True)
     
-    result = client.sign(content, origin="billing-system", document_type="invoice")
+    client.sign(content, origin="billing-system", document_type="invoice")
     
     print("✅ JSON document signed!")
     print(f"   Document: {document['type']} #{document['number']}")
@@ -83,7 +83,7 @@ def sign_with_custom_url():
     # Useful for remote daemons or custom ports
     client = VouchClient(daemon_url="http://localhost:9999")
     
-    result = client.sign("Content", origin="custom-client")
+    client.sign("Content", origin="custom-client")
     print("✅ Signed via custom URL!")
 
 

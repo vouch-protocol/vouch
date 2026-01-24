@@ -198,8 +198,8 @@ def context_manager_pattern():
     with vouch_signing_context("context-demo") as client:
         if client:
             try:
-                result = client.sign("Content", origin="context-demo")
-                print(f"✅ Signed with context manager")
+                client.sign("Content", origin="context-demo")
+                print("✅ Signed with context manager")
             except UserDeniedSignatureError:
                 print("⚠️ User denied")
         else:
@@ -215,7 +215,7 @@ def file_error_handling():
     file_path = "/path/to/nonexistent/file.txt"
     
     try:
-        result = client.sign_file(file_path, origin="file-error-demo")
+        client.sign_file(file_path, origin="file-error-demo")
         
     except FileNotFoundError:
         print(f"❌ File not found: {file_path}")
