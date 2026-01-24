@@ -1,7 +1,7 @@
 # PAD-003: The "Identity Sidecar" Pattern & JIT Intent Signing for AI Agents
 
 **Publication Date:** January 03, 2026  
-**Author:** Vouch Protocol Maintainers  
+**Author:** Ramprasad Anandam Gaddam  
 **Subject:** Decoupled Cryptographic Signing for Stochastic AI Models  
 **Status:** Public Prior Art  
 **License:** Apache 2.0

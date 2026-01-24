@@ -1,53 +1,78 @@
 #!/usr/bin/env python3
 """
-04_audit_trail.py - Create Audit Trails
+04_audit_trail.py - Create Audit Trails with Auditor
 
-Log all agent actions for compliance.
+Issue verifiable credentials for agents and log actions.
 
 Run: python 04_audit_trail.py
 """
 
-from vouch import Signer, Auditor
+from vouch import Signer, Auditor, Verifier, generate_identity
 import json
 
-print("📋 Audit Trail")
+print("📋 Audit Trail with Verifiable Credentials")
 print("=" * 50)
 
 # =============================================================================
-# Setup Auditor
+# Setup Auditor (Certificate Authority)
 # =============================================================================
 
-# Create auditor (stores audit events)
-auditor = Auditor()
+# Create auditor identity (this is the authority that issues certificates)
+auditor_id = generate_identity(domain="vouch-authority.com")
+auditor = Auditor(
+    private_key_json=auditor_id.private_key_jwk,
+    issuer_did=auditor_id.did,
+)
 
-# Create an agent
-agent = Signer(name="Financial Agent", email="fin@example.com")
+# Create an agent identity
+agent_id = generate_identity(domain="financial-agent.example.com")
+agent = Signer(private_key=agent_id.private_key_jwk, did=agent_id.did)
 
-print(f"Agent: {agent.name}")
-print("Auditor ready\n")
+print(f"Auditor DID: {auditor.get_issuer_did()}")
+print(f"Agent DID: {agent.get_did()}")
 
 # =============================================================================
-# Log Actions
+# Issue Verifiable Credential
 # =============================================================================
 
-print("📝 Logging Actions:")
+print("\n📜 Issuing Verifiable Credential:")
+
+# Issue a vouch certificate for the agent
+cert_result = auditor.issue_vouch({
+    "did": agent.get_did(),
+    "integrity_hash": "sha256:abc123def456",  # Hash of agent code/model
+    "reputation_score": 85,  # Agent's trust score
+})
+
+certificate = cert_result["certificate"]
+print(f"   Certificate: {certificate[:50]}...")
+print(f"   Issued by: {auditor.get_issuer_did()}")
+print(f"   For agent: {agent.get_did()}")
+
+# =============================================================================
+# Log Actions with Signed Tokens
+# =============================================================================
+
+print("\n📝 Logging Actions (Audit Trail):")
+
+audit_log = []
 
 # Action 1: Query balance
-action1 = {"action": "get_balance", "account": "12345"}
-token1 = agent.sign(json.dumps(action1))
-auditor.log(token=token1, metadata={"ip": "10.0.0.1", "department": "treasury"})
+action1 = {"action": "get_balance", "account": "12345", "timestamp": "2026-01-23T10:00:00Z"}
+token1 = agent.sign(action1)
+audit_log.append({"token": token1, "metadata": {"ip": "10.0.0.1", "department": "treasury"}})
 print("   ✅ get_balance logged")
 
 # Action 2: Transfer funds
 action2 = {"action": "transfer", "from": "12345", "to": "67890", "amount": 500}
-token2 = agent.sign(json.dumps(action2))
-auditor.log(token=token2, metadata={"ip": "10.0.0.1", "approved_by": "manager@example.com"})
+token2 = agent.sign(action2)
+audit_log.append({"token": token2, "metadata": {"ip": "10.0.0.1", "approved_by": "manager@example.com"}})
 print("   ✅ transfer logged")
 
 # Action 3: Generate report
 action3 = {"action": "generate_report", "type": "monthly_summary"}
-token3 = agent.sign(json.dumps(action3))
-auditor.log(token=token3, metadata={"ip": "10.0.0.1"})
+token3 = agent.sign(action3)
+audit_log.append({"token": token3, "metadata": {"ip": "10.0.0.1"}})
 print("   ✅ generate_report logged")
 
 # =============================================================================
@@ -56,24 +81,20 @@ print("   ✅ generate_report logged")
 
 print("\n📊 Query Audit Log:")
 
-# Get all events
-print("\n   All events:")
-for event in auditor.query(limit=10):
-    payload = json.loads(event.payload)
-    print(f"   - {payload['action']} at {event.timestamp}")
+print(f"\n   Total logged events: {len(audit_log)}")
 
-# Filter by agent
-print(f"\n   Events for {agent.name}:")
-for event in auditor.query(agent_id=agent.public_key, limit=10):
-    payload = json.loads(event.payload)
-    print(f"   - {payload['action']}")
-
-# Filter by action type
-print("\n   Transfer operations only:")
-for event in auditor.query(limit=10):
-    payload = json.loads(event.payload)
-    if payload.get("action") == "transfer":
-        print(f"   - Transfer ${payload['amount']} from {payload['from']} to {payload['to']}")
+for i, entry in enumerate(audit_log):
+    token = entry["token"]
+    metadata = entry["metadata"]
+    
+    # Verify and extract payload
+    is_valid, passport = Verifier.verify(token, agent.get_public_key_jwk())
+    
+    if is_valid and passport:
+        action = passport.payload.get("action", "unknown")
+        print(f"   [{i+1}] Action: {action}")
+        print(f"       Signer: {passport.iss}")
+        print(f"       IP: {metadata.get('ip', 'N/A')}")
 
 # =============================================================================
 # Export for Compliance
@@ -81,13 +102,21 @@ for event in auditor.query(limit=10):
 
 print("\n📤 Export for Compliance:")
 
-# Export as JSON
-events = auditor.export(format="json")
-print(f"   Exported {len(events)} events as JSON")
+# Export as JSON (for APIs)
+export_data = []
+for entry in audit_log:
+    is_valid, passport = Verifier.verify(entry["token"], agent.get_public_key_jwk())
+    if is_valid and passport:
+        export_data.append({
+            "action": passport.payload,
+            "agent_did": passport.iss,
+            "timestamp": passport.iat,
+            "metadata": entry["metadata"],
+            "signature": entry["token"][:50] + "...",
+        })
 
-# Export as CSV (for spreadsheets)
-# csv_data = auditor.export(format="csv")
-# print(f"   Exported as CSV")
+print(f"   Exported {len(export_data)} events as JSON")
+print(f"   Sample: {json.dumps(export_data[0], indent=2)[:200]}...")
 
 # =============================================================================
 # Summary
@@ -98,20 +127,14 @@ print("""
 
 What's Logged:
   • Full signed token (unforgeable)
-  • Timestamp
-  • Agent identity
+  • Agent DID (identity)
+  • Action payload
   • Custom metadata (IP, user, etc.)
 
-Query Options:
-  • By agent (public key)
-  • By time range
-  • By action type
-  • Full-text search
-
-Export Formats:
-  • JSON (for APIs)
-  • CSV (for compliance reports)
-  • Custom (implement your own)
+Verifiable Credentials:
+  • Auditor issues certificates for agents
+  • Includes reputation score
+  • Includes integrity hash of agent code
 
 Compliance:
   • SOC2 audit trail

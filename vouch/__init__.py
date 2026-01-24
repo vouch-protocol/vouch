@@ -17,7 +17,7 @@ from .keys import generate_identity, KeyPair
 from .kms import RotatingKeyProvider, KeyConfig
 
 # Audio signing
-from .audio import AudioSigner, SignedAudioFrame
+from .audio import AudioSigner, SignedAudioResult
 
 
 # Enterprise features (lazy imports to avoid requiring optional deps)
@@ -103,7 +103,7 @@ __all__ = [
     "KeyConfig",
     # Audio
     "AudioSigner",
-    "SignedAudioFrame",
+    "SignedAudioResult",
     # Enterprise (lazy loaded)
     "AsyncVerifier",
     "VerificationResult",

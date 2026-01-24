@@ -8,8 +8,15 @@
  * - Message passing with content scripts
  */
 
-// Import TweetNaCl for crypto operations
-importScripts('lib/tweetnacl.min.js', 'lib/signer.js');
+// Import TweetNaCl for crypto operations (fallback)
+// and secure-keys.js for WebCrypto-based secure storage
+// and bridge-migration.js for Bridge daemon integration
+importScripts(
+    'lib/tweetnacl.min.js',
+    'lib/signer.js',
+    'lib/secure-keys.js',
+    'lib/bridge-migration.js'
+);
 
 // =============================================================================
 // Constants
@@ -25,41 +32,69 @@ const CONTEXT_MENU_ID = 'vouch-sign-selection';
 const CONTEXT_MENU_SCAN_ID = 'vouch-smart-scan';
 
 // API endpoint for signature storage (Cloudflare Worker)
-const API_BASE_URL = 'https://v.vouch-protocol.com';
+const API_BASE_URL = 'https://api.vouch-protocol.com';
+
+// Shortlink domain for displaying to users
+const SHORTLINK_DOMAIN = 'https://vch.sh';
 
 // =============================================================================
 // Key Management
 // =============================================================================
 
 /**
- * Initialize or load existing keypair
+ * Initialize or load existing keypair using secure storage
+ * Uses WebCrypto with non-extractable keys when available
  */
 async function initializeKeys() {
-    const stored = await chrome.storage.local.get([
-        STORAGE_KEYS.SECRET_KEY,
-        STORAGE_KEYS.PUBLIC_KEY,
-    ]);
+    try {
+        // Use the new secure key manager
+        const keyInfo = await SecureKeys.initialize();
 
-    if (stored[STORAGE_KEYS.SECRET_KEY] && stored[STORAGE_KEYS.PUBLIC_KEY]) {
-        console.log('Vouch: Loaded existing keypair');
+        console.log('Vouch: Keys initialized', {
+            isFallback: keyInfo.isFallback,
+            publicKeyPrefix: keyInfo.publicKeyHex.substring(0, 16),
+        });
+
         return {
-            publicKey: stored[STORAGE_KEYS.PUBLIC_KEY],
-            secretKey: stored[STORAGE_KEYS.SECRET_KEY],
+            publicKey: keyInfo.publicKeyHex,
+            // secretKey is NOT returned - it stays in IndexedDB
+            isSecure: !keyInfo.isFallback,
+        };
+    } catch (error) {
+        console.error('Vouch: Secure key initialization failed, using fallback', error);
+
+        // Fallback to legacy method if SecureKeys fails
+        const stored = await chrome.storage.local.get([
+            STORAGE_KEYS.SECRET_KEY,
+            STORAGE_KEYS.PUBLIC_KEY,
+        ]);
+
+        if (stored[STORAGE_KEYS.SECRET_KEY] && stored[STORAGE_KEYS.PUBLIC_KEY]) {
+            console.warn('Vouch: Using legacy keys from chrome.storage (less secure)');
+            return {
+                publicKey: stored[STORAGE_KEYS.PUBLIC_KEY],
+                secretKey: stored[STORAGE_KEYS.SECRET_KEY],
+                isSecure: false,
+            };
+        }
+
+        // Generate new keypair (fallback)
+        console.log('Vouch: Generating fallback keypair...');
+        const keypair = generateKeypair();
+
+        await chrome.storage.local.set({
+            [STORAGE_KEYS.SECRET_KEY]: keypair.secretKey,
+            [STORAGE_KEYS.PUBLIC_KEY]: keypair.publicKey,
+        });
+
+        return {
+            publicKey: keypair.publicKey,
+            secretKey: keypair.secretKey,
+            isSecure: false,
         };
     }
-
-    // Generate new keypair
-    console.log('Vouch: Generating new keypair...');
-    const keypair = generateKeypair();
-
-    await chrome.storage.local.set({
-        [STORAGE_KEYS.SECRET_KEY]: keypair.secretKey,
-        [STORAGE_KEYS.PUBLIC_KEY]: keypair.publicKey,
-    });
-
-    console.log('Vouch: New keypair generated and saved');
-    return keypair;
 }
+
 
 /**
  * Get the user's identity (email and optional display name)
@@ -175,20 +210,36 @@ async function handleContextMenuClick(info, tab) {
     }
 
     try {
-        // Get keypair
+        console.log('Vouch: Starting signing process...');
+        // Get keypair info (public key only - private stays secure)
         const keypair = await initializeKeys();
+        console.log('Vouch: Keys initialized successfully');
 
-        // Get user email
-        const email = await getUserEmail();
+        // Get user identity (email and display name)
+        const identity = await getUserIdentity();
+        console.log('Vouch: Got identity:', identity.displayName);
+        const email = identity.email;
+        const displayName = identity.displayName;
 
         // Create the message to sign (standardized format for verification)
+        // Use email in signed message for cryptographic binding
         const messageToSign = `${selectedText}\n---\nBy: ${email}`;
 
-        // Sign the message (returns Base64)
-        const signature = signMessage(messageToSign, keypair.secretKey);
+        // Sign the message using secure keys if available
+        let signature;
+        if (keypair.isSecure) {
+            // Use WebCrypto secure signing (key never leaves IndexedDB)
+            signature = await SecureKeys.signBase64(messageToSign);
+        } else if (keypair.secretKey) {
+            // Fallback to legacy signing
+            signature = signMessage(messageToSign, keypair.secretKey);
+        } else {
+            throw new Error('No signing key available');
+        }
 
         // Convert public key to Base64 for API
         const publicKeyBase64 = toBase64(fromHex(keypair.publicKey));
+
 
         // Try to store in Cloudflare and get short URL
         const apiResponse = await storeSignature({
@@ -201,8 +252,10 @@ async function handleContextMenuClick(info, tab) {
         let vouchBlock;
 
         if (apiResponse && apiResponse.success) {
-            // Use compact badge format (just verification link, not the text)
-            vouchBlock = `✅ Signed by ${email}\n🔗 ${apiResponse.url}`;
+            // Use shortlink for sharing (vch.sh/{id})
+            // Show display name for better UX, but email is in the signed message
+            const shortlink = apiResponse.shortlink || `${SHORTLINK_DOMAIN}/${apiResponse.id}`;
+            vouchBlock = `✅ Signed by ${displayName}\n🔗 ${shortlink}`;
         } else {
             // Fall back to full format (API unavailable)
             vouchBlock = formatVouchBlock(

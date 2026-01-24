@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vouch Protocol",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Sign and verify text with cryptographic proof. Trust-On-First-Use identity verification.",
   "permissions": [
     "identity",
@@ -13,8 +13,9 @@
     "clipboardWrite"
   ],
   "host_permissions": [
-    "https://v.vouch-protocol.com/*",
-    "https://api.vouch-protocol.com/*"
+    "https://vch.sh/*",
+    "https://api.vouch-protocol.com/*",
+    "https://v.vouch-protocol.com/*"
   ],
   "oauth2": {
     "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
@@ -28,7 +29,17 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "https://*/*",
+        "http://*/*"
+      ],
+      "exclude_matches": [
+        "*://mail.google.com/*",
+        "*://*.banking.com/*",
+        "*://*.bankofamerica.com/*",
+        "*://*.chase.com/*",
+        "*://*.wellsfargo.com/*",
+        "*://accounts.google.com/*",
+        "*://login.microsoftonline.com/*"
       ],
       "js": [
         "lib/tweetnacl.min.js",

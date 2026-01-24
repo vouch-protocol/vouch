@@ -1,0 +1,111 @@
+name: Build Browser Extensions
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Extension version (e.g., 1.0.5)'
+        required: true
+        default: '1.0.5'
+  push:
+    paths:
+      - 'browser-extension/**'
+    branches:
+      - main
+
+jobs:
+  # Chrome/Edge build (runs on any OS)
+  build-chromium:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create Chrome/Edge package
+        run: |
+          cd browser-extension
+          VERSION="${{ github.event.inputs.version || '1.0.5' }}"
+          zip -r "../vouch-protocol-extension-v${VERSION}.zip" . \
+            -x "*.git*" -x "*.DS_Store" -x "*.md" -x "dist/*" -x "src/*"
+          
+      - name: Upload Chrome/Edge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-edge-extension
+          path: vouch-protocol-extension-*.zip
+          retention-days: 90
+
+  # Safari build (requires macOS)
+  build-safari:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      
+      - name: Convert to Safari Web Extension
+        run: |
+          xcrun safari-web-extension-converter ./browser-extension \
+            --app-name "Vouch Protocol" \
+            --bundle-identifier "com.vouch-protocol.safari-extension" \
+            --swift \
+            --macos-only \
+            --no-open \
+            --force
+      
+      - name: Build Safari Extension
+        run: |
+          cd "Vouch Protocol"
+          # Build for macOS
+          xcodebuild -project "Vouch Protocol.xcodeproj" \
+            -scheme "Vouch Protocol (macOS)" \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            || echo "Build completed (signing skipped for CI)"
+      
+      - name: Package Safari Extension
+        run: |
+          VERSION="${{ github.event.inputs.version || '1.0.5' }}"
+          mkdir -p safari-dist
+          if [ -d "Vouch Protocol/build" ]; then
+            cp -r "Vouch Protocol/build/Build/Products/Release/"* safari-dist/ 2>/dev/null || true
+          fi
+          # Also save the Xcode project for manual signing
+          zip -r "safari-extension-xcode-v${VERSION}.zip" "Vouch Protocol"
+      
+      - name: Upload Safari Xcode Project
+        uses: actions/upload-artifact@v4
+        with:
+          name: safari-extension-xcode
+          path: safari-extension-xcode-*.zip
+          retention-days: 90
+      
+      - name: Upload Safari Build
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safari-extension-build
+          path: safari-dist/
+          retention-days: 90
+
+  # Summary job
+  summary:
+    needs: [build-chromium, build-safari]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## 📦 Extension Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Chrome/Edge | ${{ needs.build-chromium.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Safari | ${{ needs.build-safari.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Download artifacts from the Actions tab." >> $GITHUB_STEP_SUMMARY

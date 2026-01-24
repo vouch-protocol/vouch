@@ -86,7 +86,7 @@ export async function signImage(
             signature,
             chainId,
             timestamp,
-            verifyUrl: `https://vouch.me/v/${imageHash.slice(0, 8)}`,
+            verifyUrl: `https://vch.sh/${imageHash.slice(0, 8)}`,
         };
     } catch (error) {
         return {

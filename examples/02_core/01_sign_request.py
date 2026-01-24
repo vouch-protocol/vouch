@@ -7,28 +7,29 @@ Attach Vouch tokens to outgoing API calls.
 Run: python 01_sign_request.py
 """
 
-from vouch import Signer
+from vouch import Signer, generate_identity
 import json
 
 print("📤 Sign HTTP Requests")
 print("=" * 50)
 
 # =============================================================================
-# Create a Signer
+# Create an Identity and Signer
 # =============================================================================
 
+identity = generate_identity(domain="api-client.example.com")
 signer = Signer(
-    name="API Client Agent",
-    email="agent@example.com",
+    private_key=identity.private_key_jwk,
+    did=identity.did,
 )
 
-print(f"Agent: {signer.name}")
+print(f"Agent DID: {signer.get_did()}")
 
 # =============================================================================
 # Sign a Request
 # =============================================================================
 
-# The intent you're signing
+# The intent you're signing (as a dict for JWT payload)
 request_intent = {
     "method": "POST",
     "url": "https://api.bank.com/transfer",
@@ -40,7 +41,7 @@ request_intent = {
 }
 
 # Sign it
-token = signer.sign(json.dumps(request_intent))
+token = signer.sign(request_intent)
 
 print("\n📝 Signed Request:")
 print(f"   Method: {request_intent['method']}")

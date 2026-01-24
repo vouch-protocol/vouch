@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Vouch Protocol - The Identity Layer for the Agentic Web. Cryptographic identity for AI agents.">
+    <meta name="keywords" content="AI agents, identity, cryptography, Ed25519, vouch protocol, agent security">
+    <title>Vouch Protocol - The Identity Layer for the Agentic Web</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <img src="assets/vouch-logo-full.png" alt="Vouch Protocol" class="logo-img">
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#use-cases">Use Cases</a>
+                <a href="https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md">Docs</a>
+                <a href="https://discord.gg/VxgYkjdph">Community</a>
+            </div>
+            <a href="https://github.com/vouch-protocol/vouch" class="nav-cta">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-logo">
+                    <img src="assets/vouch-banner.png" alt="Vouch Protocol" class="hero-banner">
+                </div>
+                <h1>The Identity Layer for<br>the Agentic Web</h1>
+                <p class="hero-tagline">Cryptographic identity for AI agents. Trust, but verify.</p>
+                <div class="hero-buttons">
+                    <a href="https://github.com/vouch-protocol/vouch" class="btn btn-primary">Get Started</a>
+                    <a href="https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md"
+                        class="btn btn-secondary">Read the Docs</a>
+                </div>
+                <div class="hero-badges">
+                    <span class="badge-label">Trusted by & Contributing to:</span>
+                    <div class="badge-row">
+                        <a href="https://c2pa.org" class="badge-link c2pa-badge">
+                            <img src="assets/c2pa/c2pa-logo.svg" alt="C2PA Contributor" class="c2pa-logo">
+                        </a>
+                        <a href="https://contentauthenticity.org" class="badge-link cai-badge">
+                            <img src="assets/cai/cai-logo-black.png" alt="CAI Member" class="cai-logo">
+                        </a>
+                        <a href="https://www.bestpractices.dev/projects/11688" class="badge-link">
+                            <img src="https://www.bestpractices.dev/projects/11688/badge" alt="OpenSSF Silver">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem-section">
+        <div class="container">
+            <div class="problem-card">
+                <h2>The Problem</h2>
+                <p>AI agents are making real-world API calls with <strong>ZERO cryptographic proof</strong> of:</p>
+                <div class="problem-list">
+                    <div class="problem-item">
+                        <span class="problem-emoji">👤</span>
+                        <span><strong>WHO</strong> they are</span>
+                    </div>
+                    <div class="problem-item">
+                        <span class="problem-emoji">📋</span>
+                        <span><strong>WHAT</strong> they intended to do</span>
+                    </div>
+                    <div class="problem-item">
+                        <span class="problem-emoji">🕐</span>
+                        <span><strong>WHEN</strong> they did it</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <h2 class="section-title">Core Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Ed25519 Signatures</h3>
+                    <p>Secure, high-performance digital signatures for verifying agent authenticity.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Trusted Identity</h3>
+                    <p>Establish verifiable trust and reputation across decentralized networks.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">{}</div>
+                    <h3>Framework Agnostic</h3>
+                    <p>Seamlessly integrate with any AI agent framework or platform.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Audit Trail</h3>
+                    <p>Cryptographic proof of every action for compliance and accountability.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Fast Verification</h3>
+                    <p>Sub-millisecond signature verification for real-time applications.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Open Standard</h3>
+                    <p>Apache 2.0 licensed. Use freely in commercial and open-source projects.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Generate Identity</h3>
+                    <p>Create an Ed25519 keypair and DID for your agent</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Sign Actions</h3>
+                    <p>Agent signs every API call with its private key</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Send Token</h3>
+                    <p>Include Vouch-Token in HTTP headers</p>
+                </div>
+                <div class="step-arrow">→</div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Verify</h3>
+                    <p>API verifies signature with public key</p>
+                </div>
+            </div>
+            <div class="code-preview">
+                <div class="code-header">
+                    <span class="code-dot red"></span>
+                    <span class="code-dot yellow"></span>
+                    <span class="code-dot green"></span>
+                    <span class="code-filename">example.py</span>
+                </div>
+                <pre><code><span class="code-keyword">from</span> vouch <span class="code-keyword">import</span> Signer, generate_identity
+
+<span class="code-comment"># 3 lines to sign</span>
+identity = generate_identity(domain=<span class="code-string">"your-agent.com"</span>)
+signer = Signer(private_key=identity.private_key_jwk, did=identity.did)
+token = signer.sign({<span class="code-string">"action"</span>: <span class="code-string">"read_database"</span>})</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section id="use-cases" class="use-cases">
+        <div class="container">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="use-cases-grid">
+                <div class="use-case-card">
+                    <h3>💰 Financial Services</h3>
+                    <p>SEC-compliant trade logging with cryptographic proof of agent intent.</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>🏥 Healthcare AI</h3>
+                    <p>HIPAA-compliant audit trails for AI accessing patient data.</p>
+                </div>
+                <div class="use-case-card">
+                    <h3>🎧 Customer Service</h3>
+                    <p>Accountability for AI agents handling sensitive customer information.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to secure your AI agents?</h2>
+            <p>Get started in minutes with our simple SDK</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/vouch-protocol/vouch" class="btn btn-primary btn-large">View on GitHub</a>
+                <a href="https://discord.gg/VxgYkjdph" class="btn btn-secondary btn-large">Join Discord</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <img src="assets/vouch-logo-full.png" alt="Vouch Protocol" class="footer-logo-img">
+                    </div>
+                    <p>The Identity Layer for the Agentic Web</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <a href="https://github.com/vouch-protocol/vouch">GitHub</a>
+                        <a
+                            href="https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md">Documentation</a>
+                        <a href="https://github.com/vouch-protocol/vouch/tree/main/examples">Examples</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Community</h4>
+                        <a href="https://discord.gg/VxgYkjdph">Discord</a>
+                        <a href="https://x.com/Vouch_Protocol">Twitter/X</a>
+                        <a href="https://github.com/vouch-protocol/vouch/discussions">Discussions</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Standards</h4>
+                        <a href="https://c2pa.org">C2PA</a>
+                        <a href="https://contentauthenticity.org">CAI Coalition</a>
+                        <a href="https://www.bestpractices.dev/projects/11688">OpenSSF</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-badges">
+                    <a href="https://c2pa.org" class="c2pa-badge-footer"><img src="assets/c2pa/c2pa-logo.svg" alt="C2PA"
+                            class="c2pa-logo-footer"></a>
+                    <a href="https://contentauthenticity.org" class="cai-badge-footer"><img
+                            src="assets/cai/cai-logo-white.png" alt="CAI Member" class="cai-logo-footer"></a>
+                    <a href="https://www.bestpractices.dev/projects/11688"><img
+                            src="https://www.bestpractices.dev/projects/11688/badge" alt="OpenSSF"></a>
+                </div>
+                <p>&copy; 2026 Vouch Protocol. Apache 2.0 License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

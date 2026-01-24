@@ -3,7 +3,33 @@
  * 
  * Stores and retrieves Vouch signatures with short IDs.
  * Supports free tier (1 year expiry) and pro tier (no expiry).
+ * 
+ * Shortlink: vch.sh/{id} -> 301 redirect -> vouch-protocol.com/v/{id}
  */
+
+// =============================================================================
+// Configuration
+// =============================================================================
+
+// Shortlink domain for sharing (301 redirects to VERIFY_DOMAIN)
+const SHORTLINK_DOMAIN = 'vch.sh';
+
+// Main domain where verification pages are served (for SEO)
+const VERIFY_DOMAIN = 'vouch-protocol.com';
+const VERIFY_PATH = '/v';
+
+// Legacy domains that should 301 redirect to new shortlink
+const LEGACY_SHORTLINK_DOMAINS = ['v.vouch-protocol.com', 'vouch.me'];
+
+// Helper: Generate canonical verification URL
+function getVerifyUrl(id) {
+    return `https://${VERIFY_DOMAIN}${VERIFY_PATH}/${id}`;
+}
+
+// Helper: Generate shortlink for display
+function getShortlink(id) {
+    return `https://${SHORTLINK_DOMAIN}/${id}`;
+}
 
 // CORS headers for browser requests
 const corsHeaders = {
@@ -96,11 +122,12 @@ async function handleSignature(request, env) {
         await env.SIGNATURES.put(shortId, JSON.stringify(signatureData), kvOptions);
 
         // Return success with short ID
+        // Use shortlink for sharing, canonical verify URL for SEO
         return new Response(JSON.stringify({
             success: true,
             id: shortId,
-            url: `https://v.vouch-protocol.com/${shortId}`,
-            shortUrl: `https://vouch-protocol.com/v/${shortId}`,
+            shortlink: getShortlink(shortId),
+            url: getVerifyUrl(shortId),
             expiresAt: signatureData.expiresAt,
         }), {
             status: 201,
@@ -403,26 +430,47 @@ export default {
         // Route requests
         const hostname = url.hostname;
 
-        // Handle v.vouch-protocol.com 
-        if (hostname === 'v.vouch-protocol.com') {
-            // Check if it's an API endpoint first (before shortlink handling)
-            if (path.startsWith('/api/')) {
-                // Fall through to API handling below
+        // =================================================================
+        // Handle vch.sh shortlink domain (301 redirect to main domain for SEO)
+        // =================================================================
+        if (hostname === SHORTLINK_DOMAIN) {
+            const id = path.replace('/', '');
+            if (id && id.match(/^[a-zA-Z0-9_-]+$/)) {
+                // 301 Permanent Redirect to canonical URL (SEO benefit)
+                return Response.redirect(getVerifyUrl(id), 301);
             }
-            // Check if it's a paper link (/p/xxx)
-            else if (path.match(/^\/p\/([a-zA-Z0-9_-]+)$/)) {
-                const paperMatch = path.match(/^\/p\/([a-zA-Z0-9_-]+)$/);
-                return handlePaperPage(paperMatch[1], env);
+            // Root redirects to main site
+            return Response.redirect(`https://${VERIFY_DOMAIN}`, 302);
+        }
+
+        // =================================================================
+        // Handle legacy shortlink domains (301 redirect to vch.sh for migration)
+        // =================================================================
+        if (LEGACY_SHORTLINK_DOMAINS.includes(hostname)) {
+            const id = path.replace(/^\/p\//, '').replace('/', '');
+            if (id && id.match(/^[a-zA-Z0-9_-]+$/)) {
+                // 301 Permanent Redirect to new shortlink
+                return Response.redirect(getShortlink(id), 301);
             }
-            // Handle shortlinks (e.g., /abc123)
-            else {
-                const shortId = path.replace('/', '');
-                if (shortId && shortId.match(/^[a-zA-Z0-9]+$/)) {
-                    // Render verification page directly (don't redirect to GitHub Pages)
-                    return handleSignaturePage(shortId, env);
+            // Root redirects to main site
+            return Response.redirect(`https://${VERIFY_DOMAIN}`, 302);
+        }
+
+        // =================================================================
+        // Handle main domain (vouch-protocol.com) - serve verification pages
+        // =================================================================
+        if (hostname === VERIFY_DOMAIN || hostname === `api.${VERIFY_DOMAIN}`) {
+            // Handle verification pages at /v/{id}
+            if (path.startsWith(VERIFY_PATH + '/')) {
+                const id = path.replace(VERIFY_PATH + '/', '').split('/')[0];
+                if (id && id.match(/^[a-zA-Z0-9_-]+$/)) {
+                    // Check if it's a paper or regular signature
+                    const paperData = await env.SIGNATURES.get(`paper:${id}`);
+                    if (paperData) {
+                        return handlePaperPage(id, env);
+                    }
+                    return handleSignaturePage(id, env);
                 }
-                // Root of v subdomain - redirect to main site
-                return Response.redirect('https://vouch-protocol.com', 302);
             }
         }
 
@@ -550,11 +598,12 @@ async function handlePaperRegister(request, env) {
         // Store with paper: prefix
         await env.SIGNATURES.put(`paper:${id} `, JSON.stringify(paperData));
 
-        // Return success
+        // Return success with both shortlink and canonical URL
         return new Response(JSON.stringify({
             success: true,
             id,
-            verifyUrl: `https://v.vouch-protocol.com/p/${id}`,
+            shortlink: getShortlink(id),
+            verifyUrl: getVerifyUrl(id),
             message: 'Paper signature registered successfully',
         }), {
             status: 201,

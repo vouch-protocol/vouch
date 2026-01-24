@@ -1,7 +1,7 @@
 # PAD-001: Cryptographic Binding of AI Agent Identity
 
 **Publication Date:** December 28, 2025  
-**Author:** Vouch Protocol Maintainers  
+**Author:** Ramprasad Anandam Gaddam  
 **Status:** Public Prior Art  
 **License:** Apache 2.0
 

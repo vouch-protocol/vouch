@@ -4,19 +4,23 @@
 
 Learn the structure of a Vouch token:
 - Header (algorithm, type)
-- Payload (signer, intent, timestamp)
+- Payload (claims including signer DID, intent, timestamp)
 - Signature (Ed25519)
 
 Run: python 03_token_anatomy.py
 """
 
-from vouch import Signer
+from vouch import Signer, generate_identity
 import json
 import base64
 
-# Create a signer and sign something
-signer = Signer(name="ExampleBot", email="bot@example.com")
-token = signer.sign("Transfer $100 to account 12345")
+# Create an identity and signer
+identity = generate_identity(domain="example-bot.com")
+signer = Signer(private_key=identity.private_key_jwk, did=identity.did)
+
+# Sign a payload (must be a dict)
+payload = {"action": "transfer", "amount": 100, "to_account": "12345"}
+token = signer.sign(payload)
 
 print("🔐 VOUCH TOKEN ANATOMY")
 print("=" * 60)
@@ -27,25 +31,33 @@ if len(parts) == 3:
     header_b64, payload_b64, signature_b64 = parts
 
     # Decode header
-    header = json.loads(base64.urlsafe_b64decode(header_b64 + "=="))
+    # Add padding if needed
+    header_padded = header_b64 + "=" * (4 - len(header_b64) % 4)
+    header = json.loads(base64.urlsafe_b64decode(header_padded))
     print("\n📋 HEADER (Algorithm & Type)")
     print(json.dumps(header, indent=2))
     # {
     #   "alg": "EdDSA",      <- Ed25519 algorithm
     #   "typ": "vouch+jwt"   <- Vouch token type
+    #   "kid": "did:web:..." <- Key ID (the signer's DID)
     # }
 
     # Decode payload
-    payload = json.loads(base64.urlsafe_b64decode(payload_b64 + "=="))
+    payload_padded = payload_b64 + "=" * (4 - len(payload_b64) % 4)
+    claims = json.loads(base64.urlsafe_b64decode(payload_padded))
     print("\n📦 PAYLOAD (Claims)")
-    print(json.dumps(payload, indent=2))
+    print(json.dumps(claims, indent=2))
     # {
-    #   "sub": "ExampleBot",           <- Signer name
-    #   "email": "bot@example.com",    <- Signer email
-    #   "pub": "z6Mk...",              <- Public key (did:key format)
-    #   "payload": "Transfer $100...", <- The signed content
-    #   "iat": 1704672000,             <- Issued at (Unix timestamp)
-    #   "exp": 1704675600              <- Expires at
+    #   "jti": "...",              <- Unique token ID (nonce)
+    #   "iss": "did:web:...",      <- Issuer (signer's DID)
+    #   "sub": "did:web:...",      <- Subject (same as issuer for self-signed)
+    #   "iat": 1704672000,         <- Issued at (Unix timestamp)
+    #   "nbf": 1704672000,         <- Not before
+    #   "exp": 1704675600,         <- Expires at
+    #   "vouch": {                 <- Vouch-specific claims
+    #     "version": "1.0",
+    #     "payload": {...}         <- The signed content
+    #   }
     # }
 
     print("\n✍️  SIGNATURE (Ed25519)")
@@ -54,7 +66,7 @@ if len(parts) == 3:
 
 print("\n" + "=" * 60)
 print("KEY POINTS:")
-print("  • Header: Tells verifiers which algorithm to use")
-print("  • Payload: Contains the signed intent + signer identity")
+print("  • Header: Tells verifiers which algorithm to use (EdDSA)")
+print("  • Payload: Contains the signed intent + signer DID + timestamps")
 print("  • Signature: Cryptographic proof (unforgeable)")
 print("  • Together: Provides non-repudiation for AI agents")

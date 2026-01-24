@@ -7,7 +7,15 @@ compatibility_date = "2024-01-01"
 binding = "SIGNATURES"
 id = "08413c23ad6147b78d406ba31f52ba1e"
 
-# Routes - support both path and subdomain
+# Routes - support multiple domains and paths
+[[routes]]
+pattern = "vch.sh/*"
+zone_name = "vch.sh"
+
+[[routes]]
+pattern = "vouch-protocol.com/v/*"
+zone_name = "vouch-protocol.com"
+
 [[routes]]
 pattern = "vouch-protocol.com/api/*"
 zone_name = "vouch-protocol.com"
