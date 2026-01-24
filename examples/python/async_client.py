@@ -84,11 +84,11 @@ async def async_with_timeout():
     client = AsyncVouchClient(timeout=5.0)  # 5 second timeout
     
     try:
-        result = await asyncio.wait_for(
+        await asyncio.wait_for(
             client.sign("Quick content", origin="timeout-example"),
             timeout=10.0
         )
-        print(f"✅ Completed within timeout")
+        print("✅ Completed within timeout")
         
     except asyncio.TimeoutError:
         print("⚠️ Request timed out")

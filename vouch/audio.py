@@ -32,11 +32,12 @@ except ImportError:
     np = None  # type: ignore
     NUMPY_AVAILABLE = False
 
-# C2PA for container signing
+# C2PA for container signing (requires Python 3.10+)
 try:
     import c2pa
     C2PA_AVAILABLE = True
-except ImportError:
+except (ImportError, SyntaxError):
+    # SyntaxError occurs on Python 3.9 due to match statements in c2pa-python
     c2pa = None  # type: ignore
     C2PA_AVAILABLE = False
 

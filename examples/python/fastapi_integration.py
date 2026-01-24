@@ -115,7 +115,7 @@ async def root():
 
 
 @app.get("/status")
-async def api_status(client: Optional[AsyncVouchClient] = Depends(get_vouch_optional)):
+async def api_status(client: Optional[AsyncVouchClient] = Depends(get_vouch_optional)):  # noqa: B008
     """Check API and Vouch status."""
     vouch_online = client is not None
     
@@ -140,7 +140,7 @@ async def api_status(client: Optional[AsyncVouchClient] = Depends(get_vouch_opti
 @app.post("/messages", response_model=SignedResponse)
 async def create_message(
     message: Message,
-    client: AsyncVouchClient = Depends(get_vouch_client),
+    client: AsyncVouchClient = Depends(get_vouch_client),  # noqa: B008
 ):
     """Create a signed message."""
     content_to_sign = json.dumps({
@@ -167,7 +167,7 @@ async def create_message(
 @app.post("/sign")
 async def sign_content(
     request: Request,
-    client: AsyncVouchClient = Depends(get_vouch_client),
+    client: AsyncVouchClient = Depends(get_vouch_client),  # noqa: B008
 ):
     """Sign arbitrary content."""
     body = await request.body()

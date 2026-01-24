@@ -29,7 +29,7 @@ def sign_jpeg_image():
     output_path = Path("sample_signed.jpg")
     output_path.write_bytes(signed_bytes)
     
-    print(f"✅ Image signed!")
+    print("✅ Image signed!")
     print(f"   Original: {image_path} ({image_path.stat().st_size} bytes)")
     print(f"   Signed: {output_path} ({output_path.stat().st_size} bytes)")
     print(f"   C2PA manifest embedded: {output_path.stat().st_size > image_path.stat().st_size}")
