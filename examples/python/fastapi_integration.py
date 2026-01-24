@@ -30,6 +30,7 @@ app = FastAPI(
 # Vouch Client Dependency
 # ============================================================================
 
+
 async def get_vouch_client() -> AsyncVouchClient:
     """Dependency that provides a Vouch client."""
     return AsyncVouchClient()
@@ -49,6 +50,7 @@ async def get_vouch_optional() -> Optional[AsyncVouchClient]:
 # Models
 # ============================================================================
 
+
 class Message(BaseModel):
     content: str
     author: Optional[str] = None
@@ -64,49 +66,51 @@ class SignedResponse(BaseModel):
 # Middleware: Sign All Responses
 # ============================================================================
 
+
 @app.middleware("http")
 async def sign_responses(request: Request, call_next):
     """Middleware that signs all JSON responses."""
     response = await call_next(request)
-    
+
     # Only sign JSON responses
     if response.headers.get("content-type", "").startswith("application/json"):
         # Get the response body
         body = b""
         async for chunk in response.body_iterator:
             body += chunk
-        
+
         # Try to sign
         try:
             client = AsyncVouchClient()
             await client.connect()
-            
+
             sign_result = await client.sign(
                 body.decode(),
                 origin=f"api:{request.url.path}",
             )
-            
+
             # Add signature header
             response.headers["X-Vouch-Signature"] = sign_result["signature"]
             response.headers["X-Vouch-DID"] = sign_result.get("did", "")
-            
+
         except (VouchConnectionError, NoKeysConfiguredError):
             # Proceed without signature
             response.headers["X-Vouch-Signature"] = "unsigned"
-        
+
         # Return modified response
         return JSONResponse(
             content=json.loads(body),
             headers=dict(response.headers),
             status_code=response.status_code,
         )
-    
+
     return response
 
 
 # ============================================================================
 # Endpoints
 # ============================================================================
+
 
 @app.get("/")
 async def root():
@@ -118,7 +122,7 @@ async def root():
 async def api_status(client: Optional[AsyncVouchClient] = Depends(get_vouch_optional)):  # noqa: B008
     """Check API and Vouch status."""
     vouch_online = client is not None
-    
+
     vouch_info = None
     if vouch_online:
         try:
@@ -129,7 +133,7 @@ async def api_status(client: Optional[AsyncVouchClient] = Depends(get_vouch_opti
             }
         except NoKeysConfiguredError:
             vouch_info = {"status": "no_keys"}
-    
+
     return {
         "api": "online",
         "vouch": "online" if vouch_online else "offline",
@@ -143,20 +147,22 @@ async def create_message(
     client: AsyncVouchClient = Depends(get_vouch_client),  # noqa: B008
 ):
     """Create a signed message."""
-    content_to_sign = json.dumps({
-        "content": message.content,
-        "author": message.author or "anonymous",
-    })
-    
+    content_to_sign = json.dumps(
+        {
+            "content": message.content,
+            "author": message.author or "anonymous",
+        }
+    )
+
     try:
         result = await client.sign(content_to_sign, origin="api:messages")
-        
+
         return SignedResponse(
             data={"content": message.content, "author": message.author},
             signature=result["signature"],
             signed_by=result.get("did"),
         )
-        
+
     except NoKeysConfiguredError:
         raise HTTPException(
             status_code=503,
@@ -171,20 +177,20 @@ async def sign_content(
 ):
     """Sign arbitrary content."""
     body = await request.body()
-    
+
     try:
         result = await client.sign(
             body.decode("utf-8"),
             origin="api:sign",
             content_type=request.headers.get("content-type", "text/plain"),
         )
-        
+
         return {
             "signature": result["signature"],
             "timestamp": result["timestamp"],
             "did": result.get("did"),
         }
-        
+
     except VouchConnectionError:
         raise HTTPException(status_code=503, detail="Vouch daemon offline")
 
@@ -195,4 +201,5 @@ async def sign_content(
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=8000)

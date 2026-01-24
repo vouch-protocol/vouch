@@ -39,10 +39,11 @@ class BadgeOptions:
     include_checkmark: bool = True
     padding: int = 16
     base_url: str = None  # Will use SHORTLINK_DOMAIN from config if None
-    
+
     def __post_init__(self):
         if self.base_url is None:
             from vouch.config import SHORTLINK_DOMAIN
+
             self.base_url = SHORTLINK_DOMAIN
 
 

@@ -24,7 +24,6 @@ Claim Types:
 ⚠️  DEPRECATION NOTICE: For C2PA-compliant signing, use vouch.media.c2pa instead.
 """
 
-
 import json
 import hashlib
 import base64
@@ -405,7 +404,6 @@ def sign_image_native(
         # This ensures hash survives metadata changes
         image_hash = compute_image_hash(output_path)
 
-
         # Get timestamp
         timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -628,7 +626,6 @@ def _verify_signature(image_path: Path, signature: VouchMediaSignature) -> bool:
     # Compute current image hash using pixel data (same method as signing)
     current_hash = compute_image_hash(image_path)
 
-
     # Check if hash matches
     if current_hash != signature.image_hash:
         return False
@@ -722,9 +719,7 @@ def truncate_did(did: str, prefix_len: int = 12, suffix_len: int = 4) -> str:
     return did
 
 
-def generate_verify_shortlink(
-    signature: VouchMediaSignature, base_url: str | None = None
-) -> str:
+def generate_verify_shortlink(signature: VouchMediaSignature, base_url: str | None = None) -> str:
     """
     Generate a verification shortlink for a signature.
 
@@ -739,10 +734,10 @@ def generate_verify_shortlink(
         Verification shortlink (e.g., "https://vch.sh/abc12345")
     """
     from vouch.config import SHORTLINK_DOMAIN
-    
+
     # Use provided base_url or default from config
     domain = (base_url or SHORTLINK_DOMAIN).rstrip("/")
-    
+
     # Create a short ID from signature hash (8 chars)
     sig_hash = hashlib.sha256(signature.signature.encode()).hexdigest()[:8]
     return f"{domain}/{sig_hash}"

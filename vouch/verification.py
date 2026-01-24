@@ -357,7 +357,6 @@ def verify_commit_from_github_api(
     verification = commit.get("commit", {}).get("verification", {})
     author_login = commit.get("author", {}).get("login")
 
-
     is_verified = verification.get("verified", False)
     signature = verification.get("signature", "")
 
@@ -420,7 +419,4 @@ def verify_commits(
     Returns:
         List of VerificationResult objects
     """
-    return [
-        verify_commit_vouch_signature(h, ssh_key_path, verbose)
-        for h in commit_hashes
-    ]
+    return [verify_commit_vouch_signature(h, ssh_key_path, verbose) for h in commit_hashes]

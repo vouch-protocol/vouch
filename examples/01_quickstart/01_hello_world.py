@@ -15,10 +15,7 @@ identity = generate_identity(domain="example.com")
 print(f"🔑 Generated identity with DID: {identity.did}")
 
 # 2. Create a signer with the identity
-signer = Signer(
-    private_key=identity.private_key_jwk,
-    did=identity.did
-)
+signer = Signer(private_key=identity.private_key_jwk, did=identity.did)
 
 # 3. Sign a payload (must be a dict for JWT claims)
 payload = {"action": "greet", "message": "Hello from Vouch Protocol!"}
