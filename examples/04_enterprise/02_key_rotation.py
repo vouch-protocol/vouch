@@ -92,7 +92,7 @@ print(f"   Total keys: {provider.key_count}")
 
 # Remove an old key
 provider.remove_key("key-2026-q1")
-print(f"   Removed key: key-2026-q1")
+print("   Removed key: key-2026-q1")
 print(f"   Remaining keys: {provider.key_count}")
 
 # =============================================================================

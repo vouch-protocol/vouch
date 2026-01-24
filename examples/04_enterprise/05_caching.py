@@ -30,7 +30,7 @@ async def main():
     agent = Signer(private_key=agent_id.private_key_jwk, did=agent_id.did)
     
     print(f"Agent DID: {agent.get_did()}")
-    print(f"Cache config: max_size=1000, default_ttl=300s")
+    print("Cache config: max_size=1000, default_ttl=300s")
     
     # =============================================================================
     # Cache Public Keys
