@@ -24,6 +24,7 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-012](./PAD-012-vouch-covenant.md) | Executable Usage Covenants in Media Manifests | 2026-01-20 | Published |
 | [PAD-013](./PAD-013-vouch-airgap.md) | Air-Gapped Identity via Psychoacoustic Steganography | 2026-01-20 | Published |
 | [PAD-014](./PAD-014-vouch-sonic.md) | Robust Acoustic Provenance via Steganography | 2026-01-20 | Published |
+| [PAD-015](./PAD-015-ambient-witness-protocol.md) | Ambient Witness Protocol (BLE Crowdsourcing) | 2026-01-24 | Published |
 
 
 ## Format

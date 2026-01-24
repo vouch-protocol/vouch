@@ -1,0 +1,3 @@
+mcp[cli]
+c2pa-python
+vouch-protocol
