@@ -1,4 +1,3 @@
-# vouch/media/native.py
 """
 Native Vouch Media Signing (Certificate-Free)
 
@@ -23,6 +22,8 @@ Claim Types:
 
 ⚠️  DEPRECATION NOTICE: For C2PA-compliant signing, use vouch.media.c2pa instead.
 """
+
+from __future__ import annotations
 
 import json
 import hashlib
