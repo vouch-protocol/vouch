@@ -38,11 +38,13 @@ print(f"Agent DID: {agent.get_did()}")
 print("\n📜 Issuing Verifiable Credential:")
 
 # Issue a vouch certificate for the agent
-cert_result = auditor.issue_vouch({
-    "did": agent.get_did(),
-    "integrity_hash": "sha256:abc123def456",  # Hash of agent code/model
-    "reputation_score": 85,  # Agent's trust score
-})
+cert_result = auditor.issue_vouch(
+    {
+        "did": agent.get_did(),
+        "integrity_hash": "sha256:abc123def456",  # Hash of agent code/model
+        "reputation_score": 85,  # Agent's trust score
+    }
+)
 
 certificate = cert_result["certificate"]
 print(f"   Certificate: {certificate[:50]}...")
@@ -66,7 +68,9 @@ print("   ✅ get_balance logged")
 # Action 2: Transfer funds
 action2 = {"action": "transfer", "from": "12345", "to": "67890", "amount": 500}
 token2 = agent.sign(action2)
-audit_log.append({"token": token2, "metadata": {"ip": "10.0.0.1", "approved_by": "manager@example.com"}})
+audit_log.append(
+    {"token": token2, "metadata": {"ip": "10.0.0.1", "approved_by": "manager@example.com"}}
+)
 print("   ✅ transfer logged")
 
 # Action 3: Generate report
@@ -86,13 +90,13 @@ print(f"\n   Total logged events: {len(audit_log)}")
 for i, entry in enumerate(audit_log):
     token = entry["token"]
     metadata = entry["metadata"]
-    
+
     # Verify and extract payload
     is_valid, passport = Verifier.verify(token, agent.get_public_key_jwk())
-    
+
     if is_valid and passport:
         action = passport.payload.get("action", "unknown")
-        print(f"   [{i+1}] Action: {action}")
+        print(f"   [{i + 1}] Action: {action}")
         print(f"       Signer: {passport.iss}")
         print(f"       IP: {metadata.get('ip', 'N/A')}")
 
@@ -107,13 +111,15 @@ export_data = []
 for entry in audit_log:
     is_valid, passport = Verifier.verify(entry["token"], agent.get_public_key_jwk())
     if is_valid and passport:
-        export_data.append({
-            "action": passport.payload,
-            "agent_did": passport.iss,
-            "timestamp": passport.iat,
-            "metadata": entry["metadata"],
-            "signature": entry["token"][:50] + "...",
-        })
+        export_data.append(
+            {
+                "action": passport.payload,
+                "agent_did": passport.iss,
+                "timestamp": passport.iat,
+                "metadata": entry["metadata"],
+                "signature": entry["token"][:50] + "...",
+            }
+        )
 
 print(f"   Exported {len(export_data)} events as JSON")
 print(f"   Sample: {json.dumps(export_data[0], indent=2)[:200]}...")

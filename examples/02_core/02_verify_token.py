@@ -28,7 +28,7 @@ signer = Signer(
 request_payload = {
     "method": "POST",
     "url": "https://api.bank.com/transfer",
-    "body": {"amount": 100}
+    "body": {"amount": 100},
 }
 token = signer.sign(request_payload)
 
@@ -59,7 +59,7 @@ print("\n🔒 Using Trusted Roots:")
 # Create verifier with trusted DIDs
 verifier = Verifier(
     trusted_roots={identity.did: signer.get_public_key_jwk()},
-    allow_did_resolution=False  # Only trust explicit roots
+    allow_did_resolution=False,  # Only trust explicit roots
 )
 
 # Verify using check_vouch (uses trusted roots)

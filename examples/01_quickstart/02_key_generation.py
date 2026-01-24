@@ -32,10 +32,7 @@ print(f"   Public Key (JWK):  {identity.public_key_jwk[:40]}...")
 
 print("\n📝 Option 2: Use identity with Signer")
 
-signer = Signer(
-    private_key=identity.private_key_jwk,
-    did=identity.did
-)
+signer = Signer(private_key=identity.private_key_jwk, did=identity.did)
 print(f"   ✅ Created signer for DID: {signer.get_did()}")
 
 # Sign something
@@ -54,11 +51,15 @@ key_file = os.path.join(tempfile.gettempdir(), "vouch_key.json")
 
 with open(key_file, "w") as f:
     import json
-    json.dump({
-        "did": new_identity.did,
-        "private_key_jwk": new_identity.private_key_jwk,
-        "public_key_jwk": new_identity.public_key_jwk,
-    }, f)
+
+    json.dump(
+        {
+            "did": new_identity.did,
+            "private_key_jwk": new_identity.private_key_jwk,
+            "public_key_jwk": new_identity.public_key_jwk,
+        },
+        f,
+    )
 
 print(f"   ✅ Saved identity to {key_file}")
 
@@ -66,10 +67,7 @@ print(f"   ✅ Saved identity to {key_file}")
 with open(key_file) as f:
     loaded_data = json.load(f)
 
-loaded_signer = Signer(
-    private_key=loaded_data["private_key_jwk"],
-    did=loaded_data["did"]
-)
+loaded_signer = Signer(private_key=loaded_data["private_key_jwk"], did=loaded_data["did"])
 print(f"   ✅ Loaded signer for DID: {loaded_signer.get_did()}")
 
 # Clean up
@@ -92,7 +90,7 @@ agent_identity = generate_identity(domain="secure-agent.example.com")
 agent_identity = KeyPair(
     private_key_jwk=agent_identity.private_key_jwk,
     public_key_jwk=agent_identity.public_key_jwk,
-    did=agent_identity.did
+    did=agent_identity.did,
 )
 
 # Save with encryption (password protected)
@@ -109,6 +107,7 @@ print(f"   📋 Stored identities: {len(identities)}")
 
 # Clean up
 import shutil
+
 shutil.rmtree(temp_key_dir, ignore_errors=True)
 
 # =============================================================================

@@ -91,12 +91,12 @@ print(f"   Valid: {is_valid}")
 if passport:
     print(f"   Actor DID: {passport.iss}")
     print(f"   Payload: {json.dumps(passport.payload, indent=6)[:100]}...")
-    
+
     # Check for delegation chain in the vouch claim
     if passport.delegation_chain:
         print(f"   Delegation depth: {len(passport.delegation_chain)}")
         for i, link in enumerate(passport.delegation_chain):
-            print(f"     Link {i+1}: {link.iss} → {link.sub}")
+            print(f"     Link {i + 1}: {link.iss} → {link.sub}")
 
 # =============================================================================
 # Scope Verification Pattern
@@ -108,17 +108,17 @@ print("\n🔒 Scope Verification Pattern:")
 def verify_with_scope(token: str, public_key: str, required_scope: str) -> dict:
     """Verify token and check if action is within authorized scope."""
     is_valid, passport = Verifier.verify(token, public_key)
-    
+
     if not is_valid or not passport:
         return {"allowed": False, "error": "Invalid signature"}
-    
+
     # Check if the action matches authorized scope
     action = passport.payload.get("action", "")
     authorized_by = passport.payload.get("authorized_by", [])
-    
+
     if action == required_scope and len(authorized_by) > 0:
         return {"allowed": True, "action": action, "chain_length": len(authorized_by)}
-    
+
     return {"allowed": False, "error": "Action outside delegated scope"}
 
 
