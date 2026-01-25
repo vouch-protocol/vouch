@@ -59,14 +59,14 @@
 
 We have published 15 PADs to protect our IP:
 
-| ID | Title | Key Concept |
-|----|-------|-------------|
-| **PAD-001** | Cryptographic Agent Identity | The core concept. |
-| **PAD-002** | Chain of Custody | Agent handoff signing. |
-| **PAD-012** | Vouch Covenant | "No AI Training" clauses in signatures. |
-| **PAD-013** | Vouch Airgap | QR-code based offline signing. |
-| **PAD-014** | Vouch Sonic | Audio steganography for provenance. |
-| **PAD-015** | **Ambient Witness Protocol** | Crowd-sourced BLE witnessing (Latest). |
+We have published 15 PADs to protect our IP.
+
+> **📄 Full List**: See [`docs/disclosures/README.md`](./disclosures/README.md) for the complete list of PAD-001 to PAD-015.
+
+*   **Key High-Level Concepts**:
+    *   **Identity**: PAD-001 (Crypto Identity), PAD-003 (Sidecar).
+    *   **Verification**: PAD-004 (DOM Matching), PAD-015 (Ambient Witness).
+    *   **Governance**: PAD-012 (Covenants).
 
 ---
 
@@ -91,6 +91,62 @@ We have published 15 PADs to protect our IP:
 
 ---
 
-## 6. How to Update This Context
+## 6. Key API Reference (Technical Detail)
+
+> **Context Tip**: Only document *stable, primary interfaces* here. Do not document every internal function; let the code speak for itself.
+
+### `vouch.signer.Signer`
+*   `__init__(private_key_jwk: str, did: str)`: Initialize with Ed25519 key.
+*   `sign(payload: dict) -> str`: Returns JWS Compact Token.
+
+### `vouch.media.c2pa.MediaSigner`
+*   `sign_image(source_path, output_path)`: Embeds C2PA manifest.
+    *   **Note**: Requires X.509 cert chain (self-signed allowed for dev).
+
+### `demo.vouch_mcp_server.server` (Tools)
+*   `sign_text(text, private_key_jwk, did)`: Returns JWS.
+*   `verify_text(token, public_key_jwk)`: Returns validation string.
+
+---
+
+## 7. Feature Deep Dives & Usage
+
+### 📸 Image Signing (`vouch.media.c2pa`)
+**Class**: `MediaSigner`
+*   **Purpose**: Embeds C2PA (Content Credentials) manifests into images/audio.
+*   **Key Dependencies**: `c2pa-python`, `cryptography` (for key handling).
+*   **Usage Flow**:
+    1.  Load Identity (`vouch.keys.KeyPair`).
+    2.  Convert JWK private key to `Ed25519PrivateKey`.
+    3.  Generate X.509 Certificate Chain (Self-signed for dev, CA for prod).
+    4.  Call `MediaSigner.sign_image(input, output)`.
+
+### 🌐 Browser Extension (`browser-extension/`)
+**Manifest**: Manifest V3
+*   **`content.js`**:
+    *   Implements **PAD-004 (DOM-Traversing Signature Matching)**.
+    *   Scans page for `[vouch-token]` attributes or linked C2PA images.
+    *   Injects "✓ Verified" badges into the DOM.
+*   **`background.js`**:
+    *   Handles context menu actions ("Verify Image with Vouch").
+    *   Manages local keyring state.
+
+### 📝 Text Signing (`vouch.signer`)
+**Class**: `Signer`
+*   **Format**: JWS (JSON Web Signature) Compact Serialization (`header.payload.signature`).
+*   **Header**: `{"alg": "EdDSA", "typ": "JWT"}`.
+*   **Usage**: Used for signing usage covenants (PAD-012) and prompt attribution.
+
+### 🔗 Shortlinks & Verification
+**Domain**: `v.vouch-protocol.com` (and `vch.sh`)
+*   **Logic**: Handled by **Cloudflare Worker** (`cloudflare-worker/`).
+*   **Flow**:
+    *   Shortlink `vch.sh/{id}` -> 301 Redirect -> `vouch-protocol.com/v/{id}`.
+    *   Worker fetches verification data from KV store or on-chain registry.
+    *   Renders a dynamic OpenGraph meta tag for social previews.
+
+---
+
+## 8. How to Update This Context
 
 **At the end of every session, run `python scripts/scribe.py save` to generate an update prompt.**
