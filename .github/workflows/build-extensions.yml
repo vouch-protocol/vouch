@@ -18,7 +18,7 @@ jobs:
   build-chromium:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Create Chrome/Edge package
         run: |
@@ -38,7 +38,7 @@ jobs:
   build-safari:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
