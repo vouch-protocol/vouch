@@ -65,16 +65,27 @@ jobs:
             -derivedDataPath build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            || echo "Build completed (signing skipped for CI)"
+            CODE_SIGNING_ALLOWED=NO
+
+          # Debug: Find where the app ended up
+          echo "Listing build directory:"
+          find build -name "*.app" -type d || true
       
       - name: Package Safari Extension
         run: |
           VERSION="${{ github.event.inputs.version || '1.0.5' }}"
           mkdir -p safari-dist
-          if [ -d "Vouch Protocol/build" ]; then
-            cp -r "Vouch Protocol/build/Build/Products/Release/"* safari-dist/ 2>/dev/null || true
+          
+          # Try to copy from the expected location, but also searching if moved
+          APP_PATH=$(find build -name "Vouch Protocol.app" -type d | head -n 1)
+          if [ -n "$APP_PATH" ]; then
+            echo "Found app at $APP_PATH"
+            cp -r "$APP_PATH" safari-dist/
+          else
+            echo "::error::Could not find compiled .app file!"
+            exit 1
           fi
+          
           # Also save the Xcode project for manual signing
           zip -r "safari-extension-xcode-v${VERSION}.zip" "Vouch Protocol"
       
