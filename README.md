@@ -4,7 +4,7 @@
   <img src="docs/assets/vouch-banner.png" alt="Vouch Protocol" width="400">
 </p>
 
-<p align="center">Vouch Protocol: The Open Standard for Identity & Provenance of AI Agents</strong>
+<p align="center">The Open Standard for Identity & Provenance of AI Agents</strong>
 </p>
 
 <!-- C2PA & CAI Membership Badges -->
@@ -106,7 +106,7 @@ sequenceDiagram
     participant SOC as Agentic SOC
 
     User->>Agent: "Block IP 192.168.1.5" (Signed Command)
-    Note right of Agent: Agent generates Proof <br/>(Provenance Chain)
+    Note right of Agent: Agent generates Proof<br/>(Provenance Chain)
     Agent->>Target: API Request + Vouch-Token
     Target->>SOC: "Is this valid?"
     SOC->>SOC: Verify(Vouch-Token)
