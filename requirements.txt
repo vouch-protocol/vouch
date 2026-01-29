@@ -10,3 +10,5 @@ uvicorn>=0.23.0
 # Optional: Development dependencies
 pytest>=7.0.0
 black>=23.0.0
+
+jwcrypto>=1.5.0
