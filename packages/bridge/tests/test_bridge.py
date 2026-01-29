@@ -10,10 +10,12 @@ Tests cover:
 """
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from unittest.mock import patch, MagicMock
 import base64
 import json
+
+from vouch_bridge.server import KEYRING_PRIVATE_KEY
 
 
 # ============================================================================
@@ -23,10 +25,21 @@ import json
 @pytest.fixture
 def mock_keyring():
     """Mock the system keyring to avoid touching real credentials."""
+    storage = {}
+
+    def get_password(service, key):
+        return storage.get((service, key))
+
+    def set_password(service, key, value):
+        storage[(service, key)] = value
+
+    def delete_password(service, key):
+        storage.pop((service, key), None)
+
     with patch("vouch_bridge.server.keyring") as mock:
-        mock.get_password.return_value = None
-        mock.set_password.return_value = None
-        mock.delete_password.return_value = None
+        mock.get_password.side_effect = get_password
+        mock.set_password.side_effect = set_password
+        mock.delete_password.side_effect = delete_password
         yield mock
 
 
@@ -36,6 +49,23 @@ def sample_private_key_bytes():
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     private_key = Ed25519PrivateKey.generate()
     return private_key.private_bytes_raw()
+
+
+@pytest.fixture
+def sample_private_key_pem(sample_private_key_bytes):
+    """Same key as PEM string (key manager expects PEM from keyring)."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        PrivateFormat,
+        NoEncryption,
+    )
+    private_key = Ed25519PrivateKey.from_private_bytes(sample_private_key_bytes)
+    return private_key.private_bytes(
+        encoding=Encoding.PEM,
+        format=PrivateFormat.PKCS8,
+        encryption_algorithm=NoEncryption(),
+    ).decode("utf-8")
 
 
 @pytest.fixture
@@ -58,7 +88,7 @@ class TestStatusEndpoint:
         """Status endpoint should return 200 with version info."""
         from vouch_bridge.server import app
         
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/status")
         
         assert response.status_code == 200
@@ -68,18 +98,18 @@ class TestStatusEndpoint:
         assert "uptime" in data
     
     @pytest.mark.asyncio
-    async def test_status_includes_key_status(self, mock_keyring, sample_private_key_bytes):
+    async def test_status_includes_key_status(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem):
         """Status should indicate whether keys are configured."""
         from vouch_bridge.server import app
         
         # First without keys
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/status")
         assert response.json().get("has_keys", False) == False
         
         # Now with keys
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/status")
         assert response.json().get("has_keys", True) == True
 
@@ -96,7 +126,7 @@ class TestKeyGeneration:
         """Should generate a new Ed25519 keypair when none exists."""
         from vouch_bridge.server import app
         
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/keys/generate")
         
         assert response.status_code == 200
@@ -109,17 +139,19 @@ class TestKeyGeneration:
         mock_keyring.set_password.assert_called()
     
     @pytest.mark.asyncio
-    async def test_generate_keys_fails_if_exists(self, mock_keyring, sample_private_key_bytes):
-        """Should return 409 if keys already exist."""
+    async def test_generate_keys_fails_if_exists(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem):
+        """Should return 200 with success=False when keys already exist."""
         from vouch_bridge.server import app
         
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
         
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/keys/generate")
         
-        assert response.status_code == 409
-        assert "already exists" in response.json()["detail"].lower()
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is False
+        assert "already exist" in data["message"].lower()
 
 
 # ============================================================================
@@ -130,13 +162,13 @@ class TestPublicKeyEndpoint:
     """Tests for GET /keys/public endpoint."""
     
     @pytest.mark.asyncio
-    async def test_get_public_key_returns_key_info(self, mock_keyring, sample_private_key_bytes):
+    async def test_get_public_key_returns_key_info(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem):
         """Should return public key, DID, and fingerprint."""
         from vouch_bridge.server import app
         
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
         
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/keys/public")
         
         assert response.status_code == 200
@@ -153,7 +185,7 @@ class TestPublicKeyEndpoint:
         
         mock_keyring.get_password.return_value = None
         
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/keys/public")
         
         assert response.status_code == 404
@@ -167,15 +199,15 @@ class TestTextSigning:
     """Tests for POST /sign endpoint (text/code signing)."""
     
     @pytest.mark.asyncio
-    async def test_sign_text_returns_signature(self, mock_keyring, sample_private_key_bytes):
+    async def test_sign_text_returns_signature(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem):
         """Should sign content and return base64 signature."""
         from vouch_bridge.server import app
         
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
         
         # Mock the consent UI to auto-approve
         with patch("vouch_bridge.server.ConsentUI.request_consent", return_value=True):
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
                 response = await client.post("/sign", json={
                     "content": "Hello, World!",
                     "origin": "test-suite",
@@ -188,13 +220,13 @@ class TestTextSigning:
         assert "public_key" in data
     
     @pytest.mark.asyncio
-    async def test_sign_requires_content(self, mock_keyring, sample_private_key_bytes):
+    async def test_sign_requires_content(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem):
         """Should return 422 if content is missing."""
         from vouch_bridge.server import app
         
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
         
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/sign", json={
                 "origin": "test-suite",
             })
@@ -202,15 +234,15 @@ class TestTextSigning:
         assert response.status_code == 422
     
     @pytest.mark.asyncio
-    async def test_sign_denied_by_user_returns_403(self, mock_keyring, sample_private_key_bytes):
+    async def test_sign_denied_by_user_returns_403(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem):
         """Should return 403 if user denies consent."""
         from vouch_bridge.server import app
         
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
         
         # Mock consent denial
         with patch("vouch_bridge.server.ConsentUI.request_consent", return_value=False):
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
                 response = await client.post("/sign", json={
                     "content": "Hello, World!",
                     "origin": "test-suite",
@@ -225,7 +257,7 @@ class TestTextSigning:
         
         mock_keyring.get_password.return_value = None
         
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/sign", json={
                 "content": "Hello, World!",
                 "origin": "test-suite",
@@ -279,11 +311,11 @@ class TestMediaSigning:
     """Tests for POST /sign-media endpoint (C2PA)."""
     
     @pytest.mark.asyncio
-    async def test_sign_media_accepts_image(self, mock_keyring, sample_private_key_bytes, tmp_path):
+    async def test_sign_media_accepts_image(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem, tmp_path):
         """Should accept and sign an image file."""
         from vouch_bridge.server import app
         
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
         
         # Create a minimal valid JPEG (1x1 red pixel)
         jpeg_bytes = bytes([
@@ -325,7 +357,7 @@ class TestMediaSigning:
         
         # Mock consent
         with patch("vouch_bridge.server.MediaConsentUI.request_media_consent", return_value=True):
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
                 with open(test_file, "rb") as f:
                     response = await client.post(
                         "/sign-media",
@@ -337,17 +369,17 @@ class TestMediaSigning:
         assert response.status_code == 200
     
     @pytest.mark.asyncio
-    async def test_sign_media_denied_returns_403(self, mock_keyring, sample_private_key_bytes, tmp_path):
+    async def test_sign_media_denied_returns_403(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem, tmp_path):
         """Should return 403 if user denies media signing consent."""
         from vouch_bridge.server import app
         
-        mock_keyring.get_password.return_value = base64.b64encode(sample_private_key_bytes).decode()
+        mock_keyring.get_password.side_effect = lambda service, key: sample_private_key_pem if key == KEYRING_PRIVATE_KEY else None
         
         test_file = tmp_path / "test.txt"
         test_file.write_text("test content")
         
         with patch("vouch_bridge.server.MediaConsentUI.request_media_consent", return_value=False):
-            async with AsyncClient(app=app, base_url="http://test") as client:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
                 with open(test_file, "rb") as f:
                     response = await client.post(
                         "/sign-media",
