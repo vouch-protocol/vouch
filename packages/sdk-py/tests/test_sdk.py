@@ -38,7 +38,7 @@ class TestVouchClient:
         assert client.daemon_url == custom_url
     
     def test_connect_success(self):
-        """Connect should return daemon status when online."""
+        """Connect should return True and set daemon_status when online."""
         from vouch_sdk import VouchClient, DaemonStatus
         
         mock_response = MagicMock()
@@ -49,63 +49,78 @@ class TestVouchClient:
             "has_keys": True,
         }
         
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.get.return_value = mock_response
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            MockClient.return_value.get.return_value = mock_response
             
             client = VouchClient()
-            status = client.connect()
+            ok = client.connect()
         
-        assert status["status"] == "ok"
-        assert status["version"] == "1.1.0"
+        assert ok is True
+        assert client.daemon_status is not None
+        assert client.daemon_status.status == "ok"
+        assert client.daemon_status.version == "1.1.0"
     
     def test_connect_raises_connection_error(self):
-        """Connect should raise VouchConnectionError when daemon is offline."""
-        from vouch_sdk import VouchClient, VouchConnectionError
+        """Connect should return False when daemon is offline."""
+        from vouch_sdk import VouchClient
         import httpx
         
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.get.side_effect = httpx.ConnectError("Connection refused")
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            MockClient.return_value.get.side_effect = httpx.ConnectError("Connection refused")
             
             client = VouchClient()
-            with pytest.raises(VouchConnectionError) as exc_info:
-                client.connect()
-            
-            assert "not running" in str(exc_info.value).lower() or "connection" in str(exc_info.value).lower()
+            ok = client.connect()
+        
+        assert ok is False
+        assert client.daemon_status is None
     
     def test_sign_text_success(self):
-        """Sign should return signature for text content."""
+        """Sign should return SignResult for text content."""
         from vouch_sdk import VouchClient
         
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
+        sign_response = MagicMock()
+        sign_response.status_code = 200
+        sign_response.json.return_value = {
             "signature": "base64signature==",
             "timestamp": "2026-01-20T06:00:00Z",
             "public_key": "base64pubkey==",
             "did": "did:key:z123",
+            "content_hash": "abc123",
         }
         
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.post.return_value = mock_response
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            mock_http = MockClient.return_value
+            mock_http.get.return_value = status_response
+            mock_http.post.return_value = sign_response
             
             client = VouchClient()
+            client.connect()
             result = client.sign("Hello, World!", origin="test")
         
-        assert result["signature"] == "base64signature=="
-        assert "timestamp" in result
+        assert result.signature == "base64signature=="
+        assert result.timestamp == "2026-01-20T06:00:00Z"
     
     def test_sign_raises_no_keys_error(self):
         """Sign should raise NoKeysConfiguredError when daemon has no keys."""
         from vouch_sdk import VouchClient, NoKeysConfiguredError
         
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-        mock_response.json.return_value = {"detail": "No keys configured"}
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
+        sign_response = MagicMock()
+        sign_response.status_code = 404
+        sign_response.json.return_value = {"detail": "No keys configured"}
         
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.post.return_value = mock_response
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            mock_http = MockClient.return_value
+            mock_http.get.return_value = status_response
+            mock_http.post.return_value = sign_response
             
             client = VouchClient()
+            client.connect()
             with pytest.raises(NoKeysConfiguredError):
                 client.sign("Hello", origin="test")
     
@@ -113,37 +128,48 @@ class TestVouchClient:
         """Sign should raise UserDeniedSignatureError when user denies consent."""
         from vouch_sdk import VouchClient, UserDeniedSignatureError
         
-        mock_response = MagicMock()
-        mock_response.status_code = 403
-        mock_response.json.return_value = {"detail": "User denied signature"}
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
+        sign_response = MagicMock()
+        sign_response.status_code = 403
+        sign_response.json.return_value = {"detail": "User denied signature"}
         
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.post.return_value = mock_response
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            mock_http = MockClient.return_value
+            mock_http.get.return_value = status_response
+            mock_http.post.return_value = sign_response
             
             client = VouchClient()
+            client.connect()
             with pytest.raises(UserDeniedSignatureError):
                 client.sign("Hello", origin="test")
     
     def test_get_public_key_success(self):
-        """GetPublicKey should return key info."""
+        """GetPublicKey should return PublicKeyInfo."""
         from vouch_sdk import VouchClient
         
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
+        key_response = MagicMock()
+        key_response.status_code = 200
+        key_response.json.return_value = {
             "public_key": "abcd1234",
             "did": "did:key:z123",
             "fingerprint": "SHA256:abcd",
         }
         
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.get.return_value = mock_response
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            mock_http = MockClient.return_value
+            mock_http.get.side_effect = [status_response, key_response]
             
             client = VouchClient()
+            client.connect()
             result = client.get_public_key()
         
-        assert result["did"].startswith("did:key:")
-        assert "fingerprint" in result
+        assert result.did.startswith("did:key:")
+        assert result.fingerprint == "SHA256:abcd"
 
 
 # ============================================================================
@@ -163,7 +189,7 @@ class TestAsyncVouchClient:
     
     @pytest.mark.asyncio
     async def test_async_connect_success(self):
-        """Async connect should return daemon status."""
+        """Async connect should return True and set daemon_status."""
         from vouch_sdk import AsyncVouchClient
         
         mock_response = MagicMock()
@@ -171,39 +197,48 @@ class TestAsyncVouchClient:
         mock_response.json.return_value = {
             "status": "ok",
             "version": "1.1.0",
+            "has_keys": True,
         }
         
-        with patch("httpx.AsyncClient") as MockClient:
-            mock_client = AsyncMock()
+        with patch("vouch_sdk.client.httpx.AsyncClient") as MockClient:
+            mock_client = MockClient.return_value
             mock_client.get = AsyncMock(return_value=mock_response)
-            MockClient.return_value.__aenter__.return_value = mock_client
             
             client = AsyncVouchClient()
-            status = await client.connect()
+            ok = await client.connect()
         
-        assert status["status"] == "ok"
+        assert ok is True
+        assert client.daemon_status is not None
+        assert client.daemon_status.status == "ok"
     
     @pytest.mark.asyncio
     async def test_async_sign_success(self):
-        """Async sign should work properly."""
+        """Async sign should return SignResult."""
         from vouch_sdk import AsyncVouchClient
         
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
+        sign_response = MagicMock()
+        sign_response.status_code = 200
+        sign_response.json.return_value = {
             "signature": "async_signature==",
             "timestamp": "2026-01-20T06:00:00Z",
+            "public_key": "pubkey",
+            "did": "did:key:z123",
+            "content_hash": "abc123",
         }
         
-        with patch("httpx.AsyncClient") as MockClient:
-            mock_client = AsyncMock()
-            mock_client.post = AsyncMock(return_value=mock_response)
-            MockClient.return_value.__aenter__.return_value = mock_client
+        with patch("vouch_sdk.client.httpx.AsyncClient") as MockClient:
+            mock_client = MockClient.return_value
+            mock_client.get = AsyncMock(return_value=status_response)
+            mock_client.post = AsyncMock(return_value=sign_response)
             
             client = AsyncVouchClient()
+            await client.connect()
             result = await client.sign("Async content", origin="test")
         
-        assert result["signature"] == "async_signature=="
+        assert result.signature == "async_signature=="
 
 
 # ============================================================================
@@ -214,49 +249,70 @@ class TestFileSigning:
     """Tests for sign_file and sign_bytes methods."""
     
     def test_sign_file_success(self, tmp_path):
-        """sign_file should send file to daemon."""
+        """sign_file should return MediaSignResult."""
         from vouch_sdk import VouchClient
         
-        # Create a test file
         test_file = tmp_path / "test.txt"
         test_file.write_text("Test file content")
         
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b"Signed file content"
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
+        sign_response = MagicMock()
+        sign_response.status_code = 200
+        sign_response.content = b"Signed file content"
+        sign_response.headers = {}
         
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.post.return_value = mock_response
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            mock_http = MockClient.return_value
+            mock_http.get.return_value = status_response
+            mock_http.post.return_value = sign_response
             
             client = VouchClient()
+            client.connect()
             result = client.sign_file(str(test_file), origin="test")
         
-        assert result == b"Signed file content"
+        assert result.data == b"Signed file content"
     
     def test_sign_file_not_found(self, tmp_path):
-        """sign_file should raise error for missing file."""
+        """sign_file should raise FileNotFoundError for missing file."""
         from vouch_sdk import VouchClient
         
-        client = VouchClient()
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
         
-        with pytest.raises(FileNotFoundError):
-            client.sign_file(str(tmp_path / "nonexistent.txt"), origin="test")
-    
-    def test_sign_bytes_success(self):
-        """sign_bytes should send binary data to daemon."""
-        from vouch_sdk import VouchClient
-        
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b"Signed bytes"
-        
-        with patch("httpx.Client") as MockClient:
-            MockClient.return_value.__enter__.return_value.post.return_value = mock_response
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            mock_http = MockClient.return_value
+            mock_http.get.return_value = status_response
             
             client = VouchClient()
+            client.connect()
+            with pytest.raises(FileNotFoundError):
+                client.sign_file(str(tmp_path / "nonexistent.txt"), origin="test")
+    
+    def test_sign_bytes_success(self):
+        """sign_bytes should return MediaSignResult."""
+        from vouch_sdk import VouchClient
+        
+        status_response = MagicMock()
+        status_response.status_code = 200
+        status_response.json.return_value = {"status": "ok", "version": "1.1.0", "has_keys": True}
+        sign_response = MagicMock()
+        sign_response.status_code = 200
+        sign_response.content = b"Signed bytes"
+        sign_response.headers = {}
+        
+        with patch("vouch_sdk.client.httpx.Client") as MockClient:
+            mock_http = MockClient.return_value
+            mock_http.get.return_value = status_response
+            mock_http.post.return_value = sign_response
+            
+            client = VouchClient()
+            client.connect()
             result = client.sign_bytes(b"Binary data", filename="test.bin", origin="test")
         
-        assert result == b"Signed bytes"
+        assert result.data == b"Signed bytes"
 
 
 # ============================================================================
@@ -310,12 +366,13 @@ class TestDataClasses:
             status="ok",
             version="1.0.0",
             has_keys=True,
-            uptime=3600,
+            public_key_fingerprint="SHA256:abc",
         )
         
         assert status.status == "ok"
         assert status.version == "1.0.0"
-        assert status.has_keys == True
+        assert status.has_keys is True
+        assert status.public_key_fingerprint == "SHA256:abc"
     
     def test_sign_result_fields(self):
         """SignResult should have expected fields."""
@@ -326,10 +383,12 @@ class TestDataClasses:
             timestamp="2026-01-20T06:00:00Z",
             public_key="pubkey",
             did="did:key:z123",
+            content_hash="abc123",
         )
         
         assert result.signature == "base64sig=="
         assert result.did.startswith("did:key:")
+        assert result.content_hash == "abc123"
     
     def test_public_key_info_fields(self):
         """PublicKeyInfo should have expected fields."""
