@@ -97,22 +97,6 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 3. **Send to API** - Include token in HTTP header
 4. **Verify** - API checks signature with public key
 
-### Visual Workflow
-```mermaid
-sequenceDiagram
-    participant User as CISO
-    participant Agent as Firewall Agent
-    participant Target as Cloud Firewall
-    participant SOC as Agentic SOC
-
-    User->>Agent: "Block IP 192.168.1.5"
-    Note right of Agent: Agent generates Proof of Provenance
-    Agent->>Target: API Request + Vouch-Token
-    Target->>SOC: "Is this valid?"
-    SOC->>SOC: Verify(Vouch-Token)
-    SOC-->>Target: Provenance Verified
-    Target->>Target: Block IP
-
 ### The Trust Model
 
 ![Trust Model](docs/images/trust-model.png)
