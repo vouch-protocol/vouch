@@ -96,7 +96,21 @@ class TestStatusEndpoint:
         assert data["status"] == "ok"
         assert "version" in data
         assert "uptime" in data
-    
+
+    @pytest.mark.asyncio
+    async def test_status_uptime_is_non_negative_integer(self, mock_keyring):
+        """Uptime should be a non-negative integer (seconds since daemon started)."""
+        from vouch_bridge.server import app
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get("/status")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "uptime" in data
+        assert isinstance(data["uptime"], int), "uptime should be an integer"
+        assert data["uptime"] >= 0, "uptime should be non-negative"
+
     @pytest.mark.asyncio
     async def test_status_includes_key_status(self, mock_keyring, sample_private_key_bytes, sample_private_key_pem):
         """Status should indicate whether keys are configured."""
