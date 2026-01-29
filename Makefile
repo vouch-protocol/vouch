@@ -22,6 +22,7 @@ help:
 # Install all Python packages in editable mode
 install-all:
 	@echo "📦 Installing Python packages in editable mode..."
+	python -m pip install -e ".[dev]"
 	python -m pip install -e ./packages/bridge[dev]
 	python -m pip install -e ./packages/sdk-py[dev]
 	@echo "✅ All packages installed!"
