@@ -105,14 +105,13 @@ sequenceDiagram
     participant Target as Cloud Firewall
     participant SOC as Agentic SOC
 
-    User->>Agent: "Block IP 192.168.1.5" (Signed Command)
-    Note right of Agent: Agent generates Proof<br/>(Provenance Chain)
+    User->>Agent: "Block IP 192.168.1.5"
+    Note right of Agent: Agent generates Proof of Provenance
     Agent->>Target: API Request + Vouch-Token
     Target->>SOC: "Is this valid?"
     SOC->>SOC: Verify(Vouch-Token)
-    SOC-->>Target: ✅ Provenance Verified
+    SOC-->>Target: Provenance Verified
     Target->>Target: Block IP
-
 
 ### The Trust Model
 
