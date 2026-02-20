@@ -4,8 +4,7 @@
   <img src="docs/assets/vouch-banner.png" alt="Vouch Protocol" width="400">
 </p>
 
-<p align="center">
-  <strong>The Identity Layer for the Agentic Web</strong>
+<p align="center">The Open Standard for Identity & Provenance of AI Agents</strong>
 </p>
 
 <!-- C2PA & CAI Membership Badges -->
