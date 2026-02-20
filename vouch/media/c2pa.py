@@ -130,7 +130,7 @@ class VouchC2PASigner:
             alg=c2pa.C2paSigningAlg.ED25519,
             sign_cert=self._certificate_pem,
             private_key=self._private_key_pem,
-            ta_url="",
+            ta_url="http://timestamp.digicert.com",
         )
 
 
@@ -217,12 +217,12 @@ class MediaSigner:
                 encryption_algorithm=serialization.NoEncryption(),
             )
 
-            # Create signer info with PEM-encoded key and cert
+            # Create signer info with PEM-encoded key and cert + RFC 3161 timestamp
             signer_info = c2pa.C2paSignerInfo(
                 alg=c2pa.C2paSigningAlg.ED25519,
                 sign_cert=self._certificate_chain,
                 private_key=private_key_pem,
-                ta_url="",
+                ta_url="http://timestamp.digicert.com",
             )
             signer = c2pa.Signer.from_info(signer_info)
 
