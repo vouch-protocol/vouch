@@ -286,6 +286,22 @@ class MediaSigner:
                         ]
                     },
                 },
+                # Standard schema.org CreativeWork (C2PA interop)
+                {
+                    "label": "stds.schema-org.CreativeWork",
+                    "data": {
+                        "@context": "https://schema.org",
+                        "@type": "CreativeWork",
+                        "author": [
+                            {
+                                "@type": "Person",
+                                "name": self._identity.display_name,
+                                "identifier": self._identity.did,
+                            }
+                        ],
+                        **({"name": title} if title else {}),
+                    },
+                },
                 # Vouch identity assertion
                 self._identity.to_assertion(),
             ],
