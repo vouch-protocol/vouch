@@ -29,6 +29,8 @@ class VouchMCPServer:
     def __init__(self):
         self._signer: Optional[Signer] = None
         self._did: Optional[str] = None
+        self._auto_sign = os.getenv("VOUCH_AUTO_SIGN", "").lower() in ("true", "1", "yes")
+        self._session_token: Optional[str] = None
         self._load_credentials()
 
     def _load_credentials(self) -> None:
@@ -40,7 +42,8 @@ class VouchMCPServer:
             try:
                 self._signer = Signer(private_key=private_key, did=did)
                 self._did = did
-                logger.info(f"Vouch MCP Server initialized with DID: {did}")
+                mode = "(Auto-Sign ON)" if self._auto_sign else ""
+                logger.info(f"Vouch MCP Server initialized with DID: {did} {mode}")
             except Exception as e:
                 logger.error(f"Failed to initialize signer: {e}")
         else:
@@ -48,7 +51,7 @@ class VouchMCPServer:
 
     def _get_tools_list(self) -> list:
         """Return the list of available tools."""
-        return [
+        tools = [
             {
                 "name": "sign_action",
                 "description": "Generate a cryptographic Vouch-Token to sign a sensitive action. Use this before making authenticated API calls.",
@@ -72,7 +75,22 @@ class VouchMCPServer:
                 "description": "Get the current agent's DID (Decentralized Identifier)",
                 "inputSchema": {"type": "object", "properties": {}},
             },
+            {
+                "name": "create_session",
+                "description": "Create a session token valid for multiple actions. Reduces need to sign each action individually.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "purpose": {
+                            "type": "string",
+                            "description": "What is this session for? (e.g., 'calendar_access', 'email_management')",
+                        },
+                    },
+                    "required": ["purpose"],
+                },
+            },
         ]
+        return tools
 
     def process_request(self, line: str) -> Optional[Dict[str, Any]]:
         """Process an incoming MCP request."""
@@ -170,10 +188,46 @@ class VouchMCPServer:
 
         elif tool_name == "get_identity":
             did = self._did or "Not configured"
+            auto_sign_status = "ON" if self._auto_sign else "OFF"
+            session_status = "Active" if self._session_token else "None"
             return {
                 "jsonrpc": "2.0",
                 "id": request_id,
-                "result": {"content": [{"type": "text", "text": f"Agent DID: {did}"}]},
+                "result": {
+                    "content": [{
+                        "type": "text",
+                        "text": f"Agent DID: {did}\nAuto-Sign: {auto_sign_status}\nSession: {session_status}"
+                    }]
+                },
+            }
+
+        elif tool_name == "create_session":
+            if not self._signer:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "error": {"code": -32603, "message": "Vouch identity not configured"},
+                }
+
+            purpose = arguments.get("purpose", "general")
+            import time
+            session_payload = {
+                "type": "session",
+                "purpose": purpose,
+                "created_at": int(time.time()),
+                "valid_for": "1 hour",
+            }
+            self._session_token = self._signer.sign(session_payload)
+
+            return {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "content": [{
+                        "type": "text",
+                        "text": f"✅ Session created for: {purpose}\n\nSession-Token: {self._session_token}\n\nUse this token for subsequent actions. No need to sign each one individually."
+                    }]
+                },
             }
 
         else:
