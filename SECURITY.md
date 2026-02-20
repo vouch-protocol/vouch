@@ -61,6 +61,11 @@ When using Vouch Protocol:
 - **JWT structure**: Tokens follow JWS compact serialization
 - **No symmetric keys**: We only support asymmetric cryptography
 
+## Threat Model & Assumptions
+Vouch Protocol is designed for "Agentic SOC" environments where the agent host itself may be compromised.
+- **Key Storage:** We assume private keys are stored in a secure enclave (HSM/Vault), not in the agent's codebase.
+- **Non-Repudiation:** All agent actions are signed via Ed25519, ensuring that a compromised log aggregator cannot forge an agent's history.
+
 ## Security Updates
 
 Security updates are released as patch versions (e.g., 1.3.x). 
