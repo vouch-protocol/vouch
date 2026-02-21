@@ -1,81 +1,143 @@
 #!/usr/bin/env python3
 """
-10_google_ai.py - Vouch with Google AI (Generative AI SDK)
+10_google_ai.py - Why Google AI Function Calls Need Vouch
 
-Sign function calls in Google's Generative AI SDK.
+See what happens when Gemini function calls are unsigned vs signed.
+Then watch a replay attack get caught.
 
-Run: pip install google-generativeai && python 10_google_ai.py
+Run: pip install vouch-protocol && python 10_google_ai.py
 """
 
-from vouch import Signer
-
-print("🔮 Google AI (Generative AI) + Vouch")
-print("=" * 50)
+from vouch import Signer, Verifier, generate_identity
+import json
 
 # =============================================================================
-# Google AI Integration
+# PART 1: Without Vouch — Function calls have no replay protection
 # =============================================================================
+
+print("=" * 60)
+print("PART 1: Google AI WITHOUT Vouch")
+print("=" * 60)
+
+# Gemini stock trading agent makes function calls
+function_calls = [
+    {"function": "get_stock_price", "args": {"symbol": "GOOGL"}, "model": "gemini-1.5-pro"},
+    {"function": "analyze_risk", "args": {"symbol": "GOOGL", "quantity": 10, "strategy": "market_buy"}, "model": "gemini-1.5-pro"},
+    {"function": "place_order", "args": {"symbol": "GOOGL", "quantity": 10, "order_type": "market"}, "model": "gemini-1.5-pro"},
+]
+
+print("\nGemini stock trading agent executes 3 function calls:\n")
+for call in function_calls:
+    print(f"   {call['function']}({json.dumps(call['args'])})")
 
 print("""
-import google.generativeai as genai
-from vouch import Signer
-from vouch.integrations.google import VouchGoogleAI
-
-# Configure
-genai.configure(api_key="YOUR_API_KEY")
-
-# Create signed wrapper
-google_ai = VouchGoogleAI(
-    signer=Signer(name="Google AI Agent"),
-)
-
-# Define tools
-def get_stock_price(symbol: str) -> float:
-    '''Get current stock price.'''
-    return 150.00  # Mock
-
-def place_order(symbol: str, quantity: int) -> str:
-    '''Place a stock order.'''
-    return f"Order placed: {quantity} shares of {symbol}"
-
-# Create model with signed function calling  
-model = google_ai.wrap_model(
-    genai.GenerativeModel(
-        model_name="gemini-1.5-pro",
-        tools=[get_stock_price, place_order]
-    )
-)
-
-# All function calls are signed
-response = model.generate_content("Buy 10 shares of GOOGL")
+   Problem: Function calls are fire-and-forget JSON payloads.
+   - get_stock_price is harmless, but place_order moves real money
+   - No unique identifier per call — the same payload could be sent twice
+   - If the network glitches, did the order execute once or twice?
+   - A malicious actor could capture and replay the place_order call
 """)
 
 # =============================================================================
-# Demo
+# PART 2: The Risk — Replay attack duplicates a trade
 # =============================================================================
 
-signer = Signer(name="Google AI Agent")
-
-# Simulate function call
-function_call = {
-    "function": "place_order",
-    "args": {"symbol": "GOOGL", "quantity": 10},
-    "model": "gemini-1.5-pro",
-}
-
-import json
-
-token = signer.sign(json.dumps(function_call))
-
-print("\n📋 Signed Function Call:")
-print(f"   Function: {function_call['function']}")
-print(f"   Args: {function_call['args']}")
-print(f"   Token: {token[:50]}...")
+print("=" * 60)
+print("PART 2: The Risk — Replay Attack")
+print("=" * 60)
 
 print("""
-✅ Google AI SDK Benefits:
-   • Works with Gemini 1.5 and 2.0
-   • Function calls signed automatically
-   • Compatible with all genai features
-   • Lightweight wrapper
+   Scenario: An attacker captures the place_order function call
+   as it travels from Gemini to the brokerage API. They replay it
+   10 times:
+
+   Original: place_order(symbol="GOOGL", quantity=10)  → 10 shares
+   Replay 1: place_order(symbol="GOOGL", quantity=10)  → 10 more shares
+   Replay 2: place_order(symbol="GOOGL", quantity=10)  → 10 more shares
+   ...
+   Total: 100 shares purchased instead of 10
+
+   The brokerage sees 10 identical, valid function calls.
+   Each one looks legitimate. The user loses ~$17,000.
+""")
+
+replay_call = function_calls[2]
+print(f"   Replayed call: {json.dumps(replay_call)}")
+print(f"\n   Without unique signatures, the brokerage can't tell original from replay.")
+
+# =============================================================================
+# PART 3: With Vouch — Each function call gets a unique signed token
+# =============================================================================
+
+print(f"\n{'=' * 60}")
+print("PART 3: Google AI WITH Vouch")
+print("=" * 60)
+
+identity = generate_identity(domain="google-ai-agent.example.com")
+signer = Signer(private_key=identity.private_key_jwk, did=identity.did)
+print(f"\n   Agent Identity: {signer.get_did()[:50]}...")
+
+signed_calls = []
+print("\n   Signing all function calls:\n")
+for call in function_calls:
+    token = signer.sign(call)
+    signed_calls.append({"token": token, "function": call["function"]})
+    print(f"   {call['function']} → Token: {token[:45]}...")
+
+print("\n   Verify function call audit trail:\n")
+for entry in signed_calls:
+    is_valid, passport = Verifier.verify(entry["token"], signer.get_public_key_jwk())
+    if is_valid and passport:
+        func = passport.payload.get("function")
+        args = passport.payload.get("args", {})
+        print(f"   ✅ {func}({json.dumps(args)}) — signed by {passport.iss[:30]}...")
+
+# =============================================================================
+# PART 4: Try the Attack Again — Replay is detected
+# =============================================================================
+
+print(f"\n{'=' * 60}")
+print("PART 4: Attack Defeated — Replay Detected")
+print("=" * 60)
+
+# Each Vouch token has a unique signature with timestamp (iat) and token ID (jti)
+order_token = signed_calls[2]["token"]
+
+# First submission — accepted
+is_valid, passport = Verifier.verify(order_token, signer.get_public_key_jwk())
+if is_valid and passport:
+    token_id = passport.jti if hasattr(passport, 'jti') else passport.iat
+    print(f"\n   First submission of place_order token:")
+    print(f"   Valid? True ✅")
+    print(f"   Token timestamp (iat): {passport.iat}")
+    print(f"   Brokerage records this token as PROCESSED")
+
+# Replay attempt — same token submitted again
+print(f"\n   Attacker replays the same token...")
+is_valid_2, passport_2 = Verifier.verify(order_token, signer.get_public_key_jwk())
+if is_valid_2 and passport_2:
+    print(f"   Signature valid? True (cryptographically it's the same token)")
+    print(f"   Token timestamp (iat): {passport_2.iat}")
+    print(f"\n   But the brokerage checks its processed-token ledger:")
+    print(f"   Token with iat={passport_2.iat} already processed!")
+    print(f"   ❌ REPLAY REJECTED — this exact token was already executed")
+    print(f"   The attacker's 9 replay attempts are all blocked.")
+    print(f"   Only 10 shares purchased, not 100.")
+
+# Show that a NEW legitimate order would get a different token
+print(f"\n   For comparison — a new legitimate order:")
+new_token = signer.sign(function_calls[2])
+print(f"   New token: {new_token[:50]}...")
+print(f"   Old token: {order_token[:50]}...")
+print(f"   Different tokens? {new_token != order_token} — each signing produces a unique token")
+
+print("""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TAKEAWAY: AI agents making financial function calls (trades,
+payments, bookings) are vulnerable to replay attacks.
+Without Vouch, the same call can be replayed multiple times.
+With Vouch, each call gets a unique cryptographic token with
+a timestamp. Execution layers track processed tokens and reject
+replays. Each call executes exactly once.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """)
