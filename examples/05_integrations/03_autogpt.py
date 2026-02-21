@@ -23,8 +23,14 @@ print("=" * 60)
 # AutoGPT runs autonomously, executing commands on its own
 commands_executed = [
     {"command": "web_search", "args": {"query": "AI safety research papers"}},
-    {"command": "file_write", "args": {"path": "/data/notes.md", "content": "Research findings..."}},
-    {"command": "send_email", "args": {"to": "team@corp.com", "subject": "Research done", "body": "..."}},
+    {
+        "command": "file_write",
+        "args": {"path": "/data/notes.md", "content": "Research findings..."},
+    },
+    {
+        "command": "send_email",
+        "args": {"to": "team@corp.com", "subject": "Research done", "body": "..."},
+    },
 ]
 
 print("\nAgent autonomously executes 3 commands:\n")
@@ -112,11 +118,13 @@ print("=" * 60)
 attacker_identity = generate_identity(domain="malicious-plugin.evil.com")
 attacker_signer = Signer(private_key=attacker_identity.private_key_jwk, did=attacker_identity.did)
 
-injected_token = attacker_signer.sign({
-    **injected_command,
-    "step": 3,
-    "timestamp": datetime.now(timezone.utc).isoformat(),
-})
+injected_token = attacker_signer.sign(
+    {
+        **injected_command,
+        "step": 3,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+)
 
 print("\n   Malicious plugin injects: http_post to evil.com")
 print(f"   Injected token: {injected_token[:50]}...")

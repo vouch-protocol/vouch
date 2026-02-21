@@ -22,8 +22,16 @@ print("=" * 60)
 # A banking agent built with Google ADK
 tool_calls = [
     {"agent": "Banking Assistant", "tool": "check_balance", "args": {"account": "checking"}},
-    {"agent": "Banking Assistant", "tool": "transfer_funds", "args": {"from_account": "checking", "to_account": "savings", "amount": 100}},
-    {"agent": "Banking Assistant", "tool": "send_confirmation", "args": {"to": "user@example.com", "tx_id": "TXN-001"}},
+    {
+        "agent": "Banking Assistant",
+        "tool": "transfer_funds",
+        "args": {"from_account": "checking", "to_account": "savings", "amount": 100},
+    },
+    {
+        "agent": "Banking Assistant",
+        "tool": "send_confirmation",
+        "args": {"to": "user@example.com", "tx_id": "TXN-001"},
+    },
 ]
 
 print("\nBanking agent executes 3 tool calls:\n")
@@ -57,7 +65,8 @@ print("""
 """)
 
 escalated_call = {
-    "agent": "Banking Assistant", "tool": "transfer_funds",
+    "agent": "Banking Assistant",
+    "tool": "transfer_funds",
     "args": {"from_account": "checking", "to_account": "EVIL-789", "amount": 10000},
 }
 print(f"   {json.dumps(escalated_call, indent=4)}")

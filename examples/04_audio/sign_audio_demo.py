@@ -49,11 +49,11 @@ for i in range(num_samples):
     sample = int(32767 * 0.5 * math.sin(2 * math.pi * 440 * t) * envelope)
     samples.append(sample)
 
-with wave.open(str(audio_path), 'w') as wav_file:
+with wave.open(str(audio_path), "w") as wav_file:
     wav_file.setnchannels(1)
     wav_file.setsampwidth(2)
     wav_file.setframerate(sample_rate)
-    wav_file.writeframes(struct.pack('<' + 'h' * len(samples), *samples))
+    wav_file.writeframes(struct.pack("<" + "h" * len(samples), *samples))
 
 print(f"   Created: {audio_path}")
 
@@ -117,7 +117,7 @@ if result.success:
     print(f"   Signer DID:  {result.signer_did[:40]}...")
     print(f"   Timestamp:   {result.timestamp}")
     print(f"   Watermarked: {result.watermark_embedded}")
-    
+
     if result.covenant:
         print("\n📋 Embedded Covenant:")
         print(f"   AI Training:   {'✅ ALLOW' if result.covenant.ai_training else '❌ DENY'}")

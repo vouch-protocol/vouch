@@ -48,7 +48,10 @@ print("PART 2: The Risk — Forged Tool Call")
 print("=" * 60)
 
 real_call = {"tool": "transfer_funds", "args": {"from": "savings", "to": "checking", "amount": 500}}
-forged_call = {"tool": "transfer_funds", "args": {"from": "savings", "to": "attacker_account", "amount": 50000}}
+forged_call = {
+    "tool": "transfer_funds",
+    "args": {"from": "savings", "to": "attacker_account", "amount": 50000},
+}
 
 print(f"\n   Real call:   {json.dumps(real_call)}")
 print(f"   Forged call: {json.dumps(forged_call)}")
@@ -117,7 +120,9 @@ is_valid, passport = Verifier.verify(real_token, signer.get_public_key_jwk())
 print("\n   Verify real token against real agent's key:")
 print(f"   Valid? {is_valid}")
 if is_valid and passport:
-    print(f"   ✅ ACCEPTED — {passport.payload.get('tool')}({json.dumps(passport.payload.get('args'))}) is authentic")
+    print(
+        f"   ✅ ACCEPTED — {passport.payload.get('tool')}({json.dumps(passport.payload.get('args'))}) is authentic"
+    )
 
 print("""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

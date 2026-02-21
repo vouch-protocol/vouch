@@ -22,8 +22,16 @@ print("=" * 60)
 # Gemini stock trading agent makes function calls
 function_calls = [
     {"function": "get_stock_price", "args": {"symbol": "GOOGL"}, "model": "gemini-1.5-pro"},
-    {"function": "analyze_risk", "args": {"symbol": "GOOGL", "quantity": 10, "strategy": "market_buy"}, "model": "gemini-1.5-pro"},
-    {"function": "place_order", "args": {"symbol": "GOOGL", "quantity": 10, "order_type": "market"}, "model": "gemini-1.5-pro"},
+    {
+        "function": "analyze_risk",
+        "args": {"symbol": "GOOGL", "quantity": 10, "strategy": "market_buy"},
+        "model": "gemini-1.5-pro",
+    },
+    {
+        "function": "place_order",
+        "args": {"symbol": "GOOGL", "quantity": 10, "order_type": "market"},
+        "model": "gemini-1.5-pro",
+    },
 ]
 
 print("\nGemini stock trading agent executes 3 function calls:\n")
@@ -106,7 +114,7 @@ order_token = signed_calls[2]["token"]
 # First submission — accepted
 is_valid, passport = Verifier.verify(order_token, signer.get_public_key_jwk())
 if is_valid and passport:
-    token_id = passport.jti if hasattr(passport, 'jti') else passport.iat
+    token_id = passport.jti if hasattr(passport, "jti") else passport.iat
     print("\n   First submission of place_order token:")
     print("   Valid? True ✅")
     print(f"   Token timestamp (iat): {passport.iat}")

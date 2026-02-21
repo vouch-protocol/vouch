@@ -22,13 +22,17 @@ print("=" * 60)
 # A typical CrewAI workflow: Researcher → Writer → Reviewer
 workflow = [
     {"agent": "Researcher", "action": "web_search", "output": "Found 15 papers on AI safety"},
-    {"agent": "Writer", "action": "write_article", "output": "Draft: 'Why AI Agents Need Identity'"},
+    {
+        "agent": "Writer",
+        "action": "write_article",
+        "output": "Draft: 'Why AI Agents Need Identity'",
+    },
     {"agent": "Reviewer", "action": "approve", "output": "Approved for publication"},
 ]
 
 print("\n3-agent crew completes a task:\n")
 for step in workflow:
-    print(f"   {step['agent']} → {step['action']}: \"{step['output']}\"")
+    print(f'   {step["agent"]} → {step["action"]}: "{step["output"]}"')
 
 print("""
    Problem: These are just log entries. No cryptographic proof.
@@ -87,24 +91,30 @@ print(f"   Reviewer DID:   {reviewer.get_did()[:45]}...")
 
 # Step 1: Researcher signs their output
 research_payload = {
-    "agent": "Researcher", "action": "web_search",
-    "query": "AI agent security frameworks 2026", "results_count": 15,
+    "agent": "Researcher",
+    "action": "web_search",
+    "query": "AI agent security frameworks 2026",
+    "results_count": 15,
 }
 research_token = researcher.sign(research_payload)
 print(f"\n   🔬 Researcher signed: web_search → {research_token[:45]}...")
 
 # Step 2: Writer signs, chained to Researcher
 write_payload = {
-    "agent": "Writer", "action": "write_article",
-    "title": "Why AI Agents Need Cryptographic Identity", "word_count": 1500,
+    "agent": "Writer",
+    "action": "write_article",
+    "title": "Why AI Agents Need Cryptographic Identity",
+    "word_count": 1500,
 }
 writer_token = writer.sign(write_payload, parent_token=research_token)
 print(f"   ✍️  Writer signed: write_article (chained to research) → {writer_token[:45]}...")
 
 # Step 3: Reviewer signs, chained to Writer
 review_payload = {
-    "agent": "Reviewer", "action": "approve",
-    "verdict": "approved", "feedback": "Well-researched, publish-ready",
+    "agent": "Reviewer",
+    "action": "approve",
+    "verdict": "approved",
+    "feedback": "Well-researched, publish-ready",
 }
 reviewer_token = reviewer.sign(review_payload, parent_token=writer_token)
 print(f"   📋 Reviewer signed: approve (chained to write) → {reviewer_token[:45]}...")
@@ -121,7 +131,9 @@ for name, token, agent_signer in agents:
     if is_valid and passport:
         action = passport.payload.get("action")
         chain_depth = len(passport.delegation_chain) if passport.delegation_chain else 0
-        print(f"   ✅ {name}: action={action}, chain_depth={chain_depth}, DID={passport.iss[:30]}...")
+        print(
+            f"   ✅ {name}: action={action}, chain_depth={chain_depth}, DID={passport.iss[:30]}..."
+        )
 
 # =============================================================================
 # PART 4: Try the Attack Again — Impersonation detected
@@ -134,8 +146,10 @@ print("=" * 60)
 # The compromised Writer tries to forge a Reviewer approval
 print("\n   Writer (compromised) forges a Reviewer approval...")
 forged_review = {
-    "agent": "Reviewer", "action": "approve",
-    "verdict": "approved", "feedback": "LGTM",
+    "agent": "Reviewer",
+    "action": "approve",
+    "verdict": "approved",
+    "feedback": "LGTM",
 }
 # Writer signs it with THEIR key, claiming to be Reviewer
 forged_token = writer.sign(forged_review)
