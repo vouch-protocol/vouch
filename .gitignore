@@ -63,3 +63,8 @@ browser-extension/dist/
 # Scribe Context Manager (Private)
 .scribe/
 DEVELOPER_CONTEXT.md
+
+# Specs & strategy (confidential - do not publish)
+docs/specs/strategy-lfai-and-w3c.md
+docs/specs/w3c-cg-report.md
+docs/specs/ietf-internet-draft.md

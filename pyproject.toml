@@ -103,6 +103,7 @@ all = [
 [project.scripts]
 vouch = "vouch.cli:main"
 vouch-mcp = "vouch.integrations.mcp.server:main"
+vouch-bridge = "vouch.bridge.server:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
