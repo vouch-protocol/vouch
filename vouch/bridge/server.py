@@ -108,7 +108,7 @@ def _check_auth(authorization: Optional[str]) -> None:
         return
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = authorization[len("Bearer "):]
+    token = authorization[len("Bearer ") :]
     if token != settings.bridge_secret:
         raise HTTPException(status_code=403, detail="Invalid bridge secret")
 
@@ -132,11 +132,13 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
 
     # --- Root CA (self-signed) ---
     root_key = Ed25519PrivateKey.generate()
-    root_name = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Vouch Protocol"),
-        x509.NameAttribute(NameOID.COMMON_NAME, "Vouch Root CA"),
-    ])
+    root_name = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Vouch Protocol"),
+            x509.NameAttribute(NameOID.COMMON_NAME, "Vouch Root CA"),
+        ]
+    )
     _root_cert = (
         x509.CertificateBuilder()
         .subject_name(root_name)
@@ -148,10 +150,15 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
         .add_extension(x509.BasicConstraints(ca=True, path_length=1), critical=True)
         .add_extension(
             x509.KeyUsage(
-                digital_signature=False, key_cert_sign=True, crl_sign=True,
-                content_commitment=False, key_encipherment=False,
-                data_encipherment=False, key_agreement=False,
-                encipher_only=False, decipher_only=False,
+                digital_signature=False,
+                key_cert_sign=True,
+                crl_sign=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                encipher_only=False,
+                decipher_only=False,
             ),
             critical=True,
         )
@@ -164,11 +171,13 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
 
     # --- Intermediate CA (signed by root) ---
     inter_key = Ed25519PrivateKey.generate()
-    inter_name = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Vouch Protocol"),
-        x509.NameAttribute(NameOID.COMMON_NAME, "Vouch Intermediate CA"),
-    ])
+    inter_name = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Vouch Protocol"),
+            x509.NameAttribute(NameOID.COMMON_NAME, "Vouch Intermediate CA"),
+        ]
+    )
     inter_cert = (
         x509.CertificateBuilder()
         .subject_name(inter_name)
@@ -180,10 +189,15 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
         .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
         .add_extension(
             x509.KeyUsage(
-                digital_signature=False, key_cert_sign=True, crl_sign=True,
-                content_commitment=False, key_encipherment=False,
-                data_encipherment=False, key_agreement=False,
-                encipher_only=False, decipher_only=False,
+                digital_signature=False,
+                key_cert_sign=True,
+                crl_sign=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                encipher_only=False,
+                decipher_only=False,
             ),
             critical=True,
         )
@@ -200,11 +214,13 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
 
     # --- End-entity signing cert (signed by intermediate) ---
     ee_key = Ed25519PrivateKey.generate()
-    ee_name = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Vouch Protocol"),
-        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
-    ])
+    ee_name = x509.Name(
+        [
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Vouch Protocol"),
+            x509.NameAttribute(NameOID.COMMON_NAME, common_name),
+        ]
+    )
     ee_cert = (
         x509.CertificateBuilder()
         .subject_name(ee_name)
@@ -216,18 +232,25 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
         .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
         .add_extension(
             x509.KeyUsage(
-                digital_signature=True, key_cert_sign=False, crl_sign=False,
-                content_commitment=False, key_encipherment=False,
-                data_encipherment=False, key_agreement=False,
-                encipher_only=False, decipher_only=False,
+                digital_signature=True,
+                key_cert_sign=False,
+                crl_sign=False,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                encipher_only=False,
+                decipher_only=False,
             ),
             critical=True,
         )
         .add_extension(
-            x509.ExtendedKeyUsage([
-                ExtendedKeyUsageOID.EMAIL_PROTECTION,
-                x509.ObjectIdentifier("1.3.6.1.5.5.7.3.36"),  # documentSigning
-            ]),
+            x509.ExtendedKeyUsage(
+                [
+                    ExtendedKeyUsageOID.EMAIL_PROTECTION,
+                    x509.ObjectIdentifier("1.3.6.1.5.5.7.3.36"),  # documentSigning
+                ]
+            ),
             critical=False,
         )
         .add_extension(
@@ -242,9 +265,8 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
     )
 
     # Chain: end-entity + intermediate (NO root — per C2PA spec)
-    chain_pem = (
-        ee_cert.public_bytes(serialization.Encoding.PEM)
-        + inter_cert.public_bytes(serialization.Encoding.PEM)
+    chain_pem = ee_cert.public_bytes(serialization.Encoding.PEM) + inter_cert.public_bytes(
+        serialization.Encoding.PEM
     )
 
     return ee_key, chain_pem
@@ -253,10 +275,14 @@ def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, byte
 def _detect_mime_type(ext: str) -> str:
     """Map file extension to MIME type."""
     return {
-        ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-        ".png": "image/png", ".gif": "image/gif",
-        ".webp": "image/webp", ".tiff": "image/tiff",
-        ".tif": "image/tiff", ".avif": "image/avif",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+        ".tiff": "image/tiff",
+        ".tif": "image/tiff",
+        ".avif": "image/avif",
     }.get(ext, "application/octet-stream")
 
 

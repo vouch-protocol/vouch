@@ -22,7 +22,11 @@ print("=" * 60)
 # Claude (or another LLM) calls tools through MCP
 mcp_calls = [
     {"tool": "read_file", "params": {"path": "/src/main.py"}, "request_id": "req_001"},
-    {"tool": "write_file", "params": {"path": "/data/output.txt", "content": "Analysis..."}, "request_id": "req_002"},
+    {
+        "tool": "write_file",
+        "params": {"path": "/data/output.txt", "content": "Analysis..."},
+        "request_id": "req_002",
+    },
     {"tool": "execute_command", "params": {"command": "pytest tests/ -v"}, "request_id": "req_003"},
 ]
 
@@ -56,7 +60,11 @@ print("""
    The attacker now has your SSH private key.
 """)
 
-rogue_call = {"tool": "execute_command", "params": {"command": "cat ~/.ssh/id_rsa"}, "request_id": "req_rogue"}
+rogue_call = {
+    "tool": "execute_command",
+    "params": {"command": "cat ~/.ssh/id_rsa"},
+    "request_id": "req_rogue",
+}
 print(f"   Rogue call: {json.dumps(rogue_call)}")
 print("\n   The MCP server sees a valid JSON-RPC request. Without signing,")
 print("   it can't distinguish Claude's requests from the attacker's.")

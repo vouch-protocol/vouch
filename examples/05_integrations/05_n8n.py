@@ -21,10 +21,16 @@ print("=" * 60)
 
 # A typical n8n financial workflow: Webhook → Process → Transfer → Notify
 workflow_nodes = [
-    {"node": "Webhook Trigger", "output": {"customer_id": "C-1234", "request": "transfer", "amount": 500}},
+    {
+        "node": "Webhook Trigger",
+        "output": {"customer_id": "C-1234", "request": "transfer", "amount": 500},
+    },
     {"node": "Validation", "output": {"customer_id": "C-1234", "validated": True, "amount": 500}},
     {"node": "Bank API", "output": {"tx_id": "TXN-001", "amount": 500, "status": "completed"}},
-    {"node": "Slack Notify", "output": {"channel": "#alerts", "message": "Transfer $500 for C-1234"}},
+    {
+        "node": "Slack Notify",
+        "output": {"channel": "#alerts", "message": "Transfer $500 for C-1234"},
+    },
 ]
 
 print("\n4-node financial workflow:\n")
@@ -126,11 +132,13 @@ print("   Transfer blocked. Incident flagged for review.")
 attacker_identity = generate_identity(domain="compromised-node.evil.com")
 attacker_signer = Signer(private_key=attacker_identity.private_key_jwk, did=attacker_identity.did)
 
-forged_token = attacker_signer.sign({
-    "workflow_id": "wf_finance_001",
-    "node": "Webhook Trigger",
-    "output": {"customer_id": "C-1234", "request": "transfer", "amount": 50000},
-})
+forged_token = attacker_signer.sign(
+    {
+        "workflow_id": "wf_finance_001",
+        "node": "Webhook Trigger",
+        "output": {"customer_id": "C-1234", "request": "transfer", "amount": 50000},
+    }
+)
 
 print("\n   Attacker forges a new Webhook token with $50,000...")
 is_valid, _ = Verifier.verify(forged_token, signer.get_public_key_jwk())

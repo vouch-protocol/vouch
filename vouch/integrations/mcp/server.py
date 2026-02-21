@@ -194,10 +194,12 @@ class VouchMCPServer:
                 "jsonrpc": "2.0",
                 "id": request_id,
                 "result": {
-                    "content": [{
-                        "type": "text",
-                        "text": f"Agent DID: {did}\nAuto-Sign: {auto_sign_status}\nSession: {session_status}"
-                    }]
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"Agent DID: {did}\nAuto-Sign: {auto_sign_status}\nSession: {session_status}",
+                        }
+                    ]
                 },
             }
 
@@ -211,6 +213,7 @@ class VouchMCPServer:
 
             purpose = arguments.get("purpose", "general")
             import time
+
             session_payload = {
                 "type": "session",
                 "purpose": purpose,
@@ -223,10 +226,12 @@ class VouchMCPServer:
                 "jsonrpc": "2.0",
                 "id": request_id,
                 "result": {
-                    "content": [{
-                        "type": "text",
-                        "text": f"✅ Session created for: {purpose}\n\nSession-Token: {self._session_token}\n\nUse this token for subsequent actions. No need to sign each one individually."
-                    }]
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"✅ Session created for: {purpose}\n\nSession-Token: {self._session_token}\n\nUse this token for subsequent actions. No need to sign each one individually.",
+                        }
+                    ]
                 },
             }
 

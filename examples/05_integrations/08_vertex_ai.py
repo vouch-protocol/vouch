@@ -22,8 +22,16 @@ print("=" * 60)
 # Gemini makes function calls on Vertex AI
 function_calls = [
     {"function": "get_weather", "args": {"city": "Tokyo"}, "model": "gemini-1.5-pro"},
-    {"function": "search_flights", "args": {"from": "SFO", "to": "NRT", "date": "2026-03-15"}, "model": "gemini-1.5-pro"},
-    {"function": "book_hotel", "args": {"city": "Tokyo", "checkin": "2026-03-15", "nights": 5}, "model": "gemini-1.5-pro"},
+    {
+        "function": "search_flights",
+        "args": {"from": "SFO", "to": "NRT", "date": "2026-03-15"},
+        "model": "gemini-1.5-pro",
+    },
+    {
+        "function": "book_hotel",
+        "args": {"city": "Tokyo", "checkin": "2026-03-15", "nights": 5},
+        "model": "gemini-1.5-pro",
+    },
 ]
 
 print("\nGemini executes 3 function calls for travel planning:\n")
@@ -57,8 +65,14 @@ print("""
    The middleware logs show "5 nights" — the tampering is invisible.
 """)
 
-original_booking = {"function": "book_hotel", "args": {"city": "Tokyo", "checkin": "2026-03-15", "nights": 5}}
-tampered_booking = {"function": "book_hotel", "args": {"city": "Tokyo", "checkin": "2026-03-15", "nights": 50}}
+original_booking = {
+    "function": "book_hotel",
+    "args": {"city": "Tokyo", "checkin": "2026-03-15", "nights": 5},
+}
+tampered_booking = {
+    "function": "book_hotel",
+    "args": {"city": "Tokyo", "checkin": "2026-03-15", "nights": 50},
+}
 print(f"   Original: {json.dumps(original_booking['args'])}")
 print(f"   Tampered: {json.dumps(tampered_booking['args'])}")
 print("\n   The booking API received nights=50. Was it Gemini's decision or tampering?")
@@ -89,7 +103,7 @@ for call, intent in zip(function_calls, intents):
     payload = {**call, "intent": intent}
     token = signer.sign(payload)
     signed_calls.append({"token": token, "function": call["function"]})
-    print(f"   {call['function']} (intent: \"{intent}\") → {token[:40]}...")
+    print(f'   {call["function"]} (intent: "{intent}") → {token[:40]}...')
 
 print("\n   Verify function call audit trail:\n")
 for entry in signed_calls:
@@ -97,7 +111,7 @@ for entry in signed_calls:
     if is_valid and passport:
         func = passport.payload.get("function")
         intent = passport.payload.get("intent")
-        print(f"   ✅ {func}: \"{intent}\" — signed by {passport.iss[:30]}...")
+        print(f'   ✅ {func}: "{intent}" — signed by {passport.iss[:30]}...')
 
 # =============================================================================
 # PART 4: Try the Attack Again — Tampered booking is caught
@@ -113,7 +127,7 @@ is_valid, passport = Verifier.verify(booking_token, signer.get_public_key_jwk())
 if is_valid and passport:
     signed_nights = passport.payload["args"]["nights"]
     signed_intent = passport.payload["intent"]
-    print(f"\n   Signed booking: nights={signed_nights}, intent=\"{signed_intent}\"")
+    print(f'\n   Signed booking: nights={signed_nights}, intent="{signed_intent}"')
     print("   Middleware claims: nights=50")
     print("\n   Booking API verifies the signed token:")
     print(f"   Signed says {signed_nights} nights ≠ middleware says 50 nights")
@@ -125,7 +139,9 @@ if is_valid and passport:
 attacker_identity = generate_identity(domain="compromised-middleware.evil.com")
 attacker_signer = Signer(private_key=attacker_identity.private_key_jwk, did=attacker_identity.did)
 
-forged_token = attacker_signer.sign({**tampered_booking, "intent": "Hotel booking for 50-night stay"})
+forged_token = attacker_signer.sign(
+    {**tampered_booking, "intent": "Hotel booking for 50-night stay"}
+)
 print("\n   Attacker forges token with nights=50...")
 is_valid, _ = Verifier.verify(forged_token, signer.get_public_key_jwk())
 print(f"   Valid against agent's trusted key? {is_valid}")

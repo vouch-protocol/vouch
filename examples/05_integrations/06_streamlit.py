@@ -29,9 +29,9 @@ session_log = [
 print("\nDashboard session with AI:\n")
 for entry in session_log:
     if entry["action"] == "query":
-        print(f"   [User Query] \"{entry['input']}\"")
+        print(f'   [User Query] "{entry["input"]}"')
     elif entry["action"] == "ai_response":
-        print(f"   [AI Response] \"{entry['output']}\"")
+        print(f'   [AI Response] "{entry["output"]}"')
     elif entry["action"] == "export":
         print(f"   [Data Export] {entry['rows']} rows as {entry['format']}")
 
@@ -87,13 +87,22 @@ audit_log = []
 print("\n   Signing all session actions:\n")
 
 # Sign user query
-query_payload = {"action": "query", "user": "alice@corp.com", "input": "What's our Q3 revenue forecast?"}
+query_payload = {
+    "action": "query",
+    "user": "alice@corp.com",
+    "input": "What's our Q3 revenue forecast?",
+}
 query_token = signer.sign(query_payload)
 audit_log.append(("User Query", query_token))
 print(f"   [Query] → Token: {query_token[:45]}...")
 
 # Sign AI response
-response_payload = {"action": "ai_response", "model": "gpt-4", "output": "Q3 forecast: $12.5M based on pipeline", "confidence": 0.87}
+response_payload = {
+    "action": "ai_response",
+    "model": "gpt-4",
+    "output": "Q3 forecast: $12.5M based on pipeline",
+    "confidence": 0.87,
+}
 response_token = signer.sign(response_payload)
 audit_log.append(("AI Response", response_token))
 print(f"   [AI Response] → Token: {response_token[:45]}...")
@@ -123,8 +132,8 @@ print("=" * 60)
 is_valid, passport = Verifier.verify(response_token, signer.get_public_key_jwk())
 if is_valid and passport:
     signed_output = passport.payload.get("output")
-    print(f"\n   Signed AI response: \"{signed_output}\"")
-    print("   Trader claims AI said: \"Q3 forecast: $20M based on pipeline\"")
+    print(f'\n   Signed AI response: "{signed_output}"')
+    print('   Trader claims AI said: "Q3 forecast: $20M based on pipeline"')
     print("\n   The cryptographic record proves the AI said $12.5M, not $20M.")
     print("   The token is immutable — it can't be edited without invalidating")
     print("   the signature. The trader's falsification attempt fails.")
@@ -133,10 +142,13 @@ if is_valid and passport:
 attacker_identity = generate_identity(domain="trader-laptop.local")
 attacker_signer = Signer(private_key=attacker_identity.private_key_jwk, did=attacker_identity.did)
 
-forged_token = attacker_signer.sign({
-    "action": "ai_response", "model": "gpt-4",
-    "output": "Q3 forecast: $20M based on pipeline",
-})
+forged_token = attacker_signer.sign(
+    {
+        "action": "ai_response",
+        "model": "gpt-4",
+        "output": "Q3 forecast: $20M based on pipeline",
+    }
+)
 
 print("\n   Trader forges a new token with $20M...")
 is_valid, _ = Verifier.verify(forged_token, signer.get_public_key_jwk())
