@@ -72,7 +72,7 @@ def main():
         args={"path": "/data/file.txt"},
         token=token1,
     )
-    print(f"   Tool: read_file")
+    print("   Tool: read_file")
     print(f"   DID: {trusted_did}")
     print(f"   Result: {'✅ ALLOWED' if result1.allowed else '❌ BLOCKED'}")
     if result1.reason:
@@ -89,8 +89,8 @@ def main():
         args={"path": "/etc/passwd"},
         token=None,  # No token!
     )
-    print(f"   Tool: read_file")
-    print(f"   DID: (none)")
+    print("   Tool: read_file")
+    print("   DID: (none)")
     print(f"   Result: {'✅ ALLOWED' if result2.allowed else '❌ BLOCKED'}")
     if result2.reason:
         print(f"   Reason: {result2.reason}")
@@ -109,7 +109,7 @@ def main():
         args={"cmd": "rm -rf /"},
         token=token3,
     )
-    print(f"   Tool: run_command")
+    print("   Tool: run_command")
     print(f"   DID: {malicious_did}")
     print(f"   Result: {'✅ ALLOWED' if result3.allowed else '❌ BLOCKED'}")
     if result3.reason:
@@ -127,7 +127,7 @@ def main():
         args={"cmd": "sudo reboot"},
         token=token4,
     )
-    print(f"   Tool: run_command")
+    print("   Tool: run_command")
     print(f"   DID: {trusted_did}")
     print(f"   Result: {'✅ ALLOWED' if result4.allowed else '❌ BLOCKED'}")
     if result4.reason:
@@ -146,7 +146,7 @@ def main():
         args={"path": "innocent.txt"},
         token=token5,
     )
-    print(f"   Tool: read_file")
+    print("   Tool: read_file")
     print(f"   DID: {malicious_did} (BLOCKED)")
     print(f"   Result: {'✅ ALLOWED' if result5.allowed else '❌ BLOCKED'}")
     if result5.reason:

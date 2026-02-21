@@ -58,8 +58,8 @@ print("""
 
 rogue_call = {"tool": "execute_command", "params": {"command": "cat ~/.ssh/id_rsa"}, "request_id": "req_rogue"}
 print(f"   Rogue call: {json.dumps(rogue_call)}")
-print(f"\n   The MCP server sees a valid JSON-RPC request. Without signing,")
-print(f"   it can't distinguish Claude's requests from the attacker's.")
+print("\n   The MCP server sees a valid JSON-RPC request. Without signing,")
+print("   it can't distinguish Claude's requests from the attacker's.")
 
 # =============================================================================
 # PART 3: With Vouch — Every tool call is signed by the MCP server identity
@@ -102,16 +102,16 @@ rogue_identity = generate_identity(domain="rogue-extension.evil.com")
 rogue_signer = Signer(private_key=rogue_identity.private_key_jwk, did=rogue_identity.did)
 
 rogue_token = rogue_signer.sign(rogue_call)
-print(f"\n   Rogue process sends: execute_command('cat ~/.ssh/id_rsa')")
+print("\n   Rogue process sends: execute_command('cat ~/.ssh/id_rsa')")
 print(f"   Rogue token: {rogue_token[:50]}...")
 
 # MCP server verifies against its own trusted key
 is_valid, passport = Verifier.verify(rogue_token, signer.get_public_key_jwk())
-print(f"\n   MCP server verifies against trusted key:")
+print("\n   MCP server verifies against trusted key:")
 print(f"   Valid? {is_valid}")
 if not is_valid:
-    print(f"   ❌ REJECTED — this call was NOT authorized by the MCP server")
-    print(f"   SSH key exfiltration blocked. The rogue process is locked out.")
+    print("   ❌ REJECTED — this call was NOT authorized by the MCP server")
+    print("   SSH key exfiltration blocked. The rogue process is locked out.")
 
 # Legitimate calls still work
 is_valid, _ = Verifier.verify(signed_calls[2]["token"], signer.get_public_key_jwk())

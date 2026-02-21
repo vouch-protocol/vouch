@@ -63,7 +63,7 @@ print("""
 
 replay_call = function_calls[2]
 print(f"   Replayed call: {json.dumps(replay_call)}")
-print(f"\n   Without unique signatures, the brokerage can't tell original from replay.")
+print("\n   Without unique signatures, the brokerage can't tell original from replay.")
 
 # =============================================================================
 # PART 3: With Vouch — Each function call gets a unique signed token
@@ -107,25 +107,25 @@ order_token = signed_calls[2]["token"]
 is_valid, passport = Verifier.verify(order_token, signer.get_public_key_jwk())
 if is_valid and passport:
     token_id = passport.jti if hasattr(passport, 'jti') else passport.iat
-    print(f"\n   First submission of place_order token:")
-    print(f"   Valid? True ✅")
+    print("\n   First submission of place_order token:")
+    print("   Valid? True ✅")
     print(f"   Token timestamp (iat): {passport.iat}")
-    print(f"   Brokerage records this token as PROCESSED")
+    print("   Brokerage records this token as PROCESSED")
 
 # Replay attempt — same token submitted again
-print(f"\n   Attacker replays the same token...")
+print("\n   Attacker replays the same token...")
 is_valid_2, passport_2 = Verifier.verify(order_token, signer.get_public_key_jwk())
 if is_valid_2 and passport_2:
-    print(f"   Signature valid? True (cryptographically it's the same token)")
+    print("   Signature valid? True (cryptographically it's the same token)")
     print(f"   Token timestamp (iat): {passport_2.iat}")
-    print(f"\n   But the brokerage checks its processed-token ledger:")
+    print("\n   But the brokerage checks its processed-token ledger:")
     print(f"   Token with iat={passport_2.iat} already processed!")
-    print(f"   ❌ REPLAY REJECTED — this exact token was already executed")
-    print(f"   The attacker's 9 replay attempts are all blocked.")
-    print(f"   Only 10 shares purchased, not 100.")
+    print("   ❌ REPLAY REJECTED — this exact token was already executed")
+    print("   The attacker's 9 replay attempts are all blocked.")
+    print("   Only 10 shares purchased, not 100.")
 
 # Show that a NEW legitimate order would get a different token
-print(f"\n   For comparison — a new legitimate order:")
+print("\n   For comparison — a new legitimate order:")
 new_token = signer.sign(function_calls[2])
 print(f"   New token: {new_token[:50]}...")
 print(f"   Old token: {order_token[:50]}...")

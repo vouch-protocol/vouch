@@ -62,7 +62,7 @@ print("""
 tampered_output = {"customer_id": "C-1234", "validated": True, "amount": 50000}
 print(f"   Tampered payload: {json.dumps(tampered_output)}")
 print(f"   Original payload: {json.dumps(workflow_nodes[0]['output'])}")
-print(f"\n   The Bank API has no way to verify the amount wasn't changed.")
+print("\n   The Bank API has no way to verify the amount wasn't changed.")
 
 # =============================================================================
 # PART 3: With Vouch — Each node signs its output
@@ -116,11 +116,11 @@ if is_valid and passport:
 
 # Now the compromised Validation node tries to forward amount=50000
 # But the Bank API can check the Webhook's signed token
-print(f"   Validation claims amount: $50000")
-print(f"\n   Bank API verifies Webhook's signed token:")
+print("   Validation claims amount: $50000")
+print("\n   Bank API verifies Webhook's signed token:")
 print(f"   Webhook signed ${original_amount} ≠ Validation claims $50000")
-print(f"   ❌ MISMATCH DETECTED — the amount was tampered after the Webhook")
-print(f"   Transfer blocked. Incident flagged for review.")
+print("   ❌ MISMATCH DETECTED — the amount was tampered after the Webhook")
+print("   Transfer blocked. Incident flagged for review.")
 
 # If the attacker tries to forge a new Webhook token with $50000
 attacker_identity = generate_identity(domain="compromised-node.evil.com")
@@ -132,11 +132,11 @@ forged_token = attacker_signer.sign({
     "output": {"customer_id": "C-1234", "request": "transfer", "amount": 50000},
 })
 
-print(f"\n   Attacker forges a new Webhook token with $50,000...")
+print("\n   Attacker forges a new Webhook token with $50,000...")
 is_valid, _ = Verifier.verify(forged_token, signer.get_public_key_jwk())
 print(f"   Valid against workflow's trusted key? {is_valid}")
 if not is_valid:
-    print(f"   ❌ REJECTED — signature doesn't match the workflow's identity")
+    print("   ❌ REJECTED — signature doesn't match the workflow's identity")
 
 print("""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
