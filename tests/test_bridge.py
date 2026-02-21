@@ -9,6 +9,7 @@ import base64
 import os
 import pytest
 
+fastapi = pytest.importorskip("fastapi", reason="fastapi not installed")
 from fastapi.testclient import TestClient
 
 # Set a test secret before importing the app

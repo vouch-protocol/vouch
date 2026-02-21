@@ -64,18 +64,18 @@ print(f"   Created: {audio_path}")
 print("\n📋 Vouch Covenant Policies Available:")
 
 no_ai = VouchCovenant.no_ai_training()
-print(f"\n1. no_ai_training():")
+print("\n1. no_ai_training():")
 print(f"   - ai_training:   {no_ai.ai_training}")
 print(f"   - voice_cloning: {no_ai.voice_cloning}")
 print(f"   - ai_inference:  {no_ai.ai_inference}")
 
 no_deriv = VouchCovenant.no_derivatives()
-print(f"\n2. no_derivatives():")
+print("\n2. no_derivatives():")
 print(f"   - derivative_works: {no_deriv.derivative_works}")
 print(f"   - ai_training:      {no_deriv.ai_training}")
 
 permissive = VouchCovenant.permissive()
-print(f"\n3. permissive():")
+print("\n3. permissive():")
 print(f"   - ai_training:       {permissive.ai_training}")
 print(f"   - voice_cloning:     {permissive.voice_cloning}")
 print(f"   - commercial_use:    {permissive.commercial_use}")
@@ -94,9 +94,9 @@ signer = AudioSigner(
     watermarker=watermarker,
 )
 
-print(f"   ✅ Signer initialized")
-print(f"   Watermarker: Spread-Spectrum (Vouch Sonic)")
-print(f"   Robustness:  Medium (survives compression)")
+print("   ✅ Signer initialized")
+print("   Watermarker: Spread-Spectrum (Vouch Sonic)")
+print("   Robustness:  Medium (survives compression)")
 
 # =============================================================================
 # Sign the audio with watermark

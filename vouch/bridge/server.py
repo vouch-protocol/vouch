@@ -113,7 +113,7 @@ def _check_auth(authorization: Optional[str]) -> None:
         raise HTTPException(status_code=403, detail="Invalid bridge secret")
 
 
-def _generate_cert_chain(common_name: str) -> tuple["Ed25519PrivateKey", bytes]:
+def _generate_cert_chain(common_name: str) -> tuple:  # (Ed25519PrivateKey, bytes)
     """
     Generate a 3-level certificate chain for C2PA signing.
 
@@ -137,7 +137,7 @@ def _generate_cert_chain(common_name: str) -> tuple["Ed25519PrivateKey", bytes]:
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Vouch Protocol"),
         x509.NameAttribute(NameOID.COMMON_NAME, "Vouch Root CA"),
     ])
-    root_cert = (
+    _root_cert = (
         x509.CertificateBuilder()
         .subject_name(root_name)
         .issuer_name(root_name)

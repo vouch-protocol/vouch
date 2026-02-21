@@ -68,8 +68,8 @@ original = {"action": "ai_response", "output": "Q3 forecast: $12.5M based on pip
 falsified = {"action": "ai_response", "output": "Q3 forecast: $20M based on pipeline"}
 print(f"   Original: {json.dumps(original)}")
 print(f"   Falsified: {json.dumps(falsified)}")
-print(f"\n   Both are plain JSON. In a dispute, there's no way to prove")
-print(f"   which version is authentic. The AI can't defend itself.")
+print("\n   Both are plain JSON. In a dispute, there's no way to prove")
+print("   which version is authentic. The AI can't defend itself.")
 
 # =============================================================================
 # PART 3: With Vouch — Every dashboard action is signed
@@ -124,10 +124,10 @@ is_valid, passport = Verifier.verify(response_token, signer.get_public_key_jwk()
 if is_valid and passport:
     signed_output = passport.payload.get("output")
     print(f"\n   Signed AI response: \"{signed_output}\"")
-    print(f"   Trader claims AI said: \"Q3 forecast: $20M based on pipeline\"")
-    print(f"\n   The cryptographic record proves the AI said $12.5M, not $20M.")
-    print(f"   The token is immutable — it can't be edited without invalidating")
-    print(f"   the signature. The trader's falsification attempt fails.")
+    print("   Trader claims AI said: \"Q3 forecast: $20M based on pipeline\"")
+    print("\n   The cryptographic record proves the AI said $12.5M, not $20M.")
+    print("   The token is immutable — it can't be edited without invalidating")
+    print("   the signature. The trader's falsification attempt fails.")
 
 # Can the trader forge a new token with $20M?
 attacker_identity = generate_identity(domain="trader-laptop.local")
@@ -138,12 +138,12 @@ forged_token = attacker_signer.sign({
     "output": "Q3 forecast: $20M based on pipeline",
 })
 
-print(f"\n   Trader forges a new token with $20M...")
+print("\n   Trader forges a new token with $20M...")
 is_valid, _ = Verifier.verify(forged_token, signer.get_public_key_jwk())
 print(f"   Valid against dashboard's trusted key? {is_valid}")
 if not is_valid:
-    print(f"   ❌ REJECTED — not signed by the dashboard's identity")
-    print(f"   The original $12.5M response stands as the authentic record.")
+    print("   ❌ REJECTED — not signed by the dashboard's identity")
+    print("   The original $12.5M response stands as the authentic record.")
 
 print("""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

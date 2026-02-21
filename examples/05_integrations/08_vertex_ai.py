@@ -61,8 +61,8 @@ original_booking = {"function": "book_hotel", "args": {"city": "Tokyo", "checkin
 tampered_booking = {"function": "book_hotel", "args": {"city": "Tokyo", "checkin": "2026-03-15", "nights": 50}}
 print(f"   Original: {json.dumps(original_booking['args'])}")
 print(f"   Tampered: {json.dumps(tampered_booking['args'])}")
-print(f"\n   The booking API received nights=50. Was it Gemini's decision or tampering?")
-print(f"   Without signing, there's no way to know.")
+print("\n   The booking API received nights=50. Was it Gemini's decision or tampering?")
+print("   Without signing, there's no way to know.")
 
 # =============================================================================
 # PART 3: With Vouch — Function calls are signed with intent binding
@@ -114,23 +114,23 @@ if is_valid and passport:
     signed_nights = passport.payload["args"]["nights"]
     signed_intent = passport.payload["intent"]
     print(f"\n   Signed booking: nights={signed_nights}, intent=\"{signed_intent}\"")
-    print(f"   Middleware claims: nights=50")
-    print(f"\n   Booking API verifies the signed token:")
+    print("   Middleware claims: nights=50")
+    print("\n   Booking API verifies the signed token:")
     print(f"   Signed says {signed_nights} nights ≠ middleware says 50 nights")
-    print(f"   ❌ MISMATCH — the booking was tampered after Gemini signed it")
-    print(f"   The 50-night booking is blocked. Only the signed 5-night")
-    print(f"   booking is accepted.")
+    print("   ❌ MISMATCH — the booking was tampered after Gemini signed it")
+    print("   The 50-night booking is blocked. Only the signed 5-night")
+    print("   booking is accepted.")
 
 # Attacker tries to forge a new token
 attacker_identity = generate_identity(domain="compromised-middleware.evil.com")
 attacker_signer = Signer(private_key=attacker_identity.private_key_jwk, did=attacker_identity.did)
 
 forged_token = attacker_signer.sign({**tampered_booking, "intent": "Hotel booking for 50-night stay"})
-print(f"\n   Attacker forges token with nights=50...")
+print("\n   Attacker forges token with nights=50...")
 is_valid, _ = Verifier.verify(forged_token, signer.get_public_key_jwk())
 print(f"   Valid against agent's trusted key? {is_valid}")
 if not is_valid:
-    print(f"   ❌ REJECTED — not signed by the Vertex AI agent's identity")
+    print("   ❌ REJECTED — not signed by the Vertex AI agent's identity")
 
 print("""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

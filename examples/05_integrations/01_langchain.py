@@ -52,9 +52,9 @@ forged_call = {"tool": "transfer_funds", "args": {"from": "savings", "to": "atta
 
 print(f"\n   Real call:   {json.dumps(real_call)}")
 print(f"   Forged call: {json.dumps(forged_call)}")
-print(f"\n   Are they distinguishable? Both are plain JSON.")
-print(f"   A downstream service has NO WAY to tell them apart.")
-print(f"   The attacker changed the recipient and amount — undetected.")
+print("\n   Are they distinguishable? Both are plain JSON.")
+print("   A downstream service has NO WAY to tell them apart.")
+print("   The attacker changed the recipient and amount — undetected.")
 
 # =============================================================================
 # PART 3: With Vouch — Every tool call is cryptographically signed
@@ -101,20 +101,20 @@ attacker_signer = Signer(private_key=attacker_identity.private_key_jwk, did=atta
 # Attacker forges a new token with their own key
 forged_token = attacker_signer.sign(forged_call)
 
-print(f"\n   Attacker forges: transfer $50,000 to attacker_account")
+print("\n   Attacker forges: transfer $50,000 to attacker_account")
 print(f"   Forged token: {forged_token[:50]}...")
 
 # The receiving service verifies against the REAL agent's public key
 is_valid, passport = Verifier.verify(forged_token, signer.get_public_key_jwk())
-print(f"\n   Verify forged token against real agent's key:")
+print("\n   Verify forged token against real agent's key:")
 print(f"   Valid? {is_valid}")
 if not is_valid:
-    print(f"   ❌ REJECTED — signature doesn't match the trusted agent's key")
-    print(f"   The $50,000 transfer is blocked. The real agent never signed it.")
+    print("   ❌ REJECTED — signature doesn't match the trusted agent's key")
+    print("   The $50,000 transfer is blocked. The real agent never signed it.")
 
 # Meanwhile, the real token still verifies
 is_valid, passport = Verifier.verify(real_token, signer.get_public_key_jwk())
-print(f"\n   Verify real token against real agent's key:")
+print("\n   Verify real token against real agent's key:")
 print(f"   Valid? {is_valid}")
 if is_valid and passport:
     print(f"   ✅ ACCEPTED — {passport.payload.get('tool')}({json.dumps(passport.payload.get('args'))}) is authentic")

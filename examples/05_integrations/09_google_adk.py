@@ -61,7 +61,7 @@ escalated_call = {
     "args": {"from_account": "checking", "to_account": "EVIL-789", "amount": 10000},
 }
 print(f"   {json.dumps(escalated_call, indent=4)}")
-print(f"""
+print("""
    The user only asked about balance, but the agent executed a transfer.
    Without signing, the audit log just shows a normal transfer_funds call.
    There's no way to distinguish authorized from injected tool calls.
@@ -114,16 +114,16 @@ if is_valid and passport:
     tool = passport.payload["tool"]
     to_account = passport.payload["args"]["to_account"]
     print(f"\n   Agent signed: {tool} → ${amount} to {to_account}")
-    print(f"\n   Execution layer policy check:")
+    print("\n   Execution layer policy check:")
     print(f"   - Tool: {tool}")
     print(f"   - Amount: ${amount} (threshold: $1000)")
     print(f"   - Recipient: {to_account} (not in approved list)")
 
     if amount > 1000:
-        print(f"\n   ❌ POLICY VIOLATION — transfer over $1000 requires human approval")
-        print(f"   The signed token PROVES the agent made this call (not a forgery)")
-        print(f"   but policy enforcement blocks it. The token becomes evidence")
-        print(f"   for investigating the prompt injection.")
+        print("\n   ❌ POLICY VIOLATION — transfer over $1000 requires human approval")
+        print("   The signed token PROVES the agent made this call (not a forgery)")
+        print("   but policy enforcement blocks it. The token becomes evidence")
+        print("   for investigating the prompt injection.")
 
 # Show the legitimate $100 transfer still works
 legit_token = signed_calls[1]["token"]
@@ -131,7 +131,7 @@ is_valid, passport = Verifier.verify(legit_token, signer.get_public_key_jwk())
 if is_valid and passport:
     amount = passport.payload["args"]["amount"]
     print(f"\n   Legitimate transfer (${amount}) still valid? True ✅")
-    print(f"   Under threshold, approved recipient — executes normally.")
+    print("   Under threshold, approved recipient — executes normally.")
 
 print("""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
