@@ -1,8 +1,9 @@
 /**
  * Vouch Verifier - Home Screen
  *
- * Main screen with two action buttons:
+ * Main screen with three action buttons:
  * - Verify Audio (Sonic Listener)
+ * - Voice ID (Enrollment & Verification)
  * - Pair with Desktop (Bridge)
  */
 
@@ -22,6 +23,7 @@ import identityService, {
     DeviceIdentity,
     BiometricCapability,
 } from '@/services/IdentityService';
+import voiceIdService, { VoiceIdStatus } from '@/services/VoiceIdService';
 
 // =============================================================================
 // Types
@@ -80,6 +82,7 @@ export default function HomeScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [identity, setIdentity] = useState<DeviceIdentity | null>(null);
     const [biometrics, setBiometrics] = useState<BiometricCapability | null>(null);
+    const [voiceIdStatus, setVoiceIdStatus] = useState<VoiceIdStatus | null>(null);
 
     // Initialize identity service
     useEffect(() => {
@@ -94,6 +97,11 @@ export default function HomeScreen() {
                     const id = await identityService.getDeviceIdentity();
                     setIdentity(id);
                 }
+
+                // Load Voice ID status
+                await voiceIdService.initialize();
+                const vStatus = await voiceIdService.getLocalStatus();
+                setVoiceIdStatus(vStatus);
             } catch (error) {
                 console.error('Init error:', error);
             } finally {
@@ -125,6 +133,11 @@ export default function HomeScreen() {
     // Navigate to audio verification
     const handleVerifyAudio = useCallback(() => {
         router.push('/verify');
+    }, []);
+
+    // Navigate to Voice ID
+    const handleVoiceId = useCallback(() => {
+        router.push('/voice-id');
     }, []);
 
     // Navigate to desktop pairing
@@ -204,6 +217,15 @@ export default function HomeScreen() {
                     />
 
                     <ActionButton
+                        emoji="🗣️"
+                        title="Voice ID"
+                        subtitle={voiceIdStatus?.enrolled ? 'Enrolled - Tap to verify' : 'Set up voice biometrics'}
+                        onPress={handleVoiceId}
+                        gradient="green"
+                        disabled={!identity}
+                    />
+
+                    <ActionButton
                         emoji="🔗"
                         title="Pair with Desktop"
                         subtitle="Scan QR to connect"
@@ -225,6 +247,17 @@ export default function HomeScreen() {
                     <View style={styles.statusCard}>
                         <Text style={styles.statusLabel}>Sonic Engine</Text>
                         <Text style={styles.statusValue}>Ready</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.statusContainer, { marginTop: 12 }]}>
+                    <View style={styles.statusCard}>
+                        <Text style={styles.statusLabel}>Voice ID</Text>
+                        <Text style={styles.statusValue}>
+                            {voiceIdStatus?.enrolled
+                                ? `Active (${voiceIdStatus.sampleCount} samples)`
+                                : 'Not Enrolled'}
+                        </Text>
                     </View>
                 </View>
             </View>

@@ -15,8 +15,10 @@
     },
     "dependencies": {
         "expo": "~51.0.0",
+        "expo-av": "~14.0.0",
         "expo-camera": "~15.0.0",
         "expo-crypto": "~13.0.0",
+        "expo-file-system": "~17.0.0",
         "expo-local-authentication": "~14.0.0",
         "expo-router": "~3.5.0",
         "expo-secure-store": "~13.0.0",
@@ -60,7 +62,7 @@
             "supportsTablet": true,
             "bundleIdentifier": "com.vouch.verifier",
             "infoPlist": {
-                "NSMicrophoneUsageDescription": "Vouch Verifier needs microphone access to detect audio watermarks",
+                "NSMicrophoneUsageDescription": "Vouch Verifier needs microphone access to detect audio watermarks and enroll your Voice ID",
                 "NSCameraUsageDescription": "Vouch Verifier needs camera access to scan QR codes for desktop pairing",
                 "NSFaceIDUsageDescription": "Vouch Verifier uses Face ID to securely sign content with your identity"
             }
