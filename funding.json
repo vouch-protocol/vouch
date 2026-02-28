@@ -42,12 +42,6 @@
   "funding": {
     "channels": [
       {
-        "guid": "github-sponsors",
-        "type": "payment-provider",
-        "address": "https://github.com/sponsors/vouch-protocol",
-        "description": "GitHub Sponsors"
-      },
-      {
         "guid": "bank-transfer",
         "type": "bank",
         "description": "Wire transfer (details provided upon request)"
@@ -63,7 +57,6 @@
         "currency": "USD",
         "frequency": "one-time",
         "channels": [
-          "github-sponsors",
           "bank-transfer"
         ]
       }
