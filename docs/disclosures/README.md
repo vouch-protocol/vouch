@@ -32,6 +32,10 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-020](./PAD-020-ratchet-lock-protocol.md) | Capability Acquisition Containment ("Ratchet Lock Protocol") | 2026-02-14 | Published |
 | [PAD-021](./PAD-021-inverse-capability-protocol.md) | Graduated Autonomy via Inverse Capability Scaling | 2026-02-14 | Published |
 | [PAD-022](./PAD-022-swarm-limits-protocol.md) | Agent Population Governance ("Swarm Limits Protocol") | 2026-02-14 | Published |
+| [PAD-023](./PAD-023-content-policy-watermarking.md) | Machine-Readable Content Usage Policies in Audio Watermarks | 2026-02-22 | Published |
+| [PAD-024](./PAD-024-temporal-video-fingerprinting.md) | Temporal Perceptual Hashing of Video for Provenance-Linked Reverse Search | 2026-02-20 | Published |
+| [PAD-025](./PAD-025-edge-first-content-provenance.md) | Edge-First Content Provenance via Client-Side WASM and On-Device ML | 2026-02-28 | Published |
+| [PAD-026](./PAD-026-did-linked-voiceprint-enrollment.md) | DID-Linked Voice Biometric Enrollment with Privacy-Preserving Feature Vectors | 2026-02-28 | Published |
 
 
 ## Format
