@@ -1,0 +1,86 @@
+{
+  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+  "version": "v1.1.0",
+  "entity": {
+    "type": "individual",
+    "role": "owner",
+    "name": "Ramprasad Gaddam",
+    "email": "ramprasad@example.com",
+    "description": "Creator and lead maintainer of Vouch Protocol, the open standard for cryptographic identity and provenance of AI agents. Member of C2PA, W3C, and Linux Foundation. Building the identity layer for the agentic web.",
+    "webpageUrl": {
+      "url": "https://github.com/vouch-protocol/vouch"
+    }
+  },
+  "projects": [
+    {
+      "guid": "vouch-protocol",
+      "name": "Vouch Protocol",
+      "description": "The open standard for AI agent identity, accountability, and content provenance. Vouch Protocol provides Ed25519 cryptographic identity for AI agents via signed JWT tokens (Vouch-Tokens), integrates with C2PA Content Credentials for media provenance, and supports decentralized identifiers (DIDs). It is the SSL certificate for AI agents -- solving 'how we TRUST agents' in the same way SSL solved 'how we trust websites'. Includes Python SDK, TypeScript SDK, Rust core, browser extension, mobile verifier app, MCP integration, and 27 defensive prior art disclosures (PADs) donated to the public domain.",
+      "webpageUrl": {
+        "url": "https://github.com/vouch-protocol/vouch"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/vouch-protocol/vouch"
+      },
+      "licenses": [
+        "spdx:Apache-2.0"
+      ],
+      "tags": [
+        "ai-safety",
+        "cryptography",
+        "identity",
+        "provenance",
+        "c2pa",
+        "did",
+        "ed25519",
+        "content-authenticity",
+        "agent-security",
+        "deepfake-detection"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "github-sponsors",
+        "type": "payment-provider",
+        "address": "https://github.com/sponsors/vouch-protocol",
+        "description": "GitHub Sponsors"
+      },
+      {
+        "guid": "bank-transfer",
+        "type": "bank",
+        "description": "Wire transfer (details provided upon request)"
+      }
+    ],
+    "plans": [
+      {
+        "guid": "annual-sustainer",
+        "status": "active",
+        "name": "Annual sustainability fund",
+        "description": "Covers maintainer time, CI/CD infrastructure, security audits, and cross-platform testing for the Python SDK, TypeScript SDK, Rust core, mobile apps, and browser extension.",
+        "amount": 25000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": [
+          "github-sponsors",
+          "bank-transfer"
+        ]
+      },
+      {
+        "guid": "one-time-grant",
+        "status": "active",
+        "name": "One-time development grant",
+        "description": "Supports specific milestones: W3C specification submission, ONNX voice model optimization, WASM audio watermarking engine, and enterprise HSM integration.",
+        "amount": 10000,
+        "currency": "USD",
+        "frequency": "one-time",
+        "channels": [
+          "github-sponsors",
+          "bank-transfer"
+        ]
+      }
+    ],
+    "history": []
+  }
+}
