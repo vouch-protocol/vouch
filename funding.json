@@ -5,7 +5,7 @@
     "type": "individual",
     "role": "owner",
     "name": "Ramprasad Gaddam",
-    "email": "ramprasad@example.com",
+    "email": "ram@vouch-protocol.com",
     "description": "Creator and lead maintainer of Vouch Protocol, the open standard for cryptographic identity and provenance of AI agents. Member of C2PA, W3C, and Linux Foundation. Building the identity layer for the agentic web.",
     "webpageUrl": {
       "url": "https://github.com/vouch-protocol/vouch"
@@ -55,23 +55,10 @@
     ],
     "plans": [
       {
-        "guid": "annual-sustainer",
+        "guid": "sustainability-grant",
         "status": "active",
-        "name": "Annual sustainability fund",
-        "description": "Covers maintainer time, CI/CD infrastructure, security audits, and cross-platform testing for the Python SDK, TypeScript SDK, Rust core, mobile apps, and browser extension.",
-        "amount": 25000,
-        "currency": "USD",
-        "frequency": "yearly",
-        "channels": [
-          "github-sponsors",
-          "bank-transfer"
-        ]
-      },
-      {
-        "guid": "one-time-grant",
-        "status": "active",
-        "name": "One-time development grant",
-        "description": "Supports specific milestones: W3C specification submission, ONNX voice model optimization, WASM audio watermarking engine, and enterprise HSM integration.",
+        "name": "Open source sustainability grant",
+        "description": "Covers maintainer time, CI/CD infrastructure, security audits, W3C specification work, and cross-platform testing for the Python SDK, TypeScript SDK, Rust core, mobile apps, and browser extension.",
         "amount": 10000,
         "currency": "USD",
         "frequency": "one-time",
