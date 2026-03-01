@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JHPT5HRW2F"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-JHPT5HRW2F');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key Ceremony Documentation | Vouch Protocol</title>
+    <meta name="description"
+        content="Key Ceremony Documentation for the Vouch Protocol C2PA Certificate Authority. ECDSA P-384, Google Cloud KMS HSM.">
+
+    <meta property="og:title" content="Vouch Protocol Key Ceremony">
+    <meta property="og:description"
+        content="Key generation ceremony procedures for the Vouch Protocol C2PA Certificate Authority.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://vouch-protocol.com/key-ceremony.html">
+
+    <link rel="icon" type="image/jpeg" href="assets/vouch-logo-icon.jpg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --success: #10b981;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .gradient-bg {
+            position: fixed; top: 0; left: 0; right: 0; height: 100vh;
+            background: radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+            pointer-events: none; z-index: -1;
+        }
+
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 1.5rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(10, 10, 15, 0.8); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border); z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: flex; align-items: center; gap: 0.5rem; text-decoration: none;
+        }
+
+        .nav-links { display: flex; gap: 2rem; list-style: none; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text-primary); }
+
+        .btn {
+            padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600;
+            text-decoration: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 0 20px var(--accent-glow); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px var(--accent-glow); }
+
+        .doc-hero { padding: 10rem 2rem 4rem; text-align: center; }
+        .doc-hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; margin-bottom: 1rem; }
+        .doc-hero .subtitle { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1.5rem; }
+        .doc-meta { display: flex; gap: 1.5rem; justify-content: center; font-size: 0.8rem; color: var(--text-secondary); }
+
+        .doc-body { max-width: 800px; margin: 0 auto; padding: 0 2rem 6rem; }
+
+        .doc-section {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem;
+            transition: border-color 0.3s;
+        }
+        .doc-section:hover { border-color: rgba(99, 102, 241, 0.2); }
+
+        .doc-section h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+        .doc-section h2 .num { color: var(--accent); margin-right: 0.5rem; }
+
+        .doc-section p {
+            font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8; margin-bottom: 0.75rem;
+        }
+
+        .doc-section ul { list-style: none; margin: 0 0 0.75rem; }
+        .doc-section ul li {
+            font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;
+            padding-left: 1.25rem; position: relative;
+        }
+        .doc-section ul li::before {
+            content: ''; width: 5px; height: 5px; background: var(--accent);
+            border-radius: 50%; position: absolute; left: 0; top: 10px;
+        }
+
+        .doc-section a { color: var(--accent); text-decoration: none; }
+        .doc-section a:hover { text-decoration: underline; }
+
+        .ceremony-step {
+            border-left: 3px solid var(--accent); padding-left: 1.25rem; margin-bottom: 1.25rem;
+        }
+        .ceremony-step h4 { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
+        .ceremony-step p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0; }
+        .step-badge {
+            display: inline-block; background: var(--accent); color: white;
+            font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 0.5rem;
+        }
+
+        .doc-nav {
+            display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; padding: 2rem 0;
+        }
+        .doc-nav a {
+            font-size: 0.8rem; color: var(--text-secondary); text-decoration: none;
+            padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; transition: all 0.2s;
+        }
+        .doc-nav a:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        footer {
+            padding: 4rem 2rem; border-top: 1px solid var(--border); text-align: center;
+        }
+        .footer-links { display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .footer-links a { color: var(--text-secondary); text-decoration: none; }
+        .footer-links a:hover { color: var(--text-primary); }
+        .copyright { color: var(--text-secondary); font-size: 0.875rem; }
+
+        @media (max-width: 768px) {
+            nav { padding: 1rem; }
+            .nav-links { display: none; }
+            .doc-hero { padding-top: 6rem; }
+            .doc-section { padding: 1.5rem; }
+            .doc-meta { flex-direction: column; gap: 0.5rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="gradient-bg"></div>
+
+    <nav>
+        <a href="/" class="logo"><img src="assets/vouch-logo-icon.jpg" alt="Vouch"
+                style="height: 32px; border-radius: 6px;"> Vouch</a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="cps.html">CPS</a></li>
+            <li><a href="https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md">Docs</a></li>
+            <li><a href="https://github.com/vouch-protocol/vouch">GitHub</a></li>
+        </ul>
+        <a href="https://github.com/vouch-protocol/vouch" class="btn btn-primary">Get Started</a>
+    </nav>
+
+    <section class="doc-hero">
+        <h1>Key Ceremony Documentation</h1>
+        <p class="subtitle">Vouch Protocol C2PA Certificate Authority</p>
+        <div class="doc-meta">
+            <span>Version 2.0</span>
+            <span>March 2026</span>
+        </div>
+    </section>
+
+    <div class="doc-body">
+
+        <div class="doc-section">
+            <h2><span class="num">1.</span> Purpose</h2>
+            <p>This document describes the key ceremony procedures for the Vouch Protocol C2PA Certificate Authority
+                (CA). The key ceremony is the process by which the CA root key, intermediate signing keys, and leaf
+                certificates are generated, secured, and activated.</p>
+            <p>CA certificates (Root and Intermediate) use ECDSA P-384 (secp384r1) as required by the C2PA Certificate
+                Policy. Leaf signing certificates use Ed25519 for high-performance content credential signing. All CA
+                key material is generated and stored in Google Cloud KMS HSM (FIPS 140-2 Level 3).</p>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">2.</span> Trust Chain Architecture</h2>
+            <p>The Vouch Protocol C2PA CA operates a three-tier certificate hierarchy:</p>
+            <ul>
+                <li><strong>Vouch Protocol Root CA</strong> (ECDSA P-384) - Keys in Google Cloud KMS HSM, non-exportable protection</li>
+                <li><strong>Vouch Protocol Intermediate CA</strong> (ECDSA P-384) - Signs leaf certificates, keys in Google Cloud KMS HSM</li>
+                <li><strong>Vouch Protocol C2PA Signer</strong> (Ed25519) - Active signing certificate for content credentials</li>
+            </ul>
+            <p>The root CA key is generated in HSM and never leaves the hardware boundary. The intermediate CA key signs
+                leaf certificates. Leaf certificates are used for day-to-day C2PA content credential signing by
+                subscribers such as Cygn (cygn.me).</p>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">3.</span> Key Generation Procedure</h2>
+            <p>The following procedure is followed for each key generation ceremony:</p>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 1</span> Environment Preparation</h4>
+                <p>A clean environment is prepared with Google Cloud SDK, OpenSSL 3.x, and the Vouch Protocol ceremony
+                    script. Authenticated access to Google Cloud KMS is verified. All previous temporary files are
+                    purged. Network connectivity to Google Cloud KMS API is confirmed.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 2</span> Ceremony Participants</h4>
+                <p>Minimum 3 participants assemble: (1) CA Administrator who executes the ceremony script, (2) Witness
+                    who observes and verifies each step, (3) Independent Witness who is not affiliated with the CA
+                    Operator. All participants sign the ceremony attestation document.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 3</span> Root CA Generation (One-time)</h4>
+                <p>An ECDSA P-384 asymmetric signing key is created in Google Cloud KMS with HSM protection level and
+                    DESTROY scheduling. The public key is extracted via KMS API. A self-signed root certificate is
+                    assembled with 20-year validity, basicConstraints CA:TRUE pathlen:2, keyUsage keyCertSign+cRLSign,
+                    and C2PA Certificate Policy OID 1.3.6.1.4.1.62558.1.1. The certificate TBS is signed via KMS
+                    asymmetricSign API.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 4</span> Intermediate CA Generation</h4>
+                <p>An ECDSA P-384 key is created in KMS HSM. A certificate is assembled with 1,827-day (5-year)
+                    validity, basicConstraints CA:TRUE pathlen:0, extendedKeyUsage c2pa-kp-claimSigning
+                    (1.3.6.1.4.1.62558.2.1) + emailProtection. AIA extension includes OCSP responder URL and CA Issuers
+                    URL. CRL Distribution Point is set. The certificate is signed by the Root CA via KMS API.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 5</span> Leaf Certificate Generation</h4>
+                <p>An Ed25519 keypair is generated locally or in HSM. A certificate is assembled with 366-day (AL1) or
+                    90-day (AL2) validity, basicConstraints CA:FALSE, keyUsage digitalSignature+nonRepudiation,
+                    extendedKeyUsage c2pa-kp-claimSigning + emailProtection. C2PA Assurance Level extension
+                    (1.3.6.1.4.1.62558.3) and CPL Record extension (1.3.6.1.4.1.62558.4) are included. Signed by
+                    Intermediate CA via KMS API.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 6</span> PKI Linting</h4>
+                <p>All generated certificates are validated using PKI linting tools (zlint, x509lint, certlint).
+                    C2PA-specific extensions are verified for correct OIDs, criticality flags, and encoding. Results are
+                    recorded in the ceremony attestation.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 7</span> Chain Verification</h4>
+                <p>The full certificate chain is verified: Root CA self-signature, Intermediate signed by Root, Leaf
+                    signed by Intermediate. Each certificate's extensions (basicConstraints, keyUsage, EKU, AIA, CRL,
+                    C2PA OIDs) are independently checked. A test C2PA content credential is signed and verified
+                    end-to-end.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4><span class="step-badge">Step 8</span> Sign-off</h4>
+                <p>All three participants review and sign the ceremony attestation document. The attestation includes
+                    certificate fingerprints, key IDs, verification results, and any deviations. Signed attestation is
+                    archived with 7-year retention.</p>
+            </div>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">4.</span> Key Storage and Protection</h2>
+            <ul>
+                <li><strong>Root CA private key:</strong> Google Cloud KMS HSM, FIPS 140-2 Level 3, non-exportable, EC_SIGN_P384_SHA384</li>
+                <li><strong>Intermediate CA private key:</strong> Google Cloud KMS HSM, FIPS 140-2 Level 3, non-exportable, used only via KMS API</li>
+                <li><strong>Leaf private key:</strong> Subscriber-managed storage (environment variables, local keystore, or HSM)</li>
+                <li><strong>Certificate chain:</strong> Published at <code>/.well-known/c2pa-trust-list</code></li>
+            </ul>
+            <p>All KMS operations require IAM authentication. Key access is restricted to the ceremony service account
+                and authorized signing services. Dual control is enforced for key management operations.</p>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">5.</span> Certificate Lifecycle</h2>
+            <ul>
+                <li><strong>Root CA:</strong> 20-year validity, offline renewal ceremony with independent witness</li>
+                <li><strong>Intermediate CA:</strong> Maximum 1,827 days (5 years), signed by Root during key ceremony</li>
+                <li><strong>Leaf AL1:</strong> Maximum 366 days, annual renewal</li>
+                <li><strong>Leaf AL2:</strong> Maximum 90 days, quarterly renewal</li>
+                <li><strong>Re-authentication:</strong> Maximum 398 days for certificate renewal</li>
+            </ul>
+            <p>Revoked certificates are published in the CRL at <code>/api/v1/c2pa/crl</code> and queryable via OCSP at
+                <code>/api/v1/c2pa/ocsp</code>.</p>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">6.</span> Revocation Procedures</h2>
+            <p>In the event of key compromise or certificate misuse:</p>
+
+            <div class="ceremony-step">
+                <h4>Detection</h4>
+                <p>Key compromise is detected through KMS audit log monitoring, anomalous signing patterns, or external
+                    reports to ca@vouch-protocol.com.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4>Immediate Response</h4>
+                <p>The compromised certificate serial number is added to the revocation list. CRL and OCSP endpoints
+                    immediately reflect the revocation. For KMS-hosted keys, the key version is disabled via Cloud KMS
+                    API.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4>Key Rotation</h4>
+                <p>A new leaf certificate is generated using the existing intermediate CA via KMS API signing. The new
+                    certificate chain is distributed to the subscriber. The old leaf private key is securely deleted.</p>
+            </div>
+
+            <div class="ceremony-step">
+                <h4>Notification</h4>
+                <p>Affected subscribers are notified via email. The trust list at
+                    <code>/.well-known/c2pa-trust-list</code> is updated with the new certificate information.</p>
+            </div>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">7.</span> Audit Controls</h2>
+            <ul>
+                <li>Google Cloud KMS provides built-in audit logging for all key operations</li>
+                <li>KMS audit logs are exported to Cloud Logging with 7-year retention</li>
+                <li>Ceremony artifacts (attestations, PKI lint reports, chain verifications) retained for 7 years</li>
+                <li>Certificate issuance and revocation events logged with operator identity and timestamp</li>
+                <li>CRL and OCSP query logs maintained for compliance reporting</li>
+                <li>C2PA signing operations logged per subscriber with content hash and certificate serial number</li>
+            </ul>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">8.</span> Compliance</h2>
+            <p>The Vouch Protocol C2PA CA operates in accordance with:</p>
+            <ul>
+                <li><strong>C2PA Certificate Policy</strong> (OID: 1.3.6.1.4.1.62558.1.1)</li>
+                <li><strong>C2PA Specification v2.x</strong> - Content Credentials trust model</li>
+                <li><strong>FIPS 140-2 Level 3</strong> - Hardware security module certification (Google Cloud KMS)</li>
+                <li><strong>FIPS 186-4</strong> - Digital Signature Standard (ECDSA P-384)</li>
+                <li><strong>RFC 5280</strong> - Internet X.509 PKI Certificate and CRL Profile</li>
+                <li><strong>RFC 6960</strong> - Online Certificate Status Protocol (OCSP)</li>
+                <li><strong>RFC 8032</strong> - Edwards-Curve Digital Signature Algorithm (Ed25519)</li>
+                <li><strong>RFC 3161</strong> - Internet X.509 PKI Time-Stamp Protocol (via DigiCert TSA)</li>
+            </ul>
+            <p>Vouch Protocol is a member of C2PA, W3C, and the Linux Foundation.</p>
+        </div>
+
+        <div class="doc-section">
+            <h2><span class="num">9.</span> Contact</h2>
+            <ul>
+                <li><strong>CA Operator:</strong> Vouch Protocol (vouch-protocol.com)</li>
+                <li><strong>Platform Operator:</strong> Cygn Weaves (cygn.me)</li>
+                <li><strong>CA Email:</strong> ca@vouch-protocol.com</li>
+                <li><strong>Security Reports:</strong> security@vouch-protocol.com</li>
+                <li><strong>C2PA Conformance:</strong> conformance@c2pa.org</li>
+                <li><strong>CPS:</strong> vouch-protocol.com/cps.html</li>
+                <li><strong>Trust List:</strong> vouch-protocol.com/.well-known/c2pa-trust-list</li>
+            </ul>
+        </div>
+
+        <div class="doc-nav">
+            <a href="cps.html">Certificate Practice Statement</a>
+            <a href="/.well-known/c2pa-trust-list">Trust List</a>
+            <a href="/api/v1/c2pa/crl">CRL</a>
+            <a href="/">Home</a>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="/">Home</a>
+            <a href="cps.html">CPS</a>
+            <a href="key-ceremony.html">Key Ceremony</a>
+            <a href="https://github.com/vouch-protocol/vouch">GitHub</a>
+            <a href="https://discord.gg/VxgYkjdph">Discord</a>
+            <a href="mailto:ca@vouch-protocol.com">Contact</a>
+        </div>
+        <p class="copyright">&copy; 2024-2026 Vouch Protocol Contributors. Apache 2.0 License.</p>
+    </footer>
+</body>
+
+</html>

@@ -20,6 +20,11 @@ zone_name = "vouch-protocol.com"
 pattern = "vouch-protocol.com/api/*"
 zone_name = "vouch-protocol.com"
 
+# C2PA CA endpoints (.well-known)
+[[routes]]
+pattern = "vouch-protocol.com/.well-known/c2pa-*"
+zone_name = "vouch-protocol.com"
+
 [[routes]]
 pattern = "api.vouch-protocol.com/*"
 zone_name = "vouch-protocol.com"
