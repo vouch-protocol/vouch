@@ -403,6 +403,266 @@ async function validateProKey(env, apiKey) {
     return validKeys.includes(apiKey);
 }
 
+// =============================================================================
+// C2PA Certificate Authority Endpoints
+// =============================================================================
+
+// GET /.well-known/c2pa-trust-list
+function handleC2PATrustList() {
+    const trustList = {
+        version: '2.0',
+        name: 'Vouch Protocol C2PA Trust List',
+        description: 'Trust list for the Vouch Protocol C2PA Certificate Authority. Vouch Protocol operates a three-tier PKI with ECDSA P-384 CA certificates and Ed25519 leaf signing certificates.',
+        website: 'https://vouch-protocol.com',
+        cps: 'https://vouch-protocol.com/cps.html',
+        updated: new Date().toISOString(),
+        certificatePolicy: {
+            oid: '1.3.6.1.4.1.62558.1.1',
+            name: 'C2PA Certificate Policy',
+        },
+        trustAnchors: [{
+            name: 'Vouch Protocol Root CA',
+            organization: 'Vouch Protocol',
+            subject: 'CN=Vouch Protocol Root CA,O=Vouch Protocol,C=IN',
+            algorithm: 'ECDSA P-384',
+            keyStorage: 'Google Cloud KMS HSM (FIPS 140-2 Level 3)',
+            validity: '20 years',
+            usage: ['c2pa.signing'],
+            crl: 'https://vouch-protocol.com/api/v1/c2pa/crl',
+            ocsp: 'https://vouch-protocol.com/api/v1/c2pa/ocsp',
+        }],
+        issuingCAs: [{
+            name: 'Vouch Protocol Intermediate CA',
+            organization: 'Vouch Protocol',
+            subject: 'CN=Vouch Protocol Intermediate CA,O=Vouch Protocol,C=IN',
+            algorithm: 'ECDSA P-384',
+            keyStorage: 'Google Cloud KMS HSM (FIPS 140-2 Level 3)',
+            validity: '5 years (1,827 days)',
+            issuer: 'CN=Vouch Protocol Root CA,O=Vouch Protocol,C=IN',
+            extendedKeyUsage: [
+                'c2pa-kp-claimSigning (1.3.6.1.4.1.62558.2.1)',
+                'emailProtection',
+            ],
+        }],
+        signingCertificates: [{
+            name: 'Vouch Protocol C2PA Signer',
+            organization: 'Vouch Protocol',
+            subject: 'CN=Vouch Protocol C2PA Signer,O=Vouch Protocol,C=IN',
+            issuer: 'CN=Vouch Protocol Intermediate CA,O=Vouch Protocol,C=IN',
+            algorithm: 'Ed25519',
+            assuranceLevel: 'AL1 (1.3.6.1.4.1.62558.3.1)',
+            validity: '366 days (AL1) / 90 days (AL2)',
+            usage: ['c2pa.signing', 'c2pa.timestamping'],
+            status: 'active',
+        }],
+        policies: {
+            signatureAlgorithm: 'ECDSA P-384 (CA) + Ed25519 (leaf)',
+            timestampServer: 'http://timestamp.digicert.com',
+            revocationCheck: 'crl+ocsp',
+            certificateLifetime: {
+                rootCA: '20 years',
+                intermediateCA: '1,827 days',
+                leafAL1: '366 days',
+                leafAL2: '90 days',
+            },
+            keyStorage: 'Google Cloud KMS HSM (FIPS 140-2 Level 3)',
+        },
+        conformance: {
+            c2paCertificatePolicy: '1.3.6.1.4.1.62558.1.1',
+            fips: ['FIPS 140-2 Level 3 (KMS HSM)', 'FIPS 186-4 (ECDSA)'],
+            rfc: ['RFC 5280', 'RFC 6960', 'RFC 3161'],
+        },
+    };
+
+    return new Response(JSON.stringify(trustList, null, 2), {
+        status: 200,
+        headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=86400',
+        },
+    });
+}
+
+// GET /api/v1/c2pa/crl
+async function handleC2PACRL(env) {
+    const c2paCrlHeaders = {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'X-CRL-Version': '1',
+        'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Expose-Headers': 'X-CRL-Version',
+    };
+
+    try {
+        const now = new Date();
+        const nextUpdate = new Date(now.getTime() + 86400000);
+
+        // Fetch revoked certs from KV (stored as JSON array)
+        const revokedData = await env.SIGNATURES.get('c2pa:revoked-certs');
+        const revokedCertificates = [];
+
+        if (revokedData) {
+            try {
+                const entries = JSON.parse(revokedData);
+                for (const entry of entries) {
+                    if (entry.serialNumber) {
+                        revokedCertificates.push({
+                            serialNumber: entry.serialNumber,
+                            revocationDate: entry.revokedAt || new Date(0).toISOString(),
+                            reason: entry.reason || 'unspecified',
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('CRL: Failed to parse revoked certs:', e);
+            }
+        }
+
+        const crl = {
+            version: 1,
+            issuer: 'CN=Vouch Protocol Intermediate CA,O=Vouch Protocol,C=IN',
+            thisUpdate: now.toISOString(),
+            nextUpdate: nextUpdate.toISOString(),
+            revokedCertificates,
+        };
+
+        return new Response(JSON.stringify(crl, null, 2), {
+            status: 200,
+            headers: c2paCrlHeaders,
+        });
+    } catch (e) {
+        console.error('CRL endpoint error:', e);
+        return new Response(JSON.stringify({ error: 'Failed to generate CRL' }), {
+            status: 500,
+            headers: c2paCrlHeaders,
+        });
+    }
+}
+
+// Helper: validate hex serial number
+function isValidSerial(serial) {
+    return /^[0-9a-fA-F]+$/.test(serial) && serial.length > 0 && serial.length <= 128;
+}
+
+// Helper: lookup cert revocation status
+async function lookupCertStatus(env, serialNumber) {
+    const now = new Date();
+    const nextUpdate = new Date(now.getTime() + 86400000);
+    const base = {
+        serialNumber,
+        thisUpdate: now.toISOString(),
+        nextUpdate: nextUpdate.toISOString(),
+    };
+
+    const revokedData = await env.SIGNATURES.get('c2pa:revoked-certs');
+    if (!revokedData) {
+        return { ...base, status: 'good' };
+    }
+
+    try {
+        const entries = JSON.parse(revokedData);
+        const normalizedSerial = serialNumber.toLowerCase();
+        for (const entry of entries) {
+            if (entry.serialNumber && entry.serialNumber.toLowerCase() === normalizedSerial) {
+                return {
+                    ...base,
+                    status: 'revoked',
+                    revocationReason: entry.reason || 'unspecified',
+                };
+            }
+        }
+    } catch (e) {
+        console.error('OCSP: Failed to parse revoked certs:', e);
+    }
+
+    return { ...base, status: 'good' };
+}
+
+// POST /api/v1/c2pa/ocsp
+async function handleC2PAOCSPPost(request, env) {
+    const ocspHeaders = {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=60',
+    };
+
+    try {
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+                status: 400,
+                headers: ocspHeaders,
+            });
+        }
+
+        const serial = body.serialNumber;
+        if (!serial || typeof serial !== 'string') {
+            return new Response(JSON.stringify({
+                error: 'serialNumber (hex string) is required in request body',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        if (!isValidSerial(serial)) {
+            return new Response(JSON.stringify({
+                error: 'serialNumber must be a valid hex string (1-128 characters)',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        const response = await lookupCertStatus(env, serial);
+        return new Response(JSON.stringify(response, null, 2), {
+            status: 200,
+            headers: ocspHeaders,
+        });
+    } catch (e) {
+        console.error('OCSP POST error:', e);
+        return new Response(JSON.stringify({ error: 'OCSP lookup failed' }), {
+            status: 500,
+            headers: ocspHeaders,
+        });
+    }
+}
+
+// GET /api/v1/c2pa/ocsp?serial=...
+async function handleC2PAOCSPGet(request, env) {
+    const ocspHeaders = {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=60',
+    };
+
+    try {
+        const url = new URL(request.url);
+        const serial = url.searchParams.get('serial');
+
+        if (!serial) {
+            return new Response(JSON.stringify({
+                error: 'serial query parameter (hex string) is required',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        if (!isValidSerial(serial)) {
+            return new Response(JSON.stringify({
+                error: 'serial must be a valid hex string (1-128 characters)',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        const response = await lookupCertStatus(env, serial);
+        return new Response(JSON.stringify(response, null, 2), {
+            status: 200,
+            headers: ocspHeaders,
+        });
+    } catch (e) {
+        console.error('OCSP GET error:', e);
+        return new Response(JSON.stringify({ error: 'OCSP lookup failed' }), {
+            status: 500,
+            headers: ocspHeaders,
+        });
+    }
+}
+
 // Health check endpoint
 function handleHealth() {
     return new Response(JSON.stringify({
@@ -474,6 +734,26 @@ export default {
             }
         }
 
+        // =============================================================
+        // C2PA CA endpoints (served on vouch-protocol.com)
+        // =============================================================
+        if (path === '/.well-known/c2pa-trust-list' && method === 'GET') {
+            return handleC2PATrustList();
+        }
+
+        if (path === '/.well-known/c2pa-crl' && method === 'GET') {
+            return Response.redirect('https://vouch-protocol.com/api/v1/c2pa/crl', 302);
+        }
+
+        if (path === '/api/v1/c2pa/crl' && method === 'GET') {
+            return handleC2PACRL(env);
+        }
+
+        if (path === '/api/v1/c2pa/ocsp') {
+            if (method === 'POST') return handleC2PAOCSPPost(request, env);
+            if (method === 'GET') return handleC2PAOCSPGet(request, env);
+        }
+
         // Support both /api/* (old) and /* (new api subdomain)
         const apiPath = path.startsWith('/api') ? path : '/api' + path;
 
@@ -511,6 +791,10 @@ export default {
                 'POST /api/paper/register': 'Register a paper signature',
                 'GET /api/paper/verify/:id': 'Verify a paper signature',
                 'GET /api/health': 'Health check',
+                'GET /.well-known/c2pa-trust-list': 'C2PA CA trust list',
+                'GET /api/v1/c2pa/crl': 'Certificate Revocation List',
+                'GET /api/v1/c2pa/ocsp?serial=...': 'OCSP status check (GET)',
+                'POST /api/v1/c2pa/ocsp': 'OCSP status check (POST)',
             },
         }), {
             status: 404,
