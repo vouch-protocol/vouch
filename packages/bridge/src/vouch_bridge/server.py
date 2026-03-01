@@ -37,6 +37,7 @@ import mimetypes
 import os
 import sys
 import tempfile
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -602,6 +603,10 @@ class MediaConsentUI:
 # =============================================================================
 
 
+# Process start time for uptime (seconds since module load)
+_start_time: float = time.monotonic()
+
+
 class StatusResponse(BaseModel):
     """Health check response."""
 
@@ -609,6 +614,7 @@ class StatusResponse(BaseModel):
     version: str
     has_keys: bool
     public_key_fingerprint: Optional[str] = None
+    uptime: int  # Seconds since daemon started
 
 
 class PublicKeyResponse(BaseModel):
@@ -826,11 +832,13 @@ async def get_status():
         except Exception:
             pass
 
+    uptime_seconds = int(time.monotonic() - _start_time)
     return StatusResponse(
         status="ok",
         version="1.0.0",
         has_keys=has_keys,
         public_key_fingerprint=fingerprint,
+        uptime=uptime_seconds,
     )
 
 
