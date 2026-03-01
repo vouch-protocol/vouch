@@ -66,7 +66,7 @@ export type RecordingCallback = (state: RecordingState) => void;
 const MIN_ENROLLMENT_SAMPLES = 3;
 const MIN_RECORDING_DURATION_MS = 2000; // 2 seconds minimum
 const MAX_RECORDING_DURATION_MS = 10000; // 10 seconds maximum
-const DEFAULT_API_BASE = 'https://example.com';
+const DEFAULT_API_BASE = 'https://vouch-protocol.com';
 
 const STORAGE_KEYS = {
     VOICE_STATUS: 'vouch_voice_id_status',
