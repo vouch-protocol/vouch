@@ -108,6 +108,7 @@ vouch-bridge = "vouch.bridge.server:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["vouch*"]
+exclude = ["vouch.pro", "vouch.pro.*"]
 
 [tool.black]
 line-length = 100

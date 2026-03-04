@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-03-03
+
+### Added
+- C2PA Certificate Authority infrastructure
+- Multi-layer sonic watermark embedding with Hamming(7,4) error correction
+- Psychoacoustic masking for frequency-adaptive watermark amplitude
+- Audio bridge routes for real-time watermarking service
+- Prior art disclosures PAD-028 (cross-modal identity provenance) and PAD-029 (Eldear scam protection)
+
+### Changed
+- Bridge server now includes audio watermarking endpoints
+- WASM core upgraded from single-layer to multi-layer spread-spectrum embedding
+- Setuptools config excludes `vouch.pro` from published packages
+
+### Fixed
+- Legacy single-layer fallback preserved for backwards compatibility in watermark detection
+
 ## [1.4.0] - 2026-01-05
 
 ### Added
@@ -87,7 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JWS token format
 - Basic documentation
 
-[Unreleased]: https://github.com/vouch-protocol/vouch/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/vouch-protocol/vouch/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/vouch-protocol/vouch/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/vouch-protocol/vouch/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/vouch-protocol/vouch/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/vouch-protocol/vouch/compare/v1.2.0...v1.3.0
