@@ -37,6 +37,8 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-025](./PAD-025-edge-first-content-provenance.md) | Edge-First Content Provenance via Client-Side WASM and On-Device ML | 2026-02-28 | Published |
 | [PAD-026](./PAD-026-did-linked-voiceprint-enrollment.md) | DID-Linked Voice Biometric Enrollment with Privacy-Preserving Feature Vectors | 2026-02-28 | Published |
 | [PAD-027](./PAD-027-shamir-split-biometric-recovery.md) | Shamir Secret Sharing of Biometric Enrollment Data Bound to DIDs | 2026-02-28 | Published |
+| [PAD-028](./PAD-028-cross-modal-identity-provenance.md) | Unified Cross-Modal Identity-Bound Provenance System | 2026-03-01 | Published |
+| [PAD-029](./PAD-029-eldear-scam-protection-identity.md) | Identity-Verified Communication Shield for Vulnerable Populations | 2026-03-01 | Published |
 
 
 ## Format

@@ -87,9 +87,14 @@ class HealthResponse(BaseModel):
 
 app = FastAPI(
     title="Vouch Bridge",
-    description="C2PA image signing and QR badge overlay service",
+    description="C2PA image signing, QR badge overlay, and audio watermarking service",
     version="1.0.0",
 )
+
+# Register audio routes
+from vouch.bridge.audio_routes import router as audio_router
+
+app.include_router(audio_router)
 
 _settings: Optional[BridgeSettings] = None
 

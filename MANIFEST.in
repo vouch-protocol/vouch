@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+include pyproject.toml
+recursive-include vouch *.py *.pyi *.json *.yaml
+recursive-exclude vouch/pro *
+prune vouch/pro
