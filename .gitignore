@@ -70,3 +70,9 @@ DEVELOPER_CONTEXT.md
 docs/specs/strategy-lfai-and-w3c.md
 docs/specs/w3c-cg-report.md
 docs/specs/ietf-internet-draft.md
+
+# Patent briefs (confidential - do not publish)
+docs/patents/
+
+# AI assistant config
+claude.md
