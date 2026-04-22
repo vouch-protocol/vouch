@@ -247,7 +247,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 - [x] MCP integration
 - [x] LangChain, CrewAI, AutoGPT integrations
 - [x] C2PA Content Credentials integration (image signing & verification)
-- [x] 27 Prior Art Disclosures (CC0 defensive publications)
+- [x] 38 Prior Art Disclosures (CC0 defensive publications)
 - [x] Audio watermarking (Vouch Sonic - spread-spectrum steganography)
 - [x] Voice biometric enrollment (DID-linked voiceprints)
 - [ ] W3C standardization track (in progress)
@@ -302,7 +302,7 @@ We welcome contributions! See [CONTRIBUTING.md](https://github.com/vouch-protoco
 
 ## 📜 Prior Art Disclosures
 
-To ensure ecosystem freedom, we publish **27 defensive prior art disclosures** (CC0 public domain) covering novel methods across cryptographic identity, media provenance, voice biometrics, AI safety, and content authenticity:
+To ensure ecosystem freedom, we publish **38 defensive prior art disclosures** (CC0 public domain) covering novel methods across cryptographic identity, media provenance, voice biometrics, AI safety, and content authenticity:
 
 | ID | Title | Category |
 |----|-------|----------|
@@ -333,5 +333,16 @@ To ensure ecosystem freedom, we publish **27 defensive prior art disclosures** (
 | [PAD-025](docs/disclosures/PAD-025-edge-first-content-provenance.md) | Edge-First Content Provenance via Client-Side WASM | Architecture |
 | [PAD-026](docs/disclosures/PAD-026-did-linked-voiceprint-enrollment.md) | DID-Linked Voice Biometric Enrollment | Voice / Biometrics |
 | [PAD-027](docs/disclosures/PAD-027-shamir-split-biometric-recovery.md) | Shamir Secret Sharing of Biometric Enrollment Data | Recovery / Biometrics |
+| [PAD-028](docs/disclosures/PAD-028-cross-modal-identity-provenance.md) | Unified Cross-Modal Identity-Bound Provenance | Multi-Modal / Identity |
+| [PAD-029](docs/disclosures/PAD-029-eldear-scam-protection-identity.md) | Identity-Verified Communication Shield | Elder Safety / Voice |
+| [PAD-030](docs/disclosures/PAD-030-zk-reputation-portability.md) | Zero-Knowledge Reputation Portability | Privacy / Trust |
+| [PAD-031](docs/disclosures/PAD-031-canary-provenance-honeypots.md) | Adversarial Provenance Honeypots | Adversarial Detection |
+| [PAD-032](docs/disclosures/PAD-032-cryptographic-mortality-protocol.md) | Cryptographic Mortality Protocol | Identity Lifecycle |
+| [PAD-033](docs/disclosures/PAD-033-zk-pq-signature-compression.md) | ZK Proof Compression for Post-Quantum Signatures | Post-Quantum / ZKP |
+| [PAD-034](docs/disclosures/PAD-034-composite-threshold-swarm-consensus.md) | Composite Threshold Aggregation for Swarm Consensus | Post-Quantum / Swarm |
+| [PAD-035](docs/disclosures/PAD-035-async-chunked-edge-pq-signatures.md) | Asynchronous Chunked Verification and Edge PQ Signatures | Post-Quantum / Edge |
+| [PAD-036](docs/disclosures/PAD-036-aggregated-reputation-scoring.md) | Aggregated Reputation Scoring via Verifiable State Receipts | Trust / Enterprise |
+| [PAD-037](docs/disclosures/PAD-037-credential-federation.md) | Cross-Protocol Agent Credential Federation | Identity / Enterprise |
+| [PAD-038](docs/disclosures/PAD-038-agent-capability-discovery.md) | Decentralized Agent Capability Discovery | Discovery / Multi-Agent |
 
 [View all disclosures →](docs/disclosures/README.md)

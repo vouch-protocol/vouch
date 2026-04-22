@@ -39,6 +39,15 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-027](./PAD-027-shamir-split-biometric-recovery.md) | Shamir Secret Sharing of Biometric Enrollment Data Bound to DIDs | 2026-02-28 | Published |
 | [PAD-028](./PAD-028-cross-modal-identity-provenance.md) | Unified Cross-Modal Identity-Bound Provenance System | 2026-03-01 | Published |
 | [PAD-029](./PAD-029-eldear-scam-protection-identity.md) | Identity-Verified Communication Shield for Vulnerable Populations | 2026-03-01 | Published |
+| [PAD-030](./PAD-030-zk-reputation-portability.md) | Zero-Knowledge Reputation Portability for Autonomous Agents | 2026-04-22 | Published |
+| [PAD-031](./PAD-031-canary-provenance-honeypots.md) | Adversarial Provenance Honeypots via Synthetic Canary Identities | 2026-04-22 | Published |
+| [PAD-032](./PAD-032-cryptographic-mortality-protocol.md) | Cryptographic Mortality Protocol for Agent Identity Termination | 2026-04-22 | Published |
+| [PAD-033](./PAD-033-zk-pq-signature-compression.md) | ZK Proof Compression for Post-Quantum Digital Signatures over HTTP | 2026-04-22 | Published |
+| [PAD-034](./PAD-034-composite-threshold-swarm-consensus.md) | Composite Threshold Aggregation for Multi-Agent Swarm Consensus | 2026-04-22 | Published |
+| [PAD-035](./PAD-035-async-chunked-edge-pq-signatures.md) | Asynchronous Chunked Verification and Edge-Optimized PQ Signatures | 2026-04-22 | Published |
+| [PAD-036](./PAD-036-aggregated-reputation-scoring.md) | Aggregated Reputation Scoring via Verifiable State Receipts | 2026-04-22 | Published |
+| [PAD-037](./PAD-037-credential-federation.md) | Cross-Protocol Agent Credential Federation | 2026-04-22 | Published |
+| [PAD-038](./PAD-038-agent-capability-discovery.md) | Decentralized Agent Capability Discovery Protocol | 2026-04-22 | Published |
 
 
 ## Format
