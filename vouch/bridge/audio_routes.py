@@ -36,7 +36,9 @@ from vouch.bridge.config import BridgeSettings, load_settings
 class AudioEmbedRequest(BaseModel):
     """Request body for POST /audio/embed."""
 
-    audio_base64: str = Field(..., description="Base64-encoded audio (WAV/MP3/FLAC/OGG/M4A/AAC/Opus/WebM)")
+    audio_base64: str = Field(
+        ..., description="Base64-encoded audio (WAV/MP3/FLAC/OGG/M4A/AAC/Opus/WebM)"
+    )
     did: str = Field(..., description="DID of the signer")
     display_name: str = Field("", description="Human-readable signer name")
     covenant: Optional[dict] = Field(None, description="VouchCovenant policy dict")
@@ -127,7 +129,7 @@ def _check_auth(authorization: Optional[str]) -> None:
         return
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-    token = authorization[len("Bearer "):]
+    token = authorization[len("Bearer ") :]
     if token != settings.bridge_secret:
         raise HTTPException(status_code=403, detail="Invalid bridge secret")
 
@@ -150,7 +152,7 @@ _AUDIO_MAGIC = [
 def _detect_audio_extension(audio_bytes: bytes) -> str:
     """Detect audio format from magic bytes."""
     for magic, offset, ext in _AUDIO_MAGIC:
-        if audio_bytes[offset: offset + len(magic)] == magic:
+        if audio_bytes[offset : offset + len(magic)] == magic:
             return ext
     # Check for MP4/M4A containers (ftyp box)
     if len(audio_bytes) >= 12 and audio_bytes[4:8] == b"ftyp":
@@ -221,7 +223,9 @@ async def audio_embed(
         return AudioEmbedResponse(success=False, error=f"Audio modules unavailable: {e}")
 
     if not NUMPY_AVAILABLE:
-        return AudioEmbedResponse(success=False, error="NumPy not installed — required for audio watermarking")
+        return AudioEmbedResponse(
+            success=False, error="NumPy not installed — required for audio watermarking"
+        )
 
     # Decode audio
     try:
@@ -309,7 +313,9 @@ async def audio_detect(
         return AudioDetectResponse(success=False, error=f"Audio modules unavailable: {e}")
 
     if not NUMPY_AVAILABLE:
-        return AudioDetectResponse(success=False, error="NumPy not installed — required for detection")
+        return AudioDetectResponse(
+            success=False, error="NumPy not installed — required for detection"
+        )
 
     # Decode audio
     try:
