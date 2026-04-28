@@ -38,8 +38,8 @@ def main() -> None:
     # 3. Issue the credential. Returns a dict you can JSON-serialize.
     credential = signer.sign_credential(
         intent=intent,
-        valid_seconds=300,        # 5-minute validity, default
-        reputation_score=87,      # Optional, [0, 100]
+        valid_seconds=300,  # 5-minute validity, default
+        reputation_score=87,  # Optional, [0, 100]
     )
 
     print("Issued Vouch Credential:")

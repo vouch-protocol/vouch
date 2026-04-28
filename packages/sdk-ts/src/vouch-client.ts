@@ -427,8 +427,15 @@ export class VouchClient {
             // Browser: file is already a Blob
             formData.append('file', file as Blob, filename);
         } else {
-            // Node.js: convert Buffer to Blob
-            const blob = new Blob([file as Buffer], { type: this.getMimeType(filename) });
+            // Node.js: convert Buffer to Blob.
+            // Copy into a fresh ArrayBuffer to satisfy the BlobPart type
+            // contract under newer @types/node typings (which tighten the
+            // ArrayBufferLike relation, allowing SharedArrayBuffer that
+            // BlobPart does not accept).
+            const buf = file as Buffer;
+            const ab = new ArrayBuffer(buf.byteLength);
+            new Uint8Array(ab).set(buf);
+            const blob = new Blob([ab], { type: this.getMimeType(filename) });
             formData.append('file', blob, filename);
         }
 

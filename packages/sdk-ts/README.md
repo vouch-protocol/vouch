@@ -2,201 +2,101 @@
 
 Official TypeScript SDK for the [Vouch Protocol](https://vouch-protocol.com).
 
-A clean, environment-agnostic client library for communicating with the Vouch Bridge Daemon. Works in both **Browser** and **Node.js**.
+The open W3C-track standard for cryptographic identity and provenance of AI agents. Works in both **Browser** and **Node.js**.
 
 ## Installation
 
 ```bash
 npm install @vouch-protocol/sdk
+
+# Optional: for the hybrid post-quantum profile
+npm install @noble/post-quantum
 ```
 
-## Quick Start
+## Two surfaces in one package
+
+This package exports two complementary APIs:
+
+1. **Cryptographic SDK** (v1.0+): issue and verify W3C Verifiable Credentials with W3C Data Integrity proofs (`eddsa-jcs-2022`), Multikey verification methods, and an optional hybrid post-quantum profile (`hybrid-eddsa-mldsa44-jcs-2026`). Use for direct cryptographic agent identity.
+2. **Daemon Client**: a client library for delegating signing operations to a locally-running Vouch Bridge Daemon. Use when key material is centrally managed.
+
+## Quick Start: Cryptographic SDK (v1.0+)
+
+```typescript
+import { Signer, Verifier, generateIdentity } from '@vouch-protocol/sdk';
+
+// Generate a fresh agent identity
+const keys = await generateIdentity('agent.example.com');
+
+// Issue a W3C Verifiable Credential bound to a specific intent
+const signer = new Signer({
+    privateKey: keys.privateKeyJwk,
+    did: keys.did!,
+});
+
+const credential = await signer.signCredential({
+    intent: {
+        action: 'read_database',
+        target: 'users_table',
+        resource: 'https://api.example.com/v1/users',
+    },
+});
+
+// Verify on the receiving side
+const result = await Verifier.verifyCredential(credential, keys.publicKeyJwk);
+if (result.isValid) {
+    console.log('Verified agent:', result.passport!.iss);
+    console.log('Authorized intent:', result.passport!.intent);
+}
+```
+
+## Quick Start: Daemon Client
 
 ```typescript
 import { VouchClient } from '@vouch-protocol/sdk';
 
 const client = new VouchClient();
 
-// Connect to the local daemon
 if (await client.connect()) {
-    console.log('Connected to Vouch Daemon!');
-    
-    // Sign text content
     const result = await client.sign('Hello, World!', { origin: 'my-app' });
     console.log('Signature:', result.signature);
     console.log('DID:', result.did);
 }
 ```
 
-## API Reference
+## Hybrid Post-Quantum Profile
 
-### `new VouchClient(config?)`
-
-Create a new client instance.
+Optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite carries Ed25519 + ML-DSA-44 composite signatures over the same canonical bytes. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines.
 
 ```typescript
-const client = new VouchClient({
-    daemonUrl: 'http://127.0.0.1:21000',  // Default
-    timeout: 5000,                         // Connection timeout (ms)
-    requestTimeout: 120000,                // Request timeout for media (ms)
-});
+import { Signer, generateMLDSA44KeyPair } from '@vouch-protocol/sdk';
+
+const mldsaKeys = await generateMLDSA44KeyPair();
+// ...sign and verify under the hybrid profile...
 ```
 
-### `connect(): Promise<boolean>`
+See the full implementation guide at [docs/hybrid-pq-implementation-guide.md](https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md).
 
-Connect to the Vouch Daemon.
+## What's exported
 
-```typescript
-const connected = await client.connect();
-
-if (connected) {
-    console.log('Ready to sign!');
-} else {
-    console.log('Daemon not running. Please start vouch-bridge.');
-}
-```
-
-### `sign(content, metadata?): Promise<SignResult>`
-
-Sign text content. **Triggers user consent popup.**
-
-```typescript
-try {
-    const result = await client.sign('Hello, World!', {
-        origin: 'my-app',
-    });
-    
-    console.log({
-        signature: result.signature,
-        publicKey: result.public_key,
-        did: result.did,
-        timestamp: result.timestamp,
-        contentHash: result.content_hash,
-    });
-} catch (error) {
-    if (error instanceof UserDeniedSignatureError) {
-        console.log('User clicked Deny in the consent popup');
-    }
-}
-```
-
-### `signBlob(file, filename, metadata?): Promise<MediaSignResult>`
-
-Sign binary files (images, videos, audio, PDFs). **Triggers user consent popup with preview.**
-
-```typescript
-// Browser: from file input
-const input = document.querySelector('input[type="file"]');
-const file = input.files[0];
-
-const result = await client.signBlob(file, file.name, {
-    origin: 'photo-studio',
-});
-
-// Download signed file
-const url = URL.createObjectURL(result.data);
-const a = document.createElement('a');
-a.href = url;
-a.download = result.filename;
-a.click();
-
-// Node.js: from file system
-import { readFileSync, writeFileSync } from 'fs';
-
-const buffer = readFileSync('/path/to/photo.jpg');
-const result = await client.signBlob(buffer, 'photo.jpg');
-
-writeFileSync('/path/to/photo_signed.jpg', result.data);
-```
-
-### `getPublicKey(): Promise<PublicKeyInfo>`
-
-Get the user's public key and DID.
-
-```typescript
-const key = await client.getPublicKey();
-
-console.log({
-    publicKey: key.public_key,
-    did: key.did,              // did:key:z6Mkv...
-    fingerprint: key.fingerprint,
-});
-```
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `isConnected` | `boolean` | Whether connected to daemon |
-| `daemonStatus` | `DaemonStatus \| null` | Last known daemon status |
-
-## Error Handling
-
-```typescript
-import { 
-    VouchClient,
-    UserDeniedSignatureError,
-    DaemonNotAvailableError,
-    NoKeysConfiguredError,
-} from '@vouch-protocol/sdk';
-
-const client = new VouchClient();
-
-try {
-    await client.connect();
-    await client.sign('content');
-} catch (error) {
-    if (error instanceof DaemonNotAvailableError) {
-        console.log('Start the daemon: vouch-bridge');
-    } else if (error instanceof NoKeysConfiguredError) {
-        console.log('Generate keys first: POST /keys/generate');
-    } else if (error instanceof UserDeniedSignatureError) {
-        console.log('User clicked Deny in consent popup');
-    }
-}
-```
-
-## Browser Usage (Non-Module)
-
-```html
-<script src="https://unpkg.com/@vouch-protocol/sdk"></script>
-<script>
-    const client = new VouchClient();
-    
-    client.connect().then(connected => {
-        if (connected) {
-            console.log('Ready!');
-        }
-    });
-</script>
-```
-
-## Environment Support
-
-| Environment | Transport | Notes |
-|-------------|-----------|-------|
-| Browser | `fetch` | Native fetch API |
-| Node.js 18+ | `fetch` | Native fetch API |
-| Node.js 16-17 | `fetch` | Requires `node-fetch` polyfill |
-
-## Requirements
-
-- **Vouch Bridge Daemon** running on `localhost:21000`
-- Node.js 18+ for native fetch (or polyfill for older versions)
-
-## Security
-
-- The SDK communicates only with `localhost` (127.0.0.1)
-- Private keys never leave the daemon's system keyring
-- All signing requests trigger a user consent popup
-- The user sees a preview of what they're signing
+- `Signer`, `Verifier`, `generateIdentity`, credential issuance and verification (v1.0+)
+- `buildVouchCredential`, `VouchCredential`, `Intent`, `DelegationLink`, credential construction primitives
+- `canonicalize`, `canonicalizeToString`, RFC 8785 JCS canonicalization
+- `encodeEd25519Public`, `encodeMLDSA44Public`, `decodeMultikey`, `multikeyAlgorithm`, Multikey verification methods
+- `buildProof`, `verifyProof`, `eddsa-jcs-2022` Data Integrity primitives
+- `buildHybridProof`, `verifyHybridProof`, `generateMLDSA44KeyPair`, hybrid post-quantum primitives
+- `VouchClient` and the daemon client error types, daemon-delegation client
 
 ## License
 
-MIT © Ramprasad Anandam Gaddam
+MIT. See [LICENSE](https://github.com/vouch-protocol/vouch/blob/main/LICENSE) in the monorepo.
 
-## Links
+## Documentation
 
-- [Vouch Protocol](https://vouch-protocol.com)
-- [GitHub](https://github.com/vouch-protocol/vouch)
-- [Documentation](https://github.com/vouch-protocol/vouch#readme)
+- W3C Community Group Report: https://vouch-protocol.com/specs/CG-REPORT/
+- Hybrid Post-Quantum Implementation Guide: https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md
+- Defensive Prior Art Disclosures (CC0): https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures
+
+## Repository
+
+[github.com/vouch-protocol/vouch](https://github.com/vouch-protocol/vouch) (monorepo, this package lives under `packages/sdk-ts/`).

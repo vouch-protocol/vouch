@@ -19,12 +19,7 @@ import pytest
 from vouch import jcs
 
 
-VECTOR_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "test-vectors"
-    / "jcs"
-    / "vectors.json"
-)
+VECTOR_PATH = Path(__file__).resolve().parent.parent / "test-vectors" / "jcs" / "vectors.json"
 
 
 def _load_vectors():

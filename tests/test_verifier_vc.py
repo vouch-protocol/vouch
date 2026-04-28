@@ -145,9 +145,7 @@ def test_verify_credential_rejects_wrong_public_key():
     other = _new_signer("did:web:other.example.com")
     cred = signer.sign_credential(intent=_intent())
 
-    valid, _ = Verifier.verify_credential(
-        cred, public_key=_ed25519_public_from_signer(other)
-    )
+    valid, _ = Verifier.verify_credential(cred, public_key=_ed25519_public_from_signer(other))
     assert valid is False
 
 
@@ -191,15 +189,11 @@ def test_verify_credential_clock_skew_tolerance_applies():
     pub = _ed25519_public_from_signer(signer)
 
     # 30s skew accepts a 20s-expired credential
-    valid_with_skew, _ = Verifier.verify_credential(
-        cred, public_key=pub, clock_skew_seconds=30
-    )
+    valid_with_skew, _ = Verifier.verify_credential(cred, public_key=pub, clock_skew_seconds=30)
     assert valid_with_skew is True
 
     # 5s skew does not
-    valid_no_skew, _ = Verifier.verify_credential(
-        cred, public_key=pub, clock_skew_seconds=5
-    )
+    valid_no_skew, _ = Verifier.verify_credential(cred, public_key=pub, clock_skew_seconds=5)
     assert valid_no_skew is False
 
 
@@ -213,7 +207,6 @@ def test_verify_credential_rejects_missing_resource_binding():
     cred = signer.sign_credential(intent=_intent())
     # Strip the resource field after signing - signature still valid but
     # the structural rule says missing resource MUST be rejected at verify.
-    pub = _ed25519_public_from_signer(signer)
     cred["credentialSubject"]["intent"].pop("resource")
 
     valid, _ = Verifier.verify_credential(cred, public_key=None)

@@ -46,9 +46,7 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Case 1: Valid credential -> verification succeeds, returns Passport.
     # ------------------------------------------------------------------
-    is_valid, passport = Verifier.verify_credential(
-        credential, public_key=public_key
-    )
+    is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
 
     print(f"Case 1 (untampered): valid={is_valid}")
     if passport:
@@ -63,13 +61,9 @@ def main() -> None:
     # Case 2: Tampered credential -> verification fails, no Passport.
     # ------------------------------------------------------------------
     tampered = json.loads(json.dumps(credential))  # deep copy
-    tampered["credentialSubject"]["intent"]["resource"] = (
-        "https://attacker.example.com/api/users"
-    )
+    tampered["credentialSubject"]["intent"]["resource"] = "https://attacker.example.com/api/users"
 
-    is_valid, passport = Verifier.verify_credential(
-        tampered, public_key=public_key
-    )
+    is_valid, passport = Verifier.verify_credential(tampered, public_key=public_key)
     print(f"\nCase 2 (tampered):   valid={is_valid}")
     print(
         "  The proof binds the entire credential including the resource URL."

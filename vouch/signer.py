@@ -153,9 +153,7 @@ class Signer:
         token.add_signature(self._key, None, json_encode(protected_header), None)
         return token.serialize(compact=True)
 
-    def _build_delegation_chain(
-        self, parent_token: str, current_payload: Dict[str, Any]
-    ) -> list:
+    def _build_delegation_chain(self, parent_token: str, current_payload: Dict[str, Any]) -> list:
         """Legacy delegation chain assembly (operates on JWS tokens)."""
         MAX_CHAIN_DEPTH = 5
         try:
@@ -171,9 +169,7 @@ class Signer:
             existing_chain = parent_vouch.get("delegation_chain", [])
 
             if len(existing_chain) >= MAX_CHAIN_DEPTH:
-                raise ValueError(
-                    f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}"
-                )
+                raise ValueError(f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}")
 
             new_link = {
                 "iss": parent_claims.get("iss", ""),
@@ -355,9 +351,7 @@ class Signer:
         parent_chain = parent_subject.get("delegationChain") or []
 
         if len(parent_chain) >= MAX_CHAIN_DEPTH:
-            raise ValueError(
-                f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}"
-            )
+            raise ValueError(f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}")
 
         # Resource-narrowing check (§9.3): child resource must be a sub-resource
         # of (or equal to) the parent's resource.

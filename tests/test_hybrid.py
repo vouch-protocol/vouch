@@ -102,11 +102,14 @@ def test_build_and_verify_hybrid_direct():
     )
     cred["proof"] = proof
 
-    assert data_integrity_hybrid.verify_hybrid_proof(
-        cred,
-        ed25519_public_key=ed_pub,
-        mldsa44_public_key=ml_pub,
-    ) is True
+    assert (
+        data_integrity_hybrid.verify_hybrid_proof(
+            cred,
+            ed25519_public_key=ed_pub,
+            mldsa44_public_key=ml_pub,
+        )
+        is True
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -120,10 +123,7 @@ def test_sign_credential_hybrid_shape():
 
     proof = cred["proof"]
     assert proof["type"] == data_integrity.PROOF_TYPE
-    assert (
-        proof["cryptosuite"]
-        == data_integrity_hybrid.CRYPTOSUITE_HYBRID_EDDSA_MLDSA44
-    )
+    assert proof["cryptosuite"] == data_integrity_hybrid.CRYPTOSUITE_HYBRID_EDDSA_MLDSA44
     assert proof["proofPurpose"] == "assertionMethod"
     assert proof["verificationMethod"] == signer.verification_method_id()
     assert proof["proofValue"].startswith("z")
@@ -210,16 +210,17 @@ def test_hybrid_and_eddsa_jcs_paths_coexist():
     signer = _new_signer()
 
     cred_ed = signer.sign_credential(intent=_intent())
-    assert data_integrity.verify_proof(
-        cred_ed, _ed25519_public_from_signer(signer)
-    ) is True
+    assert data_integrity.verify_proof(cred_ed, _ed25519_public_from_signer(signer)) is True
 
     cred_hyb = signer.sign_credential_hybrid(intent=_intent())
-    assert data_integrity_hybrid.verify_hybrid_proof(
-        cred_hyb,
-        ed25519_public_key=_ed25519_public_from_signer(signer),
-        mldsa44_public_key=signer.public_key_mldsa44(),
-    ) is True
+    assert (
+        data_integrity_hybrid.verify_hybrid_proof(
+            cred_hyb,
+            ed25519_public_key=_ed25519_public_from_signer(signer),
+            mldsa44_public_key=signer.public_key_mldsa44(),
+        )
+        is True
+    )
 
 
 def test_eddsa_jcs_verifier_rejects_hybrid_cryptosuite():

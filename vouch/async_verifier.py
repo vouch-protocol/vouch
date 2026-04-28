@@ -425,9 +425,7 @@ class AsyncVerifier:
             proof = cred.get("proof") or {}
             vm_id = proof.get("verificationMethod") if isinstance(proof, dict) else None
 
-            public_key = await self._resolve_credential_public_key_async(
-                issuer_did, vm_id
-            )
+            public_key = await self._resolve_credential_public_key_async(issuer_did, vm_id)
             if public_key is None:
                 logger.warning(f"Could not resolve Multikey for: {issuer_did}")
                 return False, None
@@ -455,9 +453,7 @@ class AsyncVerifier:
                 from jwcrypto.common import base64url_decode
 
                 if jwk_dict.get("kty") == "OKP" and jwk_dict.get("crv") == "Ed25519":
-                    return Ed25519PublicKey.from_public_bytes(
-                        base64url_decode(jwk_dict["x"])
-                    )
+                    return Ed25519PublicKey.from_public_bytes(base64url_decode(jwk_dict["x"]))
             except Exception:  # pragma: no cover
                 pass
 

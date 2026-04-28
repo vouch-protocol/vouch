@@ -27,10 +27,7 @@ from vouch import data_integrity_hybrid, jcs
 
 
 VECTOR_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "test-vectors"
-    / "hybrid-eddsa-mldsa44"
-    / "vector.json"
+    Path(__file__).resolve().parent.parent / "test-vectors" / "hybrid-eddsa-mldsa44" / "vector.json"
 )
 
 
@@ -58,9 +55,7 @@ def test_hybrid_interop_canonical_digest():
 def test_hybrid_interop_python_verifies_python_signature():
     vec = _load()
 
-    ed_pub = Ed25519PublicKey.from_public_bytes(
-        base64.b64decode(vec["ed25519"]["public_key_b64"])
-    )
+    ed_pub = Ed25519PublicKey.from_public_bytes(base64.b64decode(vec["ed25519"]["public_key_b64"]))
     ml_pub = base64.b64decode(vec["mldsa44"]["public_key_b64"])
 
     ok = data_integrity_hybrid.verify_hybrid_proof(

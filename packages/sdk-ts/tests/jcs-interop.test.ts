@@ -24,6 +24,7 @@ const VECTOR_PATH = path.resolve(
     __dirname,
     '..',
     '..',
+    '..',
     'test-vectors',
     'jcs',
     'vectors.json'
