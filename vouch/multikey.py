@@ -84,6 +84,7 @@ def algorithm_of(multikey: str) -> str:
 
 # ---- base58btc primitive (vendored to avoid a dependency) ----
 
+
 def _b58encode(data: bytes) -> str:
     if not data:
         return ""

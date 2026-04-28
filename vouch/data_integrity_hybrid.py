@@ -53,6 +53,7 @@ def _import_pqcrypto():
     keeps working when the optional dependency is missing."""
     try:
         from pqcrypto.sign import ml_dsa_44  # type: ignore[import-untyped]
+
         return ml_dsa_44
     except ImportError as e:
         raise ImportError(

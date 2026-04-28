@@ -528,8 +528,9 @@ class Verifier:
 
         passport = CredentialPassport(
             sub=subject.get("id", ""),
-            iss=cred.get("issuer", "") if isinstance(cred.get("issuer"), str)
-                else (cred.get("issuer") or [""])[0],
+            iss=cred.get("issuer", "")
+            if isinstance(cred.get("issuer"), str)
+            else (cred.get("issuer") or [""])[0],
             valid_from=cred.get("validFrom", ""),
             valid_until=cred.get("validUntil", ""),
             credential_id=cred.get("id", ""),
@@ -597,9 +598,7 @@ class Verifier:
                 from jwcrypto.common import base64url_decode
 
                 if jwk_dict.get("kty") == "OKP" and jwk_dict.get("crv") == "Ed25519":
-                    return Ed25519PublicKey.from_public_bytes(
-                        base64url_decode(jwk_dict["x"])
-                    )
+                    return Ed25519PublicKey.from_public_bytes(base64url_decode(jwk_dict["x"]))
             except Exception:  # pragma: no cover
                 pass
 

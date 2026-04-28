@@ -34,6 +34,7 @@ const VECTOR_PATH = path.resolve(
     __dirname,
     '..',
     '..',
+    '..',
     'test-vectors',
     'hybrid-eddsa-mldsa44',
     'vector.json'

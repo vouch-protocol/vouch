@@ -13,9 +13,7 @@ VALID_INTENT = {
 
 
 def test_minimal_credential_shape():
-    cred = vc.build_vouch_credential(
-        issuer_did="did:web:agent.example.com", intent=VALID_INTENT
-    )
+    cred = vc.build_vouch_credential(issuer_did="did:web:agent.example.com", intent=VALID_INTENT)
     assert cred["@context"] == [
         "https://www.w3.org/ns/credentials/v2",
         "https://vouch-protocol.com/contexts/v1",
@@ -28,16 +26,12 @@ def test_minimal_credential_shape():
 
 
 def test_credential_id_is_uuid_urn():
-    cred = vc.build_vouch_credential(
-        issuer_did="did:web:agent.example.com", intent=VALID_INTENT
-    )
+    cred = vc.build_vouch_credential(issuer_did="did:web:agent.example.com", intent=VALID_INTENT)
     assert cred["id"].startswith("urn:uuid:")
 
 
 def test_temporal_window_default():
-    cred = vc.build_vouch_credential(
-        issuer_did="did:web:agent.example.com", intent=VALID_INTENT
-    )
+    cred = vc.build_vouch_credential(issuer_did="did:web:agent.example.com", intent=VALID_INTENT)
     assert "validFrom" in cred
     assert "validUntil" in cred
 

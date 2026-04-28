@@ -137,6 +137,4 @@ def _utf16_sort_key(s: str) -> tuple[int, ...]:
     # RFC 8785 §3.2.3: object keys ordered by UTF-16 code-unit lexicographic order.
     # Encode to UTF-16-BE and read as 16-bit code units.
     encoded = s.encode("utf-16-be")
-    return tuple(
-        (encoded[i] << 8) | encoded[i + 1] for i in range(0, len(encoded), 2)
-    )
+    return tuple((encoded[i] << 8) | encoded[i + 1] for i in range(0, len(encoded), 2))
