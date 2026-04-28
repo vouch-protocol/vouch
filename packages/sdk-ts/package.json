@@ -1,6 +1,6 @@
 {
   "name": "@vouch-protocol/sdk",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Official TypeScript SDK for Vouch Protocol - communicate with the Vouch Daemon",
   "keywords": [
     "vouch",

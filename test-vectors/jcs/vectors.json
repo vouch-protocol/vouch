@@ -1,0 +1,87 @@
+{
+  "description": "RFC 8785 JSON Canonicalization Scheme test vectors. All Vouch Protocol implementations (Python, TypeScript, Go) MUST produce byte-identical canonical output for these inputs. Cross-implementation interop is REQUIRED.",
+  "version": "1.0",
+  "spec": "https://www.rfc-editor.org/rfc/rfc8785",
+  "vectors": [
+    {
+      "name": "empty-object",
+      "input": {},
+      "canonical": "{}"
+    },
+    {
+      "name": "empty-array",
+      "input": [],
+      "canonical": "[]"
+    },
+    {
+      "name": "key-sorting",
+      "input": { "b": 1, "a": 2, "c": 3 },
+      "canonical": "{\"a\":2,\"b\":1,\"c\":3}"
+    },
+    {
+      "name": "nested-key-sorting",
+      "input": { "z": { "b": 1, "a": 2 }, "a": { "y": 1, "x": 2 } },
+      "canonical": "{\"a\":{\"x\":2,\"y\":1},\"z\":{\"a\":2,\"b\":1}}"
+    },
+    {
+      "name": "array-preserves-order",
+      "input": [3, 1, 2],
+      "canonical": "[3,1,2]"
+    },
+    {
+      "name": "integer-formatting",
+      "input": { "n": 42 },
+      "canonical": "{\"n\":42}"
+    },
+    {
+      "name": "negative-zero-normalized",
+      "input": { "n": -0 },
+      "canonical": "{\"n\":0}"
+    },
+    {
+      "name": "large-integer",
+      "input": { "n": 1000000 },
+      "canonical": "{\"n\":1000000}"
+    },
+    {
+      "name": "string-with-quote",
+      "input": { "s": "a\"b" },
+      "canonical": "{\"s\":\"a\\\"b\"}"
+    },
+    {
+      "name": "string-with-backslash",
+      "input": { "s": "a\\b" },
+      "canonical": "{\"s\":\"a\\\\b\"}"
+    },
+    {
+      "name": "string-with-newline",
+      "input": { "s": "line1\nline2" },
+      "canonical": "{\"s\":\"line1\\nline2\"}"
+    },
+    {
+      "name": "boolean-and-null",
+      "input": { "t": true, "f": false, "n": null },
+      "canonical": "{\"f\":false,\"n\":null,\"t\":true}"
+    },
+    {
+      "name": "vouch-credential-skeleton",
+      "input": {
+        "@context": ["https://www.w3.org/ns/credentials/v2", "https://vouch-protocol.com/contexts/v1"],
+        "type": ["VerifiableCredential", "VouchCredential"],
+        "issuer": "did:web:agent.example.com",
+        "validFrom": "2026-04-26T10:00:00Z",
+        "validUntil": "2026-04-26T10:05:00Z",
+        "credentialSubject": {
+          "id": "did:web:agent.example.com",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read_database",
+            "target": "users_table",
+            "resource": "https://api.example.com/v1/users"
+          }
+        }
+      },
+      "canonical": "{\"@context\":[\"https://www.w3.org/ns/credentials/v2\",\"https://vouch-protocol.com/contexts/v1\"],\"credentialSubject\":{\"id\":\"did:web:agent.example.com\",\"intent\":{\"action\":\"read_database\",\"resource\":\"https://api.example.com/v1/users\",\"target\":\"users_table\"},\"vouchVersion\":\"1.0\"},\"issuer\":\"did:web:agent.example.com\",\"type\":[\"VerifiableCredential\",\"VouchCredential\"],\"validFrom\":\"2026-04-26T10:00:00Z\",\"validUntil\":\"2026-04-26T10:05:00Z\"}"
+    }
+  ]
+}

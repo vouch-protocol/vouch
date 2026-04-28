@@ -1,19 +1,38 @@
 """
-Vouch Protocol Verifier - Cryptographically verifies Vouch-Tokens.
+Vouch Protocol Verifier.
 
-This module provides verification functionality for the Vouch Protocol,
-validating signatures, timestamps, and extracting claims from tokens.
+Verifies both legacy JWS-format Vouch-Tokens and modern W3C Verifiable
+Credentials with Data Integrity proofs (eddsa-jcs-2022).
+
+Two coexisting verification paths:
+
+    1. Legacy JWS: `Verifier.verify(token, ...)` and `Verifier.check_vouch(token)`.
+       Operates on JWS Compact Serialization strings produced by `Signer.sign()`.
+
+    2. W3C VC: `Verifier.verify_credential(credential, ...)` and
+       `Verifier.check_vouch_credential(credential)`. Operates on credential
+       dicts produced by `Signer.sign_credential()` (see W3C CG Report §8).
+
+Existing callers of the legacy methods continue to work unchanged. New callers
+should prefer the credential methods.
 """
 
 import json
 import time
 import logging
+from datetime import datetime, timezone
 from typing import Tuple, Optional, Dict, Any, Union, List
 from dataclasses import dataclass, field
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PublicKey,
+)
 from jwcrypto import jwk, jws
 from jwcrypto.common import JWException
 import httpx
+
+from . import data_integrity, did_web, multikey
 
 
 logger = logging.getLogger(__name__)
@@ -71,6 +90,54 @@ class VerificationError(Exception):
     """Raised when token verification fails."""
 
     pass
+
+
+@dataclass
+class CredentialDelegationLink:
+    """
+    A single link in a W3C VC delegation chain (W3C CG Report §9.2).
+
+    Distinct shape from the legacy DelegationLink used in JWS-format tokens.
+    """
+
+    issuer: str
+    subject: str
+    intent: Dict[str, Any]
+    valid_from: Optional[str] = None
+    valid_until: Optional[str] = None
+    parent_proof_value: Optional[str] = None
+
+
+@dataclass
+class CredentialPassport:
+    """
+    Verified W3C Verifiable Credential issued under Vouch Protocol v1.0.
+
+    Returned by `Verifier.verify_credential()` and
+    `Verifier.check_vouch_credential()`. Parallel to the legacy `Passport`
+    dataclass; new code should prefer this type.
+
+    Attributes:
+        sub: credentialSubject.id (the agent's DID)
+        iss: issuer (DID that signed the credential)
+        valid_from: ISO 8601 timestamp string
+        valid_until: ISO 8601 timestamp string
+        credential_id: The credential's `id` field (e.g. urn:uuid:...)
+        intent: Intent payload (action, target, resource)
+        reputation_score: Optional self-reported reputation in [0, 100]
+        delegation_chain: Ordered list of delegation links from root to current
+        raw_credential: Full verified credential dict
+    """
+
+    sub: str
+    iss: str
+    valid_from: str
+    valid_until: str
+    credential_id: str
+    intent: Dict[str, Any]
+    raw_credential: Dict[str, Any]
+    reputation_score: Optional[int] = None
+    delegation_chain: List[CredentialDelegationLink] = field(default_factory=list)
 
 
 class Verifier:
@@ -344,3 +411,264 @@ class Verifier:
     def clear_cache(self) -> None:
         """Clear the resolved key cache."""
         self._key_cache.clear()
+
+    # ------------------------------------------------------------------
+    # Modern path: W3C Verifiable Credentials with Data Integrity proofs
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def verify_credential(
+        credential: Union[Dict[str, Any], str],
+        public_key: Optional[Union[Ed25519PublicKey, str]] = None,
+        clock_skew_seconds: int = 30,
+    ) -> Tuple[bool, Optional[CredentialPassport]]:
+        """
+        Verify a W3C Verifiable Credential issued under Vouch Protocol v1.0.
+
+        Performs the full verification flow per W3C CG Report §8.1:
+            1. Parse the credential.
+            2. Verify the Data Integrity proof (eddsa-jcs-2022).
+            3. Validate temporal claims (validFrom, validUntil).
+            4. Validate the required `intent.resource` binding.
+            5. Build a CredentialPassport.
+
+        Args:
+            credential: A Vouch Credential dict OR a JSON-encoded string.
+            public_key: An `Ed25519PublicKey` instance, or a Multikey string,
+                or None. If None, only structural and temporal checks run.
+            clock_skew_seconds: Allowed clock drift for timestamp validation.
+
+        Returns:
+            Tuple of (is_valid, CredentialPassport or None).
+        """
+        if not credential:
+            return False, None
+
+        # Parse if given as a JSON string
+        try:
+            if isinstance(credential, str):
+                cred = json.loads(credential)
+            else:
+                cred = credential
+        except json.JSONDecodeError as e:
+            logger.debug(f"Invalid credential JSON: {e}")
+            return False, None
+
+        if not isinstance(cred, dict):
+            return False, None
+
+        # Verify the Data Integrity proof if a key was provided
+        if public_key is not None:
+            try:
+                resolved = _coerce_ed25519_public_key(public_key)
+                if resolved is None:
+                    logger.debug("Could not coerce public_key to Ed25519PublicKey")
+                    return False, None
+                if not data_integrity.verify_proof(cred, resolved):
+                    logger.debug("Data Integrity proof verification failed")
+                    return False, None
+            except ValueError as e:
+                logger.debug(f"Proof verification raised: {e}")
+                return False, None
+            except InvalidSignature:
+                return False, None
+
+        # Validate temporal claims
+        now = datetime.now(timezone.utc)
+        valid_from = _parse_iso8601(cred.get("validFrom"))
+        valid_until = _parse_iso8601(cred.get("validUntil"))
+
+        if valid_until is None or valid_from is None:
+            logger.debug("Credential missing validFrom or validUntil")
+            return False, None
+
+        skew = clock_skew_seconds
+        if (now - valid_until).total_seconds() > skew:
+            logger.debug("Credential expired")
+            return False, None
+        if (valid_from - now).total_seconds() > skew:
+            logger.debug("Credential not yet valid")
+            return False, None
+
+        # Validate required intent.resource binding (§5.4.1, §8.4)
+        subject = cred.get("credentialSubject") or {}
+        if not isinstance(subject, dict):
+            return False, None
+        intent = subject.get("intent") or {}
+        if not isinstance(intent, dict):
+            return False, None
+        resource = intent.get("resource")
+        if not resource:
+            logger.debug("Credential missing required intent.resource")
+            return False, None
+
+        # Build the CredentialPassport
+        chain = []
+        for raw_link in subject.get("delegationChain", []) or []:
+            try:
+                chain.append(
+                    CredentialDelegationLink(
+                        issuer=raw_link.get("issuer", ""),
+                        subject=raw_link.get("subject", ""),
+                        intent=raw_link.get("intent", {}) or {},
+                        valid_from=raw_link.get("validFrom"),
+                        valid_until=raw_link.get("validUntil"),
+                        parent_proof_value=raw_link.get("parentProofValue"),
+                    )
+                )
+            except Exception as e:  # pragma: no cover
+                logger.debug(f"Invalid delegation link: {e}")
+
+        rep_score = subject.get("reputationScore")
+        if rep_score is not None:
+            try:
+                rep_score = int(rep_score)
+            except (TypeError, ValueError):
+                rep_score = None
+
+        passport = CredentialPassport(
+            sub=subject.get("id", ""),
+            iss=cred.get("issuer", "") if isinstance(cred.get("issuer"), str)
+                else (cred.get("issuer") or [""])[0],
+            valid_from=cred.get("validFrom", ""),
+            valid_until=cred.get("validUntil", ""),
+            credential_id=cred.get("id", ""),
+            intent=intent,
+            raw_credential=cred,
+            reputation_score=rep_score,
+            delegation_chain=chain,
+        )
+
+        return True, passport
+
+    def check_vouch_credential(
+        self,
+        credential: Union[Dict[str, Any], str],
+    ) -> Tuple[bool, Optional[CredentialPassport]]:
+        """
+        Verify a W3C Vouch Credential, resolving the issuer key from trusted
+        roots or via DID resolution (`did:web`).
+
+        Mirrors `check_vouch()` for the modern credential format.
+        """
+        if not credential:
+            return False, None
+
+        try:
+            cred = json.loads(credential) if isinstance(credential, str) else credential
+            if not isinstance(cred, dict):
+                return False, None
+
+            issuer_did = cred.get("issuer")
+            if isinstance(issuer_did, list):
+                issuer_did = issuer_did[0] if issuer_did else ""
+            if not issuer_did:
+                return False, None
+
+            # Determine which verification method the proof points at
+            proof = cred.get("proof") or {}
+            vm_id = proof.get("verificationMethod") if isinstance(proof, dict) else None
+
+            public_key = self._resolve_credential_public_key(issuer_did, vm_id)
+            if public_key is None:
+                logger.warning(f"Could not resolve Multikey/JWK for: {issuer_did}")
+                return False, None
+
+            return Verifier.verify_credential(
+                cred,
+                public_key=public_key,
+                clock_skew_seconds=self._clock_skew,
+            )
+        except Exception as e:
+            logger.debug(f"check_vouch_credential error: {e}")
+            return False, None
+
+    def _resolve_credential_public_key(
+        self,
+        did: str,
+        verification_method_id: Optional[str] = None,
+    ) -> Optional[Ed25519PublicKey]:
+        """Resolve an Ed25519PublicKey for the modern credential path."""
+        # Trusted root override (legacy JWK form is acceptable, we coerce)
+        if did in self._trusted_roots:
+            jwk_obj = self._trusted_roots[did]
+            try:
+                jwk_dict = json.loads(jwk_obj.export_public())
+                from jwcrypto.common import base64url_decode
+
+                if jwk_dict.get("kty") == "OKP" and jwk_dict.get("crv") == "Ed25519":
+                    return Ed25519PublicKey.from_public_bytes(
+                        base64url_decode(jwk_dict["x"])
+                    )
+            except Exception:  # pragma: no cover
+                pass
+
+        if not (self._allow_resolution and did.startswith("did:web:")):
+            return None
+
+        try:
+            doc = did_web.resolve_did_web_sync(did)
+            return doc.get_ed25519_public_key(verification_method_id)
+        except Exception as e:
+            logger.debug(f"DID resolution failed for {did}: {e}")
+            return None
+
+
+# ---------------------------------------------------------------------------
+# Module-private helpers
+# ---------------------------------------------------------------------------
+
+
+def _coerce_ed25519_public_key(
+    public_key: Union[Ed25519PublicKey, str, Dict[str, Any]],
+) -> Optional[Ed25519PublicKey]:
+    """Accept Ed25519PublicKey, Multikey string, or JWK dict/string."""
+    if isinstance(public_key, Ed25519PublicKey):
+        return public_key
+
+    # Multikey string (z-prefixed base58btc)
+    if isinstance(public_key, str) and public_key.startswith("z"):
+        try:
+            alg, raw = multikey.decode(public_key)
+            if alg == "Ed25519":
+                return Ed25519PublicKey.from_public_bytes(raw)
+        except ValueError:
+            return None
+        return None
+
+    # JWK as JSON string or dict
+    jwk_dict: Optional[Dict[str, Any]] = None
+    if isinstance(public_key, str):
+        try:
+            jwk_dict = json.loads(public_key)
+        except json.JSONDecodeError:
+            return None
+    elif isinstance(public_key, dict):
+        jwk_dict = public_key
+
+    if jwk_dict and jwk_dict.get("kty") == "OKP" and jwk_dict.get("crv") == "Ed25519":
+        from jwcrypto.common import base64url_decode
+
+        try:
+            return Ed25519PublicKey.from_public_bytes(base64url_decode(jwk_dict["x"]))
+        except Exception:
+            return None
+
+    return None
+
+
+def _parse_iso8601(value: Optional[str]) -> Optional[datetime]:
+    """Parse W3C VC datetime strings. Returns timezone-aware UTC datetime."""
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        # Accept "...Z" and "...+00:00" forms
+        if value.endswith("Z"):
+            dt = datetime.fromisoformat(value[:-1] + "+00:00")
+        else:
+            dt = datetime.fromisoformat(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except (ValueError, TypeError):
+        return None

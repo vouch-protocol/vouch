@@ -16,9 +16,17 @@ from jwcrypto import jwk, jws
 from jwcrypto.common import JWException
 import httpx
 
-from vouch.verifier import Passport, VerificationError
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+from vouch.verifier import (
+    Passport,
+    CredentialPassport,
+    VerificationError,
+    Verifier,
+)
 from vouch.cache import CacheInterface, MemoryCache
 from vouch.nonce import NonceTrackerInterface, MemoryNonceTracker
+from vouch import did_web
 
 
 logger = logging.getLogger(__name__)
@@ -368,3 +376,98 @@ class AsyncVerifier:
     def stats(self) -> Dict[str, int]:
         """Return verification statistics."""
         return self._stats.copy()
+
+    # ------------------------------------------------------------------
+    # Modern path: W3C Verifiable Credentials with Data Integrity proofs
+    # ------------------------------------------------------------------
+
+    async def verify_credential(
+        self,
+        credential,
+        public_key=None,
+    ) -> Tuple[bool, Optional[CredentialPassport]]:
+        """
+        Verify a W3C Vouch Credential. The cryptographic check is delegated to
+        the synchronous `Verifier.verify_credential`, since Ed25519 verification
+        is fast and CPU-bound (offloading to a thread adds more overhead than
+        it saves). DID resolution is async.
+
+        See `Verifier.verify_credential` for argument semantics.
+        """
+        return Verifier.verify_credential(
+            credential,
+            public_key=public_key,
+            clock_skew_seconds=self._clock_skew,
+        )
+
+    async def check_vouch_credential(
+        self,
+        credential,
+    ) -> Tuple[bool, Optional[CredentialPassport]]:
+        """
+        Async equivalent of `Verifier.check_vouch_credential`. Resolves the
+        issuer's Multikey via async did:web resolution and the local cache.
+        """
+        if not credential:
+            return False, None
+
+        try:
+            cred = json.loads(credential) if isinstance(credential, str) else credential
+            if not isinstance(cred, dict):
+                return False, None
+
+            issuer_did = cred.get("issuer")
+            if isinstance(issuer_did, list):
+                issuer_did = issuer_did[0] if issuer_did else ""
+            if not issuer_did:
+                return False, None
+
+            proof = cred.get("proof") or {}
+            vm_id = proof.get("verificationMethod") if isinstance(proof, dict) else None
+
+            public_key = await self._resolve_credential_public_key_async(
+                issuer_did, vm_id
+            )
+            if public_key is None:
+                logger.warning(f"Could not resolve Multikey for: {issuer_did}")
+                return False, None
+
+            return Verifier.verify_credential(
+                cred,
+                public_key=public_key,
+                clock_skew_seconds=self._clock_skew,
+            )
+        except Exception as e:
+            logger.debug(f"check_vouch_credential error: {e}")
+            return False, None
+
+    async def _resolve_credential_public_key_async(
+        self,
+        did: str,
+        verification_method_id: Optional[str] = None,
+    ) -> Optional[Ed25519PublicKey]:
+        """Async resolve Ed25519 public key from did:web for VC verification."""
+        # Trusted root override
+        if did in self._trusted_roots:
+            jwk_obj = self._trusted_roots[did]
+            try:
+                jwk_dict = json.loads(jwk_obj.export_public())
+                from jwcrypto.common import base64url_decode
+
+                if jwk_dict.get("kty") == "OKP" and jwk_dict.get("crv") == "Ed25519":
+                    return Ed25519PublicKey.from_public_bytes(
+                        base64url_decode(jwk_dict["x"])
+                    )
+            except Exception:  # pragma: no cover
+                pass
+
+        if not (self._allow_resolution and did.startswith("did:web:")):
+            return None
+
+        try:
+            # Async DID resolution using vouch.did_web helpers
+            doc = await did_web.resolve_did_web(did, timeout=self._http_timeout)
+            return doc.get_ed25519_public_key(verification_method_id)
+        except Exception as e:
+            logger.debug(f"Async DID resolution failed for {did}: {e}")
+            return None

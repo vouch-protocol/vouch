@@ -1,0 +1,29 @@
+{
+  "description": "Notes on how vector.json was constructed. Implementations validating against vector.json should NOT regenerate from these notes; instead they should verify the signed_credential field in vector.json directly using the published public keys (ed25519.public_key_b64, mldsa44.public_key_b64). The seed metadata below is informational only.",
+  "ed25519_seed_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE=",
+  "ed25519_seed_note": "The Ed25519 seed used in vector.json is the canonical 32-byte value with only the final byte set to 1, chosen for deterministic reproducibility across reference implementations. The corresponding public key is recorded in vector.json under ed25519.public_key_b64.",
+  "mldsa44_keypair_note": "The ML-DSA-44 keypair in vector.json was generated via FIPS 204 ML-DSA.KeyGen with a deterministic seed. Implementations may regenerate by deriving from the same seed, or simply verify against the included public_key_b64.",
+  "issuer_did": "did:web:test.example.com",
+  "verification_method_id": "did:web:test.example.com#key-1",
+  "credential_id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+  "valid_from": "2026-04-26T10:00:00Z",
+  "valid_until": "2026-04-26T10:05:00Z",
+  "intent": {
+    "action": "read_database",
+    "target": "users_table",
+    "resource": "https://api.example.com/v1/users"
+  },
+  "implementation_test_procedure": [
+    "1. Parse vector.json. Extract signed_credential.",
+    "2. Remove proof.proofValue from a deep copy of signed_credential.",
+    "3. JCS-canonicalize the resulting object. SHA-256 the result.",
+    "4. Confirm SHA-256 matches expected_canonical_sha256_b64.",
+    "5. Decode proof.proofValue from multibase z-prefix base58btc.",
+    "6. Split the decoded payload at byte 64. First 64 bytes = Ed25519 sig. Remaining 2,420 bytes = ML-DSA-44 sig.",
+    "7. Verify Ed25519 sig against ed25519.public_key_b64 over the SHA-256 digest from step 3.",
+    "8. Verify ML-DSA-44 sig against mldsa44.public_key_b64 over the SHA-256 digest from step 3.",
+    "9. Both verifications MUST succeed for the credential to be considered valid under the hybrid profile.",
+    "10. Tamper test: change any byte of credentialSubject.intent.resource, repeat steps 2-8. Both signatures MUST fail."
+  ],
+  "verification_modes_supported": ["A: classical-only (Ed25519 alone)", "B: post-quantum-only (ML-DSA-44 alone)", "C: both required (default for regulated deployments)"]
+}
