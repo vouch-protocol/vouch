@@ -78,6 +78,70 @@ class DIDDocument:
                 return vm.public_key_jwk
         return None
 
+    def get_public_key_multibase(self, key_id: Optional[str] = None) -> Optional[str]:
+        """
+        Get a Multikey (multibase + multicodec) public key string from the document.
+
+        This is the verification-method format used by W3C Data Integrity
+        (`eddsa-jcs-2022`). Algorithm-agnostic across Ed25519, ML-DSA, etc.
+        See W3C CG Report §4.3.
+
+        Args:
+            key_id: Optional specific key ID to find. If None, returns first
+                Multikey verification method available.
+
+        Returns:
+            The `publicKeyMultibase` string (z-prefixed base58btc) or None.
+        """
+        for vm in self.verification_methods:
+            if key_id and vm.id != key_id:
+                continue
+            if vm.public_key_multibase and vm.type == "Multikey":
+                return vm.public_key_multibase
+        return None
+
+    def get_ed25519_public_key(self, key_id: Optional[str] = None):
+        """
+        Resolve an Ed25519 public key from this DID Document.
+
+        Tries the modern Multikey format first, then falls back to a JWK
+        verification method if present. This lets a single Verifier handle
+        both legacy (`Ed25519VerificationKey2020` + JWK) and modern (`Multikey`)
+        DID Documents during the v0.x to v1.0 migration.
+
+        Returns:
+            An `Ed25519PublicKey` object, or None if no compatible key is found.
+        """
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+            Ed25519PublicKey,
+        )
+
+        from . import multikey
+
+        # Modern Multikey path
+        mk = self.get_public_key_multibase(key_id)
+        if mk:
+            try:
+                alg, raw = multikey.decode(mk)
+                if alg == "Ed25519":
+                    return Ed25519PublicKey.from_public_bytes(raw)
+            except ValueError:
+                pass
+
+        # Legacy JWK fallback (Ed25519 OKP)
+        jwk_dict = self.get_public_key_jwk(key_id)
+        if jwk_dict and jwk_dict.get("kty") == "OKP" and jwk_dict.get("crv") == "Ed25519":
+            from jwcrypto.common import base64url_decode
+
+            x = jwk_dict.get("x")
+            if x:
+                try:
+                    return Ed25519PublicKey.from_public_bytes(base64url_decode(x))
+                except Exception:
+                    pass
+
+        return None
+
 
 def did_web_to_url(did: str) -> str:
     """

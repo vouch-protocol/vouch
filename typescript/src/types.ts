@@ -2,8 +2,12 @@
  * Vouch Protocol TypeScript SDK Types
  */
 
+import type { VouchCredential, Intent, DelegationLink } from './vc';
+
+export type { VouchCredential, Intent, DelegationLink };
+
 /**
- * Passport returned after successful verification
+ * Passport returned after successful verification of a legacy JWS token.
  */
 export interface Passport {
     /** Subject DID */
@@ -23,7 +27,7 @@ export interface Passport {
 }
 
 /**
- * Result of verification
+ * Result of legacy JWS verification.
  */
 export interface VerificationResult {
     isValid: boolean;
@@ -32,11 +36,48 @@ export interface VerificationResult {
 }
 
 /**
+ * Verified W3C Verifiable Credential under Vouch Protocol v1.0.
+ *
+ * Returned by `Verifier.verifyCredential()` and
+ * `Verifier.checkVouchCredential()`. Parallel to the legacy `Passport`,
+ * new code should prefer this type.
+ */
+export interface CredentialPassport {
+    /** credentialSubject.id, the agent's DID */
+    sub: string;
+    /** issuer DID */
+    iss: string;
+    /** ISO 8601 timestamp string */
+    validFrom: string;
+    /** ISO 8601 timestamp string */
+    validUntil: string;
+    /** Credential id, e.g. "urn:uuid:..." */
+    credentialId: string;
+    /** Intent payload (action, target, resource) */
+    intent: Intent;
+    /** Optional self-reported reputation score in [0, 100] */
+    reputationScore?: number;
+    /** Ordered delegation chain from root to current */
+    delegationChain: DelegationLink[];
+    /** Full verified credential */
+    rawCredential: VouchCredential;
+}
+
+/**
+ * Result of credential verification (modern path).
+ */
+export interface CredentialVerificationResult {
+    isValid: boolean;
+    passport: CredentialPassport | null;
+    error?: string;
+}
+
+/**
  * Configuration for Signer
  */
 export interface SignerConfig {
     /** Private key in JWK format (JSON string or object) */
-    privateKey: string | JsonWebKey;
+    privateKey: string | JWKKey;
     /** DID identifier for the signer */
     did: string;
     /** Default token expiry in seconds (default: 300) */
@@ -48,7 +89,7 @@ export interface SignerConfig {
  */
 export interface VerifierConfig {
     /** Map of trusted DIDs to their public keys */
-    trustedRoots?: Record<string, string | JsonWebKey>;
+    trustedRoots?: Record<string, string | JWKKey>;
     /** Clock skew tolerance in seconds (default: 30) */
     clockSkewSeconds?: number;
 }
@@ -62,4 +103,29 @@ export interface JWKKey {
     x?: string;
     d?: string;
     kid?: string;
+}
+
+/**
+ * Options for issuing a Vouch Credential (modern path).
+ */
+export interface SignCredentialOptions {
+    /** Intent payload. MUST contain action, target, resource. */
+    intent: Intent;
+    /** Override the default validity window in seconds. */
+    validSeconds?: number;
+    /** Optional self-reported reputation score in [0, 100]. */
+    reputationScore?: number;
+    /** Override the issued-at moment (default: now). */
+    validFrom?: Date;
+    /** Optional credential id, defaults to a fresh UUID URN. */
+    credentialId?: string;
+    /**
+     * If provided, this signer is acting as a sub-agent. The issuer extends
+     * the parent's delegation chain with a new link from the parent's
+     * subject to this signer's DID, enforcing depth and resource-narrowing
+     * rules (W3C CG Report §9.3, §9.4).
+     */
+    parentCredential?: VouchCredential;
+    /** Pre-built delegation chain to attach (advanced). */
+    delegationChain?: DelegationLink[];
 }
