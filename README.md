@@ -28,7 +28,7 @@
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
 ```bash
 pip install vouch-protocol
@@ -89,16 +89,16 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 
 **Vouch Protocol** provides cryptographic identity for AI agents, modeled after SSL/TLS:
 
-✅ **W3C Verifiable Credentials** (W3C VC Data Model 2.0)
-✅ **W3C Data Integrity proofs** (`eddsa-jcs-2022` cryptosuite, no JOSE/JWS dependency)
-✅ **Decentralized Identifiers** (`did:web`, `did:key`)
-✅ **Multikey verification methods** (algorithm-agnostic, post-quantum ready)
-✅ **Hybrid post-quantum profile** (optional Ed25519 + ML-DSA-44 composite, `hybrid-eddsa-mldsa44-jcs-2026`)
-✅ **Human-readable JSON** (proof attaches as a sibling object, no Base64-wrapped opaque payload)
-✅ **Framework-agnostic** (works with MCP, LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI, etc.)
-✅ **Cross-language interop** (Python, TypeScript, Go, byte-identical canonical form)
-✅ **Backward-compatible** (legacy v0.x JWS API still supported during deprecation window)
-✅ **Open source** (Apache 2.0 license; CC0 prior-art portfolio)
+- **W3C Verifiable Credentials** (W3C VC Data Model 2.0)
+- **W3C Data Integrity proofs** (`eddsa-jcs-2022` cryptosuite, no JOSE/JWS dependency)
+- **Decentralized Identifiers** (`did:web`, `did:key`)
+- **Multikey verification methods** (algorithm-agnostic, post-quantum ready)
+- **Hybrid post-quantum profile** (optional Ed25519 + ML-DSA-44 composite, `hybrid-eddsa-mldsa44-jcs-2026`)
+- **Human-readable JSON** (proof attaches as a sibling object, no Base64-wrapped opaque payload)
+- **Framework-agnostic** (works with MCP, LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI)
+- **Cross-language interop** (Python, TypeScript, Go, byte-identical canonical form)
+- **Backward-compatible** (legacy v0.x JWS API still supported during deprecation window)
+- **Open source** (Apache 2.0 license, CC0 prior-art portfolio)
 
 **Think of it as:**
 - SSL certificate = Proves website identity
@@ -259,13 +259,14 @@ def legacy_route(vouch_token: str = Header(alias="Vouch-Token")):
 
 Works with all major AI frameworks out-of-the-box:
 
-- ✅ **Model Context Protocol (MCP)** - Native integration for Claude Desktop & Cursor
-- ✅ **LangChain** - Sign tool calls automatically
-- ✅ **CrewAI** - Multi-agent identity management
-- ✅ **AutoGPT** - Autonomous agent signing
-- ✅ **AutoGen** - Microsoft multi-agent framework
-- ✅ **Google Vertex AI** - Sign function calls
-- ✅ **n8n** - Low-code agent workflows
+- **Model Context Protocol (MCP)**: native integration for Claude Desktop and Cursor
+- **LangChain**: sign tool calls automatically
+- **CrewAI**: multi-agent identity management
+- **AutoGPT**: autonomous agent signing
+- **AutoGen**: Microsoft multi-agent framework
+- **Google Vertex AI**: sign function calls
+- **Google ADK**: native ADK tool integration
+- **n8n**: low-code agent workflows
 
 [See all integrations →](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
 
@@ -273,13 +274,13 @@ Works with all major AI frameworks out-of-the-box:
 
 ## Enterprise Features
 
-- 🔐 **Key Rotation** - Automatic rotating keys for production
-- 🎙️ **Voice AI Signing** - Sign audio frames in real-time
-- ☁️ **Cloud KMS** - AWS KMS, GCP Cloud KMS, Azure Key Vault
-- 📊 **Reputation Scoring** - Track agent behavior over time
-- 🚫 **Revocation Registry** - Blacklist compromised keys
-- ⚡ **Redis Caching** - Production-scale verification
-- 🛡️ **Hybrid Post-Quantum Profile** - Optional Ed25519 + ML-DSA-44 composite signatures (`hybrid-eddsa-mldsa44-jcs-2026`) for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 migration timelines
+- **Key Rotation**: automatic rotating keys for production
+- **Voice AI Signing**: sign audio frames in real-time
+- **Cloud KMS**: AWS KMS, GCP Cloud KMS, Azure Key Vault
+- **Reputation Scoring**: track agent behavior over time
+- **Revocation Registry**: blacklist compromised keys
+- **Redis Caching**: production-scale verification
+- **Hybrid Post-Quantum Profile**: optional Ed25519 + ML-DSA-44 composite signatures (`hybrid-eddsa-mldsa44-jcs-2026`) for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 migration timelines
 
 ### Hybrid Post-Quantum Example
 
@@ -296,7 +297,7 @@ credential = signer.sign_credential_hybrid(intent={
 
 ---
 
-## 🎯 Use Cases
+## Use Cases
 
 ### Financial Services
 ```python
@@ -320,18 +321,20 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 
 ---
 
-## 📚 Documentation
+## Documentation
 
-- 🚀 [Quick Start](https://github.com/vouch-protocol/vouch#quick-start)
-- 🔧 [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
-- 📖 [Protocol Specification](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
-- 🏢 [Enterprise Features](https://github.com/vouch-protocol/vouch#enterprise-features)
-- 🛡️ [Security Best Practices](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
-- ❓ [FAQ](https://github.com/vouch-protocol/vouch/discussions)
+- [Quick Start](https://github.com/vouch-protocol/vouch#quick-start)
+- [W3C Community Group Report (v1.6 normative spec)](https://vouch-protocol.com/specs/CG-REPORT/)
+- [Hybrid Post-Quantum Implementation Guide](https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md)
+- [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
+- [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
+- [Threat Model and Security Considerations](https://github.com/vouch-protocol/vouch/blob/main/docs/THREAT_MODEL.md)
+- [Defensive Prior Art Disclosures (47 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
+- [FAQ and Discussions](https://github.com/vouch-protocol/vouch/discussions)
 
 ---
 
-## 🤝 Community
+## Community
 
 - **Discord** - Ask questions, share use cases → [Join now](https://discord.gg/VxgYkjdph)
 - **GitHub Discussions** - Technical discussions → [Start a discussion](https://github.com/vouch-protocol/vouch/discussions)
@@ -339,36 +342,58 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 
 ---
 
-## 🛣️ Roadmap
+## Roadmap
 
-- [x] Core protocol (Ed25519, JWK, JWT)
-- [x] MCP integration
-- [x] LangChain, CrewAI, AutoGPT integrations
-- [x] C2PA Content Credentials integration (image signing & verification)
-- [x] 38 Prior Art Disclosures (CC0 defensive publications)
-- [x] Audio watermarking (Vouch Sonic - spread-spectrum steganography)
-- [x] Voice biometric enrollment (DID-linked voiceprints)
-- [ ] W3C standardization track (in progress)
+### v1.6 (current release)
+
+- [x] **W3C Verifiable Credentials + Data Integrity** (`eddsa-jcs-2022` cryptosuite)
+- [x] **Multikey verification methods** (algorithm-agnostic, multibase + multicodec)
+- [x] **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`, NIST CNSA 2.0 / NSM-10 aligned)
+- [x] **Three-language reference implementation** (Python, TypeScript, Go) with byte-identical canonical form via RFC 8785 JCS, verified against shared test vectors
+- [x] **W3C CG Report drafted** and submitted to the Credentials Community Group for incubation
+- [x] **47 Prior Art Disclosures** (CC0 defensive publications)
+- [x] Identity Sidecar architecture (LLM-isolated keys)
+- [x] Heartbeat Protocol with adaptive Trust Entropy
+- [x] Resource-bound delegation chains with capability narrowing
+- [x] MCP integration (Claude Desktop, Cursor)
+- [x] Framework adapters (LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI, Google ADK, n8n)
+- [x] C2PA Content Credentials integration
+- [x] Audio watermarking (Vouch Sonic, sub-band steganography)
+- [x] DID-linked voice biometric enrollment
+- [x] Browser extension (Chrome / Edge content signing)
+- [x] GitHub App and Cloudflare Workers verification gateway
+
+### Next (v1.7 and beyond)
+
+- [ ] Independent third-party cryptographic security audit (Trail of Bits / NCC Group / Cure53)
+- [ ] W3C VCWG and DIWG transition (charter or rechartering proposal)
+- [ ] Algorithm Quorum verification (M-of-N cryptosuite diversity, per PAD-046)
+- [ ] Verifiable Delay Function rate-limiting for high-stakes agent actions (per PAD-047)
+- [ ] Cryptographic Weight Binding for model-intrinsic AI identity (per PAD-043)
+- [ ] Ephemeral ZK-State Channels for high-frequency agent-to-agent negotiation (per PAD-044)
+- [ ] Retrieval-anchored proof of non-hallucination (per PAD-045)
+- [ ] Standardized agent ledger metadata schema (per PAD-042)
 - [ ] Edge-first WASM + ONNX client-side processing
-- [ ] Multi-signature support
-- [ ] Hardware key support (YubiKey, etc.)
-- [ ] Browser extension (verify agents in real-time)
+- [ ] Hardware key support (YubiKey, TPM, Secure Enclave)
+- [ ] Native Rust implementation for edge and embedded deployments
 
-[View full roadmap →](https://github.com/vouch-protocol/vouch/issues)
+[View full roadmap and issue tracker →](https://github.com/vouch-protocol/vouch/issues)
 
 ---
 
-## 📜 License
+## License
 
-**Apache License 2.0** - See [LICENSE](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
+**Apache License 2.0**: See [LICENSE](https://github.com/vouch-protocol/vouch/blob/main/LICENSE)
 
 You can use this freely in commercial and open-source projects.
 
-*The Vouch Protocol specification is being developed as a W3C standards track submission. The implementation is also being submitted to the Linux Foundation's AI & Data Foundation (LF AI & Data).*
+The 47 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
+
+*The Vouch Protocol specification is being developed as a W3C standards track submission via the Credentials Community Group. The implementation is also being proposed to the Linux Foundation's AI & Data Foundation.*
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Inspired by:
 - **SSL/TLS** (the gold standard for identity)
@@ -379,26 +404,26 @@ Built by [Ramprasad Gaddam](https://www.linkedin.com/in/rampy) ([Twitter/X](http
 
 ---
 
-## 🚀 Contributing
+## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](https://github.com/vouch-protocol/vouch/blob/main/CONTRIBUTING.md).
+Contributions welcome. See [CONTRIBUTING.md](https://github.com/vouch-protocol/vouch/blob/main/CONTRIBUTING.md).
 
-**Areas where we need help:**
-- [ ] Add integrations (Haystack, Semantic Kernel, etc.)
-- [ ] Improve documentation
-- [ ] Write tutorials
-- [ ] Build examples
-- [ ] Security audits
-
----
-
-**⭐ Star this repo if you find it useful!**
-
-[Star on GitHub](https://github.com/vouch-protocol/vouch) | [Join Discord](https://discord.gg/VxgYkjdph) | [Follow on Twitter](https://x.com/Vouch_Protocol)
+**Areas where help is most useful:**
+- [ ] Additional framework integrations (Haystack, Semantic Kernel, LlamaIndex, others)
+- [ ] Cross-implementation interop test vectors (additional edge cases for JCS, VC, hybrid PQ)
+- [ ] Tutorials and worked examples for regulated-sector deployments
+- [ ] Independent security review and audit
+- [ ] Reference implementations in additional languages (Rust, Java, .NET)
 
 ---
 
-## 📜 Prior Art Disclosures
+**Star this repo if you find it useful.**
+
+[Star on GitHub](https://github.com/vouch-protocol/vouch) | [Join Discord](https://discord.gg/VxgYkjdph) | [Follow on X](https://x.com/Vouch_Protocol)
+
+---
+
+## Prior Art Disclosures
 
 To ensure ecosystem freedom, we publish **38 defensive prior art disclosures** (CC0 public domain) covering novel methods across cryptographic identity, media provenance, voice biometrics, AI safety, and content authenticity:
 
