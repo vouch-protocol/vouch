@@ -829,3 +829,24 @@ Any party attempting to patent the methods described herein after the Prior Art 
 - Vouch Protocol: Prior Art Disclosures PAD-001 (Cryptographic Agent Identity), PAD-005 (Reverse Lookup Registry), PAD-014 (Acoustic Provenance)
 - RFC 7519 (JSON Web Token)
 - Bernstein, D.J. et al. "Ed25519: High-speed high-security signatures" (2012)
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The Temporal Perceptual Hashing protocol described above is independent of
+the specific signature envelope used to record the signing fact in the
+provenance database. This disclosure additionally covers the embodiment
+where the signing record is a W3C Verifiable Credential secured by a W3C
+Data Integrity proof (`eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026`)
+rather than a JWS compact token.
+
+The temporal-hash side of the protocol (frame sampling, perceptual
+hashing, temporal composition, weighted reverse search, container
+metadata) is unchanged. The W3C Data Integrity embodiment additionally
+allows the stored provenance record to include a JCS-canonicalized
+`credentialSubject` containing the temporal hash plus signer DID, and
+enables byte-identical reproduction of the signed record across Python,
+TypeScript, and Go reference verifiers, which materially strengthens the
+forensic-evidence value of the reverse search match. This is disclosed
+as additional prior art under modern W3C standards.

@@ -374,3 +374,38 @@ The following aspects are disclosed as prior art:
 This document is published as a defensive prior art disclosure under the Apache 2.0 license. The methods and systems described herein are hereby placed into the public domain to prevent patent monopolization. Any party implementing similar functionality after the publication date of this document cannot claim novelty for patent purposes.
 
 **Reference Implementation:** https://github.com/vouch-protocol/vouch
+
+---
+
+## Update (April 27, 2026): JCS Canonicalization Strengthens Determinism
+
+The Composite Threshold Swarm Consensus protocol described above pairs
+threshold-aggregated classical signatures (BLS12-381) with a single
+post-quantum ML-DSA signature for swarm-collective authorization. The
+novel signature-aggregation mechanism is independent of the specific
+serialization format of the payload being co-signed.
+
+This update discloses that when the swarm-collective payload is
+JCS-canonicalized (RFC 8785) prior to BLS aggregation and ML-DSA signing,
+the threshold consensus property gains a determinism guarantee:
+
+- Each swarm member contributing a BLS partial signature is signing a
+  byte-identical canonical input. The aggregated BLS signature is
+  therefore a true threshold signature over a single deterministic
+  message, with no risk of serialization drift causing partial-signature
+  rejection at aggregation time.
+- The single ML-DSA signature produced by the swarm leader is computed
+  over the same byte-identical canonical form that the BLS aggregation
+  attests to, ensuring that classical and post-quantum proofs are bound
+  to the same payload bytes (rather than to differently-serialized
+  variants of the same logical payload).
+- Independent verifiers can confirm both the BLS aggregate and the
+  ML-DSA signature against the same JCS canonical form, eliminating
+  serialization-mismatch failures that would otherwise undermine the
+  composite property.
+
+The originally-claimed Composite Threshold Swarm Consensus mechanism
+remains the disclosed claim. JCS canonicalization is disclosed as a
+strengthening implementation property that closes a serialization-drift
+attack surface in multi-party threshold signature schemes for
+post-quantum agent swarms.

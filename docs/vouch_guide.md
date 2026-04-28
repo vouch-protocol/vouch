@@ -1,5 +1,10 @@
 # The Vouch Protocol: A Comprehensive Guide
 
+> **v1.0 alignment with W3C standards.** This guide reflects the current
+> v1.0 specification which uses W3C Verifiable Credentials secured by W3C
+> Data Integrity proofs (`eddsa-jcs-2022` cryptosuite). The legacy v0.x
+> JWS API is documented in §6 below for backward compatibility.
+
 ## 1. The Problem: The "Wild West" of AI Agents
 
 Imagine you manage a bank account. You hire a human accountant, give them access, and if they steal money, you know exactly who did it. You can fire them, sue them, or revoke their certified accountant status. There is **Identity**, **Reputation**, and **Liability**.
@@ -93,13 +98,57 @@ You might ask, "Why not just use API keys?" or "Why not Blockchain?" Here is the
 - **Security**: Resistant to side-channel attacks.
 - **Size**: Small keys (32 bytes) and signatures (64 bytes). Fits easily in HTTP headers.
 
-### D. JSON Web Tokens (JWS/JWT)
-**Decision**: The "Vouch" itself is a standard JWS (JSON Web Signature).
-**Why**: Interoperability. Every programming language has a JWT library. We didn't want to invent a custom binary format that no one else could read.
+### D. W3C Verifiable Credentials with Data Integrity (v1.0)
+**Decision**: The Vouch credential is a W3C VC secured by a W3C Data
+Integrity proof using the `eddsa-jcs-2022` cryptosuite.
+**Why**:
+- **Standards alignment**: directly on the W3C track, sharing primitives
+  with mainstream verifiable credential ecosystems.
+- **Human-readable JSON**: the credential is auditable without decoding,
+  the proof attaches as a sibling object rather than wrapping the payload
+  in opaque Base64.
+- **Algorithm-agnostic**: Multikey verification methods support Ed25519,
+  ML-DSA-44, and future post-quantum algorithms with no schema change.
 
-### E. Python First, TypeScript Next
-**Decision**: We built the Python SDK first.
-**Why**: Python is the lingua franca of AI (PyTorch, TensorFlow, LangChain). However, we recognized the Agentic Web is also JS/TS-heavy (Vercel AI SDK), so we shipped the TypeScript SDK immediately after (v1.2.0).
+### E. Python First, TypeScript and Go Concurrently
+**Decision**: We maintain Python, TypeScript, and Go implementations in
+parallel.
+**Why**: Python is the lingua franca of AI (PyTorch, TensorFlow,
+LangChain). The TypeScript SDK targets the Vercel AI SDK / browser
+runtimes. The Go sidecar serves high-throughput edge deployments. All
+three implementations share byte-identical JCS canonicalization and pass
+a common interop test vector suite.
+
+### F. Hybrid Post-Quantum as an Optional Profile
+**Decision**: We define `hybrid-eddsa-mldsa44-jcs-2026` as an OPTIONAL
+profile in v1.0 that may become RECOMMENDED for regulated deployments
+in v1.1.
+**Why**: NIST CNSA 2.0 and U.S. NSM-10 require quantum-resistant
+cryptography on phased timelines. Healthcare, banking, and capital
+markets credentials issued today may be litigated decades into the
+future. The hybrid path produces credentials with both an Ed25519 and
+ML-DSA-44 signature over the same canonical form so the credential
+remains valid under either algorithm.
+
+---
+
+## 6. Legacy v0.x JWS API
+
+The legacy JWS path remains operational during the deprecation window so
+existing integrations keep working. New code should prefer
+`Signer.sign_credential()` and `Verifier.verify_credential()`.
+
+```python
+# Legacy JWS path (v0.x)
+token = signer.sign({"action": "read_email"})
+is_valid, passport = Verifier.verify(token, public_key_jwk=public_key)
+```
+
+The migration path is straightforward:
+1. Replace `signer.sign(payload)` with `signer.sign_credential(intent={...})`.
+2. Replace `Verifier.verify(token, public_key_jwk=...)` with `Verifier.verify_credential(credential, public_key=...)`.
+3. Update the intent payload to carry an explicit `resource` URI (REQUIRED in v1.0 per W3C CG Report §5.4.1).
+4. Update DID Documents to use Multikey verification methods (`type: "Multikey"`, `publicKeyMultibase: "z6Mk..."`) instead of legacy JWK.
 
 ---
 

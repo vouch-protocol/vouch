@@ -120,14 +120,32 @@ Types:
 ### Example Code Style
 
 ```python
+def verify_credential(
+    credential: dict[str, Any] | str,
+    public_key: Ed25519PublicKey | str,
+) -> tuple[bool, Optional[CredentialPassport]]:
+    """
+    Verify a v1.0 Vouch Credential (W3C VC + Data Integrity).
+
+    Args:
+        credential: A Vouch Credential object or a JSON-encoded string.
+        public_key: An Ed25519PublicKey, a Multikey string, or a JWK form.
+
+    Returns:
+        Tuple of (is_valid, CredentialPassport or None).
+    """
+    ...
+
+
 def verify_token(token: str, public_key: str) -> tuple[bool, Optional[Passport]]:
     """
-    Verify a Vouch-Token.
-    
+    Verify a legacy v0.x Vouch-Token (JWS Compact). Retained for backward
+    compatibility during the deprecation window.
+
     Args:
         token: The JWS compact serialized token.
         public_key: JWK JSON string of the public key.
-        
+
     Returns:
         Tuple of (is_valid, Passport or None).
     """

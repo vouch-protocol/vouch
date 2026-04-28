@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-04-29
+
+### Added
+
+W3C-track alignment with backward-compatible coexistence of the legacy v0.x JWS path.
+
+- **W3C Verifiable Credentials issuance** (`Signer.sign_credential`): produces a W3C VC Data Model 2.0 credential carrying the agent's intent (`action`, `target`, required `resource`), reputation, and optional delegation chain.
+- **W3C Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (`Verifier.verify_credential`): proof attaches as a sibling object on the credential, no Base64-wrapping of the payload.
+- **JCS canonicalization** (`vouch.jcs`): RFC 8785 implementation. Cross-implementation interop verified against shared test vectors at `test-vectors/jcs/vectors.json`.
+- **Multikey verification methods** (`vouch.multikey`): multibase + multicodec encoding for Ed25519 (`0xed01`) and ML-DSA-44 (`0x1207`). Algorithm-agnostic key resolution via `DIDDocument.get_ed25519_public_key()` (auto-falls-back to legacy JWK).
+- **Hybrid post-quantum profile** (`Signer.sign_credential_hybrid`): optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite. Both Ed25519 and ML-DSA-44 sign the same JCS canonical bytes for graceful verifier downgrade. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines. Requires `pip install vouch-protocol[pq]` for the optional `pqcrypto` dependency.
+- **W3C VC envelope helpers** (`vouch.vc`): `build_vouch_credential`, `build_session_voucher`.
+- **Async verifier credential path** (`AsyncVerifier.verify_credential`, `AsyncVerifier.check_vouch_credential`): mirrors the sync path with async DID resolution.
+- **Three-language interop** with TypeScript (`typescript/`) and Go (`go-sidecar/`) producing byte-identical canonical form.
+- **Three new defensive disclosures** (PAD-039, PAD-040, PAD-041) plus 16 amendments to existing PADs documenting W3C Data Integrity embodiments and JCS-determinism properties.
+
+### Changed
+- `Signer` constructor now derives raw Ed25519 bytes from the JWK seed for the modern Data Integrity path. Existing callers using `Signer.sign()` are unaffected.
+- `did_web.DIDDocument` adds `get_public_key_multibase()` and `get_ed25519_public_key()` helpers.
+
+### Deprecated
+- Legacy v0.x JWS paths (`Signer.sign`, `Verifier.verify`, `Verifier.check_vouch`) remain operational during the deprecation window. New code should prefer the credential methods.
+
 ## [1.5.0] - 2026-03-03
 
 ### Added

@@ -373,3 +373,33 @@ The following aspects are disclosed as prior art:
 This document is published as a defensive prior art disclosure under the Apache 2.0 license. The methods and systems described herein are hereby placed into the public domain to prevent patent monopolization. Any party implementing similar functionality after the publication date of this document cannot claim novelty for patent purposes.
 
 **Reference Implementation:** https://github.com/vouch-protocol/vouch
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment & JCS-Determinism Strengthening
+
+The Credential Federation protocol translates between Vouch credentials
+and legacy enterprise authentication protocols. This disclosure
+additionally covers two refinements arising from the v1.0 specification:
+
+**Embodiment broadening:** The Vouch credential side of the translation
+boundary may be a W3C Verifiable Credential secured by a W3C Data
+Integrity proof (`eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026`) in
+addition to the originally-described JWS form. The Credential Translation
+Engine, Trust Anchor Mapping, and Bidirectional Provenance Preservation
+mechanisms operate identically against either form, since both expose
+the issuer DID, the intent payload, and the temporal claims to the
+translation layer.
+
+**JCS determinism strengthening:** The W3C VC embodiment enables the
+Federation Envelope to preserve the issuer's original signed canonical
+form (the JCS-canonicalized credential bytes) when translating into
+legacy protocols. A legacy verifier receiving an OAuth Bearer token can,
+if it implements the Vouch Federation extension, recover and
+independently verify the original W3C Data Integrity proof against the
+issuer's Multikey verification method, without trusting the Credential
+Translation Engine's serializer. This determinism property strengthens
+the bidirectional provenance preservation claim by eliminating a
+previously-implicit dependency on the federation gateway as a serialization
+oracle. Both refinements are disclosed as additional prior art for the
+same inventive cross-protocol federation mechanism.

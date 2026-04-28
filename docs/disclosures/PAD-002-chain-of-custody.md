@@ -128,3 +128,35 @@ This disclosure establishes prior art for:
 ---
 
 *This document is published as prior art to prevent patent assertion on the described concepts while allowing free use by the community under the Apache 2.0 license.*
+
+---
+
+## Update (April 27, 2026): JCS Canonicalization Strengthens Determinism
+
+The Recursive Delegation mechanism described above achieves
+cryptographic chain-of-custody by composing parent-to-child identity
+attestations such that each link is independently verifiable. The novel
+property of the chain is independent of the specific serialization
+format of each link.
+
+This update discloses that when each delegation link is canonicalized
+via RFC 8785 JSON Canonicalization Scheme (JCS) prior to signing
+(matching the W3C Data Integrity `eddsa-jcs-2022` cryptosuite), the
+chain-of-custody property gains a determinism guarantee:
+
+- Independent verifiers running independent implementations (Python,
+  TypeScript, Go) recompute byte-identical canonical bytes for any
+  given link, producing byte-identical signature inputs.
+- A multi-party verification process (e.g., a quorum of validators
+  cross-checking each other) can therefore reach unanimous agreement on
+  link validity without trusting a specific serializer.
+- Replay or partial extraction attacks against a chain are detectable
+  because any modification of any link's canonical form invalidates the
+  signature deterministically across all verifiers.
+
+This determinism property strengthens the non-obvious nature of the
+recursive delegation mechanism by eliminating a previously-implicit
+dependency on a normative serializer. The original chain-of-custody
+mechanism remains the disclosed claim; the JCS-canonicalized form is
+disclosed as a strengthening implementation detail covering multi-party
+verification scenarios.

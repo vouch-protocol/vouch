@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-This document specifies the technical architecture for the **Vouch Verifier** mobile application—a cross-platform (iOS/Android) app that functions as:
+This document specifies the technical architecture for the **Vouch Verifier** mobile application, a cross-platform (iOS/Android) app that functions as:
 
 1. **"Shazam for Deepfakes"**: Real-time audio watermark detection using the Vouch Sonic protocol
 2. **Remote Signer**: Hardware-secured signing for desktop Vouch Bridge via QR-linked secure channel

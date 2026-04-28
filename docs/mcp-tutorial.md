@@ -172,6 +172,14 @@ if VOUCH_DID and VOUCH_PRIVATE_KEY:
     signer = Signer(private_key=VOUCH_PRIVATE_KEY, did=VOUCH_DID)
     print(f"✓ Vouch identity loaded: {VOUCH_DID}", file=sys.stderr)
 
+# New v1.0 deployments should prefer the W3C VC + Data Integrity path:
+#     credential = signer.sign_credential(intent={
+#         'action': 'send_email',
+#         'target': f'recipient:{recipient}',
+#         'resource': 'https://mail.example.com/api/send',
+#     })
+# The legacy JWS path used below remains supported during the deprecation window.
+
 
 def handle_request(request):
     """Handle incoming MCP requests with Vouch signing."""

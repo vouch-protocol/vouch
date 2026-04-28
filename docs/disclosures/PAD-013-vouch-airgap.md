@@ -287,3 +287,24 @@ The Vouch AirGap system addresses the fundamental vulnerability of digital signa
 - B. Chen and G. Wornell, "Quantization Index Modulation" (IEEE)
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-012
 - W3C Decentralized Identifiers (DIDs) v1.0
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The Air-Gap protocol described above can transmit any cryptographic
+identity proof over the analog channel; the original disclosure used JWS
+compact tokens as the encoded payload. This disclosure additionally
+covers the embodiment where the encoded payload is a W3C Verifiable
+Credential carrying a W3C Data Integrity proof (`eddsa-jcs-2022` or
+`hybrid-eddsa-mldsa44-jcs-2026`).
+
+The substantive Air-Gap novelty is unchanged: spread-spectrum watermarking,
+ultrasonic data beacons, psychoacoustic masking, Zero-Network Handshake,
+Liveness Anchors, and Acoustic PKI. The W3C Data Integrity embodiment
+benefits the Air-Gap protocol specifically because the canonical form
+(JCS) is byte-identical across implementations, enabling a receiving
+device that decodes the audio stream to verify the credential against
+either Python, TypeScript, or Go reference implementations without
+serialization-mismatch failures. This is disclosed as additional prior
+art for the Air-Gap protocol under modern W3C standards.

@@ -317,3 +317,26 @@ This disclosure describes a voice biometric enrollment and verification system t
 **License:** This disclosure is published under Creative Commons CC0 1.0 Universal (Public Domain Dedication). It is released as defensive prior art to prevent patent monopolization of the described techniques. Anyone is free to implement, modify, and extend this system without restriction.
 
 **Prior Art Declaration:** This document establishes prior art effective February 28, 2026, under 35 U.S.C. Section 102(a)(1) and equivalent international provisions.
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The voiceprint-enrollment protocol described above can issue any form of
+cryptographic proof of voice ownership; the original disclosure used a
+Vouch-Token (Ed25519 JWT). This disclosure additionally covers the
+embodiment where the proof issued upon successful voice verification is a
+W3C Verifiable Credential of type `VouchCredential` plus a custom
+`VoiceOwnershipCredential` type, secured by a W3C Data Integrity proof
+(`eddsa-jcs-2022` cryptosuite, optionally
+`hybrid-eddsa-mldsa44-jcs-2026`).
+
+The voice-biometric novel elements remain unchanged: multi-sample
+centroid averaging, cosine similarity verification, embedding type
+migration (DSP -> ECAPA-TDNN), privacy by construction (raw audio never
+stored), DID-binding. In the W3C Data Integrity embodiment, the issued
+credential's `credentialSubject` carries the verified voiceprint hash and
+the DID, with `validUntil` controlling the expiry of the voice-ownership
+attestation, while the `proof` object provides the same Ed25519
+non-repudiation. The W3C-aligned form is disclosed as additional prior
+art for the same inventive voice-enrollment mechanism.

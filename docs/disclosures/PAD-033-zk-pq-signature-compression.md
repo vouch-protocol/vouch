@@ -355,3 +355,25 @@ The following aspects are disclosed as prior art:
 This document is published as a defensive prior art disclosure under the Apache 2.0 license. The methods and systems described herein are hereby placed into the public domain to prevent patent monopolization. Any party implementing similar functionality after the publication date of this document cannot claim novelty for patent purposes.
 
 **Reference Implementation:** https://github.com/vouch-protocol/vouch
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The ZK-SNARK compression mechanism for post-quantum digital signatures
+described above is most directly applicable to JWS Compact Serialization
+where header-size constraints are most acute. This disclosure
+additionally covers the embodiment where the compressed signature appears
+inside a W3C Data Integrity proof object attached to a W3C Verifiable
+Credential, with the credential transmitted as the HTTP request body
+(`application/vouch+credential+json`).
+
+Specifically, the embodiment defines a cryptosuite identifier
+`zksnark-mldsa44-jcs-2026` whose `proofValue` encodes a Groth16 or PLONK
+proof asserting the existence of a valid ML-DSA-44 signature over the
+JCS-canonicalized credential under the public key referenced by
+`verificationMethod`. The compression ratio, sidecar isolation, witness
+generation, and stateless HTTP property are unchanged from the original
+disclosure. The W3C Data Integrity embodiment is disclosed as additional
+prior art for the same inventive ZK-compression mechanism, broadening
+the defensive coverage to W3C VC-bound deployments.

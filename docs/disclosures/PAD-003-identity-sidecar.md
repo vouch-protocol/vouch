@@ -122,3 +122,27 @@ This disclosure precludes patents on:
 ---
 
 *This document is published as prior art to prevent patent assertion on the described concepts while allowing free use by the community under the Apache 2.0 license.*
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The Identity Sidecar pattern is algorithm-agnostic: the property being
+disclosed is the architectural separation between the stochastic LLM
+("Brain") and the deterministic signing process ("Passport"), regardless
+of the specific cryptographic envelope produced.
+
+This disclosure additionally covers the embodiment where the Sidecar
+issues W3C Verifiable Credentials secured by W3C Data Integrity proofs
+(`eddsa-jcs-2022` cryptosuite, optionally `hybrid-eddsa-mldsa44-jcs-2026`)
+in lieu of the originally-described JWS Compact tokens. The novel
+LLM-isolation property is preserved verbatim: the LLM submits an intent
+to the Sidecar, the Sidecar validates against a deterministic policy, and
+the Sidecar returns a signed Vouch Credential. Private keys remain
+isolated from the LLM context window in either embodiment.
+
+The W3C Data Integrity embodiment additionally enables the LLM to forward
+the resulting credential as the HTTP request body (rather than a header),
+which removes a header-size constraint relevant to the hybrid post-quantum
+embodiment. This is disclosed as additional prior art for the same
+inventive sidecar architecture.

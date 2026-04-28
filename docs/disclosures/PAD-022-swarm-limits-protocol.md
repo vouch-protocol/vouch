@@ -2024,3 +2024,34 @@ The protocol's core insight is that **individual safety does not imply collectiv
 - PAD-019: Method for Transparent Agent-to-Agent Communication with Collusion Detection ("Glass Channel Protocol")
 - PAD-020: Method for Capability Acquisition Containment via Cryptographic Manifest Governance ("Ratchet Lock Protocol")
 - PAD-021: Graduated Autonomy Scaling via Inverse Capability Correlation ("Inverse Capability Protocol")
+
+---
+
+## Update (April 27, 2026): JCS Canonicalization Strengthens Determinism
+
+The Swarm Limits Protocol described above enforces population caps,
+spawn-rate limits, and lifecycle transitions on agent fleets. The novel
+mechanism for federated swarm-state agreement is independent of the
+specific serialization format of swarm-state assertions.
+
+This update discloses that when swarm-state snapshots (population
+counts, spawn timestamps, lifecycle transitions) are JCS-canonicalized
+(RFC 8785) prior to signing by any swarm node, the multi-node consensus
+property gains a determinism guarantee:
+
+- Each node in a federated swarm computes a byte-identical canonical
+  form of the swarm state, enabling content-addressed cross-checking
+  (each node can verify it is reasoning over the same state as its
+  peers by comparing canonical-form hashes, no trusted oracle required).
+- Detection of policy violations (population cap exceeded, spawn rate
+  exceeded, illegitimate lifecycle transition) produces byte-identical
+  evidence that any node can independently verify and forward to
+  governance.
+- The fleet-level reputation aggregation property inherits the same
+  determinism, allowing reputation scores to be reproducibly recomputed
+  by any validator examining the same canonical inputs.
+
+The originally-claimed Swarm Limits mechanism remains the disclosed
+claim. JCS canonicalization is disclosed as a strengthening
+implementation property that enables federated swarm governance without
+a trusted central serializer.

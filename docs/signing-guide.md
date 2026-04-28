@@ -96,3 +96,25 @@ A: Currently text only. PDF support is coming soon.
 1. [Install the Browser Extension](https://chrome.google.com/webstore)
 2. [Read the Technical Papers](/docs/disclosures/)
 3. [Join the Community](https://github.com/vouch-protocol/vouch)
+
+---
+
+## Signing AI Agent Actions (v1.0)
+
+If you are signing autonomous AI agent actions (not human content), use
+the v1.0 W3C VC + Data Integrity API instead:
+
+```python
+from vouch import Signer
+
+signer = Signer(private_key=key, did='did:web:agent.example.com')
+credential = signer.sign_credential(intent={
+    'action': 'submit_claim',
+    'target': 'claim:42',
+    'resource': 'https://payer.example.com/api/claims/42',
+})
+```
+
+For the full agent-identity guide, see
+[The Vouch Protocol: A Comprehensive Guide](./vouch_guide.md) and the
+[W3C CG Report](https://vouch-protocol.com/specs/CG-REPORT/).

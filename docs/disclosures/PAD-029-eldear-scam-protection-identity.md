@@ -202,3 +202,22 @@ The following aspects are disclosed as prior art:
 This document is published as a defensive prior art disclosure under the Apache 2.0 license. The methods and systems described herein are hereby placed into the public domain to prevent patent monopolization. Any party implementing similar functionality after the publication date of this document cannot claim novelty for patent purposes.
 
 **Reference Implementation:** https://github.com/vouch-protocol/vouch
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The Communication Shield protocol verifies caller identity by requiring
+the caller to present a cryptographic Decentralized Identifier signed
+with Ed25519. This disclosure additionally covers the embodiment where
+the caller's identity proof is a W3C Verifiable Credential secured by a
+W3C Data Integrity proof (`eddsa-jcs-2022` or
+`hybrid-eddsa-mldsa44-jcs-2026`) rather than a JWS-format token.
+
+The three-layer shield architecture (DID verification, voice biometric
+matching, AI-generated speech detection) is unchanged. The W3C Data
+Integrity embodiment additionally allows the shield to verify credentials
+issued by enterprise verifiers (banks, healthcare providers) that adopt
+the W3C VC standard, expanding interoperability without changing the
+shield's user-facing trust indicator. This is disclosed as additional
+prior art for the same identity-verified communication shield mechanism.
