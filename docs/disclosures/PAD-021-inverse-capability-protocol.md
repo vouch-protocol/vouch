@@ -1688,3 +1688,36 @@ The core principle is simple: **power without verified alignment demands maximum
 - PAD-016: Method for Continuous Trust Maintenance via Dynamic Credential Renewal ("The Heartbeat Protocol")
 - PAD-017: Method for Cryptographic Proof of Reasoning with Adaptive Commitment Depth ("Proof of Reasoning Protocol")
 - PAD-020: Method for Irreversible Capability Declaration via Ratchet Lock ("The Ratchet Lock Protocol")
+
+---
+
+## Update (April 27, 2026): JCS Canonicalization Strengthens Determinism
+
+The Inverse Capability Protocol described above implements graduated
+autonomy scaling such that capabilities can only be narrowed (never
+broadened) along a delegation chain. The novel mechanism is independent
+of the specific serialization format of capability assertions.
+
+This update discloses that when capability assertions and the resource
+URIs they constrain are JCS-canonicalized (RFC 8785) prior to signing,
+the inverse-capability property gains a determinism guarantee:
+
+- The resource-narrowing rule is evaluated against the canonical form
+  of the resource URI, which is byte-identical across independent
+  verifiers. A child agent's claim that its resource scope is a
+  sub-resource of the parent's resource scope is therefore decidable
+  without ambiguity, even if intermediate processing has reordered or
+  re-quoted the surrounding JSON.
+- An autonomy-scaling decision made by a Policy Validator over a
+  JCS-canonicalized capability assertion is reproducible by any other
+  validator examining the same chain, eliminating a class of disputes
+  arising from serialization differences.
+- The monotonic non-broadening property is enforceable across implementation
+  boundaries: Python, TypeScript, and Go reference implementations of
+  the resource-narrowing check produce byte-identical decisions on the
+  same input.
+
+The originally-claimed Inverse Capability mechanism remains the disclosed
+claim. JCS canonicalization is disclosed as a strengthening
+implementation property that enables capability evaluation across
+heterogeneous validators without serialization disputes.

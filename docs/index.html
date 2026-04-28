@@ -384,25 +384,24 @@
     </nav>
 
     <section class="hero">
-        <div class="hero-badge">🚀 <span>v1.4.0</span> — SSH Signing & Supply Chain Security</div>
+        <div class="hero-badge">🚀 <span>v1.4.0</span>: W3C VC + Data Integrity, Hybrid Post-Quantum</div>
         <h1>The Identity Layer for the Agentic Web</h1>
         <p class="hero-subtitle">
-            Cryptographic identity for AI agents. One command to sign your code, secure your supply chain, and build
-            trust.
+            W3C-aligned cryptographic identity for AI agents. Verifiable Credentials with Data Integrity proofs,
+            optional hybrid Ed25519 + ML-DSA-44 post-quantum profile.
         </p>
         <div class="hero-cta">
             <a href="#install" class="btn btn-primary">📦 Install Now</a>
+            <a href="https://vouch-protocol.com/specs/CG-REPORT/" class="btn btn-secondary">📄 Read the W3C Spec</a>
             <a href="https://github.com/vouch-protocol/vouch" class="btn btn-secondary">⭐ Star on GitHub</a>
         </div>
 
         <div class="code-block">
-            <pre><span class="comment"># One command to secure your git commits</span>
+            <pre><span class="comment"># W3C VC + Data Integrity in 4 lines</span>
 $ pip install vouch-protocol
-$ <span class="function">vouch git init</span>
-
-<span class="comment"># All commits now show ✅ Verified on GitHub</span>
-$ git commit -m <span class="string">"Secure commit"</span>
-<span class="comment"># → Signed with Vouch-DID: did:vouch:9f85a3...</span></pre>
+$ <span class="function">signer = Signer(private_key=key, did=<span class="string">'did:web:agent.example.com'</span>)</span>
+$ <span class="function">cred = signer.sign_credential</span>(intent={<span class="string">'action'</span>: <span class="string">'read_db'</span>, <span class="string">'target'</span>: <span class="string">'users'</span>, <span class="string">'resource'</span>: url})
+<span class="comment"># → Returns a W3C VC with eddsa-jcs-2022 Data Integrity proof</span></pre>
         </div>
     </section>
 
@@ -442,6 +441,16 @@ $ git commit -m <span class="string">"Secure commit"</span>
                 <h3>Framework Integrations</h3>
                 <p>Works with LangChain, CrewAI, AutoGPT, MCP, and more. Meet developers where they are.</p>
             </div>
+            <div class="feature-card">
+                <div class="feature-icon">📐</div>
+                <h3>W3C-Aligned</h3>
+                <p>v1.0 builds on W3C Verifiable Credentials, Data Integrity (<code>eddsa-jcs-2022</code>), DIDs, and Multikey. No JOSE, no Base64-wrapped opaque payloads.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Hybrid Post-Quantum</h3>
+                <p>Optional <code>hybrid-eddsa-mldsa44-jcs-2026</code> cryptosuite carries both Ed25519 and ML-DSA-44 signatures, aligning with NIST CNSA 2.0 / NSM-10 migration timelines.</p>
+            </div>
         </div>
     </section>
 
@@ -479,7 +488,7 @@ $ git commit -m <span class="string">"Secure commit"</span>
                 <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">January 10, 2026 •
                     3 min read</div>
                 <h3>Ambient Verification: Trust at a Glance</h3>
-                <p>Making signature verification invisible. See a ✅ as you browse—zero effort required.</p>
+                <p>Making signature verification invisible. See a ✅ as you browse, zero effort required.</p>
                 <a href="blog/ambient-verification-browser.html"
                     style="color: var(--accent); text-decoration: none; font-weight: 500;">Read more →</a>
             </div>

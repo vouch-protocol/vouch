@@ -249,6 +249,44 @@
         </div>
 
         <div class="demo-section">
+            <h2>🤖 Sign an AI Agent Action (v1.0)</h2>
+            <p>The same protocol secures AI agent actions with W3C Verifiable Credentials and Data Integrity proofs (<code>eddsa-jcs-2022</code>):</p>
+
+            <div class="signed-block" style="white-space: pre-wrap;">{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://vouch-protocol.com/contexts/v1"
+  ],
+  "id": "urn:uuid:550e8400-e29b-41d4-a716-446655440000",
+  "type": ["VerifiableCredential", "VouchCredential"],
+  "issuer": "did:web:agent.example.com",
+  "validFrom": "2026-04-26T10:00:00Z",
+  "validUntil": "2026-04-26T10:05:00Z",
+  "credentialSubject": {
+    "id": "did:web:agent.example.com",
+    "vouchVersion": "1.0",
+    "intent": {
+      "action": "read_database",
+      "target": "users_table",
+      "resource": "https://api.example.com/v1/users"
+    }
+  },
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-04-26T10:00:00Z",
+    "verificationMethod": "did:web:agent.example.com#key-1",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z3FXQjecWufY46..."
+  }
+}</div>
+
+            <div class="note">
+                <strong>📐 Standards-aligned:</strong> The credential is human-readable JSON. The proof attaches as a sibling object, not as a Base64-wrapped opaque payload. Optionally upgradable to a hybrid Ed25519 + ML-DSA-44 post-quantum signature.
+            </div>
+        </div>
+
+        <div class="demo-section">
             <h2>🚀 Try It Yourself</h2>
             <p>Here's how to sign your own content:</p>
 

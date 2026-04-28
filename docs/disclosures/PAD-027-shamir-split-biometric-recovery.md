@@ -313,3 +313,23 @@ This disclosure describes a method for bundling an Ed25519 private key and a voi
 **License:** This disclosure is published under Creative Commons CC0 1.0 Universal (Public Domain Dedication). It is released as defensive prior art to prevent patent monopolization of the described techniques. Anyone is free to implement, modify, and extend this system without restriction.
 
 **Prior Art Declaration:** This document establishes prior art effective February 28, 2026, under 35 U.S.C. Section 102(a)(1) and equivalent international provisions.
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The Shamir-Split Biometric Recovery protocol bundles the user's Ed25519
+private key together with a voice biometric centroid into a single
+identity bundle that is then secret-shared. The bundle's serialization
+format is independent of the cryptographic envelope used elsewhere in
+the protocol; the original disclosure used JWK as the key-encoding form.
+
+This disclosure additionally covers the embodiment where the bundled
+private-key encoding is the W3C Multikey format (multibase + multicodec,
+algorithm-agnostic), enabling the same Shamir-Split bundle structure to
+recover Ed25519 keys today, ML-DSA-44 keys under the hybrid post-quantum
+profile, or future post-quantum algorithms with no change to the bundle
+schema or the secret-sharing mechanism. The Shamir threshold parameters,
+AES-256-GCM share encryption, PBKDF2 key derivation, and combined
+biometric-plus-key recovery property are unchanged. This is disclosed
+as additional prior art under modern W3C standards.

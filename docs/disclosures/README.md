@@ -48,7 +48,47 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-036](./PAD-036-aggregated-reputation-scoring.md) | Aggregated Reputation Scoring via Verifiable State Receipts | 2026-04-22 | Published |
 | [PAD-037](./PAD-037-credential-federation.md) | Cross-Protocol Agent Credential Federation | 2026-04-22 | Published |
 | [PAD-038](./PAD-038-agent-capability-discovery.md) | Decentralized Agent Capability Discovery Protocol | 2026-04-22 | Published |
+| [PAD-039](./PAD-039-jcs-deterministic-multi-party-trust-state.md) | Cross-Implementation Deterministic Multi-Party Trust State via JCS-Canonicalized Verifiable Credentials | 2026-04-27 | Published |
+| [PAD-040](./PAD-040-hybrid-composite-signature-same-canonical-bytes.md) | Hybrid Composite Signature Bound to Same Canonical Bytes (Ed25519 + ML-DSA-44 over JCS) | 2026-04-27 | Published |
+| [PAD-041](./PAD-041-multikey-algorithm-agnostic-verification.md) | Algorithm-Agnostic Verification Method Resolution via Multikey Multicodec Discrimination | 2026-04-27 | Published |
+| [PAD-042](./PAD-042-standardized-metadata-schema-agent-ledger.md) | Standardized Metadata Schema for AI Agent Ledger Signatures | 2026-04-29 | Published |
+| [PAD-043](./PAD-043-cryptographic-weight-binding.md) | Cryptographic Weight Binding for Model-Intrinsic AI Identity | 2026-04-29 | Published |
+| [PAD-044](./PAD-044-ephemeral-zk-state-channels.md) | Ephemeral ZK-State Channels for Agentic Layer 2 Scalability | 2026-04-29 | Published |
+| [PAD-045](./PAD-045-proof-of-non-hallucination-retrieval-anchoring.md) | Proof of Non-Hallucination via Cryptographic Retrieval Anchoring | 2026-04-29 | Published |
+| [PAD-046](./PAD-046-algorithm-quorum-cryptosuite-diversity.md) | Algorithm Quorum Verification via M-of-N Cryptosuite Diversity | 2026-04-29 | Published |
+| [PAD-047](./PAD-047-vdf-rate-limited-agent-actions.md) | Verifiable Delay Functions for Cryptographic Rate-Limiting of Autonomous Agent Actions | 2026-04-29 | Published |
 
+
+## April 2026 Amendment Wave (W3C Data Integrity Alignment)
+
+On April 27, 2026, sixteen previously-published disclosures (PAD-001,
+002, 003, 013, 016, 021, 022, 024, 026, 027, 029, 031, 032, 033, 034,
+037) received clearly-dated `Update` sections appended to the original
+text. The amendments fall into two categories:
+
+**Embodiment broadening:** Ten disclosures that originally named JWS,
+JWT, or JWK as the cryptographic envelope (PAD-001, 003, 013, 024, 026,
+027, 029, 031, 033, 037) had W3C Data Integrity (`eddsa-jcs-2022` and
+`hybrid-eddsa-mldsa44-jcs-2026`) added as alternative embodiments of the
+same originally-claimed mechanism. The original abstracts, claims, and
+priority dates are preserved unchanged. The new embodiments are
+disclosed prior art under the same Apache 2.0 license.
+
+**JCS determinism strengthening:** Six disclosures whose protocols
+benefit from deterministic byte-identical canonicalization across
+implementations (PAD-002, 016, 021, 022, 032, 034) had a clarifying
+amendment added explaining how RFC 8785 JCS canonicalization
+strengthens the multi-party verification properties of the
+originally-claimed mechanism. The original mechanism remains the
+disclosed claim; the JCS-canonicalized form is disclosed as a
+strengthening implementation property.
+
+PAD-037 received both forms of amendment in a single combined update.
+
+These amendments do not reset the priority dates of the original
+claims. The April 27, 2026 effective date applies only to the
+amendment content and to the three new disclosures (PAD-039, PAD-040,
+PAD-041) filed alongside the amendment wave.
 
 ## Format
 

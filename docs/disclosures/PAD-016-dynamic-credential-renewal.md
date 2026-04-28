@@ -719,3 +719,39 @@ The protocol's core insight is that **identity and behavioral compliance are ins
 - W3C Decentralized Identifiers (DIDs) v1.0
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-015
 - PAD-002: Cryptographic Binding of AI Agent Intent via Recursive Delegation
+
+---
+
+## Update (April 27, 2026): JCS Canonicalization Strengthens Determinism
+
+The Heartbeat Protocol described above maintains continuous trust
+through dynamic credential renewal, behavioral attestation, and Merkle
+action roots. The novel renewal mechanism is independent of the specific
+serialization format of the credential and its behavioral digest.
+
+This update discloses that when the credential and its behavioral
+attestation are JCS-canonicalized (RFC 8785) prior to hashing and
+signing, several determinism properties emerge that strengthen the
+Heartbeat Protocol:
+
+- The Merkle action root computed over a sequence of JCS-canonicalized
+  agent actions is byte-identical when computed by independent verifiers.
+  A federated Validator Quorum (Policy, Behavioral, Budget) can
+  therefore agree on the Merkle root without trusting a specific
+  serializer.
+- The behavioral digest hash, when computed over JCS-canonicalized
+  fields, is reproducible across the agent's own runtime (Python),
+  edge verifiers (TypeScript), and high-throughput validation (Go),
+  enabling cross-implementation agreement on whether a heartbeat is
+  trustworthy.
+- The canary commitment chain (each heartbeat reveals the prior
+  secret and commits to a new one) inherits the same byte-identical
+  reproducibility, which is critical for the cryptographic mortality
+  detection mechanism: a substituted agent cannot produce a
+  canonically-equivalent heartbeat because the canary continuity
+  would be cryptographically detectable across all verifiers.
+
+The originally-claimed Heartbeat mechanism remains the disclosed claim.
+JCS canonicalization is disclosed as a strengthening implementation
+property that enables federated multi-party trust evaluation without a
+trusted central serializer.

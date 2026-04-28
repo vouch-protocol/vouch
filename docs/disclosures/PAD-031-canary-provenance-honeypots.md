@@ -367,3 +367,23 @@ The following aspects are disclosed as prior art:
 This document is published as a defensive prior art disclosure under the Apache 2.0 license. The methods and systems described herein are hereby placed into the public domain to prevent patent monopolization. Any party implementing similar functionality after the publication date of this document cannot claim novelty for patent purposes.
 
 **Reference Implementation:** https://github.com/vouch-protocol/vouch
+
+---
+
+## Update (April 27, 2026): W3C Data Integrity Embodiment
+
+The Adversarial Provenance Honeypots protocol seeds canary identities,
+trap watermarks, and bait credentials into a provenance ecosystem to
+detect adversarial behavior. The novel mechanism is independent of the
+specific credential envelope used; the original disclosure included
+"synthetic JWK keypairs" and "trap credentials" alongside canary DIDs.
+
+This disclosure additionally covers the embodiment where the canary
+credentials are W3C Verifiable Credentials secured by W3C Data Integrity
+proofs (`eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026`), and where
+the trap credential bundle is a `vouch.json` containing a Multikey-format
+private key encoding. The detection logic, the silent alert pipeline, the
+content-stripping traceback property, and the offensive intelligence
+layer are all unchanged. The W3C-aligned canary form is disclosed as
+additional prior art covering the same inventive deception-detection
+mechanism for content provenance.

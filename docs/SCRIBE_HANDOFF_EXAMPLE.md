@@ -44,7 +44,11 @@ index 0000000..345df0d
 +def sign_text(text: str, private_key_jwk: str, did: str) -> str:
 +    """
 +    Sign a text message or prompt using Vouch Identity.
-+    Returns a verifiable JWS token.
++    Returns a verifiable token (legacy JWS form).
++
++    Note: v1.0 deployments should prefer `signer.sign_credential(intent={
++    'action': 'sign_text', 'target': 'message', 'resource': '<uri>'})`,
++    which returns a W3C Verifiable Credential with a Data Integrity proof.
 +    """
 +    try:
 +        signer = Signer(private_key=private_key_jwk, did=did)

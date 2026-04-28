@@ -96,8 +96,10 @@ We have published 15 PADs to protect our IP.
 > **Context Tip**: Only document *stable, primary interfaces* here. Do not document every internal function; let the code speak for itself.
 
 ### `vouch.signer.Signer`
-*   `__init__(private_key_jwk: str, did: str)`: Initialize with Ed25519 key.
-*   `sign(payload: dict) -> str`: Returns JWS Compact Token.
+*   `__init__(private_key: str, did: str)`: Initialize with Ed25519 JWK.
+*   `sign_credential(intent: dict) -> dict`: **(v1.0, preferred)** Returns a W3C Verifiable Credential with a Data Integrity proof (`eddsa-jcs-2022`). Intent must include `action`, `target`, `resource`.
+*   `sign_credential_hybrid(intent: dict) -> dict`: **(v1.0, optional PQ)** Returns a credential with a `hybrid-eddsa-mldsa44-jcs-2026` proof carrying both Ed25519 and ML-DSA-44 signatures.
+*   `sign(payload: dict) -> str`: **(legacy v0.x)** Returns a JWS Compact Token. Retained for backward compatibility.
 
 ### `vouch.media.c2pa.MediaSigner`
 *   `sign_image(source_path, output_path)`: Embeds C2PA manifest.
@@ -131,11 +133,12 @@ We have published 15 PADs to protect our IP.
     *   Handles context menu actions ("Verify Image with Vouch").
     *   Manages local keyring state.
 
-### 📝 Text Signing (`vouch.signer`)
+### 📝 Text & Action Signing (`vouch.signer`)
 **Class**: `Signer`
-*   **Format**: JWS (JSON Web Signature) Compact Serialization (`header.payload.signature`).
-*   **Header**: `{"alg": "EdDSA", "typ": "JWT"}`.
-*   **Usage**: Used for signing usage covenants (PAD-012) and prompt attribution.
+*   **Default v1.0 format**: W3C Verifiable Credential secured by a Data Integrity proof using the `eddsa-jcs-2022` cryptosuite. Human-readable JSON with the proof attached as a sibling object.
+*   **Hybrid PQ profile (optional)**: `hybrid-eddsa-mldsa44-jcs-2026` carrying Ed25519 + ML-DSA-44 composite signatures.
+*   **Legacy v0.x format**: JWS Compact Serialization (`header.payload.signature`) with `{"alg": "EdDSA", "typ": "vouch+jwt"}`. Retained during the deprecation window.
+*   **Usage**: Used for signing agent intents, usage covenants (PAD-012), and prompt attribution.
 
 ### 🔗 Shortlinks & Verification
 **Domain**: `v.vouch-protocol.com` (and `vch.sh`)

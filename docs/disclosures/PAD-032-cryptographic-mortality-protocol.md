@@ -517,3 +517,36 @@ The following aspects are disclosed as prior art:
 This document is published as a defensive prior art disclosure under the Apache 2.0 license. The methods and systems described herein are hereby placed into the public domain to prevent patent monopolization. Any party implementing similar functionality after the publication date of this document cannot claim novelty for patent purposes.
 
 **Reference Implementation:** https://github.com/vouch-protocol/vouch
+
+---
+
+## Update (April 27, 2026): JCS Canonicalization Strengthens Determinism
+
+The Cryptographic Mortality Protocol described above detects agent
+death, substitution, or hijack via canary commitments and revealed-secret
+continuity. The novel mortality-detection mechanism is independent of
+the specific serialization format of the canary commitment messages.
+
+This update discloses that when canary commitment messages and the
+heartbeat envelope they accompany are JCS-canonicalized (RFC 8785)
+prior to signing, the mortality-detection property gains a determinism
+guarantee:
+
+- A substituted agent attempting to forge a continuity-preserving
+  canary chain must produce canonically-equivalent commitment messages
+  whose byte representation is byte-identical to those a legitimate
+  agent would produce. The byte-identical requirement is enforced
+  across independent verifiers without trusting a specific serializer.
+- A cross-implementation verifier set (Python, TypeScript, Go reference
+  implementations) reaches unanimous agreement on whether a canary
+  reveal-and-commit pair is valid, eliminating false positives arising
+  from serialization differences.
+- The forensic property of the protocol, that a broken canary chain is
+  cryptographic evidence of substitution, is reproducible by any third
+  party who can verify the JCS canonical form, expanding the protocol's
+  use in regulated audit and post-incident review contexts.
+
+The originally-claimed Cryptographic Mortality mechanism remains the
+disclosed claim. JCS canonicalization is disclosed as a strengthening
+implementation property that enables federated mortality detection
+without a trusted central serializer.

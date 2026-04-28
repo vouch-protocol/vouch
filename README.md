@@ -42,6 +42,20 @@ git commit -m "Secure commit"
 
 ---
 
+## What's New in v1.0
+
+Vouch Protocol v1.0 aligns directly with the W3C standards track:
+
+- **W3C Verifiable Credentials** as the credential format (replacing v0.x JWS tokens).
+- **W3C Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (no JOSE, no Base64-wrapped payload, the credential remains human-readable JSON).
+- **Multikey verification methods** in DID Documents (algorithm-agnostic, ML-DSA-44 ready).
+- **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`) as an optional add-on for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
+- **Three-way cross-implementation interop** verified across Python, TypeScript, and Go.
+
+The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work unchanged for a deprecation window. New code should prefer `Signer.sign_credential()` and `Verifier.verify_credential()`. See the W3C CG Report at [vouch-protocol.com/specs/CG-REPORT/](https://vouch-protocol.com/specs/CG-REPORT/) for the full specification.
+
+---
+
 > **The Open Standard for AI Agent Identity & Accountability**
 > 
 > When Anthropic launched MCP, they solved "how agents call tools."  
@@ -75,11 +89,16 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 
 **Vouch Protocol** provides cryptographic identity for AI agents, modeled after SSL/TLS:
 
-✅ **Ed25519 signatures** (industry-standard cryptography)  
-✅ **JWK key format** (works with existing infrastructure)  
-✅ **Audit trail** (cryptographic proof of every action)  
-✅ **Framework-agnostic** (works with MCP, LangChain, CrewAI, etc.)  
-✅ **Open source** (Apache 2.0 license)
+✅ **W3C Verifiable Credentials** (W3C VC Data Model 2.0)
+✅ **W3C Data Integrity proofs** (`eddsa-jcs-2022` cryptosuite, no JOSE/JWS dependency)
+✅ **Decentralized Identifiers** (`did:web`, `did:key`)
+✅ **Multikey verification methods** (algorithm-agnostic, post-quantum ready)
+✅ **Hybrid post-quantum profile** (optional Ed25519 + ML-DSA-44 composite, `hybrid-eddsa-mldsa44-jcs-2026`)
+✅ **Human-readable JSON** (proof attaches as a sibling object, no Base64-wrapped opaque payload)
+✅ **Framework-agnostic** (works with MCP, LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI, etc.)
+✅ **Cross-language interop** (Python, TypeScript, Go, byte-identical canonical form)
+✅ **Backward-compatible** (legacy v0.x JWS API still supported during deprecation window)
+✅ **Open source** (Apache 2.0 license; CC0 prior-art portfolio)
 
 **Think of it as:**
 - SSL certificate = Proves website identity
@@ -91,20 +110,50 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 
 ### The Workflow
 
-![Vouch Protocol Workflow](docs/images/how-it-works.png)
+```mermaid
+flowchart LR
+    P["👤 Principal<br/>did:web:user.example.com"]
+    A["🤖 AI Agent<br/>did:web:agent.example.com<br/>+ Identity Sidecar"]
+    C["📄 Vouch Credential<br/>W3C VC + Data Integrity<br/>(eddsa-jcs-2022)"]
+    API["🔐 API Endpoint"]
+    V{"✅ Verified"}
+
+    P -->|"Delegation VC"| A
+    A -->|"sign_credential(intent)"| C
+    C -->|"HTTP body<br/>application/vouch+credential+json"| API
+    API -->|"verify_credential()"| V
+```
 
 **4 Simple Steps:**
-1. **Generate Identity** - Create keypair and DID
-2. **Sign Action** - Agent signs every API call
-3. **Send to API** - Include token in HTTP header
-4. **Verify** - API checks signature with public key
+1. **Generate Identity**: Create an Ed25519 keypair and a DID, publish a DID Document with a Multikey verification method.
+2. **Sign Action**: Agent's sidecar issues a W3C Verifiable Credential carrying `action`, `target`, and `resource`, secured by an `eddsa-jcs-2022` Data Integrity proof.
+3. **Send to API**: Transmit the credential as the HTTP request body with `Content-Type: application/vouch+credential+json` (or via the legacy `Vouch-Token` header for v0.x compatibility).
+4. **Verify**: API resolves the issuer's DID, validates the Data Integrity proof, checks temporal claims and the resource binding, returns a `CredentialPassport`.
 
 ### The Trust Model
 
-![Trust Model](docs/images/trust-model.png)
+```mermaid
+flowchart TB
+    subgraph IDENTITY["Identity Layer"]
+        DID["DID<br/>did:web / did:key"]
+        MK["Multikey<br/>algorithm-agnostic key encoding"]
+    end
+    subgraph FORMAT["Credential Layer"]
+        VC["W3C Verifiable Credential<br/>(VC Data Model 2.0)"]
+        INTENT["Intent payload<br/>action · target · resource"]
+    end
+    subgraph CRYPTO["Cryptographic Proof"]
+        JCS["JCS canonicalization (RFC 8785)"]
+        DEFAULT["eddsa-jcs-2022<br/>(Ed25519, default)"]
+        HYBRID["hybrid-eddsa-mldsa44-jcs-2026<br/>(Ed25519 + ML-DSA-44, optional)"]
+    end
+    IDENTITY --> FORMAT
+    FORMAT --> CRYPTO
+    JCS --> DEFAULT
+    JCS --> HYBRID
+```
 
-**Trust = Public Key Cryptography + JWT + DID**  
-The same math that secures SSL/TLS, just for AI agents.
+**Trust = W3C Verifiable Credentials + Data Integrity + Decentralized Identifiers + Multikey, with optional hybrid post-quantum signatures.** The same math that secures SSL/TLS plus the W3C primitives that secure verifiable credentials elsewhere on the web, applied to AI agents.
 
 ---
 
@@ -117,7 +166,11 @@ The same math that secures SSL/TLS, just for AI agents.
 | **Agent-specific** | ✅ (designed for agents) | ❌ (generic) |
 | **MCP integration** | ✅ (native) | ❌ (manual) |
 | **Framework integrations** | ✅ (LangChain, CrewAI, etc.) | ❌ |
-| **Audit trail format** | ✅ (standardized) | ❌ (custom) |
+| **Audit trail format** | ✅ (W3C VC standardized) | ❌ (custom) |
+| **W3C-aligned** | ✅ (`eddsa-jcs-2022` Data Integrity) | ❌ |
+| **Multikey verification methods** | ✅ (algorithm-agnostic) | ❌ |
+| **Hybrid post-quantum signatures** | ✅ (`hybrid-eddsa-mldsa44-jcs-2026`) | ❌ |
+| **Cross-implementation interop tests** | ✅ (Python, TypeScript, Go) | ❌ |
 | **Security best practices** | ✅ (built-in) | ⚠️ (easy to mess up) |
 
 ---
@@ -135,6 +188,8 @@ vouch init --domain your-agent.com
 ```
 
 ### 3. Sign an Action (Agent Side)
+
+**v1.0 path (W3C VC + Data Integrity, recommended):**
 ```python
 from vouch import Signer
 import os
@@ -144,30 +199,59 @@ signer = Signer(
     did=os.environ['VOUCH_DID']
 )
 
+credential = signer.sign_credential(intent={
+    'action': 'read_database',
+    'target': 'users_table',
+    'resource': 'https://api.example.com/v1/users',
+})
+# Send credential as the JSON body of the API request, content-type
+# application/vouch+credential+json
+```
+
+**Legacy v0.x path (JWS, still supported):**
+```python
 token = signer.sign({'action': 'read_database', 'target': 'users'})
 # Include token in Vouch-Token header
 ```
 
 ### 4. Verify (API Side)
+
+**v1.0 path:**
 ```python
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from vouch import Verifier
 
 app = FastAPI()
 
 @app.post("/api/resource")
-def protected_route(vouch_token: str = Header(alias="Vouch-Token")):
-    public_key = '{"kty":"OKP"...}' # From agent's vouch.json
-    
-    is_valid, passport = Verifier.verify(vouch_token, public_key_jwk=public_key)
-    
+async def protected_route(request: Request):
+    credential = await request.json()
+    public_key = '{"kty":"OKP", ...}'  # Resolved from did:web or trusted root
+
+    is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
     if not is_valid:
         raise HTTPException(status_code=401, detail="Untrusted Agent")
-        
+
+    return {
+        "status": "Verified",
+        "agent": passport.sub,
+        "intent": passport.intent,
+    }
+```
+
+**Legacy v0.x path:**
+```python
+from vouch import Verifier
+
+@app.post("/api/legacy")
+def legacy_route(vouch_token: str = Header(alias="Vouch-Token")):
+    is_valid, passport = Verifier.verify(vouch_token, public_key_jwk=public_key)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Untrusted Agent")
     return {"status": "Verified", "agent": passport.sub}
 ```
 
-**That's it.** 3 lines to sign, 3 lines to verify.
+**That's it.** A few lines to sign, a few to verify, on either path.
 
 ---
 
@@ -190,11 +274,25 @@ Works with all major AI frameworks out-of-the-box:
 ## Enterprise Features
 
 - 🔐 **Key Rotation** - Automatic rotating keys for production
-- 🎙️ **Voice AI Signing** - Sign audio frames in real-time  
+- 🎙️ **Voice AI Signing** - Sign audio frames in real-time
 - ☁️ **Cloud KMS** - AWS KMS, GCP Cloud KMS, Azure Key Vault
 - 📊 **Reputation Scoring** - Track agent behavior over time
 - 🚫 **Revocation Registry** - Blacklist compromised keys
 - ⚡ **Redis Caching** - Production-scale verification
+- 🛡️ **Hybrid Post-Quantum Profile** - Optional Ed25519 + ML-DSA-44 composite signatures (`hybrid-eddsa-mldsa44-jcs-2026`) for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 migration timelines
+
+### Hybrid Post-Quantum Example
+
+```python
+# Optional v1.0 profile, requires `pip install pqcrypto`
+credential = signer.sign_credential_hybrid(intent={
+    'action': 'submit_clinical_finding',
+    'target': 'trial:NCT00000001',
+    'resource': 'https://fda-submissions.example.com/api/findings',
+})
+# Carries both Ed25519 and ML-DSA-44 signatures over the same JCS canonical form.
+# Verification REQUIRES both to validate.
+```
 
 ---
 
