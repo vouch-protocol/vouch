@@ -329,7 +329,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 - [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
 - [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
 - [Threat Model and Security Considerations](https://github.com/vouch-protocol/vouch/blob/main/docs/THREAT_MODEL.md)
-- [Defensive Prior Art Disclosures (47 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
+- [Defensive Prior Art Disclosures (55 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
 - [FAQ and Discussions](https://github.com/vouch-protocol/vouch/discussions)
 
 ---
@@ -351,7 +351,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 - [x] **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`, NIST CNSA 2.0 / NSM-10 aligned)
 - [x] **Three-language reference implementation** (Python, TypeScript, Go) with byte-identical canonical form via RFC 8785 JCS, verified against shared test vectors
 - [x] **W3C CG Report drafted** and submitted to the Credentials Community Group for incubation
-- [x] **47 Prior Art Disclosures** (CC0 defensive publications)
+- [x] **55 Prior Art Disclosures** (CC0 defensive publications)
 - [x] Identity Sidecar architecture (LLM-isolated keys)
 - [x] Heartbeat Protocol with adaptive Trust Entropy
 - [x] Resource-bound delegation chains with capability narrowing
@@ -387,7 +387,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 
 You can use this freely in commercial and open-source projects.
 
-The 47 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
+The 55 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
 
 *The Vouch Protocol specification is being developed as a W3C standards track submission via the Credentials Community Group. The implementation is also being proposed to the Linux Foundation's AI & Data Foundation.*
 
@@ -425,7 +425,7 @@ Contributions welcome. See [CONTRIBUTING.md](https://github.com/vouch-protocol/v
 
 ## Prior Art Disclosures
 
-To ensure ecosystem freedom, we publish **38 defensive prior art disclosures** (CC0 public domain) covering novel methods across cryptographic identity, media provenance, voice biometrics, AI safety, and content authenticity:
+To ensure ecosystem freedom, we publish **55 defensive prior art disclosures** (CC0 public domain) covering novel methods across cryptographic identity, media provenance, voice biometrics, AI safety, post-quantum cryptography, AI coding assistant governance, and content authenticity:
 
 | ID | Title | Category |
 |----|-------|----------|
@@ -467,5 +467,22 @@ To ensure ecosystem freedom, we publish **38 defensive prior art disclosures** (
 | [PAD-036](docs/disclosures/PAD-036-aggregated-reputation-scoring.md) | Aggregated Reputation Scoring via Verifiable State Receipts | Trust / Enterprise |
 | [PAD-037](docs/disclosures/PAD-037-credential-federation.md) | Cross-Protocol Agent Credential Federation | Identity / Enterprise |
 | [PAD-038](docs/disclosures/PAD-038-agent-capability-discovery.md) | Decentralized Agent Capability Discovery | Discovery / Multi-Agent |
+| [PAD-039](docs/disclosures/PAD-039-jcs-deterministic-multi-party-trust-state.md) | Cross-Implementation Deterministic Multi-Party Trust State via JCS | Cross-Impl Determinism |
+| [PAD-040](docs/disclosures/PAD-040-hybrid-composite-signature-same-canonical-bytes.md) | Hybrid Composite Signature Bound to Same Canonical Bytes (Ed25519 + ML-DSA-44) | Post-Quantum / Hybrid |
+| [PAD-041](docs/disclosures/PAD-041-multikey-algorithm-agnostic-verification.md) | Algorithm-Agnostic Verification Method Resolution via Multikey Multicodec | Verification / Multikey |
+| [PAD-042](docs/disclosures/PAD-042-standardized-metadata-schema-agent-ledger.md) | Standardized Metadata Schema for AI Agent Ledger Signatures | Metadata / Audit |
+| [PAD-043](docs/disclosures/PAD-043-cryptographic-weight-binding.md) | Cryptographic Weight Binding for Model-Intrinsic AI Identity | AI Identity / Model |
+| [PAD-044](docs/disclosures/PAD-044-ephemeral-zk-state-channels.md) | Ephemeral ZK-State Channels for Agentic Layer 2 Scalability | Scalability / ZK |
+| [PAD-045](docs/disclosures/PAD-045-proof-of-non-hallucination-retrieval-anchoring.md) | Proof of Non-Hallucination via Cryptographic Retrieval Anchoring | AI Safety / RAG |
+| [PAD-046](docs/disclosures/PAD-046-algorithm-quorum-cryptosuite-diversity.md) | Algorithm Quorum Verification via M-of-N Cryptosuite Diversity | Defense in Depth |
+| [PAD-047](docs/disclosures/PAD-047-vdf-rate-limited-agent-actions.md) | Verifiable Delay Functions for Cryptographic Rate-Limiting | Agent Containment |
+| [PAD-048](docs/disclosures/PAD-048-write-only-async-context-ledger.md) | Write-Only Async Context Ledger for LLM Coding Assistants | AI Coding / IP Protection |
+| [PAD-049](docs/disclosures/PAD-049-decoupled-semantic-policy-extraction.md) | Decoupled Semantic Policy Extraction via Passive Source Monitoring | AI Coding / IP Protection |
+| [PAD-050](docs/disclosures/PAD-050-zero-context-deterministic-egress-interception.md) | Zero-Context Deterministic Egress Interception | AI Coding / Egress Control |
+| [PAD-051](docs/disclosures/PAD-051-parallel-intent-extraction-shadow-models.md) | Parallel Intent Extraction via Local Shadow Models | AI Coding / Local-First |
+| [PAD-052](docs/disclosures/PAD-052-ui-state-sniffing-closed-box-ai-tools.md) | UI State Sniffing for Closed-Box AI Coding Tools | AI Coding / Compatibility |
+| [PAD-053](docs/disclosures/PAD-053-time-bounded-ephemeral-rules.md) | Time-Bounded Ephemeral Rules with Auto-Expiry | AI Coding / Lifetime |
+| [PAD-054](docs/disclosures/PAD-054-filesystem-hierarchy-policy-inheritance.md) | Filesystem-Hierarchy Policy Inheritance for AI Coding Workspaces | AI Coding / Composition |
+| [PAD-055](docs/disclosures/PAD-055-cross-session-policy-re-anchoring.md) | Cross-Session Policy Re-Anchoring via Pre-Flight Context Replay | AI Coding / Continuity |
 
 [View all disclosures →](docs/disclosures/README.md)
