@@ -57,7 +57,43 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-045](./PAD-045-proof-of-non-hallucination-retrieval-anchoring.md) | Proof of Non-Hallucination via Cryptographic Retrieval Anchoring | 2026-04-29 | Published |
 | [PAD-046](./PAD-046-algorithm-quorum-cryptosuite-diversity.md) | Algorithm Quorum Verification via M-of-N Cryptosuite Diversity | 2026-04-29 | Published |
 | [PAD-047](./PAD-047-vdf-rate-limited-agent-actions.md) | Verifiable Delay Functions for Cryptographic Rate-Limiting of Autonomous Agent Actions | 2026-04-29 | Published |
+| [PAD-048](./PAD-048-write-only-async-context-ledger.md) | Write-Only Asynchronous Context Ledger for LLM Coding Assistants | 2026-04-30 | Published |
+| [PAD-049](./PAD-049-decoupled-semantic-policy-extraction.md) | Decoupled Semantic Policy Extraction via Passive Source Monitoring | 2026-04-30 | Published |
+| [PAD-050](./PAD-050-zero-context-deterministic-egress-interception.md) | Zero-Context Deterministic Egress Interception via Pre-Push Hook with Optional Cryptographic Attestation | 2026-04-30 | Published |
+| [PAD-051](./PAD-051-parallel-intent-extraction-shadow-models.md) | Parallel Intent Extraction from LLM Prompts via a Local Shadow Small-Language-Model | 2026-04-30 | Published |
+| [PAD-052](./PAD-052-ui-state-sniffing-closed-box-ai-tools.md) | UI State Sniffing for Policy Extraction from Closed-Box AI Coding Applications | 2026-04-30 | Published |
+| [PAD-053](./PAD-053-time-bounded-ephemeral-rules.md) | Time-Bounded Ephemeral Rules with Auto-Expiry for LLM Coding Assistant Sessions | 2026-04-30 | Published |
+| [PAD-054](./PAD-054-filesystem-hierarchy-policy-inheritance.md) | Filesystem-Hierarchy Policy Inheritance for LLM Coding Assistant Workspaces | 2026-04-30 | Published |
+| [PAD-055](./PAD-055-cross-session-policy-re-anchoring.md) | Cross-Session Policy Re-Anchoring via Pre-Flight Context Replay | 2026-04-30 | Published |
 
+
+## April 30, 2026: AI Coding Assistant Governance Series (PAD-048 through PAD-055)
+
+Eight new disclosures published April 30, 2026 cover a complementary domain
+to the existing Vouch Protocol disclosures: governing the operational
+behavior of LLM coding assistants in developer workflows. The series
+addresses **context dilution** (rules forgotten over long sessions),
+**IP leak prevention** (proprietary code or operational constraints
+inadvertently included in pushes), and **persistent rule semantics across
+discontinuous sessions**.
+
+The architectural foundation (PAD-048) establishes a write-only ledger
+in which the LLM acts as a passive recorder and a separate deterministic
+Compactor consolidates rules into a policy artifact. The remaining
+disclosures cover alternative declaration channels (PAD-049 source
+comments, PAD-051 local shadow-model extraction, PAD-052 closed-box-tool
+sniffing), enforcement (PAD-050 pre-push interception with silent block
+or cryptographic attestation), lifetime management (PAD-053 ephemeral
+rules), composition (PAD-054 hierarchy inheritance), and continuity
+(PAD-055 cross-session re-anchoring).
+
+A reference implementation of these mechanisms is published as a
+companion open-source project, **Amnesia** (`vouch-protocol/amnesia`),
+which is a standalone Node.js / TypeScript developer utility usable
+independently of the broader Vouch Protocol. When Amnesia and Vouch are
+deployed together, optional cryptographic attestation (PAD-050 attest
+mode) integrates Amnesia's egress events with Vouch Protocol's
+W3C Verifiable Credentials and Data Integrity proof system.
 
 ## April 2026 Amendment Wave (W3C Data Integrity Alignment)
 
