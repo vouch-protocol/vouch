@@ -2,7 +2,7 @@
 
 **Continuous State Verifiability for Autonomous AI Agents**
 
-*Companion to the W3C CG Report, 26 April 2026*
+*Companion to the W3C CG Report, 30 April 2026*
 
 ---
 
@@ -31,7 +31,10 @@ On top of these primitives, Vouch contributes:
 3. **Trust Entropy**, deterministic, mathematical decay of credential trust over time, providing an objective alternative to subjective reputation scores.
 4. **Federated Validator Quorum**, independent M-of-N approval across policy, behavioral, and budget validators; no single compromise can issue valid credentials.
 5. **Resource-bound delegation chains**, every delegation link is bound to a specific resource URI, preventing confused-deputy attacks at the authorization layer.
-6. **Hybrid post-quantum profile**, optional Ed25519 + ML-DSA-44 composite signatures aligned with NIST CNSA 2.0 migration timelines.
+6. **Hybrid post-quantum profile**, optional Ed25519 + ML-DSA-44 composite signatures bound to the same JCS-canonicalized bytes, aligned with NIST CNSA 2.0 migration timelines.
+7. **Algorithm Quorum Verification (optional)**, M-of-N cryptosuite diversity for defense-in-depth during the post-quantum transition; the hybrid profile of (6) is the simplest 2-of-2 case, generalizable to any M-of-N.
+8. **LLM-specific threat coverage**, including RAG-anchored reasoning attestation and model-weight-binding for detection of weight substitution and unauthorized fine-tuning.
+9. **Cross-implementation determinism**, RFC 8785 JCS-canonicalized credentials reproduce byte-identically across the three reference implementations (Python, TypeScript, Go), eliminating ambiguity in multi-party trust state.
 
 ## Why This Matters Across Industries
 
@@ -59,7 +62,7 @@ On top of these primitives, Vouch contributes:
 
 **For potential charter sponsors (CVS, UHG, JPMorgan Chase, Wells Fargo, Pfizer, Microsoft, Cloudflare, AWS, and similarly-positioned organizations)**: Indicate interest. Voting in favor of a recharter to add agent state verifiability does not require commercial commitment, only signal that this is a problem your organization recognizes.
 
-**For W3C members**: Review, comment, and engage at upcoming Wednesday CCG calls (with Asia-Pacific-friendly times under request), and at the Brussels (June 2026) and Dublin (September/October 2026) face-to-face meetings.
+**For W3C members**: Review, comment, and engage at upcoming Wednesday CCG calls (with Asia-Pacific-friendly times under request), and at upcoming W3C face-to-face meetings.
 
 **For DIF members and contributors to adjacent agent identity specifications**: Vouch Protocol is designed to compose with your work. We welcome cross-pollination on the State Verifiability layer that sits beneath identity and authorization.
 
@@ -67,5 +70,5 @@ On top of these primitives, Vouch contributes:
 
 **Editor**: Ramprasad Gaddam, ram@vouch-protocol.com
 **Repository**: https://github.com/vouch-protocol/vouch
-**Full specification**: https://vouch-protocol.com/specs/CG-REPORT/2026-04-26/
-**License**: Apache License 2.0 (specification); CC0 (38-disclosure prior-art portfolio)
+**Full specification**: https://vouch-protocol.com/specs/CG-REPORT/2026-04-30/
+**License**: Apache License 2.0 (specification); CC0 (55-disclosure prior-art portfolio)

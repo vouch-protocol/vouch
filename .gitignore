@@ -70,6 +70,13 @@ DEVELOPER_CONTEXT.md
 docs/specs/strategy-lfai-and-w3c.md
 docs/specs/w3c-cg-report.md
 docs/specs/ietf-internet-draft.md
+docs/specs/ccg-submission-emails.md
+docs/specs/vouch-sponsor-brief.md
+
+# Local-only spec build infrastructure and landing page (rebuild locally)
+docs/specs/index.html
+docs/specs/Makefile
+docs/specs/build.sh
 
 # Patent briefs (confidential - do not publish)
 docs/patents/
@@ -79,3 +86,13 @@ claude.md
 
 # Claude Code local-only state (permission allowlist, agent settings, etc.)
 .claude/
+
+# Discarded icon set (kept locally for reference, not shipped)
+docs/assets/icons-green/
+
+# Local-only preview / comparison pages (not part of the published site)
+docs/icon-preview.html
+docs/icon-preview-v2.html
+docs/icon-set-preview.html
+docs/preview-blue.html
+docs/preview-green.html
