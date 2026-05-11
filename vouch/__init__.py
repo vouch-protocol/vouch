@@ -110,6 +110,17 @@ def __getattr__(name):
         from . import behavioral_attestation
 
         return getattr(behavioral_attestation, name)
+    elif name in (
+        "CanaryChain",
+        "CanaryChainError",
+        "CanaryHeartbeat",
+        "CanaryVerifier",
+        "compute_commitment",
+        "verify_reveal",
+    ):
+        from . import canary
+
+        return getattr(canary, name)
     # Reputation
     elif name in (
         "ReputationEngine",
