@@ -812,26 +812,6 @@ vouch init [--domain DOMAIN] [--env]
 - Without \`--domain\` - generates a did:key DID
 - \`--env\` - exports the DID and key path as shell env vars
 
-## sign
-
-Sign a plaintext message (legacy JWS path).
-
-\`\`\`bash
-vouch sign "my-action-payload" --did did:web:agent.example.com
-\`\`\`
-
-For new code, prefer \`vouch credential sign\` instead.
-
-## verify
-
-Verify a JWS or W3C credential.
-
-\`\`\`bash
-vouch verify <token>
-vouch verify --cached <token>      # use cached DID Document
-vouch verify --strict <token>      # fail on any warning
-\`\`\`
-
 ## credential sign
 
 Sign a W3C Verifiable Credential.

@@ -77,7 +77,7 @@ export default function HomePage() {
             {/* Hero */}
             <section className="border-b border-rule">
                 <div className="container-wide py-20 md:py-28">
-                    <div className="eyebrow mb-6">W3C Community Group Report - Draft - 26 April 2026</div>
+                    <div className="eyebrow mb-6">v1.6.0 shipped &middot; Spec v0.1-draft &middot; W3C-track</div>
                     <h1 className="font-serif font-semibold text-ink leading-[1.05] tracking-tight mb-6 max-w-[920px] text-[clamp(2.5rem,5.2vw,4rem)]">
                         Cryptographic identity &amp; accountability for autonomous AI agents.
                     </h1>
