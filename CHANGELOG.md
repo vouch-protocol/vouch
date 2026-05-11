@@ -8,7 +8,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **W3C BitstringStatusList** across Python, TypeScript, and Go SDKs for credential-level revocation and suspension status (W3C CG Report §11.2). Reference implementation of W3C VC-BITSTRING-STATUS-LIST with:
+
+#### State Verifiability runtime (W3C CG Report §11, §15)
+
+First-class implementation of the State Verifiability layer the spec
+previously described as informative. Six new Python modules animate the
+SessionVoucher VC format with a concrete renewal protocol:
+
+- **`vouch.trust_entropy`** — verifier-side decay computation per §11.5.
+  `compute_trust_at`, `evaluate_trust`, `check_trust_threshold`,
+  `half_life_seconds`, `time_until_threshold`. Closes the previous gap
+  where `decay_lambda` was round-tripped through credentials but never
+  consumed by any verifier.
+- **`vouch.behavioral_attestation`** — per-interval signal collector
+  producing the §11.3 `behavioralDigest` (api calls, tokens consumed,
+  resources accessed, intent drift). Thread-safe `BehavioralCollector`
+  with three reference drift scorers (mean, max, EWMA).
+- **`vouch.canary`** — commit/reveal chain per §11.3 / §11.7 giving the
+  Heartbeat Protocol a dead-man's-switch property. `CanaryChain` on the
+  agent side, `CanaryVerifier` on the validator side, both stateful and
+  thread-safe.
+- **`vouch.merkle`** — binary Merkle tree primitives with RFC 6962 domain
+  separation. `MerkleTree`, `InclusionProof` (O(log n) selective
+  disclosure), `compute_action_merkle_root` for the §11.3
+  `actionMerkleRoot` field. Used by Heartbeat and adjacent to PAD-017
+  Reasoning Trees and PAD-042 transparency-log anchoring.
+- **`vouch.heartbeat`** — orchestration per §11.3. `HeartbeatRequest`
+  wire format, `HeartbeatSession` (composes canary chain + behavioral
+  collector + action tracker), `HeartbeatScheduler` (asyncio periodic
+  firing with caller-supplied submit callback), `HeartbeatValidator`
+  (single-validator implementation that issues SessionVouchers and walks
+  per-session canary state and interval-index monotonicity).
+- **`vouch.quorum`** — M-of-N federation per §11.6. `QuorumValidator`
+  wraps a HeartbeatValidator with a role tag and optional weight;
+  `HeartbeatQuorum` coordinates N validators and aggregates trust
+  parameters across approvers (default: min `initial_trust`, max
+  `decay_lambda`, min validity window, intersection of scopes).
+
+#### W3C BitstringStatusList
+
+Reference implementation of W3C VC-BITSTRING-STATUS-LIST for
+credential-level revocation and suspension status (W3C CG Report §11.2)
+across Python, TypeScript, and Go SDKs:
   - `StatusList` class (in-memory bitstring with gzip + base64url multibase encoding per W3C §4.2, 131,072-bit minimum, deterministic gzip headers across languages).
   - `build_status_list_credential` / `buildStatusListCredential` / `BuildStatusListCredential` issuers for `BitstringStatusListCredential` VCs.
   - `build_status_list_entry` / `buildStatusListEntry` / `BuildStatusListEntry` builders for the `credentialStatus` reference attached to a Vouch Credential.

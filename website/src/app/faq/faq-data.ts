@@ -73,7 +73,7 @@ Vouch fixes this by turning every agent action into a signed receipt. Identity, 
                 q: 'Can I use Vouch in production today?',
                 a: `**Yes, for what most teams need.** Signing your agent's actions, verifying them anywhere, building permission chains between multiple agents, revoking compromised credentials, and being post-quantum ready: all shipped, all tested across Python, TypeScript, and Go, all have published test vectors. Build on it today.
 
-**The "continuous trust scoring" layer is still cooking.** That's the part where multiple validators agree on whether your agent is behaving correctly while it's running. The data format is ready, but the running pieces aren't built yet. Most teams don't need this; the core covers almost every use case we've seen.
+**The "continuous trust scoring" layer now ships in the Python SDK.** That's the part where the credential's trust value decays over time, multiple validators can agree on whether your agent is behaving correctly while it's running, and a missed heartbeat is cryptographically detectable. The six new modules (trust entropy decay, behavioral attestation digest, canary commit/reveal chain, Merkle trees, heartbeat orchestration, validator quorum) animate the SessionVoucher format end-to-end. TypeScript and Go ports of these runtime pieces are not yet shipped; the data formats are already cross-language.
 
 **Vouch Shield**, our optional runtime middleware that checks every tool call against your permission rules, is also production-ready (TypeScript library).`,
             },
@@ -163,8 +163,8 @@ A Vouch delegation chain captures all three steps cryptographically. Each step n
     // =====================================================================
     {
         id: 'developers',
-        audience: 'For Developers',
-        title: 'Getting Vouch into your codebase',
+        audience: 'Building with Vouch',
+        title: 'Adding Vouch to your code',
         items: [
             {
                 q: 'Which languages have Vouch SDKs?',
@@ -409,8 +409,8 @@ Build artifacts (.crx, .zip) are produced by the GitHub Actions workflow at [.gi
     // =====================================================================
     {
         id: 'operators',
-        audience: 'For Operators',
-        title: 'Running Vouch in production',
+        audience: 'Running in Production',
+        title: 'Deployment, keys, storage, observability',
         items: [
             {
                 q: 'Which KMS backends are supported?',
@@ -550,8 +550,8 @@ Practical operational sizing: 131,072 credentials at a 5-minute validity (typica
     // =====================================================================
     {
         id: 'compliance',
-        audience: 'For Compliance Teams',
-        title: 'Regulatory positioning and the audit story',
+        audience: 'Compliance & Regulations',
+        title: 'HIPAA, SR 11-7, EU AI Act, NIST and friends',
         items: [
             {
                 q: 'Does Vouch satisfy HIPAA / HITECH?',
@@ -604,72 +604,41 @@ If a dispute arises, the credential and its proof can be presented as evidence; 
     // =====================================================================
     {
         id: 'standards',
-        audience: 'For Standards Reviewers',
-        title: 'How Vouch composes with existing standards',
+        audience: 'Standards & Interoperability',
+        title: 'How Vouch fits with W3C, IETF, and C2PA',
         items: [
             {
-                q: 'Why is this in CCG rather than the VC Working Group?',
-                a: `The W3C Credentials Community Group is the incubation venue. The editor's intent is to incubate Vouch in the CCG, gather implementer experience, and propose transition pathways to the W3C Verifiable Credentials Working Group and the Data Integrity Working Group once the design is stable.`,
-                meta: 'CG Report Status of This Document',
-            },
-            {
-                q: 'How does Vouch compose with W3C VC Data Model 2.0?',
-                a: `A Vouch Credential is a W3C VC 2.0 with a Vouch-specific \`credentialSubject\` shape (the \`intent\` object binding action, target, and resource). The \`@context\` includes the standard VC 2.0 context plus a Vouch-specific context. Full compliance with VC-DATA-MODEL-2.0.`,
-                meta: 'CG Report §5 Credential Format - Appendix A',
-            },
-            {
-                q: 'How does Vouch relate to W3C Data Integrity?',
-                a: `Vouch uses Data Integrity proofs ([VC-DATA-INTEGRITY]) with the \`eddsa-jcs-2022\` cryptosuite as the default and a new \`hybrid-eddsa-mldsa44-jcs-2026\` cryptosuite for the hybrid post-quantum profile. The hybrid cryptosuite identifier is provisional and would need formal registration in the Data Integrity Working Group during transition.`,
-                meta: 'CG Report §7.1, §13.2',
-            },
-            {
-                q: 'How does Vouch compose with W3C DIDs?',
-                a: `Vouch uses DIDs as the identity format, with full DID Core compliance. \`did:web\` and \`did:key\` are the primary supported methods. Verification methods in the DID Document use W3C Controlled Identifiers (Multikey), supporting Ed25519 and ML-DSA-44 side-by-side for crypto-agility.`,
-                meta: 'CG Report §6 Identity Model - Appendix A',
-            },
-            {
-                q: 'How does Vouch relate to W3C BitstringStatusList?',
-                a: `Vouch Credentials MAY include a \`credentialStatus\` property referencing a BitstringStatusList for revocation. The CG Report describes this as the recommended credential-level revocation mechanism, complementing the DID-level revocation registry.
+                q: 'What standards does Vouch build on?',
+                a: `Vouch sits on top of well-known W3C and IETF standards rather than inventing new cryptography:
 
-A reference implementation of both the issuer and verifier sides ships across all three SDKs (\`vouch.status_list\` in Python, \`packages/sdk-ts/src/status-list.ts\` in TypeScript, \`go-sidecar/signer/status_list.go\` in Go) with a published cross-language test vector at [test-vectors/bitstring-status-list/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/bitstring-status-list). The implementations share a single canonical encoding (gzip + base64url multibase, 131,072-bit minimum bitstring per W3C §4.2, deterministic gzip headers).`,
-                meta: 'CG Report §11.2 - Appendix A',
-            },
-            {
-                q: 'How does Vouch relate to ZCAP-LD?',
-                a: `Vouch delegation chains share semantic intent with [ZCAP-LD]: both authorize specific capabilities with explicit per-link scope. Vouch uses JCS canonicalization rather than JSON-LD canonicalization, and requires explicit \`resource\` binding per link, which gives a different syntactic surface but a comparable security model. The two specifications can interoperate; Appendix A notes the relationship.`,
-                meta: 'CG Report Appendix A',
-            },
-            {
-                q: 'How does Vouch relate to IETF JWS / JOSE?',
-                a: `Vouch uses W3C Data Integrity proofs rather than JWS Compact Serialization. Both are valid VC signature envelopes; Vouch chose Data Integrity for JSON-native canonicalization and cryptosuite agility (Multikey lets the same DID Document publish multiple algorithm public keys, e.g. Ed25519 and ML-DSA-44 side-by-side). Earlier protocol drafts experimented with a JWS-based path that base64url-encoded the payload before signing; that path has been retired in favour of signing the JCS canonical bytes directly.`,
-                meta: 'CG Report Appendix A',
-            },
-            {
-                q: 'How does Vouch relate to C2PA?',
-                a: `Vouch is a *companion* specification to C2PA, not a competitor. C2PA defines the manifest format for media provenance; Vouch defines the identity layer underneath. The \`c2pa-ca/\` directory in the repo issues Vouch-rooted C2PA certificates, and the audio path implements multi-layer watermark embedding. The editor is a member of C2PA and the Content Authenticity Initiative.`,
-                meta: 'CG Report Appendix A',
-            },
-            {
-                q: 'How does Vouch relate to MCP (Model Context Protocol)?',
-                a: `Framework-agnostic: Vouch operates with any MCP server or client by binding identity to credentials rather than to a specific transport. \`vouch/integrations/mcp/server.py\` is a reference MCP server integration. MCP carries the credential as a tool-call envelope; Vouch validates the credential before tool execution.`,
-            },
-            {
-                q: 'What about IETF JCS (RFC 8785)?',
-                a: `Vouch uses JCS canonicalization as required by the \`eddsa-jcs-2022\` cryptosuite. JCS is byte-deterministic across implementations, which is what enables Vouch's three-language interop (PAD-039).`,
-            },
-            {
-                q: 'What test vectors are published?',
-                a: `Cross-implementation test vectors at [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors). The two anchor vectors:
+- **W3C Verifiable Credentials 2.0** — the JSON shape of a Vouch credential
+- **W3C Data Integrity** — how the cryptographic signature is attached
+- **W3C Decentralized Identifiers (DIDs)** — how agents identify themselves
+- **W3C Controlled Identifiers / Multikey** — how public keys are encoded
+- **W3C BitstringStatusList** — how individual credentials get revoked
+- **RFC 8785 (JCS)** — the rule for serializing JSON the same way every time
+- **NIST FIPS 204 (ML-DSA)** — the post-quantum signature algorithm
+- **C2PA** — Vouch acts as the identity layer for media provenance
 
-- [test-vectors/hybrid-eddsa-mldsa44/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/hybrid-eddsa-mldsa44) - a full signed credential with deterministic generation parameters for the hybrid post-quantum profile, verified byte-identically by Python, TypeScript, and Go.
-- [test-vectors/bitstring-status-list/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/bitstring-status-list) - a canonical W3C BitstringStatusListCredential with specific revoked indices chosen to exercise byte boundaries, mid-range, and exact endpoints. Python and TypeScript produce byte-identical encoded output; Go produces a valid DEFLATE stream that decodes equivalently (the W3C-required equivalence).
-
-Both vectors are accompanied by deterministic generator scripts (\`generate.py\`) so they can be regenerated and audited.`,
-                meta: 'CG Report Appendix C',
+The full mapping is documented in Appendix A of the [specification](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md).`,
             },
             {
-                q: 'What is on the v2.0 roadmap?',
-                a: `Tracked at [ROADMAP.md](https://github.com/vouch-protocol/vouch/blob/main/ROADMAP.md). Headline items include making portions of the State Verifiability layer normative (Heartbeat orchestration, validator quorum, canary commitments), expanding the post-quantum profile from hybrid to pure-PQ as NIST CNSA 2.0 phase-in advances, and federating the credential registry across multiple validator quorums.`,
+                q: 'Does Vouch work with MCP, LangChain, CrewAI, etc.?',
+                a: `Yes. Vouch is framework-agnostic. A Vouch credential is just signed JSON, so any framework that can pass a JSON blob alongside a tool call can carry it. We ship ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, Google Vertex AI, Google ADK, n8n, Hasura, Streamlit, and the Model Context Protocol (MCP). Drop-in for the major frameworks; small adapter for anything else.`,
+            },
+            {
+                q: 'Does Vouch work alongside C2PA for media provenance?',
+                a: `Yes, and intentionally so. C2PA is the right standard for "where did this photo/video/audio come from." Vouch is the right layer for "which AI agent signed it, with whose permission." The repo ships a small Certificate Authority that issues Vouch-rooted C2PA certificates so the two stitch together cleanly. The editor is a member of C2PA and the Content Authenticity Initiative.`,
+            },
+            {
+                q: 'Where is this in the standards pipeline?',
+                a: `Vouch is a W3C Community Group Report being incubated in the [Credentials Community Group](https://www.w3.org/community/credentials/). The goal is to gather feedback from teams actually building agents, then propose it for the formal standards track via the W3C Verifiable Credentials Working Group and the Data Integrity Working Group.
+
+If you want to follow along or contribute, the [public-credentials mailing list](https://lists.w3.org/Archives/Public/public-credentials/) is the right venue.`,
+            },
+            {
+                q: 'Are test vectors published for interop?',
+                a: `Yes. [Cross-language test vectors](https://github.com/vouch-protocol/vouch/tree/main/test-vectors) cover the hybrid post-quantum profile and W3C BitstringStatusList. Each vector includes a deterministic generator script so you can reproduce and audit it. Python, TypeScript, and Go all verify the same vectors byte-identically.`,
             },
         ],
     },
@@ -679,63 +648,48 @@ Both vectors are accompanied by deterministic generator scripts (\`generate.py\`
     // =====================================================================
     {
         id: 'post-quantum',
-        audience: 'Post-Quantum',
-        title: 'Hybrid signatures and crypto-agility',
+        audience: 'Post-Quantum Security',
+        title: 'Why hybrid signatures, and how they work',
         items: [
             {
-                q: 'What does the hybrid post-quantum profile actually do?',
-                a: `The hybrid profile (cryptosuite \`hybrid-eddsa-mldsa44-jcs-2026\`) signs the same JCS-canonicalized bytes with **both** Ed25519 (classical) and ML-DSA-44 (post-quantum, FIPS 204). The two signatures are concatenated and base58-encoded into a single \`proofValue\`:
+                q: 'Why does Vouch care about post-quantum?',
+                a: `Eventually, a sufficiently powerful quantum computer will be able to break today's elliptic-curve signatures (Ed25519 included). We don't know when, but governments are already publishing migration deadlines (NIST CNSA 2.0, U.S. NSM-10). Even more importantly, an attacker can harvest signed credentials now and decrypt them later. So even before quantum computers exist, the smart move is to start signing things with both an old and a new algorithm so old signatures stay valid forever.`,
+            },
+            {
+                q: 'How does the hybrid signature work?',
+                a: `Each credential is signed twice: once with Ed25519 (today's algorithm, fast) and once with ML-DSA-44 (the NIST-approved post-quantum algorithm). Both signatures cover the exact same JSON bytes, and they ride together inside the credential.
 
+A verifier can choose what to check:
+
+- **Old verifier?** Just check the Ed25519 part. Works today.
+- **Forward-looking verifier?** Check the ML-DSA-44 part.
+- **Belt-and-suspenders verifier?** Check both, fail if either is wrong.
+
+This means you can issue hybrid-signed credentials right now, and they remain valid whether your verifier is upgraded yet or not. No flag day, no mass migration.`,
+            },
+            {
+                q: 'Is post-quantum signing slower?',
+                a: `Yes, but barely. On a modern laptop, signing with Ed25519 takes about 50 microseconds; the hybrid path adds the ML-DSA-44 signature for a total around 3 milliseconds. Verification is similar. The bigger trade-off is size: a classical credential is ~700 bytes; a hybrid one is ~3.2 KB. You'll want to send credentials in HTTP bodies rather than headers.`,
+            },
+            {
+                q: 'How do I turn on the hybrid profile?',
+                a: `In Python, install the post-quantum extra and call the hybrid signer:
+
+\`\`\`bash
+pip install 'vouch-protocol[pq]'
 \`\`\`
-proofValue = "z" + base58btc(ed25519_sig[64] || mldsa44_sig[2420])
+
+\`\`\`python
+signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
+signed = signer.sign_credential_hybrid(credential)
 \`\`\`
 
-A verifier in three configurable modes:
-
-- **Mode A (classical-only)** - validates only the Ed25519 signature; ignores the trailing bytes
-- **Mode B (PQ-only)** - validates only the ML-DSA-44 signature
-- **Mode C (both required)** - validates both, fails if either is invalid
-
-This gives graceful verifier downgrade and a single wire format that satisfies both classical and PQ verifiers during the migration window.`,
-                meta: 'Shipped v1.6.0 - CG Report §13.2 - PAD-040',
-            },
-            {
-                q: 'Why hybrid rather than pure ML-DSA-44?',
-                a: `Two reasons. First, ML-DSA-44 is new (FIPS 204 was finalized in August 2024); a backup classical signature de-risks any future cryptanalytic surprise. Second, regulators in CNSA 2.0 / NSM-10 frameworks expect a phased migration: classical-only → hybrid → PQ-only. The hybrid profile is the middle step. As pure-PQ confidence grows over the migration window, a future cryptosuite (\`mldsa44-jcs-...\`) becomes feasible.`,
-                meta: 'NIST CNSA 2.0 - NSM-10',
-            },
-            {
-                q: 'What is the "same canonical bytes" property?',
-                a: `Both Ed25519 and ML-DSA-44 sign the **same** SHA-256 digest of the JCS-canonicalized credential. This means a verifier in either mode (classical-only or PQ-only) is checking a signature over the same exact bytes; there is no algorithm-specific serialization quirk that could let an attacker substitute one signed payload for another. Documented as [PAD-040](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-040-hybrid-composite-signature-same-canonical-bytes.md).`,
-                meta: 'PAD-040',
-            },
-            {
-                q: 'Does Vouch align with draft-ietf-jose-pq-composite-sigs?',
-                a: `Conceptually yes (PQ/T composite pattern). Wire-format-wise no, the IETF draft targets JWS Compact Serialization while Vouch uses W3C Data Integrity. The two are alternative envelope formats for the same underlying composite-signature idea.`,
-                meta: 'CG Report §13.2',
-            },
-            {
-                q: 'What ML-DSA parameter set is used?',
-                a: `ML-DSA-44 (parameter set 2 of FIPS 204), giving ~128-bit post-quantum security. Public key ~1,312 bytes, signature ~2,420 bytes. Larger parameter sets (ML-DSA-65, ML-DSA-87) are not currently supported but the Multikey encoding has multicodec prefixes reserved for them.`,
-                meta: 'NIST FIPS 204',
-            },
-            {
-                q: 'What is the performance overhead of the hybrid profile?',
-                a: `On Apple M2: ed25519 sign ~50µs, ML-DSA-44 sign ~3ms; total hybrid sign ~3ms. Verify is similar (~3ms hybrid). Credential size grows from ~700 bytes (ed25519 only) to ~3.2 KB (hybrid). The bigger consideration is HTTP header size, hybrid credentials exceed typical header limits, so credentials should be transmitted in the request body (CG Report §13.4).`,
-            },
-            {
-                q: 'Where is the hybrid implementation in each language?',
-                a: `- **Python**: \`vouch/data_integrity_hybrid.py\` (uses \`pqcrypto.sign.ml_dsa_44\`, optional dep via \`pip install vouch-protocol[pq]\`)
-- **TypeScript**: \`packages/sdk-ts/src/data-integrity-hybrid.ts\` (uses \`@noble/post-quantum/ml-dsa\`)
-- **Go**: \`go-sidecar/signer/data_integrity_hybrid.go\` (uses \`github.com/cloudflare/circl/sign/mldsa/mldsa44\`)
-
-All three export \`build_hybrid_proof()\` and \`verify_hybrid_proof()\` (or the language-idiomatic equivalent) with identical wire output.`,
-                meta: 'Shipped v1.6.0',
-            },
-            {
-                q: 'Is there a hybrid implementation guide?',
-                a: `Yes. [docs/hybrid-pq-implementation-guide.md](https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md) (260 lines) covers all three languages, the three verifier modes, DID Document layout for dual keypairs, performance and size tables, and migration guidance.`,
+TypeScript and Go work the same way. There's a full how-to in the [Guides](/help/#hybrid-pq) with code in all three languages.`,
                 helpLinks: [{ label: 'Hybrid PQ how-to', href: '/help/#hybrid-pq' }],
+            },
+            {
+                q: 'Which post-quantum algorithm does Vouch use?',
+                a: `ML-DSA-44, the smallest parameter set of NIST FIPS 204 (the standard published in 2024). It gives roughly the same security level as Ed25519 but against quantum attacks. Larger ML-DSA parameter sets (ML-DSA-65, ML-DSA-87) aren't wired in yet but the format leaves room for them.`,
             },
         ],
     },
@@ -746,40 +700,24 @@ All three export \`build_hybrid_proof()\` and \`verify_hybrid_proof()\` (or the 
     {
         id: 'shield',
         audience: 'Vouch Shield',
-        title: 'Runtime security middleware',
+        title: 'Permission checks on every tool call',
         items: [
             {
                 q: 'What is Vouch Shield?',
-                a: `An optional TypeScript runtime middleware that intercepts AI-agent tool calls and enforces:
+                a: `Vouch Shield is a small TypeScript library that sits between your AI agent and the tools it tries to call. Before any tool runs, Shield checks: is this call signed? Is the signer on my trust list? Does this DID have permission to call this specific tool? If anything is off, the call is blocked and logged. If everything checks out, the call runs.
 
-1. **Signature verification** - only signed actions are allowed
-2. **Allowlist enforcement** - only trusted DIDs can execute
-3. **Capability-based permissions** - fine-grained access control per tool
-4. **Flight recorder** - complete audit trail of allowed and blocked calls
-
-\`npm install @vouch-protocol/shield\`. Repo: [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield).`,
+\`npm install @vouch-protocol/shield\`. Source: [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield).`,
                 helpLinks: [{ label: 'Vouch Shield setup', href: '/help/#vouch-shield' }],
             },
             {
-                q: 'How does Vouch Shield differ from Vouch Protocol itself?',
-                a: `Vouch Protocol is the specification and SDK for signing and verifying credentials. Vouch Shield is the *enforcement layer* that consumes those credentials at runtime. Think of Vouch Protocol as the wire format and signature, and Vouch Shield as the gatekeeper that inspects every tool call before letting it through.`,
-            },
-            {
-                q: 'What does the Vouch Shield flow look like?',
-                a: `1. Tool call comes in (with or without a Vouch credential)
-2. If unsigned, deny immediately
-3. Check blocklist (deny if listed)
-4. Check allowlist (deny or warn if not listed)
-5. Verify the Vouch credential's signature against the registered public key
-6. Check capability permissions for the specific tool
-7. Log to flight recorder (allowed, blocked, warned)
-8. Return allow/deny decision
+                q: 'How is Vouch Shield different from the Vouch Protocol itself?',
+                a: `Think of Vouch Protocol as the passport: it defines how an agent proves who it is and what it intends to do. Vouch Shield is the customs officer: it inspects passports at the door and decides who gets through.
 
-The \`VouchShield\` class exposes \`interceptToolCall()\` as the single entry point.`,
+You can use Vouch Protocol without Shield (just sign and verify credentials in your own code). Shield is a convenience layer for teams who want the gatekeeping done for them.`,
             },
             {
-                q: 'Where does Vouch Shield live in my agent stack?',
-                a: `In the tool-execution layer. If you use LangChain, CrewAI, AutoGen, or any framework where the LLM emits a tool-call object before execution, Vouch Shield sits between the framework's "tool call decided" event and the actual tool function invocation.`,
+                q: 'Where does Shield fit in my agent stack?',
+                a: `Right before any tool actually executes. If your agent uses LangChain, CrewAI, AutoGen, MCP, or anything similar, Shield slots between "the LLM decided to call tool X" and "tool X actually runs." If the call doesn't pass Shield's checks, the tool never fires.`,
             },
         ],
     },
