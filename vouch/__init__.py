@@ -147,6 +147,20 @@ def __getattr__(name):
         from . import heartbeat
 
         return getattr(heartbeat, name)
+    elif name in (
+        "HeartbeatQuorum",
+        "QuorumError",
+        "QuorumPolicy",
+        "QuorumResult",
+        "QuorumValidator",
+        "ROLE_GENERAL",
+        "ROLE_POLICY",
+        "ROLE_BEHAVIORAL",
+        "ROLE_BUDGET",
+    ):
+        from . import quorum
+
+        return getattr(quorum, name)
     # Reputation
     elif name in (
         "ReputationEngine",
