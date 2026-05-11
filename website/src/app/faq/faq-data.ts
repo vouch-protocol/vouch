@@ -623,22 +623,98 @@ If a dispute arises, the credential and its proof can be presented as evidence; 
 The full mapping is documented in Appendix A of the [specification](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md).`,
             },
             {
-                q: 'Does Vouch work with MCP, LangChain, CrewAI, etc.?',
-                a: `Yes. Vouch is framework-agnostic. A Vouch credential is just signed JSON, so any framework that can pass a JSON blob alongside a tool call can carry it. We ship ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, Google Vertex AI, Google ADK, n8n, Hasura, Streamlit, and the Model Context Protocol (MCP). Drop-in for the major frameworks; small adapter for anything else.`,
-            },
-            {
-                q: 'Does Vouch work alongside C2PA for media provenance?',
-                a: `Yes, and intentionally so. C2PA is the right standard for "where did this photo/video/audio come from." Vouch is the right layer for "which AI agent signed it, with whose permission." The repo ships a small Certificate Authority that issues Vouch-rooted C2PA certificates so the two stitch together cleanly. The editor is a member of C2PA and the Content Authenticity Initiative.`,
-            },
-            {
-                q: 'Where is this in the standards pipeline?',
-                a: `Vouch is a W3C Community Group Report being incubated in the [Credentials Community Group](https://www.w3.org/community/credentials/). The goal is to gather feedback from teams actually building agents, then propose it for the formal standards track via the W3C Verifiable Credentials Working Group and the Data Integrity Working Group.
+                q: 'How does Vouch fit with W3C Verifiable Credentials 2.0?',
+                a: `A Vouch credential **is** a W3C Verifiable Credential. It uses the standard VC 2.0 JSON shape, the standard \`@context\`, the standard \`type\`, \`issuer\`, \`credentialSubject\`, and \`proof\` fields. The only Vouch-specific addition is an \`intent\` object inside \`credentialSubject\` that pins down the agent's action, target, and resource.
 
-If you want to follow along or contribute, the [public-credentials mailing list](https://lists.w3.org/Archives/Public/public-credentials/) is the right venue.`,
+This means any tool that knows how to read a W3C VC can read a Vouch credential. It just won't know what to do with the \`intent\` field unless it's been taught.`,
             },
             {
-                q: 'Are test vectors published for interop?',
-                a: `Yes. [Cross-language test vectors](https://github.com/vouch-protocol/vouch/tree/main/test-vectors) cover the hybrid post-quantum profile and W3C BitstringStatusList. Each vector includes a deterministic generator script so you can reproduce and audit it. Python, TypeScript, and Go all verify the same vectors byte-identically.`,
+                q: 'How does Vouch use W3C Data Integrity proofs?',
+                a: `Data Integrity is the W3C standard for attaching a cryptographic signature to JSON in a readable way (instead of wrapping the whole thing in an opaque JWS blob).
+
+Vouch supports two Data Integrity cryptosuites today:
+
+- \`eddsa-jcs-2022\` — the default, classical Ed25519 signatures
+- \`hybrid-eddsa-mldsa44-jcs-2026\` — optional, post-quantum hybrid (Ed25519 + ML-DSA-44)
+
+The hybrid cryptosuite identifier is provisional. If Vouch moves to the formal standards track, we'd want to register the identifier properly with the W3C Data Integrity Working Group.`,
+            },
+            {
+                q: 'How does Vouch use W3C DIDs?',
+                a: `Every agent and every signer in Vouch has a Decentralized Identifier. We support two DID methods:
+
+- **did:web** — resolves over HTTPS to a DID Document at your domain. Good for organizations that own a domain.
+- **did:key** — the public key is part of the identifier itself, no infrastructure needed. Good for ephemeral or fully decentralized agents.
+
+Adding more DID methods (\`did:peer\`, \`did:dht\`, etc.) is straightforward when there's demand. We're not opinionated about which method you use; we're opinionated that you use one.`,
+            },
+            {
+                q: 'What is Multikey, and why does Vouch use it?',
+                a: `Multikey is a W3C format for encoding a public key with a small tag indicating which algorithm it belongs to. We use it because a single DID Document can then publish multiple keys side-by-side, one Ed25519 and one ML-DSA-44, for example, and verifiers pick whichever they support.
+
+That's the trick behind Vouch's hybrid post-quantum: you can advertise both a classical key and a post-quantum key, sign credentials with both, and older verifiers (that only know Ed25519) still work fine. No flag day, no breakage.`,
+            },
+            {
+                q: 'How does Vouch use W3C BitstringStatusList for revocation?',
+                a: `BitstringStatusList is a W3C standard for revoking individual credentials without invalidating everything an issuer ever signed. The idea: publish a compressed bitstring at a stable URL where each bit corresponds to one credential. To revoke a credential, flip its bit and republish. To check status, verifiers fetch the list and look at the right bit.
+
+Vouch ships a reference implementation across Python, TypeScript, and Go, with a published cross-language test vector. Most issuers will pair this with the older "revoke an entire DID" model — BitstringStatusList for granular per-credential status, DID-level registry for "this key was compromised, kill everything from this identity."`,
+            },
+            {
+                q: 'How does Vouch relate to ZCAP-LD?',
+                a: `ZCAP-LD is another W3C draft that tackles a similar problem: tracking who delegated which capability to whom. Vouch delegation chains share the same intent, but with different choices:
+
+- Vouch uses **JCS** canonicalization (a deterministic byte-level recipe for serializing JSON); ZCAP-LD uses **JSON-LD** canonicalization.
+- Vouch **requires** every link in a chain to name a specific resource; ZCAP-LD is more open-ended about scope.
+
+The two can interoperate, and we're happy to spell out the mapping in a future revision of the spec.`,
+            },
+            {
+                q: 'Why not use IETF JWS / JOSE like JWTs do?',
+                a: `JWS Compact Serialization wraps the entire credential in an opaque base64 blob. You can't read it without decoding it first. Data Integrity keeps the credential as readable JSON and attaches the signature as a sibling object you can look at directly.
+
+For agent actions where humans (auditors, regulators, your CFO) will read the credentials, readability matters. Earlier Vouch drafts experimented with JWS and we moved away from it deliberately. JWS is still a valid signature envelope for VCs; we just chose differently.`,
+            },
+            {
+                q: 'How does Vouch fit with C2PA?',
+                a: `C2PA is the right standard for "where did this photo, video, or audio come from?" — provenance for media. Vouch is the right layer for "which AI agent signed this, and with whose permission?" — identity for the signer.
+
+The two complement each other. The Vouch repo ships a small Certificate Authority that issues Vouch-rooted C2PA certificates, so a C2PA manifest can be signed by a Vouch-identified agent and the whole chain checks out. The editor sits on C2PA technical committees and the Content Authenticity Initiative; this composition is intentional.`,
+            },
+            {
+                q: 'How does Vouch fit with the Model Context Protocol (MCP)?',
+                a: `Vouch is framework-agnostic, so it works with MCP servers and clients without anything special. An MCP tool-call envelope can carry a Vouch credential alongside the tool arguments. The MCP server (or a Vouch Shield middleware in front of it) verifies the credential before letting the tool run.
+
+There's a reference MCP server integration in the Python SDK to make this concrete.`,
+            },
+            {
+                q: 'Where is Vouch in the W3C standards pipeline?',
+                a: `Vouch is a **Community Group Report** at the W3C [Credentials Community Group](https://www.w3.org/community/credentials/). A Community Group Report is an early-stage incubation document: useful, public, but **not** part of W3C's formal standards track.
+
+The next step, once enough teams adopt Vouch and we have implementation experience to draw on, is to propose it for the formal standards track via the **Verifiable Credentials Working Group** and the **Data Integrity Working Group**. That would lead to a "Working Draft," then a "Candidate Recommendation," then a "Recommendation" (the W3C equivalent of "official standard"). We're at step one; expect a multi-year journey.`,
+            },
+            {
+                q: 'What does "informative" vs "normative" mean in the Vouch spec?',
+                a: `Standards-speak: **normative** means "if you say you implement this spec, you have to do X." **Informative** means "here's a useful description, but it's not part of the contract."
+
+The Vouch credential layer (signing, verification, delegation, hybrid post-quantum, revocation) is normative. If you call yourself Vouch-compatible, you must implement these the same way as everyone else, byte for byte.
+
+The State Verifiability layer (Heartbeat Protocol, validator quorum, behavioral attestation) was originally documented as informative — "here's the idea, implementations may vary." With the runtime now shipped in the Python SDK and being ported to TypeScript and Go, parts of that layer will become normative in a future revision.`,
+            },
+            {
+                q: 'Are there test vectors for cross-language interop?',
+                a: `Yes. [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors) has canonical test vectors for the hybrid post-quantum profile and for W3C BitstringStatusList. Each comes with a deterministic generator script (\`generate.py\`) so anyone can regenerate it and audit the result.
+
+Python, TypeScript, and Go all verify the same vectors. For BitstringStatusList specifically, Python and TypeScript produce byte-identical encoded output; Go produces a slightly different DEFLATE stream that decompresses to the same bitstring (semantically equivalent, which is what the W3C spec actually requires).`,
+            },
+            {
+                q: 'What is on the Vouch roadmap?',
+                a: `Tracked at [ROADMAP.md](https://github.com/vouch-protocol/vouch/blob/main/ROADMAP.md). Headline items:
+
+- Promote the State Verifiability runtime to fully normative once TypeScript and Go ports of the Python implementation land.
+- Expand the post-quantum profile from "hybrid Ed25519 + ML-DSA-44" to "pure ML-DSA" as NIST's CNSA 2.0 migration progresses and confidence in ML-DSA matures.
+- Federate the credential trust state across multiple validator quorums for multi-tenant deployments.
+- Propose the formal standards-track transition once we have enough implementer experience.`,
             },
         ],
     },
