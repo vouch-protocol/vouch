@@ -51,6 +51,12 @@ type BuildVouchCredentialOptions struct {
 	DelegationChain  []map[string]any
 	CredentialID     string
 	ValidFrom        time.Time
+
+	// CredentialStatus is an optional W3C credentialStatus entry, typically
+	// built via BuildStatusListEntry to reference a BitstringStatusListCredential
+	// (W3C CG Report §11.2). When non-nil, it is attached to the credential as
+	// the `credentialStatus` property.
+	CredentialStatus map[string]any
 }
 
 // BuildVouchCredential constructs an unsigned Vouch Credential. The caller
@@ -111,7 +117,7 @@ func BuildVouchCredential(opts BuildVouchCredentialOptions) (map[string]any, err
 		credID = uuid
 	}
 
-	return map[string]any{
+	vc := map[string]any{
 		"@context":          []any{VCContextV2, VouchContextV1},
 		"id":                credID,
 		"type":              []any{VCType, VouchCredentialType},
@@ -119,7 +125,13 @@ func BuildVouchCredential(opts BuildVouchCredentialOptions) (map[string]any, err
 		"validFrom":         formatISO8601(issuedAt),
 		"validUntil":        formatISO8601(expiresAt),
 		"credentialSubject": subject,
-	}, nil
+	}
+
+	if opts.CredentialStatus != nil {
+		vc["credentialStatus"] = opts.CredentialStatus
+	}
+
+	return vc, nil
 }
 
 func validateIntent(intent map[string]any) error {

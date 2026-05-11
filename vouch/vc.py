@@ -32,6 +32,7 @@ def build_vouch_credential(
     delegation_chain: Optional[List[Dict[str, Any]]] = None,
     credential_id: Optional[str] = None,
     valid_from: Optional[datetime] = None,
+    credential_status: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Construct an unsigned Vouch Credential. Caller is responsible for attaching
@@ -45,6 +46,9 @@ def build_vouch_credential(
         delegation_chain: Optional ordered list of delegation links.
         credential_id: Optional credential ID. Defaults to a fresh UUID URN.
         valid_from: Optional override for `validFrom`. Defaults to current UTC.
+        credential_status: Optional W3C `credentialStatus` entry, typically built
+            via `status_list.build_status_list_entry` to reference a
+            BitstringStatusListCredential (W3C CG Report §11.2).
 
     Returns:
         A dict suitable for proof attachment.
@@ -66,7 +70,7 @@ def build_vouch_credential(
     if delegation_chain:
         subject["delegationChain"] = delegation_chain
 
-    return {
+    vc: Dict[str, Any] = {
         "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
         "id": credential_id or _new_uuid_urn(),
         "type": [VC_TYPE, VOUCH_CREDENTIAL_TYPE],
@@ -75,6 +79,11 @@ def build_vouch_credential(
         "validUntil": _iso(expires_at),
         "credentialSubject": subject,
     }
+
+    if credential_status is not None:
+        vc["credentialStatus"] = credential_status
+
+    return vc
 
 
 def build_session_voucher(

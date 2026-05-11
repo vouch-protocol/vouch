@@ -47,6 +47,12 @@ type SignCredentialOptions struct {
 	// parent's subject to this signer's DID, enforcing the 5-hop depth
 	// limit (§9.4) and the resource-narrowing rule (§9.3 step 5).
 	ParentCredential map[string]any
+
+	// CredentialStatus is an optional W3C credentialStatus entry, typically
+	// built via BuildStatusListEntry to reference a BitstringStatusListCredential
+	// (W3C CG Report §11.2). When non-nil, it is attached to the credential
+	// as the `credentialStatus` property.
+	CredentialStatus map[string]any
 }
 
 // SignCredential issues a W3C Verifiable Credential with a Data Integrity
@@ -68,13 +74,14 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
-		IssuerDID:       s.did,
-		Intent:          opts.Intent,
-		ValidSeconds:    validSeconds,
-		ReputationScore: opts.ReputationScore,
-		DelegationChain: chain,
-		CredentialID:    opts.CredentialID,
-		ValidFrom:       opts.ValidFrom,
+		IssuerDID:        s.did,
+		Intent:           opts.Intent,
+		ValidSeconds:     validSeconds,
+		ReputationScore:  opts.ReputationScore,
+		DelegationChain:  chain,
+		CredentialID:     opts.CredentialID,
+		ValidFrom:        opts.ValidFrom,
+		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
 		return nil, err
@@ -166,13 +173,14 @@ func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]an
 	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
-		IssuerDID:       s.did,
-		Intent:          opts.Intent,
-		ValidSeconds:    validSeconds,
-		ReputationScore: opts.ReputationScore,
-		DelegationChain: chain,
-		CredentialID:    opts.CredentialID,
-		ValidFrom:       opts.ValidFrom,
+		IssuerDID:        s.did,
+		Intent:           opts.Intent,
+		ValidSeconds:     validSeconds,
+		ReputationScore:  opts.ReputationScore,
+		DelegationChain:  chain,
+		CredentialID:     opts.CredentialID,
+		ValidFrom:        opts.ValidFrom,
+		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
 		return nil, err
