@@ -98,6 +98,18 @@ def __getattr__(name):
         from . import trust_entropy
 
         return getattr(trust_entropy, name)
+    elif name in (
+        "BehavioralAttestationError",
+        "BehavioralCollector",
+        "BehavioralSample",
+        "validate_behavioral_digest",
+        "mean_drift_scorer",
+        "max_drift_scorer",
+        "ewma_drift_scorer",
+    ):
+        from . import behavioral_attestation
+
+        return getattr(behavioral_attestation, name)
     # Reputation
     elif name in (
         "ReputationEngine",
