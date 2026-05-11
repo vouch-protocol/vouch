@@ -8,6 +8,10 @@
 !.yarn/releases
 !.yarn/versions
 
+# Root .gitignore excludes package-lock.json (legacy Python-primary repo rule).
+# Re-include it here so CI gets deterministic installs via npm ci.
+!package-lock.json
+
 # testing
 /coverage
 
