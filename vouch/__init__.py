@@ -141,6 +141,8 @@ def __getattr__(name):
         "HeartbeatScheduler",
         "HeartbeatValidator",
         "HeartbeatValidationResult",
+        "HeartbeatStoreInterface",
+        "MemoryHeartbeatStore",
         "HEARTBEAT_PROTOCOL_VERSION",
         "HEARTBEAT_REQUEST_TYPE",
     ):
