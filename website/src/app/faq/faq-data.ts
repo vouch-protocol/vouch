@@ -46,59 +46,54 @@ export const FAQ_SECTIONS: FAQSection[] = [
         title: 'What the protocol is and why it exists',
         items: [
             {
-                q: 'What is the Vouch Protocol?',
-                a: `Vouch Protocol is an open, W3C-track specification for cryptographic agent identity, intent attestation, and continuous trust verification for autonomous AI agents.
+                q: 'What is Vouch Protocol?',
+                a: `Vouch is a digital signature layer for AI agents. When your agent does something on your behalf (sends an email, transfers money, files a claim, queries a database), Vouch lets it cryptographically sign that action so anyone, anywhere, can later prove who did what and with whose permission.
 
-It is built on primitives already familiar to the W3C community: Decentralized Identifiers, Verifiable Credentials, and Data Integrity proofs. The reference implementations are in Python, TypeScript, and Go, and they produce byte-identical credentials thanks to RFC 8785 JCS canonicalization.`,
-                meta: 'Spec v0.1-draft - Implementation v1.6.0 (2026-04-29)',
+Think of it as a tamper-proof receipt for every move an autonomous AI makes. The receipt is human-readable, cryptographically signed, and works across whatever framework you use to build agents (LangChain, CrewAI, MCP, anything).`,
             },
             {
                 q: 'What problem does it solve?',
-                a: `Autonomous AI agents are increasingly deployed to take real-world actions in regulated environments: financial trades, healthcare claim submissions, regulatory filings, critical-infrastructure control. The existing authentication mechanisms (API keys, OAuth bearer tokens, session cookies) were designed for human users and stateless services. They prove that someone holds a token; they prove nothing about what the holder intended to do, who delegated the action, or whether the holder's runtime state is still aligned with the authorization that was originally granted.
+                a: `AI agents are doing real work now: they submit insurance claims, place trades, file regulatory reports, access patient records. When something goes wrong (and eventually something will), you need to know exactly which agent took which action, who authorized it, and whether the agent had permission.
 
-Vouch fills that gap. Every action is a signed W3C Verifiable Credential that binds identity, action, target, and resource together, with optional delegation chains, behavioral metadata, and continuous renewal.`,
-                meta: 'CG Report §1.1 Problem Statement',
+The tools we built for humans (API keys, login sessions, OAuth tokens) were not designed for this. They prove someone has access. They don't prove what the agent intended to do, who delegated the action down to it, or whether the agent is still behaving correctly.
+
+Vouch fixes this by turning every agent action into a signed receipt. Identity, intent, target, and the chain of permissions are all cryptographically bound together. If your CFO asks "did our agent really wire that money?", you can prove it in seconds, with math, not log files.`,
             },
             {
                 q: 'How is this different from OAuth, API keys, or JWTs?',
-                a: `Three substantive differences:
+                a: `Three big differences:
 
-1. **Identity is cryptographic, not assigned.** The agent's identity is a Decentralized Identifier (did:web or did:key) backed by an Ed25519 keypair the agent controls. There is no central issuer that can be coerced to revoke or impersonate.
+**1. The agent owns its identity.** With API keys, someone hands the agent a string. With Vouch, the agent generates its own cryptographic identity. Nobody, including the issuer, can impersonate it or take it away from afar.
 
-2. **Credentials bind intent to resource.** A Vouch credential is not "this principal is allowed to call this API"; it is "this agent intends to execute this action on this specific resource at this specific time, signed by these specific delegators." Replay attacks against a different resource are cryptographically blocked.
+**2. Every action carries its intent.** An API key just says "I'm allowed in." A Vouch credential says "I am Agent A, I want to submit *this specific claim* to *this specific URL*, at *this specific time*, and here is the chain of humans who approved it." Replaying the credential against any other resource literally cannot work.
 
-3. **Trust is continuously verified, not granted once.** The Heartbeat Protocol inverts the traditional PKI trust model from "trusted until revoked" to "untrusted until renewed."`,
-                meta: 'CG Report §1.1, §11 Heartbeat Protocol',
+**3. Trust expires fast and renews continuously.** A bearer token is good until someone remembers to revoke it. Vouch flips this: agents are untrusted by default and must renew their credentials on a heartbeat. If an agent goes silent (crashed, compromised, network split), its permissions expire on their own. No manual cleanup.`,
             },
             {
-                q: 'Is Vouch Protocol production-ready?',
-                a: `**For the credential layer: yes.** Signing, verification, Multikey, JCS canonicalization, delegation chains, and the hybrid post-quantum profile are all shipped, work across all three languages, and have published test vectors. Use them in production today.
+                q: 'Can I use Vouch in production today?',
+                a: `**Yes, for what most teams need.** Signing your agent's actions, verifying them anywhere, building permission chains between multiple agents, revoking compromised credentials, and being post-quantum ready: all shipped, all tested across Python, TypeScript, and Go, all have published test vectors. Build on it today.
 
-**For the State Verifiability layer (Heartbeat, validator quorum, canary commitments, behavioral attestation): not yet.** The credential format ships (SessionVoucher), but the runtime that drives heartbeats and quorum isn't built. That is the next focus once enough teams are running Vouch in production to tell us what shape it needs.
+**The "continuous trust scoring" layer is still cooking.** That's the part where multiple validators agree on whether your agent is behaving correctly while it's running. The data format is ready, but the running pieces aren't built yet. Most teams don't need this; the core covers almost every use case we've seen.
 
-**Vouch Shield**, the optional runtime middleware that intercepts tool calls and enforces capability checks, is production-ready as a TypeScript library.`,
-                meta: 'CHANGELOG: v1.0 through v1.6.0',
+**Vouch Shield**, our optional runtime middleware that checks every tool call against your permission rules, is also production-ready (TypeScript library).`,
             },
             {
-                q: 'Who is behind Vouch Protocol?',
-                a: `Editor: [Ramprasad Gaddam](https://github.com/vouch-protocol), a Director of AI and Machine Learning Engineering with 20 years in Healthcare and Manufacturing IT (16+ in healthcare), Master Inventor with 20 patents in cryptography, blockchain, and AI, and 55 defensive disclosures published under CC0 to encourage open adoption.
+                q: 'Who is behind Vouch?',
+                a: `Vouch is a personal open-source project from [Ramprasad Gaddam](https://github.com/vouch-protocol), an AI engineering director with 20+ years in regulated industries (healthcare, banking, manufacturing), 20 patents in cryptography and AI, and active membership in W3C, The Linux Foundation, C2PA, the Content Authenticity Initiative, DIF, and IEEE.
 
-Member of standards boards at The Linux Foundation, Coalition for Content Provenance and Authenticity (C2PA), Content Authenticity Initiative (CAI), Decentralized Identity Foundation (DIF), and IEEE.
-
-Vouch Protocol is a personal open-source project, not affiliated with any employer.`,
+It is not affiliated with or endorsed by any employer.`,
             },
             {
-                q: 'What does the name "Vouch" mean?',
-                a: `To vouch for something is to attest to its truth on your own authority and to accept the consequences of being wrong. A Vouch Credential is exactly that: an agent (or its principal) cryptographically attesting to an action and accepting the audit trail.`,
+                q: 'Where does the name come from?',
+                a: `To vouch for someone is to publicly stand behind them and take responsibility if they let you down. A Vouch credential does the same thing in code: an agent stands behind its own action, and the chain of people who delegated to it stands behind the agent.`,
             },
             {
-                q: 'Where is the specification published?',
-                a: `The current draft is the W3C Community Group Report at [docs/specs/w3c-cg-report.md](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md). The executive summary is at [docs/specs/cg-report-executive-summary.md](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/cg-report-executive-summary.md). The submission target is the W3C Credentials Community Group (CCG).`,
-                meta: 'W3C CG Report - Spec v0.1-draft',
+                q: 'Is Vouch free? What is the license?',
+                a: `Yes, fully free and open-source. **Apache 2.0** for all code and the specification. **CC0** (public domain) for the 55 design disclosures we've published. Use it in commercial products, fork it, sell things built on top of it. We just ask that you don't try to patent the ideas back at us.`,
             },
             {
-                q: 'What license is Vouch published under?',
-                a: `Apache License 2.0 for code and specification. CC0 1.0 Universal (public domain) for the 55-entry Prior Art Disclosure (PAD) portfolio at [docs/disclosures/](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures).`,
+                q: 'Where can I read the formal specification?',
+                a: `Most people never need to. The FAQ and [Guides](/help/) cover everything you'll use day to day. But if you want the formal version, it's at [docs/specs/w3c-cg-report.md](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md), with an executive summary [here](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/cg-report-executive-summary.md). Vouch is on the W3C standards track via the Credentials Community Group.`,
             },
         ],
     },
@@ -108,80 +103,57 @@ Vouch Protocol is a personal open-source project, not affiliated with any employ
     // =====================================================================
     {
         id: 'concepts',
-        audience: 'Core Concepts',
-        title: 'The vocabulary you need',
+        audience: 'How It Works',
+        title: 'The pieces, explained simply',
         items: [
             {
-                q: 'What is a DID (Decentralized Identifier)?',
-                a: `A DID is an identifier that you control cryptographically rather than an identifier issued to you by an authority. Vouch uses two DID methods:
+                q: 'What is a DID, in plain English?',
+                a: `A DID (Decentralized Identifier) is a username your agent gives itself, backed by a cryptographic key only your agent holds. No registrar, no central authority can take it away.
 
-- **did:web** - the DID resolves via HTTPS to a DID Document hosted at a well-known URL. Example: \`did:web:agent.example.com\`.
-- **did:key** - the DID *contains* the public key. Self-resolving, no infrastructure required. Example: \`did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\`.
+Think of it like a passport you issue to yourself, where the passport's authenticity is proven by math, not by a government stamp. Vouch uses two flavours:
 
-Both are W3C standards. The DID is bound to the agent's runtime via a private key the agent controls.`,
-                meta: 'CG Report §6 Identity Model',
+- **did:web** looks like \`did:web:agent.example.com\` and points to a small JSON file on your domain. Use this when you own a domain.
+- **did:key** looks like \`did:key:z6Mk...\` and the public key is baked into the identifier itself. Use this for quick experiments or self-contained agents that don't need a website.`,
             },
             {
                 q: 'What is a Verifiable Credential?',
-                a: `A W3C Verifiable Credential (VC) is a JSON document with a cryptographic proof attached. The document makes claims about a subject (the agent); the proof is a digital signature over the canonicalized document by an issuer (which may be the agent itself, a delegator, or a validator).
+                a: `A Verifiable Credential is a small piece of signed JSON that says "the holder of this DID claims X." For Vouch, X is something like "I, Agent A, am about to submit claim HC-001 to the insurance system at this URL."
 
-A Vouch Credential is a VC where the credential subject's claims include an \`intent\` object binding the agent to a specific action, target, and resource.`,
-                meta: 'CG Report §5 Vouch Credential Format',
+The credential is signed by whoever issues it (the agent itself, a human delegator, or a validator). Anyone with the issuer's public key can verify the signature later. Tamper with even one character and the signature breaks.
+
+A Vouch credential is just a Verifiable Credential with an \`intent\` field that pins down what the agent is doing and to what.`,
             },
             {
                 q: 'What is a Data Integrity proof?',
-                a: `A signature scheme defined by the W3C that attaches to a VC as a sibling object rather than wrapping the credential in an opaque encoded blob (as JWS does). The VC stays human-readable JSON; the proof is a separate object with \`type\`, \`cryptosuite\`, \`proofValue\`, and verification metadata.
+                a: `It is the cryptographic signature glued to the side of a Verifiable Credential. Vouch uses a W3C standard called Data Integrity, which keeps the credential as plain readable JSON and attaches the proof as a separate object next to it. You can open a Vouch credential in any text editor and read it.
 
-Vouch uses the \`eddsa-jcs-2022\` cryptosuite (Ed25519 over RFC 8785 JCS-canonicalized bytes) by default, and the \`hybrid-eddsa-mldsa44-jcs-2026\` cryptosuite for the post-quantum profile.`,
-                meta: 'CG Report §7 Signing Operations',
+By default Vouch uses Ed25519 (fast, well-known elliptic-curve signatures). If you need post-quantum protection, switch to the hybrid cryptosuite that signs with both Ed25519 *and* ML-DSA-44 (a NIST-approved post-quantum algorithm).`,
             },
             {
-                q: 'What is JCS canonicalization?',
-                a: `JCS is RFC 8785 (JSON Canonicalization Scheme). It defines a deterministic byte-level serialization of any JSON value: keys sorted lexicographically, numbers in canonical form, strings escaped consistently, no insignificant whitespace.
+                q: 'Why do you talk about "JCS canonicalization"?',
+                a: `It is a fancy name for "write this JSON the exact same way every time." JCS (RFC 8785) gives every implementation the same recipe: sort keys alphabetically, format numbers the same way, no random whitespace. Same JSON in, same bytes out.
 
-Because JCS is byte-deterministic, two implementations of Vouch in different languages produce byte-identical signed payloads given the same input. This makes cross-language verification of signatures trivially correct, and it enables a deterministic multi-party trust state ([PAD-039](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-039-jcs-deterministic-multi-party-trust-state.md)).`,
-                meta: 'RFC 8785 - PAD-039',
+This matters because signatures are over bytes, not over abstract JSON. If your Python signs the credential but the bytes look different when TypeScript serializes the same data, the signature breaks. JCS makes that impossible. It is the reason a Vouch credential signed in Python can be verified in TypeScript or Go without any conversion.`,
             },
             {
-                q: 'What is Multikey?',
-                a: `A W3C verification-method format that encodes a public key with a multicodec prefix indicating its algorithm. Ed25519 uses prefix \`0xed01\`; ML-DSA-44 uses prefix \`0x1207\`. Multikey lets a DID Document advertise multiple public keys side-by-side, enabling crypto-agility (an agent can publish both an Ed25519 key and an ML-DSA-44 key, and verifiers pick which to validate).`,
-                meta: 'PAD-041 Multikey Algorithm-Agnostic Verification',
-            },
-            {
-                q: 'What is the Identity Sidecar pattern?',
-                a: `An architectural pattern that puts the agent's private signing key in a separate process from the LLM. The LLM never sees the key. When the agent wants to sign an action, it asks the sidecar (over local IPC or HTTP) and receives back a signed credential.
+                q: 'What is the Identity Sidecar pattern, and why should I care?',
+                a: `It is a deployment trick that keeps your agent's private signing key away from the language model.
 
-Vouch ships a reference Go sidecar daemon (\`go-sidecar/cmd/vouch-sidecar\`) that exposes \`POST /sign\` on a configurable port. The sidecar is the recommended deployment for LLM-driven agents because it makes prompt-injection key-exfiltration impossible.`,
-                meta: 'CG Report §10 Identity Sidecar - PAD-003',
+Here is the problem: your LLM-driven agent has tools, and a prompt-injection attack could trick it into leaking anything in its context window. If the private key is in that context, the attacker now controls your agent's identity.
+
+The fix: run a small separate process (the "sidecar") that owns the key. When the agent wants to sign something, it asks the sidecar over a local connection. The sidecar signs, returns the credential, and never exposes the key to the LLM. Vouch ships a small Go binary you can run as the sidecar.`,
             },
             {
                 q: 'What is the Heartbeat Protocol?',
-                a: `A periodic credential-renewal mechanism for long-running agents. Every T seconds the agent submits a heartbeat request that includes a fresh canary commitment, the previous canary reveal, a behavioral digest (api calls, tokens consumed, resources accessed), and (optionally) an action Merkle root. Validators verify the request and issue a new SessionVoucher VC valid for the next interval.
+                a: `It is a dead-man's-switch for long-running agents. Every few minutes (you pick the interval) the agent has to actively renew its credentials. If it crashes, gets disconnected, or is taken over, the renewals stop and its permissions expire on their own. No human has to remember to revoke anything.
 
-This inverts the traditional PKI model from "trusted until revoked" to "untrusted until renewed." If the agent stops heartbeating (process crash, network split, compromise detected), the SessionVoucher expires naturally and downstream verifiers stop accepting actions.
-
-The SessionVoucher credential format ships today (\`build_session_voucher\` in vouch/vc.py, since v1.6.0). The runtime that actually orchestrates heartbeats, drives validator quorum, and manages canary commitments is not built yet. The protocol describes the shape; the implementation is still ahead of us.`,
-                meta: 'CG Report §11 Heartbeat Protocol - PAD-016',
-            },
-            {
-                q: 'What is the State Verifiability layer?',
-                a: `The collective name for the mechanisms that answer "is this agent's runtime state still aligned with its authorization?" after a credential has been issued. Components:
-
-- Heartbeat Protocol (renewal)
-- Validator Quorum (federated approval)
-- Canary Commitments (commit/reveal chain so a missed heartbeat is detectable)
-- Behavioral Attestation (per-action metadata: api calls, tokens, resources)
-- Trust Entropy (time-based decay of trust scores)
-
-Vouch today ships the credential layer (signing, verification, delegation, hybrid PQ). The state layer above is what comes next, once enough teams are running Vouch in production to tell us what the runtime should look like in practice.`,
-                meta: 'CG Report §15 State Verifiability',
+The credential format for these renewals ships today (it is called SessionVoucher). The runtime that actually drives the heartbeats and coordinates with multiple validators is on the roadmap, not built yet.`,
             },
             {
                 q: 'What is a delegation chain?',
-                a: `A sequence of nested credentials proving "principal → agent → sub-agent" authority. Each link in the chain is a signed credential where the issuer is the previous link's subject. Each link can *narrow* the resource scope (a delegator can grant access to a subset of resources, never more), and each link contributes to the audit trail.
+                a: `A chain of permission slips that tracks "who let whom do what." Imagine you tell your assistant "please book my flight." Your assistant tells an AI travel agent "please find flights." The travel agent tells a payment agent "please charge this card." Three steps, three permission grants.
 
-The verifier walks the chain backward to the principal, confirming every link's signature and that each link's \`resource\` is a subset of the previous link's. The chain is what makes "the agent did it" traceable to "the human who is ultimately responsible."`,
-                meta: 'CG Report §9 Delegation Chains',
+A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.`,
             },
         ],
     },
