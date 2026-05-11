@@ -134,6 +134,19 @@ def __getattr__(name):
         from . import merkle
 
         return getattr(merkle, name)
+    elif name in (
+        "HeartbeatError",
+        "HeartbeatRequest",
+        "HeartbeatSession",
+        "HeartbeatScheduler",
+        "HeartbeatValidator",
+        "HeartbeatValidationResult",
+        "HEARTBEAT_PROTOCOL_VERSION",
+        "HEARTBEAT_REQUEST_TYPE",
+    ):
+        from . import heartbeat
+
+        return getattr(heartbeat, name)
     # Reputation
     elif name in (
         "ReputationEngine",
