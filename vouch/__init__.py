@@ -121,6 +121,19 @@ def __getattr__(name):
         from . import canary
 
         return getattr(canary, name)
+    elif name in (
+        "MerkleError",
+        "MerkleTree",
+        "InclusionProof",
+        "ProofStep",
+        "hash_leaf",
+        "hash_node",
+        "verify_inclusion",
+        "compute_action_merkle_root",
+    ):
+        from . import merkle
+
+        return getattr(merkle, name)
     # Reputation
     elif name in (
         "ReputationEngine",
