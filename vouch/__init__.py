@@ -82,6 +82,22 @@ def __getattr__(name):
         from . import status_list_fetcher
 
         return getattr(status_list_fetcher, name)
+    # State Verifiability runtime (W3C CG Report §15)
+    elif name in (
+        "TrustEntropyError",
+        "TrustEvaluation",
+        "compute_trust_at",
+        "evaluate_trust",
+        "check_trust_threshold",
+        "half_life_seconds",
+        "time_until_threshold",
+        "TRUST_THRESHOLD_HIGH_STAKES",
+        "TRUST_THRESHOLD_MEDIUM_STAKES",
+        "TRUST_THRESHOLD_LOW_STAKES",
+    ):
+        from . import trust_entropy
+
+        return getattr(trust_entropy, name)
     # Reputation
     elif name in (
         "ReputationEngine",
