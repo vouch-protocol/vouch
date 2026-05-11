@@ -312,10 +312,8 @@ TypeScript currently has the Amnesia bridge in \`packages/sdk-ts/src/integration
 
 \`\`\`
 vouch init [--domain DOMAIN] [--env]    Generate keypair + DID, store securely
-vouch sign MESSAGE                      Sign plaintext (legacy JWS)
-vouch verify TOKEN                      Verify JWS or W3C credential
-vouch credential sign [--hybrid]        Sign W3C credential
-vouch credential verify                 Verify W3C credential
+vouch credential sign [--hybrid]        Sign a W3C Verifiable Credential
+vouch credential verify                 Verify a W3C Verifiable Credential
 vouch git init                          One-command Git workflow setup
 vouch git status                        Show current Git config
 vouch reputation get [--did DID]        Fetch reputation score
@@ -364,9 +362,12 @@ The \`RotatingKeyProvider\` class handles automatic rotation by time or by valid
                 q: 'What storage backends does the revocation registry support?',
                 a: `\`vouch/revocation.py\` (449 lines) supports Memory and Redis backends out of the box, with an abstract \`RevocationStoreInterface\` for custom backends (HTTP remote registries, distributed key-value stores, etc.).
 
-This is **key-level revocation** (revoke a DID, all credentials under it become invalid). The spec also references W3C BitstringStatusList for **credential-level revocation** (revoke a single credential by index in a status bitstring), which is currently exposed as an optional \`credentialStatus\` field on credentials but not yet implemented as a registry runtime.`,
-                helpLinks: [{ label: 'Revocation deployment', href: '/help/#revocation' }],
-                meta: 'Shipped v1.2.0 - CG Report §11.2',
+This is **DID-level revocation** (revoke a DID, all credentials under it become invalid). For **credential-level revocation** (revoke a single credential by index in a status bitstring), Vouch ships a W3C BitstringStatusList implementation across all three SDKs (\`vouch.status_list\` in Python, \`packages/sdk-ts/src/status-list.ts\` in TypeScript, \`go-sidecar/signer/status_list.go\` in Go). The two mechanisms compose: BitstringStatusList for granular per-credential status, DID-level registry for "revoke everything from this compromised identity" scenarios.`,
+                helpLinks: [
+                    { label: 'Revocation deployment', href: '/help/#revocation' },
+                    { label: 'Credential status (BitstringStatusList)', href: '/help/#credential-status' },
+                ],
+                meta: 'Shipped v1.2.0 (registry) + Unreleased (BitstringStatusList) - CG Report §11.2',
             },
             {
                 q: 'What storage backends does the reputation engine support?',
@@ -541,7 +542,9 @@ If a dispute arises, the credential and its proof can be presented as evidence; 
             },
             {
                 q: 'How does Vouch relate to W3C BitstringStatusList?',
-                a: `Vouch Credentials MAY include a \`credentialStatus\` property referencing a BitstringStatusList for revocation. The cg report describes this as the recommended credential-level revocation mechanism, complementing the DID-level revocation registry the Python SDK implements.`,
+                a: `Vouch Credentials MAY include a \`credentialStatus\` property referencing a BitstringStatusList for revocation. The CG Report describes this as the recommended credential-level revocation mechanism, complementing the DID-level revocation registry.
+
+A reference implementation of both the issuer and verifier sides ships across all three SDKs (\`vouch.status_list\` in Python, \`packages/sdk-ts/src/status-list.ts\` in TypeScript, \`go-sidecar/signer/status_list.go\` in Go) with a published cross-language test vector at [test-vectors/bitstring-status-list/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/bitstring-status-list). The implementations share a single canonical encoding (gzip + base64url multibase, 131,072-bit minimum bitstring per W3C §4.2, deterministic gzip headers).`,
                 meta: 'CG Report §11.2 - Appendix A',
             },
             {
@@ -551,7 +554,7 @@ If a dispute arises, the credential and its proof can be presented as evidence; 
             },
             {
                 q: 'How does Vouch relate to IETF JWS / JOSE?',
-                a: `Vouch v1.0+ uses W3C Data Integrity proofs rather than JWS Compact Serialization. Both are valid VC signature envelopes; Vouch chose Data Integrity for JSON-native canonicalization and cryptosuite agility (Multikey lets the same DID Document publish multiple algorithm public keys). The legacy v0.x JWS-based path remains in the codebase for backward compatibility but is superseded.`,
+                a: `Vouch uses W3C Data Integrity proofs rather than JWS Compact Serialization. Both are valid VC signature envelopes; Vouch chose Data Integrity for JSON-native canonicalization and cryptosuite agility (Multikey lets the same DID Document publish multiple algorithm public keys, e.g. Ed25519 and ML-DSA-44 side-by-side). Earlier protocol drafts experimented with a JWS-based path that base64url-encoded the payload before signing; that path has been retired in favour of signing the JCS canonical bytes directly.`,
                 meta: 'CG Report Appendix A',
             },
             {
@@ -569,7 +572,12 @@ If a dispute arises, the credential and its proof can be presented as evidence; 
             },
             {
                 q: 'What test vectors are published?',
-                a: `Cross-implementation test vectors at [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors). The hybrid PQ vectors are at [test-vectors/hybrid-eddsa-mldsa44/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/hybrid-eddsa-mldsa44) and include a full signed credential with deterministic generation parameters that all three reference implementations (Python, TypeScript, Go) verify byte-identically.`,
+                a: `Cross-implementation test vectors at [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors). The two anchor vectors:
+
+- [test-vectors/hybrid-eddsa-mldsa44/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/hybrid-eddsa-mldsa44) - a full signed credential with deterministic generation parameters for the hybrid post-quantum profile, verified byte-identically by Python, TypeScript, and Go.
+- [test-vectors/bitstring-status-list/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/bitstring-status-list) - a canonical W3C BitstringStatusListCredential with specific revoked indices chosen to exercise byte boundaries, mid-range, and exact endpoints. Python and TypeScript produce byte-identical encoded output; Go produces a valid DEFLATE stream that decodes equivalently (the W3C-required equivalence).
+
+Both vectors are accompanied by deterministic generator scripts (\`generate.py\`) so they can be regenerated and audited.`,
                 meta: 'CG Report Appendix C',
             },
             {
