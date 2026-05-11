@@ -1,0 +1,96 @@
+name: Deploy Website
+
+# Auto-builds the Next.js site in website/ and commits the static output
+# into docs/ so GitHub Pages serves it from main:/docs.
+#
+# Trigger only on changes inside website/. Commits to docs/ from this
+# workflow do NOT re-trigger it because docs/** is not in the paths filter.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+
+# Allow the workflow to push commits back to the repository.
+permissions:
+  contents: write
+
+# If a new push comes in while one is running, cancel the in-flight job
+# so the latest version is the one that ships.
+concurrency:
+  group: deploy-website
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Need full history so the commit-back step has a clean base
+          fetch-depth: 0
+          # Use a token that allows pushing back
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        working-directory: website
+        run: npm ci --no-audit --no-fund
+
+      - name: Build static export
+        working-directory: website
+        run: npm run build
+
+      - name: Copy output into docs/
+        run: |
+          # Preserve existing static pages, blog/, disclosures/, etc.
+          # Next.js output is merged on top (overwrites overlapping files).
+          cp -rv website/out/. docs/
+
+      - name: Detect changes
+        id: detect
+        run: |
+          if [ -z "$(git status --porcelain docs/)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in docs/, skipping commit."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected in docs/:"
+            git status --short docs/
+          fi
+
+      - name: Commit and push to main
+        if: steps.detect.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git commit -m "ci(website): deploy static export from ${GITHUB_SHA::7}
+
+          Automated deploy by .github/workflows/deploy-website.yml.
+          Triggered by commit ${GITHUB_SHA}.
+
+          [skip ci]"
+          git push origin main
+
+      - name: Summary
+        run: |
+          echo "## Website deploy" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.detect.outputs.changed }}" = "true" ]; then
+            echo "✓ Static export refreshed and committed to docs/." >> $GITHUB_STEP_SUMMARY
+            echo "GitHub Pages will redeploy from main:/docs in 1-2 minutes." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No content changes detected. docs/ already up to date." >> $GITHUB_STEP_SUMMARY
+          fi
