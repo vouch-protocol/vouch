@@ -66,6 +66,22 @@ def __getattr__(name):
         from . import revocation
 
         return getattr(revocation, name)
+    # BitstringStatusList (credential-level status, W3C CG Report §11.2)
+    elif name in (
+        "StatusList",
+        "StatusListError",
+        "FilesystemStatusListStore",
+        "build_status_list_credential",
+        "build_status_list_entry",
+        "verify_status",
+    ):
+        from . import status_list
+
+        return getattr(status_list, name)
+    elif name in ("StatusListFetcher", "StatusListFetchError"):
+        from . import status_list_fetcher
+
+        return getattr(status_list_fetcher, name)
     # Reputation
     elif name in (
         "ReputationEngine",
@@ -133,6 +149,15 @@ __all__ = [
     "RevocationRecord",
     "MemoryRevocationStore",
     "RedisRevocationStore",
+    # BitstringStatusList
+    "StatusList",
+    "StatusListError",
+    "FilesystemStatusListStore",
+    "StatusListFetcher",
+    "StatusListFetchError",
+    "build_status_list_credential",
+    "build_status_list_entry",
+    "verify_status",
     # Reputation
     "ReputationEngine",
     "ReputationScore",

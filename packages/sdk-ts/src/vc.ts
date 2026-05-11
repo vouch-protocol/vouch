@@ -62,11 +62,15 @@ export interface BuildVouchCredentialOptions {
     delegationChain?: DelegationLink[];
     credentialId?: string;
     validFrom?: Date;
+    credentialStatus?: Record<string, unknown>;
 }
 
 /**
  * Construct an unsigned Vouch Credential. Caller is responsible for
  * attaching a Data Integrity proof via `buildProof`.
+ *
+ * `credentialStatus` is typically built via `buildStatusListEntry` to
+ * reference a BitstringStatusListCredential (W3C CG Report §11.2).
  */
 export function buildVouchCredential(
     opts: BuildVouchCredentialOptions
@@ -94,7 +98,7 @@ export function buildVouchCredential(
         subject.delegationChain = opts.delegationChain;
     }
 
-    return {
+    const vc: VouchCredential = {
         '@context': [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
         id: opts.credentialId ?? newUuidUrn(),
         type: [VC_TYPE, VOUCH_CREDENTIAL_TYPE],
@@ -103,6 +107,12 @@ export function buildVouchCredential(
         validUntil: iso(expiresAt),
         credentialSubject: subject,
     };
+
+    if (opts.credentialStatus !== undefined) {
+        vc.credentialStatus = opts.credentialStatus;
+    }
+
+    return vc;
 }
 
 function validateIntent(intent: Intent): void {

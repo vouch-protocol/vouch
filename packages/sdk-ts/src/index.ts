@@ -83,6 +83,34 @@ export {
 } from './data-integrity-hybrid';
 export type { HybridKeyPair, BuildHybridProofOptions } from './data-integrity-hybrid';
 
+// BitstringStatusList (W3C VC-BITSTRING-STATUS-LIST, W3C CG Report §11.2)
+export {
+    StatusList,
+    StatusListError,
+    buildStatusListCredential,
+    buildStatusListEntry,
+    verifyStatus,
+    DEFAULT_BITSTRING_LENGTH,
+    STATUS_PURPOSE_REVOCATION,
+    STATUS_PURPOSE_SUSPENSION,
+    STATUS_PURPOSE_MESSAGE,
+    VALID_STATUS_PURPOSES,
+    BITSTRING_STATUS_LIST_CREDENTIAL_TYPE,
+    BITSTRING_STATUS_LIST_SUBJECT_TYPE,
+    BITSTRING_STATUS_LIST_ENTRY_TYPE,
+    MULTIBASE_BASE64URL_PREFIX,
+} from './status-list';
+export type {
+    StatusPurpose,
+    BitstringStatusListCredential,
+    BitstringStatusListEntry,
+    StatusListOptions,
+    BuildStatusListCredentialOptions,
+    BuildStatusListEntryOptions,
+    VerifyStatusOptions,
+    StatusListStateDict,
+} from './status-list';
+
 // ---------------------------------------------------------------------------
 // Daemon Client
 // ---------------------------------------------------------------------------

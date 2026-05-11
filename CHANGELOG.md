@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **W3C BitstringStatusList** across Python, TypeScript, and Go SDKs for credential-level revocation and suspension status (W3C CG Report §11.2). Reference implementation of W3C VC-BITSTRING-STATUS-LIST with:
+  - `StatusList` class (in-memory bitstring with gzip + base64url multibase encoding per W3C §4.2, 131,072-bit minimum, deterministic gzip headers across languages).
+  - `build_status_list_credential` / `buildStatusListCredential` / `BuildStatusListCredential` issuers for `BitstringStatusListCredential` VCs.
+  - `build_status_list_entry` / `buildStatusListEntry` / `BuildStatusListEntry` builders for the `credentialStatus` reference attached to a Vouch Credential.
+  - `verify_status` / `verifyStatus` / `VerifyStatus` for verifier-side bit lookup with structural validation.
+  - `build_vouch_credential` (and TS / Go equivalents) accept an optional `credential_status` / `credentialStatus` / `CredentialStatus` parameter to attach a status entry at issuance.
+  - `StatusList.to_state_dict` / `from_state_dict` (and TS / Go equivalents) for persistence between issuer restarts, including the allocation cursor that is not recoverable from the encoded bitstring alone.
+  - `FilesystemStatusListStore` (Python) reference filesystem-backed store with atomic writes.
+- **HTTP fetcher for verifier-side status list retrieval** (`vouch.status_list_fetcher.StatusListFetcher`): in-memory TTL cache, conditional GETs via `ETag` / `If-Modified-Since`, configurable response-size limit, `force_refresh` for verification-failure handling. Uses the existing `httpx` dependency.
+- **Cross-language test vector** at `test-vectors/bitstring-status-list/vector.json` with a deterministic generator (`generate.py`). Python and TypeScript implementations produce byte-identical encoded output for the same revoked indices; Go's `compress/flate` produces a valid DEFLATE stream that decodes equivalently (the W3C-required equivalence).
+
+### Tests
+- 48 Python tests, 32 TypeScript tests, and 39 Go tests covering construction validation, bit operations, encoding round-trip, structural validation, end-to-end revocation flow, state dict persistence, filesystem store atomicity, HTTP fetcher caching and conditional GETs, package exports, and cross-language interop.
+
 ## [1.6.0] - 2026-04-29
 
 ### Added
