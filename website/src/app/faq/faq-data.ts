@@ -258,8 +258,8 @@ The verifier walks every link, validates signatures, and confirms resource subse
                 meta: 'CG Report §9 Delegation Chains',
             },
             {
-                q: 'How do I attach a credentialStatus (BitstringStatusList) to an issued credential?',
-                a: `Two steps. First, allocate an index from your status list. Second, build a status entry and pass it to \`build_vouch_credential\`:
+                q: 'How do I make a credential revocable later?',
+                a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Two steps: allocate an index from your status list, then pass a status entry to \`build_vouch_credential\`:
 
 \`\`\`python
 from vouch import (
@@ -334,7 +334,7 @@ The fetcher caches by URL with a 5-minute default TTL and issues conditional GET
                 meta: 'Shipped on main, in next release',
             },
             {
-                q: 'How does the issuer survive a restart without re-allocating indices?',
+                q: 'How do I avoid re-using a credential index after a restart?',
                 a: `Use the persistence API. \`to_state_dict()\` returns a JSON-serializable dict containing the encoded bitstring **and** the allocation cursor (\`next_index\`), which is NOT recoverable from the encoded list alone:
 
 \`\`\`python

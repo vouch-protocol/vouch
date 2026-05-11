@@ -30,7 +30,7 @@ export const HELP_SECTIONS: HelpSection[] = [
     {
         id: 'getting-started',
         title: 'Getting Started',
-        description: 'Install an SDK, sign your first credential, and verify it.',
+        description: 'Pick a language, install the SDK, and sign your first credential in under five minutes.',
         articles: [
             {
                 id: 'quickstart-python',
@@ -215,7 +215,7 @@ This makes prompt-injection key-exfiltration impossible: even if the LLM is jail
     {
         id: 'identity-and-signing',
         title: 'Identity & Signing',
-        description: 'Working with DIDs, keypairs, delegation chains, and the hybrid PQ profile.',
+        description: 'Manage your agent\'s identity and keys, sign with post-quantum crypto, and build delegation chains.',
         articles: [
             {
                 id: 'did-management',
@@ -259,8 +259,8 @@ The DID Document publishes both the current and the previous keys during the ove
             },
             {
                 id: 'hybrid-pq',
-                title: 'Using the Hybrid Post-Quantum Profile',
-                summary: 'Ed25519 + ML-DSA-44 in one cryptosuite, three verifier modes, all three SDKs.',
+                title: 'Signing with Post-Quantum Crypto',
+                summary: 'How to make your signatures safe today and ready for the day quantum computers break Ed25519.',
                 body: `
 ## Install dependencies
 
@@ -351,8 +351,8 @@ Hybrid credentials exceed typical HTTP header size limits, so transmit them in t
             },
             {
                 id: 'delegation-chains',
-                title: 'Building Delegation Chains',
-                summary: 'Verifiable principal → agent → sub-agent chains with resource narrowing.',
+                title: 'Building Permission Chains',
+                summary: 'When a human delegates to an agent that delegates to a sub-agent: how to track each step cryptographically.',
                 body: `
 ## Why chains
 
@@ -414,12 +414,12 @@ The verifier walks every link, validates each signature, and confirms resource n
     {
         id: 'deployment',
         title: 'Production Deployment',
-        description: 'Sidecar, KMS, storage backends, metrics, rate limiting.',
+        description: 'How to run Vouch reliably at scale: the sidecar, your KMS, revocation registries, metrics, rate limits.',
         articles: [
             {
                 id: 'sidecar-deployment',
-                title: 'Deploying the Go Sidecar',
-                summary: 'Containerizing, key provisioning, health checks, observability.',
+                title: 'Deploying the Vouch Sidecar',
+                summary: 'Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.',
                 body: `
 ## Build container
 
@@ -459,8 +459,8 @@ The sidecar is stateless. Horizontally scale by running multiple instances behin
             },
             {
                 id: 'kms-integration',
-                title: 'KMS Integration',
-                summary: 'AWS, GCP, Azure, Local file. How to configure each.',
+                title: 'Connecting Your KMS',
+                summary: 'How to keep production signing keys in AWS, GCP, Azure, or an encrypted local file.',
                 body: `
 ## AWS KMS
 
@@ -511,8 +511,8 @@ provider = RotatingKeyProvider(
             },
             {
                 id: 'reputation',
-                title: 'Deploying the Reputation Engine',
-                summary: 'Memory, Redis, Kafka, HTTP backends. Decay model and tiers.',
+                title: 'Tracking Agent Reputation',
+                summary: 'How to score, decay, and slash reputations across a fleet of agents using Memory, Redis, or Kafka.',
                 body: `
 ## What the engine does
 
@@ -573,8 +573,8 @@ The W3C CG Report says specific reputation scoring **algorithms** are non-normat
             },
             {
                 id: 'revocation',
-                title: 'Deploying the Revocation Registry',
-                summary: 'DID-level revocation: revoke an entire agent identity in one operation.',
+                title: 'Revoking an Entire Agent',
+                summary: 'When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.',
                 body: `
 ## When to use DID-level revocation
 
@@ -613,8 +613,8 @@ The verifier consults the revocation registry on every verification. If the issu
             },
             {
                 id: 'credential-status',
-                title: 'Credential Status with W3C BitstringStatusList',
-                summary: 'Per-credential revocation and suspension across Python, TypeScript, and Go.',
+                title: 'Revoking Individual Credentials',
+                summary: 'How to revoke or suspend a single credential without invalidating everything else the agent ever signed.',
                 body: `
 ## What this gives you
 
@@ -775,8 +775,8 @@ A verifier that runs both consults the DID registry first (cheap), then the stat
             },
             {
                 id: 'metrics-and-observability',
-                title: 'Metrics and Observability',
-                summary: 'Prometheus and OpenTelemetry, what to alert on.',
+                title: 'Metrics & Observability',
+                summary: 'What Vouch emits to Prometheus and OpenTelemetry, plus what is worth alerting on.',
                 body: `
 ## Prometheus metrics
 
@@ -819,12 +819,12 @@ Then point at your collector via \`OTEL_EXPORTER_OTLP_ENDPOINT\`. Verifier spans
     {
         id: 'integrations',
         title: 'Framework Integrations',
-        description: 'LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vouch Shield, GitHub App.',
+        description: 'Wire Vouch into the framework you already use, or into your GitHub workflow.',
         articles: [
             {
                 id: 'integrations',
-                title: 'Framework Integration Overview',
-                summary: 'Which frameworks have shipped integrations and where they live.',
+                title: 'Which AI Frameworks Vouch Plugs Into',
+                summary: 'Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.',
                 body: `
 ## Python integrations
 
@@ -857,8 +857,8 @@ Currently one: \`packages/sdk-ts/src/integrations/amnesia.ts\` for the Amnesia e
             },
             {
                 id: 'github-app',
-                title: 'Vouch Gatekeeper GitHub App',
-                summary: 'Enforce signed commits and organizational policy on every PR.',
+                title: 'The Vouch Gatekeeper GitHub App',
+                summary: 'Block unsigned commits and enforce your team policy on every pull request, with one click to install.',
                 body: `
 ## What it does
 
@@ -898,8 +898,8 @@ FastAPI service (\`github-app/main.py\`, ~1000 lines). Webhook endpoint at \`/we
             },
             {
                 id: 'vouch-shield',
-                title: 'Wiring Up Vouch Shield',
-                summary: 'Drop the middleware in front of your agent\'s tool layer.',
+                title: 'Adding Vouch Shield to Your Agent',
+                summary: 'Drop a small middleware in front of your agent so every tool call gets checked before it runs.',
                 body: `
 ## Install
 
@@ -959,12 +959,12 @@ The \`FlightRecorder\` logs every allowed and blocked call. Pipe it to your SIEM
     {
         id: 'cli',
         title: 'CLI Reference',
-        description: 'The full vouch command and what each subcommand does.',
+        description: 'Every command, every flag, with copy-pasteable examples.',
         articles: [
             {
                 id: 'cli-reference',
-                title: 'Complete vouch CLI Reference',
-                summary: 'Every subcommand, its flags, and a copy-pasteable example.',
+                title: 'The vouch Command Reference',
+                summary: 'Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.',
                 body: `
 ## init
 
