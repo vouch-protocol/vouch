@@ -98,7 +98,7 @@ As AI agents become more autonomous, trust and accountability become critical in
 - **URL:** https://github.com/vouch-protocol/vouch/issues
 
 === Collaboration Tools
-- **Discord:** https://discord.gg/VxgYkjdph
+- **Discord:** https://discord.gg/mMqx5cG9Y
 - **Discussions:** GitHub Discussions enabled
 - **Twitter/X:** @Vouch_Protocol
 
@@ -193,7 +193,7 @@ Documented in RELEASES.md:
 
 === Social Media Accounts
 - **Twitter/X:** https://x.com/Vouch_Protocol
-- **Discord:** https://discord.gg/VxgYkjdph
+- **Discord:** https://discord.gg/mMqx5cG9Y
 - **LinkedIn:** To be created
 
 === Existing Sponsorship
