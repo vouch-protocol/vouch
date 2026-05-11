@@ -43,6 +43,7 @@ from __future__ import annotations
 import asyncio
 import threading
 import uuid
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence
@@ -325,6 +326,84 @@ class HeartbeatScheduler:
 
 
 # ---------------------------------------------------------------------------
+# Pluggable storage for validator state
+# ---------------------------------------------------------------------------
+
+
+class HeartbeatStoreInterface(ABC):
+    """
+    Abstract storage backend for HeartbeatValidator per-session state.
+
+    Implementations persist a small JSON-serializable state dict per
+    (subject_did, session_id) key. The state dict has the shape:
+
+        {
+            "last_commitment": <multibase str or None>,
+            "expecting_reveal": <bool>,
+            "last_interval": <int or None>
+        }
+
+    The reference MemoryHeartbeatStore (in this module) keeps state in
+    a process-local dict, suitable for development and single-process
+    deployments. Production deployments substitute a Redis, Postgres,
+    Kafka, or S3 store via this interface; concrete backends ship in
+    the commercial `vouch.pro` layer.
+
+    Implementations MUST be thread-safe. Validators typically hold a
+    single Store instance and dispatch concurrent heartbeat requests
+    against it.
+    """
+
+    @abstractmethod
+    def get(self, session_key: str) -> Optional[Dict[str, Any]]:
+        """Return the state dict for `session_key`, or None if absent."""
+
+    @abstractmethod
+    def put(self, session_key: str, state: Dict[str, Any]) -> None:
+        """Atomically replace the state dict for `session_key`."""
+
+    @abstractmethod
+    def delete(self, session_key: str) -> None:
+        """Drop all state for `session_key`. Idempotent."""
+
+    @abstractmethod
+    def known_sessions(self) -> List[str]:
+        """Return the list of session keys currently tracked."""
+
+
+class MemoryHeartbeatStore(HeartbeatStoreInterface):
+    """
+    Reference in-memory store. Thread-safe via an internal lock.
+
+    Loses all state on process restart, by design; production
+    deployments swap in a durable store. The state-dict shape is the
+    contract; subclasses MUST keep the same shape so verifier logic
+    is backend-agnostic.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._data: Dict[str, Dict[str, Any]] = {}
+
+    def get(self, session_key: str) -> Optional[Dict[str, Any]]:
+        with self._lock:
+            state = self._data.get(session_key)
+            return dict(state) if state is not None else None
+
+    def put(self, session_key: str, state: Dict[str, Any]) -> None:
+        with self._lock:
+            self._data[session_key] = dict(state)
+
+    def delete(self, session_key: str) -> None:
+        with self._lock:
+            self._data.pop(session_key, None)
+
+    def known_sessions(self) -> List[str]:
+        with self._lock:
+            return list(self._data.keys())
+
+
+# ---------------------------------------------------------------------------
 # Validator side: HeartbeatValidator
 # ---------------------------------------------------------------------------
 
@@ -381,12 +460,7 @@ class HeartbeatValidator:
     max_ttl_seconds: int = 3600
     voucher_valid_seconds: int = 120
     scope: List[str] = field(default_factory=lambda: ["agent_actions"])
-    _verifiers: Dict[str, CanaryVerifier] = field(
-        default_factory=dict, init=False, repr=False
-    )
-    _last_interval: Dict[str, int] = field(
-        default_factory=dict, init=False, repr=False
-    )
+    store: HeartbeatStoreInterface = field(default_factory=MemoryHeartbeatStore)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
 
     def _session_key(self, subject_did: str, session_id: str) -> str:
@@ -408,13 +482,21 @@ class HeartbeatValidator:
         key = self._session_key(req.subject_did, req.session_id)
 
         with self._lock:
-            last = self._last_interval.get(key)
-            if last is not None and req.interval_index <= last:
+            state = self.store.get(key) or {
+                "last_commitment": None,
+                "expecting_reveal": False,
+                "last_interval": None,
+            }
+
+            last_interval = state.get("last_interval")
+            if last_interval is not None and req.interval_index <= last_interval:
                 reasons.append(
-                    f"stale_interval_index:{req.interval_index}<= last={last}"
+                    f"stale_interval_index:{req.interval_index}<= last={last_interval}"
                 )
 
-            verifier = self._verifiers.setdefault(key, CanaryVerifier())
+            verifier = CanaryVerifier()
+            verifier._last_commitment = state.get("last_commitment")  # noqa: SLF001
+            verifier._expecting_reveal = bool(state.get("expecting_reveal"))  # noqa: SLF001
             try:
                 chain_ok = verifier.observe(req.canary_commitment, req.canary_reveal)
             except CanaryChainError as exc:
@@ -426,7 +508,12 @@ class HeartbeatValidator:
             if reasons:
                 return HeartbeatValidationResult(ok=False, reasons=reasons)
 
-            self._last_interval[key] = req.interval_index
+            new_state = {
+                "last_commitment": verifier._last_commitment,  # noqa: SLF001
+                "expecting_reveal": verifier._expecting_reveal,  # noqa: SLF001
+                "last_interval": req.interval_index,
+            }
+            self.store.put(key, new_state)
 
         voucher = build_session_voucher(
             subject_did=req.subject_did,
@@ -442,15 +529,13 @@ class HeartbeatValidator:
 
     def known_sessions(self) -> List[str]:
         """Return session keys currently tracked by this validator."""
-        with self._lock:
-            return list(self._verifiers.keys())
+        return self.store.known_sessions()
 
     def reset_session(self, subject_did: str, session_id: str) -> None:
         """Drop all state for one session. Useful after a clean shutdown."""
         key = self._session_key(subject_did, session_id)
         with self._lock:
-            self._verifiers.pop(key, None)
-            self._last_interval.pop(key, None)
+            self.store.delete(key)
 
 
 # ---------------------------------------------------------------------------
@@ -477,4 +562,6 @@ __all__ = [
     "HeartbeatScheduler",
     "HeartbeatValidator",
     "HeartbeatValidationResult",
+    "HeartbeatStoreInterface",
+    "MemoryHeartbeatStore",
 ]

@@ -293,3 +293,105 @@ class TestEndToEndFlow:
         for v in vouchers:
             assert v["credentialSubject"]["id"] == AGENT_DID
             assert v["issuer"] == [VALIDATOR_DID]
+
+
+class TestPluggableStore:
+    """
+    Verifies that HeartbeatValidator supports custom storage backends via
+    HeartbeatStoreInterface. Default MemoryHeartbeatStore preserves the
+    pre-refactor behavior; production backends (Redis, Postgres, Kafka,
+    S3) plug in here without touching validator code.
+    """
+
+    def test_default_uses_memory_store(self):
+        from vouch.heartbeat import MemoryHeartbeatStore
+
+        v = HeartbeatValidator(validator_did=VALIDATOR_DID)
+        assert isinstance(v.store, MemoryHeartbeatStore)
+
+    def test_validator_survives_restart_when_state_is_persisted(self):
+        """
+        Simulate validator restart by creating a second validator that
+        shares the same store. The second validator MUST continue the
+        canary chain from where the first one left off.
+        """
+        from vouch.heartbeat import MemoryHeartbeatStore
+
+        shared_store = MemoryHeartbeatStore()
+
+        v1 = HeartbeatValidator(validator_did=VALIDATOR_DID, store=shared_store)
+        session = HeartbeatSession(subject_did=AGENT_DID)
+
+        first = session.build_request().to_dict()
+        assert v1.validate(first).ok
+
+        # "Restart" the validator with the same backing store.
+        v2 = HeartbeatValidator(validator_did=VALIDATOR_DID, store=shared_store)
+        second = session.build_request().to_dict()
+        result = v2.validate(second)
+        assert result.ok, f"v2 rejected after restart: {result.reasons}"
+        # v2 also rejects stale replays of intervals v1 already saw.
+        assert v2.validate(first).ok is False
+
+    def test_custom_store_can_be_a_dict_wrapper(self):
+        """
+        Any backend implementing HeartbeatStoreInterface works. This
+        test wraps a plain dict, demonstrating that the contract is
+        the small JSON-serializable state-dict shape.
+        """
+        from vouch.heartbeat import HeartbeatStoreInterface
+
+        class DictStore(HeartbeatStoreInterface):
+            def __init__(self):
+                self.d = {}
+
+            def get(self, key):
+                return self.d.get(key)
+
+            def put(self, key, state):
+                self.d[key] = dict(state)
+
+            def delete(self, key):
+                self.d.pop(key, None)
+
+            def known_sessions(self):
+                return list(self.d.keys())
+
+        store = DictStore()
+        v = HeartbeatValidator(validator_did=VALIDATOR_DID, store=store)
+        session = HeartbeatSession(subject_did=AGENT_DID)
+
+        for _ in range(3):
+            assert v.validate(session.build_request().to_dict()).ok
+
+        # State persisted to the custom store.
+        assert len(store.d) == 1
+        state = next(iter(store.d.values()))
+        assert state["last_interval"] == 2
+        assert state["expecting_reveal"] is True
+        assert state["last_commitment"] is not None
+
+    def test_reset_session_removes_state_from_store(self):
+        v = HeartbeatValidator(validator_did=VALIDATOR_DID)
+        session = HeartbeatSession(subject_did=AGENT_DID)
+        v.validate(session.build_request().to_dict())
+        assert len(v.known_sessions()) == 1
+        v.reset_session(AGENT_DID, session.session_id)
+        assert v.known_sessions() == []
+
+    def test_state_dict_is_json_serializable(self):
+        """The state-dict contract must be JSON-serializable so production
+        backends (Redis SET, Postgres jsonb column, S3 object) can store it."""
+        import json
+        from vouch.heartbeat import MemoryHeartbeatStore
+
+        store = MemoryHeartbeatStore()
+        v = HeartbeatValidator(validator_did=VALIDATOR_DID, store=store)
+        session = HeartbeatSession(subject_did=AGENT_DID)
+        v.validate(session.build_request().to_dict())
+
+        key = next(iter(store.known_sessions()))
+        state = store.get(key)
+        # MUST round-trip through JSON.
+        round_tripped = json.loads(json.dumps(state))
+        assert round_tripped == state
