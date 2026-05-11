@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vouch Protocol - Theme 1: Standards Document Classicism</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment: #FAF7EE;
+  --parchment-warm: #F2EBD9;
+  --ink: #0F172A;
+  --ink-soft: #334155;
+  --ink-faint: #64748B;
+  --burgundy: #7C2D3A;
+  --burgundy-dark: #5C1F2C;
+  --rule: #D9CFB6;
+  --rule-light: #E8DFC9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 17px; }
+
+body {
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: 'Source Serif 4', Georgia, serif;
+  line-height: 1.65;
+  font-feature-settings: "kern", "liga", "onum";
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 2.5rem; }
+.column { max-width: 680px; }
+
+/* === NAV === */
+nav.site-nav {
+  background: var(--parchment);
+  border-bottom: 1px solid var(--rule);
+  padding: 1.25rem 0;
+}
+nav.site-nav .inner { display: flex; align-items: center; justify-content: space-between; }
+nav.site-nav .brand { display: flex; align-items: baseline; gap: 0.85rem; text-decoration: none; color: var(--ink); }
+nav.site-nav .brand .mark {
+  font-family: 'Source Serif 4', serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+nav.site-nav .brand .small-caps {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--burgundy);
+  font-weight: 500;
+}
+nav.site-nav ul { list-style: none; display: flex; gap: 2rem; align-items: center; }
+nav.site-nav ul a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition: all 0.2s;
+}
+nav.site-nav ul a:hover { color: var(--burgundy); border-bottom-color: var(--burgundy); }
+nav.site-nav ul a.github {
+  border: 1px solid var(--ink);
+  padding: 0.4rem 0.9rem;
+  border-radius: 0;
+}
+nav.site-nav ul a.github:hover {
+  background: var(--ink);
+  color: var(--parchment);
+  border-color: var(--ink);
+}
+
+/* === HERO === */
+section.hero { padding: 5rem 0 4rem; border-bottom: 1px solid var(--rule); }
+section.hero .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--burgundy);
+  margin-bottom: 1.5rem;
+}
+section.hero h1 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  max-width: 850px;
+}
+section.hero p.lede {
+  font-size: 1.2rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 640px;
+  margin-bottom: 2rem;
+}
+section.hero p.lede::first-letter {
+  font-family: 'Source Serif 4', serif;
+  font-size: 3.2rem;
+  font-weight: 700;
+  float: left;
+  line-height: 1;
+  margin: 0.1rem 0.5rem 0 0;
+  color: var(--burgundy);
+}
+section.hero .ctas { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+section.hero .btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.85rem 1.5rem;
+  border-radius: 0;
+  transition: all 0.2s;
+}
+section.hero .btn.primary {
+  background: var(--ink);
+  color: var(--parchment);
+  border: 1px solid var(--ink);
+}
+section.hero .btn.primary:hover { background: var(--burgundy); border-color: var(--burgundy); }
+section.hero .btn.secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink-faint);
+}
+section.hero .btn.secondary:hover { border-color: var(--ink); }
+section.hero .citation {
+  font-family: 'Source Serif 4', serif;
+  font-style: italic;
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+/* === SECTION HEADERS === */
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+.section-heading .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--burgundy);
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+.section-heading h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.85rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* === FEATURES === */
+section.features { padding: 5rem 0; border-bottom: 1px solid var(--rule); }
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2.5rem;
+}
+.feature {
+  border-top: 2px solid var(--ink);
+  padding-top: 1.25rem;
+}
+.feature .feature-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+.feature h3 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+  letter-spacing: -0.01em;
+}
+.feature p {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 0.85rem;
+}
+.feature .ref {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--burgundy);
+  letter-spacing: 0.05em;
+}
+
+/* === FAQ === */
+section.faq { padding: 5rem 0; border-bottom: 1px solid var(--rule); }
+.faq-content { display: grid; grid-template-columns: 200px 1fr; gap: 4rem; align-items: start; }
+.faq-content aside {
+  position: sticky;
+  top: 2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.faq-content aside .marginalia-title {
+  color: var(--burgundy);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.5rem;
+}
+.faq-content aside a {
+  display: block;
+  color: var(--ink-soft);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  transition: color 0.2s;
+}
+.faq-content aside a:hover { color: var(--burgundy); }
+
+.faq-section { margin-bottom: 3rem; }
+.faq-section .section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--burgundy);
+  margin-bottom: 0.5rem;
+}
+.faq-section h3.faq-section-title {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 1.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+.qa-entry {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--rule-light);
+}
+.qa-entry:last-child { border-bottom: none; }
+.qa-entry .qnum {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+}
+.qa-entry .q {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0.85rem;
+  color: var(--ink);
+}
+.qa-entry .a {
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.qa-entry .a a {
+  color: var(--burgundy);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.qa-entry .a code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: var(--parchment-warm);
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+}
+.qa-entry .a p { margin-bottom: 0.85rem; }
+.qa-entry .a p:last-child { margin-bottom: 0; }
+.qa-entry .footnote {
+  font-family: 'Source Serif 4', serif;
+  font-style: italic;
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  margin-top: 0.75rem;
+}
+
+/* === FOOTER === */
+footer.site-footer { padding: 4rem 0 3rem; }
+footer.site-footer .rule { border-top: 4px double var(--ink); padding-top: 3rem; }
+footer.site-footer .columns {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 3rem;
+}
+footer.site-footer h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--burgundy);
+  margin-bottom: 1rem;
+}
+footer.site-footer ul { list-style: none; }
+footer.site-footer ul li { margin-bottom: 0.6rem; }
+footer.site-footer ul a {
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-size: 0.95rem;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s;
+}
+footer.site-footer ul a:hover {
+  color: var(--burgundy);
+  border-bottom-color: var(--burgundy);
+}
+footer.site-footer .brand-block .mark {
+  font-family: 'Source Serif 4', serif;
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+footer.site-footer .brand-block p {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  font-style: italic;
+  max-width: 280px;
+}
+footer.site-footer .imprint {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 900px) {
+  .faq-content { grid-template-columns: 1fr; }
+  .faq-content aside { position: static; }
+  footer.site-footer .columns { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="container inner">
+    <a href="#" class="brand">
+      <span class="mark">Vouch Protocol</span>
+      <span class="small-caps">An Open Standard</span>
+    </a>
+    <ul>
+      <li><a href="#">Home</a></li>
+      <li><a href="#">FAQ</a></li>
+      <li><a href="#">Help</a></li>
+      <li><a href="#">Support</a></li>
+      <li><a href="#" class="github">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="eyebrow">W3C Community Group Report - Draft - 26 April 2026</div>
+    <h1>Cryptographic identity &amp; accountability for autonomous AI&nbsp;agents.</h1>
+    <p class="lede">
+      The Vouch Protocol is an open specification for establishing continuous state verifiability of autonomous AI agents,
+      a layer that sits beneath, and complements, agent identity and delegation specifications. Built on W3C Verifiable
+      Credentials, Data Integrity proofs, and Decentralized Identifiers, with reference implementations in Python,
+      TypeScript, and Go.
+    </p>
+    <div class="ctas">
+      <a href="#" class="btn primary">Read the FAQ</a>
+      <a href="#" class="btn secondary">Browse guides</a>
+      <span class="citation">- Cf. §1.2 Design Goals</span>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="container">
+    <div class="section-heading">
+      <span class="num">§ I</span>
+      <h2>What the protocol provides</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-num">i.</div>
+        <h3>Cryptographic Agent Identity</h3>
+        <p>Every agent holds a W3C Decentralized Identifier (did:web or did:key) backed by an Ed25519 keypair. No API keys, no shared secrets, no bearer tokens.</p>
+        <span class="ref">§6 Identity Model</span>
+      </div>
+      <div class="feature">
+        <div class="feature-num">ii.</div>
+        <h3>Intent-bound Credentials</h3>
+        <p>Every action is signed as a W3C Verifiable Credential with Data Integrity proofs. The credential binds identity, action, target, and resource so nothing replays elsewhere.</p>
+        <span class="ref">§5 Credential Format</span>
+      </div>
+      <div class="feature">
+        <div class="feature-num">iii.</div>
+        <h3>Resource-scoped Delegation</h3>
+        <p>Multi-agent systems gain verifiable principal-to-sub-agent chains. Each link narrows the resource scope. No more "the agent did it" black boxes.</p>
+        <span class="ref">§9 Delegation Chains</span>
+      </div>
+      <div class="feature">
+        <div class="feature-num">iv.</div>
+        <h3>Identity Sidecar Pattern</h3>
+        <p>Private keys never enter the LLM context window. A separate Go binary (vouch-sidecar) signs on behalf of the agent over a local IPC channel.</p>
+        <span class="ref">§10 Identity Sidecar</span>
+      </div>
+      <div class="feature">
+        <div class="feature-num">v.</div>
+        <h3>Continuous Trust via Heartbeat</h3>
+        <p>Long-running agents renew SessionVoucher credentials on a periodic schedule. The trust model inverts from "trusted until revoked" to "untrusted until renewed."</p>
+        <span class="ref">§11 Heartbeat Protocol</span>
+      </div>
+      <div class="feature">
+        <div class="feature-num">vi.</div>
+        <h3>Hybrid Post-Quantum Ready</h3>
+        <p>The cryptosuite <code style="font-family:'JetBrains Mono',monospace;font-size:0.85em;background:var(--parchment-warm);padding:0.05rem 0.3rem;">hybrid-eddsa-mldsa44-jcs-2026</code> ships today. Ed25519 + ML-DSA-44 sign the same JCS bytes.</p>
+        <span class="ref">§13 Crypto-Agility</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="container">
+    <div class="section-heading">
+      <span class="num">§ II</span>
+      <h2>Frequently asked questions</h2>
+    </div>
+
+    <div class="faq-content">
+      <aside>
+        <div class="marginalia-title">In this section</div>
+        <a href="#about">About Vouch</a>
+        <a href="#dev">For Developers</a>
+        <a href="#ops">For Operators</a>
+        <a href="#compliance">For Compliance</a>
+        <a href="#standards">For Standards Reviewers</a>
+      </aside>
+
+      <div>
+        <div class="faq-section" id="about">
+          <div class="section-label">About Vouch</div>
+          <h3 class="faq-section-title">What is the Vouch Protocol?</h3>
+
+          <div class="qa-entry">
+            <div class="qnum">i.</div>
+            <div class="q">What problem does Vouch Protocol solve?</div>
+            <div class="a">
+              <p>
+                Autonomous AI agents are increasingly deployed to take real-world actions in regulated environments,
+                financial trades, healthcare claim submissions, regulatory filings. Existing authentication mechanisms
+                (API keys, OAuth bearer tokens, session cookies) were designed for human users and stateless services
+                and do not provide cryptographic chain-of-custody, intent attestation, or behavioral attestation that
+                regulated environments require.
+              </p>
+              <p>
+                Vouch Protocol fills this gap using primitives already familiar to the W3C community: <a href="#">Decentralized Identifiers</a>,
+                <a href="#">Verifiable Credentials</a>, and <a href="#">Data Integrity proofs</a>.
+              </p>
+              <div class="footnote">Cf. §1.1 Problem Statement.</div>
+            </div>
+          </div>
+
+          <div class="qa-entry">
+            <div class="qnum">ii.</div>
+            <div class="q">How is this different from API keys or OAuth?</div>
+            <div class="a">
+              <p>
+                API keys and OAuth bearer tokens prove that whoever holds the token may access an API; they prove nothing
+                about what the holder intended to do, who delegated the action, or whether the holder's runtime state is
+                still aligned with the original authorization. Vouch credentials bind identity, intent, target, and
+                resource together, making non-repudiable attestation possible.
+              </p>
+            </div>
+          </div>
+
+          <div class="qa-entry">
+            <div class="qnum">iii.</div>
+            <div class="q">Is Vouch Protocol production-ready?</div>
+            <div class="a">
+              <p>
+                Yes for the credential layer (signing, verification, delegation chains, hybrid post-quantum profile,
+                three-language interop). The State Verifiability layer (Heartbeat Protocol orchestration, validator quorum,
+                canary commitments) is informative in this revision and expected to become normative as implementer
+                experience accumulates.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-section" id="dev">
+          <div class="section-label">For Developers</div>
+          <h3 class="faq-section-title">Integration &amp; SDKs</h3>
+
+          <div class="qa-entry">
+            <div class="qnum">iv.</div>
+            <div class="q">Which languages have Vouch SDKs?</div>
+            <div class="a">
+              <p>
+                Three: Python (<code>pip install vouch-protocol</code>), TypeScript (<code>npm install @vouch-protocol/core</code>),
+                and Go (<code>go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar</code>). All three produce
+                byte-identical credentials thanks to RFC 8785 JCS canonicalization. Cross-language test vectors are published.
+              </p>
+            </div>
+          </div>
+
+          <div class="qa-entry">
+            <div class="qnum">v.</div>
+            <div class="q">Do I need to run the Go sidecar?</div>
+            <div class="a">
+              <p>
+                Only if you want the Identity Sidecar pattern, which is the recommended deployment for LLM-driven agents
+                because it keeps the private key out of the LLM context window. If your code never exposes the key to the
+                model, you can sign directly from the Python or TypeScript SDK.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="rule">
+      <div class="columns">
+        <div class="brand-block">
+          <span class="mark">Vouch Protocol</span>
+          <p>Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.</p>
+        </div>
+        <div>
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Help &amp; Guides</a></li>
+            <li><a href="#">Support</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">GitHub</a></li>
+            <li><a href="#">W3C CG Report</a></li>
+            <li><a href="#">Test Vectors</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>SDKs</h4>
+          <ul>
+            <li><a href="#">Python</a></li>
+            <li><a href="#">TypeScript</a></li>
+            <li><a href="#">Go sidecar</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Community</h4>
+          <ul>
+            <li><a href="#">Discord</a></li>
+            <li><a href="#">GitHub issues</a></li>
+            <li><a href="#">W3C CCG list</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="imprint">
+        <span>© 2025-2026 Ramprasad Gaddam. Apache License 2.0.</span>
+        <span>An open W3C-track specification.</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

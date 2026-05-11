@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-size: 17px;
+  }
+
+  body {
+    @apply bg-parchment text-ink antialiased;
+    font-feature-settings: "kern", "liga", "onum";
+    line-height: 1.65;
+  }
+
+  ::selection {
+    @apply bg-burgundy/20 text-ink;
+  }
+
+  /* Inline code */
+  code:not(pre code) {
+    @apply font-mono text-[0.85em] bg-parchment-warm px-1.5 py-0.5 rounded-sm;
+  }
+
+  /* Code blocks */
+  pre {
+    @apply font-mono bg-ink text-parchment p-5 rounded-none border border-ink overflow-x-auto text-sm leading-relaxed;
+  }
+
+  pre code {
+    @apply !bg-transparent !p-0 !text-parchment;
+  }
+
+  /* Heading defaults */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif text-ink;
+    font-feature-settings: "kern", "liga", "ss01";
+  }
+
+  /* Links inside prose */
+  .prose a, a.prose-link {
+    @apply text-burgundy underline decoration-1 underline-offset-2 hover:text-burgundy-dark;
+  }
+}
+
+@layer components {
+  .container-wide {
+    @apply max-w-[1100px] mx-auto px-6 md:px-10;
+  }
+
+  .container-prose {
+    @apply max-w-prose mx-auto px-6;
+  }
+
+  /* Eyebrow text (mono, uppercase) */
+  .eyebrow {
+    @apply font-mono uppercase text-burgundy;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    line-height: 1;
+  }
+
+  .eyebrow-faint {
+    @apply font-mono uppercase text-ink-faint;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    line-height: 1;
+  }
+
+  /* Small caps (mono, uppercase, tight) */
+  .small-caps {
+    @apply font-mono uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+  }
+
+  /* Drop cap helper, apply to a <p> */
+  .drop-cap::first-letter {
+    @apply font-serif font-bold text-burgundy float-left;
+    font-size: 3.2rem;
+    line-height: 1;
+    margin: 0.1rem 0.5rem 0 0;
+  }
+
+  /* Section heading with numeric prefix */
+  .section-heading {
+    @apply flex items-baseline gap-6 mb-8 pb-5 border-b border-rule;
+  }
+
+  .section-heading .num {
+    @apply font-mono text-burgundy;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+  }
+
+  .section-heading h2 {
+    @apply font-serif font-semibold text-ink;
+    font-size: 1.85rem;
+    letter-spacing: -0.015em;
+  }
+
+  /* Classical buttons */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 font-mono uppercase bg-ink text-parchment border border-ink no-underline transition-colors hover:bg-burgundy hover:border-burgundy;
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    padding: 0.85rem 1.5rem;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 font-mono uppercase bg-transparent text-ink border border-ink-faint no-underline transition-colors hover:border-ink;
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    padding: 0.85rem 1.5rem;
+  }
+
+  /* Numbered feature card (top-rule style) */
+  .feature-card {
+    @apply border-t-2 border-ink pt-5;
+  }
+
+  /* Marginalia (sidebar) link */
+  .marginalia-link {
+    @apply block font-mono uppercase no-underline text-ink-soft hover:text-burgundy transition-colors mb-2;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+  }
+
+  /* Footnote / citation text */
+  .footnote {
+    @apply font-serif italic text-ink-faint;
+    font-size: 0.85rem;
+  }
+
+  /* Double rule (footer separator) */
+  .double-rule {
+    border-top-style: double;
+    @apply border-t-[4px] border-ink;
+  }
+}
+
+/* Print styles */
+@media print {
+  body { background: white; color: black; }
+  nav, footer { display: none; }
+  pre, code { background: #f5f5f5 !important; color: black !important; }
+}

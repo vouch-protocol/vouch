@@ -1,0 +1,92 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+
+const LINKS = [
+    { href: '/', label: 'Home' },
+    { href: '/faq/', label: 'FAQ' },
+    { href: '/help/', label: 'Help' },
+    { href: '/support/', label: 'Support' },
+];
+
+export default function Nav() {
+    const pathname = usePathname();
+    const [open, setOpen] = useState(false);
+
+    return (
+        <nav className="bg-parchment border-b border-rule">
+            <div className="container-wide flex items-center justify-between py-5">
+                <Link href="/" className="flex items-baseline gap-3 no-underline text-ink">
+                    <span className="font-serif font-bold text-[1.35rem] tracking-tight">Vouch Protocol</span>
+                    <span className="small-caps text-burgundy hidden sm:inline">An Open Standard</span>
+                </Link>
+
+                <div className="hidden md:flex items-center gap-8">
+                    {LINKS.map((link) => {
+                        const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={`font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b border-transparent pb-0.5 transition-colors ${
+                                    isActive ? 'text-burgundy border-burgundy' : 'text-ink-soft hover:text-burgundy hover:border-burgundy'
+                                }`}
+                            >
+                                {link.label}
+                            </Link>
+                        );
+                    })}
+                    <a
+                        href="https://github.com/vouch-protocol/vouch"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border border-ink px-3.5 py-1.5 transition-colors hover:bg-ink hover:text-parchment"
+                    >
+                        GitHub
+                    </a>
+                </div>
+
+                <button
+                    onClick={() => setOpen(!open)}
+                    className="md:hidden p-2 text-ink"
+                    aria-label="Toggle menu"
+                >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        {open ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        )}
+                    </svg>
+                </button>
+            </div>
+
+            {open && (
+                <div className="md:hidden border-t border-rule bg-parchment">
+                    <div className="container-wide py-4 flex flex-col gap-3">
+                        {LINKS.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                onClick={() => setOpen(false)}
+                                className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy no-underline py-1"
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
+                        <a
+                            href="https://github.com/vouch-protocol/vouch"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy no-underline py-1"
+                        >
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+            )}
+        </nav>
+    );
+}
