@@ -72,11 +72,11 @@ Vouch fills that gap. Every action is a signed W3C Verifiable Credential that bi
             },
             {
                 q: 'Is Vouch Protocol production-ready?',
-                a: `For the credential layer: yes. Signing, verification, Multikey, JCS canonicalization, delegation chains, and the hybrid post-quantum profile are all shipped, cross-language tested, and have published test vectors.
+                a: `**For the credential layer: yes.** Signing, verification, Multikey, JCS canonicalization, delegation chains, and the hybrid post-quantum profile are all shipped, work across all three languages, and have published test vectors. Use them in production today.
 
-For the State Verifiability layer (Heartbeat orchestration, validator quorum, canary commitments, behavioral attestation): informative in the current spec revision. The credential *formats* exist (SessionVoucher VC type), but the runtime orchestration is expected to become normative in a future revision as implementer experience accumulates.
+**For the State Verifiability layer (Heartbeat, validator quorum, canary commitments, behavioral attestation): not yet.** The credential format ships (SessionVoucher), but the runtime that drives heartbeats and quorum isn't built. That is the next focus once enough teams are running Vouch in production to tell us what shape it needs.
 
-Vouch Shield, the optional runtime middleware that intercepts tool calls and enforces capability checks, is production-ready as a TypeScript library.`,
+**Vouch Shield**, the optional runtime middleware that intercepts tool calls and enforces capability checks, is production-ready as a TypeScript library.`,
                 meta: 'CHANGELOG: v1.0 through v1.6.0',
             },
             {
@@ -160,7 +160,7 @@ Vouch ships a reference Go sidecar daemon (\`go-sidecar/cmd/vouch-sidecar\`) tha
 
 This inverts the traditional PKI model from "trusted until revoked" to "untrusted until renewed." If the agent stops heartbeating (process crash, network split, compromise detected), the SessionVoucher expires naturally and downstream verifiers stop accepting actions.
 
-In Spec v0.1-draft this is informative. The SessionVoucher VC format ships in v1.6.0 (\`build_session_voucher\` in vouch/vc.py), but the runtime orchestration is expected to become normative in a later revision.`,
+The SessionVoucher credential format ships today (\`build_session_voucher\` in vouch/vc.py, since v1.6.0). The runtime that actually orchestrates heartbeats, drives validator quorum, and manages canary commitments is not built yet. The protocol describes the shape; the implementation is still ahead of us.`,
                 meta: 'CG Report §11 Heartbeat Protocol - PAD-016',
             },
             {
@@ -173,7 +173,7 @@ In Spec v0.1-draft this is informative. The SessionVoucher VC format ships in v1
 - Behavioral Attestation (per-action metadata: api calls, tokens, resources)
 - Trust Entropy (time-based decay of trust scores)
 
-State Verifiability is informative in this draft. Vouch focuses today on the credential layer; the state layer is the "what comes next" focus once implementer experience accumulates.`,
+Vouch today ships the credential layer (signing, verification, delegation, hybrid PQ). The state layer above is what comes next, once enough teams are running Vouch in production to tell us what the runtime should look like in practice.`,
                 meta: 'CG Report §15 State Verifiability',
             },
             {
@@ -284,6 +284,102 @@ result = await verifier.verify_delegation_chain([principal_vc, agent_vc, sub_age
 
 The verifier walks every link, validates signatures, and confirms resource subset narrowing. If any link fails, the whole chain fails with a structured reason.`,
                 meta: 'CG Report §9 Delegation Chains',
+            },
+            {
+                q: 'How do I attach a credentialStatus (BitstringStatusList) to an issued credential?',
+                a: `Two steps. First, allocate an index from your status list. Second, build a status entry and pass it to \`build_vouch_credential\`:
+
+\`\`\`python
+from vouch import (
+    StatusList, build_status_list_entry, build_vouch_credential, Signer,
+)
+
+# Issuer maintains a single StatusList per status purpose (revocation or suspension).
+status_list = StatusList(status_list_id="https://issuer.example/status/1")
+index = status_list.allocate_index()
+
+# Attach the status entry at issuance time.
+status_entry = build_status_list_entry(
+    status_list_credential="https://issuer.example/status/1",
+    status_list_index=index,
+)
+
+credential = build_vouch_credential(
+    issuer_did="did:web:issuer.example",
+    intent={"action": "submit_claim", "target": "claim:HC-001",
+            "resource": "https://insurance.example/claims/HC-001"},
+    credential_status=status_entry,
+)
+
+signed = Signer.from_did("did:web:issuer.example").sign_credential(credential)
+\`\`\`
+
+The TypeScript and Go SDKs expose the same API (\`buildStatusListEntry\` / \`BuildStatusListEntry\`) and accept \`credentialStatus\` / \`CredentialStatus\` on their credential builders.`,
+                helpLinks: [{ label: 'BitstringStatusList how-to', href: '/help/#credential-status' }],
+                meta: 'Shipped on main, in next release - CG Report §11.2',
+            },
+            {
+                q: 'How do I revoke a credential I previously issued?',
+                a: `Flip the bit at that credential's index in your status list, re-sign the BitstringStatusListCredential, and republish it:
+
+\`\`\`python
+status_list.revoke(index)  # set the bit
+
+status_credential = build_status_list_credential(
+    issuer_did="did:web:issuer.example",
+    status_list=status_list,
+)
+signed_status_credential = signer.sign_credential(status_credential)
+
+# Publish signed_status_credential at the URL referenced by issued credentials.
+\`\`\`
+
+Verifiers fetch the updated status credential, decode the bitstring, and observe that the bit is now set. The credential itself doesn't change; only the status list does.`,
+                helpLinks: [{ label: 'BitstringStatusList how-to', href: '/help/#credential-status' }],
+                meta: 'Shipped on main, in next release',
+            },
+            {
+                q: 'How does a verifier check credential status?',
+                a: `Fetch the status list credential, then call \`verify_status\` with the credential's \`credentialStatus\` entry and the fetched list:
+
+\`\`\`python
+from vouch import StatusListFetcher, verify_status
+
+fetcher = StatusListFetcher()  # in-memory TTL cache, conditional GETs
+
+status_credential = fetcher.get(
+    signed["credentialStatus"]["statusListCredential"]
+)
+
+is_revoked = verify_status(
+    credential_status=signed["credentialStatus"],
+    status_list_credential=status_credential,
+)
+\`\`\`
+
+The fetcher caches by URL with a 5-minute default TTL and issues conditional GETs (\`If-None-Match\`, \`If-Modified-Since\`) so re-validation is cheap when the issuer hasn't updated the list. Set \`force_refresh=True\` on verification failure to handle stale-cache scenarios. TypeScript and Go callers can compose the equivalent with \`fetch()\` and \`net/http.Get()\` respectively.`,
+                helpLinks: [{ label: 'BitstringStatusList how-to', href: '/help/#credential-status' }],
+                meta: 'Shipped on main, in next release',
+            },
+            {
+                q: 'How does the issuer survive a restart without re-allocating indices?',
+                a: `Use the persistence API. \`to_state_dict()\` returns a JSON-serializable dict containing the encoded bitstring **and** the allocation cursor (\`next_index\`), which is NOT recoverable from the encoded list alone:
+
+\`\`\`python
+from vouch import FilesystemStatusListStore
+
+store = FilesystemStatusListStore("/var/lib/vouch/status-1.json")
+
+# After every allocate / revoke, persist.
+store.save(status_list)
+
+# On startup:
+status_list = store.load()
+\`\`\`
+
+\`FilesystemStatusListStore\` is a reference implementation with atomic temp-file + rename writes. Production deployments substitute Redis, Postgres, or S3 using the same state-dict API. Without persistence of \`next_index\`, an issuer restart would re-allocate already-used indices, silently overwriting prior revocations.`,
+                helpLinks: [{ label: 'BitstringStatusList how-to', href: '/help/#credential-status' }],
+                meta: 'Shipped on main, in next release',
             },
             {
                 q: 'What framework integrations exist?',
@@ -452,8 +548,27 @@ For containerized deployment, the [Dockerfile](https://github.com/vouch-protocol
             },
             {
                 q: 'What about media provenance?',
-                a: `Vouch composes with [C2PA](https://c2pa.org) for media provenance rather than reimplementing it. The \`c2pa-ca/\` directory contains an active Certificate Authority that issues Ed25519-signed C2PA certificates and embeds CBOR manifests in image metadata. The audio path (\`vouch/audio.py\`, 38 KB) implements multi-layer Hamming(7,4) watermarks with psychoacoustic masking for audio signing.`,
+                a: `Vouch leaves media provenance to [C2PA](https://c2pa.org) and works alongside it rather than reimplementing it. The \`c2pa-ca/\` directory contains an active Certificate Authority that issues Ed25519-signed C2PA certificates and embeds CBOR manifests in image metadata. The audio path (\`vouch/audio.py\`, 38 KB) implements multi-layer Hamming(7,4) watermarks with psychoacoustic masking for audio signing.`,
                 meta: 'Shipped v1.5.0',
+            },
+            {
+                q: 'How should I deploy the BitstringStatusList in production?',
+                a: `Three operational pieces:
+
+1. **Issuer-side storage**: Replace \`FilesystemStatusListStore\` (development) with a shared store so multiple issuer instances can coordinate. The state-dict API is backend-agnostic; common choices are Redis (\`SET status:1 <state-json>\`), Postgres (single row with \`UPDATE\` under SELECT FOR UPDATE), or S3 (with optimistic concurrency via ETags).
+
+2. **Status list publishing**: Sign the \`BitstringStatusListCredential\` and serve it at a stable HTTPS URL, ideally with \`Cache-Control: max-age=...\` and \`ETag\` headers. The \`StatusListFetcher\` honors both. CDN-cacheable; the credential is public.
+
+3. **Verifier-side caching**: The reference \`StatusListFetcher\` uses an in-memory cache, fine for single-process verifiers. For multi-instance verifier fleets, wrap it with a shared cache (Redis) so a revocation is visible across the fleet within one TTL window. On verification failure, set \`force_refresh=True\` to bypass the cache and pick up the latest list.`,
+                helpLinks: [{ label: 'BitstringStatusList how-to', href: '/help/#credential-status' }],
+                meta: 'Shipped on main, in next release',
+            },
+            {
+                q: 'How big can a BitstringStatusList grow?',
+                a: `The W3C minimum is 131,072 bits (16 KiB uncompressed; ~50 bytes compressed when empty). That's enough for 131,072 credentials per status list. For larger issuers, allocate a new status list when you approach exhaustion; each credential's \`credentialStatus.statusListCredential\` URL identifies which list it belongs to.
+
+Practical operational sizing: 131,072 credentials at a 5-minute validity (typical short-lived agent credentials) means a single list covers roughly one year at 0.4 credentials/minute, or one day at ~91/minute. Plan list rotation accordingly.`,
+                meta: 'W3C BitstringStatusList §4.2',
             },
         ],
     },
@@ -740,9 +855,22 @@ Run with \`--verbose\` for detailed startup logs.`,
 2. **Key not in DID Document** - the signing key's verification-method ID is not in the DID Document's \`verificationMethod\` array.
 3. **Credential expired** - \`validUntil\` is in the past.
 4. **Nonce already seen** - the nonce store has a record of this credential's nonce.
-5. **Revoked** - the issuing DID is in the revocation registry.
+5. **Revoked at the DID level** - the issuing DID is in the revocation registry.
+6. **Revoked at the credential level** - the credential's \`credentialStatus\` bit is set in the fetched BitstringStatusListCredential.
 
 The verifier returns structured reasons, not just "invalid"; check the error code.`,
+            },
+            {
+                q: 'My verifier sees a credential as valid after I revoked it. What is going on?',
+                a: `Almost always cache TTL. The \`StatusListFetcher\` caches the status list credential by URL for 5 minutes by default. A revocation made at the issuer becomes visible to verifiers only after the cache expires (or sooner if the verifier sets \`force_refresh=True\`).
+
+Two operational adjustments:
+
+1. **Shorten the TTL** if your latency-to-revocation requirement is tighter than 5 minutes (\`StatusListFetcher(cache_ttl_seconds=60)\`).
+2. **Set \`force_refresh=True\` on verification failure** so a credential that suddenly fails for any reason triggers a fresh fetch of its status list. This is the recommended way to handle stale caches.
+
+For coordinated revocations across a verifier fleet, share the cache (Redis) so an invalidation in one verifier becomes visible to all of them immediately.`,
+                meta: 'CG Report §11.2',
             },
             {
                 q: 'How do I report a security issue?',

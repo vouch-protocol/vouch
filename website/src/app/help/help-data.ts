@@ -574,13 +574,17 @@ The W3C CG Report says specific reputation scoring **algorithms** are non-normat
             {
                 id: 'revocation',
                 title: 'Deploying the Revocation Registry',
-                summary: 'DID-level revocation vs credential-level BitstringStatusList.',
+                summary: 'DID-level revocation: revoke an entire agent identity in one operation.',
                 body: `
-## Two kinds of revocation
+## When to use DID-level revocation
 
-**DID-level**: revoke an entire agent identity. All credentials issued by that DID become invalid. Useful when a key is compromised or an agent is decommissioned. \`vouch/revocation.py\` (449 lines) ships this.
+DID-level revocation invalidates **all** credentials ever issued under a given DID. Use it when:
 
-**Credential-level**: revoke a single credential by index in a BitstringStatusList. Useful when a specific action needs to be retracted without affecting the rest of the agent's history. Referenced in the spec; an integration runtime is on the roadmap.
+- A signing key is suspected compromised
+- An agent is being decommissioned
+- An organizational principal needs to break the entire chain of credentials it ever authorized
+
+For revoking individual credentials without affecting the rest of an agent's history, use BitstringStatusList instead (see [Credential Status](#credential-status)). The two mechanisms compose: many production deployments run both.
 
 ## Backends
 
@@ -605,6 +609,168 @@ is_revoked = await registry.is_revoked("did:web:compromised-agent.example.com")
 ## How the verifier uses it
 
 The verifier consults the revocation registry on every verification. If the issuing DID is revoked, the credential fails with reason \`issuer_revoked\`. Cache TTL is configurable (default 60 seconds) to balance freshness with verifier throughput.
+`,
+            },
+            {
+                id: 'credential-status',
+                title: 'Credential Status with W3C BitstringStatusList',
+                summary: 'Per-credential revocation and suspension across Python, TypeScript, and Go.',
+                body: `
+## What this gives you
+
+W3C BitstringStatusList (\`vc-bitstring-status-list\`) lets an issuer revoke or suspend an **individual** credential without invalidating other credentials issued by the same DID. It's the right tool when one specific action needs to be retracted but the rest of the agent's history should remain valid.
+
+Vouch ships a cross-language reference implementation:
+
+- Python: \`vouch.status_list\` and \`vouch.status_list_fetcher\`
+- TypeScript: \`@vouch-protocol/core\` exports \`StatusList\`, \`buildStatusListCredential\`, \`buildStatusListEntry\`, \`verifyStatus\`
+- Go: \`go-sidecar/signer\` exports \`StatusList\`, \`BuildStatusListCredential\`, \`BuildStatusListEntry\`, \`VerifyStatus\`
+
+All three share a single canonical encoding (gzip + base64url multibase, 131,072-bit minimum bitstring) and a cross-language test vector at \`test-vectors/bitstring-status-list/\`.
+
+## Issuer flow
+
+The issuer maintains one or more \`StatusList\` instances (one per status purpose; typically one for revocation and optionally one for suspension). Each new credential is assigned the next available bit index in the list. To revoke a credential, the issuer flips its bit, re-signs the \`BitstringStatusListCredential\`, and republishes it at its stable URL.
+
+\`\`\`python
+from vouch import (
+    Signer, StatusList, FilesystemStatusListStore,
+    build_status_list_credential, build_status_list_entry,
+    build_vouch_credential,
+)
+
+# Load or create the status list. Persisted state survives restarts.
+store = FilesystemStatusListStore("/var/lib/vouch/status-1.json")
+try:
+    status_list = store.load()
+except FileNotFoundError:
+    status_list = StatusList(status_list_id="https://issuer.example/status/1")
+
+signer = Signer.from_did("did:web:issuer.example")
+
+# ---- Issue a credential with a credentialStatus entry ----
+index = status_list.allocate_index()
+store.save(status_list)  # persist the new cursor
+
+credential = build_vouch_credential(
+    issuer_did="did:web:issuer.example",
+    intent={"action": "submit_claim", "target": "claim:HC-001",
+            "resource": "https://insurance.example/claims/HC-001"},
+    credential_status=build_status_list_entry(
+        status_list_credential="https://issuer.example/status/1",
+        status_list_index=index,
+    ),
+)
+signed_credential = signer.sign_credential(credential)
+
+# ---- Later, revoke that credential ----
+status_list.revoke(index)
+store.save(status_list)
+
+# Re-sign and republish the status list credential at its stable URL.
+status_credential = build_status_list_credential(
+    issuer_did="did:web:issuer.example",
+    status_list=status_list,
+)
+signed_status_credential = signer.sign_credential(status_credential)
+\`\`\`
+
+## Verifier flow
+
+Verifiers fetch the published status list credential and look up the credential's bit. The \`StatusListFetcher\` provides an in-memory TTL cache, conditional GETs, and HTTPS enforcement.
+
+\`\`\`python
+from vouch import StatusListFetcher, verify_status
+
+fetcher = StatusListFetcher(cache_ttl_seconds=300)
+
+status_credential = fetcher.get(
+    signed_credential["credentialStatus"]["statusListCredential"]
+)
+
+is_revoked = verify_status(
+    credential_status=signed_credential["credentialStatus"],
+    status_list_credential=status_credential,
+)
+\`\`\`
+
+On verification failure, set \`force_refresh=True\` so the verifier bypasses cached state and picks up the latest list. This is the recommended way to handle stale caches.
+
+## Why persistence matters
+
+\`StatusList\` keeps two pieces of state: the bitstring (which bits are set) and the allocation cursor (\`next_index\`, the next unused index). The bitstring is recoverable from the published \`encodedList\`, but the cursor is NOT. Without persisting the cursor, an issuer restart would re-allocate already-used indices and silently overwrite prior revocations.
+
+\`to_state_dict()\` returns a JSON-serializable dict carrying both:
+
+\`\`\`json
+{
+  "version": 1,
+  "status_list_id": "https://issuer.example/status/1",
+  "status_purpose": "revocation",
+  "length": 131072,
+  "next_index": 1024,
+  "encoded_list": "uH4sIAAAAAAAC_-3Z..."
+}
+\`\`\`
+
+\`FilesystemStatusListStore\` is a reference store with atomic writes (temp file + rename). For production, swap in Redis (\`SET status:1 <state-json>\`), Postgres (one row, \`UPDATE\` under \`SELECT FOR UPDATE\`), or S3 (with ETag-based optimistic concurrency). The state-dict API is backend-agnostic.
+
+## TypeScript and Go
+
+The TypeScript and Go APIs mirror Python. Examples:
+
+\`\`\`typescript
+import {
+    StatusList, buildStatusListCredential, buildStatusListEntry,
+    verifyStatus, buildVouchCredential,
+} from '@vouch-protocol/core';
+
+const statusList = new StatusList({ statusListId: 'https://issuer.example/status/1' });
+const index = statusList.allocateIndex();
+
+const credential = buildVouchCredential({
+    issuerDid: 'did:web:issuer.example',
+    intent: { action: 'submit_claim', target: 'claim:HC-001',
+              resource: 'https://insurance.example/claims/HC-001' },
+    credentialStatus: buildStatusListEntry({
+        statusListCredential: 'https://issuer.example/status/1',
+        statusListIndex: index,
+    }),
+});
+\`\`\`
+
+\`\`\`go
+import "github.com/vouch-protocol/vouch/go-sidecar/signer"
+
+sl, _ := signer.NewStatusList("https://issuer.example/status/1", "", 0)
+idx, _ := sl.AllocateIndex()
+
+entry, _ := signer.BuildStatusListEntry(signer.BuildStatusListEntryOptions{
+    StatusListCredential: "https://issuer.example/status/1",
+    StatusListIndex:      idx,
+})
+
+// Pass via SignCredentialOptions.CredentialStatus to Signer.SignCredential.
+\`\`\`
+
+TypeScript and Go callers fetch the published status credential using their platform's HTTP client (\`fetch()\` / \`net/http.Get()\`) and call \`verifyStatus\` / \`VerifyStatus\` with the result.
+
+## Cross-language interop
+
+Python and TypeScript produce byte-identical encoded output (both use zlib's DEFLATE encoder). Go's \`compress/flate\` produces a valid DEFLATE stream that decodes to the same bitstring; W3C BitstringStatusList §4.2 requires equivalence of the **decompressed** bitstring, not the gzip envelope, so all three implementations interop cleanly. The canonical test vector at \`test-vectors/bitstring-status-list/vector.json\` is exercised by all three test suites.
+
+## Sizing
+
+The W3C minimum bitstring length is 131,072 bits (16 KiB uncompressed; ~50 bytes compressed when empty). That holds 131,072 credentials per status list. For larger issuers, allocate a new status list as you approach exhaustion; the \`credentialStatus.statusListCredential\` URL on each credential identifies which list it belongs to.
+
+## Composition with DID-level revocation
+
+BitstringStatusList and the DID-level revocation registry (\`vouch.revocation\`) compose cleanly:
+
+- **DID-level**: "this entire identity is compromised, kill everything." One operation, instant blanket effect.
+- **Credential-level (BitstringStatusList)**: "this specific action was retracted, but the rest of this identity's history remains valid." Surgical.
+
+A verifier that runs both consults the DID registry first (cheap), then the status list (HTTP fetch, cached). If either returns "revoked," the credential is rejected with a specific reason code.
 `,
             },
             {

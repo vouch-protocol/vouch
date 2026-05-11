@@ -161,7 +161,7 @@ export default function HomePage() {
                         <h2>Built on open standards</h2>
                     </div>
                     <p className="text-ink-soft max-w-prose mb-10 leading-relaxed">
-                        Vouch composes with existing W3C and IETF standards. No new cryptographic primitives are
+                        Vouch builds on existing W3C and IETF standards. No new cryptographic primitives are
                         introduced where existing standards suffice.
                     </p>
                     <div className="flex flex-wrap gap-2">
