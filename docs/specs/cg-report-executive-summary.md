@@ -52,7 +52,7 @@ On top of these primitives, Vouch contributes:
 
 | Phase | Body | Gating signal | Outcome |
 |---|---|---|---|
-| Incubation | W3C Credentials Community Group | Active now | CG Report v1.0, multi-vendor implementations, test vectors |
+| Incubation | W3C Credentials Community Group | Active now | CG Report (Spec v0.1-draft), multi-vendor implementations, test vectors |
 | Transition Proposal | W3C VCWG / DIWG | When community traction supports it (multiple implementations, broad agreement, charter readiness) | Charter or rechartering proposal |
 | Standards Track | W3C VCWG / DIWG | Following transition | Working Draft to Candidate Recommendation to Recommendation |
 

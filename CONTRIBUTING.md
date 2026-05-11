@@ -185,7 +185,7 @@ git push --force-with-lease
 ## Questions?
 
 - Open a [Discussion](https://github.com/vouch-protocol/vouch/discussions)
-- Join our [Discord](https://discord.gg/VxgYkjdph)
+- Join our [Discord](https://discord.gg/mMqx5cG9Y)
 - Check the [Documentation](https://github.com/vouch-protocol/vouch#readme)
 
 ## Release Process

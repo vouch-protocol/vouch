@@ -19,7 +19,7 @@
   <a href="https://github.com/vouch-protocol/vouch"><img src="https://img.shields.io/badge/Protected_by-Vouch_Protocol-00C853?style=flat&labelColor=333&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMDBDODUzIiBkPSJNMTIgMjBMMiA0aDRsNiAxMC41TDE4IDRoNEwxMiAyMHoiLz48L3N2Zz4=" alt="Protected by Vouch"></a>
   <a href="https://www.bestpractices.dev/projects/11688"><img src="https://www.bestpractices.dev/projects/11688/badge" alt="OpenSSF Silver"></a>
   <a href="https://codecov.io/gh/vouch-protocol/vouch"><img src="https://codecov.io/gh/vouch-protocol/vouch/branch/main/graph/badge.svg" alt="Code Coverage"></a>
-  <a href="https://discord.gg/VxgYkjdph"><img src="https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://discord.gg/mMqx5cG9Y"><img src="https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white" alt="Discord"></a>
 </p>
 
 <p align="center">
@@ -63,7 +63,7 @@ The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work
 > 
 > **Vouch Protocol is the SSL certificate for AI agents.**
 
-[Read the spec →](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md) | [Join Discord →](https://discord.gg/VxgYkjdph)
+[Read the spec →](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md) | [Join Discord →](https://discord.gg/mMqx5cG9Y)
 
 ---
 
@@ -336,7 +336,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 
 ## Community
 
-- **Discord** - Ask questions, share use cases → [Join now](https://discord.gg/VxgYkjdph)
+- **Discord** - Ask questions, share use cases → [Join now](https://discord.gg/mMqx5cG9Y)
 - **GitHub Discussions** - Technical discussions → [Start a discussion](https://github.com/vouch-protocol/vouch/discussions)
 - **Twitter/X** - Updates and announcements → [@Vouch_Protocol](https://x.com/Vouch_Protocol)
 
@@ -419,7 +419,7 @@ Contributions welcome. See [CONTRIBUTING.md](https://github.com/vouch-protocol/v
 
 **Star this repo if you find it useful.**
 
-[Star on GitHub](https://github.com/vouch-protocol/vouch) | [Join Discord](https://discord.gg/VxgYkjdph) | [Follow on X](https://x.com/Vouch_Protocol)
+[Star on GitHub](https://github.com/vouch-protocol/vouch) | [Join Discord](https://discord.gg/mMqx5cG9Y) | [Follow on X](https://x.com/Vouch_Protocol)
 
 ---
 
