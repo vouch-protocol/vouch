@@ -14,7 +14,7 @@
  *  vouch-protocol/packages/sdk-ts/ (TypeScript SDK)
  *  vouch-protocol/go-sidecar/ (Go sidecar)
  *  vouch-protocol/vouch-shield (sibling repo)
- *  vouch-protocol/docs/specs/w3c-cg-report.md
+ *  vouch-protocol/docs/specs/ (local-only spec drafts)
  */
 
 export interface FAQItem {
@@ -93,7 +93,7 @@ It is not affiliated with or endorsed by any employer.`,
       },
       {
         q: 'Where can I read the formal specification?',
-        a: `Most people never need to. The FAQ and [Guides](/help/) cover everything you'll use day to day. But if you want the formal version, it's at [docs/specs/w3c-cg-report.md](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md), with an executive summary [here](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md). Vouch is on the open standard via the open standards group.`,
+        a: `Most people never need to. The FAQ and [Guides](/help/) cover everything you'll use day to day. But if you want the formal version, an executive summary is available [here](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md).`,
       },
     ],
   },
