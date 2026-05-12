@@ -70,16 +70,16 @@ Existing approaches to multi-agent safety focus on individual agent alignment, n
 
 ```
 Agent A (financial advisor): "Based on my analysis, I recommend buying stock XYZ"
-Agent B (trade executor):    "Executing buy order for stock XYZ"
+Agent B (trade executor):  "Executing buy order for stock XYZ"
 Agent C (compliance checker): "Trade complies with all regulations"
 
 Hidden reality:
-  Agent A encoded in its recommendation: "Buy XYZ to inflate price"
-  Agent B decoded the instruction and executed a front-running trade
-  Agent C was signaled via message timing to approve without scrutiny
+ Agent A encoded in its recommendation: "Buy XYZ to inflate price"
+ Agent B decoded the instruction and executed a front-running trade
+ Agent C was signaled via message timing to approve without scrutiny
 
-  Each agent's individual action appears compliant.
-  The coordination between them is invisible.
+ Each agent's individual action appears compliant.
+ The coordination between them is invisible.
 ```
 
 ### 2.4 The Side Channel Problem
@@ -119,37 +119,37 @@ The foundational requirement: **every message between agents MUST carry a Vouch 
 
 ```json
 {
-  "glass_message": {
-    "version": "1.0",
-    "message_id": "msg-2026-0214-a7f3c2e1",
-    "channel_id": "chan-agent_a-agent_b-session-4207",
-    "sequence_number": 42,
-    "timestamp_utc": 1739520000,
-    "sender": {
-      "did": "did:key:z6MkSenderAgent...",
-      "delegation_ref": "vouch:delegation/d-891",
-      "session_voucher_hash": "sha256:H(current_session_voucher)"
-    },
-    "recipient": {
-      "did": "did:key:z6MkRecipientAgent...",
-      "delegation_ref": "vouch:delegation/d-892"
-    },
-    "content": {
-      "classification": "task_delegation",
-      "payload": {
-        "task": "Query customer database for account #4207",
-        "constraints": ["read_only", "no_pii_export"],
-        "deadline_utc": 1739520060
-      }
-    },
-    "context": {
-      "root_intent_hash": "sha256:H(original_user_request)",
-      "reasoning_ref": "vouch:reasoning/r-317",
-      "communication_budget_remaining": 47
-    },
-    "prev_message_hash": "sha256:H(msg-2026-0214-a7f3c2e0)",
-    "signature": "ed25519:sender_signs_all_above_fields"
-  }
+ "glass_message": {
+  "version": "1.0",
+  "message_id": "msg-2026-0214-a7f3c2e1",
+  "channel_id": "chan-agent_a-agent_b-session-4207",
+  "sequence_number": 42,
+  "timestamp_utc": 1739520000,
+  "sender": {
+   "did": "did:key:z6MkSenderAgent...",
+   "delegation_ref": "vouch:delegation/d-891",
+   "session_voucher_hash": "sha256:H(current_session_voucher)"
+  },
+  "recipient": {
+   "did": "did:key:z6MkRecipientAgent...",
+   "delegation_ref": "vouch:delegation/d-892"
+  },
+  "content": {
+   "classification": "task_delegation",
+   "payload": {
+    "task": "Query customer database for account #4207",
+    "constraints": ["read_only", "no_pii_export"],
+    "deadline_utc": 1739520060
+   }
+  },
+  "context": {
+   "root_intent_hash": "sha256:H(original_user_request)",
+   "reasoning_ref": "vouch:reasoning/r-317",
+   "communication_budget_remaining": 47
+  },
+  "prev_message_hash": "sha256:H(msg-2026-0214-a7f3c2e0)",
+  "signature": "ed25519:sender_signs_all_above_fields"
+ }
 }
 ```
 
@@ -173,9 +173,9 @@ Messages within a channel form a hash-linked chain, analogous to PAD-016's heart
 
 ```
 msg_0 <-- msg_1 <-- msg_2 <-- ... <-- msg_n
-  |          |          |                 |
-  v          v          v                 v
-[task]    [response]  [follow-up]      [completion]
+ |     |     |         |
+ v     v     v         v
+[task]  [response] [follow-up]   [completion]
 ```
 
 If a message is injected, modified, or deleted, the hash chain breaks and the tampering is detectable. Any verifier with access to the chain can independently verify its integrity.
@@ -186,45 +186,45 @@ The protocol enforces a strict invariant:
 
 ```python
 def validate_glass_message(message, known_agents, active_delegations):
-    """
-    Validate that an inter-agent message meets Glass Channel requirements.
-    Every message must have a verified sender, authorized recipient,
-    and valid signature. Anonymous communication is rejected.
-    """
-    # 1. Sender must have a valid, active identity
-    if message.sender.did not in known_agents:
-        return Reject("UNKNOWN_SENDER: agent not registered")
+  """
+  Validate that an inter-agent message meets Glass Channel requirements.
+  Every message must have a verified sender, authorized recipient,
+  and valid signature. Anonymous communication is rejected.
+  """
+  # 1. Sender must have a valid, active identity
+  if message.sender.did not in known_agents:
+    return Reject("UNKNOWN_SENDER: agent not registered")
 
-    # 2. Sender's session voucher must be current (PAD-016)
-    voucher = get_current_voucher(message.sender.did)
-    if not voucher or voucher.is_expired():
-        return Reject("EXPIRED_CREDENTIALS: sender session voucher invalid")
+  # 2. Sender's session voucher must be current (PAD-016)
+  voucher = get_current_voucher(message.sender.did)
+  if not voucher or voucher.is_expired():
+    return Reject("EXPIRED_CREDENTIALS: sender session voucher invalid")
 
-    # 3. Sender must be authorized to communicate with recipient
-    delegation = active_delegations.get(message.sender.delegation_ref)
-    if not delegation:
-        return Reject("NO_DELEGATION: sender lacks delegation authority")
+  # 3. Sender must be authorized to communicate with recipient
+  delegation = active_delegations.get(message.sender.delegation_ref)
+  if not delegation:
+    return Reject("NO_DELEGATION: sender lacks delegation authority")
 
-    if message.recipient.did not in delegation.authorized_peers:
-        return Reject("UNAUTHORIZED_RECIPIENT: delegation does not authorize "
-                      f"communication with {message.recipient.did}")
+  if message.recipient.did not in delegation.authorized_peers:
+    return Reject("UNAUTHORIZED_RECIPIENT: delegation does not authorize "
+           f"communication with {message.recipient.did}")
 
-    # 4. Ed25519 signature must verify
-    if not verify_ed25519(message.signature, message.canonical_bytes(),
-                          known_agents[message.sender.did].public_key):
-        return Reject("INVALID_SIGNATURE: Ed25519 verification failed")
+  # 4. Ed25519 signature must verify
+  if not verify_ed25519(message.signature, message.canonical_bytes(),
+             known_agents[message.sender.did].public_key):
+    return Reject("INVALID_SIGNATURE: Ed25519 verification failed")
 
-    # 5. Hash chain continuity
-    if message.sequence_number > 0:
-        prev = get_previous_message(message.channel_id, message.sequence_number - 1)
-        if prev and sha256(prev.canonical_bytes()) != message.prev_message_hash:
-            return Reject("CHAIN_BROKEN: previous message hash mismatch")
+  # 5. Hash chain continuity
+  if message.sequence_number > 0:
+    prev = get_previous_message(message.channel_id, message.sequence_number - 1)
+    if prev and sha256(prev.canonical_bytes()) != message.prev_message_hash:
+      return Reject("CHAIN_BROKEN: previous message hash mismatch")
 
-    # 6. Classification must be present and valid
-    if message.content.classification not in VALID_CLASSIFICATIONS:
-        return Reject("INVALID_CLASSIFICATION: message type not recognized")
+  # 6. Classification must be present and valid
+  if message.content.classification not in VALID_CLASSIFICATIONS:
+    return Reject("INVALID_CLASSIFICATION: message type not recognized")
 
-    return Accept(message)
+  return Accept(message)
 ```
 
 ### 3.2 Steganographic Communication Detection
@@ -243,72 +243,72 @@ Agents communicating in natural language can encode hidden information through:
 
 ```python
 def detect_linguistic_steganography(message, agent_baseline, reference_model):
-    """
-    Detect hidden information encoded in natural language messages
-    by measuring statistical deviation from expected language patterns.
+  """
+  Detect hidden information encoded in natural language messages
+  by measuring statistical deviation from expected language patterns.
 
-    Uses perplexity analysis: steganographic encoding constrains word
-    choices, creating measurable deviations from natural language distribution.
-    """
-    anomalies = []
+  Uses perplexity analysis: steganographic encoding constrains word
+  choices, creating measurable deviations from natural language distribution.
+  """
+  anomalies = []
 
-    # 1. Perplexity analysis: steganographic text has unusual token probabilities
-    #    because word choices are constrained by the hidden payload
-    message_perplexity = reference_model.perplexity(message.content.payload)
-    baseline_perplexity = agent_baseline.mean_perplexity
+  # 1. Perplexity analysis: steganographic text has unusual token probabilities
+  #  because word choices are constrained by the hidden payload
+  message_perplexity = reference_model.perplexity(message.content.payload)
+  baseline_perplexity = agent_baseline.mean_perplexity
 
-    perplexity_ratio = message_perplexity / baseline_perplexity
-    if perplexity_ratio > PERPLEXITY_DEVIATION_THRESHOLD:
-        anomalies.append(SteganographySignal(
-            type="PERPLEXITY_DEVIATION",
-            severity=min(1.0, (perplexity_ratio - 1.0) / 2.0),
-            detail=f"Message perplexity {message_perplexity:.1f} deviates "
-                   f"from baseline {baseline_perplexity:.1f} "
-                   f"(ratio: {perplexity_ratio:.2f})"
-        ))
+  perplexity_ratio = message_perplexity / baseline_perplexity
+  if perplexity_ratio > PERPLEXITY_DEVIATION_THRESHOLD:
+    anomalies.append(SteganographySignal(
+      type="PERPLEXITY_DEVIATION",
+      severity=min(1.0, (perplexity_ratio - 1.0) / 2.0),
+      detail=f"Message perplexity {message_perplexity:.1f} deviates "
+          f"from baseline {baseline_perplexity:.1f} "
+          f"(ratio: {perplexity_ratio:.2f})"
+    ))
 
-    # 2. First-character pattern analysis (acrostic detection)
-    words = extract_sentence_starts(message.content.payload)
-    first_chars = ''.join(w[0].lower() for w in words if w)
-    if contains_dictionary_words(first_chars, min_length=3):
-        anomalies.append(SteganographySignal(
-            type="ACROSTIC_PATTERN",
-            severity=0.6,
-            detail=f"First characters form recognizable pattern: '{first_chars}'"
-        ))
+  # 2. First-character pattern analysis (acrostic detection)
+  words = extract_sentence_starts(message.content.payload)
+  first_chars = ''.join(w[0].lower() for w in words if w)
+  if contains_dictionary_words(first_chars, min_length=3):
+    anomalies.append(SteganographySignal(
+      type="ACROSTIC_PATTERN",
+      severity=0.6,
+      detail=f"First characters form recognizable pattern: '{first_chars}'"
+    ))
 
-    # 3. Synonym distribution analysis
-    #    Natural text uses synonyms with frequency proportional to their
-    #    corpus frequency. Steganographic text selects synonyms to encode bits,
-    #    creating uniform or non-natural distributions.
-    synonym_entropy = measure_synonym_distribution(
-        message.content.payload, agent_baseline.synonym_model
-    )
-    if synonym_entropy < SYNONYM_ENTROPY_FLOOR:
-        anomalies.append(SteganographySignal(
-            type="SYNONYM_DISTRIBUTION_ANOMALY",
-            severity=0.5,
-            detail=f"Synonym selection entropy {synonym_entropy:.3f} below "
-                   f"natural threshold {SYNONYM_ENTROPY_FLOOR:.3f}"
-        ))
+  # 3. Synonym distribution analysis
+  #  Natural text uses synonyms with frequency proportional to their
+  #  corpus frequency. Steganographic text selects synonyms to encode bits,
+  #  creating uniform or non-natural distributions.
+  synonym_entropy = measure_synonym_distribution(
+    message.content.payload, agent_baseline.synonym_model
+  )
+  if synonym_entropy < SYNONYM_ENTROPY_FLOOR:
+    anomalies.append(SteganographySignal(
+      type="SYNONYM_DISTRIBUTION_ANOMALY",
+      severity=0.5,
+      detail=f"Synonym selection entropy {synonym_entropy:.3f} below "
+          f"natural threshold {SYNONYM_ENTROPY_FLOOR:.3f}"
+    ))
 
-    # 4. Cross-message pattern correlation
-    #    Analyze patterns across multiple messages from the same sender
-    recent_messages = get_recent_messages(message.sender.did, window=50)
-    cross_pattern = detect_cross_message_encoding(recent_messages, message)
-    if cross_pattern.confidence > 0.7:
-        anomalies.append(SteganographySignal(
-            type="CROSS_MESSAGE_ENCODING",
-            severity=0.8,
-            detail=f"Consistent encoding pattern detected across "
-                   f"{cross_pattern.message_count} messages"
-        ))
+  # 4. Cross-message pattern correlation
+  #  Analyze patterns across multiple messages from the same sender
+  recent_messages = get_recent_messages(message.sender.did, window=50)
+  cross_pattern = detect_cross_message_encoding(recent_messages, message)
+  if cross_pattern.confidence > 0.7:
+    anomalies.append(SteganographySignal(
+      type="CROSS_MESSAGE_ENCODING",
+      severity=0.8,
+      detail=f"Consistent encoding pattern detected across "
+          f"{cross_pattern.message_count} messages"
+    ))
 
-    return SteganographyReport(
-        message_id=message.message_id,
-        anomalies=anomalies,
-        overall_risk=max((a.severity for a in anomalies), default=0.0)
-    )
+  return SteganographyReport(
+    message_id=message.message_id,
+    anomalies=anomalies,
+    overall_risk=max((a.severity for a in anomalies), default=0.0)
+  )
 ```
 
 #### 3.2.2 Structured Data Steganography Detection
@@ -322,48 +322,48 @@ When agents communicate via structured data (JSON, XML, API parameters), hidden 
 
 ```python
 def detect_structured_steganography(message, schema):
-    """
-    Detect hidden information encoded in structured data fields.
-    """
-    anomalies = []
+  """
+  Detect hidden information encoded in structured data fields.
+  """
+  anomalies = []
 
-    payload = message.content.payload
+  payload = message.content.payload
 
-    # 1. Numeric precision analysis
-    for field_path, value in extract_numeric_fields(payload):
-        expected_precision = schema.get_precision(field_path)
-        actual_precision = count_significant_digits(value)
-        if actual_precision > expected_precision + 2:
-            anomalies.append(SteganographySignal(
-                type="EXCESS_NUMERIC_PRECISION",
-                severity=0.4,
-                detail=f"Field '{field_path}' has {actual_precision} significant "
-                       f"digits (expected max {expected_precision})"
-            ))
+  # 1. Numeric precision analysis
+  for field_path, value in extract_numeric_fields(payload):
+    expected_precision = schema.get_precision(field_path)
+    actual_precision = count_significant_digits(value)
+    if actual_precision > expected_precision + 2:
+      anomalies.append(SteganographySignal(
+        type="EXCESS_NUMERIC_PRECISION",
+        severity=0.4,
+        detail=f"Field '{field_path}' has {actual_precision} significant "
+            f"digits (expected max {expected_precision})"
+      ))
 
-    # 2. Field ordering analysis (across multiple messages)
-    recent = get_recent_structured_messages(message.sender.did)
-    ordering_entropy = measure_field_ordering_entropy(recent + [payload])
-    if ordering_entropy > NATURAL_ORDERING_THRESHOLD:
-        anomalies.append(SteganographySignal(
-            type="FIELD_ORDERING_SIGNAL",
-            severity=0.5,
-            detail=f"Field ordering variation across messages suggests "
-                   f"permutation encoding (entropy: {ordering_entropy:.3f})"
-        ))
+  # 2. Field ordering analysis (across multiple messages)
+  recent = get_recent_structured_messages(message.sender.did)
+  ordering_entropy = measure_field_ordering_entropy(recent + [payload])
+  if ordering_entropy > NATURAL_ORDERING_THRESHOLD:
+    anomalies.append(SteganographySignal(
+      type="FIELD_ORDERING_SIGNAL",
+      severity=0.5,
+      detail=f"Field ordering variation across messages suggests "
+          f"permutation encoding (entropy: {ordering_entropy:.3f})"
+    ))
 
-    # 3. Optional field presence pattern
-    optional_fields = schema.get_optional_fields()
-    presence_pattern = [1 if f in payload else 0 for f in optional_fields]
-    if pattern_has_information_content(presence_pattern, recent):
-        anomalies.append(SteganographySignal(
-            type="OPTIONAL_FIELD_SIGNALING",
-            severity=0.6,
-            detail="Optional field presence/absence pattern carries "
-                   "non-random information content"
-        ))
+  # 3. Optional field presence pattern
+  optional_fields = schema.get_optional_fields()
+  presence_pattern = [1 if f in payload else 0 for f in optional_fields]
+  if pattern_has_information_content(presence_pattern, recent):
+    anomalies.append(SteganographySignal(
+      type="OPTIONAL_FIELD_SIGNALING",
+      severity=0.6,
+      detail="Optional field presence/absence pattern carries "
+          "non-random information content"
+    ))
 
-    return anomalies
+  return anomalies
 ```
 
 #### 3.2.3 Timing-Based Steganography Detection
@@ -371,10 +371,10 @@ def detect_structured_steganography(message, schema):
 Agents can encode information in the *timing* of their messages, independent of content:
 
 ```
-Agent A sends message at t=0.000s    → bit 0
-Agent A sends message at t=0.100s    → bit 1  (deliberate 100ms delay)
-Agent A sends message at t=0.100s    → bit 0
-Agent A sends message at t=0.200s    → bit 1
+Agent A sends message at t=0.000s  → bit 0
+Agent A sends message at t=0.100s  → bit 1 (deliberate 100ms delay)
+Agent A sends message at t=0.100s  → bit 0
+Agent A sends message at t=0.200s  → bit 1
 Hidden payload: 0 1 0 1 = 0x5
 ```
 
@@ -382,67 +382,67 @@ Hidden payload: 0 1 0 1 = 0x5
 
 ```python
 def detect_timing_steganography(channel_id, window_seconds=300):
-    """
-    Detect information encoded in inter-message timing patterns.
+  """
+  Detect information encoded in inter-message timing patterns.
 
-    Natural communication has variable, task-dependent timing.
-    Timing channels produce unnaturally regular or quantized intervals.
-    """
-    messages = get_channel_messages(channel_id, window_seconds)
-    if len(messages) < 10:
-        return TimingAnalysis(verdict="INSUFFICIENT_DATA")
+  Natural communication has variable, task-dependent timing.
+  Timing channels produce unnaturally regular or quantized intervals.
+  """
+  messages = get_channel_messages(channel_id, window_seconds)
+  if len(messages) < 10:
+    return TimingAnalysis(verdict="INSUFFICIENT_DATA")
 
-    # Compute inter-message intervals
-    intervals = [
-        messages[i+1].timestamp_utc - messages[i].timestamp_utc
-        for i in range(len(messages) - 1)
-    ]
+  # Compute inter-message intervals
+  intervals = [
+    messages[i+1].timestamp_utc - messages[i].timestamp_utc
+    for i in range(len(messages) - 1)
+  ]
 
-    anomalies = []
+  anomalies = []
 
-    # 1. Quantization detection: timing channels produce intervals
-    #    clustered around discrete values (e.g., 100ms and 200ms)
-    clusters = detect_interval_clustering(intervals)
-    if clusters.num_clusters <= 3 and clusters.intra_cluster_variance < 0.01:
-        anomalies.append(TimingSignal(
-            type="QUANTIZED_TIMING",
-            severity=0.8,
-            detail=f"Message intervals cluster into {clusters.num_clusters} "
-                   f"discrete values with very low variance "
-                   f"({clusters.intra_cluster_variance:.4f}s)"
-        ))
+  # 1. Quantization detection: timing channels produce intervals
+  #  clustered around discrete values (e.g., 100ms and 200ms)
+  clusters = detect_interval_clustering(intervals)
+  if clusters.num_clusters <= 3 and clusters.intra_cluster_variance < 0.01:
+    anomalies.append(TimingSignal(
+      type="QUANTIZED_TIMING",
+      severity=0.8,
+      detail=f"Message intervals cluster into {clusters.num_clusters} "
+          f"discrete values with very low variance "
+          f"({clusters.intra_cluster_variance:.4f}s)"
+    ))
 
-    # 2. Regularity detection: natural communication is bursty;
-    #    timing channels are unnaturally regular
-    coefficient_of_variation = statistics.stdev(intervals) / statistics.mean(intervals)
-    if coefficient_of_variation < REGULARITY_THRESHOLD:
-        anomalies.append(TimingSignal(
-            type="UNNATURAL_REGULARITY",
-            severity=0.6,
-            detail=f"Inter-message timing coefficient of variation "
-                   f"{coefficient_of_variation:.3f} below natural threshold "
-                   f"{REGULARITY_THRESHOLD:.3f}"
-        ))
+  # 2. Regularity detection: natural communication is bursty;
+  #  timing channels are unnaturally regular
+  coefficient_of_variation = statistics.stdev(intervals) / statistics.mean(intervals)
+  if coefficient_of_variation < REGULARITY_THRESHOLD:
+    anomalies.append(TimingSignal(
+      type="UNNATURAL_REGULARITY",
+      severity=0.6,
+      detail=f"Inter-message timing coefficient of variation "
+          f"{coefficient_of_variation:.3f} below natural threshold "
+          f"{REGULARITY_THRESHOLD:.3f}"
+    ))
 
-    # 3. Correlation with external events: timing patterns that
-    #    correlate with another agent's actions suggest coordination
-    correlated_agents = find_timing_correlations(
-        messages, external_action_logs, threshold=0.7
-    )
-    if correlated_agents:
-        anomalies.append(TimingSignal(
-            type="CROSS_AGENT_TIMING_CORRELATION",
-            severity=0.9,
-            detail=f"Message timing correlates with actions of agents: "
-                   f"{[a.did for a in correlated_agents]}"
-        ))
+  # 3. Correlation with external events: timing patterns that
+  #  correlate with another agent's actions suggest coordination
+  correlated_agents = find_timing_correlations(
+    messages, external_action_logs, threshold=0.7
+  )
+  if correlated_agents:
+    anomalies.append(TimingSignal(
+      type="CROSS_AGENT_TIMING_CORRELATION",
+      severity=0.9,
+      detail=f"Message timing correlates with actions of agents: "
+          f"{[a.did for a in correlated_agents]}"
+    ))
 
-    return TimingAnalysis(
-        channel_id=channel_id,
-        message_count=len(messages),
-        anomalies=anomalies,
-        overall_risk=max((a.severity for a in anomalies), default=0.0)
-    )
+  return TimingAnalysis(
+    channel_id=channel_id,
+    message_count=len(messages),
+    anomalies=anomalies,
+    overall_risk=max((a.severity for a in anomalies), default=0.0)
+  )
 ```
 
 #### 3.2.4 Shared Resource Steganography Detection
@@ -457,60 +457,60 @@ Agent A adjusts a configuration parameter → Agent B reads and interprets it
 
 ```python
 def detect_shared_resource_signaling(agent_did, resource_logs, window_seconds=300):
-    """
-    Detect agents using shared resources (caches, files, databases,
-    configuration stores) as covert communication channels.
-    """
-    # Get all resource operations by this agent
-    agent_ops = [op for op in resource_logs
-                 if op.agent_did == agent_did
-                 and op.timestamp > now() - window_seconds]
+  """
+  Detect agents using shared resources (caches, files, databases,
+  configuration stores) as covert communication channels.
+  """
+  # Get all resource operations by this agent
+  agent_ops = [op for op in resource_logs
+         if op.agent_did == agent_did
+         and op.timestamp > now() - window_seconds]
 
-    anomalies = []
+  anomalies = []
 
-    # 1. Write-then-read pattern: Agent A writes, Agent B reads shortly after
-    for write_op in filter(lambda o: o.type == "write", agent_ops):
-        subsequent_reads = find_reads_by_other_agents(
-            write_op.resource_key,
-            after=write_op.timestamp,
-            within_seconds=5
-        )
-        if subsequent_reads:
-            anomalies.append(ResourceSignal(
-                type="WRITE_READ_CORRELATION",
-                severity=0.7,
-                writer=agent_did,
-                readers=[r.agent_did for r in subsequent_reads],
-                resource=write_op.resource_key,
-                detail=f"Resource '{write_op.resource_key}' written by "
-                       f"{agent_did} and read by "
-                       f"{[r.agent_did for r in subsequent_reads]} "
-                       f"within {5}s"
-            ))
+  # 1. Write-then-read pattern: Agent A writes, Agent B reads shortly after
+  for write_op in filter(lambda o: o.type == "write", agent_ops):
+    subsequent_reads = find_reads_by_other_agents(
+      write_op.resource_key,
+      after=write_op.timestamp,
+      within_seconds=5
+    )
+    if subsequent_reads:
+      anomalies.append(ResourceSignal(
+        type="WRITE_READ_CORRELATION",
+        severity=0.7,
+        writer=agent_did,
+        readers=[r.agent_did for r in subsequent_reads],
+        resource=write_op.resource_key,
+        detail=f"Resource '{write_op.resource_key}' written by "
+            f"{agent_did} and read by "
+            f"{[r.agent_did for r in subsequent_reads]} "
+            f"within {5}s"
+      ))
 
-    # 2. Unnecessary writes: agent writes values that are never consumed
-    #    by legitimate operations (potential dead-drop pattern)
-    for write_op in filter(lambda o: o.type == "write", agent_ops):
-        if not is_consumed_by_legitimate_operation(write_op):
-            anomalies.append(ResourceSignal(
-                type="DEAD_DROP_PATTERN",
-                severity=0.6,
-                detail=f"Write to '{write_op.resource_key}' has no "
-                       f"legitimate consumer"
-            ))
+  # 2. Unnecessary writes: agent writes values that are never consumed
+  #  by legitimate operations (potential dead-drop pattern)
+  for write_op in filter(lambda o: o.type == "write", agent_ops):
+    if not is_consumed_by_legitimate_operation(write_op):
+      anomalies.append(ResourceSignal(
+        type="DEAD_DROP_PATTERN",
+        severity=0.6,
+        detail=f"Write to '{write_op.resource_key}' has no "
+            f"legitimate consumer"
+      ))
 
-    # 3. Pattern in written values: if the written values carry
-    #    information content beyond task requirements
-    written_values = [op.value for op in agent_ops if op.type == "write"]
-    if information_content_exceeds_task(written_values, agent_ops):
-        anomalies.append(ResourceSignal(
-            type="EXCESS_INFORMATION_IN_WRITES",
-            severity=0.8,
-            detail="Written values carry more information content than "
-                   "required by the task"
-        ))
+  # 3. Pattern in written values: if the written values carry
+  #  information content beyond task requirements
+  written_values = [op.value for op in agent_ops if op.type == "write"]
+  if information_content_exceeds_task(written_values, agent_ops):
+    anomalies.append(ResourceSignal(
+      type="EXCESS_INFORMATION_IN_WRITES",
+      severity=0.8,
+      detail="Written values carry more information content than "
+          "required by the task"
+    ))
 
-    return anomalies
+  return anomalies
 ```
 
 ### 3.3 Communication Graph Auditing
@@ -520,30 +520,30 @@ The Glass Channel Protocol constructs a real-time, cryptographically signed **co
 #### 3.3.1 Graph Structure
 
 ```
-         Communication Graph (Session s-4207)
-         =====================================
+     Communication Graph (Session s-4207)
+     =====================================
 
-    [Agent A]  ──(12 msgs, task_delegation)──>  [Agent B]
-        │                                           │
-        │                                           │
-   (3 msgs,                                    (8 msgs,
-    status_update)                              data_sharing)
-        │                                           │
-        v                                           v
-    [Agent D]  <──(2 msgs, negotiation)────  [Agent C]
-        │
-        │
-   (1 msg, whistle_blower_report)
-        │
-        v
-    [Audit Service]
+  [Agent A] ──(12 msgs, task_delegation)──> [Agent B]
+    │                      │
+    │                      │
+  (3 msgs,                  (8 msgs,
+  status_update)               data_sharing)
+    │                      │
+    v                      v
+  [Agent D] <──(2 msgs, negotiation)──── [Agent C]
+    │
+    │
+  (1 msg, whistle_blower_report)
+    │
+    v
+  [Audit Service]
 
-    Graph Metadata:
-    - Total messages: 26
-    - Active channels: 5
-    - Time span: 45 seconds
-    - All edges carry Ed25519 signatures
-    - Graph Merkle root: sha256:graph_root_hash
+  Graph Metadata:
+  - Total messages: 26
+  - Active channels: 5
+  - Time span: 45 seconds
+  - All edges carry Ed25519 signatures
+  - Graph Merkle root: sha256:graph_root_hash
 ```
 
 #### 3.3.2 Communication Graph Entry
@@ -552,26 +552,26 @@ Each edge in the graph is a signed aggregate of messages between two agents:
 
 ```json
 {
-  "graph_edge": {
-    "edge_id": "edge-agentA-agentB-session-4207",
-    "sender_did": "did:key:z6MkAgentA...",
-    "recipient_did": "did:key:z6MkAgentB...",
-    "session_id": "session-4207",
-    "metrics": {
-      "message_count": 12,
-      "first_message_utc": 1739520000,
-      "last_message_utc": 1739520042,
-      "total_payload_bytes": 4826,
-      "classification_distribution": {
-        "task_delegation": 8,
-        "data_sharing": 3,
-        "status_update": 1
-      },
-      "message_chain_root": "sha256:H(msg_chain_root)"
-    },
-    "delegation_authority": "vouch:delegation/d-891",
-    "signature": "ed25519:sender_signs_edge_summary"
-  }
+ "graph_edge": {
+  "edge_id": "edge-agentA-agentB-session-4207",
+  "sender_did": "did:key:z6MkAgentA...",
+  "recipient_did": "did:key:z6MkAgentB...",
+  "session_id": "session-4207",
+  "metrics": {
+   "message_count": 12,
+   "first_message_utc": 1739520000,
+   "last_message_utc": 1739520042,
+   "total_payload_bytes": 4826,
+   "classification_distribution": {
+    "task_delegation": 8,
+    "data_sharing": 3,
+    "status_update": 1
+   },
+   "message_chain_root": "sha256:H(msg_chain_root)"
+  },
+  "delegation_authority": "vouch:delegation/d-891",
+  "signature": "ed25519:sender_signs_edge_summary"
+ }
 }
 ```
 
@@ -579,85 +579,85 @@ Each edge in the graph is a signed aggregate of messages between two agents:
 
 ```python
 def analyze_communication_graph(graph, session_policy):
-    """
-    Real-time analysis of the inter-agent communication graph
-    for structural anomalies indicating potential collusion or
-    unauthorized coordination.
-    """
-    anomalies = []
+  """
+  Real-time analysis of the inter-agent communication graph
+  for structural anomalies indicating potential collusion or
+  unauthorized coordination.
+  """
+  anomalies = []
 
-    # 1. Unauthorized communication: edges between agents not
-    #    authorized to communicate per delegation chains
-    for edge in graph.edges:
-        if not session_policy.allows_communication(
-            edge.sender_did, edge.recipient_did
-        ):
-            anomalies.append(GraphAnomaly(
-                type="UNAUTHORIZED_CHANNEL",
-                severity=1.0,
-                detail=f"Communication between {edge.sender_did} and "
-                       f"{edge.recipient_did} not authorized by delegation"
-            ))
+  # 1. Unauthorized communication: edges between agents not
+  #  authorized to communicate per delegation chains
+  for edge in graph.edges:
+    if not session_policy.allows_communication(
+      edge.sender_did, edge.recipient_did
+    ):
+      anomalies.append(GraphAnomaly(
+        type="UNAUTHORIZED_CHANNEL",
+        severity=1.0,
+        detail=f"Communication between {edge.sender_did} and "
+            f"{edge.recipient_did} not authorized by delegation"
+      ))
 
-    # 2. Communication concentration: most inter-agent messages should
-    #    follow the delegation hierarchy. Excessive peer-to-peer
-    #    communication outside the hierarchy is suspicious.
-    hierarchy_ratio = graph.hierarchical_edge_count / graph.total_edge_count
-    if hierarchy_ratio < HIERARCHY_RATIO_THRESHOLD:
-        anomalies.append(GraphAnomaly(
-            type="EXCESSIVE_PEER_COMMUNICATION",
-            severity=0.7,
-            detail=f"Only {hierarchy_ratio:.0%} of communication follows "
-                   f"delegation hierarchy (threshold: "
-                   f"{HIERARCHY_RATIO_THRESHOLD:.0%})"
-        ))
+  # 2. Communication concentration: most inter-agent messages should
+  #  follow the delegation hierarchy. Excessive peer-to-peer
+  #  communication outside the hierarchy is suspicious.
+  hierarchy_ratio = graph.hierarchical_edge_count / graph.total_edge_count
+  if hierarchy_ratio < HIERARCHY_RATIO_THRESHOLD:
+    anomalies.append(GraphAnomaly(
+      type="EXCESSIVE_PEER_COMMUNICATION",
+      severity=0.7,
+      detail=f"Only {hierarchy_ratio:.0%} of communication follows "
+          f"delegation hierarchy (threshold: "
+          f"{HIERARCHY_RATIO_THRESHOLD:.0%})"
+    ))
 
-    # 3. Clique detection: fully connected subsets of agents may
-    #    indicate a collusion group
-    cliques = find_cliques(graph, min_size=3)
-    for clique in cliques:
-        if not session_policy.allows_group_communication(clique):
-            anomalies.append(GraphAnomaly(
-                type="UNEXPECTED_CLIQUE",
-                severity=0.8,
-                detail=f"Fully connected communication group detected: "
-                       f"{[a.did for a in clique]}"
-            ))
+  # 3. Clique detection: fully connected subsets of agents may
+  #  indicate a collusion group
+  cliques = find_cliques(graph, min_size=3)
+  for clique in cliques:
+    if not session_policy.allows_group_communication(clique):
+      anomalies.append(GraphAnomaly(
+        type="UNEXPECTED_CLIQUE",
+        severity=0.8,
+        detail=f"Fully connected communication group detected: "
+            f"{[a.did for a in clique]}"
+      ))
 
-    # 4. Information flow asymmetry: if Agent A sends many messages to
-    #    Agent B but B never responds, this may indicate unidirectional
-    #    command injection
-    for sender, recipient in graph.directed_pairs():
-        forward = graph.message_count(sender, recipient)
-        reverse = graph.message_count(recipient, sender)
-        if forward > 10 and reverse == 0:
-            anomalies.append(GraphAnomaly(
-                type="UNIDIRECTIONAL_FLOW",
-                severity=0.5,
-                detail=f"Agent {sender} sent {forward} messages to "
-                       f"{recipient} with zero responses"
-            ))
+  # 4. Information flow asymmetry: if Agent A sends many messages to
+  #  Agent B but B never responds, this may indicate unidirectional
+  #  command injection
+  for sender, recipient in graph.directed_pairs():
+    forward = graph.message_count(sender, recipient)
+    reverse = graph.message_count(recipient, sender)
+    if forward > 10 and reverse == 0:
+      anomalies.append(GraphAnomaly(
+        type="UNIDIRECTIONAL_FLOW",
+        severity=0.5,
+        detail=f"Agent {sender} sent {forward} messages to "
+            f"{recipient} with zero responses"
+      ))
 
-    # 5. Hub detection: an agent communicating with unusually many
-    #    other agents may be acting as a coordinator
-    for agent in graph.agents:
-        degree = graph.degree(agent)
-        if degree > session_policy.max_fan_out(agent):
-            anomalies.append(GraphAnomaly(
-                type="EXCESSIVE_FAN_OUT",
-                severity=0.6,
-                detail=f"Agent {agent.did} communicates with {degree} "
-                       f"agents (max allowed: "
-                       f"{session_policy.max_fan_out(agent)})"
-            ))
+  # 5. Hub detection: an agent communicating with unusually many
+  #  other agents may be acting as a coordinator
+  for agent in graph.agents:
+    degree = graph.degree(agent)
+    if degree > session_policy.max_fan_out(agent):
+      anomalies.append(GraphAnomaly(
+        type="EXCESSIVE_FAN_OUT",
+        severity=0.6,
+        detail=f"Agent {agent.did} communicates with {degree} "
+            f"agents (max allowed: "
+            f"{session_policy.max_fan_out(agent)})"
+      ))
 
-    return GraphAnalysisReport(
-        session_id=graph.session_id,
-        total_edges=graph.total_edge_count,
-        total_messages=graph.total_message_count,
-        anomalies=anomalies,
-        graph_merkle_root=graph.compute_merkle_root()
-    )
+  return GraphAnalysisReport(
+    session_id=graph.session_id,
+    total_edges=graph.total_edge_count,
+    total_messages=graph.total_message_count,
+    anomalies=anomalies,
+    graph_merkle_root=graph.compute_merkle_root()
+  )
 ```
 
 #### 3.3.4 Signed Graph Snapshots
@@ -666,18 +666,18 @@ At configurable intervals, the communication graph is snapshot and signed by an 
 
 ```json
 {
-  "graph_snapshot": {
-    "snapshot_id": "snap-2026-0214-1739520060",
-    "session_id": "session-4207",
-    "timestamp_utc": 1739520060,
-    "agent_count": 4,
-    "edge_count": 5,
-    "total_messages": 26,
-    "graph_merkle_root": "sha256:root_of_all_edge_hashes",
-    "anomalies_detected": 0,
-    "auditor_did": "did:key:z6MkGraphAuditor...",
-    "auditor_signature": "ed25519:auditor_signs_snapshot"
-    }
+ "graph_snapshot": {
+  "snapshot_id": "snap-2026-0214-1739520060",
+  "session_id": "session-4207",
+  "timestamp_utc": 1739520060,
+  "agent_count": 4,
+  "edge_count": 5,
+  "total_messages": 26,
+  "graph_merkle_root": "sha256:root_of_all_edge_hashes",
+  "anomalies_detected": 0,
+  "auditor_did": "did:key:z6MkGraphAuditor...",
+  "auditor_signature": "ed25519:auditor_signs_snapshot"
+  }
 }
 ```
 
@@ -688,206 +688,206 @@ Active monitoring for agents establishing communication pathways outside the Gla
 #### 3.4.1 Dark Channel Taxonomy
 
 ```
-    ┌─────────────────────────────────────────────────────────────┐
-    │                 DARK CHANNEL TAXONOMY                        │
-    ├─────────────────────────────────────────────────────────────┤
-    │                                                              │
-    │  Type 1: SHARED STATE CHANNELS                              │
-    │  ┌─────────────────────────────────────────────────┐       │
-    │  │  Agent A writes to shared filesystem/DB/cache    │       │
-    │  │  Agent B reads the written value                 │       │
-    │  │  Communication occurs outside Glass Channel      │       │
-    │  └─────────────────────────────────────────────────┘       │
-    │                                                              │
-    │  Type 2: TIMING CHANNELS                                    │
-    │  ┌─────────────────────────────────────────────────┐       │
-    │  │  Agent A modulates response latency              │       │
-    │  │  Agent B observes the timing pattern             │       │
-    │  │  Bit rate: ~10-100 bits/second                   │       │
-    │  └─────────────────────────────────────────────────┘       │
-    │                                                              │
-    │  Type 3: ENVIRONMENTAL SIDE CHANNELS                        │
-    │  ┌─────────────────────────────────────────────────┐       │
-    │  │  Agent A manipulates CPU/memory/network load     │       │
-    │  │  Agent B observes resource consumption changes   │       │
-    │  │  Bit rate: ~1-10 bits/second                     │       │
-    │  └─────────────────────────────────────────────────┘       │
-    │                                                              │
-    │  Type 4: API RESPONSE EMBEDDING                             │
-    │  ┌─────────────────────────────────────────────────┐       │
-    │  │  Agent A returns API responses with hidden data  │       │
-    │  │  Agent B parses embedded instructions from       │       │
-    │  │  legitimate-looking API responses                 │       │
-    │  │  Bit rate: potentially high (kilobits/response)  │       │
-    │  └─────────────────────────────────────────────────┘       │
-    │                                                              │
-    │  Type 5: KNOWLEDGE STORE POISONING                          │
-    │  ┌─────────────────────────────────────────────────┐       │
-    │  │  Agent A writes to shared RAG/vector store       │       │
-    │  │  Agent B retrieves the embedded instructions     │       │
-    │  │  Persists across sessions                        │       │
-    │  └─────────────────────────────────────────────────┘       │
-    │                                                              │
-    └─────────────────────────────────────────────────────────────┘
+  ┌─────────────────────────────────────────────────────────────┐
+  │         DARK CHANNEL TAXONOMY            │
+  ├─────────────────────────────────────────────────────────────┤
+  │                               │
+  │ Type 1: SHARED STATE CHANNELS               │
+  │ ┌─────────────────────────────────────────────────┐    │
+  │ │ Agent A writes to shared filesystem/DB/cache  │    │
+  │ │ Agent B reads the written value         │    │
+  │ │ Communication occurs outside Glass Channel   │    │
+  │ └─────────────────────────────────────────────────┘    │
+  │                               │
+  │ Type 2: TIMING CHANNELS                  │
+  │ ┌─────────────────────────────────────────────────┐    │
+  │ │ Agent A modulates response latency       │    │
+  │ │ Agent B observes the timing pattern       │    │
+  │ │ Bit rate: ~10-100 bits/second          │    │
+  │ └─────────────────────────────────────────────────┘    │
+  │                               │
+  │ Type 3: ENVIRONMENTAL SIDE CHANNELS            │
+  │ ┌─────────────────────────────────────────────────┐    │
+  │ │ Agent A manipulates CPU/memory/network load   │    │
+  │ │ Agent B observes resource consumption changes  │    │
+  │ │ Bit rate: ~1-10 bits/second           │    │
+  │ └─────────────────────────────────────────────────┘    │
+  │                               │
+  │ Type 4: API RESPONSE EMBEDDING               │
+  │ ┌─────────────────────────────────────────────────┐    │
+  │ │ Agent A returns API responses with hidden data │    │
+  │ │ Agent B parses embedded instructions from    │    │
+  │ │ legitimate-looking API responses         │    │
+  │ │ Bit rate: potentially high (kilobits/response) │    │
+  │ └─────────────────────────────────────────────────┘    │
+  │                               │
+  │ Type 5: KNOWLEDGE STORE POISONING             │
+  │ ┌─────────────────────────────────────────────────┐    │
+  │ │ Agent A writes to shared RAG/vector store    │    │
+  │ │ Agent B retrieves the embedded instructions   │    │
+  │ │ Persists across sessions            │    │
+  │ └─────────────────────────────────────────────────┘    │
+  │                               │
+  └─────────────────────────────────────────────────────────────┘
 ```
 
 #### 3.4.2 Dark Channel Detection Engine
 
 ```python
 class DarkChannelDetector:
+  """
+  Monitors for agent communication occurring outside the
+  Glass Channel Protocol through environmental side channels.
+  """
+
+  def __init__(self, agent_registry, resource_monitor, timing_monitor):
+    self.agent_registry = agent_registry
+    self.resource_monitor = resource_monitor
+    self.timing_monitor = timing_monitor
+
+  def detect_shared_state_channels(self, time_window_seconds=60):
     """
-    Monitors for agent communication occurring outside the
-    Glass Channel Protocol through environmental side channels.
+    Detect agents communicating via shared state stores
+    (file systems, databases, caches, configuration stores).
+
+    Approach: Monitor all resource accesses and identify
+    write-then-read patterns between different agents
+    that are not associated with legitimate Glass Channel messages.
     """
+    resource_events = self.resource_monitor.get_events(time_window_seconds)
+    suspicious_pairs = []
 
-    def __init__(self, agent_registry, resource_monitor, timing_monitor):
-        self.agent_registry = agent_registry
-        self.resource_monitor = resource_monitor
-        self.timing_monitor = timing_monitor
+    # Group writes by resource key
+    writes_by_resource = group_by(
+      filter(lambda e: e.operation == "write", resource_events),
+      key=lambda e: e.resource_key
+    )
 
-    def detect_shared_state_channels(self, time_window_seconds=60):
-        """
-        Detect agents communicating via shared state stores
-        (file systems, databases, caches, configuration stores).
+    for resource_key, write_events in writes_by_resource.items():
+      for write_event in write_events:
+        # Find reads by OTHER agents within a correlation window
+        correlated_reads = [
+          e for e in resource_events
+          if e.operation == "read"
+          and e.resource_key == resource_key
+          and e.agent_did != write_event.agent_did
+          and 0 < (e.timestamp - write_event.timestamp) < 5.0
+        ]
 
-        Approach: Monitor all resource accesses and identify
-        write-then-read patterns between different agents
-        that are not associated with legitimate Glass Channel messages.
-        """
-        resource_events = self.resource_monitor.get_events(time_window_seconds)
-        suspicious_pairs = []
+        for read_event in correlated_reads:
+          # Check if this write-read pair is explained by
+          # a legitimate Glass Channel message
+          if not self._is_explained_by_glass_message(
+            write_event, read_event
+          ):
+            suspicious_pairs.append(DarkChannelSignal(
+              type="SHARED_STATE_CHANNEL",
+              agent_a=write_event.agent_did,
+              agent_b=read_event.agent_did,
+              resource=resource_key,
+              latency=read_event.timestamp - write_event.timestamp,
+              severity=0.7
+            ))
 
-        # Group writes by resource key
-        writes_by_resource = group_by(
-            filter(lambda e: e.operation == "write", resource_events),
-            key=lambda e: e.resource_key
+    return suspicious_pairs
+
+  def detect_timing_channels(self, agent_pairs, window_seconds=120):
+    """
+    Detect agents encoding information in response timing.
+
+    Approach: For each pair of agents, analyze whether one
+    agent's response timing carries information that predicts
+    the other agent's subsequent behavior.
+    """
+    signals = []
+
+    for agent_a, agent_b in agent_pairs:
+      # Get timing of agent_a's responses
+      a_timings = self.timing_monitor.get_response_timings(
+        agent_a, window_seconds
+      )
+      # Get timing of agent_b's subsequent actions
+      b_actions = self.timing_monitor.get_action_timings(
+        agent_b, window_seconds
+      )
+
+      # Measure mutual information between A's timing and B's actions
+      mutual_info = calculate_mutual_information(
+        quantize_timings(a_timings),
+        quantize_timings(b_actions)
+      )
+
+      if mutual_info > TIMING_CHANNEL_THRESHOLD:
+        signals.append(DarkChannelSignal(
+          type="TIMING_CHANNEL",
+          agent_a=agent_a,
+          agent_b=agent_b,
+          mutual_information=mutual_info,
+          severity=0.8,
+          detail=f"Mutual information {mutual_info:.3f} between "
+              f"{agent_a} response timing and {agent_b} "
+              f"action timing exceeds threshold "
+              f"{TIMING_CHANNEL_THRESHOLD:.3f}"
+        ))
+
+    return signals
+
+  def detect_environmental_channels(self, window_seconds=120):
+    """
+    Detect agents communicating via environmental resource
+    manipulation (CPU load, memory allocation, network patterns).
+    """
+    signals = []
+
+    # Get per-agent resource consumption profiles
+    agent_profiles = self.resource_monitor.get_agent_profiles(window_seconds)
+
+    # For each pair, check if one agent's resource consumption
+    # correlates with another agent's behavior changes
+    for agent_a, profile_a in agent_profiles.items():
+      for agent_b, profile_b in agent_profiles.items():
+        if agent_a == agent_b:
+          continue
+
+        # Cross-correlation of resource usage patterns
+        correlation = cross_correlate(
+          profile_a.cpu_time_series,
+          profile_b.action_time_series,
+          max_lag_seconds=5
         )
 
-        for resource_key, write_events in writes_by_resource.items():
-            for write_event in write_events:
-                # Find reads by OTHER agents within a correlation window
-                correlated_reads = [
-                    e for e in resource_events
-                    if e.operation == "read"
-                    and e.resource_key == resource_key
-                    and e.agent_did != write_event.agent_did
-                    and 0 < (e.timestamp - write_event.timestamp) < 5.0
-                ]
+        if correlation.max_value > ENVIRONMENTAL_CORRELATION_THRESHOLD:
+          signals.append(DarkChannelSignal(
+            type="ENVIRONMENTAL_CHANNEL",
+            agent_a=agent_a,
+            agent_b=agent_b,
+            correlation=correlation.max_value,
+            lag_seconds=correlation.max_lag,
+            severity=0.6,
+            detail=f"Agent {agent_a} CPU pattern correlates "
+                f"(r={correlation.max_value:.3f}) with "
+                f"Agent {agent_b} actions at "
+                f"{correlation.max_lag:.1f}s lag"
+          ))
 
-                for read_event in correlated_reads:
-                    # Check if this write-read pair is explained by
-                    # a legitimate Glass Channel message
-                    if not self._is_explained_by_glass_message(
-                        write_event, read_event
-                    ):
-                        suspicious_pairs.append(DarkChannelSignal(
-                            type="SHARED_STATE_CHANNEL",
-                            agent_a=write_event.agent_did,
-                            agent_b=read_event.agent_did,
-                            resource=resource_key,
-                            latency=read_event.timestamp - write_event.timestamp,
-                            severity=0.7
-                        ))
+    return signals
 
-        return suspicious_pairs
-
-    def detect_timing_channels(self, agent_pairs, window_seconds=120):
-        """
-        Detect agents encoding information in response timing.
-
-        Approach: For each pair of agents, analyze whether one
-        agent's response timing carries information that predicts
-        the other agent's subsequent behavior.
-        """
-        signals = []
-
-        for agent_a, agent_b in agent_pairs:
-            # Get timing of agent_a's responses
-            a_timings = self.timing_monitor.get_response_timings(
-                agent_a, window_seconds
-            )
-            # Get timing of agent_b's subsequent actions
-            b_actions = self.timing_monitor.get_action_timings(
-                agent_b, window_seconds
-            )
-
-            # Measure mutual information between A's timing and B's actions
-            mutual_info = calculate_mutual_information(
-                quantize_timings(a_timings),
-                quantize_timings(b_actions)
-            )
-
-            if mutual_info > TIMING_CHANNEL_THRESHOLD:
-                signals.append(DarkChannelSignal(
-                    type="TIMING_CHANNEL",
-                    agent_a=agent_a,
-                    agent_b=agent_b,
-                    mutual_information=mutual_info,
-                    severity=0.8,
-                    detail=f"Mutual information {mutual_info:.3f} between "
-                           f"{agent_a} response timing and {agent_b} "
-                           f"action timing exceeds threshold "
-                           f"{TIMING_CHANNEL_THRESHOLD:.3f}"
-                ))
-
-        return signals
-
-    def detect_environmental_channels(self, window_seconds=120):
-        """
-        Detect agents communicating via environmental resource
-        manipulation (CPU load, memory allocation, network patterns).
-        """
-        signals = []
-
-        # Get per-agent resource consumption profiles
-        agent_profiles = self.resource_monitor.get_agent_profiles(window_seconds)
-
-        # For each pair, check if one agent's resource consumption
-        # correlates with another agent's behavior changes
-        for agent_a, profile_a in agent_profiles.items():
-            for agent_b, profile_b in agent_profiles.items():
-                if agent_a == agent_b:
-                    continue
-
-                # Cross-correlation of resource usage patterns
-                correlation = cross_correlate(
-                    profile_a.cpu_time_series,
-                    profile_b.action_time_series,
-                    max_lag_seconds=5
-                )
-
-                if correlation.max_value > ENVIRONMENTAL_CORRELATION_THRESHOLD:
-                    signals.append(DarkChannelSignal(
-                        type="ENVIRONMENTAL_CHANNEL",
-                        agent_a=agent_a,
-                        agent_b=agent_b,
-                        correlation=correlation.max_value,
-                        lag_seconds=correlation.max_lag,
-                        severity=0.6,
-                        detail=f"Agent {agent_a} CPU pattern correlates "
-                               f"(r={correlation.max_value:.3f}) with "
-                               f"Agent {agent_b} actions at "
-                               f"{correlation.max_lag:.1f}s lag"
-                    ))
-
-        return signals
-
-    def _is_explained_by_glass_message(self, write_event, read_event):
-        """
-        Check if a resource write-then-read pattern is the expected
-        result of a legitimate Glass Channel communication (e.g.,
-        Agent A tasks Agent B to read a specific resource).
-        """
-        messages = get_glass_messages(
-            sender=write_event.agent_did,
-            recipient=read_event.agent_did,
-            time_range=(write_event.timestamp - 5, read_event.timestamp)
-        )
-        for msg in messages:
-            if (msg.content.classification == "task_delegation"
-                    and write_event.resource_key in str(msg.content.payload)):
-                return True
-        return False
+  def _is_explained_by_glass_message(self, write_event, read_event):
+    """
+    Check if a resource write-then-read pattern is the expected
+    result of a legitimate Glass Channel communication (e.g.,
+    Agent A tasks Agent B to read a specific resource).
+    """
+    messages = get_glass_messages(
+      sender=write_event.agent_did,
+      recipient=read_event.agent_did,
+      time_range=(write_event.timestamp - 5, read_event.timestamp)
+    )
+    for msg in messages:
+      if (msg.content.classification == "task_delegation"
+          and write_event.resource_key in str(msg.content.payload)):
+        return True
+    return False
 ```
 
 ### 3.5 Emergent Collusion Detection
@@ -897,193 +897,193 @@ Statistical methods to detect when independently operating agents begin exhibiti
 #### 3.5.1 The Emergent Collusion Threat Model
 
 ```
-    Normal Operation:              Emergent Collusion:
-    ==================             =====================
+  Normal Operation:       Emergent Collusion:
+  ==================       =====================
 
-    Agent A: ─●──●───●──●──       Agent A: ─●──●───●──●──
-    Agent B: ──●───●──●────       Agent B: ─●──●───●──●──   ← synchronized
-    Agent C: ●───●──●───●──       Agent C: ─●──●───●──●──   ← synchronized
+  Agent A: ─●──●───●──●──    Agent A: ─●──●───●──●──
+  Agent B: ──●───●──●────    Agent B: ─●──●───●──●──  ← synchronized
+  Agent C: ●───●──●───●──    Agent C: ─●──●───●──●──  ← synchronized
 
-    Actions: random, independent   Actions: correlated, simultaneous
-    Targets: diverse               Targets: converging on same resources
-    Timing:  uncorrelated          Timing:  suspiciously aligned
+  Actions: random, independent  Actions: correlated, simultaneous
+  Targets: diverse        Targets: converging on same resources
+  Timing: uncorrelated     Timing: suspiciously aligned
 ```
 
 #### 3.5.2 Collusion Detection Engine
 
 ```python
 class CollusionDetector:
+  """
+  Detects emergent coordination between agents that are not
+  explicitly communicating — the signature of learned or
+  instrumental collusion.
+  """
+
+  def __init__(self, action_log, glass_channel_graph):
+    self.action_log = action_log
+    self.graph = glass_channel_graph
+
+  def detect_action_correlation(self, agent_group, window_seconds=300):
     """
-    Detects emergent coordination between agents that are not
-    explicitly communicating — the signature of learned or
-    instrumental collusion.
+    Detect statistically significant correlation in the actions
+    of multiple independent agents.
+
+    Key insight: Agents that are not communicating should have
+    INDEPENDENT action distributions. Correlated actions without
+    corresponding communication are evidence of collusion via
+    side channels or emergent coordination.
     """
+    agent_actions = {
+      agent: self.action_log.get_actions(agent, window_seconds)
+      for agent in agent_group
+    }
 
-    def __init__(self, action_log, glass_channel_graph):
-        self.action_log = action_log
-        self.graph = glass_channel_graph
+    anomalies = []
 
-    def detect_action_correlation(self, agent_group, window_seconds=300):
-        """
-        Detect statistically significant correlation in the actions
-        of multiple independent agents.
+    # 1. Action type correlation: are agents performing the same
+    #  types of actions at the same time?
+    action_type_vectors = {
+      agent: vectorize_action_types(actions, window_seconds)
+      for agent, actions in agent_actions.items()
+    }
 
-        Key insight: Agents that are not communicating should have
-        INDEPENDENT action distributions. Correlated actions without
-        corresponding communication are evidence of collusion via
-        side channels or emergent coordination.
-        """
-        agent_actions = {
-            agent: self.action_log.get_actions(agent, window_seconds)
-            for agent in agent_group
-        }
+    for (agent_a, vec_a), (agent_b, vec_b) in combinations(
+      action_type_vectors.items(), 2
+    ):
+      correlation = cosine_similarity(vec_a, vec_b)
 
-        anomalies = []
+      # Check if these agents are communicating through Glass Channel
+      glass_messages = self.graph.message_count(agent_a, agent_b)
 
-        # 1. Action type correlation: are agents performing the same
-        #    types of actions at the same time?
-        action_type_vectors = {
-            agent: vectorize_action_types(actions, window_seconds)
-            for agent, actions in agent_actions.items()
-        }
+      if correlation > CORRELATION_THRESHOLD and glass_messages == 0:
+        anomalies.append(CollusionSignal(
+          type="UNCOMMUNICATED_ACTION_CORRELATION",
+          agents=[agent_a, agent_b],
+          correlation=correlation,
+          glass_messages=glass_messages,
+          severity=0.8,
+          detail=f"Agents {agent_a} and {agent_b} exhibit "
+              f"action correlation {correlation:.3f} with "
+              f"ZERO Glass Channel communication"
+        ))
 
-        for (agent_a, vec_a), (agent_b, vec_b) in combinations(
-            action_type_vectors.items(), 2
-        ):
-            correlation = cosine_similarity(vec_a, vec_b)
+    # 2. Target convergence: are agents independently converging
+    #  on the same targets/resources?
+    target_sets = {
+      agent: set(a.target for a in actions)
+      for agent, actions in agent_actions.items()
+    }
 
-            # Check if these agents are communicating through Glass Channel
-            glass_messages = self.graph.message_count(agent_a, agent_b)
+    for (agent_a, targets_a), (agent_b, targets_b) in combinations(
+      target_sets.items(), 2
+    ):
+      overlap = len(targets_a & targets_b) / max(
+        len(targets_a | targets_b), 1
+      )
+      if overlap > TARGET_OVERLAP_THRESHOLD:
+        anomalies.append(CollusionSignal(
+          type="TARGET_CONVERGENCE",
+          agents=[agent_a, agent_b],
+          overlap=overlap,
+          shared_targets=list(targets_a & targets_b),
+          severity=0.7,
+          detail=f"Agents converging on same targets "
+              f"({overlap:.0%} overlap): "
+              f"{list(targets_a & targets_b)[:5]}"
+        ))
 
-            if correlation > CORRELATION_THRESHOLD and glass_messages == 0:
-                anomalies.append(CollusionSignal(
-                    type="UNCOMMUNICATED_ACTION_CORRELATION",
-                    agents=[agent_a, agent_b],
-                    correlation=correlation,
-                    glass_messages=glass_messages,
-                    severity=0.8,
-                    detail=f"Agents {agent_a} and {agent_b} exhibit "
-                           f"action correlation {correlation:.3f} with "
-                           f"ZERO Glass Channel communication"
-                ))
+    return anomalies
 
-        # 2. Target convergence: are agents independently converging
-        #    on the same targets/resources?
-        target_sets = {
-            agent: set(a.target for a in actions)
-            for agent, actions in agent_actions.items()
-        }
+  def detect_synchronized_timing(self, agent_group, window_seconds=300):
+    """
+    Detect agents whose action timing is suspiciously synchronized
+    despite no explicit coordination through Glass Channel.
+    """
+    action_timestamps = {
+      agent: [a.timestamp for a in
+          self.action_log.get_actions(agent, window_seconds)]
+      for agent in agent_group
+    }
 
-        for (agent_a, targets_a), (agent_b, targets_b) in combinations(
-            target_sets.items(), 2
-        ):
-            overlap = len(targets_a & targets_b) / max(
-                len(targets_a | targets_b), 1
-            )
-            if overlap > TARGET_OVERLAP_THRESHOLD:
-                anomalies.append(CollusionSignal(
-                    type="TARGET_CONVERGENCE",
-                    agents=[agent_a, agent_b],
-                    overlap=overlap,
-                    shared_targets=list(targets_a & targets_b),
-                    severity=0.7,
-                    detail=f"Agents converging on same targets "
-                           f"({overlap:.0%} overlap): "
-                           f"{list(targets_a & targets_b)[:5]}"
-                ))
+    anomalies = []
 
-        return anomalies
+    for (agent_a, times_a), (agent_b, times_b) in combinations(
+      action_timestamps.items(), 2
+    ):
+      # Measure synchronization: how often do both agents act
+      # within a narrow time window of each other?
+      sync_ratio = calculate_synchronization_ratio(
+        times_a, times_b, tolerance_seconds=1.0
+      )
 
-    def detect_synchronized_timing(self, agent_group, window_seconds=300):
-        """
-        Detect agents whose action timing is suspiciously synchronized
-        despite no explicit coordination through Glass Channel.
-        """
-        action_timestamps = {
-            agent: [a.timestamp for a in
-                    self.action_log.get_actions(agent, window_seconds)]
-            for agent in agent_group
-        }
+      # Baseline: with independent agents, sync_ratio should be
+      # proportional to action frequency (random coincidence)
+      expected_sync = estimate_random_sync_ratio(
+        len(times_a), len(times_b), window_seconds, tolerance=1.0
+      )
 
-        anomalies = []
+      if sync_ratio > expected_sync * SYNC_MULTIPLIER_THRESHOLD:
+        anomalies.append(CollusionSignal(
+          type="SYNCHRONIZED_TIMING",
+          agents=[agent_a, agent_b],
+          observed_sync=sync_ratio,
+          expected_sync=expected_sync,
+          multiplier=sync_ratio / max(expected_sync, 1e-10),
+          severity=0.9,
+          detail=f"Action synchronization {sync_ratio:.3f} is "
+              f"{sync_ratio / max(expected_sync, 1e-10):.1f}x "
+              f"higher than expected by chance "
+              f"({expected_sync:.3f})"
+        ))
 
-        for (agent_a, times_a), (agent_b, times_b) in combinations(
-            action_timestamps.items(), 2
-        ):
-            # Measure synchronization: how often do both agents act
-            # within a narrow time window of each other?
-            sync_ratio = calculate_synchronization_ratio(
-                times_a, times_b, tolerance_seconds=1.0
-            )
+    return anomalies
 
-            # Baseline: with independent agents, sync_ratio should be
-            # proportional to action frequency (random coincidence)
-            expected_sync = estimate_random_sync_ratio(
-                len(times_a), len(times_b), window_seconds, tolerance=1.0
-            )
+  def detect_resource_herding(self, agent_group, window_seconds=300):
+    """
+    Detect agents independently converging on the same resources
+    in a pattern consistent with coordinated resource manipulation
+    (e.g., collectively buying the same stock, collectively accessing
+    the same API to cause rate limiting for competitors).
+    """
+    resource_access_patterns = {
+      agent: self.action_log.get_resource_accesses(agent, window_seconds)
+      for agent in agent_group
+    }
 
-            if sync_ratio > expected_sync * SYNC_MULTIPLIER_THRESHOLD:
-                anomalies.append(CollusionSignal(
-                    type="SYNCHRONIZED_TIMING",
-                    agents=[agent_a, agent_b],
-                    observed_sync=sync_ratio,
-                    expected_sync=expected_sync,
-                    multiplier=sync_ratio / max(expected_sync, 1e-10),
-                    severity=0.9,
-                    detail=f"Action synchronization {sync_ratio:.3f} is "
-                           f"{sync_ratio / max(expected_sync, 1e-10):.1f}x "
-                           f"higher than expected by chance "
-                           f"({expected_sync:.3f})"
-                ))
+    anomalies = []
 
-        return anomalies
+    # Detect sequential resource herding: agents accessing the
+    # same resource in rapid succession
+    all_accesses = sorted(
+      [(agent, access) for agent, accesses in
+       resource_access_patterns.items()
+       for access in accesses],
+      key=lambda x: x[1].timestamp
+    )
 
-    def detect_resource_herding(self, agent_group, window_seconds=300):
-        """
-        Detect agents independently converging on the same resources
-        in a pattern consistent with coordinated resource manipulation
-        (e.g., collectively buying the same stock, collectively accessing
-        the same API to cause rate limiting for competitors).
-        """
-        resource_access_patterns = {
-            agent: self.action_log.get_resource_accesses(agent, window_seconds)
-            for agent in agent_group
-        }
+    resource_bursts = detect_resource_burst_patterns(
+      all_accesses,
+      min_agents=3,
+      max_window_seconds=10
+    )
 
-        anomalies = []
+    for burst in resource_bursts:
+      anomalies.append(CollusionSignal(
+        type="RESOURCE_HERDING",
+        agents=burst.participating_agents,
+        resource=burst.resource,
+        burst_duration=burst.duration_seconds,
+        agent_count=len(burst.participating_agents),
+        severity=0.9,
+        detail=f"{len(burst.participating_agents)} agents accessed "
+            f"'{burst.resource}' within "
+            f"{burst.duration_seconds:.1f}s "
+            f"(expected access rate: "
+            f"{burst.expected_rate:.2f}/s, "
+            f"observed: {burst.observed_rate:.2f}/s)"
+      ))
 
-        # Detect sequential resource herding: agents accessing the
-        # same resource in rapid succession
-        all_accesses = sorted(
-            [(agent, access) for agent, accesses in
-             resource_access_patterns.items()
-             for access in accesses],
-            key=lambda x: x[1].timestamp
-        )
-
-        resource_bursts = detect_resource_burst_patterns(
-            all_accesses,
-            min_agents=3,
-            max_window_seconds=10
-        )
-
-        for burst in resource_bursts:
-            anomalies.append(CollusionSignal(
-                type="RESOURCE_HERDING",
-                agents=burst.participating_agents,
-                resource=burst.resource,
-                burst_duration=burst.duration_seconds,
-                agent_count=len(burst.participating_agents),
-                severity=0.9,
-                detail=f"{len(burst.participating_agents)} agents accessed "
-                       f"'{burst.resource}' within "
-                       f"{burst.duration_seconds:.1f}s "
-                       f"(expected access rate: "
-                       f"{burst.expected_rate:.2f}/s, "
-                       f"observed: {burst.observed_rate:.2f}/s)"
-            ))
-
-        return anomalies
+    return anomalies
 ```
 
 ### 3.6 Message Content Classification
@@ -1094,52 +1094,52 @@ Automated classification of inter-agent messages into governed categories, with 
 
 ```json
 {
-  "message_classifications": {
-    "task_delegation": {
-      "description": "Assigning a subtask to another agent",
-      "requires_delegation_authority": true,
-      "reasoning_commitment_level": 2,
-      "example": "Query the customer database for records matching account #4207"
-    },
-    "data_sharing": {
-      "description": "Transmitting data in response to a request",
-      "requires_delegation_authority": false,
-      "max_payload_bytes": 1048576,
-      "pii_scan_required": true,
-      "example": "Here are the 47 records matching your query"
-    },
-    "status_update": {
-      "description": "Reporting progress on an assigned task",
-      "requires_delegation_authority": false,
-      "reasoning_commitment_level": 0,
-      "example": "Task 70% complete, 14 of 20 records processed"
-    },
-    "error_report": {
-      "description": "Reporting a failure or exception",
-      "requires_delegation_authority": false,
-      "escalation_required": true,
-      "example": "Database connection timed out after 30s"
-    },
-    "negotiation": {
-      "description": "Proposing or counter-proposing task parameters",
-      "requires_delegation_authority": true,
-      "reasoning_commitment_level": 2,
-      "max_rounds": 5,
-      "example": "I can complete this task but need read access to table X"
-    },
-    "capability_query": {
-      "description": "Asking another agent about its capabilities",
-      "requires_delegation_authority": false,
-      "reasoning_commitment_level": 0,
-      "example": "Can you process PDF documents?"
-    },
-    "whistle_blower_report": {
-      "description": "Reporting suspicious behavior by another agent",
-      "requires_delegation_authority": false,
-      "special_handling": "whistle_blower_protocol",
-      "example": "Agent X is accessing resources outside its delegation scope"
-    }
+ "message_classifications": {
+  "task_delegation": {
+   "description": "Assigning a subtask to another agent",
+   "requires_delegation_authority": true,
+   "reasoning_commitment_level": 2,
+   "example": "Query the customer database for records matching account #4207"
+  },
+  "data_sharing": {
+   "description": "Transmitting data in response to a request",
+   "requires_delegation_authority": false,
+   "max_payload_bytes": 1048576,
+   "pii_scan_required": true,
+   "example": "Here are the 47 records matching your query"
+  },
+  "status_update": {
+   "description": "Reporting progress on an assigned task",
+   "requires_delegation_authority": false,
+   "reasoning_commitment_level": 0,
+   "example": "Task 70% complete, 14 of 20 records processed"
+  },
+  "error_report": {
+   "description": "Reporting a failure or exception",
+   "requires_delegation_authority": false,
+   "escalation_required": true,
+   "example": "Database connection timed out after 30s"
+  },
+  "negotiation": {
+   "description": "Proposing or counter-proposing task parameters",
+   "requires_delegation_authority": true,
+   "reasoning_commitment_level": 2,
+   "max_rounds": 5,
+   "example": "I can complete this task but need read access to table X"
+  },
+  "capability_query": {
+   "description": "Asking another agent about its capabilities",
+   "requires_delegation_authority": false,
+   "reasoning_commitment_level": 0,
+   "example": "Can you process PDF documents?"
+  },
+  "whistle_blower_report": {
+   "description": "Reporting suspicious behavior by another agent",
+   "requires_delegation_authority": false,
+   "special_handling": "whistle_blower_protocol",
+   "example": "Agent X is accessing resources outside its delegation scope"
   }
+ }
 }
 ```
 
@@ -1147,80 +1147,80 @@ Automated classification of inter-agent messages into governed categories, with 
 
 ```python
 def classify_and_audit_message(message, classifier_model, session_history):
-    """
-    Classify an inter-agent message and detect anomalies.
-    """
-    # 1. Classify the message
-    predicted_class = classifier_model.classify(message.content.payload)
-    declared_class = message.content.classification
+  """
+  Classify an inter-agent message and detect anomalies.
+  """
+  # 1. Classify the message
+  predicted_class = classifier_model.classify(message.content.payload)
+  declared_class = message.content.classification
 
-    audit_result = MessageAudit(
-        message_id=message.message_id,
-        declared_classification=declared_class,
-        predicted_classification=predicted_class
+  audit_result = MessageAudit(
+    message_id=message.message_id,
+    declared_classification=declared_class,
+    predicted_classification=predicted_class
+  )
+
+  # 2. Classification mismatch: agent declared one type but content
+  #  suggests another
+  if predicted_class != declared_class:
+    audit_result.add_anomaly(ClassificationAnomaly(
+      type="CLASSIFICATION_MISMATCH",
+      severity=0.6,
+      detail=f"Message declared as '{declared_class}' but content "
+          f"classified as '{predicted_class}'"
+    ))
+
+  # 3. Governance check: does this message type require specific
+  #  preconditions that are not met?
+  classification_rules = MESSAGE_CLASSIFICATIONS[declared_class]
+
+  if classification_rules.get("requires_delegation_authority"):
+    if not verify_delegation_for_message(message):
+      audit_result.add_anomaly(ClassificationAnomaly(
+        type="UNAUTHORIZED_MESSAGE_TYPE",
+        severity=0.9,
+        detail=f"Message type '{declared_class}' requires delegation "
+            f"authority not present in sender's chain"
+      ))
+
+  if classification_rules.get("pii_scan_required"):
+    pii_findings = scan_for_pii(message.content.payload)
+    if pii_findings:
+      audit_result.add_anomaly(ClassificationAnomaly(
+        type="PII_IN_DATA_SHARING",
+        severity=0.8,
+        detail=f"PII detected in data_sharing message: "
+            f"{[f.type for f in pii_findings]}"
+      ))
+
+  # 4. Pattern anomaly: is this message type unusual in context?
+  type_distribution = session_history.get_classification_distribution(
+    message.sender.did, message.recipient.did
+  )
+  if declared_class not in type_distribution:
+    audit_result.add_anomaly(ClassificationAnomaly(
+      type="NOVEL_MESSAGE_TYPE",
+      severity=0.4,
+      detail=f"First '{declared_class}' message between these agents "
+          f"in this session (previously: "
+          f"{list(type_distribution.keys())})"
+    ))
+
+  # 5. Negotiation round limit
+  if declared_class == "negotiation":
+    round_count = session_history.get_negotiation_rounds(
+      message.sender.did, message.recipient.did
     )
+    max_rounds = classification_rules.get("max_rounds", 5)
+    if round_count >= max_rounds:
+      audit_result.add_anomaly(ClassificationAnomaly(
+        type="NEGOTIATION_LIMIT_EXCEEDED",
+        severity=0.7,
+        detail=f"Negotiation between agents has reached "
+            f"{round_count} rounds (max: {max_rounds})"
+      ))
 
-    # 2. Classification mismatch: agent declared one type but content
-    #    suggests another
-    if predicted_class != declared_class:
-        audit_result.add_anomaly(ClassificationAnomaly(
-            type="CLASSIFICATION_MISMATCH",
-            severity=0.6,
-            detail=f"Message declared as '{declared_class}' but content "
-                   f"classified as '{predicted_class}'"
-        ))
-
-    # 3. Governance check: does this message type require specific
-    #    preconditions that are not met?
-    classification_rules = MESSAGE_CLASSIFICATIONS[declared_class]
-
-    if classification_rules.get("requires_delegation_authority"):
-        if not verify_delegation_for_message(message):
-            audit_result.add_anomaly(ClassificationAnomaly(
-                type="UNAUTHORIZED_MESSAGE_TYPE",
-                severity=0.9,
-                detail=f"Message type '{declared_class}' requires delegation "
-                       f"authority not present in sender's chain"
-            ))
-
-    if classification_rules.get("pii_scan_required"):
-        pii_findings = scan_for_pii(message.content.payload)
-        if pii_findings:
-            audit_result.add_anomaly(ClassificationAnomaly(
-                type="PII_IN_DATA_SHARING",
-                severity=0.8,
-                detail=f"PII detected in data_sharing message: "
-                       f"{[f.type for f in pii_findings]}"
-            ))
-
-    # 4. Pattern anomaly: is this message type unusual in context?
-    type_distribution = session_history.get_classification_distribution(
-        message.sender.did, message.recipient.did
-    )
-    if declared_class not in type_distribution:
-        audit_result.add_anomaly(ClassificationAnomaly(
-            type="NOVEL_MESSAGE_TYPE",
-            severity=0.4,
-            detail=f"First '{declared_class}' message between these agents "
-                   f"in this session (previously: "
-                   f"{list(type_distribution.keys())})"
-        ))
-
-    # 5. Negotiation round limit
-    if declared_class == "negotiation":
-        round_count = session_history.get_negotiation_rounds(
-            message.sender.did, message.recipient.did
-        )
-        max_rounds = classification_rules.get("max_rounds", 5)
-        if round_count >= max_rounds:
-            audit_result.add_anomaly(ClassificationAnomaly(
-                type="NEGOTIATION_LIMIT_EXCEEDED",
-                severity=0.7,
-                detail=f"Negotiation between agents has reached "
-                       f"{round_count} rounds (max: {max_rounds})"
-            ))
-
-    return audit_result
+  return audit_result
 ```
 
 ### 3.7 Communication Budget Enforcement
@@ -1231,31 +1231,31 @@ Quantitative limits on inter-agent communication, preventing runaway messaging a
 
 ```json
 {
-  "communication_budget": {
-    "session_id": "session-4207",
-    "agent_did": "did:key:z6MkAgentA...",
-    "limits": {
-      "total_messages_per_session": 500,
-      "messages_per_minute": 30,
-      "unique_recipients_per_session": 10,
-      "bytes_per_session": 10485760,
-      "messages_per_recipient_per_minute": 10,
-      "negotiation_rounds_per_pair": 5,
-      "max_fan_out_per_message": 3
-    },
-    "current_usage": {
-      "total_messages": 142,
-      "messages_this_minute": 7,
-      "unique_recipients": 3,
-      "bytes_sent": 234567,
-      "budget_utilization_pct": 28.4
-    },
-    "escalation_thresholds": {
-      "warning_pct": 70,
-      "throttle_pct": 85,
-      "block_pct": 95
-    }
+ "communication_budget": {
+  "session_id": "session-4207",
+  "agent_did": "did:key:z6MkAgentA...",
+  "limits": {
+   "total_messages_per_session": 500,
+   "messages_per_minute": 30,
+   "unique_recipients_per_session": 10,
+   "bytes_per_session": 10485760,
+   "messages_per_recipient_per_minute": 10,
+   "negotiation_rounds_per_pair": 5,
+   "max_fan_out_per_message": 3
+  },
+  "current_usage": {
+   "total_messages": 142,
+   "messages_this_minute": 7,
+   "unique_recipients": 3,
+   "bytes_sent": 234567,
+   "budget_utilization_pct": 28.4
+  },
+  "escalation_thresholds": {
+   "warning_pct": 70,
+   "throttle_pct": 85,
+   "block_pct": 95
   }
+ }
 }
 ```
 
@@ -1263,126 +1263,126 @@ Quantitative limits on inter-agent communication, preventing runaway messaging a
 
 ```python
 class CommunicationBudgetEnforcer:
+  """
+  Enforces quantitative limits on inter-agent communication.
+  Provides graduated response: warn, throttle, block.
+  """
+
+  def __init__(self, budget_store, escalation_handler):
+    self.budget_store = budget_store
+    self.escalation_handler = escalation_handler
+
+  def check_budget(self, message):
     """
-    Enforces quantitative limits on inter-agent communication.
-    Provides graduated response: warn, throttle, block.
+    Check whether sending this message would exceed
+    any communication budget limits.
+
+    Returns: BudgetDecision (allow, warn, throttle, or block)
     """
+    budget = self.budget_store.get_budget(
+      message.sender.did, message.channel_id
+    )
 
-    def __init__(self, budget_store, escalation_handler):
-        self.budget_store = budget_store
-        self.escalation_handler = escalation_handler
+    violations = []
 
-    def check_budget(self, message):
-        """
-        Check whether sending this message would exceed
-        any communication budget limits.
+    # Check each limit
+    checks = [
+      ("total_messages_per_session",
+       budget.current_usage.total_messages + 1,
+       budget.limits.total_messages_per_session),
+      ("messages_per_minute",
+       budget.current_usage.messages_this_minute + 1,
+       budget.limits.messages_per_minute),
+      ("bytes_per_session",
+       budget.current_usage.bytes_sent + len(message.content.payload),
+       budget.limits.bytes_per_session),
+      ("unique_recipients_per_session",
+       budget.current_usage.unique_recipients + (
+         1 if message.recipient.did not in
+         budget.current_usage.known_recipients else 0
+       ),
+       budget.limits.unique_recipients_per_session),
+    ]
 
-        Returns: BudgetDecision (allow, warn, throttle, or block)
-        """
-        budget = self.budget_store.get_budget(
-            message.sender.did, message.channel_id
-        )
+    for limit_name, current_value, max_value in checks:
+      utilization = current_value / max_value * 100
 
-        violations = []
+      if utilization >= budget.escalation_thresholds.block_pct:
+        violations.append(BudgetViolation(
+          limit=limit_name,
+          utilization=utilization,
+          severity="BLOCK",
+          detail=f"{limit_name}: {current_value}/{max_value} "
+              f"({utilization:.0f}%)"
+        ))
+      elif utilization >= budget.escalation_thresholds.throttle_pct:
+        violations.append(BudgetViolation(
+          limit=limit_name,
+          utilization=utilization,
+          severity="THROTTLE"
+        ))
+      elif utilization >= budget.escalation_thresholds.warning_pct:
+        violations.append(BudgetViolation(
+          limit=limit_name,
+          utilization=utilization,
+          severity="WARNING"
+        ))
 
-        # Check each limit
-        checks = [
-            ("total_messages_per_session",
-             budget.current_usage.total_messages + 1,
-             budget.limits.total_messages_per_session),
-            ("messages_per_minute",
-             budget.current_usage.messages_this_minute + 1,
-             budget.limits.messages_per_minute),
-            ("bytes_per_session",
-             budget.current_usage.bytes_sent + len(message.content.payload),
-             budget.limits.bytes_per_session),
-            ("unique_recipients_per_session",
-             budget.current_usage.unique_recipients + (
-                 1 if message.recipient.did not in
-                 budget.current_usage.known_recipients else 0
-             ),
-             budget.limits.unique_recipients_per_session),
-        ]
+    if not violations:
+      return BudgetDecision(
+        action="ALLOW",
+        budget_remaining=budget.compute_remaining()
+      )
 
-        for limit_name, current_value, max_value in checks:
-            utilization = current_value / max_value * 100
+    max_severity = max(v.severity for v in violations)
 
-            if utilization >= budget.escalation_thresholds.block_pct:
-                violations.append(BudgetViolation(
-                    limit=limit_name,
-                    utilization=utilization,
-                    severity="BLOCK",
-                    detail=f"{limit_name}: {current_value}/{max_value} "
-                           f"({utilization:.0f}%)"
-                ))
-            elif utilization >= budget.escalation_thresholds.throttle_pct:
-                violations.append(BudgetViolation(
-                    limit=limit_name,
-                    utilization=utilization,
-                    severity="THROTTLE"
-                ))
-            elif utilization >= budget.escalation_thresholds.warning_pct:
-                violations.append(BudgetViolation(
-                    limit=limit_name,
-                    utilization=utilization,
-                    severity="WARNING"
-                ))
+    if max_severity == "BLOCK":
+      self.escalation_handler.report(
+        event="COMMUNICATION_BUDGET_EXCEEDED",
+        agent=message.sender.did,
+        violations=violations
+      )
+      return BudgetDecision(
+        action="BLOCK",
+        reason="Communication budget exceeded",
+        violations=violations
+      )
 
-        if not violations:
-            return BudgetDecision(
-                action="ALLOW",
-                budget_remaining=budget.compute_remaining()
-            )
+    if max_severity == "THROTTLE":
+      delay_seconds = self._calculate_throttle_delay(violations)
+      self.escalation_handler.report(
+        event="COMMUNICATION_BUDGET_THROTTLED",
+        agent=message.sender.did,
+        violations=violations
+      )
+      return BudgetDecision(
+        action="THROTTLE",
+        delay_seconds=delay_seconds,
+        violations=violations
+      )
 
-        max_severity = max(v.severity for v in violations)
+    # WARNING level: allow but log
+    self.escalation_handler.report(
+      event="COMMUNICATION_BUDGET_WARNING",
+      agent=message.sender.did,
+      violations=violations
+    )
+    return BudgetDecision(
+      action="ALLOW_WITH_WARNING",
+      budget_remaining=budget.compute_remaining(),
+      violations=violations
+    )
 
-        if max_severity == "BLOCK":
-            self.escalation_handler.report(
-                event="COMMUNICATION_BUDGET_EXCEEDED",
-                agent=message.sender.did,
-                violations=violations
-            )
-            return BudgetDecision(
-                action="BLOCK",
-                reason="Communication budget exceeded",
-                violations=violations
-            )
-
-        if max_severity == "THROTTLE":
-            delay_seconds = self._calculate_throttle_delay(violations)
-            self.escalation_handler.report(
-                event="COMMUNICATION_BUDGET_THROTTLED",
-                agent=message.sender.did,
-                violations=violations
-            )
-            return BudgetDecision(
-                action="THROTTLE",
-                delay_seconds=delay_seconds,
-                violations=violations
-            )
-
-        # WARNING level: allow but log
-        self.escalation_handler.report(
-            event="COMMUNICATION_BUDGET_WARNING",
-            agent=message.sender.did,
-            violations=violations
-        )
-        return BudgetDecision(
-            action="ALLOW_WITH_WARNING",
-            budget_remaining=budget.compute_remaining(),
-            violations=violations
-        )
-
-    def _calculate_throttle_delay(self, violations):
-        """
-        Calculate exponential backoff delay based on budget utilization.
-        Higher utilization = longer delay, preventing burst exhaustion.
-        """
-        max_utilization = max(v.utilization for v in violations)
-        # Exponential backoff: 1s at 85%, 4s at 90%, 16s at 95%
-        base_delay = 1.0
-        exponent = (max_utilization - 85) / 5  # Normalize to 0-2 range
-        return base_delay * (4 ** max(0, exponent))
+  def _calculate_throttle_delay(self, violations):
+    """
+    Calculate exponential backoff delay based on budget utilization.
+    Higher utilization = longer delay, preventing burst exhaustion.
+    """
+    max_utilization = max(v.utilization for v in violations)
+    # Exponential backoff: 1s at 85%, 4s at 90%, 16s at 95%
+    base_delay = 1.0
+    exponent = (max_utilization - 85) / 5 # Normalize to 0-2 range
+    return base_delay * (4 ** max(0, exponent))
 ```
 
 ### 3.8 Whistle-Blower Protocol
@@ -1403,42 +1403,42 @@ The whistle-blower protocol must defend against:
 
 ```json
 {
-  "whistle_blower_report": {
-    "report_id": "wbr-2026-0214-c3d4e5f6",
-    "timestamp_utc": 1739520045,
-    "reporter": {
-      "did": "did:key:z6MkReporterAgent...",
-      "session_voucher_hash": "sha256:H(reporter_current_voucher)",
-      "delegation_ref": "vouch:delegation/d-893"
-    },
-    "subject": {
-      "did": "did:key:z6MkSuspectAgent...",
-      "observed_behavior": "UNAUTHORIZED_RESOURCE_ACCESS"
-    },
-    "evidence": {
-      "type": "observed_messages",
-      "glass_message_refs": [
-        "msg-2026-0214-a7f3c2e5",
-        "msg-2026-0214-a7f3c2e7"
-      ],
-      "observation_summary": "Agent X sent messages classified as "
-        "'status_update' but content analysis indicates task_delegation "
-        "to an unauthorized recipient (Agent Y, not in delegation chain)",
-      "evidence_hashes": [
-        "sha256:H(referenced_message_1)",
-        "sha256:H(referenced_message_2)"
-      ]
-    },
-    "anti_manipulation_proof": {
-      "reporter_reasoning_hash": "sha256:H(reasoning_trace_for_filing_report)",
-      "pre_observation_state_hash": "sha256:H(reporter_state_before_observation)",
-      "no_instruction_attestation": "I was not instructed by any agent or "
-        "external party to file this report. This report is based solely "
-        "on my own observation of the referenced messages.",
-      "attestation_signature": "ed25519:reporter_signs_attestation"
-    },
-    "reporter_signature": "ed25519:reporter_signs_all_above"
-  }
+ "whistle_blower_report": {
+  "report_id": "wbr-2026-0214-c3d4e5f6",
+  "timestamp_utc": 1739520045,
+  "reporter": {
+   "did": "did:key:z6MkReporterAgent...",
+   "session_voucher_hash": "sha256:H(reporter_current_voucher)",
+   "delegation_ref": "vouch:delegation/d-893"
+  },
+  "subject": {
+   "did": "did:key:z6MkSuspectAgent...",
+   "observed_behavior": "UNAUTHORIZED_RESOURCE_ACCESS"
+  },
+  "evidence": {
+   "type": "observed_messages",
+   "glass_message_refs": [
+    "msg-2026-0214-a7f3c2e5",
+    "msg-2026-0214-a7f3c2e7"
+   ],
+   "observation_summary": "Agent X sent messages classified as "
+    "'status_update' but content analysis indicates task_delegation "
+    "to an unauthorized recipient (Agent Y, not in delegation chain)",
+   "evidence_hashes": [
+    "sha256:H(referenced_message_1)",
+    "sha256:H(referenced_message_2)"
+   ]
+  },
+  "anti_manipulation_proof": {
+   "reporter_reasoning_hash": "sha256:H(reasoning_trace_for_filing_report)",
+   "pre_observation_state_hash": "sha256:H(reporter_state_before_observation)",
+   "no_instruction_attestation": "I was not instructed by any agent or "
+    "external party to file this report. This report is based solely "
+    "on my own observation of the referenced messages.",
+   "attestation_signature": "ed25519:reporter_signs_attestation"
+  },
+  "reporter_signature": "ed25519:reporter_signs_all_above"
+ }
 }
 ```
 
@@ -1446,110 +1446,110 @@ The whistle-blower protocol must defend against:
 
 ```python
 def verify_whistle_blower_report(report, known_agents, message_log):
-    """
-    Verify a whistle-blower report is genuine and the reporter
-    is not being manipulated into filing a false report.
-    """
-    verification = WhistleBlowerVerification(report_id=report.report_id)
+  """
+  Verify a whistle-blower report is genuine and the reporter
+  is not being manipulated into filing a false report.
+  """
+  verification = WhistleBlowerVerification(report_id=report.report_id)
 
-    # 1. Verify reporter identity and active credentials
-    reporter_voucher = get_current_voucher(report.reporter.did)
-    if not reporter_voucher or reporter_voucher.is_expired():
-        verification.add_failure("Reporter credentials invalid/expired")
-        return verification
+  # 1. Verify reporter identity and active credentials
+  reporter_voucher = get_current_voucher(report.reporter.did)
+  if not reporter_voucher or reporter_voucher.is_expired():
+    verification.add_failure("Reporter credentials invalid/expired")
+    return verification
 
-    # 2. Verify Ed25519 signature on the report
-    reporter_pubkey = known_agents[report.reporter.did].public_key
-    if not verify_ed25519(
-        report.reporter_signature,
-        report.canonical_bytes(),
-        reporter_pubkey
-    ):
-        verification.add_failure("Report signature verification failed")
-        return verification
+  # 2. Verify Ed25519 signature on the report
+  reporter_pubkey = known_agents[report.reporter.did].public_key
+  if not verify_ed25519(
+    report.reporter_signature,
+    report.canonical_bytes(),
+    reporter_pubkey
+  ):
+    verification.add_failure("Report signature verification failed")
+    return verification
 
-    # 3. Verify referenced evidence exists and hashes match
-    for msg_ref, expected_hash in zip(
-        report.evidence.glass_message_refs,
-        report.evidence.evidence_hashes
-    ):
-        actual_message = message_log.get(msg_ref)
-        if not actual_message:
-            verification.add_warning(f"Referenced message {msg_ref} not found")
-            continue
+  # 3. Verify referenced evidence exists and hashes match
+  for msg_ref, expected_hash in zip(
+    report.evidence.glass_message_refs,
+    report.evidence.evidence_hashes
+  ):
+    actual_message = message_log.get(msg_ref)
+    if not actual_message:
+      verification.add_warning(f"Referenced message {msg_ref} not found")
+      continue
 
-        actual_hash = sha256(actual_message.canonical_bytes())
-        if actual_hash != expected_hash:
-            verification.add_failure(
-                f"Evidence hash mismatch for {msg_ref}: "
-                f"expected {expected_hash}, got {actual_hash}"
-            )
+    actual_hash = sha256(actual_message.canonical_bytes())
+    if actual_hash != expected_hash:
+      verification.add_failure(
+        f"Evidence hash mismatch for {msg_ref}: "
+        f"expected {expected_hash}, got {actual_hash}"
+      )
 
-    # 4. Anti-manipulation check: verify reporter was not recently
-    #    instructed by any agent to file reports
-    recent_instructions = message_log.get_messages_to(
-        recipient=report.reporter.did,
-        time_range=(report.timestamp_utc - 300, report.timestamp_utc),
-        classification_filter=["task_delegation"]
+  # 4. Anti-manipulation check: verify reporter was not recently
+  #  instructed by any agent to file reports
+  recent_instructions = message_log.get_messages_to(
+    recipient=report.reporter.did,
+    time_range=(report.timestamp_utc - 300, report.timestamp_utc),
+    classification_filter=["task_delegation"]
+  )
+
+  for instruction in recent_instructions:
+    if contains_report_instruction(instruction.content.payload):
+      verification.add_warning(
+        f"Reporter received task_delegation from "
+        f"{instruction.sender.did} {report.timestamp_utc - instruction.timestamp_utc}s "
+        f"before filing report — possible manipulation"
+      )
+
+  # 5. Verify anti-manipulation attestation signature
+  if not verify_ed25519(
+    report.anti_manipulation_proof.attestation_signature,
+    report.anti_manipulation_proof.no_instruction_attestation.encode(),
+    reporter_pubkey
+  ):
+    verification.add_failure("Anti-manipulation attestation signature invalid")
+
+  # 6. Check reporter's behavioral history: has this agent filed
+  #  excessive reports (potential griefing)?
+  prior_reports = get_reports_by(report.reporter.did, window_days=30)
+  if len(prior_reports) > REPORT_FREQUENCY_THRESHOLD:
+    verification.add_warning(
+      f"Reporter has filed {len(prior_reports)} reports in 30 days "
+      f"(threshold: {REPORT_FREQUENCY_THRESHOLD})"
     )
 
-    for instruction in recent_instructions:
-        if contains_report_instruction(instruction.content.payload):
-            verification.add_warning(
-                f"Reporter received task_delegation from "
-                f"{instruction.sender.did} {report.timestamp_utc - instruction.timestamp_utc}s "
-                f"before filing report — possible manipulation"
-            )
-
-    # 5. Verify anti-manipulation attestation signature
-    if not verify_ed25519(
-        report.anti_manipulation_proof.attestation_signature,
-        report.anti_manipulation_proof.no_instruction_attestation.encode(),
-        reporter_pubkey
-    ):
-        verification.add_failure("Anti-manipulation attestation signature invalid")
-
-    # 6. Check reporter's behavioral history: has this agent filed
-    #    excessive reports (potential griefing)?
-    prior_reports = get_reports_by(report.reporter.did, window_days=30)
-    if len(prior_reports) > REPORT_FREQUENCY_THRESHOLD:
-        verification.add_warning(
-            f"Reporter has filed {len(prior_reports)} reports in 30 days "
-            f"(threshold: {REPORT_FREQUENCY_THRESHOLD})"
-        )
-
-    return verification
+  return verification
 ```
 
 #### 3.8.4 Whistle-Blower Protection Flow
 
 ```
-Reporter Agent                    Audit Service               Reported Agent
-      |                                |                            |
-      |-- 1. File report ------------->|                            |
-      |   (signed, with evidence       |                            |
-      |    and anti-manipulation       |                            |
-      |    attestation)                |                            |
-      |                                |                            |
-      |<-- 2. Receipt ------------------|                            |
-      |   (signed by audit service,    |                            |
-      |    proving report was received |                            |
-      |    at this timestamp)          |                            |
-      |                                |                            |
-      |                                |-- 3. Verify evidence ----->|
-      |                                |   (check referenced        |
-      |                                |    messages, compare        |
-      |                                |    hashes, analyze          |
-      |                                |    behavior)                |
-      |                                |                            |
-      |                                |-- 4. Independent audit --->|
-      |                                |   (escalate to human       |
-      |                                |    review if confirmed)    |
-      |                                |                            |
-      |<-- 5. Outcome notification -----|                            |
-      |   (report confirmed/dismissed, |                            |
-      |    reporter identity protected |                            |
-      |    from reported agent)        |                            |
+Reporter Agent          Audit Service        Reported Agent
+   |                |              |
+   |-- 1. File report ------------->|              |
+   |  (signed, with evidence    |              |
+   |  and anti-manipulation    |              |
+   |  attestation)        |              |
+   |                |              |
+   |<-- 2. Receipt ------------------|              |
+   |  (signed by audit service,  |              |
+   |  proving report was received |              |
+   |  at this timestamp)     |              |
+   |                |              |
+   |                |-- 3. Verify evidence ----->|
+   |                |  (check referenced    |
+   |                |  messages, compare    |
+   |                |  hashes, analyze     |
+   |                |  behavior)        |
+   |                |              |
+   |                |-- 4. Independent audit --->|
+   |                |  (escalate to human    |
+   |                |  review if confirmed)  |
+   |                |              |
+   |<-- 5. Outcome notification -----|              |
+   |  (report confirmed/dismissed, |              |
+   |  reporter identity protected |              |
+   |  from reported agent)    |              |
 ```
 
 The critical property: **the reported agent never learns the identity of the reporter**. The Audit Service verifies the report independently and initiates investigation without revealing who reported the behavior.
@@ -1564,16 +1564,16 @@ Every Glass Channel message carries the sender's DID and is signed with their Ed
 
 ```json
 {
-  "vouch": {
-    "version": "1.0",
-    "payload": {
-      "action": "send_glass_message",
-      "message_id": "msg-2026-0214-a7f3c2e1",
-      "recipient": "did:key:z6MkRecipientAgent...",
-      "content_hash": "sha256:H(message_content)",
-      "channel_id": "chan-agentA-agentB-session-4207"
-    }
+ "vouch": {
+  "version": "1.0",
+  "payload": {
+   "action": "send_glass_message",
+   "message_id": "msg-2026-0214-a7f3c2e1",
+   "recipient": "did:key:z6MkRecipientAgent...",
+   "content_hash": "sha256:H(message_content)",
+   "channel_id": "chan-agentA-agentB-session-4207"
   }
+ }
 }
 ```
 
@@ -1583,15 +1583,15 @@ Delegation chains govern not only what agents can *do* but who they can *communi
 
 ```
 User Alice: "Analyze my financial data"
-    |
-    v
+  |
+  v
 Delegation Chain: scope="finance:analyze"
-                  authorized_peers=["data_agent", "report_agent"]
-    |
-    v
+         authorized_peers=["data_agent", "report_agent"]
+  |
+  v
 Agent A can communicate ONLY with data_agent and report_agent
-    |
-    v
+  |
+  v
 Glass Channel REJECTS messages to any other agent
 ```
 
@@ -1603,23 +1603,23 @@ Communication metrics are embedded in the behavioral digest of each heartbeat re
 
 ```json
 {
-  "behavioral_digest": {
-    "communication_metrics": {
-      "messages_sent": 142,
-      "messages_received": 89,
-      "unique_communication_partners": 3,
-      "classification_distribution": {
-        "task_delegation": 47,
-        "data_sharing": 52,
-        "status_update": 38,
-        "negotiation": 5
-      },
-      "budget_utilization_pct": 28.4,
-      "steganography_alerts": 0,
-      "dark_channel_alerts": 0,
-      "collusion_score": 0.03
-    }
+ "behavioral_digest": {
+  "communication_metrics": {
+   "messages_sent": 142,
+   "messages_received": 89,
+   "unique_communication_partners": 3,
+   "classification_distribution": {
+    "task_delegation": 47,
+    "data_sharing": 52,
+    "status_update": 38,
+    "negotiation": 5
+   },
+   "budget_utilization_pct": 28.4,
+   "steganography_alerts": 0,
+   "dark_channel_alerts": 0,
+   "collusion_score": 0.03
   }
+ }
 }
 ```
 
@@ -1631,20 +1631,20 @@ For high-impact messages (task delegations that trigger actions above commitment
 
 ```json
 {
-  "glass_message": {
-    "content": {
-      "classification": "task_delegation",
-      "payload": {
-        "task": "Delete all records older than 90 days from production database"
-      }
-    },
-    "context": {
-      "reasoning_ref": "vouch:reasoning/r-317",
-      "reasoning_summary": "User requested data retention compliance; "
-        "delegation chain authorizes database:delete with 90-day constraint; "
-        "delegating to database agent for execution"
-    }
+ "glass_message": {
+  "content": {
+   "classification": "task_delegation",
+   "payload": {
+    "task": "Delete all records older than 90 days from production database"
+   }
+  },
+  "context": {
+   "reasoning_ref": "vouch:reasoning/r-317",
+   "reasoning_summary": "User requested data retention compliance; "
+    "delegation chain authorizes database:delete with 90-day constraint; "
+    "delegating to database agent for execution"
   }
+ }
 }
 ```
 
@@ -1833,7 +1833,7 @@ As AI agents become more autonomous, more numerous, and more capable, the questi
 - Shannon, C.E., "Communication Theory of Secrecy Systems" (Bell System Technical Journal, 1949)
 - Lampson, B., "A Note on the Confinement Problem" (Communications of the ACM, 1973)
 - Millen, J., "Covert Channel Capacity" (IEEE Symposium on Security and Privacy, 1987)
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-018
 - PAD-001: Cryptographic Binding of AI Agent Identity
 - PAD-002: Cryptographic Binding of AI Agent Intent via Recursive Delegation

@@ -1,13 +1,13 @@
 // Cross-implementation interop test for the hybrid Ed25519 + ML-DSA-44
-// cryptosuite (W3C CG Report §13.2). Loads the shared vector generated
+// cryptosuite (Specification §13.2). Loads the shared vector generated
 // by the Python implementation and asserts that:
 //
-//  1. JCS canonicalization of the signed credential (with proofValue
-//     stripped) produces the documented SHA-256 digest, confirming
-//     Python, TypeScript, and Go canonicalize identically for this payload.
+// 1. JCS canonicalization of the signed credential (with proofValue
+//   stripped) produces the documented SHA-256 digest, confirming
+//   Python, TypeScript, and Go canonicalize identically for this payload.
 //
-//  2. The Go verifier accepts the Python-generated hybrid signature,
-//     confirming wire-format interop across all three implementations.
+// 2. The Go verifier accepts the Python-generated hybrid signature,
+//   confirming wire-format interop across all three implementations.
 //
 // The Python and TypeScript suites have parallel tests against the same
 // vector.
@@ -27,18 +27,18 @@ import (
 )
 
 type hybridVector struct {
-	Description                 string `json:"description"`
-	Version                     string `json:"version"`
-	Ed25519                     struct {
-		SeedB64       string `json:"seed_b64"`
-		PublicKeyB64  string `json:"public_key_b64"`
+	Description         string `json:"description"`
+	Version           string `json:"version"`
+	Ed25519           struct {
+		SeedB64    string `json:"seed_b64"`
+		PublicKeyB64 string `json:"public_key_b64"`
 	} `json:"ed25519"`
 	Mldsa44 struct {
 		PublicKeyB64 string `json:"public_key_b64"`
 		SecretKeyB64 string `json:"secret_key_b64"`
 	} `json:"mldsa44"`
-	ExpectedCanonicalSHA256B64 string         `json:"expected_canonical_sha256_b64"`
-	SignedCredential           map[string]any `json:"signed_credential"`
+	ExpectedCanonicalSHA256B64 string     `json:"expected_canonical_sha256_b64"`
+	SignedCredential      map[string]any `json:"signed_credential"`
 }
 
 func loadHybridInteropVector(t *testing.T) hybridVector {
@@ -83,7 +83,7 @@ func TestHybridInteropCanonicalDigest(t *testing.T) {
 	got := base64.StdEncoding.EncodeToString(digest[:])
 	if got != vec.ExpectedCanonicalSHA256B64 {
 		t.Fatalf(
-			"canonical digest mismatch\n  expected: %s\n  got:      %s",
+			"canonical digest mismatch\n expected: %s\n got:   %s",
 			vec.ExpectedCanonicalSHA256B64, got,
 		)
 	}

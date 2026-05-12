@@ -62,33 +62,33 @@ Consider the lifecycle of a musician's song with a "No AI Training" restriction:
 
 ```
 Step 1: Musician records song.
-        Rights: "No AI Training, No Voice Cloning, Commercial License Required"
-        C2PA metadata: ✓ Present
-        ID3 tags: ✓ Present
+    Rights: "No AI Training, No Voice Cloning, Commercial License Required"
+    C2PA metadata: ✓ Present
+    ID3 tags: ✓ Present
 
 Step 2: Musician uploads to YouTube.
-        YouTube transcodes to VP9/Opus for streaming.
-        C2PA metadata: ✗ STRIPPED
-        ID3 tags: ✗ STRIPPED
-        YouTube internal DB: ✓ Present (but siloed)
+    YouTube transcodes to VP9/Opus for streaming.
+    C2PA metadata: ✗ STRIPPED
+    ID3 tags: ✗ STRIPPED
+    YouTube internal DB: ✓ Present (but siloed)
 
 Step 3: User downloads audio using yt-dlp.
-        Extracted as M4A/AAC.
-        C2PA metadata: ✗ GONE
-        ID3 tags: ✗ GONE
-        YouTube DB: ✗ NOT ACCESSIBLE
+    Extracted as M4A/AAC.
+    C2PA metadata: ✗ GONE
+    ID3 tags: ✗ GONE
+    YouTube DB: ✗ NOT ACCESSIBLE
 
 Step 4: User converts to WAV for editing.
-        All remaining container metadata: ✗ GONE
+    All remaining container metadata: ✗ GONE
 
 Step 5: AI training company scrapes the WAV file.
-        Ingests into training dataset.
-        No machine-readable policy exists anywhere in the file.
-        The creator's "No AI Training" restriction is invisible.
+    Ingests into training dataset.
+    No machine-readable policy exists anywhere in the file.
+    The creator's "No AI Training" restriction is invisible.
 
 Step 6: Creator discovers their voice in an AI model.
-        No technical evidence that the restriction was communicated.
-        Legal burden falls entirely on proving the original terms.
+    No technical evidence that the restriction was communicated.
+    Legal burden falls entirely on proving the original terms.
 ```
 
 At **every step** in this chain, the content protection rules are lost. The audio signal survives intact--only the rules about how it may be used are destroyed.
@@ -129,29 +129,29 @@ Extend the Vouch Sonic watermark payload (PAD-014) to include a compact, binary-
 
 ```json
 {
-  "version": "1.0",
-  "type": "audio_provenance",
-  "signer_did": "did:key:z6MkhaXgBZDvotDkL5LmCWaEe...",
-  "content_hash": "sha256:a1b2c3d4...",
-  "timestamp_utc": 1737352800,
-  "nonce": "random_32_bytes_hex",
-  "signature": "ed25519_signature_base64",
-  "metadata": {
-    "title": "Original Song Title",
-    "duration_ms": 240000,
-    "sample_rate": 48000
-  },
-  "policy": {
-    "ai_training": "deny",
-    "voice_cloning": "deny",
-    "derivatives": "allow_with_attribution",
-    "commercial": "deny",
-    "sampling": "deny",
-    "broadcast": "allow",
-    "expiry_utc": 1768888800,
-    "license_uri": "https://example.com/license/abc123",
-    "custom": "no_sampling_without_license"
-  }
+ "version": "1.0",
+ "type": "audio_provenance",
+ "signer_did": "did:key:z6MkhaXgBZDvotDkL5LmCWaEe...",
+ "content_hash": "sha256:a1b2c3d4...",
+ "timestamp_utc": 1737352800,
+ "nonce": "random_32_bytes_hex",
+ "signature": "ed25519_signature_base64",
+ "metadata": {
+  "title": "Original Song Title",
+  "duration_ms": 240000,
+  "sample_rate": 48000
+ },
+ "policy": {
+  "ai_training": "deny",
+  "voice_cloning": "deny",
+  "derivatives": "allow_with_attribution",
+  "commercial": "deny",
+  "sampling": "deny",
+  "broadcast": "allow",
+  "expiry_utc": 1768888800,
+  "license_uri": "https://example.com/license/abc123",
+  "custom": "no_sampling_without_license"
+ }
 }
 ```
 
@@ -166,79 +166,79 @@ from typing import Optional
 
 # Standardized policy field codes (1-byte identifiers)
 POLICY_CODES = {
-    0x01: "ai_training",
-    0x02: "voice_cloning",
-    0x03: "derivatives",
-    0x04: "commercial",
-    0x05: "sampling",
-    0x06: "broadcast",
-    0x07: "sync_licensing",
-    0x08: "public_performance",
-    0xFE: "expiry_utc",
-    0xFF: "custom",
+  0x01: "ai_training",
+  0x02: "voice_cloning",
+  0x03: "derivatives",
+  0x04: "commercial",
+  0x05: "sampling",
+  0x06: "broadcast",
+  0x07: "sync_licensing",
+  0x08: "public_performance",
+  0xFE: "expiry_utc",
+  0xFF: "custom",
 }
 
 # Standardized permission values (1-byte identifiers)
 PERMISSION_VALUES = {
-    0x00: "deny",
-    0x01: "allow",
-    0x02: "allow_with_attribution",
-    0x03: "allow_noncommercial",
-    0x04: "allow_with_license",
-    0x05: "contact_creator",
+  0x00: "deny",
+  0x01: "allow",
+  0x02: "allow_with_attribution",
+  0x03: "allow_noncommercial",
+  0x04: "allow_with_license",
+  0x05: "contact_creator",
 }
 
 
 def encode_policy(policy: dict) -> bytes:
-    """
-    Encode a content usage policy into a compact CBOR payload.
+  """
+  Encode a content usage policy into a compact CBOR payload.
 
-    Target: 40-80 bytes for standard policies,
-    up to 120 bytes with custom free-text rules.
-    """
-    compact = {}
+  Target: 40-80 bytes for standard policies,
+  up to 120 bytes with custom free-text rules.
+  """
+  compact = {}
 
-    for field_code, field_name in POLICY_CODES.items():
-        if field_name in policy:
-            value = policy[field_name]
+  for field_code, field_name in POLICY_CODES.items():
+    if field_name in policy:
+      value = policy[field_name]
 
-            if field_name == "expiry_utc":
-                # Timestamp stored as 4-byte integer
-                compact[field_code] = value
-            elif field_name == "custom":
-                # Free text stored as UTF-8 string (truncated to 64 bytes)
-                compact[field_code] = value[:64]
-            else:
-                # Standard permission values use 1-byte codes
-                for val_code, val_name in PERMISSION_VALUES.items():
-                    if value == val_name:
-                        compact[field_code] = val_code
-                        break
+      if field_name == "expiry_utc":
+        # Timestamp stored as 4-byte integer
+        compact[field_code] = value
+      elif field_name == "custom":
+        # Free text stored as UTF-8 string (truncated to 64 bytes)
+        compact[field_code] = value[:64]
+      else:
+        # Standard permission values use 1-byte codes
+        for val_code, val_name in PERMISSION_VALUES.items():
+          if value == val_name:
+            compact[field_code] = val_code
+            break
 
-    encoded = cbor2.dumps(compact)
-    return encoded
+  encoded = cbor2.dumps(compact)
+  return encoded
 
 
 def decode_policy(data: bytes) -> dict:
-    """
-    Decode a CBOR-encoded content usage policy.
+  """
+  Decode a CBOR-encoded content usage policy.
 
-    Returns human-readable policy dictionary.
-    """
-    compact = cbor2.loads(data)
-    policy = {}
+  Returns human-readable policy dictionary.
+  """
+  compact = cbor2.loads(data)
+  policy = {}
 
-    for field_code, value in compact.items():
-        field_name = POLICY_CODES.get(field_code, f"unknown_{field_code}")
+  for field_code, value in compact.items():
+    field_name = POLICY_CODES.get(field_code, f"unknown_{field_code}")
 
-        if field_name == "expiry_utc":
-            policy[field_name] = value
-        elif field_name == "custom":
-            policy[field_name] = value
-        else:
-            policy[field_name] = PERMISSION_VALUES.get(value, f"unknown_{value}")
+    if field_name == "expiry_utc":
+      policy[field_name] = value
+    elif field_name == "custom":
+      policy[field_name] = value
+    else:
+      policy[field_name] = PERMISSION_VALUES.get(value, f"unknown_{value}")
 
-    return policy
+  return policy
 ```
 
 **Payload size analysis:**
@@ -259,30 +259,30 @@ The policy payload is integrated into PAD-014's existing watermark structure:
 ```
 PAD-014 Watermark Payload (Original):
 ┌──────────────────────────────────────────────┐
-│ Version (1B) │ Type (1B) │ DID (32B)         │
-│ Content Hash (32B) │ Timestamp (4B)          │
-│ Nonce (32B) │ Signature (64B)                │
-│ Metadata (variable, ~50B)                    │
-│ ECC (Reed-Solomon, ~80B)                     │
+│ Version (1B) │ Type (1B) │ DID (32B)     │
+│ Content Hash (32B) │ Timestamp (4B)     │
+│ Nonce (32B) │ Signature (64B)        │
+│ Metadata (variable, ~50B)          │
+│ ECC (Reed-Solomon, ~80B)           │
 ├──────────────────────────────────────────────┤
-│ Total: 256-512 bytes                         │
+│ Total: 256-512 bytes             │
 └──────────────────────────────────────────────┘
 
 PAD-023 Extended Watermark Payload:
 ┌──────────────────────────────────────────────┐
-│ Version (1B) │ Type (1B) │ DID (32B)         │
-│ Content Hash (32B) │ Timestamp (4B)          │
-│ Nonce (32B) │ Signature (64B)                │
-│ Metadata (variable, ~50B)                    │
+│ Version (1B) │ Type (1B) │ DID (32B)     │
+│ Content Hash (32B) │ Timestamp (4B)     │
+│ Nonce (32B) │ Signature (64B)        │
+│ Metadata (variable, ~50B)          │
 │ ┌──────────────────────────────────────────┐ │
-│ │ POLICY BLOCK (40-120B, CBOR-encoded)     │ │
-│ │ Policy Version (1B)                      │ │
-│ │ Policy Fields (variable)                 │ │
-│ │ Policy Hash (included in signature)      │ │
+│ │ POLICY BLOCK (40-120B, CBOR-encoded)   │ │
+│ │ Policy Version (1B)           │ │
+│ │ Policy Fields (variable)         │ │
+│ │ Policy Hash (included in signature)   │ │
 │ └──────────────────────────────────────────┘ │
-│ ECC (Reed-Solomon, ~100B)                    │
+│ ECC (Reed-Solomon, ~100B)          │
 ├──────────────────────────────────────────────┤
-│ Total: 320-640 bytes                         │
+│ Total: 320-640 bytes             │
 └──────────────────────────────────────────────┘
 ```
 
@@ -296,33 +296,33 @@ The embedded policy enables a new class of content protection: **self-enforcing 
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                 COMPLIANT DECODER                      │
+│         COMPLIANT DECODER           │
 ├──────────────────────────────────────────────────────┤
-│  Audio Input (any format, any transformation history) │
-│      ↓                                                │
-│  [Vouch Sonic Extraction] (PAD-014 pipeline)          │
-│      ↓                                                │
-│  [Payload Reconstruction]                             │
-│      ↓                                                │
-│  [Ed25519 Signature Verification]                     │
-│   - Verify signer DID                                 │
-│   - Verify signature covers policy block              │
-│      ↓                                                │
-│  [Policy Extraction]                                  │
-│   - CBOR decode policy block                          │
-│   - Check policy expiry timestamp                     │
-│   - Map policy fields to action permissions            │
-│      ↓                                                │
-│  [Policy Evaluation]                                  │
-│   - Context: What is the intended use?                │
-│   - Match intended use against policy fields           │
-│   - Return: ALLOW / DENY / CONTACT_CREATOR            │
-│      ↓                                                │
-│  [Output]                                             │
-│   - Verified creator identity (DID)                   │
-│   - Verified timestamp                                │
-│   - Machine-readable usage permissions                │
-│   - Enforcement recommendation                        │
+│ Audio Input (any format, any transformation history) │
+│   ↓                        │
+│ [Vouch Sonic Extraction] (PAD-014 pipeline)     │
+│   ↓                        │
+│ [Payload Reconstruction]               │
+│   ↓                        │
+│ [Ed25519 Signature Verification]           │
+│  - Verify signer DID                 │
+│  - Verify signature covers policy block       │
+│   ↓                        │
+│ [Policy Extraction]                 │
+│  - CBOR decode policy block             │
+│  - Check policy expiry timestamp           │
+│  - Map policy fields to action permissions      │
+│   ↓                        │
+│ [Policy Evaluation]                 │
+│  - Context: What is the intended use?        │
+│  - Match intended use against policy fields      │
+│  - Return: ALLOW / DENY / CONTACT_CREATOR      │
+│   ↓                        │
+│ [Output]                       │
+│  - Verified creator identity (DID)          │
+│  - Verified timestamp                │
+│  - Machine-readable usage permissions        │
+│  - Enforcement recommendation            │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -351,75 +351,75 @@ from typing import Optional
 
 @dataclass
 class ForensicPolicyReport:
-    """
-    Generated when watermarked audio is found in a context
-    that violates the embedded policy.
-    """
-    audio_source: str
-    extraction_timestamp: float
-    signer_did: str
-    signer_did_verified: bool
-    signature_valid: bool
-    original_timestamp: float
-    policy: dict
-    violation_context: str
-    violation_field: str
-    violation_severity: str
-    evidence_hash: str
+  """
+  Generated when watermarked audio is found in a context
+  that violates the embedded policy.
+  """
+  audio_source: str
+  extraction_timestamp: float
+  signer_did: str
+  signer_did_verified: bool
+  signature_valid: bool
+  original_timestamp: float
+  policy: dict
+  violation_context: str
+  violation_field: str
+  violation_severity: str
+  evidence_hash: str
 
 
 def generate_forensic_report(
-    audio_file: str,
-    intended_use: str,
-    extraction_result: dict,
+  audio_file: str,
+  intended_use: str,
+  extraction_result: dict,
 ) -> Optional[ForensicPolicyReport]:
-    """
-    Generate a forensic report when watermarked audio is found
-    in a potentially violating context.
+  """
+  Generate a forensic report when watermarked audio is found
+  in a potentially violating context.
 
-    The report provides cryptographic evidence that:
-    1. The creator signed the audio (DID + Ed25519 signature)
-    2. The creator explicitly set a policy prohibiting this use
-    3. The policy was embedded at a specific time (timestamp)
-    4. The policy could not have been accidentally stripped
-       (it survived in the audio waveform)
-    """
-    if not extraction_result.get("watermark_found"):
-        return None
-
-    policy = extraction_result.get("policy", {})
-
-    # Map intended use to policy field
-    use_to_field = {
-        "ai_training": "ai_training",
-        "voice_cloning": "voice_cloning",
-        "derivative_work": "derivatives",
-        "commercial_use": "commercial",
-        "sampling": "sampling",
-        "broadcast": "broadcast",
-    }
-
-    policy_field = use_to_field.get(intended_use)
-    if not policy_field or policy_field not in policy:
-        return None
-
-    permission = policy[policy_field]
-    if permission == "deny":
-        return ForensicPolicyReport(
-            audio_source=audio_file,
-            extraction_timestamp=extraction_result["extraction_time"],
-            signer_did=extraction_result["signer_did"],
-            signer_did_verified=extraction_result["did_verified"],
-            signature_valid=extraction_result["signature_valid"],
-            original_timestamp=extraction_result["timestamp_utc"],
-            policy=policy,
-            violation_context=intended_use,
-            violation_field=policy_field,
-            violation_severity="EXPLICIT_DENIAL",
-            evidence_hash=extraction_result["evidence_hash"],
-        )
-
+  The report provides cryptographic evidence that:
+  1. The creator signed the audio (DID + Ed25519 signature)
+  2. The creator explicitly set a policy prohibiting this use
+  3. The policy was embedded at a specific time (timestamp)
+  4. The policy could not have been accidentally stripped
+    (it survived in the audio waveform)
+  """
+  if not extraction_result.get("watermark_found"):
     return None
+
+  policy = extraction_result.get("policy", {})
+
+  # Map intended use to policy field
+  use_to_field = {
+    "ai_training": "ai_training",
+    "voice_cloning": "voice_cloning",
+    "derivative_work": "derivatives",
+    "commercial_use": "commercial",
+    "sampling": "sampling",
+    "broadcast": "broadcast",
+  }
+
+  policy_field = use_to_field.get(intended_use)
+  if not policy_field or policy_field not in policy:
+    return None
+
+  permission = policy[policy_field]
+  if permission == "deny":
+    return ForensicPolicyReport(
+      audio_source=audio_file,
+      extraction_timestamp=extraction_result["extraction_time"],
+      signer_did=extraction_result["signer_did"],
+      signer_did_verified=extraction_result["did_verified"],
+      signature_valid=extraction_result["signature_valid"],
+      original_timestamp=extraction_result["timestamp_utc"],
+      policy=policy,
+      violation_context=intended_use,
+      violation_field=policy_field,
+      violation_severity="EXPLICIT_DENIAL",
+      evidence_hash=extraction_result["evidence_hash"],
+    )
+
+  return None
 ```
 
 #### 3.3.2 Legal Evidentiary Value
@@ -442,40 +442,40 @@ For maximum compatibility, the system embeds content usage policies in both stri
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  DUAL-CHANNEL POLICY                      │
+│         DUAL-CHANNEL POLICY           │
 ├─────────────────────────────────────────────────────────┤
-│                                                           │
-│  Channel 1: Metadata (C2PA, ID3, XMP)                    │
-│  ┌─────────────────────────────────────────────────────┐ │
-│  │ Rich policy expression (full JSON-LD)                │ │
-│  │ Human-readable license text                          │ │
-│  │ License URI and contact information                  │ │
-│  │ Full C2PA manifest with assertion chain              │ │
-│  │                                                       │ │
-│  │ Durability: LOW (stripped by transcoding)             │ │
-│  │ Richness: HIGH (unlimited space)                     │ │
-│  │ Platform support: GROWING (C2PA adoption)            │ │
-│  └─────────────────────────────────────────────────────┘ │
-│                                                           │
-│  Channel 2: Watermark (Vouch Sonic + PAD-023 Policy)     │
-│  ┌─────────────────────────────────────────────────────┐ │
-│  │ Compact CBOR-encoded policy (40-120 bytes)           │ │
-│  │ Standardized permission codes                        │ │
-│  │ Cryptographic binding to creator identity             │ │
-│  │                                                       │ │
-│  │ Durability: HIGH (survives all transformations)      │ │
-│  │ Richness: LOW (capacity-constrained)                 │ │
-│  │ Platform support: UNIVERSAL (signal-level)           │ │
-│  └─────────────────────────────────────────────────────┘ │
-│                                                           │
-│  Resolution Rule:                                        │
-│  - If both channels present: metadata is advisory,       │
-│    watermark is authoritative                            │
-│  - If only metadata present: use metadata                │
-│  - If only watermark present: use watermark              │
-│  - If conflict: watermark takes precedence               │
-│    (cannot have been tampered without breaking signature) │
-│                                                           │
+│                              │
+│ Channel 1: Metadata (C2PA, ID3, XMP)          │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Rich policy expression (full JSON-LD)        │ │
+│ │ Human-readable license text             │ │
+│ │ License URI and contact information         │ │
+│ │ Full C2PA manifest with assertion chain       │ │
+│ │                            │ │
+│ │ Durability: LOW (stripped by transcoding)       │ │
+│ │ Richness: HIGH (unlimited space)           │ │
+│ │ Platform support: GROWING (C2PA adoption)      │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                              │
+│ Channel 2: Watermark (Vouch Sonic + PAD-023 Policy)   │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Compact CBOR-encoded policy (40-120 bytes)      │ │
+│ │ Standardized permission codes            │ │
+│ │ Cryptographic binding to creator identity       │ │
+│ │                            │ │
+│ │ Durability: HIGH (survives all transformations)   │ │
+│ │ Richness: LOW (capacity-constrained)         │ │
+│ │ Platform support: UNIVERSAL (signal-level)      │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                              │
+│ Resolution Rule:                    │
+│ - If both channels present: metadata is advisory,    │
+│  watermark is authoritative              │
+│ - If only metadata present: use metadata        │
+│ - If only watermark present: use watermark       │
+│ - If conflict: watermark takes precedence        │
+│  (cannot have been tampered without breaking signature) │
+│                              │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -522,59 +522,59 @@ import time
 
 
 def evaluate_policy_with_expiry(
-    policy: dict,
-    intended_use: str,
-    current_time: Optional[float] = None,
+  policy: dict,
+  intended_use: str,
+  current_time: Optional[float] = None,
 ) -> dict:
-    """
-    Evaluate a content usage policy, respecting expiration.
+  """
+  Evaluate a content usage policy, respecting expiration.
 
-    After expiry, all restrictions lapse (default: allow).
-    This enables temporal rights management:
-    - "No AI Training until 2030"
-    - "Commercial rights revert after 5 years"
-    - "Exclusive license expires January 2028"
-    """
-    if current_time is None:
-        current_time = time.time()
+  After expiry, all restrictions lapse (default: allow).
+  This enables temporal rights management:
+  - "No AI Training until 2030"
+  - "Commercial rights revert after 5 years"
+  - "Exclusive license expires January 2028"
+  """
+  if current_time is None:
+    current_time = time.time()
 
-    expiry = policy.get("expiry_utc")
+  expiry = policy.get("expiry_utc")
 
-    if expiry is not None and current_time > expiry:
-        return {
-            "permission": "allow",
-            "reason": "POLICY_EXPIRED",
-            "expiry_utc": expiry,
-            "current_time": current_time,
-            "note": "All restrictions have lapsed per creator-set expiry",
-        }
-
-    # Policy is active -- evaluate normally
-    use_to_field = {
-        "ai_training": "ai_training",
-        "voice_cloning": "voice_cloning",
-        "derivative_work": "derivatives",
-        "commercial_use": "commercial",
-        "sampling": "sampling",
-        "broadcast": "broadcast",
-        "sync_licensing": "sync_licensing",
-        "public_performance": "public_performance",
-    }
-
-    field = use_to_field.get(intended_use)
-    if field is None or field not in policy:
-        return {
-            "permission": "unspecified",
-            "reason": "NO_POLICY_FOR_USE",
-            "note": "Creator did not specify a policy for this use case",
-        }
-
+  if expiry is not None and current_time > expiry:
     return {
-        "permission": policy[field],
-        "reason": "POLICY_ACTIVE",
-        "field": field,
-        "expiry_utc": expiry,
+      "permission": "allow",
+      "reason": "POLICY_EXPIRED",
+      "expiry_utc": expiry,
+      "current_time": current_time,
+      "note": "All restrictions have lapsed per creator-set expiry",
     }
+
+  # Policy is active -- evaluate normally
+  use_to_field = {
+    "ai_training": "ai_training",
+    "voice_cloning": "voice_cloning",
+    "derivative_work": "derivatives",
+    "commercial_use": "commercial",
+    "sampling": "sampling",
+    "broadcast": "broadcast",
+    "sync_licensing": "sync_licensing",
+    "public_performance": "public_performance",
+  }
+
+  field = use_to_field.get(intended_use)
+  if field is None or field not in policy:
+    return {
+      "permission": "unspecified",
+      "reason": "NO_POLICY_FOR_USE",
+      "note": "Creator did not specify a policy for this use case",
+    }
+
+  return {
+    "permission": policy[field],
+    "reason": "POLICY_ACTIVE",
+    "field": field,
+    "expiry_utc": expiry,
+  }
 ```
 
 **Time-bound policy examples:**
@@ -592,25 +592,25 @@ When derivative works are created from watermarked audio, the original creator's
 
 ```
 Original Song (Artist A):
-  Watermark: DID_A, policy: {derivatives: allow_with_attribution, ai_training: deny}
-      |
-      v
+ Watermark: DID_A, policy: {derivatives: allow_with_attribution, ai_training: deny}
+   |
+   v
 Remix (Producer B) samples 30 seconds:
-  Watermark from original 30-second segment: DID_A still extractable
-  Producer B adds their own watermark: DID_B, policy: {derivatives: deny}
-      |
-      v
+ Watermark from original 30-second segment: DID_A still extractable
+ Producer B adds their own watermark: DID_B, policy: {derivatives: deny}
+   |
+   v
 The remix now carries TWO watermarks:
-  1. DID_A's watermark in the sampled segment (with A's policy)
-  2. DID_B's watermark across the full remix (with B's policy)
-      |
-      v
+ 1. DID_A's watermark in the sampled segment (with A's policy)
+ 2. DID_B's watermark across the full remix (with B's policy)
+   |
+   v
 AI training company ingests the remix:
-  Extraction reveals:
-  - DID_A: ai_training = DENY (in sampled segment)
-  - DID_B: derivatives = DENY (across full mix)
+ Extraction reveals:
+ - DID_A: ai_training = DENY (in sampled segment)
+ - DID_B: derivatives = DENY (across full mix)
 
-  Both creators' restrictions are discoverable from the audio signal.
+ Both creators' restrictions are discoverable from the audio signal.
 ```
 
 ### 4.4 Cross-Regulation Compliance Signaling
@@ -623,85 +623,85 @@ The machine-readable policy watermark maps to specific regulatory frameworks, en
 # Mapping from policy fields to regulatory requirements
 
 REGULATORY_MAPPING = {
-    "eu_ai_act_article_53": {
-        "description": "EU AI Act transparency obligations for GPAI providers",
-        "relevant_fields": ["ai_training"],
-        "compliance_rule": (
-            "If ai_training == 'deny', this content MUST be excluded "
-            "from training datasets under Article 53(1)(c) obligation "
-            "to respect rights reservations expressed in machine-readable format"
-        ),
-        "reference": "Regulation (EU) 2024/1689, Article 53(1)(c)",
-    },
-    "us_eo_14110": {
-        "description": "US Executive Order on Safe, Secure, and Trustworthy AI",
-        "relevant_fields": ["ai_training", "voice_cloning"],
-        "compliance_rule": (
-            "AI developers should respect content creator preferences "
-            "regarding training data inclusion"
-        ),
-        "reference": "Executive Order 14110, Section 5.2",
-    },
-    "dmca_1201": {
-        "description": "DMCA anti-circumvention provisions",
-        "relevant_fields": ["ai_training", "voice_cloning", "derivatives"],
-        "compliance_rule": (
-            "Watermark extraction and policy bypass may constitute "
-            "circumvention of a technological protection measure"
-        ),
-        "reference": "17 U.S.C. section 1201",
-    },
-    "eu_copyright_directive_article_4": {
-        "description": "EU Copyright Directive text and data mining opt-out",
-        "relevant_fields": ["ai_training"],
-        "compliance_rule": (
-            "Rights holders who have expressly reserved their rights "
-            "in a machine-readable manner must be excluded from TDM. "
-            "A watermark-embedded 'deny' constitutes machine-readable reservation."
-        ),
-        "reference": "Directive (EU) 2019/790, Article 4",
-    },
+  "eu_ai_act_article_53": {
+    "description": "EU AI Act transparency obligations for GPAI providers",
+    "relevant_fields": ["ai_training"],
+    "compliance_rule": (
+      "If ai_training == 'deny', this content MUST be excluded "
+      "from training datasets under Article 53(1)(c) obligation "
+      "to respect rights reservations expressed in machine-readable format"
+    ),
+    "reference": "Regulation (EU) 2024/1689, Article 53(1)(c)",
+  },
+  "us_eo_14110": {
+    "description": "US Executive Order on Safe, Secure, and Trustworthy AI",
+    "relevant_fields": ["ai_training", "voice_cloning"],
+    "compliance_rule": (
+      "AI developers should respect content creator preferences "
+      "regarding training data inclusion"
+    ),
+    "reference": "Executive Order 14110, Section 5.2",
+  },
+  "dmca_1201": {
+    "description": "DMCA anti-circumvention provisions",
+    "relevant_fields": ["ai_training", "voice_cloning", "derivatives"],
+    "compliance_rule": (
+      "Watermark extraction and policy bypass may constitute "
+      "circumvention of a technological protection measure"
+    ),
+    "reference": "17 U.S.C. section 1201",
+  },
+  "eu_copyright_directive_article_4": {
+    "description": "EU Copyright Directive text and data mining opt-out",
+    "relevant_fields": ["ai_training"],
+    "compliance_rule": (
+      "Rights holders who have expressly reserved their rights "
+      "in a machine-readable manner must be excluded from TDM. "
+      "A watermark-embedded 'deny' constitutes machine-readable reservation."
+    ),
+    "reference": "Directive (EU) 2019/790, Article 4",
+  },
 }
 
 
 def check_regulatory_compliance(
-    policy: dict,
-    intended_use: str,
-    jurisdiction: str,
+  policy: dict,
+  intended_use: str,
+  jurisdiction: str,
 ) -> dict:
-    """
-    Check whether an intended use of watermarked audio
-    complies with relevant regulations given the embedded policy.
-    """
-    violations = []
+  """
+  Check whether an intended use of watermarked audio
+  complies with relevant regulations given the embedded policy.
+  """
+  violations = []
 
-    for reg_id, reg_info in REGULATORY_MAPPING.items():
-        # Check if this regulation applies to the jurisdiction
-        if jurisdiction == "eu" and not reg_id.startswith("eu"):
-            continue
-        if jurisdiction == "us" and not reg_id.startswith("us") and reg_id != "dmca_1201":
-            continue
+  for reg_id, reg_info in REGULATORY_MAPPING.items():
+    # Check if this regulation applies to the jurisdiction
+    if jurisdiction == "eu" and not reg_id.startswith("eu"):
+      continue
+    if jurisdiction == "us" and not reg_id.startswith("us") and reg_id != "dmca_1201":
+      continue
 
-        for field in reg_info["relevant_fields"]:
-            if field in policy and policy[field] == "deny":
-                if intended_use in ("ai_training", "voice_cloning", "derivative_work"):
-                    violations.append({
-                        "regulation": reg_id,
-                        "reference": reg_info["reference"],
-                        "policy_field": field,
-                        "policy_value": "deny",
-                        "compliance_rule": reg_info["compliance_rule"],
-                    })
+    for field in reg_info["relevant_fields"]:
+      if field in policy and policy[field] == "deny":
+        if intended_use in ("ai_training", "voice_cloning", "derivative_work"):
+          violations.append({
+            "regulation": reg_id,
+            "reference": reg_info["reference"],
+            "policy_field": field,
+            "policy_value": "deny",
+            "compliance_rule": reg_info["compliance_rule"],
+          })
 
-    return {
-        "compliant": len(violations) == 0,
-        "violations": violations,
-        "jurisdiction": jurisdiction,
-        "recommendation": (
-            "PROCEED" if len(violations) == 0
-            else "EXCLUDE_FROM_DATASET"
-        ),
-    }
+  return {
+    "compliant": len(violations) == 0,
+    "violations": violations,
+    "jurisdiction": jurisdiction,
+    "recommendation": (
+      "PROCEED" if len(violations) == 0
+      else "EXCLUDE_FROM_DATASET"
+    ),
+  }
 ```
 
 ---
@@ -801,33 +801,33 @@ The watermark embeds the creator's DID in every copy of the audio. Creators shou
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                VOUCH PROTOCOL ECOSYSTEM                    │
+│        VOUCH PROTOCOL ECOSYSTEM          │
 ├──────────────────────────────────────────────────────────┤
-│                                                            │
-│  PAD-001 (Identity)                                        │
-│   └─ DID + Ed25519 keypair for creator identity            │
-│       └─ Used as signer_did in watermark                   │
-│                                                            │
-│  PAD-014 (Vouch Sonic)                                     │
-│   └─ Psychoacoustic steganography engine                   │
-│       └─ Spread-spectrum embedding                         │
-│       └─ Perceptual masking model                          │
-│       └─ Multi-resolution layers (L1-L4)                   │
-│       └─ Chirp synchronization                             │
-│       └─ Resilient decoding pipeline                       │
-│           └─ PAD-023 extends the PAYLOAD, reuses engine    │
-│                                                            │
-│  PAD-023 (This Disclosure)                                 │
-│   └─ Content usage policy payload                          │
-│       └─ CBOR-encoded policy fields                        │
-│       └─ Cryptographic binding to identity                 │
-│       └─ Forensic violation detection                      │
-│       └─ Regulatory compliance mapping                     │
-│                                                            │
-│  C2PA Integration                                          │
-│   └─ Dual-channel: C2PA metadata + watermark               │
-│       └─ Watermark is authoritative fallback               │
-│                                                            │
+│                              │
+│ PAD-001 (Identity)                    │
+│  └─ DID + Ed25519 keypair for creator identity      │
+│    └─ Used as signer_did in watermark          │
+│                              │
+│ PAD-014 (Vouch Sonic)                   │
+│  └─ Psychoacoustic steganography engine          │
+│    └─ Spread-spectrum embedding             │
+│    └─ Perceptual masking model             │
+│    └─ Multi-resolution layers (L1-L4)          │
+│    └─ Chirp synchronization               │
+│    └─ Resilient decoding pipeline            │
+│      └─ PAD-023 extends the PAYLOAD, reuses engine  │
+│                              │
+│ PAD-023 (This Disclosure)                 │
+│  └─ Content usage policy payload             │
+│    └─ CBOR-encoded policy fields            │
+│    └─ Cryptographic binding to identity         │
+│    └─ Forensic violation detection           │
+│    └─ Regulatory compliance mapping           │
+│                              │
+│ C2PA Integration                     │
+│  └─ Dual-channel: C2PA metadata + watermark        │
+│    └─ Watermark is authoritative fallback        │
+│                              │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -842,12 +842,12 @@ The watermark embeds the creator's DID in every copy of the audio. Creators shou
 **Policy configuration:**
 ```json
 {
-  "ai_training": "deny",
-  "voice_cloning": "deny",
-  "derivatives": "allow_noncommercial",
-  "commercial": "deny",
-  "sampling": "allow_with_attribution",
-  "broadcast": "allow"
+ "ai_training": "deny",
+ "voice_cloning": "deny",
+ "derivatives": "allow_noncommercial",
+ "commercial": "deny",
+ "sampling": "allow_with_attribution",
+ "broadcast": "allow"
 }
 ```
 
@@ -860,12 +860,12 @@ The watermark embeds the creator's DID in every copy of the audio. Creators shou
 **Policy configuration:**
 ```json
 {
-  "ai_training": "deny",
-  "voice_cloning": "deny",
-  "derivatives": "deny",
-  "commercial": "allow_with_license",
-  "broadcast": "allow_with_attribution",
-  "expiry_utc": null
+ "ai_training": "deny",
+ "voice_cloning": "deny",
+ "derivatives": "deny",
+ "commercial": "allow_with_license",
+ "broadcast": "allow_with_attribution",
+ "expiry_utc": null
 }
 ```
 
@@ -878,12 +878,12 @@ The watermark embeds the creator's DID in every copy of the audio. Creators shou
 **Policy configuration:**
 ```json
 {
-  "ai_training": "deny",
-  "voice_cloning": "deny",
-  "derivatives": "deny",
-  "commercial": "allow_with_license",
-  "sampling": "deny",
-  "custom": "contractual_restriction_voice_talent_agreement"
+ "ai_training": "deny",
+ "voice_cloning": "deny",
+ "derivatives": "deny",
+ "commercial": "allow_with_license",
+ "sampling": "deny",
+ "custom": "contractual_restriction_voice_talent_agreement"
 }
 ```
 
@@ -896,13 +896,13 @@ The watermark embeds the creator's DID in every copy of the audio. Creators shou
 **Policy configuration:**
 ```json
 {
-  "ai_training": "deny",
-  "voice_cloning": "deny",
-  "derivatives": "deny",
-  "commercial": "deny",
-  "sampling": "deny",
-  "broadcast": "deny",
-  "custom": "confidential_regulated_communication"
+ "ai_training": "deny",
+ "voice_cloning": "deny",
+ "derivatives": "deny",
+ "commercial": "deny",
+ "sampling": "deny",
+ "broadcast": "deny",
+ "custom": "confidential_regulated_communication"
 }
 ```
 
@@ -926,11 +926,11 @@ The watermark embeds the creator's DID in every copy of the audio. Creators shou
 **Policy configuration (during exclusivity):**
 ```json
 {
-  "ai_training": "deny",
-  "voice_cloning": "deny",
-  "derivatives": "deny",
-  "commercial": "deny",
-  "expiry_utc": 1861920000
+ "ai_training": "deny",
+ "voice_cloning": "deny",
+ "derivatives": "deny",
+ "commercial": "deny",
+ "expiry_utc": 1861920000
 }
 ```
 
@@ -965,7 +965,7 @@ For creators--musicians, podcasters, voice actors, and enterprises--this means t
 - EU Copyright Directive, Directive (EU) 2019/790, Article 4 -- Exception for text and data mining
 - US Executive Order 14110 on Safe, Secure, and Trustworthy AI, Section 5.2
 - Digital Millennium Copyright Act (DMCA), 17 U.S.C. Section 1201
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 - I. Cox et al., "Digital Watermarking and Steganography" (2nd Edition)
 - E. Zwicker and H. Fastl, "Psychoacoustics: Facts and Models"
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-022

@@ -80,9 +80,9 @@ The hook performs:
 1. Compute the diff between the refs being pushed and their previously-pushed counterparts (`git rev-list <local>..<remote>`).
 2. Read `.vouchpolicy` from the workspace root (and parent directories per PAD-054).
 3. For each rule in `.vouchpolicy`, evaluate the diff:
-   - Pattern-based rules (regex, AST patterns) match deterministically.
-   - Scoped rules apply only to changes within their declared scope.
-   - Severity governs the action: `advisory` (log only), `block` (deny push), `attest` (sign and proceed).
+  - Pattern-based rules (regex, AST patterns) match deterministically.
+  - Scoped rules apply only to changes within their declared scope.
+  - Severity governs the action: `advisory` (log only), `block` (deny push), `attest` (sign and proceed).
 4. Decide: allow, block, or attest.
 
 ### 3.2 Silent block via mock terminal error
@@ -167,19 +167,19 @@ The actual logic lives in the `amnesia-cortex-hook` binary, written in TypeScrip
 
 ```
 amnesia-cortex-hook pre-push <remote> <url>
-  read refs from stdin (one line per ref: <local-ref> <local-sha> <remote-ref> <remote-sha>)
-  for each ref:
-    diff = git_diff(remote-sha, local-sha)
-    policy = load_vouchpolicy(workspace_root)
-    decisions = evaluate(diff, policy)
-    if any decision.severity == "block":
-      log_to_side_channel(decisions)
-      print_synthetic_error()
-      exit 128                    # mimics network error
-    if any decision.severity == "attest":
-      attestation = sign(diff_hash, policy_version, decisions, local_key)
-      write_attestation_to_git_notes(attestation)
-  exit 0
+ read refs from stdin (one line per ref: <local-ref> <local-sha> <remote-ref> <remote-sha>)
+ for each ref:
+  diff = git_diff(remote-sha, local-sha)
+  policy = load_vouchpolicy(workspace_root)
+  decisions = evaluate(diff, policy)
+  if any decision.severity == "block":
+   log_to_side_channel(decisions)
+   print_synthetic_error()
+   exit 128          # mimics network error
+  if any decision.severity == "attest":
+   attestation = sign(diff_hash, policy_version, decisions, local_key)
+   write_attestation_to_git_notes(attestation)
+ exit 0
 ```
 
 ### 5.2 Synthetic error variants
@@ -193,28 +193,28 @@ The hook rotates through a small library of plausible error messages so that rep
 
 The hook biases toward errors that suggest a transient network issue, since these are the failures most likely to cause the LLM to retry rather than reason about why the push failed.
 
-### 5.3 Attestation format (W3C Verifiable Credential embodiment)
+### 5.3 Attestation format (Verifiable Credential embodiment)
 
-The attestation is emitted as a W3C Verifiable Credential 2.0 with a Data Integrity proof using `eddsa-jcs-2022` (or `hybrid-eddsa-mldsa44-jcs-2026` in the post-quantum embodiment, see PAD-040):
+The attestation is emitted as a Verifiable Credential 2.0 with a Data Integrity proof using `eddsa-jcs-2022` (or `hybrid-eddsa-mldsa44-jcs-2026` in the post-quantum embodiment, see PAD-040):
 
 ```json
 {
-  "@context": ["https://www.w3.org/ns/credentials/v2"],
-  "type": ["VerifiableCredential", "AmnesiaEgressAttestation"],
-  "issuer": "did:key:z6Mk...",
-  "issuanceDate": "2026-04-30T12:34:56Z",
-  "credentialSubject": {
-    "policyVersion": "sha256-...",
-    "diffHash": "sha256-...",
-    "evaluatedRules": [...],
-    "decision": "allow",
-    "evaluator": "amnesia-cortex/0.1.0"
-  },
-  "proof": {
-    "type": "DataIntegrityProof",
-    "cryptosuite": "eddsa-jcs-2022",
-    "proofValue": "z..."
-  }
+ "@context": ["https://www.w3.org/ns/credentials/v2"],
+ "type": ["VerifiableCredential", "AmnesiaEgressAttestation"],
+ "issuer": "did:key:z6Mk...",
+ "issuanceDate": "2026-04-30T12:34:56Z",
+ "credentialSubject": {
+  "policyVersion": "sha256-...",
+  "diffHash": "sha256-...",
+  "evaluatedRules": [...],
+  "decision": "allow",
+  "evaluator": "amnesia-cortex/0.1.0"
+ },
+ "proof": {
+  "type": "DataIntegrityProof",
+  "cryptosuite": "eddsa-jcs-2022",
+  "proofValue": "z..."
+ }
 }
 ```
 
@@ -254,7 +254,7 @@ The following aspects are disclosed as prior art:
 
 6. An out-of-band human approval mechanism in which one-time push-approval tokens are produced via a command the LLM does not see and cannot replay, so that authorized bypass is achievable without exposing the policy to the LLM.
 
-7. The combination of (1) through (6), plus an embodiment in which the attestation is a W3C Verifiable Credential 2.0 with an `eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026` Data Integrity proof, integrated with the broader Vouch Protocol identity system.
+7. The combination of (1) through (6), plus an embodiment in which the attestation is a Verifiable Credential 2.0 with an `eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026` Data Integrity proof, integrated with the broader Vouch Protocol identity system.
 
 ---
 

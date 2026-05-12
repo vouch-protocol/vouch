@@ -9,34 +9,34 @@
  */
 
 export interface HelpArticle {
-    /** URL anchor */
-    id: string;
-    /** Short title shown in sidebar nav and article header */
-    title: string;
-    /** One-line summary for the section index */
-    summary: string;
-    /** Markdown-ish content body (see renderer for supported syntax) */
-    body: string;
+  /** URL anchor */
+  id: string;
+  /** Short title shown in sidebar nav and article header */
+  title: string;
+  /** One-line summary for the section index */
+  summary: string;
+  /** Markdown-ish content body (see renderer for supported syntax) */
+  body: string;
 }
 
 export interface HelpSection {
-    id: string;
-    title: string;
-    description: string;
-    articles: HelpArticle[];
+  id: string;
+  title: string;
+  description: string;
+  articles: HelpArticle[];
 }
 
 export const HELP_SECTIONS: HelpSection[] = [
-    {
-        id: 'getting-started',
-        title: 'Getting Started',
-        description: 'Pick a language, install the SDK, and sign your first credential in under five minutes.',
-        articles: [
-            {
-                id: 'quickstart-python',
-                title: 'Python Quickstart',
-                summary: 'Five-minute path from pip install to a verified Vouch credential.',
-                body: `
+  {
+    id: 'getting-started',
+    title: 'Getting Started',
+    description: 'Pick a language, install the SDK, and sign your first credential in under five minutes.',
+    articles: [
+      {
+        id: 'quickstart-python',
+        title: 'Python Quickstart',
+        summary: 'Five-minute path from pip install to a verified Vouch credential.',
+        body: `
 ## Install
 
 \`\`\`bash
@@ -65,20 +65,20 @@ from vouch import Signer, build_vouch_credential
 signer = Signer.from_did("did:web:agent.example.com")
 
 credential = build_vouch_credential(
-    subject_did="did:web:agent.example.com",
-    intent={
-        "action": "submit_claim",
-        "target": "claim:HC-001",
-        "resource": "https://insurance.example.com/claims/HC-001",
-    },
-    valid_seconds=300,
+  subject_did="did:web:agent.example.com",
+  intent={
+    "action": "submit_claim",
+    "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+  },
+  valid_seconds=300,
 )
 
 signed = signer.sign_credential(credential)
 print(signed["proof"]["proofValue"])
 \`\`\`
 
-The \`signed\` dict is the full W3C Verifiable Credential with a Data Integrity proof attached.
+The \`signed\` dict is the full Verifiable Credential with a Data Integrity proof attached.
 
 ## Verify it
 
@@ -99,12 +99,12 @@ print(result.valid, result.reasons)
 
 Next: try [signing with the hybrid post-quantum profile](#hybrid-pq) or [adding a delegation chain](#delegation-chains).
 `,
-            },
-            {
-                id: 'quickstart-typescript',
-                title: 'TypeScript Quickstart',
-                summary: 'Same flow in Node or browser. Cross-verifies with Python-signed credentials.',
-                body: `
+      },
+      {
+        id: 'quickstart-typescript',
+        title: 'TypeScript Quickstart',
+        summary: 'Same flow in Node or browser. Cross-verifies with Python-signed credentials.',
+        body: `
 ## Install
 
 \`\`\`bash
@@ -119,13 +119,13 @@ import { Signer, buildVouchCredential } from '@vouch-protocol/core';
 const signer = await Signer.fromDid('did:web:agent.example.com');
 
 const credential = buildVouchCredential({
-    subjectDid: 'did:web:agent.example.com',
-    intent: {
-        action: 'submit_claim',
-        target: 'claim:HC-001',
-        resource: 'https://insurance.example.com/claims/HC-001',
-    },
-    validSeconds: 300,
+  subjectDid: 'did:web:agent.example.com',
+  intent: {
+    action: 'submit_claim',
+    target: 'claim:HC-001',
+    resource: 'https://insurance.example.com/claims/HC-001',
+  },
+  validSeconds: 300,
 });
 
 const signed = await signer.signCredential(credential);
@@ -150,12 +150,12 @@ A credential signed in Python verifies byte-identically in TypeScript and vice v
 
 The TypeScript SDK works in both. In the browser, key storage falls back to IndexedDB (with optional WebAuthn-gated unlock) rather than the platform key store. In Node, you can pass a custom KMS provider.
 `,
-            },
-            {
-                id: 'quickstart-go',
-                title: 'Go Sidecar Quickstart',
-                summary: 'Run the long-running signing daemon. Sign credentials from any language over HTTP.',
-                body: `
+      },
+      {
+        id: 'quickstart-go',
+        title: 'Go Sidecar Quickstart',
+        summary: 'Run the long-running signing daemon. Sign credentials from any language over HTTP.',
+        body: `
 ## Build the binary
 
 \`\`\`bash
@@ -188,19 +188,19 @@ Any language can sign by POSTing to the sidecar:
 
 \`\`\`bash
 curl -X POST http://localhost:8877/sign \\
-    -H 'Content-Type: application/json' \\
-    -d '{
-        "subjectDid": "did:web:agent.example.com",
-        "intent": {
-            "action": "submit_claim",
-            "target": "claim:HC-001",
-            "resource": "https://insurance.example.com/claims/HC-001"
-        },
-        "validSeconds": 300
-    }'
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "subjectDid": "did:web:agent.example.com",
+    "intent": {
+      "action": "submit_claim",
+      "target": "claim:HC-001",
+      "resource": "https://insurance.example.com/claims/HC-001"
+    },
+    "validSeconds": 300
+  }'
 \`\`\`
 
-The response is the full signed W3C VC.
+The response is the full signed VC.
 
 ## Why a sidecar?
 
@@ -208,27 +208,27 @@ The Identity Sidecar pattern keeps the private signing key out of the LLM's proc
 
 This makes prompt-injection key-exfiltration impossible: even if the LLM is jailbroken to leak its context, the key is not in that context.
 `,
-            },
-        ],
-    },
+      },
+    ],
+  },
 
-    {
-        id: 'identity-and-signing',
-        title: 'Identity & Signing',
-        description: 'Manage your agent\'s identity and keys, sign with post-quantum crypto, and build delegation chains.',
-        articles: [
-            {
-                id: 'did-management',
-                title: 'Managing DIDs and Keys',
-                summary: 'did:web vs did:key, where keys live, how to rotate.',
-                body: `
+  {
+    id: 'identity-and-signing',
+    title: 'Identity & Signing',
+    description: 'Manage your agent\'s identity and keys, sign with post-quantum crypto, and build delegation chains.',
+    articles: [
+      {
+        id: 'did-management',
+        title: 'Managing DIDs and Keys',
+        summary: 'did:web vs did:key, where keys live, how to rotate.',
+        body: `
 ## did:web vs did:key
 
 **did:web** resolves over HTTPS to a DID Document at \`https://{domain}/.well-known/did.json\` (or a path-based variant). Good for production agents owned by an organization; the domain anchors trust.
 
 **did:key** contains the public key inside the identifier itself. Self-resolving, no infrastructure. Good for ephemeral or fully decentralized agents.
 
-Both are W3C Core DID methods. Vouch supports both natively.
+Both are well-established DID methods. Vouch supports both natively.
 
 ## Key storage
 
@@ -248,20 +248,20 @@ from vouch.kms import RotatingKeyProvider, KeyConfig
 from datetime import timedelta
 
 provider = RotatingKeyProvider(
-    backend="aws-kms",
-    key_id="alias/vouch-agent",
-    rotation_period=timedelta(days=90),
+  backend="aws-kms",
+  key_id="alias/vouch-agent",
+  rotation_period=timedelta(days=90),
 )
 \`\`\`
 
 The DID Document publishes both the current and the previous keys during the overlap window, so in-flight credentials remain verifiable.
 `,
-            },
-            {
-                id: 'hybrid-pq',
-                title: 'Signing with Post-Quantum Crypto',
-                summary: 'How to make your signatures safe today and ready for the day quantum computers break Ed25519.',
-                body: `
+      },
+      {
+        id: 'hybrid-pq',
+        title: 'Signing with Post-Quantum Crypto',
+        summary: 'How to make your signatures safe today and ready for the day quantum computers break Ed25519.',
+        body: `
 ## Install dependencies
 
 Python:
@@ -306,7 +306,7 @@ Go sidecar: pass \`--hybrid\` when starting the daemon.
 
 \`\`\`
 proof.cryptosuite = "hybrid-eddsa-mldsa44-jcs-2026"
-proof.proofValue  = "z" + base58btc(ed25519_sig[64] || mldsa44_sig[2420])
+proof.proofValue = "z" + base58btc(ed25519_sig[64] || mldsa44_sig[2420])
 \`\`\`
 
 Both signatures cover the **same** JCS-canonicalized credential bytes (PAD-040 same-bytes property).
@@ -327,11 +327,11 @@ A hybrid agent publishes both keys in its DID Document:
 
 \`\`\`json
 {
-    "id": "did:web:agent.example.com",
-    "verificationMethod": [
-        { "id": "...#key-ed25519", "type": "Multikey", "publicKeyMultibase": "z6Mk..." },
-        { "id": "...#key-mldsa44", "type": "Multikey", "publicKeyMultibase": "z87..." }
-    ]
+  "id": "did:web:agent.example.com",
+  "verificationMethod": [
+    { "id": "...#key-ed25519", "type": "Multikey", "publicKeyMultibase": "z6Mk..." },
+    { "id": "...#key-mldsa44", "type": "Multikey", "publicKeyMultibase": "z87..." }
+  ]
 }
 \`\`\`
 
@@ -346,14 +346,14 @@ The verifier picks the appropriate verification method based on the credential's
 | Sign time (M2) | ~50µs | ~3ms |
 | Verify time (M2) | ~150µs | ~3ms |
 
-Hybrid credentials exceed typical HTTP header size limits, so transmit them in the request body (CG Report §13.4).
+Hybrid credentials exceed typical HTTP header size limits, so transmit them in the request body (Specification §13.4).
 `,
-            },
-            {
-                id: 'delegation-chains',
-                title: 'Building Permission Chains',
-                summary: 'When a human delegates to an agent that delegates to a sub-agent: how to track each step cryptographically.',
-                body: `
+      },
+      {
+        id: 'delegation-chains',
+        title: 'Building Permission Chains',
+        summary: 'When a human delegates to an agent that delegates to a sub-agent: how to track each step cryptographically.',
+        body: `
 ## Why chains
 
 When a human principal delegates to an agent that delegates to a sub-agent, you need a verifiable audit trail. The delegation chain answers: who authorized this action, and what was the scope at each step?
@@ -375,25 +375,25 @@ sub_agent = Signer.from_did("did:web:sub-agent.example.com")
 
 # Principal delegates to agent
 principal_link = principal.sign_credential(build_vouch_credential(
-    subject_did=agent.did,
-    intent={"action": "*", "target": "*", "resource": "https://insurance.example.com/claims/*"},
-    valid_seconds=3600,
+  subject_did=agent.did,
+  intent={"action": "*", "target": "*", "resource": "https://insurance.example.com/claims/*"},
+  valid_seconds=3600,
 ))
 
 # Agent narrows and delegates to sub-agent
 agent_link = agent.sign_credential(build_vouch_credential(
-    subject_did=sub_agent.did,
-    intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
-    valid_seconds=300,
-    delegated_from=[principal_link],
+  subject_did=sub_agent.did,
+  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+  valid_seconds=300,
+  delegated_from=[principal_link],
 ))
 
 # Sub-agent signs its actual action
 action = sub_agent.sign_credential(build_vouch_credential(
-    subject_did=sub_agent.did,
-    intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
-    valid_seconds=60,
-    delegated_from=[principal_link, agent_link],
+  subject_did=sub_agent.did,
+  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+  valid_seconds=60,
+  delegated_from=[principal_link, agent_link],
 ))
 \`\`\`
 
@@ -407,20 +407,20 @@ result = await verifier.verify_delegation_chain([principal_link, agent_link, act
 
 The verifier walks every link, validates each signature, and confirms resource narrowing.
 `,
-            },
-        ],
-    },
+      },
+    ],
+  },
 
-    {
-        id: 'deployment',
-        title: 'Production Deployment',
-        description: 'How to run Vouch reliably at scale: the sidecar, your KMS, revocation registries, metrics, rate limits.',
-        articles: [
-            {
-                id: 'sidecar-deployment',
-                title: 'Deploying the Vouch Sidecar',
-                summary: 'Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.',
-                body: `
+  {
+    id: 'deployment',
+    title: 'Production Deployment',
+    description: 'How to run Vouch reliably at scale: the sidecar, your KMS, revocation registries, metrics, rate limits.',
+    articles: [
+      {
+        id: 'sidecar-deployment',
+        title: 'Deploying the Vouch Sidecar',
+        summary: 'Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.',
+        body: `
 ## Build container
 
 The Go binary is statically linked; you can put it in a scratch image.
@@ -456,21 +456,21 @@ The sidecar emits structured JSON logs on stdout. For metrics, run it alongside 
 
 The sidecar is stateless. Horizontally scale by running multiple instances behind a load balancer. Each instance needs access to the same KMS key (or its own replica of the agent's key for hot-standby).
 `,
-            },
-            {
-                id: 'kms-integration',
-                title: 'Connecting Your KMS',
-                summary: 'How to keep production signing keys in AWS, GCP, Azure, or an encrypted local file.',
-                body: `
+      },
+      {
+        id: 'kms-integration',
+        title: 'Connecting Your KMS',
+        summary: 'How to keep production signing keys in AWS, GCP, Azure, or an encrypted local file.',
+        body: `
 ## AWS KMS
 
 \`\`\`python
 from vouch.kms import RotatingKeyProvider
 
 provider = RotatingKeyProvider(
-    backend="aws-kms",
-    key_id="alias/vouch-agent-prod",
-    region="us-east-1",
+  backend="aws-kms",
+  key_id="alias/vouch-agent-prod",
+  region="us-east-1",
 )
 \`\`\`
 
@@ -480,8 +480,8 @@ Requires \`boto3\` and IAM permissions \`kms:Sign\` and \`kms:GetPublicKey\` on 
 
 \`\`\`python
 provider = RotatingKeyProvider(
-    backend="gcp-kms",
-    key_id="projects/my-proj/locations/global/keyRings/vouch/cryptoKeys/agent",
+  backend="gcp-kms",
+  key_id="projects/my-proj/locations/global/keyRings/vouch/cryptoKeys/agent",
 )
 \`\`\`
 
@@ -491,8 +491,8 @@ Requires \`google-cloud-kms\` and the \`roles/cloudkms.signer\` IAM role.
 
 \`\`\`python
 provider = RotatingKeyProvider(
-    backend="azure-kv",
-    key_id="https://vouch-kv.vault.azure.net/keys/agent/abc123",
+  backend="azure-kv",
+  key_id="https://vouch-kv.vault.azure.net/keys/agent/abc123",
 )
 \`\`\`
 
@@ -502,18 +502,18 @@ Requires \`azure-keyvault-keys\` and the Key Vault Crypto Officer role.
 
 \`\`\`python
 provider = RotatingKeyProvider(
-    backend="local-file",
-    key_id="/etc/vouch/agent.jwk",
-    passphrase=os.environ["VOUCH_KEY_PASSPHRASE"],
+  backend="local-file",
+  key_id="/etc/vouch/agent.jwk",
+  passphrase=os.environ["VOUCH_KEY_PASSPHRASE"],
 )
 \`\`\`
 `,
-            },
-            {
-                id: 'reputation',
-                title: 'Tracking Agent Reputation',
-                summary: 'How to score, decay, and slash reputations across a fleet of agents using Memory, Redis, or Kafka.',
-                body: `
+      },
+      {
+        id: 'reputation',
+        title: 'Tracking Agent Reputation',
+        summary: 'How to score, decay, and slash reputations across a fleet of agents using Memory, Redis, or Kafka.',
+        body: `
 ## What the engine does
 
 \`vouch/reputation.py\` (711 lines) tracks an integer reputation score per DID. The score is shaped by:
@@ -521,11 +521,11 @@ provider = RotatingKeyProvider(
 - Action deltas: success \`+1\`, failure \`-2\`, slash and boost configurable
 - Exponential decay toward baseline (default \`base=50\`, rate \`0.1/day\`, kicks in after 7 days of inactivity)
 - Tier classification:
-    - \`exceptional\` for score ≥ 90
-    - \`trusted\` for ≥ 75
-    - \`neutral\` for ≥ 50
-    - \`cautionary\` for ≥ 25
-    - \`untrusted\` otherwise
+  - \`exceptional\` for score ≥ 90
+  - \`trusted\` for ≥ 75
+  - \`neutral\` for ≥ 50
+  - \`cautionary\` for ≥ 25
+  - \`untrusted\` otherwise
 
 ## Memory backend (dev)
 
@@ -547,8 +547,8 @@ engine = ReputationEngine(store=RedisReputationStore(url="redis://prod:6379/0"))
 \`\`\`python
 from vouch.reputation import KafkaReputationStore
 engine = ReputationEngine(store=KafkaReputationStore(
-    bootstrap_servers="kafka:9092",
-    topic="vouch-reputation-events",
+  bootstrap_servers="kafka:9092",
+  topic="vouch-reputation-events",
 ))
 \`\`\`
 
@@ -559,8 +559,8 @@ Reputation events are appended to the topic. Downstream services can replay the 
 \`\`\`python
 from vouch.reputation import HTTPReputationStore
 engine = ReputationEngine(store=HTTPReputationStore(
-    base_url="https://reputation.consortium.example/v1",
-    api_key=os.environ["REPUTATION_API_KEY"],
+  base_url="https://reputation.consortium.example/v1",
+  api_key=os.environ["REPUTATION_API_KEY"],
 ))
 \`\`\`
 
@@ -568,14 +568,14 @@ For consortium deployments where reputation is shared across organizations.
 
 ## Scope note
 
-The W3C CG Report says specific reputation scoring **algorithms** are non-normative; the shipped engine is a reference implementation. Implementers MAY swap in their own algorithm by implementing the \`ReputationStoreInterface\`.
+The Specification says specific reputation scoring **algorithms** are non-normative; the shipped engine is a reference implementation. Implementers MAY swap in their own algorithm by implementing the \`ReputationStoreInterface\`.
 `,
-            },
-            {
-                id: 'revocation',
-                title: 'Revoking an Entire Agent',
-                summary: 'When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.',
-                body: `
+      },
+      {
+        id: 'revocation',
+        title: 'Revoking an Entire Agent',
+        summary: 'When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.',
+        body: `
 ## When to use DID-level revocation
 
 DID-level revocation invalidates **all** credentials ever issued under a given DID. Use it when:
@@ -597,9 +597,9 @@ registry = RevocationRegistry(store=RedisRevocationStore(url="redis://prod:6379/
 
 # Revoke a DID
 await registry.revoke(
-    did="did:web:compromised-agent.example.com",
-    reason="key_compromise",
-    revoked_by="did:web:security-team.example.com",
+  did="did:web:compromised-agent.example.com",
+  reason="key_compromise",
+  revoked_by="did:web:security-team.example.com",
 )
 
 # Check status
@@ -610,15 +610,15 @@ is_revoked = await registry.is_revoked("did:web:compromised-agent.example.com")
 
 The verifier consults the revocation registry on every verification. If the issuing DID is revoked, the credential fails with reason \`issuer_revoked\`. Cache TTL is configurable (default 60 seconds) to balance freshness with verifier throughput.
 `,
-            },
-            {
-                id: 'credential-status',
-                title: 'Revoking Individual Credentials',
-                summary: 'How to revoke or suspend a single credential without invalidating everything else the agent ever signed.',
-                body: `
+      },
+      {
+        id: 'credential-status',
+        title: 'Revoking Individual Credentials',
+        summary: 'How to revoke or suspend a single credential without invalidating everything else the agent ever signed.',
+        body: `
 ## What this gives you
 
-W3C BitstringStatusList (\`vc-bitstring-status-list\`) lets an issuer revoke or suspend an **individual** credential without invalidating other credentials issued by the same DID. It's the right tool when one specific action needs to be retracted but the rest of the agent's history should remain valid.
+BitstringStatusList (\`vc-bitstring-status-list\`) lets an issuer revoke or suspend an **individual** credential without invalidating other credentials issued by the same DID. It's the right tool when one specific action needs to be retracted but the rest of the agent's history should remain valid.
 
 Vouch ships a cross-language reference implementation:
 
@@ -634,32 +634,32 @@ The issuer maintains one or more \`StatusList\` instances (one per status purpos
 
 \`\`\`python
 from vouch import (
-    Signer, StatusList, FilesystemStatusListStore,
-    build_status_list_credential, build_status_list_entry,
-    build_vouch_credential,
+  Signer, StatusList, FilesystemStatusListStore,
+  build_status_list_credential, build_status_list_entry,
+  build_vouch_credential,
 )
 
 # Load or create the status list. Persisted state survives restarts.
 store = FilesystemStatusListStore("/var/lib/vouch/status-1.json")
 try:
-    status_list = store.load()
+  status_list = store.load()
 except FileNotFoundError:
-    status_list = StatusList(status_list_id="https://issuer.example/status/1")
+  status_list = StatusList(status_list_id="https://issuer.example/status/1")
 
 signer = Signer.from_did("did:web:issuer.example")
 
 # ---- Issue a credential with a credentialStatus entry ----
 index = status_list.allocate_index()
-store.save(status_list)  # persist the new cursor
+store.save(status_list) # persist the new cursor
 
 credential = build_vouch_credential(
-    issuer_did="did:web:issuer.example",
-    intent={"action": "submit_claim", "target": "claim:HC-001",
-            "resource": "https://insurance.example/claims/HC-001"},
-    credential_status=build_status_list_entry(
-        status_list_credential="https://issuer.example/status/1",
-        status_list_index=index,
-    ),
+  issuer_did="did:web:issuer.example",
+  intent={"action": "submit_claim", "target": "claim:HC-001",
+      "resource": "https://insurance.example/claims/HC-001"},
+  credential_status=build_status_list_entry(
+    status_list_credential="https://issuer.example/status/1",
+    status_list_index=index,
+  ),
 )
 signed_credential = signer.sign_credential(credential)
 
@@ -669,8 +669,8 @@ store.save(status_list)
 
 # Re-sign and republish the status list credential at its stable URL.
 status_credential = build_status_list_credential(
-    issuer_did="did:web:issuer.example",
-    status_list=status_list,
+  issuer_did="did:web:issuer.example",
+  status_list=status_list,
 )
 signed_status_credential = signer.sign_credential(status_credential)
 \`\`\`
@@ -685,12 +685,12 @@ from vouch import StatusListFetcher, verify_status
 fetcher = StatusListFetcher(cache_ttl_seconds=300)
 
 status_credential = fetcher.get(
-    signed_credential["credentialStatus"]["statusListCredential"]
+  signed_credential["credentialStatus"]["statusListCredential"]
 )
 
 is_revoked = verify_status(
-    credential_status=signed_credential["credentialStatus"],
-    status_list_credential=status_credential,
+  credential_status=signed_credential["credentialStatus"],
+  status_list_credential=status_credential,
 )
 \`\`\`
 
@@ -704,12 +704,12 @@ On verification failure, set \`force_refresh=True\` so the verifier bypasses cac
 
 \`\`\`json
 {
-  "version": 1,
-  "status_list_id": "https://issuer.example/status/1",
-  "status_purpose": "revocation",
-  "length": 131072,
-  "next_index": 1024,
-  "encoded_list": "uH4sIAAAAAAAC_-3Z..."
+ "version": 1,
+ "status_list_id": "https://issuer.example/status/1",
+ "status_purpose": "revocation",
+ "length": 131072,
+ "next_index": 1024,
+ "encoded_list": "uH4sIAAAAAAAC_-3Z..."
 }
 \`\`\`
 
@@ -721,21 +721,21 @@ The TypeScript and Go APIs mirror Python. Examples:
 
 \`\`\`typescript
 import {
-    StatusList, buildStatusListCredential, buildStatusListEntry,
-    verifyStatus, buildVouchCredential,
+  StatusList, buildStatusListCredential, buildStatusListEntry,
+  verifyStatus, buildVouchCredential,
 } from '@vouch-protocol/core';
 
 const statusList = new StatusList({ statusListId: 'https://issuer.example/status/1' });
 const index = statusList.allocateIndex();
 
 const credential = buildVouchCredential({
-    issuerDid: 'did:web:issuer.example',
-    intent: { action: 'submit_claim', target: 'claim:HC-001',
-              resource: 'https://insurance.example/claims/HC-001' },
-    credentialStatus: buildStatusListEntry({
-        statusListCredential: 'https://issuer.example/status/1',
-        statusListIndex: index,
-    }),
+  issuerDid: 'did:web:issuer.example',
+  intent: { action: 'submit_claim', target: 'claim:HC-001',
+       resource: 'https://insurance.example/claims/HC-001' },
+  credentialStatus: buildStatusListEntry({
+    statusListCredential: 'https://issuer.example/status/1',
+    statusListIndex: index,
+  }),
 });
 \`\`\`
 
@@ -746,8 +746,8 @@ sl, _ := signer.NewStatusList("https://issuer.example/status/1", "", 0)
 idx, _ := sl.AllocateIndex()
 
 entry, _ := signer.BuildStatusListEntry(signer.BuildStatusListEntryOptions{
-    StatusListCredential: "https://issuer.example/status/1",
-    StatusListIndex:      idx,
+  StatusListCredential: "https://issuer.example/status/1",
+  StatusListIndex:   idx,
 })
 
 // Pass via SignCredentialOptions.CredentialStatus to Signer.SignCredential.
@@ -757,11 +757,11 @@ TypeScript and Go callers fetch the published status credential using their plat
 
 ## Cross-language interop
 
-Python and TypeScript produce byte-identical encoded output (both use zlib's DEFLATE encoder). Go's \`compress/flate\` produces a valid DEFLATE stream that decodes to the same bitstring; W3C BitstringStatusList §4.2 requires equivalence of the **decompressed** bitstring, not the gzip envelope, so all three implementations interop cleanly. The canonical test vector at \`test-vectors/bitstring-status-list/vector.json\` is exercised by all three test suites.
+Python and TypeScript produce byte-identical encoded output (both use zlib's DEFLATE encoder). Go's \`compress/flate\` produces a valid DEFLATE stream that decodes to the same bitstring; BitstringStatusList §4.2 requires equivalence of the **decompressed** bitstring, not the gzip envelope, so all three implementations interop cleanly. The canonical test vector at \`test-vectors/bitstring-status-list/vector.json\` is exercised by all three test suites.
 
 ## Sizing
 
-The W3C minimum bitstring length is 131,072 bits (16 KiB uncompressed; ~50 bytes compressed when empty). That holds 131,072 credentials per status list. For larger issuers, allocate a new status list as you approach exhaustion; the \`credentialStatus.statusListCredential\` URL on each credential identifies which list it belongs to.
+The protocol minimum bitstring length is 131,072 bits (16 KiB uncompressed; ~50 bytes compressed when empty). That holds 131,072 credentials per status list. For larger issuers, allocate a new status list as you approach exhaustion; the \`credentialStatus.statusListCredential\` URL on each credential identifies which list it belongs to.
 
 ## Composition with DID-level revocation
 
@@ -772,26 +772,26 @@ BitstringStatusList and the DID-level revocation registry (\`vouch.revocation\`)
 
 A verifier that runs both consults the DID registry first (cheap), then the status list (HTTP fetch, cached). If either returns "revoked," the credential is rejected with a specific reason code.
 `,
-            },
-            {
-                id: 'metrics-and-observability',
-                title: 'Metrics & Observability',
-                summary: 'What Vouch emits to Prometheus and OpenTelemetry, plus what is worth alerting on.',
-                body: `
+      },
+      {
+        id: 'metrics-and-observability',
+        title: 'Metrics & Observability',
+        summary: 'What Vouch emits to Prometheus and OpenTelemetry, plus what is worth alerting on.',
+        body: `
 ## Prometheus metrics
 
 \`vouch/metrics.py\` exposes:
 
 \`\`\`
-vouch_signatures_total            counter
-vouch_verifications_total         counter
-vouch_verification_success_rate   gauge
-vouch_verification_latency_seconds  histogram
-vouch_cache_hits                  counter
-vouch_cache_misses                counter
-vouch_credential_issuances        counter
-vouch_reputation_lookups          counter
-vouch_revocation_checks           counter
+vouch_signatures_total      counter
+vouch_verifications_total     counter
+vouch_verification_success_rate  gauge
+vouch_verification_latency_seconds histogram
+vouch_cache_hits         counter
+vouch_cache_misses        counter
+vouch_credential_issuances    counter
+vouch_reputation_lookups     counter
+vouch_revocation_checks      counter
 \`\`\`
 
 Mount the exporter on \`/metrics\` of your verifier service.
@@ -812,20 +812,20 @@ Then point at your collector via \`OTEL_EXPORTER_OTLP_ENDPOINT\`. Verifier spans
 - \`vouch_verification_latency_seconds\` p99 exceeding your SLO (typical: 50ms with caching)
 - \`vouch_revocation_checks\` increasing without a corresponding rise in \`vouch_verifications_total\` (suggests a verifier loop is consulting the registry inefficiently)
 `,
-            },
-        ],
-    },
+      },
+    ],
+  },
 
-    {
+  {
+    id: 'integrations',
+    title: 'Framework Integrations',
+    description: 'Wire Vouch into the framework you already use, or into your GitHub workflow.',
+    articles: [
+      {
         id: 'integrations',
-        title: 'Framework Integrations',
-        description: 'Wire Vouch into the framework you already use, or into your GitHub workflow.',
-        articles: [
-            {
-                id: 'integrations',
-                title: 'Which AI Frameworks Vouch Plugs Into',
-                summary: 'Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.',
-                body: `
+        title: 'Which AI Frameworks Vouch Plugs Into',
+        summary: 'Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.',
+        body: `
 ## Python integrations
 
 All under \`vouch/integrations/\`:
@@ -854,12 +854,12 @@ Currently one: \`packages/sdk-ts/src/integrations/amnesia.ts\` for the Amnesia e
 
 [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield) is a TypeScript runtime middleware that intercepts tool calls and enforces signature verification, allowlist, capability permissions, and audit logging. Treat it as the enforcement layer that consumes Vouch credentials at execution time.
 `,
-            },
-            {
-                id: 'github-app',
-                title: 'The Vouch Gatekeeper GitHub App',
-                summary: 'Block unsigned commits and enforce your team policy on every pull request, with one click to install.',
-                body: `
+      },
+      {
+        id: 'github-app',
+        title: 'The Vouch Gatekeeper GitHub App',
+        summary: 'Block unsigned commits and enforce your team policy on every pull request, with one click to install.',
+        body: `
 ## What it does
 
 Vouch Gatekeeper listens for \`pull_request.opened\` and \`pull_request.synchronize\` events. For each PR, it verifies commit signatures with GitHub's SSH/GPG infrastructure first, and falls back to the Vouch Registry if a commit is not signed via those mechanisms.
@@ -874,8 +874,8 @@ Add \`.github/vouch-policy.yml\` to your repo:
 
 \`\`\`yaml
 allowlist:
-    - did:web:alice.example.com
-    - did:key:z6Mk...
+  - did:web:alice.example.com
+  - did:key:z6Mk...
 blocklist: []
 require_signed_commits: true
 require_co_authored_with_did: false
@@ -895,12 +895,12 @@ The app auto-opens a PR on installation to add the protection badge to your READ
 
 FastAPI service (\`github-app/main.py\`, ~1000 lines). Webhook endpoint at \`/webhook\`, badge endpoint at \`/api/badge/{owner}/{repo}\`. Setup flow at \`/setup\` redirects through GitHub OAuth and back to \`/setup/callback\`.
 `,
-            },
-            {
-                id: 'vouch-shield',
-                title: 'Adding Vouch Shield to Your Agent',
-                summary: 'Drop a small middleware in front of your agent so every tool call gets checked before it runs.',
-                body: `
+      },
+      {
+        id: 'vouch-shield',
+        title: 'Adding Vouch Shield to Your Agent',
+        summary: 'Drop a small middleware in front of your agent so every tool call gets checked before it runs.',
+        body: `
 ## Install
 
 \`\`\`bash
@@ -919,28 +919,28 @@ const identity = generateKeypair();
 shield.registerPublicKey(identity.did, identity.publicKey);
 shield.trustDid(identity.did);
 shield.setCapabilities(identity.did, {
-    filesystem: 'read',
-    network: 'outbound',
-    shell: 'none',
+  filesystem: 'read',
+  network: 'outbound',
+  shell: 'none',
 });
 
 // Before executing a tool call, intercept
 const signedRequest = signPayload(
-    { file: '/data/input.txt' },
-    identity.secretKey,
-    identity.did,
+  { file: '/data/input.txt' },
+  identity.secretKey,
+  identity.did,
 );
 
 const result = shield.interceptToolCall({
-    tool: 'read_file',
-    args: { file: '/data/input.txt' },
-    signedPayload: signedRequest,
+  tool: 'read_file',
+  args: { file: '/data/input.txt' },
+  signedPayload: signedRequest,
 });
 
 if (result.allowed) {
-    // Execute the tool
+  // Execute the tool
 } else {
-    console.error('Blocked:', result.reason);
+  console.error('Blocked:', result.reason);
 }
 \`\`\`
 
@@ -952,20 +952,20 @@ Between your framework's tool-call event and the actual tool function. If you us
 
 The \`FlightRecorder\` logs every allowed and blocked call. Pipe it to your SIEM or store it locally for after-the-fact audit.
 `,
-            },
-        ],
-    },
+      },
+    ],
+  },
 
-    {
-        id: 'cli',
-        title: 'CLI Reference',
-        description: 'Every command, every flag, with copy-pasteable examples.',
-        articles: [
-            {
-                id: 'cli-reference',
-                title: 'The vouch Command Reference',
-                summary: 'Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.',
-                body: `
+  {
+    id: 'cli',
+    title: 'CLI Reference',
+    description: 'Every command, every flag, with copy-pasteable examples.',
+    articles: [
+      {
+        id: 'cli-reference',
+        title: 'The vouch Command Reference',
+        summary: 'Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.',
+        body: `
 ## init
 
 Generate a new Ed25519 keypair, derive a DID, and store the key securely.
@@ -980,16 +980,16 @@ vouch init [--domain DOMAIN] [--env]
 
 ## credential sign
 
-Sign a W3C Verifiable Credential.
+Sign a Verifiable Credential.
 
 \`\`\`bash
 vouch credential sign credential.json
-vouch credential sign credential.json --hybrid    # use hybrid PQ profile
+vouch credential sign credential.json --hybrid  # use hybrid PQ profile
 \`\`\`
 
 ## credential verify
 
-Verify a W3C credential file.
+Verify a Verifiable Credential file.
 
 \`\`\`bash
 vouch credential verify signed.json
@@ -1032,7 +1032,7 @@ vouch revocation check --did did:web:agent.example.com
 
 All subcommands support \`--json\` for machine-readable output. The default is human-readable. Use \`--env\` to format output as shell exports for scripting.
 `,
-            },
-        ],
-    },
+      },
+    ],
+  },
 ];

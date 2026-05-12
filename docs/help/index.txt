@@ -4,7 +4,7 @@
 14:I[4486,["972","static/chunks/972-344ef090824a80bd.js","185","static/chunks/app/layout-d168bb46369b27d6.js"],"default"]
 15:I[2972,["972","static/chunks/972-344ef090824a80bd.js","931","static/chunks/app/page-e49f6abdaa52c62f.js"],""]
 16:I[8003,["972","static/chunks/972-344ef090824a80bd.js","185","static/chunks/app/layout-d168bb46369b27d6.js"],""]
-3:T621,
+3:T609,
 ## Install
 
 ```bash
@@ -33,20 +33,20 @@ from vouch import Signer, build_vouch_credential
 signer = Signer.from_did("did:web:agent.example.com")
 
 credential = build_vouch_credential(
-    subject_did="did:web:agent.example.com",
-    intent={
-        "action": "submit_claim",
-        "target": "claim:HC-001",
-        "resource": "https://insurance.example.com/claims/HC-001",
-    },
-    valid_seconds=300,
+  subject_did="did:web:agent.example.com",
+  intent={
+    "action": "submit_claim",
+    "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+  },
+  valid_seconds=300,
 )
 
 signed = signer.sign_credential(credential)
 print(signed["proof"]["proofValue"])
 ```
 
-The `signed` dict is the full W3C Verifiable Credential with a Data Integrity proof attached.
+The `signed` dict is the full Verifiable Credential with a Data Integrity proof attached.
 
 ## Verify it
 
@@ -66,7 +66,7 @@ print(result.valid, result.reasons)
 - Verification that runs anywhere with internet access to your DID Document
 
 Next: try [signing with the hybrid post-quantum profile](#hybrid-pq) or [adding a delegation chain](#delegation-chains).
-4:T531,
+4:T51d,
 ## Install
 
 ```bash
@@ -81,13 +81,13 @@ import { Signer, buildVouchCredential } from '@vouch-protocol/core';
 const signer = await Signer.fromDid('did:web:agent.example.com');
 
 const credential = buildVouchCredential({
-    subjectDid: 'did:web:agent.example.com',
-    intent: {
-        action: 'submit_claim',
-        target: 'claim:HC-001',
-        resource: 'https://insurance.example.com/claims/HC-001',
-    },
-    validSeconds: 300,
+  subjectDid: 'did:web:agent.example.com',
+  intent: {
+    action: 'submit_claim',
+    target: 'claim:HC-001',
+    resource: 'https://insurance.example.com/claims/HC-001',
+  },
+  validSeconds: 300,
 });
 
 const signed = await signer.signCredential(credential);
@@ -111,7 +111,7 @@ A credential signed in Python verifies byte-identically in TypeScript and vice v
 ## Browser vs Node
 
 The TypeScript SDK works in both. In the browser, key storage falls back to IndexedDB (with optional WebAuthn-gated unlock) rather than the platform key store. In Node, you can pass a custom KMS provider.
-5:T5ad,
+5:T581,
 ## Build the binary
 
 ```bash
@@ -144,33 +144,33 @@ Any language can sign by POSTing to the sidecar:
 
 ```bash
 curl -X POST http://localhost:8877/sign \
-    -H 'Content-Type: application/json' \
-    -d '{
-        "subjectDid": "did:web:agent.example.com",
-        "intent": {
-            "action": "submit_claim",
-            "target": "claim:HC-001",
-            "resource": "https://insurance.example.com/claims/HC-001"
-        },
-        "validSeconds": 300
-    }'
+  -H 'Content-Type: application/json' \
+  -d '{
+    "subjectDid": "did:web:agent.example.com",
+    "intent": {
+      "action": "submit_claim",
+      "target": "claim:HC-001",
+      "resource": "https://insurance.example.com/claims/HC-001"
+    },
+    "validSeconds": 300
+  }'
 ```
 
-The response is the full signed W3C VC.
+The response is the full signed VC.
 
 ## Why a sidecar?
 
 The Identity Sidecar pattern keeps the private signing key out of the LLM's process. The LLM emits a tool-call object; the orchestration layer (your Python or TypeScript code) asks the sidecar to sign on the agent's behalf; the sidecar returns a credential bound to the action.
 
 This makes prompt-injection key-exfiltration impossible: even if the LLM is jailbroken to leak its context, the key is not in that context.
-6:T4ce,
+6:T4d0,
 ## did:web vs did:key
 
 **did:web** resolves over HTTPS to a DID Document at `https://{domain}/.well-known/did.json` (or a path-based variant). Good for production agents owned by an organization; the domain anchors trust.
 
 **did:key** contains the public key inside the identifier itself. Self-resolving, no infrastructure. Good for ephemeral or fully decentralized agents.
 
-Both are W3C Core DID methods. Vouch supports both natively.
+Both are well-established DID methods. Vouch supports both natively.
 
 ## Key storage
 
@@ -190,14 +190,14 @@ from vouch.kms import RotatingKeyProvider, KeyConfig
 from datetime import timedelta
 
 provider = RotatingKeyProvider(
-    backend="aws-kms",
-    key_id="alias/vouch-agent",
-    rotation_period=timedelta(days=90),
+  backend="aws-kms",
+  key_id="alias/vouch-agent",
+  rotation_period=timedelta(days=90),
 )
 ```
 
 The DID Document publishes both the current and the previous keys during the overlap window, so in-flight credentials remain verifiable.
-7:T85c,
+7:T851,
 ## Install dependencies
 
 Python:
@@ -242,7 +242,7 @@ Go sidecar: pass `--hybrid` when starting the daemon.
 
 ```
 proof.cryptosuite = "hybrid-eddsa-mldsa44-jcs-2026"
-proof.proofValue  = "z" + base58btc(ed25519_sig[64] || mldsa44_sig[2420])
+proof.proofValue = "z" + base58btc(ed25519_sig[64] || mldsa44_sig[2420])
 ```
 
 Both signatures cover the **same** JCS-canonicalized credential bytes (PAD-040 same-bytes property).
@@ -263,11 +263,11 @@ A hybrid agent publishes both keys in its DID Document:
 
 ```json
 {
-    "id": "did:web:agent.example.com",
-    "verificationMethod": [
-        { "id": "...#key-ed25519", "type": "Multikey", "publicKeyMultibase": "z6Mk..." },
-        { "id": "...#key-mldsa44", "type": "Multikey", "publicKeyMultibase": "z87..." }
-    ]
+  "id": "did:web:agent.example.com",
+  "verificationMethod": [
+    { "id": "...#key-ed25519", "type": "Multikey", "publicKeyMultibase": "z6Mk..." },
+    { "id": "...#key-mldsa44", "type": "Multikey", "publicKeyMultibase": "z87..." }
+  ]
 }
 ```
 
@@ -282,8 +282,8 @@ The verifier picks the appropriate verification method based on the credential's
 | Sign time (M2) | ~50µs | ~3ms |
 | Verify time (M2) | ~150µs | ~3ms |
 
-Hybrid credentials exceed typical HTTP header size limits, so transmit them in the request body (CG Report §13.4).
-8:T793,
+Hybrid credentials exceed typical HTTP header size limits, so transmit them in the request body (Specification §13.4).
+8:T77d,
 ## Why chains
 
 When a human principal delegates to an agent that delegates to a sub-agent, you need a verifiable audit trail. The delegation chain answers: who authorized this action, and what was the scope at each step?
@@ -305,25 +305,25 @@ sub_agent = Signer.from_did("did:web:sub-agent.example.com")
 
 # Principal delegates to agent
 principal_link = principal.sign_credential(build_vouch_credential(
-    subject_did=agent.did,
-    intent={"action": "*", "target": "*", "resource": "https://insurance.example.com/claims/*"},
-    valid_seconds=3600,
+  subject_did=agent.did,
+  intent={"action": "*", "target": "*", "resource": "https://insurance.example.com/claims/*"},
+  valid_seconds=3600,
 ))
 
 # Agent narrows and delegates to sub-agent
 agent_link = agent.sign_credential(build_vouch_credential(
-    subject_did=sub_agent.did,
-    intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
-    valid_seconds=300,
-    delegated_from=[principal_link],
+  subject_did=sub_agent.did,
+  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+  valid_seconds=300,
+  delegated_from=[principal_link],
 ))
 
 # Sub-agent signs its actual action
 action = sub_agent.sign_credential(build_vouch_credential(
-    subject_did=sub_agent.did,
-    intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
-    valid_seconds=60,
-    delegated_from=[principal_link, agent_link],
+  subject_did=sub_agent.did,
+  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+  valid_seconds=60,
+  delegated_from=[principal_link, agent_link],
 ))
 ```
 
@@ -371,7 +371,7 @@ The sidecar emits structured JSON logs on stdout. For metrics, run it alongside 
 ## Scaling
 
 The sidecar is stateless. Horizontally scale by running multiple instances behind a load balancer. Each instance needs access to the same KMS key (or its own replica of the agent's key for hot-standby).
-a:T70e,
+a:T6fc,
 ## What the engine does
 
 `vouch/reputation.py` (711 lines) tracks an integer reputation score per DID. The score is shaped by:
@@ -379,11 +379,11 @@ a:T70e,
 - Action deltas: success `+1`, failure `-2`, slash and boost configurable
 - Exponential decay toward baseline (default `base=50`, rate `0.1/day`, kicks in after 7 days of inactivity)
 - Tier classification:
-    - `exceptional` for score ≥ 90
-    - `trusted` for ≥ 75
-    - `neutral` for ≥ 50
-    - `cautionary` for ≥ 25
-    - `untrusted` otherwise
+  - `exceptional` for score ≥ 90
+  - `trusted` for ≥ 75
+  - `neutral` for ≥ 50
+  - `cautionary` for ≥ 25
+  - `untrusted` otherwise
 
 ## Memory backend (dev)
 
@@ -405,8 +405,8 @@ engine = ReputationEngine(store=RedisReputationStore(url="redis://prod:6379/0"))
 ```python
 from vouch.reputation import KafkaReputationStore
 engine = ReputationEngine(store=KafkaReputationStore(
-    bootstrap_servers="kafka:9092",
-    topic="vouch-reputation-events",
+  bootstrap_servers="kafka:9092",
+  topic="vouch-reputation-events",
 ))
 ```
 
@@ -417,8 +417,8 @@ Reputation events are appended to the topic. Downstream services can replay the 
 ```python
 from vouch.reputation import HTTPReputationStore
 engine = ReputationEngine(store=HTTPReputationStore(
-    base_url="https://reputation.consortium.example/v1",
-    api_key=os.environ["REPUTATION_API_KEY"],
+  base_url="https://reputation.consortium.example/v1",
+  api_key=os.environ["REPUTATION_API_KEY"],
 ))
 ```
 
@@ -426,8 +426,8 @@ For consortium deployments where reputation is shared across organizations.
 
 ## Scope note
 
-The W3C CG Report says specific reputation scoring **algorithms** are non-normative; the shipped engine is a reference implementation. Implementers MAY swap in their own algorithm by implementing the `ReputationStoreInterface`.
-b:T59a,
+The Specification says specific reputation scoring **algorithms** are non-normative; the shipped engine is a reference implementation. Implementers MAY swap in their own algorithm by implementing the `ReputationStoreInterface`.
+b:T594,
 ## When to use DID-level revocation
 
 DID-level revocation invalidates **all** credentials ever issued under a given DID. Use it when:
@@ -449,9 +449,9 @@ registry = RevocationRegistry(store=RedisRevocationStore(url="redis://prod:6379/
 
 # Revoke a DID
 await registry.revoke(
-    did="did:web:compromised-agent.example.com",
-    reason="key_compromise",
-    revoked_by="did:web:security-team.example.com",
+  did="did:web:compromised-agent.example.com",
+  reason="key_compromise",
+  revoked_by="did:web:security-team.example.com",
 )
 
 # Check status
@@ -461,10 +461,10 @@ is_revoked = await registry.is_revoked("did:web:compromised-agent.example.com")
 ## How the verifier uses it
 
 The verifier consults the revocation registry on every verification. If the issuing DID is revoked, the credential fails with reason `issuer_revoked`. Cache TTL is configurable (default 60 seconds) to balance freshness with verifier throughput.
-c:T1bdb,
+c:T1b85,
 ## What this gives you
 
-W3C BitstringStatusList (`vc-bitstring-status-list`) lets an issuer revoke or suspend an **individual** credential without invalidating other credentials issued by the same DID. It's the right tool when one specific action needs to be retracted but the rest of the agent's history should remain valid.
+BitstringStatusList (`vc-bitstring-status-list`) lets an issuer revoke or suspend an **individual** credential without invalidating other credentials issued by the same DID. It's the right tool when one specific action needs to be retracted but the rest of the agent's history should remain valid.
 
 Vouch ships a cross-language reference implementation:
 
@@ -480,32 +480,32 @@ The issuer maintains one or more `StatusList` instances (one per status purpose;
 
 ```python
 from vouch import (
-    Signer, StatusList, FilesystemStatusListStore,
-    build_status_list_credential, build_status_list_entry,
-    build_vouch_credential,
+  Signer, StatusList, FilesystemStatusListStore,
+  build_status_list_credential, build_status_list_entry,
+  build_vouch_credential,
 )
 
 # Load or create the status list. Persisted state survives restarts.
 store = FilesystemStatusListStore("/var/lib/vouch/status-1.json")
 try:
-    status_list = store.load()
+  status_list = store.load()
 except FileNotFoundError:
-    status_list = StatusList(status_list_id="https://issuer.example/status/1")
+  status_list = StatusList(status_list_id="https://issuer.example/status/1")
 
 signer = Signer.from_did("did:web:issuer.example")
 
 # ---- Issue a credential with a credentialStatus entry ----
 index = status_list.allocate_index()
-store.save(status_list)  # persist the new cursor
+store.save(status_list) # persist the new cursor
 
 credential = build_vouch_credential(
-    issuer_did="did:web:issuer.example",
-    intent={"action": "submit_claim", "target": "claim:HC-001",
-            "resource": "https://insurance.example/claims/HC-001"},
-    credential_status=build_status_list_entry(
-        status_list_credential="https://issuer.example/status/1",
-        status_list_index=index,
-    ),
+  issuer_did="did:web:issuer.example",
+  intent={"action": "submit_claim", "target": "claim:HC-001",
+      "resource": "https://insurance.example/claims/HC-001"},
+  credential_status=build_status_list_entry(
+    status_list_credential="https://issuer.example/status/1",
+    status_list_index=index,
+  ),
 )
 signed_credential = signer.sign_credential(credential)
 
@@ -515,8 +515,8 @@ store.save(status_list)
 
 # Re-sign and republish the status list credential at its stable URL.
 status_credential = build_status_list_credential(
-    issuer_did="did:web:issuer.example",
-    status_list=status_list,
+  issuer_did="did:web:issuer.example",
+  status_list=status_list,
 )
 signed_status_credential = signer.sign_credential(status_credential)
 ```
@@ -531,12 +531,12 @@ from vouch import StatusListFetcher, verify_status
 fetcher = StatusListFetcher(cache_ttl_seconds=300)
 
 status_credential = fetcher.get(
-    signed_credential["credentialStatus"]["statusListCredential"]
+  signed_credential["credentialStatus"]["statusListCredential"]
 )
 
 is_revoked = verify_status(
-    credential_status=signed_credential["credentialStatus"],
-    status_list_credential=status_credential,
+  credential_status=signed_credential["credentialStatus"],
+  status_list_credential=status_credential,
 )
 ```
 
@@ -550,12 +550,12 @@ On verification failure, set `force_refresh=True` so the verifier bypasses cache
 
 ```json
 {
-  "version": 1,
-  "status_list_id": "https://issuer.example/status/1",
-  "status_purpose": "revocation",
-  "length": 131072,
-  "next_index": 1024,
-  "encoded_list": "uH4sIAAAAAAAC_-3Z..."
+ "version": 1,
+ "status_list_id": "https://issuer.example/status/1",
+ "status_purpose": "revocation",
+ "length": 131072,
+ "next_index": 1024,
+ "encoded_list": "uH4sIAAAAAAAC_-3Z..."
 }
 ```
 
@@ -567,21 +567,21 @@ The TypeScript and Go APIs mirror Python. Examples:
 
 ```typescript
 import {
-    StatusList, buildStatusListCredential, buildStatusListEntry,
-    verifyStatus, buildVouchCredential,
+  StatusList, buildStatusListCredential, buildStatusListEntry,
+  verifyStatus, buildVouchCredential,
 } from '@vouch-protocol/core';
 
 const statusList = new StatusList({ statusListId: 'https://issuer.example/status/1' });
 const index = statusList.allocateIndex();
 
 const credential = buildVouchCredential({
-    issuerDid: 'did:web:issuer.example',
-    intent: { action: 'submit_claim', target: 'claim:HC-001',
-              resource: 'https://insurance.example/claims/HC-001' },
-    credentialStatus: buildStatusListEntry({
-        statusListCredential: 'https://issuer.example/status/1',
-        statusListIndex: index,
-    }),
+  issuerDid: 'did:web:issuer.example',
+  intent: { action: 'submit_claim', target: 'claim:HC-001',
+       resource: 'https://insurance.example/claims/HC-001' },
+  credentialStatus: buildStatusListEntry({
+    statusListCredential: 'https://issuer.example/status/1',
+    statusListIndex: index,
+  }),
 });
 ```
 
@@ -592,8 +592,8 @@ sl, _ := signer.NewStatusList("https://issuer.example/status/1", "", 0)
 idx, _ := sl.AllocateIndex()
 
 entry, _ := signer.BuildStatusListEntry(signer.BuildStatusListEntryOptions{
-    StatusListCredential: "https://issuer.example/status/1",
-    StatusListIndex:      idx,
+  StatusListCredential: "https://issuer.example/status/1",
+  StatusListIndex:   idx,
 })
 
 // Pass via SignCredentialOptions.CredentialStatus to Signer.SignCredential.
@@ -603,11 +603,11 @@ TypeScript and Go callers fetch the published status credential using their plat
 
 ## Cross-language interop
 
-Python and TypeScript produce byte-identical encoded output (both use zlib's DEFLATE encoder). Go's `compress/flate` produces a valid DEFLATE stream that decodes to the same bitstring; W3C BitstringStatusList §4.2 requires equivalence of the **decompressed** bitstring, not the gzip envelope, so all three implementations interop cleanly. The canonical test vector at `test-vectors/bitstring-status-list/vector.json` is exercised by all three test suites.
+Python and TypeScript produce byte-identical encoded output (both use zlib's DEFLATE encoder). Go's `compress/flate` produces a valid DEFLATE stream that decodes to the same bitstring; BitstringStatusList §4.2 requires equivalence of the **decompressed** bitstring, not the gzip envelope, so all three implementations interop cleanly. The canonical test vector at `test-vectors/bitstring-status-list/vector.json` is exercised by all three test suites.
 
 ## Sizing
 
-The W3C minimum bitstring length is 131,072 bits (16 KiB uncompressed; ~50 bytes compressed when empty). That holds 131,072 credentials per status list. For larger issuers, allocate a new status list as you approach exhaustion; the `credentialStatus.statusListCredential` URL on each credential identifies which list it belongs to.
+The protocol minimum bitstring length is 131,072 bits (16 KiB uncompressed; ~50 bytes compressed when empty). That holds 131,072 credentials per status list. For larger issuers, allocate a new status list as you approach exhaustion; the `credentialStatus.statusListCredential` URL on each credential identifies which list it belongs to.
 
 ## Composition with DID-level revocation
 
@@ -617,21 +617,21 @@ BitstringStatusList and the DID-level revocation registry (`vouch.revocation`) c
 - **Credential-level (BitstringStatusList)**: "this specific action was retracted, but the rest of this identity's history remains valid." Surgical.
 
 A verifier that runs both consults the DID registry first (cheap), then the status list (HTTP fetch, cached). If either returns "revoked," the credential is rejected with a specific reason code.
-d:T430,
+d:T405,
 ## Prometheus metrics
 
 `vouch/metrics.py` exposes:
 
 ```
-vouch_signatures_total            counter
-vouch_verifications_total         counter
-vouch_verification_success_rate   gauge
-vouch_verification_latency_seconds  histogram
-vouch_cache_hits                  counter
-vouch_cache_misses                counter
-vouch_credential_issuances        counter
-vouch_reputation_lookups          counter
-vouch_revocation_checks           counter
+vouch_signatures_total      counter
+vouch_verifications_total     counter
+vouch_verification_success_rate  gauge
+vouch_verification_latency_seconds histogram
+vouch_cache_hits         counter
+vouch_cache_misses        counter
+vouch_credential_issuances    counter
+vouch_reputation_lookups     counter
+vouch_revocation_checks      counter
 ```
 
 Mount the exporter on `/metrics` of your verifier service.
@@ -679,7 +679,7 @@ Currently one: `packages/sdk-ts/src/integrations/amnesia.ts` for the Amnesia egr
 ## Vouch Shield (sibling repo)
 
 [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield) is a TypeScript runtime middleware that intercepts tool calls and enforces signature verification, allowlist, capability permissions, and audit logging. Treat it as the enforcement layer that consumes Vouch credentials at execution time.
-f:T4aa,
+f:T4a6,
 ## What it does
 
 Vouch Gatekeeper listens for `pull_request.opened` and `pull_request.synchronize` events. For each PR, it verifies commit signatures with GitHub's SSH/GPG infrastructure first, and falls back to the Vouch Registry if a commit is not signed via those mechanisms.
@@ -694,8 +694,8 @@ Add `.github/vouch-policy.yml` to your repo:
 
 ```yaml
 allowlist:
-    - did:web:alice.example.com
-    - did:key:z6Mk...
+  - did:web:alice.example.com
+  - did:key:z6Mk...
 blocklist: []
 require_signed_commits: true
 require_co_authored_with_did: false
@@ -714,7 +714,7 @@ The app auto-opens a PR on installation to add the protection badge to your READ
 ## Architecture
 
 FastAPI service (`github-app/main.py`, ~1000 lines). Webhook endpoint at `/webhook`, badge endpoint at `/api/badge/{owner}/{repo}`. Setup flow at `/setup` redirects through GitHub OAuth and back to `/setup/callback`.
-10:T505,
+10:T4ef,
 ## Install
 
 ```bash
@@ -733,28 +733,28 @@ const identity = generateKeypair();
 shield.registerPublicKey(identity.did, identity.publicKey);
 shield.trustDid(identity.did);
 shield.setCapabilities(identity.did, {
-    filesystem: 'read',
-    network: 'outbound',
-    shell: 'none',
+  filesystem: 'read',
+  network: 'outbound',
+  shell: 'none',
 });
 
 // Before executing a tool call, intercept
 const signedRequest = signPayload(
-    { file: '/data/input.txt' },
-    identity.secretKey,
-    identity.did,
+  { file: '/data/input.txt' },
+  identity.secretKey,
+  identity.did,
 );
 
 const result = shield.interceptToolCall({
-    tool: 'read_file',
-    args: { file: '/data/input.txt' },
-    signedPayload: signedRequest,
+  tool: 'read_file',
+  args: { file: '/data/input.txt' },
+  signedPayload: signedRequest,
 });
 
 if (result.allowed) {
-    // Execute the tool
+  // Execute the tool
 } else {
-    console.error('Blocked:', result.reason);
+  console.error('Blocked:', result.reason);
 }
 ```
 
@@ -765,7 +765,7 @@ Between your framework's tool-call event and the actual tool function. If you us
 ## Audit trail
 
 The `FlightRecorder` logs every allowed and blocked call. Pipe it to your SIEM or store it locally for after-the-fact audit.
-11:T547,
+11:T548,
 ## init
 
 Generate a new Ed25519 keypair, derive a DID, and store the key securely.
@@ -780,16 +780,16 @@ vouch init [--domain DOMAIN] [--env]
 
 ## credential sign
 
-Sign a W3C Verifiable Credential.
+Sign a Verifiable Credential.
 
 ```bash
 vouch credential sign credential.json
-vouch credential sign credential.json --hybrid    # use hybrid PQ profile
+vouch credential sign credential.json --hybrid  # use hybrid PQ profile
 ```
 
 ## credential verify
 
-Verify a W3C credential file.
+Verify a Verifiable Credential file.
 
 ```bash
 vouch credential verify signed.json
@@ -831,6 +831,6 @@ vouch revocation check --did did:web:agent.example.com
 ## Output formats
 
 All subcommands support `--json` for machine-readable output. The default is human-readable. Use `--env` to format output as shell exports for scripting.
-0:["SyWYkN9sr5pgV-9ky7oIj",[[["",{"children":["help",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],["",{"children":["help",{"children":["__PAGE__",{},[["$L1",[["$","section",null,{"className":"border-b border-rule","children":["$","div",null,{"className":"container-wide py-16 md:py-20","children":[["$","div",null,{"className":"eyebrow mb-5","children":"Help & Guides"}],["$","h1",null,{"className":"font-serif font-semibold text-ink leading-[1.1] tracking-tight mb-5 text-[clamp(2rem,4.2vw,3rem)]","children":"Long-form guides for getting Vouch into production."}],["$","p",null,{"className":"text-ink-soft text-[1.05rem] leading-relaxed max-w-prose","children":[5," parts covering ",16," guides: quickstarts in three languages, identity and key management, the hybrid post-quantum profile, delegation chains, sidecar deployment, KMS integration, reputation and revocation engines, framework integrations, and the complete CLI reference. Use the marginalia at left to navigate, or search across every guide."]}]]}]}],["$","section",null,{"children":["$","div",null,{"className":"container-wide py-12 md:py-16","children":["$","$L2",null,{"sections":[{"id":"getting-started","title":"Getting Started","description":"Pick a language, install the SDK, and sign your first credential in under five minutes.","articles":[{"id":"quickstart-python","title":"Python Quickstart","summary":"Five-minute path from pip install to a verified Vouch credential.","body":"$3"},{"id":"quickstart-typescript","title":"TypeScript Quickstart","summary":"Same flow in Node or browser. Cross-verifies with Python-signed credentials.","body":"$4"},{"id":"quickstart-go","title":"Go Sidecar Quickstart","summary":"Run the long-running signing daemon. Sign credentials from any language over HTTP.","body":"$5"}]},{"id":"identity-and-signing","title":"Identity & Signing","description":"Manage your agent's identity and keys, sign with post-quantum crypto, and build delegation chains.","articles":[{"id":"did-management","title":"Managing DIDs and Keys","summary":"did:web vs did:key, where keys live, how to rotate.","body":"$6"},{"id":"hybrid-pq","title":"Signing with Post-Quantum Crypto","summary":"How to make your signatures safe today and ready for the day quantum computers break Ed25519.","body":"$7"},{"id":"delegation-chains","title":"Building Permission Chains","summary":"When a human delegates to an agent that delegates to a sub-agent: how to track each step cryptographically.","body":"$8"}]},{"id":"deployment","title":"Production Deployment","description":"How to run Vouch reliably at scale: the sidecar, your KMS, revocation registries, metrics, rate limits.","articles":[{"id":"sidecar-deployment","title":"Deploying the Vouch Sidecar","summary":"Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.","body":"$9"},{"id":"kms-integration","title":"Connecting Your KMS","summary":"How to keep production signing keys in AWS, GCP, Azure, or an encrypted local file.","body":"\n## AWS KMS\n\n```python\nfrom vouch.kms import RotatingKeyProvider\n\nprovider = RotatingKeyProvider(\n    backend=\"aws-kms\",\n    key_id=\"alias/vouch-agent-prod\",\n    region=\"us-east-1\",\n)\n```\n\nRequires `boto3` and IAM permissions `kms:Sign` and `kms:GetPublicKey` on the key.\n\n## GCP KMS\n\n```python\nprovider = RotatingKeyProvider(\n    backend=\"gcp-kms\",\n    key_id=\"projects/my-proj/locations/global/keyRings/vouch/cryptoKeys/agent\",\n)\n```\n\nRequires `google-cloud-kms` and the `roles/cloudkms.signer` IAM role.\n\n## Azure Key Vault\n\n```python\nprovider = RotatingKeyProvider(\n    backend=\"azure-kv\",\n    key_id=\"https://vouch-kv.vault.azure.net/keys/agent/abc123\",\n)\n```\n\nRequires `azure-keyvault-keys` and the Key Vault Crypto Officer role.\n\n## Local file (development only)\n\n```python\nprovider = RotatingKeyProvider(\n    backend=\"local-file\",\n    key_id=\"/etc/vouch/agent.jwk\",\n    passphrase=os.environ[\"VOUCH_KEY_PASSPHRASE\"],\n)\n```\n"},{"id":"reputation","title":"Tracking Agent Reputation","summary":"How to score, decay, and slash reputations across a fleet of agents using Memory, Redis, or Kafka.","body":"$a"},{"id":"revocation","title":"Revoking an Entire Agent","summary":"When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.","body":"$b"},{"id":"credential-status","title":"Revoking Individual Credentials","summary":"How to revoke or suspend a single credential without invalidating everything else the agent ever signed.","body":"$c"},{"id":"metrics-and-observability","title":"Metrics & Observability","summary":"What Vouch emits to Prometheus and OpenTelemetry, plus what is worth alerting on.","body":"$d"}]},{"id":"integrations","title":"Framework Integrations","description":"Wire Vouch into the framework you already use, or into your GitHub workflow.","articles":[{"id":"integrations","title":"Which AI Frameworks Vouch Plugs Into","summary":"Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.","body":"$e"},{"id":"github-app","title":"The Vouch Gatekeeper GitHub App","summary":"Block unsigned commits and enforce your team policy on every pull request, with one click to install.","body":"$f"},{"id":"vouch-shield","title":"Adding Vouch Shield to Your Agent","summary":"Drop a small middleware in front of your agent so every tool call gets checked before it runs.","body":"$10"}]},{"id":"cli","title":"CLI Reference","description":"Every command, every flag, with copy-pasteable examples.","articles":[{"id":"cli-reference","title":"The vouch Command Reference","summary":"Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.","body":"$11"}]}]}]}]}]],null],null],null]},[null,["$","$L12",null,{"parallelRouterKey":"children","segmentPath":["children","help","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L13",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/381a08d5ec223546.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap","rel":"stylesheet"}]]}],["$","body",null,{"children":[["$","$L14",null,{}],["$","main",null,{"children":["$","$L12",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L13",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":"404"}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],"notFoundStyles":[]}]}],["$","footer",null,{"className":"mt-24 pb-12","children":["$","div",null,{"className":"container-wide","children":["$","div",null,{"className":"double-rule pt-12","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L15",null,{"href":"/","className":"font-serif font-bold text-[1.4rem] tracking-tight text-ink no-underline block mb-2","children":"Vouch Protocol"}],["$","p",null,{"className":"font-serif italic text-ink-faint text-[0.9rem] max-w-[280px]","children":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}]]}],[["$","div","Product",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Product"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","FAQ",{"children":["$","$L15",null,{"href":"/faq/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"FAQ"}]}],["$","li","Help & Guides",{"children":["$","$L15",null,{"href":"/help/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Help & Guides"}]}],["$","li","Support",{"children":["$","$L15",null,{"href":"/support/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Support"}]}]]}]]}],["$","div","Resources",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Resources"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","GitHub",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub"}]}],["$","li","W3C CG Report",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/docs/specs/cg-report-executive-summary.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"W3C CG Report"}]}],["$","li","Test Vectors",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/test-vectors","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Test Vectors"}]}],["$","li","CHANGELOG",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"CHANGELOG"}]}]]}]]}],["$","div","SDKs",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"SDKs"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Python (PyPI)",{"children":["$","a",null,{"href":"https://pypi.org/project/vouch-protocol/","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Python (PyPI)"}]}],["$","li","TypeScript (npm)",{"children":["$","a",null,{"href":"https://www.npmjs.com/package/@vouch-protocol/core","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"TypeScript (npm)"}]}],["$","li","Go sidecar",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/go-sidecar","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Go sidecar"}]}],["$","li","Browser extension",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/browser-extension","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Browser extension"}]}]]}]]}],["$","div","Community",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Community"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Discord",{"children":["$","a",null,{"href":"https://discord.gg/mMqx5cG9Y","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Discord"}]}],["$","li","GitHub issues",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/issues","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub issues"}]}],["$","li","W3C CCG mailing list",{"children":["$","a",null,{"href":"https://lists.w3.org/Archives/Public/public-credentials/","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"W3C CCG mailing list"}]}],["$","li","X / Twitter",{"children":["$","a",null,{"href":"https://x.com/Vouch_Protocol","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"X / Twitter"}]}]]}]]}]]]}],["$","div",null,{"className":"mt-12 pt-6 border-t border-rule flex flex-col md:flex-row gap-3 items-start md:items-center justify-between font-mono text-[0.7rem] tracking-[0.1em] text-ink-faint","children":[["$","span",null,{"children":"© 2025-2026 Ramprasad Gaddam. Licensed under Apache 2.0."}],["$","span",null,{"children":"An open W3C-track specification."}]]}]]}]}]}],["$","$L16",null,{"src":"https://www.googletagmanager.com/gtag/js?id=G-JHPT5HRW2F","strategy":"afterInteractive"}],["$","$L16",null,{"id":"gtag-init","strategy":"afterInteractive","children":"\n                        window.dataLayer = window.dataLayer || [];\n                        function gtag(){dataLayer.push(arguments);}\n                        gtag('js', new Date());\n                        gtag('config', 'G-JHPT5HRW2F');\n                    "}]]}]]}]],null],null],["$L17",null]]]]
+0:["toVqwzUcSNFj49T9mLses",[[["",{"children":["help",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],["",{"children":["help",{"children":["__PAGE__",{},[["$L1",[["$","section",null,{"className":"border-b border-rule","children":["$","div",null,{"className":"container-wide py-16 md:py-20","children":[["$","div",null,{"className":"eyebrow mb-5","children":"Help & Guides"}],["$","h1",null,{"className":"font-serif font-semibold text-ink leading-[1.1] tracking-tight mb-5 text-[clamp(2rem,4.2vw,3rem)]","children":"Long-form guides for getting Vouch into production."}],["$","p",null,{"className":"text-ink-soft text-[1.05rem] leading-relaxed max-w-prose","children":[5," parts covering ",16," guides: quickstarts in three languages, identity and key management, the hybrid post-quantum profile, delegation chains, sidecar deployment, KMS integration, reputation and revocation engines, framework integrations, and the complete CLI reference. Use the marginalia at left to navigate, or search across every guide."]}]]}]}],["$","section",null,{"children":["$","div",null,{"className":"container-wide py-12 md:py-16","children":["$","$L2",null,{"sections":[{"id":"getting-started","title":"Getting Started","description":"Pick a language, install the SDK, and sign your first credential in under five minutes.","articles":[{"id":"quickstart-python","title":"Python Quickstart","summary":"Five-minute path from pip install to a verified Vouch credential.","body":"$3"},{"id":"quickstart-typescript","title":"TypeScript Quickstart","summary":"Same flow in Node or browser. Cross-verifies with Python-signed credentials.","body":"$4"},{"id":"quickstart-go","title":"Go Sidecar Quickstart","summary":"Run the long-running signing daemon. Sign credentials from any language over HTTP.","body":"$5"}]},{"id":"identity-and-signing","title":"Identity & Signing","description":"Manage your agent's identity and keys, sign with post-quantum crypto, and build delegation chains.","articles":[{"id":"did-management","title":"Managing DIDs and Keys","summary":"did:web vs did:key, where keys live, how to rotate.","body":"$6"},{"id":"hybrid-pq","title":"Signing with Post-Quantum Crypto","summary":"How to make your signatures safe today and ready for the day quantum computers break Ed25519.","body":"$7"},{"id":"delegation-chains","title":"Building Permission Chains","summary":"When a human delegates to an agent that delegates to a sub-agent: how to track each step cryptographically.","body":"$8"}]},{"id":"deployment","title":"Production Deployment","description":"How to run Vouch reliably at scale: the sidecar, your KMS, revocation registries, metrics, rate limits.","articles":[{"id":"sidecar-deployment","title":"Deploying the Vouch Sidecar","summary":"Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.","body":"$9"},{"id":"kms-integration","title":"Connecting Your KMS","summary":"How to keep production signing keys in AWS, GCP, Azure, or an encrypted local file.","body":"\n## AWS KMS\n\n```python\nfrom vouch.kms import RotatingKeyProvider\n\nprovider = RotatingKeyProvider(\n  backend=\"aws-kms\",\n  key_id=\"alias/vouch-agent-prod\",\n  region=\"us-east-1\",\n)\n```\n\nRequires `boto3` and IAM permissions `kms:Sign` and `kms:GetPublicKey` on the key.\n\n## GCP KMS\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"gcp-kms\",\n  key_id=\"projects/my-proj/locations/global/keyRings/vouch/cryptoKeys/agent\",\n)\n```\n\nRequires `google-cloud-kms` and the `roles/cloudkms.signer` IAM role.\n\n## Azure Key Vault\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"azure-kv\",\n  key_id=\"https://vouch-kv.vault.azure.net/keys/agent/abc123\",\n)\n```\n\nRequires `azure-keyvault-keys` and the Key Vault Crypto Officer role.\n\n## Local file (development only)\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"local-file\",\n  key_id=\"/etc/vouch/agent.jwk\",\n  passphrase=os.environ[\"VOUCH_KEY_PASSPHRASE\"],\n)\n```\n"},{"id":"reputation","title":"Tracking Agent Reputation","summary":"How to score, decay, and slash reputations across a fleet of agents using Memory, Redis, or Kafka.","body":"$a"},{"id":"revocation","title":"Revoking an Entire Agent","summary":"When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.","body":"$b"},{"id":"credential-status","title":"Revoking Individual Credentials","summary":"How to revoke or suspend a single credential without invalidating everything else the agent ever signed.","body":"$c"},{"id":"metrics-and-observability","title":"Metrics & Observability","summary":"What Vouch emits to Prometheus and OpenTelemetry, plus what is worth alerting on.","body":"$d"}]},{"id":"integrations","title":"Framework Integrations","description":"Wire Vouch into the framework you already use, or into your GitHub workflow.","articles":[{"id":"integrations","title":"Which AI Frameworks Vouch Plugs Into","summary":"Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.","body":"$e"},{"id":"github-app","title":"The Vouch Gatekeeper GitHub App","summary":"Block unsigned commits and enforce your team policy on every pull request, with one click to install.","body":"$f"},{"id":"vouch-shield","title":"Adding Vouch Shield to Your Agent","summary":"Drop a small middleware in front of your agent so every tool call gets checked before it runs.","body":"$10"}]},{"id":"cli","title":"CLI Reference","description":"Every command, every flag, with copy-pasteable examples.","articles":[{"id":"cli-reference","title":"The vouch Command Reference","summary":"Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.","body":"$11"}]}]}]}]}]],null],null],null]},[null,["$","$L12",null,{"parallelRouterKey":"children","segmentPath":["children","help","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L13",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/381a08d5ec223546.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap","rel":"stylesheet"}]]}],["$","body",null,{"children":[["$","$L14",null,{}],["$","main",null,{"children":["$","$L12",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L13",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":"404"}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],"notFoundStyles":[]}]}],["$","footer",null,{"className":"mt-24 pb-12","children":["$","div",null,{"className":"container-wide","children":["$","div",null,{"className":"double-rule pt-12","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L15",null,{"href":"/","className":"font-serif font-bold text-[1.4rem] tracking-tight text-ink no-underline block mb-2","children":"Vouch Protocol"}],["$","p",null,{"className":"font-serif italic text-ink-faint text-[0.9rem] max-w-[280px]","children":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}]]}],[["$","div","Product",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Product"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","FAQ",{"children":["$","$L15",null,{"href":"/faq/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"FAQ"}]}],["$","li","Help & Guides",{"children":["$","$L15",null,{"href":"/help/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Help & Guides"}]}],["$","li","Support",{"children":["$","$L15",null,{"href":"/support/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Support"}]}]]}]]}],["$","div","Resources",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Resources"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","GitHub",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub"}]}],["$","li","Specification",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Specification"}]}],["$","li","Test Vectors",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/test-vectors","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Test Vectors"}]}],["$","li","CHANGELOG",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"CHANGELOG"}]}]]}]]}],["$","div","SDKs",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"SDKs"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Python (PyPI)",{"children":["$","a",null,{"href":"https://pypi.org/project/vouch-protocol/","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Python (PyPI)"}]}],["$","li","TypeScript (npm)",{"children":["$","a",null,{"href":"https://www.npmjs.com/package/@vouch-protocol/core","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"TypeScript (npm)"}]}],["$","li","Go sidecar",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/go-sidecar","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Go sidecar"}]}],["$","li","Browser extension",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/browser-extension","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Browser extension"}]}]]}]]}],["$","div","Community",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Community"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Discord",{"children":["$","a",null,{"href":"https://discord.gg/mMqx5cG9Y","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Discord"}]}],["$","li","GitHub issues",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/issues","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub issues"}]}],["$","li","X / Twitter",{"children":["$","a",null,{"href":"https://x.com/Vouch_Protocol","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"X / Twitter"}]}]]}]]}]]]}],["$","div",null,{"className":"mt-12 pt-6 border-t border-rule flex flex-col md:flex-row gap-3 items-start md:items-center justify-between font-mono text-[0.7rem] tracking-[0.1em] text-ink-faint","children":[["$","span",null,{"children":"© 2025-2026 Ramprasad Gaddam. Licensed under Apache 2.0."}],["$","span",null,{"children":"An open standard specification."}]]}]]}]}]}],["$","$L16",null,{"src":"https://www.googletagmanager.com/gtag/js?id=G-JHPT5HRW2F","strategy":"afterInteractive"}],["$","$L16",null,{"id":"gtag-init","strategy":"afterInteractive","children":"\n            window.dataLayer = window.dataLayer || [];\n            function gtag(){dataLayer.push(arguments);}\n            gtag('js', new Date());\n            gtag('config', 'G-JHPT5HRW2F');\n          "}]]}]]}]],null],null],["$L17",null]]]]
 17:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Help & Guides - Vouch Protocol"}],["$","meta","3",{"name":"description","content":"Long-form guides for Vouch Protocol: quickstarts in Python, TypeScript, and Go; key management; hybrid post-quantum signing; delegation chains; sidecar deployment; KMS integration; reputation and revocation; framework integrations; CLI reference."}],["$","meta","4",{"property":"og:title","content":"Vouch Protocol"}],["$","meta","5",{"property":"og:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","6",{"property":"og:url","content":"https://vouch-protocol.com/"}],["$","meta","7",{"property":"og:image","content":"https://vouch-protocol.com/assets/vouch-logo-full.png"}],["$","meta","8",{"property":"og:type","content":"website"}],["$","meta","9",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","10",{"name":"twitter:site","content":"@Vouch_Protocol"}],["$","meta","11",{"name":"twitter:title","content":"Vouch Protocol"}],["$","meta","12",{"name":"twitter:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","13",{"name":"twitter:image","content":"https://vouch-protocol.com/assets/vouch-logo-full.png"}],["$","link","14",{"rel":"icon","href":"/assets/vouch-logo-icon.jpg"}]]
 1:null

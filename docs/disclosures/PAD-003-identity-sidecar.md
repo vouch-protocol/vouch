@@ -1,9 +1,9 @@
 # PAD-003: The "Identity Sidecar" Pattern & JIT Intent Signing for AI Agents
 
-**Publication Date:** January 03, 2026  
-**Author:** Ramprasad Anandam Gaddam  
-**Subject:** Decoupled Cryptographic Signing for Stochastic AI Models  
-**Status:** Public Prior Art  
+**Publication Date:** January 03, 2026 
+**Author:** Ramprasad Anandam Gaddam 
+**Subject:** Decoupled Cryptographic Signing for Stochastic AI Models 
+**Status:** Public Prior Art 
 **License:** Apache 2.0
 
 ## 1. Abstract
@@ -59,18 +59,18 @@ We specifically disclose the implementation of this pattern via the **Model Cont
 
 ```json
 {
-  "name": "vouch_sign",
-  "description": "Sign an intent payload with the agent's cryptographic identity",
-  "inputSchema": {
+ "name": "vouch_sign",
+ "description": "Sign an intent payload with the agent's cryptographic identity",
+ "inputSchema": {
+  "type": "object",
+  "properties": {
+   "intent": {
     "type": "object",
-    "properties": {
-      "intent": {
-        "type": "object",
-        "description": "The action and parameters to sign"
-      }
-    },
-    "required": ["intent"]
-  }
+    "description": "The action and parameters to sign"
+   }
+  },
+  "required": ["intent"]
+ }
 }
 ```
 
@@ -79,8 +79,8 @@ We specifically disclose the implementation of this pattern via the **Model Cont
 ```python
 # The LLM requests a signature through the MCP tool
 result = await mcp_client.call_tool(
-    "vouch_sign",
-    {"intent": {"action": "book_flight", "amount": 450}}
+  "vouch_sign",
+  {"intent": {"action": "book_flight", "amount": 450}}
 )
 
 # The sidecar returns a signed token (or error if policy fails)
@@ -88,7 +88,7 @@ vouch_token = result.content[0].text
 
 # LLM uses the token in API call
 response = await api_client.book_flight(
-    headers={"Vouch-Token": vouch_token}
+  headers={"Vouch-Token": vouch_token}
 )
 ```
 
@@ -125,7 +125,7 @@ This disclosure precludes patents on:
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment
+## Update (April 27, 2026): Data Integrity Embodiment
 
 The Identity Sidecar pattern is algorithm-agnostic: the property being
 disclosed is the architectural separation between the stochastic LLM
@@ -133,7 +133,7 @@ disclosed is the architectural separation between the stochastic LLM
 of the specific cryptographic envelope produced.
 
 This disclosure additionally covers the embodiment where the Sidecar
-issues W3C Verifiable Credentials secured by W3C Data Integrity proofs
+issues Verifiable Credentials secured by Data Integrity proofs
 (`eddsa-jcs-2022` cryptosuite, optionally `hybrid-eddsa-mldsa44-jcs-2026`)
 in lieu of the originally-described JWS Compact tokens. The novel
 LLM-isolation property is preserved verbatim: the LLM submits an intent
@@ -141,7 +141,7 @@ to the Sidecar, the Sidecar validates against a deterministic policy, and
 the Sidecar returns a signed Vouch Credential. Private keys remain
 isolated from the LLM context window in either embodiment.
 
-The W3C Data Integrity embodiment additionally enables the LLM to forward
+The Data Integrity embodiment additionally enables the LLM to forward
 the resulting credential as the HTTP request body (rather than a header),
 which removes a header-size constraint relevant to the hybrid post-quantum
 embodiment. This is disclosed as additional prior art for the same

@@ -68,9 +68,9 @@ The system consists of four components:
 **Component 1: Trusted Circle Registry**
 - The senior user (or their designated family guardian) enrolls trusted contacts into a "circle."
 - Each trusted contact:
-  - Registers a DID (Decentralized Identifier backed by Ed25519).
-  - Enrolls their voice biometric (3+ voice samples → centroid vector, per PAD-026).
-  - Is associated with a display name and relationship label (e.g., "Grandson Rahul").
+ - Registers a DID (Decentralized Identifier backed by Ed25519).
+ - Enrolls their voice biometric (3+ voice samples → centroid vector, per PAD-026).
+ - Is associated with a display name and relationship label (e.g., "Grandson Rahul").
 - The registry is stored on-device (privacy-first) with an encrypted backup.
 
 **Component 2: Incoming Call Verification Pipeline**
@@ -79,24 +79,24 @@ When an incoming call is received:
 
 ```
 Step 1: DID Check
-  └─ Does the caller present a valid Vouch-Token (signed JWT with DID)?
-     ├─ Yes → Extract DID, proceed to Step 2
-     └─ No → Flag as "Unverified Caller" (yellow indicator)
+ └─ Does the caller present a valid Vouch-Token (signed JWT with DID)?
+   ├─ Yes → Extract DID, proceed to Step 2
+   └─ No → Flag as "Unverified Caller" (yellow indicator)
 
 Step 2: Trusted Circle Lookup
-  └─ Is the caller's DID in the user's Trusted Circle?
-     ├─ Yes → Proceed to Step 3 (voice verification)
-     └─ No → Flag as "Unknown Verified Caller" (yellow indicator)
+ └─ Is the caller's DID in the user's Trusted Circle?
+   ├─ Yes → Proceed to Step 3 (voice verification)
+   └─ No → Flag as "Unknown Verified Caller" (yellow indicator)
 
 Step 3: Real-Time Voice Verification
-  └─ Compare live voice against enrolled centroid for this DID
-     ├─ Match (cosine similarity ≥ 0.85) → Green indicator ("Verified: Grandson Rahul")
-     └─ Mismatch → Red indicator ("Warning: Voice does not match Grandson Rahul")
+ └─ Compare live voice against enrolled centroid for this DID
+   ├─ Match (cosine similarity ≥ 0.85) → Green indicator ("Verified: Grandson Rahul")
+   └─ Mismatch → Red indicator ("Warning: Voice does not match Grandson Rahul")
 
 Step 4: Deepfake Detection (parallel with Step 3)
-  └─ Analyze audio stream for AI-generation artifacts
-     ├─ Likely authentic → No additional flag
-     └─ Suspicious/AI-detected → Red indicator ("Warning: AI-generated voice detected")
+ └─ Analyze audio stream for AI-generation artifacts
+   ├─ Likely authentic → No additional flag
+   └─ Suspicious/AI-detected → Red indicator ("Warning: AI-generated voice detected")
 ```
 
 **Component 3: Simplified Trust Display**
@@ -205,19 +205,19 @@ This document is published as a defensive prior art disclosure under the Apache 
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment
+## Update (April 27, 2026): Data Integrity Embodiment
 
 The Communication Shield protocol verifies caller identity by requiring
 the caller to present a cryptographic Decentralized Identifier signed
 with Ed25519. This disclosure additionally covers the embodiment where
-the caller's identity proof is a W3C Verifiable Credential secured by a
-W3C Data Integrity proof (`eddsa-jcs-2022` or
+the caller's identity proof is a Verifiable Credential secured by a
+Data Integrity proof (`eddsa-jcs-2022` or
 `hybrid-eddsa-mldsa44-jcs-2026`) rather than a JWS-format token.
 
 The three-layer shield architecture (DID verification, voice biometric
 matching, AI-generated speech detection) is unchanged. The W3C Data
 Integrity embodiment additionally allows the shield to verify credentials
 issued by enterprise verifiers (banks, healthcare providers) that adopt
-the W3C VC standard, expanding interoperability without changing the
+the VC standard, expanding interoperability without changing the
 shield's user-facing trust indicator. This is disclosed as additional
 prior art for the same identity-verified communication shield mechanism.

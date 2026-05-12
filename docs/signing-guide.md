@@ -69,9 +69,9 @@ vouch sign --file article.txt
 ### For Readers WITHOUT the Extension:
 - Click the verification link (e.g., `v.vouch-protocol.com/abc123`)
 - See the verification page showing:
-  - Signer identity
-  - Timestamp
-  - Content hash
+ - Signer identity
+ - Timestamp
+ - Content hash
 
 ---
 
@@ -102,19 +102,19 @@ A: Currently text only. PDF support is coming soon.
 ## Signing AI Agent Actions (v1.0)
 
 If you are signing autonomous AI agent actions (not human content), use
-the v1.0 W3C VC + Data Integrity API instead:
+the v1.0 VC + Data Integrity API instead:
 
 ```python
 from vouch import Signer
 
 signer = Signer(private_key=key, did='did:web:agent.example.com')
 credential = signer.sign_credential(intent={
-    'action': 'submit_claim',
-    'target': 'claim:42',
-    'resource': 'https://payer.example.com/api/claims/42',
+  'action': 'submit_claim',
+  'target': 'claim:42',
+  'resource': 'https://payer.example.com/api/claims/42',
 })
 ```
 
 For the full agent-identity guide, see
 [The Vouch Protocol: A Comprehensive Guide](./vouch_guide.md) and the
-[W3C CG Report](https://vouch-protocol.com/specs/CG-REPORT/).
+[Specification](https://vouch-protocol.com/specs/SPEC/).

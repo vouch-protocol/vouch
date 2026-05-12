@@ -1,5 +1,5 @@
 // Tests for the hybrid Ed25519 + ML-DSA-44 Data Integrity cryptosuite
-// (W3C CG Report §13.2). Mirrors the eddsa-jcs-2022 tests in
+// (Specification §13.2). Mirrors the eddsa-jcs-2022 tests in
 // credential_test.go, plus hybrid-specific properties (both signatures
 // required, format size, classical-only and PQ-only tampers fail).
 
@@ -202,23 +202,23 @@ func TestHybridAndEddsaJcsCoexist(t *testing.T) {
 
 func TestHybridVerificationMethodPair(t *testing.T) {
 	cases := []struct {
-		input        string
-		expectedEd   string
-		expectedMLD  string
+		input    string
+		expectedEd  string
+		expectedMLD string
 	}{
 		{
-			input:       "did:web:agent.example.com#key-1",
-			expectedEd:  "did:web:agent.example.com#key-1",
+			input:    "did:web:agent.example.com#key-1",
+			expectedEd: "did:web:agent.example.com#key-1",
 			expectedMLD: "did:web:agent.example.com#key-2",
 		},
 		{
-			input:       "did:web:agent.example.com#abc",
-			expectedEd:  "did:web:agent.example.com#abc",
+			input:    "did:web:agent.example.com#abc",
+			expectedEd: "did:web:agent.example.com#abc",
 			expectedMLD: "did:web:agent.example.com#key-2",
 		},
 		{
-			input:       "did:web:agent.example.com",
-			expectedEd:  "did:web:agent.example.com",
+			input:    "did:web:agent.example.com",
+			expectedEd: "did:web:agent.example.com",
 			expectedMLD: "did:web:agent.example.com#key-2",
 		},
 	}
@@ -248,22 +248,22 @@ func TestBuildAndVerifyHybridProofDirect(t *testing.T) {
 	}
 
 	cred := map[string]any{
-		"@context":   []any{VCContextV2, VouchContextV1},
-		"id":         "urn:uuid:test",
-		"type":       []any{VCType, VouchCredentialType},
-		"issuer":     "did:web:test.example.com",
-		"validFrom":  "2026-04-26T00:00:00Z",
+		"@context":  []any{VCContextV2, VouchContextV1},
+		"id":     "urn:uuid:test",
+		"type":    []any{VCType, VouchCredentialType},
+		"issuer":   "did:web:test.example.com",
+		"validFrom": "2026-04-26T00:00:00Z",
 		"validUntil": "2026-04-26T00:05:00Z",
 		"credentialSubject": map[string]any{
-			"id":           "did:web:test.example.com",
+			"id":      "did:web:test.example.com",
 			"vouchVersion": "1.0",
-			"intent":       validIntent(),
+			"intent":    validIntent(),
 		},
 	}
 
 	proof, err := BuildHybridDataIntegrityProof(cred, BuildHybridProofOptions{
-		Ed25519PrivateKey:  edPriv,
-		MLDSA44PrivateKey:  mlPriv,
+		Ed25519PrivateKey: edPriv,
+		MLDSA44PrivateKey: mlPriv,
 		VerificationMethod: "did:web:test.example.com#key-1",
 	})
 	if err != nil {

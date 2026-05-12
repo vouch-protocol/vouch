@@ -17,21 +17,21 @@ A system and method for embedding deliberately constructed **canary identities**
 
 The system introduces several interlocking mechanisms:
 
-1. **Synthetic Canary DIDs:** Artificial agent identities, indistinguishable from real ones, registered in the Vouch Protocol registry. Canary DIDs have valid Ed25519 keypairs, signed manifests, and behavioral histories, but are monitored by a silent alert pipeline. Any verification request against a canary DID triggers an investigation  -  because legitimate verifiers would never encounter these identities.
+1. **Synthetic Canary DIDs:** Artificial agent identities, indistinguishable from real ones, registered in the Vouch Protocol registry. Canary DIDs have valid Ed25519 keypairs, signed manifests, and behavioral histories, but are monitored by a silent alert pipeline. Any verification request against a canary DID triggers an investigation - because legitimate verifiers would never encounter these identities.
 
 2. **Trap Watermarks:** Audio and image content embedded with valid Vouch Sonic watermarks (PAD-014) and C2PA manifests linked to canary DIDs, seeded into distribution channels where provenance stripping is suspected. When the watermark is detected in stripped or re-attributed content, the canary identity traces the content back to the stripping operation.
 
 3. **Credential Bait Documents:** Synthetic `vouch.json` files, API keys, and JWK keypairs planted in locations where credential theft is suspected (public repositories, compromised servers, leaked credential dumps). Usage of these trap credentials triggers silent alerts with the attacker's IP, user-agent, and request patterns.
 
-4. **Provenance Replay Detection:** When a valid signature from a canary DID appears in contexts other than the original trap content, it indicates that an attacker has captured and replayed the credential  -  revealing the attacker's forgery methodology.
+4. **Provenance Replay Detection:** When a valid signature from a canary DID appears in contexts other than the original trap content, it indicates that an attacker has captured and replayed the credential - revealing the attacker's forgery methodology.
 
 5. **Statistical Adversary Fingerprinting:** Aggregating canary alert events to build behavioral fingerprints of adversarial actors and provenance-stripping tools, enabling detection of systematic attacks that target individual canaries but reveal patterns across the network.
 
 Key innovations:
-- **Honeypot methodology applied to cryptographic identity and content provenance**  -  a domain where this technique has never been deployed.
-- **Canary identities are cryptographically indistinguishable from real identities**  -  an attacker cannot determine whether a DID is real or a canary without attempting to use it (at which point the alert fires).
-- **Zero false positives by construction**  -  a canary DID alert fires only when someone verifies against an identity that has no legitimate usage, eliminating the false-positive problem that plagues behavioral detection systems.
-- **Provenance-stripping tool fingerprinting**  -  the first system capable of identifying and characterizing the tools used to remove content provenance credentials.
+- **Honeypot methodology applied to cryptographic identity and content provenance** - a domain where this technique has never been deployed.
+- **Canary identities are cryptographically indistinguishable from real identities** - an attacker cannot determine whether a DID is real or a canary without attempting to use it (at which point the alert fires).
+- **Zero false positives by construction** - a canary DID alert fires only when someone verifies against an identity that has no legitimate usage, eliminating the false-positive problem that plagues behavioral detection systems.
+- **Provenance-stripping tool fingerprinting** - the first system capable of identifying and characterizing the tools used to remove content provenance credentials.
 
 ---
 
@@ -50,11 +50,11 @@ This model provides no intelligence about the adversary:
 - Which distribution channels are laundering un-attributed content?
 - How sophisticated are the forgery techniques being deployed?
 
-Without adversarial intelligence, defenders are always reactive  -  patching vulnerabilities after exploitation rather than proactively detecting and disrupting adversarial operations.
+Without adversarial intelligence, defenders are always reactive - patching vulnerabilities after exploitation rather than proactively detecting and disrupting adversarial operations.
 
 ### 2.2 Provenance Stripping Is Undetectable
 
-An attacker who strips all provenance metadata from content (removing C2PA JUMBF manifests, overwriting Exif data, re-encoding audio to destroy watermarks) produces content that appears merely "unsigned"  -  indistinguishable from content that was never signed in the first place. Current systems cannot:
+An attacker who strips all provenance metadata from content (removing C2PA JUMBF manifests, overwriting Exif data, re-encoding audio to destroy watermarks) produces content that appears merely "unsigned" - indistinguishable from content that was never signed in the first place. Current systems cannot:
 - Detect that provenance was intentionally stripped (vs. never present).
 - Identify the tool or method used for stripping.
 - Trace stripped content back to its original attributed source.
@@ -98,28 +98,28 @@ Canary DIDs are synthetic identities that are **cryptographically valid** and **
 
 ```json
 {
-  "canary_id": "canary-2026-04-22-a7f3",
-  "did": "did:vouch:z6MkCanaryABC123",
-  "keypair": {
-    "public": "ed25519_public_hex",
-    "private": "ed25519_private_hex_held_by_canary_service"
-  },
-  "cover_identity": {
-    "display_name": "DataSynthAI Processing Agent",
-    "domain": "datasynthai.example.com",
-    "description": "Automated document analysis agent"
-  },
-  "deployment": {
-    "registry_entry": true,
-    "vouch_json_published": true,
-    "trap_content_signed": 15,
-    "credential_bait_deployed": 3
-  },
-  "alert_config": {
-    "alert_on": ["verification_request", "token_presentation", "key_usage"],
-    "notification_channels": ["webhook", "email"],
-    "capture_fields": ["source_ip", "user_agent", "timestamp", "request_headers", "referring_content"]
-  }
+ "canary_id": "canary-2026-04-22-a7f3",
+ "did": "did:vouch:z6MkCanaryABC123",
+ "keypair": {
+  "public": "ed25519_public_hex",
+  "private": "ed25519_private_hex_held_by_canary_service"
+ },
+ "cover_identity": {
+  "display_name": "DataSynthAI Processing Agent",
+  "domain": "datasynthai.example.com",
+  "description": "Automated document analysis agent"
+ },
+ "deployment": {
+  "registry_entry": true,
+  "vouch_json_published": true,
+  "trap_content_signed": 15,
+  "credential_bait_deployed": 3
+ },
+ "alert_config": {
+  "alert_on": ["verification_request", "token_presentation", "key_usage"],
+  "notification_channels": ["webhook", "email"],
+  "capture_fields": ["source_ip", "user_agent", "timestamp", "request_headers", "referring_content"]
+ }
 }
 ```
 
@@ -143,15 +143,15 @@ Content embedded with valid watermarks and provenance credentials linked to cana
 2. Sign with canary DID's Ed25519 key (valid C2PA manifest or Vouch Sonic watermark)
 3. Register watermark metadata in Vouch registry (linked to canary DID)
 4. Distribute trap content into suspected stripping channels:
-   - Upload to platforms known for provenance removal
-   - Include in datasets that may be scraped by AI training pipelines
-   - Plant in media libraries used by content mills
-   - Embed in public-facing websites
+  - Upload to platforms known for provenance removal
+  - Include in datasets that may be scraped by AI training pipelines
+  - Plant in media libraries used by content mills
+  - Embed in public-facing websites
 5. Monitor for:
-   a. Watermark detection in new contexts → content was redistributed
-   b. C2PA verification requests against canary DID → someone is checking credentials
-   c. Absence of watermark in redistributed content → watermark was stripped
-   d. Modified watermark with different DID → credential replacement attack
+  a. Watermark detection in new contexts → content was redistributed
+  b. C2PA verification requests against canary DID → someone is checking credentials
+  c. Absence of watermark in redistributed content → watermark was stripped
+  d. Modified watermark with different DID → credential replacement attack
 ```
 
 ### 3.3 Credential Bait
@@ -171,14 +171,14 @@ Synthetic API keys, JWK keypairs, and `vouch.json` files planted in locations wh
 
 ```json
 {
-  "did": "did:vouch:z6MkCanaryXYZ789",
-  "publicKeyJwk": {
-    "kty": "OKP",
-    "crv": "Ed25519",
-    "x": "base64url_public_key"
-  },
-  "endpoint": "https://canary-monitor.vouch-protocol.com/v1/verify",
-  "displayName": "ProdAgent-Finance-v3"
+ "did": "did:vouch:z6MkCanaryXYZ789",
+ "publicKeyJwk": {
+  "kty": "OKP",
+  "crv": "Ed25519",
+  "x": "base64url_public_key"
+ },
+ "endpoint": "https://canary-monitor.vouch-protocol.com/v1/verify",
+ "displayName": "ProdAgent-Finance-v3"
 }
 ```
 
@@ -192,33 +192,33 @@ When a canary is triggered, the alert pipeline captures maximum forensic informa
 
 ```json
 {
-  "alert_id": "alert-2026-04-22-001",
-  "canary_id": "canary-2026-04-22-a7f3",
-  "triggered_at": "2026-04-22T14:32:07Z",
-  "trigger_type": "verification_request",
-  "forensics": {
-    "source_ip": "203.0.113.42",
-    "source_asn": "AS13335",
-    "geo": "Mumbai, IN",
-    "user_agent": "provenance-stripper/2.1 (compatible; curl/8.5)",
-    "request_method": "POST",
-    "request_path": "/api/v1/verify",
-    "request_headers": { "Accept": "application/json" },
-    "tls_fingerprint": "ja3:abc123def456",
-    "referring_content_hash": "sha256:...",
-    "timing": {
-      "tcp_handshake_ms": 45,
-      "tls_handshake_ms": 120,
-      "request_processing_ms": 3
-    }
-  },
-  "content_context": {
-    "original_trap_content_id": "trap-audio-001",
-    "watermark_present": false,
-    "c2pa_manifest_present": true,
-    "c2pa_manifest_modified": true,
-    "modification_type": "did_replacement"
+ "alert_id": "alert-2026-04-22-001",
+ "canary_id": "canary-2026-04-22-a7f3",
+ "triggered_at": "2026-04-22T14:32:07Z",
+ "trigger_type": "verification_request",
+ "forensics": {
+  "source_ip": "203.0.113.42",
+  "source_asn": "AS13335",
+  "geo": "Mumbai, IN",
+  "user_agent": "provenance-stripper/2.1 (compatible; curl/8.5)",
+  "request_method": "POST",
+  "request_path": "/api/v1/verify",
+  "request_headers": { "Accept": "application/json" },
+  "tls_fingerprint": "ja3:abc123def456",
+  "referring_content_hash": "sha256:...",
+  "timing": {
+   "tcp_handshake_ms": 45,
+   "tls_handshake_ms": 120,
+   "request_processing_ms": 3
   }
+ },
+ "content_context": {
+  "original_trap_content_id": "trap-audio-001",
+  "watermark_present": false,
+  "c2pa_manifest_present": true,
+  "c2pa_manifest_modified": true,
+  "modification_type": "did_replacement"
+ }
 }
 ```
 
@@ -241,20 +241,20 @@ Aggregating canary alerts across the network reveals adversary patterns invisibl
 
 ```json
 {
-  "adversary_fingerprint_id": "adv-fp-001",
-  "first_seen": "2026-03-15T08:00:00Z",
-  "last_seen": "2026-04-22T14:32:07Z",
-  "total_canary_triggers": 47,
-  "canary_types_triggered": ["did_verification", "watermark_detection", "credential_usage"],
-  "content_types_targeted": ["audio", "image"],
-  "methodology": "c2pa_manifest_stripping_with_did_replacement",
-  "tool_signature": {
-    "user_agent_cluster": "provenance-stripper/*",
-    "tls_ja3_hash": "abc123def456",
-    "request_timing_profile": "automated_batch"
-  },
-  "threat_assessment": "SYSTEMATIC_COMMERCIAL_STRIPPING_OPERATION",
-  "confidence": 0.94
+ "adversary_fingerprint_id": "adv-fp-001",
+ "first_seen": "2026-03-15T08:00:00Z",
+ "last_seen": "2026-04-22T14:32:07Z",
+ "total_canary_triggers": 47,
+ "canary_types_triggered": ["did_verification", "watermark_detection", "credential_usage"],
+ "content_types_targeted": ["audio", "image"],
+ "methodology": "c2pa_manifest_stripping_with_did_replacement",
+ "tool_signature": {
+  "user_agent_cluster": "provenance-stripper/*",
+  "tls_ja3_hash": "abc123def456",
+  "request_timing_profile": "automated_batch"
+ },
+ "threat_assessment": "SYSTEMATIC_COMMERCIAL_STRIPPING_OPERATION",
+ "confidence": 0.94
 }
 ```
 
@@ -274,8 +274,8 @@ Key differentiators:
 1. **No existing system** creates cryptographically valid decoy identities within a decentralized identity registry for the purpose of adversarial detection.
 2. **No existing system** embeds honeypot watermarks in audio/image/video content to detect and characterize provenance stripping operations.
 3. **No existing system** provides statistical fingerprinting of adversaries targeting content provenance infrastructure across multiple independent canary events.
-4. **No existing system** achieves zero false positive alerting by construction  -  alerts fire only when an identity that has no legitimate usage is accessed.
-5. The combination of **canary identities + trap watermarks + credential bait + adversary fingerprinting** creates a complete adversarial intelligence layer within a provenance ecosystem  -  a novel application of honeypot methodology to a domain where it has never been deployed.
+4. **No existing system** achieves zero false positive alerting by construction - alerts fire only when an identity that has no legitimate usage is accessed.
+5. The combination of **canary identities + trap watermarks + credential bait + adversary fingerprinting** creates a complete adversarial intelligence layer within a provenance ecosystem - a novel application of honeypot methodology to a domain where it has never been deployed.
 
 ---
 
@@ -286,10 +286,10 @@ Key differentiators:
 Canary DIDs are stored in the same registry as real DIDs, with a private `is_canary` flag invisible to external queries:
 
 ```
-Key: did:{canary_did}  -  Standard DID document (externally indistinguishable)
-Key: canary:registry:{canary_did}  -  Hash (canary_id, alert_config, deployment_info) [PRIVATE]
-Key: canary:alerts:{canary_did}  -  Sorted Set (score = timestamp, value = alert event JSON)
-Key: canary:adversary:{fingerprint_id}  -  Hash (adversary profile JSON)
+Key: did:{canary_did} - Standard DID document (externally indistinguishable)
+Key: canary:registry:{canary_did} - Hash (canary_id, alert_config, deployment_info) [PRIVATE]
+Key: canary:alerts:{canary_did} - Sorted Set (score = timestamp, value = alert event JSON)
+Key: canary:adversary:{fingerprint_id} - Hash (adversary profile JSON)
 ```
 
 ### 5.2 Verification Endpoint Instrumentation
@@ -298,18 +298,18 @@ The Vouch Protocol verification endpoint is instrumented to check every incoming
 
 ```
 POST /api/v1/verify
-  |
-  v
+ |
+ v
 [Extract DID from request]
-  |
-  +-- Is DID in canary registry?
-  |     |
-  |     +-- YES: Log full forensics → fire alert → return NORMAL verification result
-  |     |       (attacker sees standard response, cannot detect the canary)
-  |     |
-  |     +-- NO: Normal verification flow
-  |
-  v
+ |
+ +-- Is DID in canary registry?
+ |   |
+ |   +-- YES: Log full forensics → fire alert → return NORMAL verification result
+ |   |    (attacker sees standard response, cannot detect the canary)
+ |   |
+ |   +-- NO: Normal verification flow
+ |
+ v
 [Return verification result]
 ```
 
@@ -319,29 +319,29 @@ The critical design choice: **canary verification returns a normal response**, n
 
 ```
 Phase 1: CREATION
-  - Generate trap content (royalty-free media)
-  - Sign with canary DID (C2PA or Vouch Sonic)
-  - Register metadata in Vouch registry
+ - Generate trap content (royalty-free media)
+ - Sign with canary DID (C2PA or Vouch Sonic)
+ - Register metadata in Vouch registry
 
 Phase 2: DEPLOYMENT
-  - Distribute into suspected stripping channels
-  - Record deployment locations and timestamps
-  - Set monitoring parameters
+ - Distribute into suspected stripping channels
+ - Record deployment locations and timestamps
+ - Set monitoring parameters
 
 Phase 3: MONITORING
-  - Continuous scan for trap content fingerprints (PAD-024 temporal hashing for video, PAD-014 watermark detection for audio)
-  - Monitor verification endpoint for canary DID hits
-  - Aggregate alert events for fingerprinting
+ - Continuous scan for trap content fingerprints (PAD-024 temporal hashing for video, PAD-014 watermark detection for audio)
+ - Monitor verification endpoint for canary DID hits
+ - Aggregate alert events for fingerprinting
 
 Phase 4: ANALYSIS
-  - Build adversary profiles from aggregated alerts
-  - Correlate canary triggers with real attack patterns
-  - Update canary deployment strategy based on findings
+ - Build adversary profiles from aggregated alerts
+ - Correlate canary triggers with real attack patterns
+ - Update canary deployment strategy based on findings
 
 Phase 5: ROTATION
-  - Retire triggered canaries (adversary may now know it's a canary)
-  - Deploy fresh canaries with new identities
-  - Maintain canary density in the registry
+ - Retire triggered canaries (adversary may now know it's a canary)
+ - Deploy fresh canaries with new identities
+ - Maintain canary density in the registry
 ```
 
 ---
@@ -358,7 +358,7 @@ The following aspects are disclosed as prior art:
 
 4. A statistical adversary fingerprinting method that aggregates canary alert events across multiple independent canary identities to build behavioral profiles of adversarial actors, revealing temporal patterns, content targeting preferences, stripping methodologies, and tool signatures.
 
-5. A zero-false-positive alerting architecture where canary identity alerts fire only when an identity with no legitimate usage is accessed  -  eliminating the false positive problem inherent in behavioral anomaly detection.
+5. A zero-false-positive alerting architecture where canary identity alerts fire only when an identity with no legitimate usage is accessed - eliminating the false positive problem inherent in behavioral anomaly detection.
 
 ---
 
@@ -370,7 +370,7 @@ This document is published as a defensive prior art disclosure under the Apache 
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment
+## Update (April 27, 2026): Data Integrity Embodiment
 
 The Adversarial Provenance Honeypots protocol seeds canary identities,
 trap watermarks, and bait credentials into a provenance ecosystem to
@@ -379,11 +379,11 @@ specific credential envelope used; the original disclosure included
 "synthetic JWK keypairs" and "trap credentials" alongside canary DIDs.
 
 This disclosure additionally covers the embodiment where the canary
-credentials are W3C Verifiable Credentials secured by W3C Data Integrity
+credentials are Verifiable Credentials secured by Data Integrity
 proofs (`eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026`), and where
 the trap credential bundle is a `vouch.json` containing a Multikey-format
 private key encoding. The detection logic, the silent alert pipeline, the
 content-stripping traceback property, and the offensive intelligence
-layer are all unchanged. The W3C-aligned canary form is disclosed as
+layer are all unchanged. The standards-aligned canary form is disclosed as
 additional prior art covering the same inventive deception-detection
 mechanism for content provenance.

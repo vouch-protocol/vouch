@@ -13,7 +13,7 @@ Vouch Protocol
 === Project Description
 
 **What it does:**
-Vouch Protocol is the identity layer for AI agents. It provides cryptographic identity, authentication, and non-repudiation for autonomous AI systems using W3C Verifiable Credentials secured by W3C Data Integrity proofs (`eddsa-jcs-2022` cryptosuite), W3C Decentralized Identifiers, and W3C Multikey verification methods. An optional hybrid post-quantum profile (`hybrid-eddsa-mldsa44-jcs-2026`) carries Ed25519 + ML-DSA-44 composite signatures for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines. The legacy v0.x JWS API is retained during a deprecation window for backward compatibility.
+Vouch Protocol is the identity layer for AI agents. It provides cryptographic identity, authentication, and non-repudiation for autonomous AI systems using Verifiable Credentials secured by Data Integrity proofs (`eddsa-jcs-2022` cryptosuite), Decentralized Identifiers, and Multikey verification methods. An optional hybrid post-quantum profile (`hybrid-eddsa-mldsa44-jcs-2026`) carries Ed25519 + ML-DSA-44 composite signatures for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines. The legacy v0.x JWS API is retained during a deprecation window for backward compatibility.
 
 **Why it is valuable:**
 As AI agents increasingly make real-world decisions (financial transactions, healthcare access, customer service), there is no open standard for:
@@ -82,7 +82,7 @@ As AI agents become more autonomous, trust and accountability become critical in
 - **Version:** 2.0
 - **URL:** https://github.com/vouch-protocol/vouch/blob/main/LICENSE
 
-*Note: The Vouch Protocol specification may be contributed to W3C Verifiable Credentials Working Group as a separate standards track.*
+*Note: The Vouch Protocol specification may be contributed to Verifiable Credentials specification as a separate standards track.*
 
 === Source Control
 - **Platform:** GitHub
@@ -187,9 +187,9 @@ Documented in RELEASES.md:
 - **Model:** Benevolent Dictator For Life (BDFL) transitioning to Technical Steering Committee (TSC)
 - **Documentation:** To be formalized in GOVERNANCE.md upon acceptance
 - **Planned structure:**
-  - TSC with maintainer representation
-  - Open contributor meetings
-  - RFCs for major changes
+ - TSC with maintainer representation
+ - Open contributor meetings
+ - RFCs for major changes
 
 === Social Media Accounts
 - **Twitter/X:** https://x.com/Vouch_Protocol
@@ -199,17 +199,17 @@ Documented in RELEASES.md:
 === Existing Sponsorship
 - **Current:** Self-funded by creator
 - **Affiliations:**
-  - C2PA Contributor
-  - CAI Member
-  - W3C Verifiable Credentials participation (via UnitedHealth Group)
-  - OpenSSF Badge Program participant
+ - C2PA Contributor
+ - CAI Member
+ - Verifiable Credentials participation (via UnitedHealth Group)
+ - OpenSSF Badge Program participant
 
 === Additional Information
 
 **Standards Alignment:**
 
-- W3C DIDs (Decentralized Identifiers)
-- W3C Verifiable Credentials
+- DIDs (Decentralized Identifiers)
+- Verifiable Credentials
 - C2PA (Coalition for Content Provenance and Authenticity)
 - CAI (Content Authenticity Initiative)
 

@@ -1,9 +1,9 @@
-// W3C BitstringStatusList implementation for Vouch Protocol.
+// BitstringStatusList implementation for Vouch Protocol.
 //
 // Mirrors vouch/status_list.py and packages/sdk-ts/src/status-list.ts.
 // Implements credential-level revocation and suspension status per W3C
 // VC-BITSTRING-STATUS-LIST (https://www.w3.org/TR/vc-bitstring-status-list/),
-// referenced in W3C CG Report §11.2.
+// referenced in Specification §11.2.
 //
 // Cross-implementation interop is verified against the canonical test vector
 // at test-vectors/bitstring-status-list/vector.json.
@@ -22,17 +22,17 @@ import (
 )
 
 const (
-	// DefaultBitstringLength is the W3C BitstringStatusList §4.2 minimum
+	// DefaultBitstringLength is the BitstringStatusList §4.2 minimum
 	// bitstring length in bits (16 KiB).
 	DefaultBitstringLength = 131_072
 
 	StatusPurposeRevocation = "revocation"
 	StatusPurposeSuspension = "suspension"
-	StatusPurposeMessage    = "message"
+	StatusPurposeMessage  = "message"
 
 	BitstringStatusListCredentialType = "BitstringStatusListCredential"
-	BitstringStatusListSubjectType    = "BitstringStatusList"
-	BitstringStatusListEntryType      = "BitstringStatusListEntry"
+	BitstringStatusListSubjectType  = "BitstringStatusList"
+	BitstringStatusListEntryType   = "BitstringStatusListEntry"
 
 	// MultibaseBase64URLPrefix is the multibase prefix for base64url-no-pad.
 	MultibaseBase64URLPrefix = "u"
@@ -41,24 +41,24 @@ const (
 var validStatusPurposes = map[string]struct{}{
 	StatusPurposeRevocation: {},
 	StatusPurposeSuspension: {},
-	StatusPurposeMessage:    {},
+	StatusPurposeMessage:  {},
 }
 
 // StatusList is an in-memory bitstring for credential status tracking.
 //
-// Bit ordering follows W3C BitstringStatusList §4.2: bit at index i is stored
+// Bit ordering follows BitstringStatusList §4.2: bit at index i is stored
 // at byte i/8, with bit position 7-(i%8) (most significant bit first within
 // each byte).
 type StatusList struct {
-	statusListID   string
-	statusPurpose  string
-	length         int
-	bits           []byte
-	nextIndex      int
+	statusListID  string
+	statusPurpose string
+	length     int
+	bits      []byte
+	nextIndex   int
 }
 
 // NewStatusList constructs a new StatusList with the given id, purpose, and length.
-// Passing length == 0 selects the W3C minimum of 131,072 bits.
+// Passing length == 0 selects the protocol minimum of 131,072 bits.
 func NewStatusList(statusListID, statusPurpose string, length int) (*StatusList, error) {
 	if statusListID == "" {
 		return nil, errors.New("statusListID is required")
@@ -77,7 +77,7 @@ func NewStatusList(statusListID, statusPurpose string, length int) (*StatusList,
 	}
 	if length < DefaultBitstringLength {
 		return nil, fmt.Errorf(
-			"bitstring length must be at least %d per W3C BitstringStatusList §4.2, got %d",
+			"bitstring length must be at least %d per BitstringStatusList §4.2, got %d",
 			DefaultBitstringLength, length,
 		)
 	}
@@ -86,10 +86,10 @@ func NewStatusList(statusListID, statusPurpose string, length int) (*StatusList,
 	}
 
 	return &StatusList{
-		statusListID:  statusListID,
+		statusListID: statusListID,
 		statusPurpose: statusPurpose,
-		length:        length,
-		bits:          make([]byte, length/8),
+		length:    length,
+		bits:     make([]byte, length/8),
 	}, nil
 }
 
@@ -156,7 +156,7 @@ func (s *StatusList) RawBytes() []byte {
 }
 
 // Encode returns the multibase (base64url, no pad) string of the
-// gzip-compressed bitstring per W3C BitstringStatusList §4.2.
+// gzip-compressed bitstring per BitstringStatusList §4.2.
 //
 // The gzip mtime is forced to 0, XFL is forced to best-compression (0x02),
 // and the OS byte is forced to 0xff (unknown) so the encoded output is
@@ -220,7 +220,7 @@ func DecodeStatusList(encoded, statusListID, statusPurpose string) (*StatusList,
 	length := len(raw) * 8
 	if length < DefaultBitstringLength {
 		return nil, fmt.Errorf(
-			"decoded bitstring length %d is below the W3C minimum (%d)",
+			"decoded bitstring length %d is below the protocol minimum (%d)",
 			length, DefaultBitstringLength,
 		)
 	}
@@ -245,12 +245,12 @@ func (s *StatusList) checkIndex(index int) error {
 // needed to reconstruct the list including nextIndex (which is NOT
 // recoverable from the encoded bitstring alone).
 type StatusListStateDict struct {
-	Version       int    `json:"version"`
-	StatusListID  string `json:"statusListId"`
+	Version    int  `json:"version"`
+	StatusListID string `json:"statusListId"`
 	StatusPurpose string `json:"statusPurpose"`
-	Length        int    `json:"length"`
-	NextIndex     int    `json:"nextIndex"`
-	EncodedList   string `json:"encodedList"`
+	Length    int  `json:"length"`
+	NextIndex   int  `json:"nextIndex"`
+	EncodedList  string `json:"encodedList"`
 }
 
 // ToStateDict serializes the StatusList to a state dict suitable for
@@ -263,12 +263,12 @@ func (s *StatusList) ToStateDict() (*StatusListStateDict, error) {
 		return nil, err
 	}
 	return &StatusListStateDict{
-		Version:       1,
-		StatusListID:  s.statusListID,
+		Version:    1,
+		StatusListID: s.statusListID,
 		StatusPurpose: s.statusPurpose,
-		Length:        s.length,
-		NextIndex:     s.nextIndex,
-		EncodedList:   encoded,
+		Length:    s.length,
+		NextIndex:   s.nextIndex,
+		EncodedList:  encoded,
 	}, nil
 }
 
@@ -305,15 +305,15 @@ func FromStateDict(state *StatusListStateDict) (*StatusList, error) {
 
 // BuildStatusListCredentialOptions configures BuildStatusListCredential.
 type BuildStatusListCredentialOptions struct {
-	IssuerDID    string
-	StatusList   *StatusList
+	IssuerDID  string
+	StatusList  *StatusList
 	CredentialID string
-	ValidSeconds int       // default: 30 days
-	ValidFrom    time.Time // default: now (UTC)
+	ValidSeconds int    // default: 30 days
+	ValidFrom  time.Time // default: now (UTC)
 }
 
 // BuildStatusListCredential constructs an unsigned BitstringStatusListCredential
-// VC per W3C BitstringStatusList §4. Caller attaches a Data Integrity proof
+// VC per BitstringStatusList §4. Caller attaches a Data Integrity proof
 // before publishing.
 func BuildStatusListCredential(opts BuildStatusListCredentialOptions) (map[string]any, error) {
 	if opts.StatusList == nil {
@@ -346,19 +346,19 @@ func BuildStatusListCredential(opts BuildStatusListCredentialOptions) (map[strin
 
 	return map[string]any{
 		"@context": []any{"https://www.w3.org/ns/credentials/v2"},
-		"id":       listID,
+		"id":    listID,
 		"type": []any{
 			"VerifiableCredential",
 			BitstringStatusListCredentialType,
 		},
-		"issuer":     opts.IssuerDID,
-		"validFrom":  issuedAt.Format("2006-01-02T15:04:05Z"),
+		"issuer":   opts.IssuerDID,
+		"validFrom": issuedAt.Format("2006-01-02T15:04:05Z"),
 		"validUntil": expiresAt.Format("2006-01-02T15:04:05Z"),
 		"credentialSubject": map[string]any{
-			"id":             listID + "#list",
-			"type":           BitstringStatusListSubjectType,
-			"statusPurpose":  opts.StatusList.StatusPurpose(),
-			"encodedList":    encoded,
+			"id":       listID + "#list",
+			"type":      BitstringStatusListSubjectType,
+			"statusPurpose": opts.StatusList.StatusPurpose(),
+			"encodedList":  encoded,
 		},
 	}, nil
 }
@@ -366,9 +366,9 @@ func BuildStatusListCredential(opts BuildStatusListCredentialOptions) (map[strin
 // BuildStatusListEntryOptions configures BuildStatusListEntry.
 type BuildStatusListEntryOptions struct {
 	StatusListCredential string
-	StatusListIndex      int
-	StatusPurpose        string // default: revocation
-	EntryID              string
+	StatusListIndex   int
+	StatusPurpose    string // default: revocation
+	EntryID       string
 }
 
 // BuildStatusListEntry constructs a credentialStatus entry for a Vouch
@@ -398,10 +398,10 @@ func BuildStatusListEntry(opts BuildStatusListEntryOptions) (map[string]any, err
 	}
 
 	return map[string]any{
-		"id":                   entryID,
-		"type":                 BitstringStatusListEntryType,
-		"statusPurpose":        purpose,
-		"statusListIndex":      strconv.Itoa(opts.StatusListIndex),
+		"id":          entryID,
+		"type":         BitstringStatusListEntryType,
+		"statusPurpose":    purpose,
+		"statusListIndex":   strconv.Itoa(opts.StatusListIndex),
 		"statusListCredential": opts.StatusListCredential,
 	}, nil
 }

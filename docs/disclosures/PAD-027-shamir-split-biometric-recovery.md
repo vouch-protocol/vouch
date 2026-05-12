@@ -63,14 +63,14 @@ The system constructs an identity bundle that packages both the cryptographic ke
 
 ```json
 {
-  "version": 1,
-  "privateKey": "a3b2c1d4e5f6...64_hex_chars",
-  "voiceCentroid": {
-    "vector": [0.234, -0.891, 0.456, ...],
-    "embeddingType": "dsp_basic",
-    "sampleCount": 5,
-    "voiceprintHash": "e7a1b3c5d9f2..."
-  }
+ "version": 1,
+ "privateKey": "a3b2c1d4e5f6...64_hex_chars",
+ "voiceCentroid": {
+  "vector": [0.234, -0.891, 0.456, ...],
+  "embeddingType": "dsp_basic",
+  "sampleCount": 5,
+  "voiceprintHash": "e7a1b3c5d9f2..."
+ }
 }
 ```
 
@@ -196,14 +196,14 @@ No existing system, product, or publication combines all five elements.
 
 ```json
 {
-  "version": 1,
-  "privateKey": "<64-character hex string, 32 bytes Ed25519 seed>",
-  "voiceCentroid": {
-    "vector": ["<array of 13 or 192 IEEE 754 float64 values>"],
-    "embeddingType": "dsp_basic | ml_ecapa",
-    "sampleCount": "<integer, minimum 3>",
-    "voiceprintHash": "<32-character hex string, SHA-256 truncated>"
-  }
+ "version": 1,
+ "privateKey": "<64-character hex string, 32 bytes Ed25519 seed>",
+ "voiceCentroid": {
+  "vector": ["<array of 13 or 192 IEEE 754 float64 values>"],
+  "embeddingType": "dsp_basic | ml_ecapa",
+  "sampleCount": "<integer, minimum 3>",
+  "voiceprintHash": "<32-character hex string, SHA-256 truncated>"
+ }
 }
 ```
 
@@ -300,7 +300,7 @@ This disclosure describes a method for bundling an Ed25519 private key and a voi
 ## 8. References
 
 - A. Shamir, "How to Share a Secret" (Communications of the ACM, 1979)
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 - NIST SP 800-132 (Recommendation for Password-Based Key Derivation)
 - NIST SP 800-38D (Recommendation for Block Cipher Modes of Operation: GCM)
 - RFC 7518 (JSON Web Algorithms)
@@ -316,7 +316,7 @@ This disclosure describes a method for bundling an Ed25519 private key and a voi
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment
+## Update (April 27, 2026): Data Integrity Embodiment
 
 The Shamir-Split Biometric Recovery protocol bundles the user's Ed25519
 private key together with a voice biometric centroid into a single
@@ -325,11 +325,11 @@ format is independent of the cryptographic envelope used elsewhere in
 the protocol; the original disclosure used JWK as the key-encoding form.
 
 This disclosure additionally covers the embodiment where the bundled
-private-key encoding is the W3C Multikey format (multibase + multicodec,
+private-key encoding is the Multikey format (multibase + multicodec,
 algorithm-agnostic), enabling the same Shamir-Split bundle structure to
 recover Ed25519 keys today, ML-DSA-44 keys under the hybrid post-quantum
 profile, or future post-quantum algorithms with no change to the bundle
 schema or the secret-sharing mechanism. The Shamir threshold parameters,
 AES-256-GCM share encryption, PBKDF2 key derivation, and combined
 biometric-plus-key recovery property are unchanged. This is disclosed
-as additional prior art under modern W3C standards.
+as additional prior art under modern open standards.

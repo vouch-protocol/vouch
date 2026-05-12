@@ -93,9 +93,9 @@ which is a standalone Node.js / TypeScript developer utility usable
 independently of the broader Vouch Protocol. When Amnesia and Vouch are
 deployed together, optional cryptographic attestation (PAD-050 attest
 mode) integrates Amnesia's egress events with Vouch Protocol's
-W3C Verifiable Credentials and Data Integrity proof system.
+Verifiable Credentials and Data Integrity proof system.
 
-## April 2026 Amendment Wave (W3C Data Integrity Alignment)
+## April 2026 Amendment Wave (Data Integrity Alignment)
 
 On April 27, 2026, sixteen previously-published disclosures (PAD-001,
 002, 003, 013, 016, 021, 022, 024, 026, 027, 029, 031, 032, 033, 034,
@@ -104,7 +104,7 @@ text. The amendments fall into two categories:
 
 **Embodiment broadening:** Ten disclosures that originally named JWS,
 JWT, or JWK as the cryptographic envelope (PAD-001, 003, 013, 024, 026,
-027, 029, 031, 033, 037) had W3C Data Integrity (`eddsa-jcs-2022` and
+027, 029, 031, 033, 037) had Data Integrity (`eddsa-jcs-2022` and
 `hybrid-eddsa-mldsa44-jcs-2026`) added as alternative embodiments of the
 same originally-claimed mechanism. The original abstracts, claims, and
 priority dates are preserved unchanged. The new embodiments are

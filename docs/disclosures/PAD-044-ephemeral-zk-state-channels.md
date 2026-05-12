@@ -42,7 +42,7 @@ friction.
 The current Vouch base-layer architecture is appropriate for
 **discrete, consequential actions**: book a flight, execute a trade,
 submit a clinical finding. Each such action carries a JCS-canonical
-W3C Verifiable Credential (~700 bytes for `eddsa-jcs-2022`, ~3.2 KB
+Verifiable Credential (~700 bytes for `eddsa-jcs-2022`, ~3.2 KB
 for the hybrid post-quantum profile) over an HTTP request. At
 human-decision-rate frequencies, this is appropriate.
 
@@ -50,14 +50,14 @@ However, the future Agentic Web includes use cases that operate at
 machine-decision-rate frequencies:
 
 - Two AIs negotiating compute pricing (one queries, one bids,
-  hundreds of round-trips per second).
+ hundreds of round-trips per second).
 - Routing logistics negotiations between fleet-management agents
-  (thousands of intents per second across thousands of vehicles).
+ (thousands of intents per second across thousands of vehicles).
 - Real-time market-making between trading agents.
 - Multi-agent reinforcement learning environments where agents
-  exchange state updates at every simulation step.
+ exchange state updates at every simulation step.
 - Distributed rendering pipelines where agents negotiate task
-  allocation per frame.
+ allocation per frame.
 
 At these frequencies, signing and transmitting a separate W3C
 credential per intent is not viable. A trading agent making 10,000
@@ -84,13 +84,13 @@ Two agents A and B, each with Vouch identities (`did:web:agentA` and
 
 - Identifies both parties' DIDs.
 - Specifies the channel scope (resource URIs in scope, intent types
-  permitted, maximum interaction count, expiry).
+ permitted, maximum interaction count, expiry).
 - Locks initial state on a settlement layer. The settlement layer can
-  be a clearinghouse, an enterprise settlement service, a
-  public decentralized ledger, or any anchoring registry that supports
-  content-addressed state commits.
+ be a clearinghouse, an enterprise settlement service, a
+ public decentralized ledger, or any anchoring registry that supports
+ content-addressed state commits.
 - Carries a Vouch Data Integrity proof signed by both A and B (or a
-  threshold aggregate signature per PAD-034).
+ threshold aggregate signature per PAD-034).
 
 The Channel Open Credential is published once to the settlement
 layer, establishing the channel's existence. From this point, the
@@ -103,12 +103,12 @@ direct peer-to-peer transport (TCP, QUIC, WebRTC, or any low-latency
 channel). Each micro-intent:
 
 - Is a JCS-canonical JSON object describing one negotiation step
-  (e.g., "bid 0.0017 USD per inference token").
+ (e.g., "bid 0.0017 USD per inference token").
 - Is signed by the proposing agent under their Vouch identity using
-  the standard `eddsa-jcs-2022` cryptosuite.
+ the standard `eddsa-jcs-2022` cryptosuite.
 - Is acknowledged by the other agent with a counter-signed reply.
 - Is appended to a local **interaction log** maintained by both
-  parties.
+ parties.
 
 These micro-intents do not touch the public Vouch base layer. The
 agents trust each other's signatures because both parties hold the
@@ -129,7 +129,7 @@ The Close Credential's `credentialSubject` contains:
 - Final state (e.g., final negotiated price, total tokens exchanged).
 - Interaction count (number of micro-intents).
 - Aggregate behavioral metrics (e.g., latency distribution, intent
-  type distribution).
+ type distribution).
 - A **ZK-SNARK proof** asserting:
 
 > "There exists a sequence of N micro-intents, each correctly signed
@@ -177,16 +177,16 @@ The Layer 2 architecture preserves all base-layer cryptographic
 guarantees:
 
 - **Identity binding**: each micro-intent is signed by a Vouch DID,
-  enforced inside the ZK circuit.
+ enforced inside the ZK circuit.
 - **Resource scope**: the channel scope rules are enforced inside the
-  ZK circuit; out-of-scope intents cannot be rolled up.
+ ZK circuit; out-of-scope intents cannot be rolled up.
 - **Non-repudiation**: either party retains the full signed
-  interaction log and can produce it as evidence in dispute.
+ interaction log and can produce it as evidence in dispute.
 - **Tamper detection**: any modification to the rolled-up log
-  invalidates the ZK-SNARK.
+ invalidates the ZK-SNARK.
 - **Hybrid PQ compatibility**: the ZK circuit can verify
-  hybrid-eddsa-mldsa44 signatures inside the proof, supporting the
-  post-quantum profile (PAD-040).
+ hybrid-eddsa-mldsa44 signatures inside the proof, supporting the
+ post-quantum profile (PAD-040).
 
 ### 3.4 Dispute Resolution Mechanism
 
@@ -194,13 +194,13 @@ If either party challenges the Close Credential, the protocol
 provides an interactive dispute path:
 
 1. Challenger publishes a **Dispute Credential** to the settlement
-   layer claiming a specific micro-intent in the rolled-up log was
-   either forged, missing, or out-of-scope.
+  layer claiming a specific micro-intent in the rolled-up log was
+  either forged, missing, or out-of-scope.
 2. Within a defined challenge window, either party may publish the
-   relevant signed micro-intent or a sub-proof showing the rollup is
-   consistent.
+  relevant signed micro-intent or a sub-proof showing the rollup is
+  consistent.
 3. The settlement layer arbitrates by verifying the sub-proof,
-   producing a final settled state.
+  producing a final settled state.
 
 This mechanism mirrors optimistic-rollup challenge protocols from
 public blockchain Layer 2 systems (Optimism, Arbitrum) but adapted to
@@ -249,45 +249,45 @@ peer-to-peer links.
 The non-obvious elements of this disclosure are:
 
 1. **Adaptation of state-channel architectures to verifiable
-   credentials.** Public-blockchain state channels (Lightning Network
-   for Bitcoin, Raiden for Ethereum) settle financial transactions.
-   Adapting them to agent-identity credentials requires new circuit
-   design (the ZK-SNARK must verify Ed25519 / ML-DSA-44 signatures
-   inside the proof, not just hash equality), new dispute semantics
-   (signed micro-intents, not transaction outputs), and new scope
-   enforcement (resource-narrowing rules from PAD-021 must be
-   enforced inside the circuit).
+  credentials.** Public-blockchain state channels (Lightning Network
+  for Bitcoin, Raiden for Ethereum) settle financial transactions.
+  Adapting them to agent-identity credentials requires new circuit
+  design (the ZK-SNARK must verify Ed25519 / ML-DSA-44 signatures
+  inside the proof, not just hash equality), new dispute semantics
+  (signed micro-intents, not transaction outputs), and new scope
+  enforcement (resource-narrowing rules from PAD-021 must be
+  enforced inside the circuit).
 
 2. **The decoupling of credential bandwidth from interaction
-   frequency.** Existing high-frequency M2M protocols either skip
-   cryptographic verification entirely (sacrificing accountability)
-   or batch into custom signatures (sacrificing interoperability).
-   This disclosure achieves both: every micro-intent is
-   cryptographically bound to a Vouch DID, and the rollup produces a
-   credential interoperable with the base layer.
+  frequency.** Existing high-frequency M2M protocols either skip
+  cryptographic verification entirely (sacrificing accountability)
+  or batch into custom signatures (sacrificing interoperability).
+  This disclosure achieves both: every micro-intent is
+  cryptographically bound to a Vouch DID, and the rollup produces a
+  credential interoperable with the base layer.
 
 3. **Settlement-layer agnosticism.** The architecture works against
-   any anchoring registry: a centralized clearinghouse (a third party,
-   enterprise settlement service), a public blockchain, an internal
-   transparency log, or a hybrid. The base mechanism does not
-   require a specific Layer 1.
+  any anchoring registry: a centralized clearinghouse (a third party,
+  enterprise settlement service), a public blockchain, an internal
+  transparency log, or a hybrid. The base mechanism does not
+  require a specific Layer 1.
 
 4. **ZK-SNARK circuit specifically for Vouch credentials.** The
-   circuit verifies a sequence of JCS-canonicalized credential
-   signatures and channel-scope rules in a single proof. This is a
-   novel circuit construction not present in prior ZK-rollup
-   literature, which assumes ERC-20-style transfers or simple
-   key-value updates.
+  circuit verifies a sequence of JCS-canonicalized credential
+  signatures and channel-scope rules in a single proof. This is a
+  novel circuit construction not present in prior ZK-rollup
+  literature, which assumes ERC-20-style transfers or simple
+  key-value updates.
 
 The combination is non-obvious relative to:
 
 - Lightning Network / Raiden (financial settlements, no agent
-  identity, no scope rules).
+ identity, no scope rules).
 - Generic ZK-rollups (transaction-level, not credential-level).
 - Service mesh batching (no cryptographic guarantee per
-  micro-interaction).
+ micro-interaction).
 - Vouch base layer alone (cannot scale to billions of M2M
-  micro-intents per second).
+ micro-intents per second).
 
 ## 6. Disclaimer
 

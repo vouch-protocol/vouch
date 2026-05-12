@@ -1,7 +1,7 @@
-// W3C Verifiable Credential envelope for Vouch Protocol.
+// Verifiable Credential envelope for Vouch Protocol.
 //
 // Mirrors vouch/vc.py and typescript/src/vc.ts. Builds a VouchCredential
-// per W3C CG Report §5: a W3C VC Data Model 2.0 credential carrying an
+// per Specification §5: a VC Data Model 2.0 credential carrying an
 // agent's intent, optional reputation, and optional delegation chain,
 // secured by a Data Integrity proof (eddsa-jcs-2022).
 
@@ -15,46 +15,46 @@ import (
 )
 
 const (
-	VCContextV2          = "https://www.w3.org/ns/credentials/v2"
-	VouchContextV1       = "https://vouch-protocol.com/contexts/v1"
-	VCType               = "VerifiableCredential"
-	VouchCredentialType  = "VouchCredential"
-	SessionVoucherType   = "SessionVoucher"
-	ProtocolVersion      = "1.0"
+	VCContextV2     = "https://www.w3.org/ns/credentials/v2"
+	VouchContextV1    = "https://vouch-protocol.com/contexts/v1"
+	VCType        = "VerifiableCredential"
+	VouchCredentialType = "VouchCredential"
+	SessionVoucherType  = "SessionVoucher"
+	ProtocolVersion   = "1.0"
 )
 
 // Intent describes the action being authorized. action, target, and resource
-// are REQUIRED per W3C CG Report §5.4.1.
+// are REQUIRED per Specification §5.4.1.
 type Intent struct {
-	Action   string         `json:"action"`
-	Target   string         `json:"target"`
-	Resource string         `json:"resource"`
-	Extra    map[string]any `json:"-"`
+	Action  string     `json:"action"`
+	Target  string     `json:"target"`
+	Resource string     `json:"resource"`
+	Extra  map[string]any `json:"-"`
 }
 
 // DelegationLink is one link in a delegation chain.
 type DelegationLink struct {
-	Issuer            string         `json:"issuer"`
-	Subject           string         `json:"subject"`
-	Intent            map[string]any `json:"intent"`
-	ValidFrom         string         `json:"validFrom,omitempty"`
-	ValidUntil        string         `json:"validUntil,omitempty"`
-	ParentProofValue  string         `json:"parentProofValue,omitempty"`
+	Issuer      string     `json:"issuer"`
+	Subject      string     `json:"subject"`
+	Intent      map[string]any `json:"intent"`
+	ValidFrom     string     `json:"validFrom,omitempty"`
+	ValidUntil    string     `json:"validUntil,omitempty"`
+	ParentProofValue string     `json:"parentProofValue,omitempty"`
 }
 
 // BuildVouchCredentialOptions configures BuildVouchCredential.
 type BuildVouchCredentialOptions struct {
-	IssuerDID        string
-	Intent           map[string]any
-	ValidSeconds     int
-	ReputationScore  *int
-	DelegationChain  []map[string]any
-	CredentialID     string
-	ValidFrom        time.Time
+	IssuerDID    string
+	Intent      map[string]any
+	ValidSeconds   int
+	ReputationScore *int
+	DelegationChain []map[string]any
+	CredentialID   string
+	ValidFrom    time.Time
 
 	// CredentialStatus is an optional W3C credentialStatus entry, typically
 	// built via BuildStatusListEntry to reference a BitstringStatusListCredential
-	// (W3C CG Report §11.2). When non-nil, it is attached to the credential as
+	// (Specification §11.2). When non-nil, it is attached to the credential as
 	// the `credentialStatus` property.
 	CredentialStatus map[string]any
 }
@@ -83,9 +83,9 @@ func BuildVouchCredential(opts BuildVouchCredentialOptions) (map[string]any, err
 	expiresAt := issuedAt.Add(time.Duration(validSeconds) * time.Second)
 
 	subject := map[string]any{
-		"id":           opts.IssuerDID,
+		"id":      opts.IssuerDID,
 		"vouchVersion": ProtocolVersion,
-		"intent":       opts.Intent,
+		"intent":    opts.Intent,
 	}
 
 	if opts.ReputationScore != nil {
@@ -118,12 +118,12 @@ func BuildVouchCredential(opts BuildVouchCredentialOptions) (map[string]any, err
 	}
 
 	vc := map[string]any{
-		"@context":          []any{VCContextV2, VouchContextV1},
-		"id":                credID,
-		"type":              []any{VCType, VouchCredentialType},
-		"issuer":            opts.IssuerDID,
-		"validFrom":         formatISO8601(issuedAt),
-		"validUntil":        formatISO8601(expiresAt),
+		"@context":     []any{VCContextV2, VouchContextV1},
+		"id":        credID,
+		"type":       []any{VCType, VouchCredentialType},
+		"issuer":      opts.IssuerDID,
+		"validFrom":     formatISO8601(issuedAt),
+		"validUntil":    formatISO8601(expiresAt),
 		"credentialSubject": subject,
 	}
 
@@ -142,13 +142,13 @@ func validateIntent(intent map[string]any) error {
 		v, ok := intent[required]
 		if !ok || v == nil {
 			return fmt.Errorf(
-				"intent.%s is REQUIRED (W3C CG Report §5.4.1), Vouch credentials MUST bind to a concrete resource",
+				"intent.%s is REQUIRED (Specification §5.4.1), Vouch credentials MUST bind to a concrete resource",
 				required,
 			)
 		}
 		if s, isStr := v.(string); isStr && s == "" {
 			return fmt.Errorf(
-				"intent.%s is REQUIRED (W3C CG Report §5.4.1), Vouch credentials MUST bind to a concrete resource",
+				"intent.%s is REQUIRED (Specification §5.4.1), Vouch credentials MUST bind to a concrete resource",
 				required,
 			)
 		}

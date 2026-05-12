@@ -82,24 +82,24 @@ Every `T` seconds (where `T < TTL`), the agent constructs and submits a heartbea
 
 ```json
 {
-  "version": "1.0",
-  "type": "heartbeat_request",
-  "agent_did": "did:key:z6MkAgent...",
-  "sequence_number": 4207,
-  "timestamp_utc": 1739520000,
-  "nonce": "random_32_bytes_hex",
-  "prev_voucher_hash": "sha256:H(Voucher_4206)",
-  "action_merkle_root": "sha256:MerkleRoot(actions[t_4206, t_4207])",
-  "behavioral_digest": {
-    "api_calls": 47,
-    "tokens_consumed": 12400,
-    "resources_accessed": ["database:read", "api:weather"],
-    "intent_drift_score": 0.02
-  },
-  "intent_commitment": "sha256:H(next_planned_actions)",
-  "canary_reveal": "secret_4206_plaintext",
-  "canary_commitment": "sha256:H(secret_4207)",
-  "signature": "ed25519:agent_signs_all_above_fields"
+ "version": "1.0",
+ "type": "heartbeat_request",
+ "agent_did": "did:key:z6MkAgent...",
+ "sequence_number": 4207,
+ "timestamp_utc": 1739520000,
+ "nonce": "random_32_bytes_hex",
+ "prev_voucher_hash": "sha256:H(Voucher_4206)",
+ "action_merkle_root": "sha256:MerkleRoot(actions[t_4206, t_4207])",
+ "behavioral_digest": {
+  "api_calls": 47,
+  "tokens_consumed": 12400,
+  "resources_accessed": ["database:read", "api:weather"],
+  "intent_drift_score": 0.02
+ },
+ "intent_commitment": "sha256:H(next_planned_actions)",
+ "canary_reveal": "secret_4206_plaintext",
+ "canary_commitment": "sha256:H(secret_4207)",
+ "signature": "ed25519:agent_signs_all_above_fields"
 }
 ```
 
@@ -120,9 +120,9 @@ The hash-linking creates a **tamper-evident, append-only log** of the agent's en
 
 ```
 Voucher_0 ← Voucher_1 ← Voucher_2 ← ... ← Voucher_n
-   |             |             |                  |
-   v             v             v                  v
-Actions_0    Actions_1    Actions_2          Actions_n
+  |       |       |         |
+  v       v       v         v
+Actions_0  Actions_1  Actions_2     Actions_n
 ```
 
 If an agent is compromised at interval `k`, the chain diverges at exactly that point. Forensic analysis can identify:
@@ -138,35 +138,35 @@ The Validator does not merely check agent liveness—it evaluates the agent's **
 
 ```
 Heartbeat Request
-      |
-      v
+   |
+   v
 [1. Signature Verification]
-      |  - Verify Ed25519 signature against agent's DID
-      v
+   | - Verify Ed25519 signature against agent's DID
+   v
 [2. Chain Continuity Check]
-      |  - Verify prev_voucher_hash matches last issued voucher
-      |  - Verify sequence_number is exactly previous + 1
-      v
+   | - Verify prev_voucher_hash matches last issued voucher
+   | - Verify sequence_number is exactly previous + 1
+   v
 [3. Canary Verification]
-      |  - Verify canary_reveal matches previous canary_commitment
-      |  - Store new canary_commitment
-      v
+   | - Verify canary_reveal matches previous canary_commitment
+   | - Store new canary_commitment
+   v
 [4. Behavioral Analysis]
-      |  - Compare behavioral_digest against:
-      |    a) Agent's declared intent (from delegation chain)
-      |    b) Historical baseline for this agent class
-      |    c) Absolute safety boundaries
-      |  - Calculate drift score
-      v
+   | - Compare behavioral_digest against:
+   |  a) Agent's declared intent (from delegation chain)
+   |  b) Historical baseline for this agent class
+   |  c) Absolute safety boundaries
+   | - Calculate drift score
+   v
 [5. External Safety Signals]
-      |  - Check operator kill switch
-      |  - Query anomaly detection oracles
-      |  - Verify agent's resource budget
-      v
+   | - Check operator kill switch
+   | - Query anomaly detection oracles
+   | - Verify agent's resource budget
+   v
 [6. Renewal Decision]
-      |  - RENEW: Issue new Session Voucher
-      |  - RESTRICT: Issue voucher with reduced scope
-      |  - DENY: Refuse renewal (agent becomes untrusted)
+   | - RENEW: Issue new Session Voucher
+   | - RESTRICT: Issue voucher with reduced scope
+   | - DENY: Refuse renewal (agent becomes untrusted)
 ```
 
 #### 3.2.2 Intent Drift Detection
@@ -175,29 +175,29 @@ The Validator maintains a behavioral model for each agent class. The `intent_dri
 
 ```python
 def calculate_intent_drift(delegation_intent, behavioral_digest, historical_baseline):
-    """
-    Measures how far an agent's actual behavior has drifted
-    from its authorized intent.
+  """
+  Measures how far an agent's actual behavior has drifted
+  from its authorized intent.
 
-    Returns: 0.0 (perfect alignment) to 1.0 (complete divergence)
-    """
-    # Semantic similarity between declared intent and actual actions
-    intent_alignment = semantic_distance(
-        delegation_intent.authorized_actions,
-        behavioral_digest.resources_accessed
-    )
+  Returns: 0.0 (perfect alignment) to 1.0 (complete divergence)
+  """
+  # Semantic similarity between declared intent and actual actions
+  intent_alignment = semantic_distance(
+    delegation_intent.authorized_actions,
+    behavioral_digest.resources_accessed
+  )
 
-    # Statistical deviation from historical baseline
-    behavioral_deviation = mahalanobis_distance(
-        behavioral_digest.to_vector(),
-        historical_baseline.mean,
-        historical_baseline.covariance
-    )
+  # Statistical deviation from historical baseline
+  behavioral_deviation = mahalanobis_distance(
+    behavioral_digest.to_vector(),
+    historical_baseline.mean,
+    historical_baseline.covariance
+  )
 
-    # Composite drift score
-    drift = (intent_alignment * 0.6) + (min(1.0, behavioral_deviation / threshold) * 0.4)
+  # Composite drift score
+  drift = (intent_alignment * 0.6) + (min(1.0, behavioral_deviation / threshold) * 0.4)
 
-    return drift
+  return drift
 ```
 
 **Renewal thresholds:**
@@ -219,24 +219,24 @@ Instead of a binary valid/expired state, Session Vouchers carry a **continuous t
 trust(t) = e^(-lambda * (t - t_issued))
 
 Where:
-  t         = current time
-  t_issued  = voucher issuance timestamp
-  lambda    = decay constant (set by Validator based on risk context)
+ t     = current time
+ t_issued = voucher issuance timestamp
+ lambda  = decay constant (set by Validator based on risk context)
 ```
 
 The Session Voucher includes the parameters needed for any verifier to independently compute the current trust level:
 
 ```json
 {
-  "voucher": {
-    "agent_did": "did:key:z6MkAgent...",
-    "issued_at": 1739520000,
-    "decay_lambda": 0.05,
-    "initial_trust": 1.0,
-    "max_ttl": 60,
-    "validator_signatures": ["sig_A", "sig_B", "sig_C"],
-    "scope": ["api:read", "api:write", "database:read"]
-  }
+ "voucher": {
+  "agent_did": "did:key:z6MkAgent...",
+  "issued_at": 1739520000,
+  "decay_lambda": 0.05,
+  "initial_trust": 1.0,
+  "max_ttl": 60,
+  "validator_signatures": ["sig_A", "sig_B", "sig_C"],
+  "scope": ["api:read", "api:write", "database:read"]
+ }
 }
 ```
 
@@ -246,34 +246,34 @@ Different verifiers apply different trust thresholds based on the sensitivity of
 
 ```python
 def evaluate_access(voucher, operation, current_time):
-    """
-    Verifier-side trust evaluation.
-    Each verifier independently decides its risk tolerance.
-    """
-    elapsed = current_time - voucher.issued_at
+  """
+  Verifier-side trust evaluation.
+  Each verifier independently decides its risk tolerance.
+  """
+  elapsed = current_time - voucher.issued_at
 
-    # Hard TTL ceiling
-    if elapsed > voucher.max_ttl:
-        return AccessDecision.DENY
+  # Hard TTL ceiling
+  if elapsed > voucher.max_ttl:
+    return AccessDecision.DENY
 
-    # Compute current trust level
-    current_trust = voucher.initial_trust * math.exp(-voucher.decay_lambda * elapsed)
+  # Compute current trust level
+  current_trust = voucher.initial_trust * math.exp(-voucher.decay_lambda * elapsed)
 
-    # Operation-specific thresholds
-    thresholds = {
-        "financial_transaction": 0.95,   # Must have renewed within ~1s
-        "api_write":            0.80,    # Within ~4s
-        "api_read":             0.50,    # Within ~14s
-        "health_check":         0.20,    # Within ~32s
-        "logging":              0.05,    # Within ~60s
-    }
+  # Operation-specific thresholds
+  thresholds = {
+    "financial_transaction": 0.95,  # Must have renewed within ~1s
+    "api_write":      0.80,  # Within ~4s
+    "api_read":       0.50,  # Within ~14s
+    "health_check":     0.20,  # Within ~32s
+    "logging":       0.05,  # Within ~60s
+  }
 
-    required = thresholds.get(operation.category, 0.80)
+  required = thresholds.get(operation.category, 0.80)
 
-    if current_trust >= required:
-        return AccessDecision.ALLOW
-    else:
-        return AccessDecision.DENY
+  if current_trust >= required:
+    return AccessDecision.ALLOW
+  else:
+    return AccessDecision.DENY
 ```
 
 #### 3.3.3 Properties of Trust Entropy
@@ -293,32 +293,32 @@ To eliminate single points of failure and compromise, renewal requires independe
 #### 3.4.1 Validator Federation Architecture
 
 ```
-                    Heartbeat Request
-                          |
-            +-------------+-------------+
-            |             |             |
-            v             v             v
-    +-----------+  +-----------+  +-----------+
-    | Validator |  | Validator |  | Validator |
-    |     A     |  |     B     |  |     C     |
-    | (Policy)  |  | (Anomaly) |  | (Budget)  |
-    +-----------+  +-----------+  +-----------+
-    | Kill switch| | Behavioral| | Resource  |
-    | Operator   | | drift     | | budget    |
-    | policy     | | detection | | limits    |
-    | engine     | | ML model  | | cost caps |
-    +-----+-----+  +-----+-----+  +-----+-----+
-          |              |              |
-          v              v              v
-       Sign/Deny     Sign/Deny     Sign/Deny
-          |              |              |
-          +------+-------+------+------+
-                 |              |
-                 v              v
-          [Quorum Check: M-of-N signatures present?]
-                 |
-                 v
-          Session Voucher (carries M independent signatures)
+          Heartbeat Request
+             |
+      +-------------+-------------+
+      |       |       |
+      v       v       v
+  +-----------+ +-----------+ +-----------+
+  | Validator | | Validator | | Validator |
+  |   A   | |   B   | |   C   |
+  | (Policy) | | (Anomaly) | | (Budget) |
+  +-----------+ +-----------+ +-----------+
+  | Kill switch| | Behavioral| | Resource |
+  | Operator  | | drift   | | budget  |
+  | policy   | | detection | | limits  |
+  | engine   | | ML model | | cost caps |
+  +-----+-----+ +-----+-----+ +-----+-----+
+     |       |       |
+     v       v       v
+    Sign/Deny   Sign/Deny   Sign/Deny
+     |       |       |
+     +------+-------+------+------+
+         |       |
+         v       v
+     [Quorum Check: M-of-N signatures present?]
+         |
+         v
+     Session Voucher (carries M independent signatures)
 ```
 
 #### 3.4.2 Validator Specialization
@@ -345,19 +345,19 @@ Each Validator operates independently with its own key pair and evaluates a dist
 
 ```python
 def verify_session_voucher(voucher, known_validators, quorum_threshold):
-    """
-    Verify that a Session Voucher carries sufficient
-    independent Validator signatures.
-    """
-    valid_signatures = 0
+  """
+  Verify that a Session Voucher carries sufficient
+  independent Validator signatures.
+  """
+  valid_signatures = 0
 
-    for validator_did, signature in voucher.validator_signatures:
-        if validator_did in known_validators:
-            pubkey = known_validators[validator_did]
-            if verify_ed25519(signature, voucher.payload, pubkey):
-                valid_signatures += 1
+  for validator_did, signature in voucher.validator_signatures:
+    if validator_did in known_validators:
+      pubkey = known_validators[validator_did]
+      if verify_ed25519(signature, voucher.payload, pubkey):
+        valid_signatures += 1
 
-    return valid_signatures >= quorum_threshold
+  return valid_signatures >= quorum_threshold
 ```
 
 ### 3.5 Canary Commitments (Decentralized Dead-Man's Switch)
@@ -372,31 +372,31 @@ With each heartbeat, the agent performs two operations:
 2. **Commits** to a new canary secret for the current interval.
 
 ```
-Interval n:     Agent publishes C_n = H(secret_n)     and reveals secret_{n-1}
-Interval n+1:   Agent publishes C_{n+1} = H(secret_{n+1}) and reveals secret_n
-Interval n+2:   Agent publishes C_{n+2} = H(secret_{n+2}) and reveals secret_{n+1}
+Interval n:   Agent publishes C_n = H(secret_n)   and reveals secret_{n-1}
+Interval n+1:  Agent publishes C_{n+1} = H(secret_{n+1}) and reveals secret_n
+Interval n+2:  Agent publishes C_{n+2} = H(secret_{n+2}) and reveals secret_{n+1}
 ...
-Failure at k:   secret_k is NEVER revealed → any holder of C_k can detect death
+Failure at k:  secret_k is NEVER revealed → any holder of C_k can detect death
 ```
 
 #### 3.5.2 Verification Without Validator
 
 ```python
 def check_canary(voucher_current, voucher_previous, max_age):
-    """
-    Any verifier holding two consecutive vouchers can
-    independently check if the agent is still alive.
-    """
-    # Check if the current voucher reveals the previous canary
-    if sha256(voucher_current.canary_reveal) != voucher_previous.canary_commitment:
-        return AgentStatus.CHAIN_BROKEN  # Possible compromise or substitution
+  """
+  Any verifier holding two consecutive vouchers can
+  independently check if the agent is still alive.
+  """
+  # Check if the current voucher reveals the previous canary
+  if sha256(voucher_current.canary_reveal) != voucher_previous.canary_commitment:
+    return AgentStatus.CHAIN_BROKEN # Possible compromise or substitution
 
-    # Check if the canary is stale
-    if current_time() - voucher_current.issued_at > max_age:
-        if not has_subsequent_voucher(voucher_current):
-            return AgentStatus.PRESUMED_DEAD  # No renewal → agent failed
+  # Check if the canary is stale
+  if current_time() - voucher_current.issued_at > max_age:
+    if not has_subsequent_voucher(voucher_current):
+      return AgentStatus.PRESUMED_DEAD # No renewal → agent failed
 
-    return AgentStatus.ALIVE
+  return AgentStatus.ALIVE
 ```
 
 #### 3.5.3 Security Properties
@@ -417,24 +417,24 @@ The TTL assigned to an agent is not static—it is dynamically computed based on
 
 ```python
 def calculate_adaptive_ttl(agent_history, base_ttl=5, max_ttl=60):
-    """
-    Compute TTL based on agent's track record.
+  """
+  Compute TTL based on agent's track record.
 
-    New agents start with minimum TTL.
-    Proven agents earn longer intervals.
-    Any anomaly instantly resets to minimum.
-    """
-    if agent_history.has_recent_anomaly(window_hours=24):
-        return base_ttl  # Instant reset to minimum
+  New agents start with minimum TTL.
+  Proven agents earn longer intervals.
+  Any anomaly instantly resets to minimum.
+  """
+  if agent_history.has_recent_anomaly(window_hours=24):
+    return base_ttl # Instant reset to minimum
 
-    # Successful consecutive heartbeats (no anomalies)
-    streak = agent_history.consecutive_clean_heartbeats
+  # Successful consecutive heartbeats (no anomalies)
+  streak = agent_history.consecutive_clean_heartbeats
 
-    # Logarithmic growth: diminishing returns prevent runaway TTL
-    earned_ttl = base_ttl + (max_ttl - base_ttl) * (1 - math.exp(-streak / 500))
+  # Logarithmic growth: diminishing returns prevent runaway TTL
+  earned_ttl = base_ttl + (max_ttl - base_ttl) * (1 - math.exp(-streak / 500))
 
-    # Never exceed max
-    return min(earned_ttl, max_ttl)
+  # Never exceed max
+  return min(earned_ttl, max_ttl)
 ```
 
 #### 3.6.2 TTL Progression
@@ -466,14 +466,14 @@ Each renewal response from a Validator includes:
 
 ```json
 {
-  "validator_heartbeat": {
-    "validator_did": "did:key:z6MkValidator...",
-    "agents_currently_active": 14207,
-    "last_denial_count_1h": 3,
-    "policy_version_hash": "sha256:current_policy_hash",
-    "validator_uptime_attestation": "signed_by_peer_validators",
-    "signature": "ed25519:validator_signs_all_above"
-  }
+ "validator_heartbeat": {
+  "validator_did": "did:key:z6MkValidator...",
+  "agents_currently_active": 14207,
+  "last_denial_count_1h": 3,
+  "policy_version_hash": "sha256:current_policy_hash",
+  "validator_uptime_attestation": "signed_by_peer_validators",
+  "signature": "ed25519:validator_signs_all_above"
+ }
 }
 ```
 
@@ -483,30 +483,30 @@ The agent monitors Validator behavior across multiple renewal cycles:
 
 ```python
 def verify_validator_integrity(validator_heartbeats, expected_policy_hash):
-    """
-    Agent-side check that the Validator is operating correctly.
-    """
-    anomalies = []
+  """
+  Agent-side check that the Validator is operating correctly.
+  """
+  anomalies = []
 
-    # Check policy consistency
-    for hb in validator_heartbeats:
-        if hb.policy_version_hash != expected_policy_hash:
-            anomalies.append("POLICY_CHANGED_UNEXPECTEDLY")
+  # Check policy consistency
+  for hb in validator_heartbeats:
+    if hb.policy_version_hash != expected_policy_hash:
+      anomalies.append("POLICY_CHANGED_UNEXPECTEDLY")
 
-    # Check for suspiciously liberal renewals
-    recent = validator_heartbeats[-10:]
-    if all(hb.last_denial_count_1h == 0 for hb in recent):
-        anomalies.append("NO_DENIALS_SUSPICIOUS")  # Should occasionally deny
+  # Check for suspiciously liberal renewals
+  recent = validator_heartbeats[-10:]
+  if all(hb.last_denial_count_1h == 0 for hb in recent):
+    anomalies.append("NO_DENIALS_SUSPICIOUS") # Should occasionally deny
 
-    # Check peer attestation
-    for hb in validator_heartbeats:
-        if not verify_peer_attestation(hb.validator_uptime_attestation):
-            anomalies.append("PEER_ATTESTATION_FAILED")
+  # Check peer attestation
+  for hb in validator_heartbeats:
+    if not verify_peer_attestation(hb.validator_uptime_attestation):
+      anomalies.append("PEER_ATTESTATION_FAILED")
 
-    if len(anomalies) > THRESHOLD:
-        return ValidatorStatus.SUSPECT  # Agent should enter self-quarantine
+  if len(anomalies) > THRESHOLD:
+    return ValidatorStatus.SUSPECT # Agent should enter self-quarantine
 
-    return ValidatorStatus.HEALTHY
+  return ValidatorStatus.HEALTHY
 ```
 
 #### 3.7.3 Self-Quarantine Mode
@@ -536,45 +536,45 @@ Is the signature valid? AND Is the DID not in the revocation list?
 **Heartbeat Protocol:**
 ```
 Is the signature valid?
-  AND Do M-of-N Validator signatures verify?
-  AND Is trust(now) >= threshold_for_this_operation?
-  AND Is the canary chain unbroken?
+ AND Do M-of-N Validator signatures verify?
+ AND Is trust(now) >= threshold_for_this_operation?
+ AND Is the canary chain unbroken?
 ```
 
 ### 4.2 Complete Verification Flow
 
 ```python
 def authorize_request(request, known_validators, quorum_m):
-    voucher = request.session_voucher
-    operation = request.operation
+  voucher = request.session_voucher
+  operation = request.operation
 
-    # 1. Verify agent's signature on the request
-    if not verify_ed25519(request.signature, request.payload, voucher.agent_did):
-        return Deny("INVALID_AGENT_SIGNATURE")
+  # 1. Verify agent's signature on the request
+  if not verify_ed25519(request.signature, request.payload, voucher.agent_did):
+    return Deny("INVALID_AGENT_SIGNATURE")
 
-    # 2. Verify Validator quorum
-    valid_sigs = count_valid_validator_signatures(voucher, known_validators)
-    if valid_sigs < quorum_m:
-        return Deny("INSUFFICIENT_VALIDATOR_QUORUM")
+  # 2. Verify Validator quorum
+  valid_sigs = count_valid_validator_signatures(voucher, known_validators)
+  if valid_sigs < quorum_m:
+    return Deny("INSUFFICIENT_VALIDATOR_QUORUM")
 
-    # 3. Evaluate trust decay
-    current_trust = voucher.initial_trust * math.exp(
-        -voucher.decay_lambda * (now() - voucher.issued_at)
-    )
-    if current_trust < operation.required_trust_level:
-        return Deny("TRUST_BELOW_THRESHOLD")
+  # 3. Evaluate trust decay
+  current_trust = voucher.initial_trust * math.exp(
+    -voucher.decay_lambda * (now() - voucher.issued_at)
+  )
+  if current_trust < operation.required_trust_level:
+    return Deny("TRUST_BELOW_THRESHOLD")
 
-    # 4. Hard TTL ceiling
-    if now() - voucher.issued_at > voucher.max_ttl:
-        return Deny("VOUCHER_EXPIRED")
+  # 4. Hard TTL ceiling
+  if now() - voucher.issued_at > voucher.max_ttl:
+    return Deny("VOUCHER_EXPIRED")
 
-    # 5. Canary check (if previous voucher available)
-    if has_previous_voucher(voucher.agent_did):
-        canary_status = check_canary(voucher, get_previous_voucher(voucher.agent_did))
-        if canary_status == AgentStatus.CHAIN_BROKEN:
-            return Deny("CANARY_CHAIN_BROKEN")
+  # 5. Canary check (if previous voucher available)
+  if has_previous_voucher(voucher.agent_did):
+    canary_status = check_canary(voucher, get_previous_voucher(voucher.agent_did))
+    if canary_status == AgentStatus.CHAIN_BROKEN:
+      return Deny("CANARY_CHAIN_BROKEN")
 
-    return Allow(trust_level=current_trust)
+  return Allow(trust_level=current_trust)
 ```
 
 ---
@@ -716,7 +716,7 @@ The protocol's core insight is that **identity and behavioral compliance are ins
 - Kerberos V5 (RFC 4120)
 - OAuth 2.0 Authorization Framework (RFC 6749)
 - SPIFFE: Secure Production Identity Framework for Everyone
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-015
 - PAD-002: Cryptographic Binding of AI Agent Intent via Recursive Delegation
 
@@ -735,21 +735,21 @@ signing, several determinism properties emerge that strengthen the
 Heartbeat Protocol:
 
 - The Merkle action root computed over a sequence of JCS-canonicalized
-  agent actions is byte-identical when computed by independent verifiers.
-  A federated Validator Quorum (Policy, Behavioral, Budget) can
-  therefore agree on the Merkle root without trusting a specific
-  serializer.
+ agent actions is byte-identical when computed by independent verifiers.
+ A federated Validator Quorum (Policy, Behavioral, Budget) can
+ therefore agree on the Merkle root without trusting a specific
+ serializer.
 - The behavioral digest hash, when computed over JCS-canonicalized
-  fields, is reproducible across the agent's own runtime (Python),
-  edge verifiers (TypeScript), and high-throughput validation (Go),
-  enabling cross-implementation agreement on whether a heartbeat is
-  trustworthy.
+ fields, is reproducible across the agent's own runtime (Python),
+ edge verifiers (TypeScript), and high-throughput validation (Go),
+ enabling cross-implementation agreement on whether a heartbeat is
+ trustworthy.
 - The canary commitment chain (each heartbeat reveals the prior
-  secret and commits to a new one) inherits the same byte-identical
-  reproducibility, which is critical for the cryptographic mortality
-  detection mechanism: a substituted agent cannot produce a
-  canonically-equivalent heartbeat because the canary continuity
-  would be cryptographically detectable across all verifiers.
+ secret and commits to a new one) inherits the same byte-identical
+ reproducibility, which is critical for the cryptographic mortality
+ detection mechanism: a substituted agent cannot produce a
+ canonically-equivalent heartbeat because the canary continuity
+ would be cryptographically detectable across all verifiers.
 
 The originally-claimed Heartbeat mechanism remains the disclosed claim.
 JCS canonicalization is disclosed as a strengthening implementation

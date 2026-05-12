@@ -1,5 +1,5 @@
-// Tests for the W3C VC + Data Integrity path in the Go sidecar
-// (W3C CG Report §5, §7.1, §8). Mirrors tests/test_signer_vc.py and
+// Tests for the VC + Data Integrity path in the Go sidecar
+// (Specification §5, §7.1, §8). Mirrors tests/test_signer_vc.py and
 // typescript/tests/credential.test.ts in the sibling implementations.
 
 package signer
@@ -30,8 +30,8 @@ func newTestSigner(t *testing.T, did string) *Signer {
 		t.Fatalf("seed generation: %v", err)
 	}
 	s, err := New(Config{
-		DID:                  did,
-		Ed25519Seed:          seed,
+		DID:         did,
+		Ed25519Seed:     seed,
 		DefaultExpirySeconds: 300,
 	})
 	if err != nil {
@@ -42,8 +42,8 @@ func newTestSigner(t *testing.T, did string) *Signer {
 
 func validIntent() map[string]any {
 	return map[string]any{
-		"action":   "read_database",
-		"target":   "users_table",
+		"action":  "read_database",
+		"target":  "users_table",
 		"resource": "https://api.example.com/v1/users",
 	}
 }
@@ -354,15 +354,15 @@ func TestDelegationAppendsLinkFromParent(t *testing.T) {
 
 	parentCred, _ := parent.SignCredential(SignCredentialOptions{
 		Intent: map[string]any{
-			"action":   "plan_trip",
-			"target":   "destination:Paris",
+			"action":  "plan_trip",
+			"target":  "destination:Paris",
 			"resource": "https://travel-api.example.com/v1/bookings",
 		},
 	})
 	childCred, err := child.SignCredential(SignCredentialOptions{
 		Intent: map[string]any{
-			"action":   "book_flight",
-			"target":   "flight:AF123",
+			"action":  "book_flight",
+			"target":  "flight:AF123",
 			"resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
 		},
 		ParentCredential: parentCred,
@@ -396,16 +396,16 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 
 	parentCred, _ := parent.SignCredential(SignCredentialOptions{
 		Intent: map[string]any{
-			"action":   "read",
-			"target":   "users",
+			"action":  "read",
+			"target":  "users",
 			"resource": "https://api.example.com/v1/users",
 		},
 	})
 
 	_, err := child.SignCredential(SignCredentialOptions{
 		Intent: map[string]any{
-			"action":   "read",
-			"target":   "admin",
+			"action":  "read",
+			"target":  "admin",
 			"resource": "https://api.example.com/v1/admin",
 		},
 		ParentCredential: parentCred,
@@ -420,8 +420,8 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 
 func TestDelegationDepthLimit(t *testing.T) {
 	intent := map[string]any{
-		"action":   "read",
-		"target":   "data",
+		"action":  "read",
+		"target":  "data",
 		"resource": "https://api.example.com/v1/data",
 	}
 
@@ -436,7 +436,7 @@ func TestDelegationDepthLimit(t *testing.T) {
 	}
 	for i := 1; i <= 5; i++ {
 		cred, err = signers[i].SignCredential(SignCredentialOptions{
-			Intent:           intent,
+			Intent:      intent,
 			ParentCredential: cred,
 		})
 		if err != nil {
@@ -450,7 +450,7 @@ func TestDelegationDepthLimit(t *testing.T) {
 	}
 
 	if _, err := signers[6].SignCredential(SignCredentialOptions{
-		Intent:           intent,
+		Intent:      intent,
 		ParentCredential: cred,
 	}); err == nil {
 		t.Fatal("expected depth-limit error on 6th hop")
@@ -496,8 +496,8 @@ func TestLegacyAndModernCoexist(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 type jcsVector struct {
-	Name      string `json:"name"`
-	Input     any    `json:"input"`
+	Name   string `json:"name"`
+	Input   any  `json:"input"`
 	Canonical string `json:"canonical"`
 }
 
@@ -535,7 +535,7 @@ func TestJCSInteropVectors(t *testing.T) {
 			}
 			if out != v.Canonical {
 				t.Fatalf(
-					"canonical mismatch\n  expected: %s\n  got:      %s",
+					"canonical mismatch\n expected: %s\n got:   %s",
 					v.Canonical, out,
 				)
 			}

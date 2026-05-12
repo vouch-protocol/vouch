@@ -41,17 +41,17 @@ The Vouch Protocol ecosystem solves identity (PAD-001), action auditing (PAD-017
 
 ```
 Enterprise Firewall / Gatekeeper:
-  |
-  Incoming request from: did:vouch:z6MkUnknownAgent...
-  |
-  Questions the gatekeeper cannot currently answer:
-    1. Has this agent successfully completed similar tasks before?
-    2. How many times has this agent caused execution failures?
-    3. Has this agent ever produced a state hallucination?
-    4. What is this agent's track record over the past 30 days?
-    5. Is this agent improving or degrading in reliability?
-  |
-  Current answer: "I don't know. Allow or block?"
+ |
+ Incoming request from: did:vouch:z6MkUnknownAgent...
+ |
+ Questions the gatekeeper cannot currently answer:
+  1. Has this agent successfully completed similar tasks before?
+  2. How many times has this agent caused execution failures?
+  3. Has this agent ever produced a state hallucination?
+  4. What is this agent's track record over the past 30 days?
+  5. Is this agent improving or degrading in reliability?
+ |
+ Current answer: "I don't know. Allow or block?"
 ```
 
 ### 2.2 Self-Reported Metrics Are Untrustworthy
@@ -74,7 +74,7 @@ An agent reporting its own success rate is fundamentally unreliable:
 | GitHub stars/forks | User action | Low (bot farms) | None | No |
 | Ethereum EigenTrust | On-chain votes | Medium (Sybil staking) | Transaction signatures only | No |
 | Google PageRank | Link structure | Medium (link farms) | None | No |
-| W3C VC status lists | Issuer attestation | Medium | Issuer signature only | No |
+| VC status lists | Issuer attestation | Medium | Issuer signature only | No |
 | **This disclosure** | **Dual-verified VSRs** | **High (tiered attestation)** | **Bidirectional cryptographic proof** | **Yes** |
 
 ### 2.4 The Sybil Attack Surface
@@ -83,15 +83,15 @@ The primary attack against any reputation system is Sybil inflation: creating fa
 
 ```
 Attacker controls:
-  - Agent DID: did:vouch:z6MkMaliciousAgent
-  - 100 fake "target systems": did:web:fake-1.com ... did:web:fake-100.com
+ - Agent DID: did:vouch:z6MkMaliciousAgent
+ - 100 fake "target systems": did:web:fake-1.com ... did:web:fake-100.com
 
 Attack:
-  1. Agent sends trivial requests to each fake target system
-  2. Each fake system generates a VSR with status: "success"
-  3. Fake VSRs submitted to trust registry
-  4. Agent's score inflated to high-trust tier
-  5. Agent uses inflated reputation to gain access to real enterprise systems
+ 1. Agent sends trivial requests to each fake target system
+ 2. Each fake system generates a VSR with status: "success"
+ 3. Fake VSRs submitted to trust registry
+ 4. Agent's score inflated to high-trust tier
+ 5. Agent uses inflated reputation to gain access to real enterprise systems
 ```
 
 This disclosure's tiered attestation model specifically addresses this attack vector (Section 3.5).
@@ -106,33 +106,33 @@ A VSR is the cryptographic evidence that a specific action, requested by a speci
 
 ```json
 {
-  "vsr": {
-    "version": "1.0",
-    "receipt_id": "vsr-2026-04-22-a7f3c2e1",
-    "agent_did": "did:vouch:z6MkAgent123...",
-    "target_system_did": "did:web:api.enterprise.com",
-    "intent_reference": {
-      "intent_hash": "sha256:H(original_agent_signed_intent)",
-      "intent_timestamp": "2026-04-22T10:00:00Z",
-      "intent_action_category": "database_query",
-      "vouch_token_ref": "vouch-token-2026-04-22-001"
-    },
-    "execution_outcome": {
-      "status": "success",
-      "status_detail": "query_returned_42_rows",
-      "state_hash_before": "sha256:H(system_state_pre_execution)",
-      "state_hash_after": "sha256:H(system_state_post_execution)",
-      "execution_duration_ms": 127,
-      "side_effects": [],
-      "hallucination_detected": false
-    },
-    "metadata": {
-      "execution_timestamp": "2026-04-22T10:00:01Z",
-      "target_system_version": "v3.2.1",
-      "execution_environment": "production"
-    },
-    "target_signature": "ed25519:target_system_signs_entire_vsr"
-  }
+ "vsr": {
+  "version": "1.0",
+  "receipt_id": "vsr-2026-04-22-a7f3c2e1",
+  "agent_did": "did:vouch:z6MkAgent123...",
+  "target_system_did": "did:web:api.enterprise.com",
+  "intent_reference": {
+   "intent_hash": "sha256:H(original_agent_signed_intent)",
+   "intent_timestamp": "2026-04-22T10:00:00Z",
+   "intent_action_category": "database_query",
+   "vouch_token_ref": "vouch-token-2026-04-22-001"
+  },
+  "execution_outcome": {
+   "status": "success",
+   "status_detail": "query_returned_42_rows",
+   "state_hash_before": "sha256:H(system_state_pre_execution)",
+   "state_hash_after": "sha256:H(system_state_post_execution)",
+   "execution_duration_ms": 127,
+   "side_effects": [],
+   "hallucination_detected": false
+  },
+  "metadata": {
+   "execution_timestamp": "2026-04-22T10:00:01Z",
+   "target_system_version": "v3.2.1",
+   "execution_environment": "production"
+  },
+  "target_signature": "ed25519:target_system_signs_entire_vsr"
+ }
 }
 ```
 
@@ -163,40 +163,40 @@ The VSR closes the loop: existing PADs prove what the agent *intended* and *reas
 ### 3.3 Trust Registry Architecture
 
 ```
-                              Trust Registry
+               Trust Registry
 +--------------------------------------------------------------------+
-|                                                                    |
-|  +-------------------+    +---------------------+                  |
-|  | Ingestion API     |    | Dual-Sig Verifier   |                  |
-|  | (High-throughput) |--->| 1. Verify target sig |                  |
-|  | Accepts VSRs      |    | 2. Correlate intent  |                  |
-|  +-------------------+    +----------+----------+                  |
-|                                      |                             |
-|                              verified VSR                          |
-|                                      |                             |
-|  +-----------------------------------v--------------------------+  |
-|  |              Scoring Engine                                  |  |
-|  |                                                              |  |
-|  |  Per-Agent Scoring Matrix:                                   |  |
-|  |  +-----------------------------------------------------+    |  |
-|  |  | did:vouch:z6MkAgent123                               |    |  |
-|  |  | +-----------+----------+----------+---------------+  |    |  |
-|  |  | | Dimension | Raw Score| Weighted | Time-Adjusted |  |    |  |
-|  |  | +-----------+----------+----------+---------------+  |    |  |
-|  |  | | Accuracy  |  9847    |  0.94    |  0.91         |  |    |  |
-|  |  | | Safety    |  10000   |  1.00    |  0.98         |  |    |  |
-|  |  | | Latency   |  8923    |  0.87    |  0.84         |  |    |  |
-|  |  | | DataHndl  |  9500    |  0.92    |  0.89         |  |    |  |
-|  |  | +-----------+----------+----------+---------------+  |    |  |
-|  |  | | Composite Score: 0.905 (Tier: TRUSTED)          |  |    |  |
-|  |  | +------------------------------------------------+  |    |  |
-|  |  +-----------------------------------------------------+    |  |
-|  +--------------------------------------------------------------+  |
-|                                                                    |
-|  +-------------------+                                             |
-|  | Enterprise API    |  GET /v1/reputation/{agent_did}             |
-|  | (Gatekeeper Query)|  -> { score, tier, dimensions, history }    |
-|  +-------------------+                                             |
+|                                  |
+| +-------------------+  +---------------------+         |
+| | Ingestion API   |  | Dual-Sig Verifier  |         |
+| | (High-throughput) |--->| 1. Verify target sig |         |
+| | Accepts VSRs   |  | 2. Correlate intent |         |
+| +-------------------+  +----------+----------+         |
+|                   |               |
+|               verified VSR             |
+|                   |               |
+| +-----------------------------------v--------------------------+ |
+| |       Scoring Engine                 | |
+| |                               | |
+| | Per-Agent Scoring Matrix:                  | |
+| | +-----------------------------------------------------+  | |
+| | | did:vouch:z6MkAgent123                |  | |
+| | | +-----------+----------+----------+---------------+ |  | |
+| | | | Dimension | Raw Score| Weighted | Time-Adjusted | |  | |
+| | | +-----------+----------+----------+---------------+ |  | |
+| | | | Accuracy | 9847  | 0.94  | 0.91     | |  | |
+| | | | Safety  | 10000  | 1.00  | 0.98     | |  | |
+| | | | Latency  | 8923  | 0.87  | 0.84     | |  | |
+| | | | DataHndl | 9500  | 0.92  | 0.89     | |  | |
+| | | +-----------+----------+----------+---------------+ |  | |
+| | | | Composite Score: 0.905 (Tier: TRUSTED)     | |  | |
+| | | +------------------------------------------------+ |  | |
+| | +-----------------------------------------------------+  | |
+| +--------------------------------------------------------------+ |
+|                                  |
+| +-------------------+                       |
+| | Enterprise API  | GET /v1/reputation/{agent_did}       |
+| | (Gatekeeper Query)| -> { score, tier, dimensions, history }  |
+| +-------------------+                       |
 +--------------------------------------------------------------------+
 ```
 
@@ -206,33 +206,33 @@ Every submitted VSR undergoes bidirectional cryptographic verification before it
 
 ```
 VSR submitted to Ingestion API:
-  |
-  Step 1: TARGET SYSTEM SIGNATURE VERIFICATION
-  |  - Resolve target_system_did to DID Document
-  |  - Extract target system's public key
-  |  - Verify ed25519 signature over VSR body
-  |  - If invalid: REJECT (forged receipt)
-  |
-  Step 2: INTENT CORRELATION
-  |  - Look up intent_reference.intent_hash in the Vouch Protocol audit log
-  |  - Verify that a Vouch Token (PAD-003) with this hash was issued by agent_did
-  |  - Verify the Vouch Token was addressed to target_system_did
-  |  - Verify the action category matches
-  |  - If no matching intent: REJECT (receipt for non-existent action)
-  |
-  Step 3: TEMPORAL CONSISTENCY
-  |  - Verify intent_timestamp < execution_timestamp
-  |  - Verify execution_timestamp is within acceptable window of intent
-  |    (default: 0.1s to 3600s)
-  |  - Verify receipt_id is unique (no replay)
-  |  - If inconsistent: REJECT (backdated or replayed receipt)
-  |
-  Step 4: TARGET SYSTEM ATTESTATION LEVEL
-  |  - Determine the target system's attestation tier (Section 3.5)
-  |  - Assign weight multiplier to this VSR
-  |
-  Step 5: SCORING ENGINE INGESTION
-     - Feed verified, weighted VSR into agent's scoring matrix
+ |
+ Step 1: TARGET SYSTEM SIGNATURE VERIFICATION
+ | - Resolve target_system_did to DID Document
+ | - Extract target system's public key
+ | - Verify ed25519 signature over VSR body
+ | - If invalid: REJECT (forged receipt)
+ |
+ Step 2: INTENT CORRELATION
+ | - Look up intent_reference.intent_hash in the Vouch Protocol audit log
+ | - Verify that a Vouch Token (PAD-003) with this hash was issued by agent_did
+ | - Verify the Vouch Token was addressed to target_system_did
+ | - Verify the action category matches
+ | - If no matching intent: REJECT (receipt for non-existent action)
+ |
+ Step 3: TEMPORAL CONSISTENCY
+ | - Verify intent_timestamp < execution_timestamp
+ | - Verify execution_timestamp is within acceptable window of intent
+ |  (default: 0.1s to 3600s)
+ | - Verify receipt_id is unique (no replay)
+ | - If inconsistent: REJECT (backdated or replayed receipt)
+ |
+ Step 4: TARGET SYSTEM ATTESTATION LEVEL
+ | - Determine the target system's attestation tier (Section 3.5)
+ | - Assign weight multiplier to this VSR
+ |
+ Step 5: SCORING ENGINE INGESTION
+   - Feed verified, weighted VSR into agent's scoring matrix
 ```
 
 ### 3.5 Tiered Target System Attestation (Anti-Sybil)
@@ -242,44 +242,44 @@ Not all target systems are equally trustworthy. The scoring algorithm weights VS
 **Tier 0: Unverified (weight: 0.01x)**
 ```json
 {
-  "attestation_tier": 0,
-  "criteria": "DID exists, no further verification",
-  "example": "did:key:z6MkRandom...",
-  "sybil_risk": "CRITICAL - trivially fabricated",
-  "weight_multiplier": 0.01
+ "attestation_tier": 0,
+ "criteria": "DID exists, no further verification",
+ "example": "did:key:z6MkRandom...",
+ "sybil_risk": "CRITICAL - trivially fabricated",
+ "weight_multiplier": 0.01
 }
 ```
 
 **Tier 1: Domain-Verified (weight: 0.1x)**
 ```json
 {
-  "attestation_tier": 1,
-  "criteria": "did:web with verified DNS ownership + valid TLS certificate",
-  "example": "did:web:sandbox.startup.io",
-  "sybil_risk": "HIGH - requires domain purchase but cheap",
-  "weight_multiplier": 0.1
+ "attestation_tier": 1,
+ "criteria": "did:web with verified DNS ownership + valid TLS certificate",
+ "example": "did:web:sandbox.startup.io",
+ "sybil_risk": "HIGH - requires domain purchase but cheap",
+ "weight_multiplier": 0.1
 }
 ```
 
 **Tier 2: Organization-Verified (weight: 0.5x)**
 ```json
 {
-  "attestation_tier": 2,
-  "criteria": "Tier 1 + organizational identity verification (LEI, DUNS, EV certificate)",
-  "example": "did:web:api.verified-corp.com",
-  "sybil_risk": "LOW - requires legal entity + identity verification",
-  "weight_multiplier": 0.5
+ "attestation_tier": 2,
+ "criteria": "Tier 1 + organizational identity verification (LEI, DUNS, EV certificate)",
+ "example": "did:web:api.verified-corp.com",
+ "sybil_risk": "LOW - requires legal entity + identity verification",
+ "weight_multiplier": 0.5
 }
 ```
 
 **Tier 3: Enterprise-Verified (weight: 1.0x)**
 ```json
 {
-  "attestation_tier": 3,
-  "criteria": "Tier 2 + active Vouch Protocol integration + minimum 90-day operation history + independent audit",
-  "example": "did:web:api.fortune500.com",
-  "sybil_risk": "VERY LOW - requires sustained legitimate operation",
-  "weight_multiplier": 1.0
+ "attestation_tier": 3,
+ "criteria": "Tier 2 + active Vouch Protocol integration + minimum 90-day operation history + independent audit",
+ "example": "did:web:api.fortune500.com",
+ "sybil_risk": "VERY LOW - requires sustained legitimate operation",
+ "weight_multiplier": 1.0
 }
 ```
 
@@ -306,15 +306,15 @@ Successful VSRs increase the agent's score logarithmically:
 score_increment(n) = k * log(1 + n / scale_factor)
 
 Where:
-  n     = current total verified successful VSRs
-  k     = category-specific growth constant
-  scale_factor = difficulty scaling parameter
+ n   = current total verified successful VSRs
+ k   = category-specific growth constant
+ scale_factor = difficulty scaling parameter
 
 Effect:
-  - Moving from score 50 to 60 requires ~100 successful VSRs
-  - Moving from score 80 to 90 requires ~1,000 successful VSRs
-  - Moving from score 95 to 99 requires ~10,000 successful VSRs
-  - Moving from score 99 to 100 is asymptotically impossible
+ - Moving from score 50 to 60 requires ~100 successful VSRs
+ - Moving from score 80 to 90 requires ~1,000 successful VSRs
+ - Moving from score 95 to 99 requires ~10,000 successful VSRs
+ - Moving from score 99 to 100 is asymptotically impossible
 ```
 
 This ensures:
@@ -330,17 +330,17 @@ Failure VSRs trigger exponential penalties:
 slash_penalty(severity, current_score) = current_score * decay_rate ^ severity
 
 Where:
-  severity = failure classification:
-    1 = minor (timeout, retryable error)           -> decay_rate = 0.95
-    2 = moderate (incorrect result, partial failure) -> decay_rate = 0.80
-    3 = major (unauthorized state modification)      -> decay_rate = 0.50
-    4 = critical (state hallucination, data breach)  -> decay_rate = 0.10
+ severity = failure classification:
+  1 = minor (timeout, retryable error)      -> decay_rate = 0.95
+  2 = moderate (incorrect result, partial failure) -> decay_rate = 0.80
+  3 = major (unauthorized state modification)   -> decay_rate = 0.50
+  4 = critical (state hallucination, data breach) -> decay_rate = 0.10
 
 Examples (agent at score 95):
-  Minor failure:    95 * 0.95^1 = 90.25 (small drop)
-  Moderate failure: 95 * 0.80^2 = 60.80 (significant drop)
-  Major failure:    95 * 0.50^3 = 11.87 (near-zero trust)
-  Critical failure: 95 * 0.10^4 = 0.01  (effectively blacklisted)
+ Minor failure:  95 * 0.95^1 = 90.25 (small drop)
+ Moderate failure: 95 * 0.80^2 = 60.80 (significant drop)
+ Major failure:  95 * 0.50^3 = 11.87 (near-zero trust)
+ Critical failure: 95 * 0.10^4 = 0.01 (effectively blacklisted)
 ```
 
 A single critical failure (state hallucination where the agent claimed success but the target system's state hash reveals incorrect execution) drops an agent from high trust to near-zero, requiring thousands of subsequent successful operations to recover.
@@ -353,14 +353,14 @@ Older VSRs carry exponentially less weight than recent ones:
 time_weight(vsr) = exp(-lambda * age_days(vsr))
 
 Where:
-  lambda = decay constant (default: 0.01, half-life ~69 days)
+ lambda = decay constant (default: 0.01, half-life ~69 days)
 
 Effect:
-  - VSR from today:       weight = 1.00
-  - VSR from 30 days ago: weight = 0.74
-  - VSR from 90 days ago: weight = 0.41
-  - VSR from 180 days ago: weight = 0.17
-  - VSR from 365 days ago: weight = 0.03
+ - VSR from today:    weight = 1.00
+ - VSR from 30 days ago: weight = 0.74
+ - VSR from 90 days ago: weight = 0.41
+ - VSR from 180 days ago: weight = 0.17
+ - VSR from 365 days ago: weight = 0.03
 ```
 
 This ensures:
@@ -372,14 +372,14 @@ This ensures:
 
 ```
 For each dimension d in {accuracy, safety, latency, data_handling}:
-  
-  raw_score_d = sum over all VSRs v:
-    time_weight(v) * tier_weight(v.target_system) * outcome_value(v, d)
-  
-  normalized_score_d = 100 * (1 - exp(-raw_score_d / normalization_constant))
+
+ raw_score_d = sum over all VSRs v:
+  time_weight(v) * tier_weight(v.target_system) * outcome_value(v, d)
+
+ normalized_score_d = 100 * (1 - exp(-raw_score_d / normalization_constant))
 
 Composite Score = weighted_mean(normalized_score_d for all d)
-  where weights are configurable per enterprise query
+ where weights are configurable per enterprise query
 ```
 
 ### 3.7 Reputation Tiers
@@ -402,33 +402,33 @@ GET /v1/reputation/{agent_did}
 
 Response:
 {
-  "agent_did": "did:vouch:z6MkAgent123...",
-  "composite_score": 87.3,
-  "tier": 4,
-  "tier_label": "TRUSTED",
-  "dimensions": {
-    "accuracy":     { "score": 91.2, "vsrs_counted": 12847, "trend": "stable" },
-    "safety":       { "score": 98.1, "vsrs_counted": 12847, "trend": "improving" },
-    "latency":      { "score": 84.5, "vsrs_counted": 12847, "trend": "stable" },
-    "data_handling": { "score": 89.7, "vsrs_counted": 12847, "trend": "stable" }
-  },
-  "history": {
-    "total_vsrs_verified": 12847,
-    "success_rate_30d": 0.997,
-    "critical_failures_all_time": 0,
-    "first_vsr_timestamp": "2026-01-15T08:00:00Z",
-    "most_recent_vsr": "2026-04-22T09:58:00Z",
-    "operating_days": 97
-  },
-  "sybil_resistance": {
-    "tier_3_vsrs_pct": 0.72,
-    "tier_2_vsrs_pct": 0.21,
-    "tier_1_vsrs_pct": 0.06,
-    "tier_0_vsrs_pct": 0.01,
-    "unique_target_systems": 23
-  },
-  "query_timestamp": "2026-04-22T10:00:00Z",
-  "registry_signature": "ed25519:registry_signs_response"
+ "agent_did": "did:vouch:z6MkAgent123...",
+ "composite_score": 87.3,
+ "tier": 4,
+ "tier_label": "TRUSTED",
+ "dimensions": {
+  "accuracy":   { "score": 91.2, "vsrs_counted": 12847, "trend": "stable" },
+  "safety":    { "score": 98.1, "vsrs_counted": 12847, "trend": "improving" },
+  "latency":   { "score": 84.5, "vsrs_counted": 12847, "trend": "stable" },
+  "data_handling": { "score": 89.7, "vsrs_counted": 12847, "trend": "stable" }
+ },
+ "history": {
+  "total_vsrs_verified": 12847,
+  "success_rate_30d": 0.997,
+  "critical_failures_all_time": 0,
+  "first_vsr_timestamp": "2026-01-15T08:00:00Z",
+  "most_recent_vsr": "2026-04-22T09:58:00Z",
+  "operating_days": 97
+ },
+ "sybil_resistance": {
+  "tier_3_vsrs_pct": 0.72,
+  "tier_2_vsrs_pct": 0.21,
+  "tier_1_vsrs_pct": 0.06,
+  "tier_0_vsrs_pct": 0.01,
+  "unique_target_systems": 23
+ },
+ "query_timestamp": "2026-04-22T10:00:00Z",
+ "registry_signature": "ed25519:registry_signs_response"
 }
 ```
 
@@ -436,20 +436,20 @@ Response:
 
 ```
 Enterprise middleware receives agent request:
-  |
-  1. Extract agent DID from Vouch Token (PAD-003)
-  |
-  2. Query Trust Registry API: GET /v1/reputation/{agent_did}
-  |
-  3. Apply enterprise risk policy:
-  |   if tier >= enterprise_min_tier AND
-  |      dimensions.safety.score >= enterprise_safety_floor AND
-  |      sybil_resistance.tier_3_vsrs_pct >= 0.50:
-  |       -> ALLOW (agent meets trust requirements)
-  |   else:
-  |       -> DENY or SANDBOX (insufficient trust evidence)
-  |
-  4. Log decision with registry response hash for audit trail
+ |
+ 1. Extract agent DID from Vouch Token (PAD-003)
+ |
+ 2. Query Trust Registry API: GET /v1/reputation/{agent_did}
+ |
+ 3. Apply enterprise risk policy:
+ |  if tier >= enterprise_min_tier AND
+ |   dimensions.safety.score >= enterprise_safety_floor AND
+ |   sybil_resistance.tier_3_vsrs_pct >= 0.50:
+ |    -> ALLOW (agent meets trust requirements)
+ |  else:
+ |    -> DENY or SANDBOX (insufficient trust evidence)
+ |
+ 4. Log decision with registry response hash for audit trail
 ```
 
 ### 3.9 Reputation Dispute Resolution
@@ -458,18 +458,18 @@ Agents can dispute VSRs they believe are incorrect:
 
 ```json
 {
-  "dispute": {
-    "dispute_id": "disp-2026-04-22-001",
-    "agent_did": "did:vouch:z6MkAgent123...",
-    "contested_vsr_id": "vsr-2026-04-22-a7f3c2e1",
-    "dispute_type": "incorrect_outcome_classification",
-    "evidence": {
-      "agent_reasoning_trace": "vouch:reasoning/r-317",
-      "agent_state_proof": "sha256:H(agent_observed_state)",
-      "dispute_narrative": "Target system returned HTTP 200 with correct data. VSR incorrectly classified as 'partial_failure' due to timeout in the target's logging pipeline, not in execution."
-    },
-    "agent_signature": "ed25519:agent_signs_dispute"
-  }
+ "dispute": {
+  "dispute_id": "disp-2026-04-22-001",
+  "agent_did": "did:vouch:z6MkAgent123...",
+  "contested_vsr_id": "vsr-2026-04-22-a7f3c2e1",
+  "dispute_type": "incorrect_outcome_classification",
+  "evidence": {
+   "agent_reasoning_trace": "vouch:reasoning/r-317",
+   "agent_state_proof": "sha256:H(agent_observed_state)",
+   "dispute_narrative": "Target system returned HTTP 200 with correct data. VSR incorrectly classified as 'partial_failure' due to timeout in the target's logging pipeline, not in execution."
+  },
+  "agent_signature": "ed25519:agent_signs_dispute"
+ }
 }
 ```
 
@@ -485,22 +485,22 @@ Agents can dispute VSRs they believe are incorrect:
 This system explicitly complements PAD-030 (ZK Reputation Portability):
 
 ```
-           Agent decides which reputation mode to use:
-                            |
-              +-------------+-------------+
-              |                           |
-    PAD-030: Private Mode        PAD-036: Public Mode
-              |                           |
-    Agent proves reputation       Enterprise queries
-    via ZK proofs without         agent's public score
-    revealing identity            by known DID
-              |                           |
-    Use case: Anonymous           Use case: Enterprise
-    agent bootstrapping           trust gatekeeper
-    on new platforms              before granting access
-              |                           |
-    Data source: Agent's          Data source: Trust
-    local Pedersen accumulator    Registry's VSR aggregation
+      Agent decides which reputation mode to use:
+              |
+       +-------------+-------------+
+       |              |
+  PAD-030: Private Mode    PAD-036: Public Mode
+       |              |
+  Agent proves reputation    Enterprise queries
+  via ZK proofs without     agent's public score
+  revealing identity      by known DID
+       |              |
+  Use case: Anonymous      Use case: Enterprise
+  agent bootstrapping      trust gatekeeper
+  on new platforms       before granting access
+       |              |
+  Data source: Agent's     Data source: Trust
+  local Pedersen accumulator  Registry's VSR aggregation
 ```
 
 An agent may opt into public reputation (PAD-036) for enterprise contexts where the enterprise requires transparency, and use private reputation (PAD-030) for contexts where anonymity is preferred.
@@ -513,7 +513,7 @@ An agent may opt into public reputation (PAD-036) for enterprise contexts where 
 |--------|-----------|------------------|---------------------------|--------------|------------------|----------------|
 | eBay reputation | Human reviews | Low | No | No | No | No |
 | EigenTrust (Ethereum) | On-chain votes | Medium (staking) | No | No | No | No |
-| W3C VC status | Issuer attestation | Medium | Single-signature | No | No | No |
+| VC status | Issuer attestation | Medium | Single-signature | No | No | No |
 | Google Safe Browsing | Automated scan | High | No (internal) | No | No | Yes |
 | PAD-030 (ZK Reputation) | Blind endorsements | High (DID-bound) | No (agent-controlled) | Yes (heartbeat) | Yes | No (agent presents) |
 | **This disclosure** | **Dual-verified VSRs** | **High (tiered attestation)** | **Yes (agent intent + target outcome)** | **Yes (exponential decay)** | **Yes** | **Yes (Gatekeeper API)** |
@@ -557,22 +557,22 @@ Key: vsr:intent_index:{intent_hash} - Hash (agent_did, target_did, timestamp, vo
 
 ```
 VSR arrives at Ingestion API:
-  |
-  [Rate limiter: max 100 VSRs/s per target_system_did]
-  |
-  [Deduplication: check receipt_id uniqueness]
-  |
-  [Dual-Signature Verification (Section 3.4)]
-  |
-  [Tiered Weight Assignment (Section 3.5)]
-  |
-  [Scoring Engine Update (Section 3.6)]
-  |
-  [Composite Score Recalculation]
-  |
-  [Cache Invalidation for Gatekeeper API]
-  |
-  [Event: score_updated(agent_did, old_score, new_score)]
+ |
+ [Rate limiter: max 100 VSRs/s per target_system_did]
+ |
+ [Deduplication: check receipt_id uniqueness]
+ |
+ [Dual-Signature Verification (Section 3.4)]
+ |
+ [Tiered Weight Assignment (Section 3.5)]
+ |
+ [Scoring Engine Update (Section 3.6)]
+ |
+ [Composite Score Recalculation]
+ |
+ [Cache Invalidation for Gatekeeper API]
+ |
+ [Event: score_updated(agent_did, old_score, new_score)]
 ```
 
 ---

@@ -13,15 +13,15 @@
 
 ## 1. Abstract
 
-A system and method for enabling AI agents to prove quantitative reputation claims to new service providers without revealing their identity, action history, or the services they previously interacted with. The protocol addresses the **cold-start trust problem** in multi-platform agent ecosystems: when an agent with an established track record on Platform A first connects to Platform B, it currently begins with zero reputation  -  despite potentially thousands of verified, safe, and successful interactions elsewhere.
+A system and method for enabling AI agents to prove quantitative reputation claims to new service providers without revealing their identity, action history, or the services they previously interacted with. The protocol addresses the **cold-start trust problem** in multi-platform agent ecosystems: when an agent with an established track record on Platform A first connects to Platform B, it currently begins with zero reputation - despite potentially thousands of verified, safe, and successful interactions elsewhere.
 
 The system introduces several interlocking mechanisms:
 
-1. **Reputation Accumulators:** Each service provider issues blind reputation endorsements  -  cryptographic attestations of agent behavior (actions completed, safety violations, uptime, reasoning quality) that the agent accumulates in a Pedersen commitment-based accumulator without revealing which service issued them.
+1. **Reputation Accumulators:** Each service provider issues blind reputation endorsements - cryptographic attestations of agent behavior (actions completed, safety violations, uptime, reasoning quality) that the agent accumulates in a Pedersen commitment-based accumulator without revealing which service issued them.
 
 2. **ZK Threshold Proofs:** The agent generates zero-knowledge proofs that its accumulated reputation satisfies specific thresholds (e.g., "I have completed ≥10,000 actions with zero safety violations") without revealing the exact count, the specific actions, or the issuing services.
 
-3. **Unlinkable Presentation:** Each proof is generated with a fresh blinding factor, ensuring that two services receiving proofs from the same agent cannot correlate them to determine they are interacting with the same entity  -  unless the agent explicitly reveals its DID.
+3. **Unlinkable Presentation:** Each proof is generated with a fresh blinding factor, ensuring that two services receiving proofs from the same agent cannot correlate them to determine they are interacting with the same entity - unless the agent explicitly reveals its DID.
 
 4. **Reputation Decay Integration:** Proofs include a freshness parameter derived from PAD-016 heartbeat timestamps, ensuring that stale reputation (from an agent that was once trustworthy but has since drifted) cannot be presented as current.
 
@@ -91,7 +91,7 @@ An agent that earned excellent reputation 6 months ago but has since been compro
 
 ### 3.1 Reputation Accumulator
 
-Each agent maintains a single reputation accumulator  -  a cryptographic data structure that aggregates endorsements from multiple services without revealing individual endorsements.
+Each agent maintains a single reputation accumulator - a cryptographic data structure that aggregates endorsements from multiple services without revealing individual endorsements.
 
 The accumulator is based on Pedersen commitments over an elliptic curve:
 
@@ -99,10 +99,10 @@ The accumulator is based on Pedersen commitments over an elliptic curve:
 Accumulator State = Commit(r₁) · Commit(r₂) · ... · Commit(rₙ)
 
 Where:
-  rᵢ = reputation value from endorsement i
-  Commit(rᵢ) = rᵢ · G + bᵢ · H  (Pedersen commitment)
-  G, H = generator points on Curve25519
-  bᵢ = blinding factor (random, known only to agent)
+ rᵢ = reputation value from endorsement i
+ Commit(rᵢ) = rᵢ · G + bᵢ · H (Pedersen commitment)
+ G, H = generator points on Curve25519
+ bᵢ = blinding factor (random, known only to agent)
 ```
 
 **Properties:**
@@ -114,31 +114,31 @@ Where:
 
 ```json
 {
-  "accumulator_id": "acc-did:vouch:agent123",
-  "did": "did:vouch:agent123",
-  "dimensions": {
-    "safety": {
-      "commitment": "curve25519_point_hex",
-      "endorsement_count": 4207,
-      "last_updated": "2026-04-22T10:00:00Z"
-    },
-    "accuracy": {
-      "commitment": "curve25519_point_hex",
-      "endorsement_count": 3891,
-      "last_updated": "2026-04-22T09:55:00Z"
-    },
-    "compliance": {
-      "commitment": "curve25519_point_hex",
-      "endorsement_count": 2104,
-      "last_updated": "2026-04-22T09:30:00Z"
-    }
+ "accumulator_id": "acc-did:vouch:agent123",
+ "did": "did:vouch:agent123",
+ "dimensions": {
+  "safety": {
+   "commitment": "curve25519_point_hex",
+   "endorsement_count": 4207,
+   "last_updated": "2026-04-22T10:00:00Z"
   },
-  "freshness_proof": {
-    "heartbeat_ref": "hb-2026-04-22-09:59:45",
-    "heartbeat_signature": "ed25519:...",
-    "max_age_seconds": 3600
+  "accuracy": {
+   "commitment": "curve25519_point_hex",
+   "endorsement_count": 3891,
+   "last_updated": "2026-04-22T09:55:00Z"
   },
-  "accumulator_signature": "ed25519:agent_signs_current_state"
+  "compliance": {
+   "commitment": "curve25519_point_hex",
+   "endorsement_count": 2104,
+   "last_updated": "2026-04-22T09:30:00Z"
+  }
+ },
+ "freshness_proof": {
+  "heartbeat_ref": "hb-2026-04-22-09:59:45",
+  "heartbeat_signature": "ed25519:...",
+  "max_age_seconds": 3600
+ },
+ "accumulator_signature": "ed25519:agent_signs_current_state"
 }
 ```
 
@@ -149,44 +149,44 @@ Service providers issue endorsements that the agent can incorporate into its acc
 **Endorsement Protocol:**
 
 ```
-Agent                       Service Provider
-  |                                |
-  |-- 1. Request endorsement ----->|
-  |   (present Vouch-Token,       |
-  |    prove DID ownership)        |
-  |                                |
-  |                         [2. Service evaluates agent's
-  |                          behavior during session:
-  |                          - Actions completed: 47
-  |                          - Safety violations: 0
-  |                          - Reasoning quality: 0.92
-  |                          - Compliance score: 1.0]
-  |                                |
-  |<-- 3. Blind endorsement -------|
-  |   (signed reputation vector    |
-  |    with service's Ed25519 key, |
-  |    blinded so agent cannot     |
-  |    selectively discard)        |
-  |                                |
-  [4. Agent incorporates endorsement
-   into accumulator using homomorphic
-   addition of Pedersen commitments]
+Agent            Service Provider
+ |                |
+ |-- 1. Request endorsement ----->|
+ |  (present Vouch-Token,    |
+ |  prove DID ownership)    |
+ |                |
+ |             [2. Service evaluates agent's
+ |             behavior during session:
+ |             - Actions completed: 47
+ |             - Safety violations: 0
+ |             - Reasoning quality: 0.92
+ |             - Compliance score: 1.0]
+ |                |
+ |<-- 3. Blind endorsement -------|
+ |  (signed reputation vector  |
+ |  with service's Ed25519 key, |
+ |  blinded so agent cannot   |
+ |  selectively discard)    |
+ |                |
+ [4. Agent incorporates endorsement
+  into accumulator using homomorphic
+  addition of Pedersen commitments]
 ```
 
 **Blind Endorsement Structure:**
 
 ```json
 {
-  "endorsement_id": "end-svc-a-2026-04-22-001",
-  "issuer_did": "did:vouch:service-a",
-  "epoch": "2026-04-22T00:00:00Z",
-  "dimensions": {
-    "safety": { "value_commitment": "pedersen_commit_hex", "range_proof": "bulletproof_hex" },
-    "accuracy": { "value_commitment": "pedersen_commit_hex", "range_proof": "bulletproof_hex" },
-    "compliance": { "value_commitment": "pedersen_commit_hex", "range_proof": "bulletproof_hex" }
-  },
-  "issuer_signature": "ed25519:service_signs_endorsement",
-  "binding_nonce": "sha256:H(agent_did || epoch || issuer_did)"
+ "endorsement_id": "end-svc-a-2026-04-22-001",
+ "issuer_did": "did:vouch:service-a",
+ "epoch": "2026-04-22T00:00:00Z",
+ "dimensions": {
+  "safety": { "value_commitment": "pedersen_commit_hex", "range_proof": "bulletproof_hex" },
+  "accuracy": { "value_commitment": "pedersen_commit_hex", "range_proof": "bulletproof_hex" },
+  "compliance": { "value_commitment": "pedersen_commit_hex", "range_proof": "bulletproof_hex" }
+ },
+ "issuer_signature": "ed25519:service_signs_endorsement",
+ "binding_nonce": "sha256:H(agent_did || epoch || issuer_did)"
 }
 ```
 
@@ -210,41 +210,41 @@ The agent generates zero-knowledge proofs that its accumulated reputation satisf
 
 ```
 Input:
-  - Agent's accumulator state (commitments + blinding factors)
-  - Threshold predicate (e.g., "safety ≥ 10,000")
-  - Fresh blinding factor for unlinkability
+ - Agent's accumulator state (commitments + blinding factors)
+ - Threshold predicate (e.g., "safety ≥ 10,000")
+ - Fresh blinding factor for unlinkability
 
 Output:
-  - ZK proof π that the committed value satisfies the predicate
-  - Fresh pseudonym (unlinkable to agent's DID)
-  - Freshness certificate (linked to latest heartbeat)
+ - ZK proof π that the committed value satisfies the predicate
+ - Fresh pseudonym (unlinkable to agent's DID)
+ - Freshness certificate (linked to latest heartbeat)
 
 Verification:
-  - Verifier checks π against the commitment
-  - Verifier checks freshness certificate is recent
-  - Verifier learns ONLY that the predicate is satisfied
-  - Verifier learns NOTHING about the exact value, the agent's DID,
-    or which services issued endorsements
+ - Verifier checks π against the commitment
+ - Verifier checks freshness certificate is recent
+ - Verifier learns ONLY that the predicate is satisfied
+ - Verifier learns NOTHING about the exact value, the agent's DID,
+  or which services issued endorsements
 ```
 
 **Proof Structure:**
 
 ```json
 {
-  "proof_type": "zk_reputation_threshold",
-  "predicate": {
-    "dimension": "safety",
-    "operator": "gte",
-    "threshold": 10000
-  },
-  "proof": "bulletproof_hex_encoding",
-  "pseudonym": "curve25519_point_derived_from_fresh_blinding",
-  "freshness": {
-    "heartbeat_timestamp": "2026-04-22T09:59:45Z",
-    "heartbeat_proof": "ed25519_signature_over_timestamp",
-    "max_staleness_seconds": 3600
-  },
-  "accumulator_epoch": "2026-04-22T00:00:00Z"
+ "proof_type": "zk_reputation_threshold",
+ "predicate": {
+  "dimension": "safety",
+  "operator": "gte",
+  "threshold": 10000
+ },
+ "proof": "bulletproof_hex_encoding",
+ "pseudonym": "curve25519_point_derived_from_fresh_blinding",
+ "freshness": {
+  "heartbeat_timestamp": "2026-04-22T09:59:45Z",
+  "heartbeat_proof": "ed25519_signature_over_timestamp",
+  "max_staleness_seconds": 3600
+ },
+ "accumulator_epoch": "2026-04-22T00:00:00Z"
 }
 ```
 
@@ -256,9 +256,9 @@ Each time the agent presents a reputation proof to a new service, it generates a
 Pseudonym_i = DID_commitment · r_i · H
 
 Where:
-  DID_commitment = fixed Pedersen commitment to agent's DID
-  r_i = fresh random scalar for presentation i
-  H = second generator point
+ DID_commitment = fixed Pedersen commitment to agent's DID
+ r_i = fresh random scalar for presentation i
+ H = second generator point
 ```
 
 **Properties:**
@@ -273,7 +273,7 @@ The accumulator is cryptographically bound to the agent's DID, preventing accumu
 1. **Single accumulator per DID:** The accumulator ID is derived deterministically from the DID: `accumulator_id = SHA-256(did || "reputation_accumulator_v1")`.
 2. **Endorsement binding:** Each endorsement includes `binding_nonce = SHA-256(agent_did || epoch || issuer_did)`, ensuring endorsements cannot be transferred between agents.
 3. **Accumulator registration:** When an agent first creates its accumulator, it registers the accumulator ID with the Vouch Protocol registry. Subsequent accumulators from the same DID are rejected.
-4. **Negative endorsements are mandatory:** Services issue endorsements for every epoch of interaction, including negative outcomes. An agent cannot selectively incorporate only positive endorsements because the accumulator update requires the service's signature, and the service signs the complete behavioral assessment  -  not just the favorable parts.
+4. **Negative endorsements are mandatory:** Services issue endorsements for every epoch of interaction, including negative outcomes. An agent cannot selectively incorporate only positive endorsements because the accumulator update requires the service's signature, and the service signs the complete behavioral assessment - not just the favorable parts.
 
 ### 3.6 Freshness via Heartbeat Integration
 
@@ -281,14 +281,14 @@ Reputation proofs include a freshness certificate derived from PAD-016's heartbe
 
 ```
 Freshness Certificate:
-  - heartbeat_timestamp: Latest heartbeat renewal time
-  - heartbeat_signature: PAD-016 heartbeat service's Ed25519 signature
-  - max_staleness: Maximum age (in seconds) for the proof to be valid
+ - heartbeat_timestamp: Latest heartbeat renewal time
+ - heartbeat_signature: PAD-016 heartbeat service's Ed25519 signature
+ - max_staleness: Maximum age (in seconds) for the proof to be valid
 
 Verification:
-  1. Check heartbeat_signature is valid (from known heartbeat service)
-  2. Check (current_time - heartbeat_timestamp) ≤ max_staleness
-  3. If stale, reject the reputation proof regardless of the ZK proof's validity
+ 1. Check heartbeat_signature is valid (from known heartbeat service)
+ 2. Check (current_time - heartbeat_timestamp) ≤ max_staleness
+ 3. If stale, reject the reputation proof regardless of the ZK proof's validity
 ```
 
 This ensures that an agent whose credentials have been denied (PAD-016 heartbeat denial) or whose behavior has drifted cannot present historical reputation as current.
@@ -299,7 +299,7 @@ This ensures that an agent whose credentials have been denied (PAD-016 heartbeat
 
 | System | ZK Privacy | Cross-Platform | Agent-Specific | Multi-Dimensional | Freshness |
 |--------|-----------|---------------|----------------|-------------------|-----------|
-| W3C Verifiable Credentials | Selective disclosure only | Yes | No | No | Issuer-dependent |
+| Verifiable Credentials | Selective disclosure only | Yes | No | No | Issuer-dependent |
 | EigenTrust (P2P) | No (public scores) | Yes | No | Single score | No |
 | Semaphore (Ethereum) | Group membership proofs | No | No | No | No |
 | IRMA/Yivi | Attribute-based ZK | Partial | No | Attribute-based | Issuer-dependent |
@@ -338,10 +338,10 @@ Key differentiators:
 ### 5.3 Data Model
 
 ```
-Key: reputation:{did}:accumulator  -  Hash (dimension → commitment)
-Key: reputation:{did}:endorsements  -  Sorted Set (score = epoch, value = endorsement_id)
-Key: reputation:endorsement:{id}  -  Hash (issuer, dimensions, signature, binding_nonce)
-Key: reputation:{did}:freshness  -  Hash (heartbeat_ref, heartbeat_sig, timestamp)
+Key: reputation:{did}:accumulator - Hash (dimension → commitment)
+Key: reputation:{did}:endorsements - Sorted Set (score = epoch, value = endorsement_id)
+Key: reputation:endorsement:{id} - Hash (issuer, dimensions, signature, binding_nonce)
+Key: reputation:{did}:freshness - Hash (heartbeat_ref, heartbeat_sig, timestamp)
 ```
 
 ### 5.4 Trust Bootstrapping Flow
@@ -349,24 +349,24 @@ Key: reputation:{did}:freshness  -  Hash (heartbeat_ref, heartbeat_sig, timestam
 When an agent first connects to a new service:
 
 ```
-Agent                          New Service
-  |                                |
-  |-- 1. Present ZK reputation --->|
-  |   proof with pseudonym         |
-  |                                |
-  |                         [2. Service verifies:
-  |                          - ZK proof is valid
-  |                          - Freshness is current
-  |                          - Threshold meets policy]
-  |                                |
-  |<-- 3. Grant elevated trust ----|
-  |   (skip probation period,      |
-  |    higher rate limits,          |
-  |    access to premium APIs)      |
-  |                                |
-  [Agent operates with bootstrapped
-   trust, earns new endorsements
-   from this service over time]
+Agent             New Service
+ |                |
+ |-- 1. Present ZK reputation --->|
+ |  proof with pseudonym     |
+ |                |
+ |             [2. Service verifies:
+ |             - ZK proof is valid
+ |             - Freshness is current
+ |             - Threshold meets policy]
+ |                |
+ |<-- 3. Grant elevated trust ----|
+ |  (skip probation period,   |
+ |  higher rate limits,     |
+ |  access to premium APIs)   |
+ |                |
+ [Agent operates with bootstrapped
+  trust, earns new endorsements
+  from this service over time]
 ```
 
 ---

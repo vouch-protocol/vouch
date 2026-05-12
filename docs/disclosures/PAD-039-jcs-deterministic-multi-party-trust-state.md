@@ -24,20 +24,20 @@ trusting a central serializer or a single reference implementation.
 The method composes three interlocking elements:
 
 1. **JCS-canonicalized credentials.** All Vouch credentials are
-   canonicalized via RFC 8785 JSON Canonicalization Scheme prior to any
-   hashing, signing, Merkle composition, or rule evaluation. This produces
-   a byte-identical canonical form across independent implementations.
+  canonicalized via RFC 8785 JSON Canonicalization Scheme prior to any
+  hashing, signing, Merkle composition, or rule evaluation. This produces
+  a byte-identical canonical form across independent implementations.
 
 2. **Algorithm-agnostic verification methods (Multikey).** Public keys
-   are encoded as W3C Multikey (multibase + multicodec) so that the
-   verifying algorithm is determined by the key encoding, not by an
-   out-of-band protocol parameter or version negotiation.
+  are encoded as Multikey (multibase + multicodec) so that the
+  verifying algorithm is determined by the key encoding, not by an
+  out-of-band protocol parameter or version negotiation.
 
 3. **Reproducible test vector contract.** A shared corpus of canonical-form
-   test vectors (`test-vectors/jcs/vectors.json`) is published as the
-   normative interop contract. Any conforming implementation must produce
-   byte-identical canonical output for every vector. Implementations that
-   pass the corpus are guaranteed to agree on every downstream computation.
+  test vectors (`test-vectors/jcs/vectors.json`) is published as the
+  normative interop contract. Any conforming implementation must produce
+  byte-identical canonical output for every vector. Implementations that
+  pass the corpus are guaranteed to agree on every downstream computation.
 
 Together these enable federated, multi-party trust evaluation in which a
 quorum of independent validators (running heterogeneous code) reaches
@@ -54,19 +54,19 @@ independent verifiers to agree on:
 - Whether a delegation chain conforms to capability-narrowing rules.
 - Whether two heartbeat messages produce the same Merkle action root.
 - Whether two reputation aggregations over the same input produce the
-  same score.
+ same score.
 
 Traditionally this agreement has required either:
 
 - **A single reference implementation:** all verifiers run the same
-  binary. Defeats the purpose of federated trust.
+ binary. Defeats the purpose of federated trust.
 - **A trusted central serializer:** one party canonicalizes, all others
-  defer. Introduces a single point of compromise.
+ defer. Introduces a single point of compromise.
 - **Custom canonical form per protocol:** each protocol defines its own
-  byte-level serialization rules. Brittle, error-prone, and not portable.
+ byte-level serialization rules. Brittle, error-prone, and not portable.
 - **JSON-LD canonicalization (URDNA2015):** standards-aligned but
-  computationally heavy and complex to implement correctly across
-  languages.
+ computationally heavy and complex to implement correctly across
+ languages.
 
 None of the above provide both (a) cross-language byte-identical agreement
 and (b) lightweight implementation suitable for edge agents and high-
@@ -84,16 +84,16 @@ Every verifier in the protocol implements the same five-step pipeline:
 3. Hash (SHA-256) -> byte-identical digest
 4. Verify signature against the algorithm declared by the Multikey prefix
 5. Apply protocol rules (validity, narrowing, Merkle, aggregation)
-   over the canonical form
+  over the canonical form
 ```
 
 Steps 2-5 are guaranteed byte-identical across implementations because:
 - JCS is deterministic by RFC 8785 specification.
 - SHA-256 is deterministic.
 - Ed25519 verification (and ML-DSA-44 verification under the hybrid
-  profile) is deterministic.
+ profile) is deterministic.
 - Protocol rules consume the canonical bytes, not a re-parsed
-  structure, so traversal order and field interpretation are fixed.
+ structure, so traversal order and field interpretation are fixed.
 
 ### 3.2 Test-Vector-Anchored Interop Contract
 
@@ -104,11 +104,11 @@ N input/canonical-form pairs. The vector file at
 - Empty objects and arrays.
 - Key-sorting in code-point order at all nesting depths.
 - Numeric formatting per ECMAScript ToString (integers, negative zero,
-  large magnitudes).
+ large magnitudes).
 - String escaping per RFC 8259.
 - Boolean and null literals.
 - Vouch-specific shapes including the credential skeleton and the
-  delegation link structure.
+ delegation link structure.
 
 A conforming implementation's CI pipeline runs against this vector file.
 Implementations that pass the vectors are interop-compatible by
@@ -123,7 +123,7 @@ implementation) examine the same input credential:
 - All M produce byte-identical SHA-256 digests.
 - All M reach the same verification outcome (valid / invalid).
 - All M reach the same protocol-rule outcome (narrowing decision,
-  Merkle root, aggregation score).
+ Merkle root, aggregation score).
 
 Therefore the quorum decision is itself deterministic. Disagreement
 between validators is, by construction, evidence of:

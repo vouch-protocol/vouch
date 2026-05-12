@@ -1,29 +1,28 @@
 # Vouch Protocol
 
 <p align="center">
-  <img src="docs/assets/vouch-banner.png" alt="Vouch Protocol" width="400">
+ <img src="docs/assets/vouch-banner.png" alt="Vouch Protocol" width="400">
 </p>
 
 <p align="center">The Open Standard for Identity & Provenance of AI Agents</strong>
 </p>
 
-<!-- Standards Body Memberships -->
 <p align="center">
-  <a href="https://c2pa.org"><img src="https://img.shields.io/badge/C2PA-Member-0891b2?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyek0xMCAMTdsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz48L3N2Zz4=" alt="C2PA Member"></a>
-  <a href="https://contentauthenticity.org"><img src="https://img.shields.io/badge/CAI-Member-f97316?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHptMCAyLjE4bDcgMy4xMnY1LjdjMCA0LjgzLTMuMjMgOS4zNi03IDEwLjU4VjMuMTh6Ii8+PC9zdmc+" alt="CAI Member"></a>
-  <a href="https://identity.foundation"><img src="https://img.shields.io/badge/DIF-Member-6F2DA8?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==" alt="DIF Member"></a>
-  <a href="https://lfaidata.foundation"><img src="https://img.shields.io/badge/Linux_Foundation-Member-333333?style=for-the-badge&logo=linux-foundation&logoColor=white" alt="Linux Foundation Member"></a>
+ <a href="https://c2pa.org"><img src="https://img.shields.io/badge/C2PA-Member-0891b2?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyek0xMCAMTdsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNy41OS03LjU5TDE5IDhsLTkgOXoiLz48L3N2Zz4=" alt="C2PA Member"></a>
+ <a href="https://contentauthenticity.org"><img src="https://img.shields.io/badge/CAI-Member-f97316?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHptMCAyLjE4bDcgMy4xMnY1LjdjMCA0LjgzLTMuMjMgOS4zNi03IDEwLjU4VjMuMTh6Ii8+PC9zdmc+" alt="CAI Member"></a>
+ <a href="https://identity.foundation"><img src="https://img.shields.io/badge/DIF-Member-6F2DA8?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==" alt="DIF Member"></a>
+ <a href="https://lfaidata.foundation"><img src="https://img.shields.io/badge/Linux_Foundation-Member-333333?style=for-the-badge&logo=linux-foundation&logoColor=white" alt="Linux Foundation Member"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/vouch-protocol/vouch"><img src="https://img.shields.io/badge/Protected_by-Vouch_Protocol-00C853?style=flat&labelColor=333&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMDBDODUzIiBkPSJNMTIgMjBMMiA0aDRsNiAxMC41TDE4IDRoNEwxMiAyMHoiLz48L3N2Zz4=" alt="Protected by Vouch"></a>
-  <a href="https://www.bestpractices.dev/projects/11688"><img src="https://www.bestpractices.dev/projects/11688/badge" alt="OpenSSF Silver"></a>
-  <a href="https://codecov.io/gh/vouch-protocol/vouch"><img src="https://codecov.io/gh/vouch-protocol/vouch/branch/main/graph/badge.svg" alt="Code Coverage"></a>
-  <a href="https://discord.gg/mMqx5cG9Y"><img src="https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white" alt="Discord"></a>
+ <a href="https://github.com/vouch-protocol/vouch"><img src="https://img.shields.io/badge/Protected_by-Vouch_Protocol-00C853?style=flat&labelColor=333&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSIjMDBDODUzIiBkPSJNMTIgMjBMMiA0aDRsNiAxMC41TDE4IDRoNEwxMiAyMHoiLz48L3N2Zz4=" alt="Protected by Vouch"></a>
+ <a href="https://www.bestpractices.dev/projects/11688"><img src="https://www.bestpractices.dev/projects/11688/badge" alt="OpenSSF Silver"></a>
+ <a href="https://codecov.io/gh/vouch-protocol/vouch"><img src="https://codecov.io/gh/vouch-protocol/vouch/branch/main/graph/badge.svg" alt="Code Coverage"></a>
+ <a href="https://discord.gg/mMqx5cG9Y"><img src="https://img.shields.io/badge/Discord-Join_Community-7289da?logo=discord&logoColor=white" alt="Discord"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/vouch-protocol/vouch/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="Apache 2.0 License"></a>
+ <a href="https://github.com/vouch-protocol/vouch/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="Apache 2.0 License"></a>
 </p>
 
 ---
@@ -44,21 +43,21 @@ git commit -m "Secure commit"
 
 ## What's New in v1.0
 
-Vouch Protocol v1.0 aligns directly with the W3C standards track:
+Vouch Protocol v1.0 aligns directly with the open standard:
 
-- **W3C Verifiable Credentials** as the credential format (replacing v0.x JWS tokens).
-- **W3C Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (no JOSE, no Base64-wrapped payload, the credential remains human-readable JSON).
+- **Verifiable Credentials** as the credential format (replacing v0.x JWS tokens).
+- **Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (no JOSE, no Base64-wrapped payload, the credential remains human-readable JSON).
 - **Multikey verification methods** in DID Documents (algorithm-agnostic, ML-DSA-44 ready).
 - **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`) as an optional add-on for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
 - **Three-way cross-implementation interop** verified across Python, TypeScript, and Go.
 
-The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work unchanged for a deprecation window. New code should prefer `Signer.sign_credential()` and `Verifier.verify_credential()`. See the W3C CG Report at [vouch-protocol.com/specs/CG-REPORT/](https://vouch-protocol.com/specs/CG-REPORT/) for the full specification.
+The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work unchanged for a deprecation window. New code should prefer `Signer.sign_credential()` and `Verifier.verify_credential()`. See the Specification at [vouch-protocol.com/specs/SPEC/](https://vouch-protocol.com/specs/SPEC/) for the full specification.
 
 ---
 
 > **The Open Standard for AI Agent Identity & Accountability**
 > 
-> When Anthropic launched MCP, they solved "how agents call tools."  
+> When Anthropic launched MCP, they solved "how agents call tools." 
 > They didn't solve "how we TRUST those agents."
 > 
 > **Vouch Protocol is the SSL certificate for AI agents.**
@@ -71,7 +70,7 @@ The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work
 
 AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 - **WHO** they are
-- **WHAT** they intended to do  
+- **WHAT** they intended to do 
 - **WHEN** they did it
 
 **Examples of the risk:**
@@ -89,8 +88,8 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 
 **Vouch Protocol** provides cryptographic identity for AI agents, modeled after SSL/TLS:
 
-- **W3C Verifiable Credentials** (W3C VC Data Model 2.0)
-- **W3C Data Integrity proofs** (`eddsa-jcs-2022` cryptosuite, no JOSE/JWS dependency)
+- **Verifiable Credentials** (VC Data Model 2.0)
+- **Data Integrity proofs** (`eddsa-jcs-2022` cryptosuite, no JOSE/JWS dependency)
 - **Decentralized Identifiers** (`did:web`, `did:key`)
 - **Multikey verification methods** (algorithm-agnostic, post-quantum ready)
 - **Hybrid post-quantum profile** (optional Ed25519 + ML-DSA-44 composite, `hybrid-eddsa-mldsa44-jcs-2026`)
@@ -112,21 +111,21 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 
 ```mermaid
 flowchart LR
-    P["👤 Principal<br/>did:web:user.example.com"]
-    A["🤖 AI Agent<br/>did:web:agent.example.com<br/>+ Identity Sidecar"]
-    C["📄 Vouch Credential<br/>W3C VC + Data Integrity<br/>(eddsa-jcs-2022)"]
-    API["🔐 API Endpoint"]
-    V{"✅ Verified"}
+  P["👤 Principal<br/>did:web:user.example.com"]
+  A["🤖 AI Agent<br/>did:web:agent.example.com<br/>+ Identity Sidecar"]
+  C["📄 Vouch Credential<br/>VC + Data Integrity<br/>(eddsa-jcs-2022)"]
+  API["🔐 API Endpoint"]
+  V{"✅ Verified"}
 
-    P -->|"Delegation VC"| A
-    A -->|"sign_credential(intent)"| C
-    C -->|"HTTP body<br/>application/vouch+credential+json"| API
-    API -->|"verify_credential()"| V
+  P -->|"Delegation VC"| A
+  A -->|"sign_credential(intent)"| C
+  C -->|"HTTP body<br/>application/vouch+credential+json"| API
+  API -->|"verify_credential()"| V
 ```
 
 **4 Simple Steps:**
 1. **Generate Identity**: Create an Ed25519 keypair and a DID, publish a DID Document with a Multikey verification method.
-2. **Sign Action**: Agent's sidecar issues a W3C Verifiable Credential carrying `action`, `target`, and `resource`, secured by an `eddsa-jcs-2022` Data Integrity proof.
+2. **Sign Action**: Agent's sidecar issues a Verifiable Credential carrying `action`, `target`, and `resource`, secured by an `eddsa-jcs-2022` Data Integrity proof.
 3. **Send to API**: Transmit the credential as the HTTP request body with `Content-Type: application/vouch+credential+json` (or via the legacy `Vouch-Token` header for v0.x compatibility).
 4. **Verify**: API resolves the issuer's DID, validates the Data Integrity proof, checks temporal claims and the resource binding, returns a `CredentialPassport`.
 
@@ -134,26 +133,26 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    subgraph IDENTITY["Identity Layer"]
-        DID["DID<br/>did:web / did:key"]
-        MK["Multikey<br/>algorithm-agnostic key encoding"]
-    end
-    subgraph FORMAT["Credential Layer"]
-        VC["W3C Verifiable Credential<br/>(VC Data Model 2.0)"]
-        INTENT["Intent payload<br/>action · target · resource"]
-    end
-    subgraph CRYPTO["Cryptographic Proof"]
-        JCS["JCS canonicalization (RFC 8785)"]
-        DEFAULT["eddsa-jcs-2022<br/>(Ed25519, default)"]
-        HYBRID["hybrid-eddsa-mldsa44-jcs-2026<br/>(Ed25519 + ML-DSA-44, optional)"]
-    end
-    IDENTITY --> FORMAT
-    FORMAT --> CRYPTO
-    JCS --> DEFAULT
-    JCS --> HYBRID
+  subgraph IDENTITY["Identity Layer"]
+    DID["DID<br/>did:web / did:key"]
+    MK["Multikey<br/>algorithm-agnostic key encoding"]
+  end
+  subgraph FORMAT["Credential Layer"]
+    VC["Verifiable Credential<br/>(VC Data Model 2.0)"]
+    INTENT["Intent payload<br/>action · target · resource"]
+  end
+  subgraph CRYPTO["Cryptographic Proof"]
+    JCS["JCS canonicalization (RFC 8785)"]
+    DEFAULT["eddsa-jcs-2022<br/>(Ed25519, default)"]
+    HYBRID["hybrid-eddsa-mldsa44-jcs-2026<br/>(Ed25519 + ML-DSA-44, optional)"]
+  end
+  IDENTITY --> FORMAT
+  FORMAT --> CRYPTO
+  JCS --> DEFAULT
+  JCS --> HYBRID
 ```
 
-**Trust = W3C Verifiable Credentials + Data Integrity + Decentralized Identifiers + Multikey, with optional hybrid post-quantum signatures.** The same math that secures SSL/TLS plus the W3C primitives that secure verifiable credentials elsewhere on the web, applied to AI agents.
+**Trust = Verifiable Credentials + Data Integrity + Decentralized Identifiers + Multikey, with optional hybrid post-quantum signatures.** The same math that secures SSL/TLS, plus the standardized primitives that secure verifiable credentials elsewhere on the web, applied to AI agents.
 
 ---
 
@@ -166,8 +165,8 @@ flowchart TB
 | **Agent-specific** | ✅ (designed for agents) | ❌ (generic) |
 | **MCP integration** | ✅ (native) | ❌ (manual) |
 | **Framework integrations** | ✅ (LangChain, CrewAI, etc.) | ❌ |
-| **Audit trail format** | ✅ (W3C VC standardized) | ❌ (custom) |
-| **W3C-aligned** | ✅ (`eddsa-jcs-2022` Data Integrity) | ❌ |
+| **Audit trail format** | ✅ (VC standardized) | ❌ (custom) |
+| **standards-aligned** | ✅ (`eddsa-jcs-2022` Data Integrity) | ❌ |
 | **Multikey verification methods** | ✅ (algorithm-agnostic) | ❌ |
 | **Hybrid post-quantum signatures** | ✅ (`hybrid-eddsa-mldsa44-jcs-2026`) | ❌ |
 | **Cross-implementation interop tests** | ✅ (Python, TypeScript, Go) | ❌ |
@@ -189,20 +188,20 @@ vouch init --domain your-agent.com
 
 ### 3. Sign an Action (Agent Side)
 
-**v1.0 path (W3C VC + Data Integrity, recommended):**
+**v1.0 path (VC + Data Integrity, recommended):**
 ```python
 from vouch import Signer
 import os
 
 signer = Signer(
-    private_key=os.environ['VOUCH_PRIVATE_KEY'],
-    did=os.environ['VOUCH_DID']
+  private_key=os.environ['VOUCH_PRIVATE_KEY'],
+  did=os.environ['VOUCH_DID']
 )
 
 credential = signer.sign_credential(intent={
-    'action': 'read_database',
-    'target': 'users_table',
-    'resource': 'https://api.example.com/v1/users',
+  'action': 'read_database',
+  'target': 'users_table',
+  'resource': 'https://api.example.com/v1/users',
 })
 # Send credential as the JSON body of the API request, content-type
 # application/vouch+credential+json
@@ -225,18 +224,18 @@ app = FastAPI()
 
 @app.post("/api/resource")
 async def protected_route(request: Request):
-    credential = await request.json()
-    public_key = '{"kty":"OKP", ...}'  # Resolved from did:web or trusted root
+  credential = await request.json()
+  public_key = '{"kty":"OKP", ...}' # Resolved from did:web or trusted root
 
-    is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
-    if not is_valid:
-        raise HTTPException(status_code=401, detail="Untrusted Agent")
+  is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
+  if not is_valid:
+    raise HTTPException(status_code=401, detail="Untrusted Agent")
 
-    return {
-        "status": "Verified",
-        "agent": passport.sub,
-        "intent": passport.intent,
-    }
+  return {
+    "status": "Verified",
+    "agent": passport.sub,
+    "intent": passport.intent,
+  }
 ```
 
 **Legacy v0.x path:**
@@ -245,10 +244,10 @@ from vouch import Verifier
 
 @app.post("/api/legacy")
 def legacy_route(vouch_token: str = Header(alias="Vouch-Token")):
-    is_valid, passport = Verifier.verify(vouch_token, public_key_jwk=public_key)
-    if not is_valid:
-        raise HTTPException(status_code=401, detail="Untrusted Agent")
-    return {"status": "Verified", "agent": passport.sub}
+  is_valid, passport = Verifier.verify(vouch_token, public_key_jwk=public_key)
+  if not is_valid:
+    raise HTTPException(status_code=401, detail="Untrusted Agent")
+  return {"status": "Verified", "agent": passport.sub}
 ```
 
 **That's it.** A few lines to sign, a few to verify, on either path.
@@ -287,9 +286,9 @@ Works with all major AI frameworks out-of-the-box:
 ```python
 # Optional v1.0 profile, requires `pip install pqcrypto`
 credential = signer.sign_credential_hybrid(intent={
-    'action': 'submit_clinical_finding',
-    'target': 'trial:NCT00000001',
-    'resource': 'https://fda-submissions.example.com/api/findings',
+  'action': 'submit_clinical_finding',
+  'target': 'trial:NCT00000001',
+  'resource': 'https://fda-submissions.example.com/api/findings',
 })
 # Carries both Ed25519 and ML-DSA-44 signatures over the same JCS canonical form.
 # Verification REQUIRES both to validate.
@@ -324,7 +323,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 ## Documentation
 
 - [Quick Start](https://github.com/vouch-protocol/vouch#quick-start)
-- [W3C Community Group Report (v1.6 normative spec)](https://vouch-protocol.com/specs/CG-REPORT/)
+- [Vouch Specification (v1.6 normative)](https://vouch-protocol.com/specs/)
 - [Hybrid Post-Quantum Implementation Guide](https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md)
 - [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
 - [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
@@ -346,11 +345,11 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 
 ### v1.6 (current release)
 
-- [x] **W3C Verifiable Credentials + Data Integrity** (`eddsa-jcs-2022` cryptosuite)
+- [x] **Verifiable Credentials + Data Integrity** (`eddsa-jcs-2022` cryptosuite)
 - [x] **Multikey verification methods** (algorithm-agnostic, multibase + multicodec)
 - [x] **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`, NIST CNSA 2.0 / NSM-10 aligned)
 - [x] **Three-language reference implementation** (Python, TypeScript, Go) with byte-identical canonical form via RFC 8785 JCS, verified against shared test vectors
-- [x] **W3C CG Report drafted** and submitted to the Credentials Community Group for incubation
+- [x] **Specification drafted** and submitted to the open standards group for incubation
 - [x] **55 Prior Art Disclosures** (CC0 defensive publications)
 - [x] Identity Sidecar architecture (LLM-isolated keys)
 - [x] Heartbeat Protocol with adaptive Trust Entropy
@@ -366,7 +365,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 ### Next (v1.7 and beyond)
 
 - [ ] Independent third-party cryptographic security audit (Trail of Bits / NCC Group / Cure53)
-- [ ] W3C VCWG and DIWG transition (charter or rechartering proposal)
+- [ ] Specification stabilization and external review
 - [ ] Algorithm Quorum verification (M-of-N cryptosuite diversity, per PAD-046)
 - [ ] Verifiable Delay Function rate-limiting for high-stakes agent actions (per PAD-047)
 - [ ] Cryptographic Weight Binding for model-intrinsic AI identity (per PAD-043)
@@ -389,7 +388,7 @@ You can use this freely in commercial and open-source projects.
 
 The 55 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
 
-*The Vouch Protocol specification is being developed as a W3C standards track submission via the Credentials Community Group. The implementation is also being proposed to the Linux Foundation's AI & Data Foundation.*
+*The Vouch Protocol specification is being developed as a open standard submission via the open standards group. The implementation is also being proposed to the Linux Foundation's AI & Data Foundation.*
 
 ---
 
@@ -398,7 +397,7 @@ The 55 defensive prior-art disclosures are released under **CC0 1.0 Universal** 
 Inspired by:
 - **SSL/TLS** (the gold standard for identity)
 - **OAuth 2.0** (federated identity done right)
-- **W3C Verifiable Credentials** (the future of digital identity)
+- **Verifiable Credentials** (the future of digital identity)
 
 Built by [Ramprasad Gaddam](https://www.linkedin.com/in/rampy) ([Twitter/X](https://x.com/rampyg))
 

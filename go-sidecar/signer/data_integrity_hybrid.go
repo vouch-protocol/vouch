@@ -1,18 +1,18 @@
 // Hybrid Ed25519 + ML-DSA-44 Data Integrity proofs.
 //
-// Implements the hybrid-eddsa-mldsa44-jcs-2026 cryptosuite (W3C CG Report
+// Implements the hybrid-eddsa-mldsa44-jcs-2026 cryptosuite (Specification
 // §13.2), an additive optional profile that pairs the classical Ed25519
 // signature with a post-quantum ML-DSA-44 signature over the same
 // JCS-canonicalized payload. Verification REQUIRES both signatures to
 // validate, providing safety against compromise of either algorithm.
 //
 // Wire format:
-//   proofValue = "z" + base58btc( ed25519_sig (64 bytes) || mldsa44_sig (2420 bytes) )
+//  proofValue = "z" + base58btc( ed25519_sig (64 bytes) || mldsa44_sig (2420 bytes) )
 //
 // DID Document layout:
-//   verificationMethod[]:
-//     - id: did:..#key-1, type: Multikey, publicKeyMultibase: z<Ed25519>
-//     - id: did:..#key-2, type: Multikey, publicKeyMultibase: z<ML-DSA-44>
+//  verificationMethod[]:
+//   - id: did:..#key-1, type: Multikey, publicKeyMultibase: z<Ed25519>
+//   - id: did:..#key-2, type: Multikey, publicKeyMultibase: z<ML-DSA-44>
 //
 // The proof's verificationMethod field points at the Ed25519 entry. The
 // verifier infers the ML-DSA-44 entry by replacing the trailing "key-1"
@@ -34,15 +34,15 @@ import (
 )
 
 const (
-	// CryptosuiteHybridEddsaMldsa44 names the W3C CG Report §13.2 hybrid
+	// CryptosuiteHybridEddsaMldsa44 names the Specification §13.2 hybrid
 	// cryptosuite. Provisional identifier; final identifier will be
-	// coordinated with the W3C Data Integrity WG.
+	// coordinated with the Data Integrity WG.
 	CryptosuiteHybridEddsaMldsa44 = "hybrid-eddsa-mldsa44-jcs-2026"
 
 	// Fixed signature sizes for splitting the concatenated proofValue.
-	ed25519SignatureSize  = 64
-	mldsa44SignatureSize  = 2420
-	hybridSignatureSize   = ed25519SignatureSize + mldsa44SignatureSize
+	ed25519SignatureSize = 64
+	mldsa44SignatureSize = 2420
+	hybridSignatureSize  = ed25519SignatureSize + mldsa44SignatureSize
 )
 
 // BuildHybridProofOptions configures BuildHybridDataIntegrityProof.
@@ -56,7 +56,7 @@ type BuildHybridProofOptions struct {
 	VerificationMethod string
 
 	ProofPurpose string // defaults to "assertionMethod"
-	Created      time.Time
+	Created   time.Time
 }
 
 // BuildHybridDataIntegrityProof generates a hybrid composite proof over the
@@ -86,11 +86,11 @@ func BuildHybridDataIntegrityProof(
 	}
 
 	proof := DataIntegrityProof{
-		Type:               ProofTypeDataIntegrity,
-		Cryptosuite:        CryptosuiteHybridEddsaMldsa44,
-		Created:            formatISO8601(created),
+		Type:        ProofTypeDataIntegrity,
+		Cryptosuite:    CryptosuiteHybridEddsaMldsa44,
+		Created:      formatISO8601(created),
 		VerificationMethod: opts.VerificationMethod,
-		ProofPurpose:       purpose,
+		ProofPurpose:    purpose,
 	}
 
 	proofForCanon := proofToMap(proof)

@@ -97,13 +97,13 @@ The server never receives or stores raw audio.
 When verification succeeds (cosine similarity >= threshold), the server issues a signed Vouch-Token:
 ```json
 {
-  "type": "voice_verification",
-  "did": "did:key:z6Mk...",
-  "confidence": 92,
-  "method": "cosine_similarity",
-  "embeddingType": "ml_ecapa",
-  "verifiedAt": "2026-02-28T12:00:00Z",
-  "signature": "ed25519_signature"
+ "type": "voice_verification",
+ "did": "did:key:z6Mk...",
+ "confidence": 92,
+ "method": "cosine_similarity",
+ "embeddingType": "ml_ecapa",
+ "verifiedAt": "2026-02-28T12:00:00Z",
+ "signature": "ed25519_signature"
 }
 ```
 
@@ -117,10 +117,10 @@ Instead of storing a single voiceprint, the system collects multiple enrollment 
 Sample 1 -> extract features -> [f1_1, f1_2, ..., f1_n]
 Sample 2 -> extract features -> [f2_1, f2_2, ..., f2_n]
 Sample 3 -> extract features -> [f3_1, f3_2, ..., f3_n]
-                                        |
-                                        v
-                              Centroid = mean([S1, S2, S3])
-                              = [(f1_1+f2_1+f3_1)/3, ...]
+                    |
+                    v
+               Centroid = mean([S1, S2, S3])
+               = [(f1_1+f2_1+f3_1)/3, ...]
 ```
 
 Benefits:
@@ -176,9 +176,9 @@ The centroid vector is hashed into a 32-character hex string:
 
 ```
 voiceprint_hash = SHA-256(
-  round(centroid[0] * 10000) + ":" +
-  round(centroid[1] * 10000) + ":" +
-  ...
+ round(centroid[0] * 10000) + ":" +
+ round(centroid[1] * 10000) + ":" +
+ ...
 ).hex()[0:32]
 ```
 
@@ -246,12 +246,12 @@ Traditional speaker verification (i-vectors, x-vectors, ECAPA-TDNN) focuses on t
 ### 5.2 Redis Storage Schema
 
 ```
-voiceid:{did}              -> Hash: {did, displayName, voiceprintHash,
-                                     enrolledAt, updatedAt, sampleCount,
-                                     embeddingType}
-voiceid:{did}:features     -> List: [JSON(vector1), JSON(vector2), ...]
-voiceid:{did}:avg          -> String: JSON(centroid_vector)
-voiceid:print:{hash}       -> String: did (reverse lookup)
+voiceid:{did}       -> Hash: {did, displayName, voiceprintHash,
+                   enrolledAt, updatedAt, sampleCount,
+                   embeddingType}
+voiceid:{did}:features   -> List: [JSON(vector1), JSON(vector2), ...]
+voiceid:{did}:avg     -> String: JSON(centroid_vector)
+voiceid:print:{hash}    -> String: did (reverse lookup)
 ```
 
 ### 5.3 Verification Thresholds
@@ -304,7 +304,7 @@ This disclosure describes a voice biometric enrollment and verification system t
 
 ## 8. References
 
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 - B. Desplanques et al., "ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification" (Interspeech 2020)
 - D. Snyder et al., "X-Vectors: Robust DNN Embeddings for Speaker Recognition" (ICASSP 2018)
 - ONNX Runtime Web (Microsoft)
@@ -320,23 +320,23 @@ This disclosure describes a voice biometric enrollment and verification system t
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment
+## Update (April 27, 2026): Data Integrity Embodiment
 
 The voiceprint-enrollment protocol described above can issue any form of
 cryptographic proof of voice ownership; the original disclosure used a
 Vouch-Token (Ed25519 JWT). This disclosure additionally covers the
 embodiment where the proof issued upon successful voice verification is a
-W3C Verifiable Credential of type `VouchCredential` plus a custom
-`VoiceOwnershipCredential` type, secured by a W3C Data Integrity proof
+Verifiable Credential of type `VouchCredential` plus a custom
+`VoiceOwnershipCredential` type, secured by a Data Integrity proof
 (`eddsa-jcs-2022` cryptosuite, optionally
 `hybrid-eddsa-mldsa44-jcs-2026`).
 
 The voice-biometric novel elements remain unchanged: multi-sample
 centroid averaging, cosine similarity verification, embedding type
 migration (DSP -> ECAPA-TDNN), privacy by construction (raw audio never
-stored), DID-binding. In the W3C Data Integrity embodiment, the issued
+stored), DID-binding. In the Data Integrity embodiment, the issued
 credential's `credentialSubject` carries the verified voiceprint hash and
 the DID, with `validUntil` controlling the expiry of the voice-ownership
 attestation, while the `proof` object provides the same Ed25519
-non-repudiation. The W3C-aligned form is disclosed as additional prior
+non-repudiation. The standards-aligned form is disclosed as additional prior
 art for the same inventive voice-enrollment mechanism.

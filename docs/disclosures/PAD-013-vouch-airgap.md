@@ -1,12 +1,12 @@
 # PAD-013: Method for Air-Gapped Identity Verification via Psychoacoustic Steganography
 
-**Identifier:** PAD-013  
-**Title:** Method for Air-Gapped Identity Verification via Psychoacoustic Steganography ("Vouch AirGap")  
-**Publication Date:** January 20, 2026  
-**Prior Art Effective Date:** January 20, 2026  
-**Status:** Public Disclosure (Defensive Publication)  
-**Category:** Biometrics / Signal Processing / Security / Deepfake Defense  
-**Author:** Ramprasad Anandam Gaddam  
+**Identifier:** PAD-013 
+**Title:** Method for Air-Gapped Identity Verification via Psychoacoustic Steganography ("Vouch AirGap") 
+**Publication Date:** January 20, 2026 
+**Prior Art Effective Date:** January 20, 2026 
+**Status:** Public Disclosure (Defensive Publication) 
+**Category:** Biometrics / Signal Processing / Security / Deepfake Defense 
+**Author:** Ramprasad Anandam Gaddam 
 
 ---
 
@@ -61,14 +61,14 @@ The encoder generates and modulates cryptographic tokens into the audio stream:
 **Token Structure:**
 ```json
 {
-  "version": "1.0",
-  "type": "acoustic_anchor",
-  "signer_did": "did:key:z6Mk...",
-  "timestamp_utc": 1737352800,
-  "nonce": "a7f3...",
-  "sequence_number": 42,
-  "liveness_challenge": "b9c2...",
-  "signature": "ed25519:..."
+ "version": "1.0",
+ "type": "acoustic_anchor",
+ "signer_did": "did:key:z6Mk...",
+ "timestamp_utc": 1737352800,
+ "nonce": "a7f3...",
+ "sequence_number": 42,
+ "liveness_challenge": "b9c2...",
+ "signature": "ed25519:..."
 }
 ```
 
@@ -101,11 +101,11 @@ To ensure imperceptibility, the encoder leverages the human auditory system's li
 **Adaptive Algorithm:**
 ```
 for each audio_frame:
-    spectrum = FFT(audio_frame)
-    masking_threshold = calculate_psychoacoustic_mask(spectrum)
-    available_capacity = find_below_threshold_bins(masking_threshold)
-    inject_data_bits(available_capacity, payload_chunk)
-    output = IFFT(modified_spectrum)
+  spectrum = FFT(audio_frame)
+  masking_threshold = calculate_psychoacoustic_mask(spectrum)
+  available_capacity = find_below_threshold_bins(masking_threshold)
+  inject_data_bits(available_capacity, payload_chunk)
+  output = IFFT(modified_spectrum)
 ```
 
 #### 3.1.3 Decoding Subsystem
@@ -115,9 +115,9 @@ The decoder performs real-time extraction and verification:
 1. **Signal Capture:** Microphone input is digitized at 44.1kHz or higher.
 2. **Pre-Processing:** Noise reduction, normalization, echo cancellation.
 3. **Watermark Detection:**
-   - Correlation analysis against known spreading sequences.
-   - Peak detection in expected frequency bins.
-   - Bit extraction using matched filtering.
+  - Correlation analysis against known spreading sequences.
+  - Peak detection in expected frequency bins.
+  - Bit extraction using matched filtering.
 4. **Error Correction:** Reed-Solomon or LDPC decoding recovers from partial signal loss.
 5. **Signature Verification:** Ed25519 signature is verified against the claimed identity's public key.
 6. **Liveness Validation:** Timestamp and nonce are checked for freshness (anti-replay).
@@ -128,17 +128,17 @@ Enables identity verification between two devices without network connectivity:
 
 **Protocol Flow:**
 ```
-Device A (Prover)                    Device B (Verifier)
-     |                                      |
-     |<---- Ultrasonic Challenge Beacon ----|
-     |       (random nonce, verifier DID)   |
-     |                                      |
-     |---- Ultrasonic Response Beacon ----->|
-     |  (signed: nonce + prover DID +       |
-     |   timestamp + public key fragment)   |
-     |                                      |
-     |<---- Ultrasonic ACK -----------------| 
-     |  (mutual authentication complete)    |
+Device A (Prover)          Device B (Verifier)
+   |                   |
+   |<---- Ultrasonic Challenge Beacon ----|
+   |    (random nonce, verifier DID)  |
+   |                   |
+   |---- Ultrasonic Response Beacon ----->|
+   | (signed: nonce + prover DID +    |
+   |  timestamp + public key fragment)  |
+   |                   |
+   |<---- Ultrasonic ACK -----------------| 
+   | (mutual authentication complete)  |
 ```
 
 **Security Properties:**
@@ -164,17 +164,17 @@ Proves real-time presence versus playback of a pre-recorded session:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     ENCODER PIPELINE                            │
+│           ENCODER PIPELINE              │
 ├─────────────────────────────────────────────────────────────────┤
-│ Audio Input → Frame Buffer → FFT → Masking Analysis →          │
-│ Capacity Estimation → Bit Injection → IFFT → Output Mix        │
+│ Audio Input → Frame Buffer → FFT → Masking Analysis →     │
+│ Capacity Estimation → Bit Injection → IFFT → Output Mix    │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                     DECODER PIPELINE                            │
+│           DECODER PIPELINE              │
 ├─────────────────────────────────────────────────────────────────┤
 │ Microphone → ADC → Frame Buffer → FFT → Correlation Detection →│
-│ Bit Extraction → ECC Decode → Signature Verify → Trust Output  │
+│ Bit Extraction → ECC Decode → Signature Verify → Trust Output │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -286,25 +286,25 @@ The Vouch AirGap system addresses the fundamental vulnerability of digital signa
 - D. Kirovski and H. Malvar, "Spread-Spectrum Watermarking of Audio Signals"
 - B. Chen and G. Wornell, "Quantization Index Modulation" (IEEE)
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-012
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment
+## Update (April 27, 2026): Data Integrity Embodiment
 
 The Air-Gap protocol described above can transmit any cryptographic
 identity proof over the analog channel; the original disclosure used JWS
 compact tokens as the encoded payload. This disclosure additionally
 covers the embodiment where the encoded payload is a W3C Verifiable
-Credential carrying a W3C Data Integrity proof (`eddsa-jcs-2022` or
+Credential carrying a Data Integrity proof (`eddsa-jcs-2022` or
 `hybrid-eddsa-mldsa44-jcs-2026`).
 
 The substantive Air-Gap novelty is unchanged: spread-spectrum watermarking,
 ultrasonic data beacons, psychoacoustic masking, Zero-Network Handshake,
-Liveness Anchors, and Acoustic PKI. The W3C Data Integrity embodiment
+Liveness Anchors, and Acoustic PKI. The Data Integrity embodiment
 benefits the Air-Gap protocol specifically because the canonical form
 (JCS) is byte-identical across implementations, enabling a receiving
 device that decodes the audio stream to verify the credential against
 either Python, TypeScript, or Go reference implementations without
 serialization-mismatch failures. This is disclosed as additional prior
-art for the Air-Gap protocol under modern W3C standards.
+art for the Air-Gap protocol under modern open standards.

@@ -96,14 +96,14 @@ The WebAssembly module is compiled from Rust source using wasm-bindgen:
 
 ```
 Source: Rust (shared DSP core)
-    |
-    v
+  |
+  v
 wasm-pack build --target web
-    |
-    v
+  |
+  v
 @vouch/sonic-wasm npm package (~250KB)
-    |
-    v
+  |
+  v
 Dynamic import in browser (lazy-loaded on first use)
 ```
 
@@ -124,14 +124,14 @@ For higher-accuracy voice embeddings, the system uses ONNX Runtime Web:
 
 ```
 ECAPA-TDNN model (quantized INT8, ~3MB)
-    |
-    v
+  |
+  v
 Cached in IndexedDB after first download
-    |
-    v
+  |
+  v
 onnxruntime-web (WASM execution provider)
-    |
-    v
+  |
+  v
 192-dimensional speaker embedding vector
 ```
 
@@ -142,8 +142,8 @@ The model is downloaded once and cached indefinitely. Subsequent visits load fro
 The system supports multiple client capabilities:
 
 ```
-Tier 1 (Browser, primary):   WASM + ONNX Runtime Web
-Tier 2 (CLI / API clients):  Server-side TypeScript DSP fallback
+Tier 1 (Browser, primary):  WASM + ONNX Runtime Web
+Tier 2 (CLI / API clients): Server-side TypeScript DSP fallback
 Tier 3 (Batch / enterprise): Python bridge with full codec support
 ```
 
@@ -215,20 +215,20 @@ PAD-014 describes the Vouch Sonic watermarking algorithm (spread-spectrum stegan
 **POST /sonic/register** (after client-side watermark embedding):
 ```json
 {
-  "watermarkId": "sonic-a1b2c3d4e5f67890",
-  "audioHash": "sha256hex64chars",
-  "payloadHash": "sha256hex64chars",
-  "did": "did:key:z6Mk...",
-  "duration": 180
+ "watermarkId": "sonic-a1b2c3d4e5f67890",
+ "audioHash": "sha256hex64chars",
+ "payloadHash": "sha256hex64chars",
+ "did": "did:key:z6Mk...",
+ "duration": 180
 }
 ```
 
 **POST /voice-id/enroll** (after client-side feature extraction):
 ```json
 {
-  "embedding": [0.12, -0.34, 0.56, ...],
-  "embeddingType": "ml_ecapa",
-  "did": "did:key:z6Mk..."
+ "embedding": [0.12, -0.34, 0.56, ...],
+ "embeddingType": "ml_ecapa",
+ "did": "did:key:z6Mk..."
 }
 ```
 
@@ -271,7 +271,7 @@ The Edge-First Content Provenance Architecture addresses the fundamental tension
 - ONNX Runtime Web (Microsoft)
 - wasm-bindgen (Rust and WebAssembly Working Group)
 - Vouch Protocol: PAD-014 (Vouch Sonic), PAD-023 (Content Policy Watermarking)
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 - Web Audio API (W3C)
 - IndexedDB API (W3C)
 - ECAPA-TDNN: B. Desplanques et al., "ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification" (Interspeech 2020)
