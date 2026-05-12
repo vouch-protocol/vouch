@@ -39,7 +39,7 @@ const CHANNELS = [
 const QUICK_LINKS = [
   { label: 'FAQ', href: '/faq/', body: 'Plain-English answers to common questions across every audience.' },
   { label: 'Help & Guides', href: '/help/', body: 'Long-form guides for quickstarts, deployment, and integrations.' },
-  { label: 'Specification', href: 'https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md', external: true, body: 'The full specification draft.' },
+  { label: 'Specification', href: 'https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md', external: true, body: 'Executive summary of the specification.' },
   { label: 'CHANGELOG', href: 'https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md', external: true, body: 'Every version, every shipped feature.' },
 ];
 
