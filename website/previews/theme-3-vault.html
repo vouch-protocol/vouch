@@ -9,17 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --graphite: #1A1A1A;
-  --graphite-light: #232323;
-  --graphite-deep: #0E0E0E;
-  --brass: #B58F4E;
-  --brass-light: #C9A668;
-  --brass-deep: #8A6B3A;
-  --copper: #A06F3F;
-  --bone: #EDE6D6;
-  --bone-soft: rgba(237, 230, 214, 0.7);
-  --bone-faint: rgba(237, 230, 214, 0.4);
-  --bone-ghost: rgba(237, 230, 214, 0.1);
+ --graphite: #1A1A1A;
+ --graphite-light: #232323;
+ --graphite-deep: #0E0E0E;
+ --brass: #B58F4E;
+ --brass-light: #C9A668;
+ --brass-deep: #8A6B3A;
+ --copper: #A06F3F;
+ --bone: #EDE6D6;
+ --bone-soft: rgba(237, 230, 214, 0.7);
+ --bone-faint: rgba(237, 230, 214, 0.4);
+ --bone-ghost: rgba(237, 230, 214, 0.1);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,721 +27,720 @@
 html { font-size: 16.5px; }
 
 body {
-  background: var(--graphite);
-  color: var(--bone);
-  font-family: 'Inter', sans-serif;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
+ background: var(--graphite);
+ color: var(--bone);
+ font-family: 'Inter', sans-serif;
+ line-height: 1.6;
+ -webkit-font-smoothing: antialiased;
 }
 
 .container { max-width: 1200px; margin: 0 auto; padding: 0 2.5rem; }
 
 .mono {
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.04em;
+ font-family: 'JetBrains Mono', monospace;
+ letter-spacing: 0.04em;
 }
 
 .serif {
-  font-family: 'Fraunces', serif;
+ font-family: 'Fraunces', serif;
 }
 
 /* === NAV === */
 nav.site-nav {
-  background: var(--graphite);
-  border-bottom: 1px solid var(--bone-ghost);
+ background: var(--graphite);
+ border-bottom: 1px solid var(--bone-ghost);
 }
 nav.site-nav .inner {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1.4rem 0;
-  position: relative;
+ display: flex; align-items: center; justify-content: space-between;
+ padding: 1.4rem 0;
+ position: relative;
 }
 nav.site-nav .inner::after {
-  content: '';
-  position: absolute;
-  bottom: -2px; left: 0; right: 0;
-  height: 1px;
-  background: var(--brass);
+ content: '';
+ position: absolute;
+ bottom: -2px; left: 0; right: 0;
+ height: 1px;
+ background: var(--brass);
 }
 nav.site-nav .brand { display: flex; align-items: center; gap: 0.9rem; text-decoration: none; color: var(--bone); }
 nav.site-nav .brand .seal {
-  width: 38px; height: 38px;
-  background: var(--graphite);
-  border: 2px solid var(--brass);
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
+ width: 38px; height: 38px;
+ background: var(--graphite);
+ border: 2px solid var(--brass);
+ display: flex; align-items: center; justify-content: center;
+ position: relative;
 }
 nav.site-nav .brand .seal::after {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border: 1px solid var(--brass-deep);
+ content: '';
+ position: absolute;
+ inset: 3px;
+ border: 1px solid var(--brass-deep);
 }
 nav.site-nav .brand .seal svg {
-  width: 16px; height: 16px; color: var(--brass);
-  z-index: 1;
+ width: 16px; height: 16px; color: var(--brass);
+ z-index: 1;
 }
 nav.site-nav .brand .brand-text {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.35rem;
-  letter-spacing: -0.015em;
+ font-family: 'Fraunces', serif;
+ font-weight: 600;
+ font-size: 1.35rem;
+ letter-spacing: -0.015em;
 }
 nav.site-nav .brand .brand-sub {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  color: var(--brass);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  display: block;
-  margin-top: 1px;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.6rem;
+ color: var(--brass);
+ letter-spacing: 0.22em;
+ text-transform: uppercase;
+ display: block;
+ margin-top: 1px;
 }
 nav.site-nav ul { list-style: none; display: flex; gap: 0; align-items: center; }
 nav.site-nav ul li { display: flex; align-items: center; }
 nav.site-nav ul li:not(:last-child)::after {
-  content: '';
-  display: inline-block;
-  width: 1px; height: 14px;
-  background: var(--bone-ghost);
-  margin: 0 1.4rem;
+ content: '';
+ display: inline-block;
+ width: 1px; height: 14px;
+ background: var(--bone-ghost);
+ margin: 0 1.4rem;
 }
 nav.site-nav ul a {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--bone-soft);
-  text-decoration: none;
-  transition: color 0.15s;
+ font-family: 'Inter', sans-serif;
+ font-size: 0.88rem;
+ font-weight: 500;
+ color: var(--bone-soft);
+ text-decoration: none;
+ transition: color 0.15s;
 }
 nav.site-nav ul a:hover { color: var(--brass); }
 nav.site-nav ul a.github {
-  border: 2px solid var(--brass);
-  padding: 0.55rem 1.1rem;
-  color: var(--brass);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  position: relative;
+ border: 2px solid var(--brass);
+ padding: 0.55rem 1.1rem;
+ color: var(--brass);
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.78rem;
+ letter-spacing: 0.08em;
+ position: relative;
 }
 nav.site-nav ul a.github::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border: 1px solid var(--brass-deep);
+ content: '';
+ position: absolute;
+ inset: 3px;
+ border: 1px solid var(--brass-deep);
 }
 nav.site-nav ul a.github:hover {
-  background: var(--brass);
-  color: var(--graphite);
+ background: var(--brass);
+ color: var(--graphite);
 }
 
 /* === HERO === */
 section.hero { padding: 5.5rem 0 4rem; }
 section.hero .eyebrow-bar {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.5rem 0.9rem;
-  border: 1px solid var(--brass-deep);
-  background: rgba(181, 143, 78, 0.06);
-  margin-bottom: 2rem;
+ display: inline-flex;
+ align-items: center;
+ gap: 0.85rem;
+ padding: 0.5rem 0.9rem;
+ border: 1px solid var(--brass-deep);
+ background: rgba(181, 143, 78, 0.06);
+ margin-bottom: 2rem;
 }
 section.hero .eyebrow-bar .badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--brass);
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.7rem;
+ letter-spacing: 0.16em;
+ text-transform: uppercase;
+ color: var(--brass);
 }
 section.hero .eyebrow-bar .sep {
-  width: 1px; height: 10px; background: var(--brass-deep);
+ width: 1px; height: 10px; background: var(--brass-deep);
 }
 section.hero .eyebrow-bar .meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--bone-soft);
-  letter-spacing: 0.06em;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--bone-soft);
+ letter-spacing: 0.06em;
 }
 section.hero h1 {
-  font-family: 'Fraunces', serif;
-  font-size: clamp(2.5rem, 5.2vw, 4rem);
-  font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  max-width: 920px;
-  margin-bottom: 1.75rem;
+ font-family: 'Fraunces', serif;
+ font-size: clamp(2.5rem, 5.2vw, 4rem);
+ font-weight: 500;
+ line-height: 1.05;
+ letter-spacing: -0.025em;
+ max-width: 920px;
+ margin-bottom: 1.75rem;
 }
 section.hero h1 em {
-  font-style: italic;
-  color: var(--brass);
+ font-style: italic;
+ color: var(--brass);
 }
 section.hero p.lede {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.12rem;
-  color: var(--bone-soft);
-  line-height: 1.6;
-  max-width: 680px;
-  margin-bottom: 2.25rem;
+ font-family: 'Inter', sans-serif;
+ font-size: 1.12rem;
+ color: var(--bone-soft);
+ line-height: 1.6;
+ max-width: 680px;
+ margin-bottom: 2.25rem;
 }
 section.hero .ctas { display: flex; gap: 1rem; flex-wrap: wrap; }
 section.hero .btn {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-decoration: none;
-  padding: 0.95rem 1.6rem;
-  border-radius: 0;
-  position: relative;
-  transition: all 0.15s;
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  text-transform: uppercase;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.78rem;
+ letter-spacing: 0.1em;
+ text-decoration: none;
+ padding: 0.95rem 1.6rem;
+ border-radius: 0;
+ position: relative;
+ transition: all 0.15s;
+ display: inline-flex; align-items: center; gap: 0.5rem;
+ text-transform: uppercase;
 }
 section.hero .btn.primary {
-  background: var(--brass);
-  color: var(--graphite);
-  border: 2px solid var(--brass);
-  font-weight: 500;
+ background: var(--brass);
+ color: var(--graphite);
+ border: 2px solid var(--brass);
+ font-weight: 500;
 }
 section.hero .btn.primary::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border: 1px solid var(--graphite);
+ content: '';
+ position: absolute;
+ inset: 3px;
+ border: 1px solid var(--graphite);
 }
 section.hero .btn.primary:hover { background: var(--brass-light); border-color: var(--brass-light); }
 section.hero .btn.secondary {
-  background: transparent;
-  color: var(--bone);
-  border: 2px solid var(--bone-ghost);
+ background: transparent;
+ color: var(--bone);
+ border: 2px solid var(--bone-ghost);
 }
 section.hero .btn.secondary:hover { border-color: var(--brass); color: var(--brass); }
 
 /* === SEAL DIVIDER === */
 .seal-divider {
-  display: flex; align-items: center; justify-content: center;
-  padding: 2.5rem 0;
-  gap: 1.5rem;
+ display: flex; align-items: center; justify-content: center;
+ padding: 2.5rem 0;
+ gap: 1.5rem;
 }
 .seal-divider .rule { flex: 1; height: 1px; background: var(--bone-ghost); }
 .seal-divider .glyph {
-  width: 32px; height: 32px;
-  border: 1.5px solid var(--brass);
-  position: relative;
-  transform: rotate(45deg);
+ width: 32px; height: 32px;
+ border: 1.5px solid var(--brass);
+ position: relative;
+ transform: rotate(45deg);
 }
 .seal-divider .glyph::after {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border: 1px solid var(--brass-deep);
+ content: '';
+ position: absolute;
+ inset: 4px;
+ border: 1px solid var(--brass-deep);
 }
 
 /* === SECTION HEADERS === */
 .section-eyebrow {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--brass);
-  margin-bottom: 0.6rem;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.72rem;
+ letter-spacing: 0.22em;
+ text-transform: uppercase;
+ color: var(--brass);
+ margin-bottom: 0.6rem;
 }
 .section-title {
-  font-family: 'Fraunces', serif;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.85rem;
+ font-family: 'Fraunces', serif;
+ font-size: clamp(1.8rem, 3vw, 2.4rem);
+ font-weight: 500;
+ letter-spacing: -0.02em;
+ margin-bottom: 0.85rem;
 }
 .section-sub {
-  font-family: 'Inter', sans-serif;
-  color: var(--bone-soft);
-  font-size: 1rem;
-  line-height: 1.6;
-  max-width: 660px;
-  margin-bottom: 3rem;
+ font-family: 'Inter', sans-serif;
+ color: var(--bone-soft);
+ font-size: 1rem;
+ line-height: 1.6;
+ max-width: 660px;
+ margin-bottom: 3rem;
 }
 
 /* === FEATURES === */
 section.features { padding: 4rem 0; }
 .feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 1.5rem;
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+ gap: 1.5rem;
 }
 .feature {
-  border: 2px solid var(--bone-ghost);
-  padding: 1.85rem 1.65rem;
-  position: relative;
-  background: var(--graphite);
-  transition: border-color 0.2s;
+ border: 2px solid var(--bone-ghost);
+ padding: 1.85rem 1.65rem;
+ position: relative;
+ background: var(--graphite);
+ transition: border-color 0.2s;
 }
 .feature::before {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border: 1px solid transparent;
-  transition: border-color 0.2s;
-  pointer-events: none;
+ content: '';
+ position: absolute;
+ inset: 4px;
+ border: 1px solid transparent;
+ transition: border-color 0.2s;
+ pointer-events: none;
 }
 .feature:hover { border-color: var(--brass); }
 .feature:hover::before { border-color: var(--brass-deep); }
 .feature .index {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--brass);
-  letter-spacing: 0.12em;
-  margin-bottom: 0.85rem;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--brass);
+ letter-spacing: 0.12em;
+ margin-bottom: 0.85rem;
 }
 .feature h3 {
-  font-family: 'Fraunces', serif;
-  font-size: 1.3rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  margin-bottom: 0.85rem;
-  color: var(--bone);
+ font-family: 'Fraunces', serif;
+ font-size: 1.3rem;
+ font-weight: 600;
+ letter-spacing: -0.015em;
+ margin-bottom: 0.85rem;
+ color: var(--bone);
 }
 .feature p {
-  font-family: 'Inter', sans-serif;
-  color: var(--bone-soft);
-  font-size: 0.92rem;
-  line-height: 1.65;
-  margin-bottom: 1rem;
+ font-family: 'Inter', sans-serif;
+ color: var(--bone-soft);
+ font-size: 0.92rem;
+ line-height: 1.65;
+ margin-bottom: 1rem;
 }
 .feature .ref {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--copper);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--copper);
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
 }
 
 /* === FAQ === */
 section.faq {
-  padding: 5rem 0;
-  background: var(--graphite-deep);
-  border-top: 2px solid var(--bone-ghost);
-  border-bottom: 2px solid var(--bone-ghost);
-  position: relative;
+ padding: 5rem 0;
+ background: var(--graphite-deep);
+ border-top: 2px solid var(--bone-ghost);
+ border-bottom: 2px solid var(--bone-ghost);
+ position: relative;
 }
 section.faq::before, section.faq::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0;
-  height: 1px;
-  background: var(--brass-deep);
+ content: '';
+ position: absolute;
+ left: 0; right: 0;
+ height: 1px;
+ background: var(--brass-deep);
 }
 section.faq::before { top: 4px; }
 section.faq::after { bottom: 4px; }
 
 .faq-section {
-  border: 2px solid var(--bone-ghost);
-  padding: 2rem 2rem 1rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-  background: var(--graphite);
+ border: 2px solid var(--bone-ghost);
+ padding: 2rem 2rem 1rem;
+ margin-bottom: 1.5rem;
+ position: relative;
+ background: var(--graphite);
 }
 .faq-section .audience-tag {
-  position: absolute;
-  top: -10px; left: 1.5rem;
-  background: var(--graphite-deep);
-  padding: 0 0.7rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--brass);
+ position: absolute;
+ top: -10px; left: 1.5rem;
+ background: var(--graphite-deep);
+ padding: 0 0.7rem;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.7rem;
+ letter-spacing: 0.18em;
+ text-transform: uppercase;
+ color: var(--brass);
 }
 .faq-section .audience-tag::before, .faq-section .audience-tag::after {
-  content: '—';
-  color: var(--brass-deep);
-  margin: 0 0.3rem;
+ content: '—';
+ color: var(--brass-deep);
+ margin: 0 0.3rem;
 }
 .faq-section h3.faq-section-title {
-  font-family: 'Fraunces', serif;
-  font-size: 1.6rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  margin-bottom: 1.5rem;
+ font-family: 'Fraunces', serif;
+ font-size: 1.6rem;
+ font-weight: 600;
+ letter-spacing: -0.015em;
+ margin-bottom: 1.5rem;
 }
 
 .qa {
-  border-top: 1px solid var(--bone-ghost);
-  padding: 1.1rem 0;
+ border-top: 1px solid var(--bone-ghost);
+ padding: 1.1rem 0;
 }
 .qa:first-of-type { border-top: none; }
 .qa .q {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1.5rem;
-  cursor: pointer;
+ display: flex;
+ justify-content: space-between;
+ align-items: flex-start;
+ gap: 1.5rem;
+ cursor: pointer;
 }
 .qa .q .qtext {
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--bone);
-  flex: 1;
+ font-family: 'Inter', sans-serif;
+ font-size: 1rem;
+ font-weight: 500;
+ color: var(--bone);
+ flex: 1;
 }
 .qa .q .toggle {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.95rem;
-  color: var(--brass);
-  flex-shrink: 0;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.95rem;
+ color: var(--brass);
+ flex-shrink: 0;
 }
 .qa.open .q .qtext { color: var(--brass); }
 .qa .a {
-  display: none;
-  margin-top: 1rem;
-  padding: 1.1rem 1.2rem;
-  background: var(--graphite-deep);
-  border-left: 3px solid var(--brass);
-  color: var(--bone-soft);
-  font-family: 'Inter', sans-serif;
-  font-size: 0.92rem;
-  line-height: 1.7;
+ display: none;
+ margin-top: 1rem;
+ padding: 1.1rem 1.2rem;
+ background: var(--graphite-deep);
+ border-left: 3px solid var(--brass);
+ color: var(--bone-soft);
+ font-family: 'Inter', sans-serif;
+ font-size: 0.92rem;
+ line-height: 1.7;
 }
 .qa.open .a { display: block; }
 .qa .a p { margin-bottom: 0.7rem; }
 .qa .a p:last-child { margin-bottom: 0; }
 .qa .a code {
-  font-family: 'JetBrains Mono', monospace;
-  background: var(--graphite-light);
-  padding: 0.15rem 0.45rem;
-  font-size: 0.85em;
-  color: var(--brass);
-  border: 1px solid var(--bone-ghost);
+ font-family: 'JetBrains Mono', monospace;
+ background: var(--graphite-light);
+ padding: 0.15rem 0.45rem;
+ font-size: 0.85em;
+ color: var(--brass);
+ border: 1px solid var(--bone-ghost);
 }
 .qa .a a {
-  color: var(--brass);
-  text-decoration: none;
-  border-bottom: 1px solid var(--brass-deep);
+ color: var(--brass);
+ text-decoration: none;
+ border-bottom: 1px solid var(--brass-deep);
 }
 .qa .a .meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--copper);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-top: 1rem;
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--bone-ghost);
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--copper);
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ margin-top: 1rem;
+ padding-top: 0.7rem;
+ border-top: 1px solid var(--bone-ghost);
 }
 
 /* === FOOTER === */
 footer.site-footer { padding: 4.5rem 0 2.5rem; }
 footer.site-footer .columns {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 3rem;
-  margin-bottom: 3rem;
-  padding-bottom: 3rem;
-  border-bottom: 2px solid var(--bone-ghost);
-  position: relative;
+ display: grid;
+ grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+ gap: 3rem;
+ margin-bottom: 3rem;
+ padding-bottom: 3rem;
+ border-bottom: 2px solid var(--bone-ghost);
+ position: relative;
 }
 footer.site-footer .columns::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: -6px;
-  height: 1px;
-  background: var(--brass-deep);
+ content: '';
+ position: absolute;
+ left: 0; right: 0; bottom: -6px;
+ height: 1px;
+ background: var(--brass-deep);
 }
 footer.site-footer .brand-block .mark {
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  font-size: 1.4rem;
-  letter-spacing: -0.015em;
-  display: block;
-  margin-bottom: 0.4rem;
+ font-family: 'Fraunces', serif;
+ font-weight: 600;
+ font-size: 1.4rem;
+ letter-spacing: -0.015em;
+ display: block;
+ margin-bottom: 0.4rem;
 }
 footer.site-footer .brand-block .mark-sub {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--brass);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-  display: block;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--brass);
+ letter-spacing: 0.18em;
+ text-transform: uppercase;
+ margin-bottom: 1rem;
+ display: block;
 }
 footer.site-footer .brand-block p {
-  font-family: 'Inter', sans-serif;
-  color: var(--bone-faint);
-  font-size: 0.88rem;
-  line-height: 1.6;
-  max-width: 280px;
+ font-family: 'Inter', sans-serif;
+ color: var(--bone-faint);
+ font-size: 0.88rem;
+ line-height: 1.6;
+ max-width: 280px;
 }
 footer.site-footer h4 {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--brass);
-  margin-bottom: 1.1rem;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.72rem;
+ letter-spacing: 0.2em;
+ text-transform: uppercase;
+ color: var(--brass);
+ margin-bottom: 1.1rem;
 }
 footer.site-footer ul { list-style: none; }
 footer.site-footer ul li { margin-bottom: 0.7rem; }
 footer.site-footer ul a {
-  font-family: 'Inter', sans-serif;
-  color: var(--bone-soft);
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.15s;
+ font-family: 'Inter', sans-serif;
+ color: var(--bone-soft);
+ text-decoration: none;
+ font-size: 0.9rem;
+ transition: color 0.15s;
 }
 footer.site-footer ul a:hover { color: var(--brass); }
 footer.site-footer .imprint {
-  display: flex; justify-content: space-between; gap: 2rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  color: var(--bone-faint);
-  flex-wrap: wrap;
+ display: flex; justify-content: space-between; gap: 2rem;
+ font-family: 'JetBrains Mono', monospace;
+ font-size: 0.72rem;
+ letter-spacing: 0.1em;
+ color: var(--bone-faint);
+ flex-wrap: wrap;
 }
 
 @media (max-width: 900px) {
-  footer.site-footer .columns { grid-template-columns: 1fr 1fr; }
+ footer.site-footer .columns { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
 <body>
 
 <nav class="site-nav">
-  <div class="container inner">
-    <a href="#" class="brand">
-      <div class="seal">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-      </div>
-      <div>
-        <span class="brand-text">Vouch Protocol</span>
-        <span class="brand-sub">Open Specification</span>
-      </div>
-    </a>
-    <ul>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">FAQ</a></li>
-      <li><a href="#">Help</a></li>
-      <li><a href="#">Support</a></li>
-      <li><a href="#" class="github">GitHub</a></li>
-    </ul>
-  </div>
+ <div class="container inner">
+  <a href="#" class="brand">
+   <div class="seal">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+   </div>
+   <div>
+    <span class="brand-text">Vouch Protocol</span>
+    <span class="brand-sub">Open Specification</span>
+   </div>
+  </a>
+  <ul>
+   <li><a href="#">Home</a></li>
+   <li><a href="#">FAQ</a></li>
+   <li><a href="#">Help</a></li>
+   <li><a href="#">Support</a></li>
+   <li><a href="#" class="github">GitHub</a></li>
+  </ul>
+ </div>
 </nav>
 
 <section class="hero">
-  <div class="container">
-    <div class="eyebrow-bar">
-      <span class="badge">Spec v0.1-draft</span>
-      <span class="sep"></span>
-      <span class="meta">W3C CG Report - 26 April 2026 - Three-language interop</span>
-    </div>
-    <h1>
-      Cryptographic identity, intent, and continuous trust for <em>autonomous AI agents</em>.
-    </h1>
-    <p class="lede">
-      Vouch Protocol is an open, W3C-track specification for verifying who an agent is, what it intended to do, and
-      whether its runtime state still warrants the authority it was granted. Built on W3C Verifiable Credentials,
-      Decentralized Identifiers, and Data Integrity proofs. Reference implementations in Python, TypeScript, and Go,
-      with an optional hybrid post-quantum profile shipping today.
-    </p>
-    <div class="ctas">
-      <a href="#" class="btn primary">Read FAQ</a>
-      <a href="#" class="btn secondary">Browse guides</a>
-      <a href="#" class="btn secondary">View on GitHub</a>
-    </div>
+ <div class="container">
+  <div class="eyebrow-bar">
+   <span class="badge">Spec v0.1-draft</span>
+   <span class="sep"></span>
+   <span class="meta">Specification - 26 April 2026 - Three-language interop</span>
   </div>
+  <h1>
+   Cryptographic identity, intent, and continuous trust for <em>autonomous AI agents</em>.
+  </h1>
+  <p class="lede">
+   Vouch Protocol is an open, open standard specification for verifying who an agent is, what it intended to do, and
+   whether its runtime state still warrants the authority it was granted. Built on Verifiable Credentials,
+   Decentralized Identifiers, and Data Integrity proofs. Reference implementations in Python, TypeScript, and Go,
+   with an optional hybrid post-quantum profile shipping today.
+  </p>
+  <div class="ctas">
+   <a href="#" class="btn primary">Read FAQ</a>
+   <a href="#" class="btn secondary">Browse guides</a>
+   <a href="#" class="btn secondary">View on GitHub</a>
+  </div>
+ </div>
 </section>
 
 <div class="seal-divider container">
-  <div class="rule"></div>
-  <div class="glyph"></div>
-  <div class="rule"></div>
+ <div class="rule"></div>
+ <div class="glyph"></div>
+ <div class="rule"></div>
 </div>
 
 <section class="features">
-  <div class="container">
-    <div class="section-eyebrow">I - Capabilities</div>
-    <h2 class="section-title">What the protocol provides</h2>
-    <p class="section-sub">
-      Six properties that traditional API keys, OAuth tokens, and bearer credentials cannot provide for autonomous AI
-      agents operating in regulated environments.
-    </p>
-    <div class="feature-grid">
-      <div class="feature">
-        <div class="index">I-01</div>
-        <h3>Cryptographic Identity</h3>
-        <p>Every agent holds a W3C Decentralized Identifier (did:web or did:key) backed by an Ed25519 keypair. No API keys, no shared secrets.</p>
-        <div class="ref">§6 Identity Model</div>
-      </div>
-      <div class="feature">
-        <div class="index">I-02</div>
-        <h3>Intent Attestation</h3>
-        <p>Each action is signed as a W3C Verifiable Credential with Data Integrity proofs binding identity, action, target, and resource.</p>
-        <div class="ref">§5 Credential Format</div>
-      </div>
-      <div class="feature">
-        <div class="index">I-03</div>
-        <h3>Resource Delegation</h3>
-        <p>Multi-agent systems gain verifiable principal-to-sub-agent chains. Each link narrows the resource scope.</p>
-        <div class="ref">§9 Delegation Chains</div>
-      </div>
-      <div class="feature">
-        <div class="index">I-04</div>
-        <h3>Identity Sidecar</h3>
-        <p>Private keys never enter the LLM context window. A separate Go binary signs on behalf of the agent over a local IPC channel.</p>
-        <div class="ref">§10 Identity Sidecar</div>
-      </div>
-      <div class="feature">
-        <div class="index">I-05</div>
-        <h3>Heartbeat Renewal</h3>
-        <p>Long-running agents renew SessionVoucher credentials on a periodic schedule. The trust model inverts: untrusted until renewed.</p>
-        <div class="ref">§11 Heartbeat Protocol</div>
-      </div>
-      <div class="feature">
-        <div class="index">I-06</div>
-        <h3>Hybrid Post-Quantum</h3>
-        <p>Cryptosuite <code style="font-family:'JetBrains Mono',monospace;font-size:0.85em;color:var(--brass);">hybrid-eddsa-mldsa44-jcs-2026</code>. Ed25519 + ML-DSA-44 sign the same JCS bytes.</p>
-        <div class="ref">§13 Crypto-Agility</div>
-      </div>
-    </div>
+ <div class="container">
+  <div class="section-eyebrow">I - Capabilities</div>
+  <h2 class="section-title">What the protocol provides</h2>
+  <p class="section-sub">
+   Six properties that traditional API keys, OAuth tokens, and bearer credentials cannot provide for autonomous AI
+   agents operating in regulated environments.
+  </p>
+  <div class="feature-grid">
+   <div class="feature">
+    <div class="index">I-01</div>
+    <h3>Cryptographic Identity</h3>
+    <p>Every agent holds a Decentralized Identifier (did:web or did:key) backed by an Ed25519 keypair. No API keys, no shared secrets.</p>
+    <div class="ref">§6 Identity Model</div>
+   </div>
+   <div class="feature">
+    <div class="index">I-02</div>
+    <h3>Intent Attestation</h3>
+    <p>Each action is signed as a Verifiable Credential with Data Integrity proofs binding identity, action, target, and resource.</p>
+    <div class="ref">§5 Credential Format</div>
+   </div>
+   <div class="feature">
+    <div class="index">I-03</div>
+    <h3>Resource Delegation</h3>
+    <p>Multi-agent systems gain verifiable principal-to-sub-agent chains. Each link narrows the resource scope.</p>
+    <div class="ref">§9 Delegation Chains</div>
+   </div>
+   <div class="feature">
+    <div class="index">I-04</div>
+    <h3>Identity Sidecar</h3>
+    <p>Private keys never enter the LLM context window. A separate Go binary signs on behalf of the agent over a local IPC channel.</p>
+    <div class="ref">§10 Identity Sidecar</div>
+   </div>
+   <div class="feature">
+    <div class="index">I-05</div>
+    <h3>Heartbeat Renewal</h3>
+    <p>Long-running agents renew SessionVoucher credentials on a periodic schedule. The trust model inverts: untrusted until renewed.</p>
+    <div class="ref">§11 Heartbeat Protocol</div>
+   </div>
+   <div class="feature">
+    <div class="index">I-06</div>
+    <h3>Hybrid Post-Quantum</h3>
+    <p>Cryptosuite <code style="font-family:'JetBrains Mono',monospace;font-size:0.85em;color:var(--brass);">hybrid-eddsa-mldsa44-jcs-2026</code>. Ed25519 + ML-DSA-44 sign the same JCS bytes.</p>
+    <div class="ref">§13 Crypto-Agility</div>
+   </div>
   </div>
+ </div>
 </section>
 
 <section class="faq">
-  <div class="container">
-    <div class="section-eyebrow" style="text-align:center;">II - Reference Q&amp;A</div>
-    <h2 class="section-title" style="text-align:center;">Frequently asked questions</h2>
-    <p class="section-sub" style="margin-left:auto;margin-right:auto;text-align:center;">
-      Organized by audience. Search across all entries. Each answer links to the relevant specification section.
-    </p>
+ <div class="container">
+  <div class="section-eyebrow" style="text-align:center;">II - Reference Q&amp;A</div>
+  <h2 class="section-title" style="text-align:center;">Frequently asked questions</h2>
+  <p class="section-sub" style="margin-left:auto;margin-right:auto;text-align:center;">
+   Organized by audience. Search across all entries. Each answer links to the relevant specification section.
+  </p>
 
-    <div class="faq-section">
-      <span class="audience-tag">For Developers</span>
-      <h3 class="faq-section-title">Getting Vouch into your codebase</h3>
+  <div class="faq-section">
+   <span class="audience-tag">For Developers</span>
+   <h3 class="faq-section-title">Getting Vouch into your codebase</h3>
 
-      <div class="qa open">
-        <div class="q">
-          <div class="qtext">Which languages have Vouch SDKs?</div>
-          <div class="toggle">[-]</div>
-        </div>
-        <div class="a">
-          <p>
-            Three reference SDKs: <strong>Python</strong> (<code>pip install vouch-protocol</code>),
-            <strong>TypeScript</strong> (<code>npm install @vouch-protocol/core</code>), and
-            <strong>Go</strong> (<code>go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar</code>).
-          </p>
-          <p>
-            All three produce byte-identical credentials thanks to RFC 8785 JCS canonicalization. Cross-language test
-            vectors are published at <a href="#">test-vectors/hybrid-eddsa-mldsa44/</a>. The Python and TypeScript SDKs
-            also expose verification, while the Go binary is primarily a long-running signing daemon (the
-            <a href="#">Identity Sidecar pattern</a>).
-          </p>
-          <div class="meta">SHIPPED: v1.6.0 - REF: §7 Signing Operations</div>
-        </div>
-      </div>
-
-      <div class="qa">
-        <div class="q">
-          <div class="qtext">Do I need to run the Go sidecar?</div>
-          <div class="toggle">[+]</div>
-        </div>
-      </div>
-
-      <div class="qa">
-        <div class="q">
-          <div class="qtext">How do I verify a credential signed in a different language?</div>
-          <div class="toggle">[+]</div>
-        </div>
-      </div>
-
-      <div class="qa">
-        <div class="q">
-          <div class="qtext">What framework integrations exist (LangChain, CrewAI, MCP, etc.)?</div>
-          <div class="toggle">[+]</div>
-        </div>
-      </div>
+   <div class="qa open">
+    <div class="q">
+     <div class="qtext">Which languages have Vouch SDKs?</div>
+     <div class="toggle">[-]</div>
     </div>
-
-    <div class="faq-section">
-      <span class="audience-tag">For Operators</span>
-      <h3 class="faq-section-title">Production deployment</h3>
-
-      <div class="qa">
-        <div class="q">
-          <div class="qtext">Which KMS backends are supported?</div>
-          <div class="toggle">[+]</div>
-        </div>
-      </div>
-
-      <div class="qa">
-        <div class="q">
-          <div class="qtext">What storage backends does the revocation registry support?</div>
-          <div class="toggle">[+]</div>
-        </div>
-      </div>
-
-      <div class="qa">
-        <div class="q">
-          <div class="qtext">How do I deploy at 10K-50K RPS?</div>
-          <div class="toggle">[+]</div>
-        </div>
-      </div>
+    <div class="a">
+     <p>
+      Three reference SDKs: <strong>Python</strong> (<code>pip install vouch-protocol</code>),
+      <strong>TypeScript</strong> (<code>npm install @vouch-protocol/core</code>), and
+      <strong>Go</strong> (<code>go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar</code>).
+     </p>
+     <p>
+      All three produce byte-identical credentials thanks to RFC 8785 JCS canonicalization. Cross-language test
+      vectors are published at <a href="#">test-vectors/hybrid-eddsa-mldsa44/</a>. The Python and TypeScript SDKs
+      also expose verification, while the Go binary is primarily a long-running signing daemon (the
+      <a href="#">Identity Sidecar pattern</a>).
+     </p>
+     <div class="meta">SHIPPED: v1.6.0 - REF: §7 Signing Operations</div>
     </div>
+   </div>
+
+   <div class="qa">
+    <div class="q">
+     <div class="qtext">Do I need to run the Go sidecar?</div>
+     <div class="toggle">[+]</div>
+    </div>
+   </div>
+
+   <div class="qa">
+    <div class="q">
+     <div class="qtext">How do I verify a credential signed in a different language?</div>
+     <div class="toggle">[+]</div>
+    </div>
+   </div>
+
+   <div class="qa">
+    <div class="q">
+     <div class="qtext">What framework integrations exist (LangChain, CrewAI, MCP, etc.)?</div>
+     <div class="toggle">[+]</div>
+    </div>
+   </div>
   </div>
+
+  <div class="faq-section">
+   <span class="audience-tag">For Operators</span>
+   <h3 class="faq-section-title">Production deployment</h3>
+
+   <div class="qa">
+    <div class="q">
+     <div class="qtext">Which KMS backends are supported?</div>
+     <div class="toggle">[+]</div>
+    </div>
+   </div>
+
+   <div class="qa">
+    <div class="q">
+     <div class="qtext">What storage backends does the revocation registry support?</div>
+     <div class="toggle">[+]</div>
+    </div>
+   </div>
+
+   <div class="qa">
+    <div class="q">
+     <div class="qtext">How do I deploy at 10K-50K RPS?</div>
+     <div class="toggle">[+]</div>
+    </div>
+   </div>
+  </div>
+ </div>
 </section>
 
 <footer class="site-footer">
-  <div class="container">
-    <div class="columns">
-      <div class="brand-block">
-        <span class="mark">Vouch Protocol</span>
-        <span class="mark-sub">An Open W3C-Track Standard</span>
-        <p>Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.</p>
-      </div>
-      <div>
-        <h4>Product</h4>
-        <ul>
-          <li><a href="#">FAQ</a></li>
-          <li><a href="#">Help &amp; Guides</a></li>
-          <li><a href="#">Support</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Resources</h4>
-        <ul>
-          <li><a href="#">GitHub</a></li>
-          <li><a href="#">CG Report</a></li>
-          <li><a href="#">Test Vectors</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>SDKs</h4>
-        <ul>
-          <li><a href="#">Python</a></li>
-          <li><a href="#">TypeScript</a></li>
-          <li><a href="#">Go sidecar</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Community</h4>
-        <ul>
-          <li><a href="#">Discord</a></li>
-          <li><a href="#">Issues</a></li>
-          <li><a href="#">CCG list</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="imprint">
-      <span>© 2025-2026 Ramprasad Gaddam - Apache License 2.0</span>
-      <span>Spec v0.1-draft / Impl v1.6.0</span>
-    </div>
+ <div class="container">
+  <div class="columns">
+   <div class="brand-block">
+    <span class="mark">Vouch Protocol</span>
+    <span class="mark-sub">An Open Open Standard</span>
+    <p>Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.</p>
+   </div>
+   <div>
+    <h4>Product</h4>
+    <ul>
+     <li><a href="#">FAQ</a></li>
+     <li><a href="#">Help &amp; Guides</a></li>
+     <li><a href="#">Support</a></li>
+    </ul>
+   </div>
+   <div>
+    <h4>Resources</h4>
+    <ul>
+     <li><a href="#">GitHub</a></li>
+     <li><a href="#">Specification</a></li>
+     <li><a href="#">Test Vectors</a></li>
+    </ul>
+   </div>
+   <div>
+    <h4>SDKs</h4>
+    <ul>
+     <li><a href="#">Python</a></li>
+     <li><a href="#">TypeScript</a></li>
+     <li><a href="#">Go sidecar</a></li>
+    </ul>
+   </div>
+   <div>
+    <h4>Community</h4>
+    <ul>
+     <li><a href="#">Discord</a></li>
+     <li><a href="#">Issues</a></li>
+    </ul>
+   </div>
   </div>
+  <div class="imprint">
+   <span>© 2025-2026 Ramprasad Gaddam - Apache License 2.0</span>
+   <span>Spec v0.1-draft / Impl v1.6.0</span>
+  </div>
+ </div>
 </footer>
 
 <script>
 // Minimal accordion behavior for the FAQ preview
 document.querySelectorAll('.qa .q').forEach(q => {
-  q.addEventListener('click', () => {
-    const card = q.parentElement;
-    card.classList.toggle('open');
-    const toggle = q.querySelector('.toggle');
-    if (toggle) toggle.textContent = card.classList.contains('open') ? '[-]' : '[+]';
-  });
+ q.addEventListener('click', () => {
+  const card = q.parentElement;
+  card.classList.toggle('open');
+  const toggle = q.querySelector('.toggle');
+  if (toggle) toggle.textContent = card.classList.contains('open') ? '[-]' : '[+]';
+ });
 });
 </script>
 

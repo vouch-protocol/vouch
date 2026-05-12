@@ -2,452 +2,452 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Defensive Disclosures - Vouch Protocol</title>
-    <meta name="description"
-        content="Vouch Protocol Defensive Disclosure Series (PAD) - Technical specifications for AI agent identity, attestation, and verification.">
-    <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0a0a0f;
-            --card: #12121a;
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #ffffff;
-            --muted: #a0a0b0;
-            --accent: #6366f1;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defensive Disclosures - Vouch Protocol</title>
+  <meta name="description"
+    content="Vouch Protocol Defensive Disclosure Series (PAD) - Technical specifications for AI agent identity, attestation, and verification.">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --muted: #a0a0b0;
+      --accent: #6366f1;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
 
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
 
-        .subtitle {
-            color: var(--muted);
-            margin-bottom: 2rem;
-        }
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
 
-        .paper {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: border-color 0.2s;
-        }
+    .paper {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
 
-        .paper:hover {
-            border-color: var(--accent);
-        }
+    .paper:hover {
+      border-color: var(--accent);
+    }
 
-        .paper-id {
-            font-size: 0.75rem;
-            color: var(--accent);
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
+    .paper-id {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
 
-        .paper-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
+    .paper-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
 
-        .paper-title a {
-            color: var(--text);
-            text-decoration: none;
-        }
+    .paper-title a {
+      color: var(--text);
+      text-decoration: none;
+    }
 
-        .paper-title a:hover {
-            color: var(--accent);
-        }
+    .paper-title a:hover {
+      color: var(--accent);
+    }
 
-        .paper-desc {
-            color: var(--muted);
-            font-size: 0.9rem;
-        }
+    .paper-desc {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
 
-        .back {
-            margin-top: 2rem;
-        }
+    .back {
+      margin-top: 2rem;
+    }
 
-        .back a {
-            color: var(--accent);
-            text-decoration: none;
-        }
+    .back a {
+      color: var(--accent);
+      text-decoration: none;
+    }
 
-        .back a:hover {
-            text-decoration: underline;
-        }
-    </style>
+    .back a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>📄 Defensive Disclosure Series</h1>
-        <p class="subtitle">Technical specifications for AI agent identity, attestation, and verification</p>
+  <div class="container">
+    <h1>📄 Defensive Disclosure Series</h1>
+    <p class="subtitle">Technical specifications for AI agent identity, attestation, and verification</p>
 
-        <div class="paper">
-            <div class="paper-id">PAD-001</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-001-cryptographic-agent-identity.md">Cryptographic
-                    Binding of AI Agent Identity to Stated Intent</a></div>
-            <div class="paper-desc">Ed25519 digital signatures in JWS format for request-level attestation and
-                non-repudiation.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-002</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-002-chain-of-custody.md">Chain
-                    of Custody for Delegated Agent Actions</a></div>
-            <div class="paper-desc">Cryptographic lineage tracking when AI agents delegate to other AI agents.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-003</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-003-identity-sidecar.md">Identity
-                    Sidecar Architecture</a></div>
-            <div class="paper-desc">Separation of signing authority from agent execution for secure key management.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-004</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-004-smart-scan-verification.md">DOM-Based
-                    Automatic Signature Detection</a></div>
-            <div class="paper-desc">Browser-based ambient verification for signed web content.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-005</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-005-reverse-lookup-registry.md">Reverse
-                    Lookup Registry for Orphaned Content</a></div>
-            <div class="paper-desc">Hash-based signature discovery for content without embedded attribution.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-006</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-006-trust-graph-url-chaining.md">URL-Based
-                    Credential Chaining</a></div>
-            <div class="paper-desc">Decentralized trust graphs using did:web and DNS infrastructure.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-007</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-007-ghost-signature-telemetry.md">Automated
-                    Code Provenance Signatures</a></div>
-            <div class="paper-desc">Cryptographic proof of human involvement in AI-assisted code generation.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-008</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-008-hybrid-ssh-verification.md">Hybrid
-                    Identity Bootstrapping via SSH</a></div>
-            <div class="paper-desc">Zero-friction identity using existing SSH keys and GitHub verification.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-009</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-009-localhost-identity-bridge.md">Unified
-                    Local Identity via Localhost Bridge</a></div>
-            <div class="paper-desc">Cross-application cryptographic identity using OS Keyring and localhost HTTP bridge.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-010</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-010-semantic-consent-signing.md">Context-Adaptive
-                    Semantic Consent</a></div>
-            <div class="paper-desc">Human-in-the-loop verification with MIME-aware content preview for WYSIWYS signing.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-011</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-011-hierarchical-discovery-protocol.md">Hierarchical
-                    Discovery Protocol</a></div>
-            <div class="paper-desc">Auto-discovery of signing providers with security-prioritized fallback chain.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-012</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-012-vouch-covenant.md">Executable
-                    Usage Covenants in Media Manifests</a></div>
-            <div class="paper-desc">Machine-executable policy logic in C2PA manifests for AI training and derivative
-                work enforcement.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-013</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-013-vouch-airgap.md">Air-Gapped
-                    Identity via Psychoacoustic Steganography</a></div>
-            <div class="paper-desc">Zero-network identity verification through ultrasonic beacons and acoustic
-                authentication.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-014</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-014-vouch-sonic.md">Robust
-                    Acoustic Provenance via Steganography</a></div>
-            <div class="paper-desc">Compression-resistant audio watermarking for deepfake detection and analog-hole
-                closure.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-015</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-015-ambient-witness-protocol.md">Ambient
-                    Witness Protocol (BLE Crowdsourcing)</a></div>
-            <div class="paper-desc">Space-time proof of location via privacy-preserving Bluetooth Low Energy
-                triangulation.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-016</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-016-dynamic-credential-renewal.md">Dynamic
-                    Credential Renewal ("Heartbeat Protocol")</a></div>
-            <div class="paper-desc">Continuous behavioral monitoring with adaptive TTL credential renewal.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-017</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-017-cryptographic-proof-of-reasoning.md">Cryptographic
-                    Proof of Reasoning (Adaptive CoT)</a></div>
-            <div class="paper-desc">Tamper-evident reasoning audit with evidence anchoring and faithfulness testing.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-018</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-018-model-lineage-provenance.md">Model
-                    Lineage Provenance ("Birth Certificate Protocol")</a></div>
-            <div class="paper-desc">Cryptographic lineage tracking for AI model training, fine-tuning, and deployment.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-019</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-019-glass-channel-protocol.md">Transparent
-                    Agent Communication ("Glass Channel Protocol")</a></div>
-            <div class="paper-desc">Mandatory transparent disclosure of agent-to-agent and agent-to-human
-                communication.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-020</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-020-ratchet-lock-protocol.md">Capability
-                    Acquisition Containment ("Ratchet Lock Protocol")</a></div>
-            <div class="paper-desc">Cryptographic manifest governance preventing autonomous capability escalation.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-021</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-021-inverse-capability-protocol.md">Graduated
-                    Autonomy via Inverse Capability Scaling</a></div>
-            <div class="paper-desc">Autonomy constraints that scale inversely with agent capability level.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-022</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-022-swarm-limits-protocol.md">Agent
-                    Population Governance ("Swarm Limits Protocol")</a></div>
-            <div class="paper-desc">Cryptographic population caps and birth-rate controls for autonomous agent swarms.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-023</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-023-content-policy-watermarking.md">Machine-Readable
-                    Content Usage Policies in Audio Watermarks</a></div>
-            <div class="paper-desc">Embedding machine-executable content policies directly into audio watermark
-                payloads.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-024</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-024-temporal-video-fingerprinting.md">Temporal
-                    Perceptual Hashing for Video Provenance</a></div>
-            <div class="paper-desc">Frame-level perceptual hashing for provenance-linked video reverse search.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-025</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-025-edge-first-content-provenance.md">Edge-First
-                    Content Provenance via Client-Side WASM</a></div>
-            <div class="paper-desc">Privacy-preserving content provenance using WebAssembly and on-device ML
-                inference.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-026</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-026-did-linked-voiceprint-enrollment.md">DID-Linked
-                    Voice Biometric Enrollment</a></div>
-            <div class="paper-desc">Privacy-preserving voice biometric enrollment bound to decentralized identifiers.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-027</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-027-shamir-split-biometric-recovery.md">Shamir
-                    Secret Sharing of Biometric Enrollment Data</a></div>
-            <div class="paper-desc">Unified recovery of Ed25519 keys and voice biometric centroids via Shamir splitting.
-            </div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-028</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-028-cross-modal-identity-provenance.md">Unified
-                    Cross-Modal Identity-Bound Provenance</a></div>
-            <div class="paper-desc">Single DID provenance across five media modalities with compound confidence
-                scoring.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-029</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-029-eldear-scam-protection-identity.md">Identity-Verified
-                    Communication Shield for Vulnerable Populations</a></div>
-            <div class="paper-desc">Multi-layer caller verification combining DID, voice biometrics, and deepfake
-                detection for elder safety.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-030</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-030-zk-reputation-portability.md">Zero-Knowledge
-                    Reputation Portability for Autonomous Agents</a></div>
-            <div class="paper-desc">Privacy-preserving cross-platform trust transfer using ZK proofs and Pedersen
-                commitment accumulators.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-031</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-031-canary-provenance-honeypots.md">Adversarial
-                    Provenance Honeypots ("Canary Protocol")</a></div>
-            <div class="paper-desc">Synthetic canary identities and trap watermarks for detecting provenance forgery
-                and stripping operations.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-032</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-032-cryptographic-mortality-protocol.md">Cryptographic
-                    Mortality Protocol ("Digital Will")</a></div>
-            <div class="paper-desc">Pre-committed identity termination with capability inheritance, forensic sealing,
-                and dead-man's-switch liveness.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-033</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-033-zk-pq-signature-compression.md">ZK
-                    Proof Compression for Post-Quantum Digital Signatures over HTTP</a></div>
-            <div class="paper-desc">Sidecar-mediated ZK-SNARK compression of ML-DSA signatures achieving 83-95%
-                bandwidth reduction for HTTP transport.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-034</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-034-composite-threshold-swarm-consensus.md">Composite
-                    Threshold Aggregation for Multi-Agent Swarm Consensus</a></div>
-            <div class="paper-desc">BLS12-381 threshold aggregation paired with singular ML-DSA representative
-                signature for constant-size post-quantum swarm consensus.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-035</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-035-async-chunked-edge-pq-signatures.md">Asynchronous
-                    Chunked Verification and Edge-Optimized PQ Signatures</a></div>
-            <div class="paper-desc">Progressive trust via HTTP/2 streamed SPHINCS+ chunks and GPU-accelerated
-                Falcon-Lite for edge devices with 14KB CPU memory.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-036</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-036-aggregated-reputation-scoring.md">Aggregated
-                    Reputation Scoring via Verifiable State Receipts</a></div>
-            <div class="paper-desc">Centralized trust registry with dual-verified state receipts, tiered anti-Sybil
-                attestation, and enterprise Gatekeeper API for agent trust discovery.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-037</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-037-credential-federation.md">Cross-Protocol
-                    Agent Credential Federation</a></div>
-            <div class="paper-desc">Bidirectional translation between Vouch DIDs and OAuth/SAML/OIDC with provenance
-                preservation, trust anchor mapping, and cascade revocation.</div>
-        </div>
-
-        <div class="paper">
-            <div class="paper-id">PAD-038</div>
-            <div class="paper-title"><a
-                    href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-038-agent-capability-discovery.md">Decentralized
-                    Agent Capability Discovery Protocol</a></div>
-            <div class="paper-desc">DNS for AI agents with multi-layer capability attestation, DHT resolution,
-                capability proof challenges, and SLA binding.</div>
-        </div>
-
-        <div class="back">
-            <a href="https://vouch-protocol.com">← Back to Vouch Protocol</a>
-        </div>
-
+    <div class="paper">
+      <div class="paper-id">PAD-001</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-001-cryptographic-agent-identity.md">Cryptographic
+          Binding of AI Agent Identity to Stated Intent</a></div>
+      <div class="paper-desc">Ed25519 digital signatures in JWS format for request-level attestation and
+        non-repudiation.</div>
     </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-002</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-002-chain-of-custody.md">Chain
+          of Custody for Delegated Agent Actions</a></div>
+      <div class="paper-desc">Cryptographic lineage tracking when AI agents delegate to other AI agents.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-003</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-003-identity-sidecar.md">Identity
+          Sidecar Architecture</a></div>
+      <div class="paper-desc">Separation of signing authority from agent execution for secure key management.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-004</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-004-smart-scan-verification.md">DOM-Based
+          Automatic Signature Detection</a></div>
+      <div class="paper-desc">Browser-based ambient verification for signed web content.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-005</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-005-reverse-lookup-registry.md">Reverse
+          Lookup Registry for Orphaned Content</a></div>
+      <div class="paper-desc">Hash-based signature discovery for content without embedded attribution.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-006</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-006-trust-graph-url-chaining.md">URL-Based
+          Credential Chaining</a></div>
+      <div class="paper-desc">Decentralized trust graphs using did:web and DNS infrastructure.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-007</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-007-ghost-signature-telemetry.md">Automated
+          Code Provenance Signatures</a></div>
+      <div class="paper-desc">Cryptographic proof of human involvement in AI-assisted code generation.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-008</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-008-hybrid-ssh-verification.md">Hybrid
+          Identity Bootstrapping via SSH</a></div>
+      <div class="paper-desc">Zero-friction identity using existing SSH keys and GitHub verification.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-009</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-009-localhost-identity-bridge.md">Unified
+          Local Identity via Localhost Bridge</a></div>
+      <div class="paper-desc">Cross-application cryptographic identity using OS Keyring and localhost HTTP bridge.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-010</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-010-semantic-consent-signing.md">Context-Adaptive
+          Semantic Consent</a></div>
+      <div class="paper-desc">Human-in-the-loop verification with MIME-aware content preview for WYSIWYS signing.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-011</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-011-hierarchical-discovery-protocol.md">Hierarchical
+          Discovery Protocol</a></div>
+      <div class="paper-desc">Auto-discovery of signing providers with security-prioritized fallback chain.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-012</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-012-vouch-covenant.md">Executable
+          Usage Covenants in Media Manifests</a></div>
+      <div class="paper-desc">Machine-executable policy logic in C2PA manifests for AI training and derivative
+        work enforcement.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-013</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-013-vouch-airgap.md">Air-Gapped
+          Identity via Psychoacoustic Steganography</a></div>
+      <div class="paper-desc">Zero-network identity verification through ultrasonic beacons and acoustic
+        authentication.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-014</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-014-vouch-sonic.md">Robust
+          Acoustic Provenance via Steganography</a></div>
+      <div class="paper-desc">Compression-resistant audio watermarking for deepfake detection and analog-hole
+        closure.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-015</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-015-ambient-witness-protocol.md">Ambient
+          Witness Protocol (BLE Crowdsourcing)</a></div>
+      <div class="paper-desc">Space-time proof of location via privacy-preserving Bluetooth Low Energy
+        triangulation.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-016</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-016-dynamic-credential-renewal.md">Dynamic
+          Credential Renewal ("Heartbeat Protocol")</a></div>
+      <div class="paper-desc">Continuous behavioral monitoring with adaptive TTL credential renewal.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-017</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-017-cryptographic-proof-of-reasoning.md">Cryptographic
+          Proof of Reasoning (Adaptive CoT)</a></div>
+      <div class="paper-desc">Tamper-evident reasoning audit with evidence anchoring and faithfulness testing.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-018</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-018-model-lineage-provenance.md">Model
+          Lineage Provenance ("Birth Certificate Protocol")</a></div>
+      <div class="paper-desc">Cryptographic lineage tracking for AI model training, fine-tuning, and deployment.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-019</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-019-glass-channel-protocol.md">Transparent
+          Agent Communication ("Glass Channel Protocol")</a></div>
+      <div class="paper-desc">Mandatory transparent disclosure of agent-to-agent and agent-to-human
+        communication.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-020</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-020-ratchet-lock-protocol.md">Capability
+          Acquisition Containment ("Ratchet Lock Protocol")</a></div>
+      <div class="paper-desc">Cryptographic manifest governance preventing autonomous capability escalation.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-021</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-021-inverse-capability-protocol.md">Graduated
+          Autonomy via Inverse Capability Scaling</a></div>
+      <div class="paper-desc">Autonomy constraints that scale inversely with agent capability level.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-022</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-022-swarm-limits-protocol.md">Agent
+          Population Governance ("Swarm Limits Protocol")</a></div>
+      <div class="paper-desc">Cryptographic population caps and birth-rate controls for autonomous agent swarms.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-023</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-023-content-policy-watermarking.md">Machine-Readable
+          Content Usage Policies in Audio Watermarks</a></div>
+      <div class="paper-desc">Embedding machine-executable content policies directly into audio watermark
+        payloads.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-024</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-024-temporal-video-fingerprinting.md">Temporal
+          Perceptual Hashing for Video Provenance</a></div>
+      <div class="paper-desc">Frame-level perceptual hashing for provenance-linked video reverse search.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-025</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-025-edge-first-content-provenance.md">Edge-First
+          Content Provenance via Client-Side WASM</a></div>
+      <div class="paper-desc">Privacy-preserving content provenance using WebAssembly and on-device ML
+        inference.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-026</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-026-did-linked-voiceprint-enrollment.md">DID-Linked
+          Voice Biometric Enrollment</a></div>
+      <div class="paper-desc">Privacy-preserving voice biometric enrollment bound to decentralized identifiers.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-027</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-027-shamir-split-biometric-recovery.md">Shamir
+          Secret Sharing of Biometric Enrollment Data</a></div>
+      <div class="paper-desc">Unified recovery of Ed25519 keys and voice biometric centroids via Shamir splitting.
+      </div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-028</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-028-cross-modal-identity-provenance.md">Unified
+          Cross-Modal Identity-Bound Provenance</a></div>
+      <div class="paper-desc">Single DID provenance across five media modalities with compound confidence
+        scoring.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-029</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-029-eldear-scam-protection-identity.md">Identity-Verified
+          Communication Shield for Vulnerable Populations</a></div>
+      <div class="paper-desc">Multi-layer caller verification combining DID, voice biometrics, and deepfake
+        detection for elder safety.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-030</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-030-zk-reputation-portability.md">Zero-Knowledge
+          Reputation Portability for Autonomous Agents</a></div>
+      <div class="paper-desc">Privacy-preserving cross-platform trust transfer using ZK proofs and Pedersen
+        commitment accumulators.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-031</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-031-canary-provenance-honeypots.md">Adversarial
+          Provenance Honeypots ("Canary Protocol")</a></div>
+      <div class="paper-desc">Synthetic canary identities and trap watermarks for detecting provenance forgery
+        and stripping operations.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-032</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-032-cryptographic-mortality-protocol.md">Cryptographic
+          Mortality Protocol ("Digital Will")</a></div>
+      <div class="paper-desc">Pre-committed identity termination with capability inheritance, forensic sealing,
+        and dead-man's-switch liveness.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-033</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-033-zk-pq-signature-compression.md">ZK
+          Proof Compression for Post-Quantum Digital Signatures over HTTP</a></div>
+      <div class="paper-desc">Sidecar-mediated ZK-SNARK compression of ML-DSA signatures achieving 83-95%
+        bandwidth reduction for HTTP transport.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-034</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-034-composite-threshold-swarm-consensus.md">Composite
+          Threshold Aggregation for Multi-Agent Swarm Consensus</a></div>
+      <div class="paper-desc">BLS12-381 threshold aggregation paired with singular ML-DSA representative
+        signature for constant-size post-quantum swarm consensus.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-035</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-035-async-chunked-edge-pq-signatures.md">Asynchronous
+          Chunked Verification and Edge-Optimized PQ Signatures</a></div>
+      <div class="paper-desc">Progressive trust via HTTP/2 streamed SPHINCS+ chunks and GPU-accelerated
+        Falcon-Lite for edge devices with 14KB CPU memory.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-036</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-036-aggregated-reputation-scoring.md">Aggregated
+          Reputation Scoring via Verifiable State Receipts</a></div>
+      <div class="paper-desc">Centralized trust registry with dual-verified state receipts, tiered anti-Sybil
+        attestation, and enterprise Gatekeeper API for agent trust discovery.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-037</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-037-credential-federation.md">Cross-Protocol
+          Agent Credential Federation</a></div>
+      <div class="paper-desc">Bidirectional translation between Vouch DIDs and OAuth/SAML/OIDC with provenance
+        preservation, trust anchor mapping, and cascade revocation.</div>
+    </div>
+
+    <div class="paper">
+      <div class="paper-id">PAD-038</div>
+      <div class="paper-title"><a
+          href="https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-038-agent-capability-discovery.md">Decentralized
+          Agent Capability Discovery Protocol</a></div>
+      <div class="paper-desc">DNS for AI agents with multi-layer capability attestation, DHT resolution,
+        capability proof challenges, and SLA binding.</div>
+    </div>
+
+    <div class="back">
+      <a href="https://vouch-protocol.com">← Back to Vouch Protocol</a>
+    </div>
+
+  </div>
 </body>
 
 </html>

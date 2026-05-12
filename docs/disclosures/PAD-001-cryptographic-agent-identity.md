@@ -1,8 +1,8 @@
 # PAD-001: Cryptographic Binding of AI Agent Identity
 
-**Publication Date:** December 28, 2025  
-**Author:** Ramprasad Anandam Gaddam  
-**Status:** Public Prior Art  
+**Publication Date:** December 28, 2025 
+**Author:** Ramprasad Anandam Gaddam 
+**Status:** Public Prior Art 
 **License:** Apache 2.0
 
 ## 1. Abstract
@@ -28,18 +28,18 @@ We disclose a protocol where AI agents sign their intent using:
 ### 3.1 Token Structure
 ```json
 {
-  "jti": "unique-request-id",
-  "iss": "did:web:agent.example.com",
-  "iat": 1703808000,
-  "exp": 1703808300,
-  "vouch": {
-    "version": "1.0",
-    "payload": {
-      "action": "transfer_funds",
-      "amount": 100,
-      "recipient": "account_123"
-    }
+ "jti": "unique-request-id",
+ "iss": "did:web:agent.example.com",
+ "iat": 1703808000,
+ "exp": 1703808300,
+ "vouch": {
+  "version": "1.0",
+  "payload": {
+   "action": "transfer_funds",
+   "amount": 100,
+   "recipient": "account_123"
   }
+ }
 }
 ```
 
@@ -69,7 +69,7 @@ Reference implementation available at: https://github.com/vouch-protocol/vouch
 
 ---
 
-## 9. Update (April 27, 2026): W3C Data Integrity Embodiment
+## 9. Update (April 27, 2026): Data Integrity Embodiment
 
 The mechanism described above (binding AI agent identity to stated intent
 via Ed25519 digital signatures) can be equivalently realized using W3C Data
@@ -81,19 +81,19 @@ the agent intends to do (a structured intent payload) and *when* (temporal
 claims).
 
 In this embodiment:
-- The credential is a W3C Verifiable Credential (`VerifiableCredential` +
-  `VouchCredential` types) per the W3C VC Data Model 2.0.
+- The credential is a Verifiable Credential (`VerifiableCredential` +
+ `VouchCredential` types) per the VC Data Model 2.0.
 - The `credentialSubject.intent` field carries the structured intent
-  payload (action, target, resource).
-- The `proof` object is a W3C Data Integrity proof: JCS canonicalization
-  (RFC 8785) of the credential plus unsigned proof, SHA-256, Ed25519
-  signature, multibase-encoded `proofValue`.
+ payload (action, target, resource).
+- The `proof` object is a Data Integrity proof: JCS canonicalization
+ (RFC 8785) of the credential plus unsigned proof, SHA-256, Ed25519
+ signature, multibase-encoded `proofValue`.
 - Verification methods are encoded as `Multikey` in the issuer's DID
-  Document (W3C Controlled Identifiers), enabling algorithm-agnostic key
-  resolution.
+ Document (Controlled Identifiers), enabling algorithm-agnostic key
+ resolution.
 
 This embodiment is disclosed as additional prior art covering the same
 inventive concept of cryptographically binding AI agent identity to intent
-under modern W3C standards. The original JWS embodiment, the W3C Data
+under modern open standards. The original JWS embodiment, Data
 Integrity embodiment, and the hybrid post-quantum embodiment are all
 disclosed forms of the same underlying invention.

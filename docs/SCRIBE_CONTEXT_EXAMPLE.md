@@ -9,9 +9,9 @@
 **Name**: Vouch Protocol
 **Tagline**: "The SSL for AI Agents" & "Truth Layer for Media"
 **Core Mission**: To provide cryptographically verifiable provenance for:
-1.  **AI Agents**: Proving "I am an authorized agent of Company X".
-2.  **Media Content**: Proving "This image was captured at this time/place" (C2PA + Vouch).
-3.  **Code**: Proving "This code was written by Agent Y".
+1. **AI Agents**: Proving "I am an authorized agent of Company X".
+2. **Media Content**: Proving "This image was captured at this time/place" (C2PA + Vouch).
+3. **Code**: Proving "This code was written by Agent Y".
 
 **Current Version**: `v1.5.0`
 **License**: Apache 2.0
@@ -21,37 +21,37 @@
 ## 2. Architecture & Directory Structure
 
 ### 📂 Core (`vouch/`) - Open Source
-*   **`vouch.keys`**: Identity generation (Ed25519/DID).
-*   **`vouch.signer`**: Core signing logic for JSON/HTTP.
-*   **`vouch.verifier`**: Verification logic.
-*   **`vouch.media.c2pa`**: **CRITICAL**. Wrapper around `c2pa-python` for Content Credentials.
-    *   `MediaSigner`: Signs images with C2PA manifests.
-    *   `MediaVerifier`: Verifies C2PA manifests.
-*   **`vouch.media.native`**: Fallback signature format (Ed25519) when C2PA is unavailable.
-*   **`vouch.media.badge`**: `BadgeFactory` generates visual QR codes.
+*  **`vouch.keys`**: Identity generation (Ed25519/DID).
+*  **`vouch.signer`**: Core signing logic for JSON/HTTP.
+*  **`vouch.verifier`**: Verification logic.
+*  **`vouch.media.c2pa`**: **CRITICAL**. Wrapper around `c2pa-python` for Content Credentials.
+  *  `MediaSigner`: Signs images with C2PA manifests.
+  *  `MediaVerifier`: Verifies C2PA manifests.
+*  **`vouch.media.native`**: Fallback signature format (Ed25519) when C2PA is unavailable.
+*  **`vouch.media.badge`**: `BadgeFactory` generates visual QR codes.
 
 ### 📂 Scripts
-*   **`scripts/scribe.py`**: **Context maintenance tool**. Run this to generate AI context update prompts.
+*  **`scripts/scribe.py`**: **Context maintenance tool**. Run this to generate AI context update prompts.
 
 ### 📂 Demos (`demo/`)
-*   **`vouch-mcp-server/`**: **Active**. Claude MCP server for signing text/images.
-*   **`vouch-verify/`**: Streamlit app for media verification.
+*  **`vouch-mcp-server/`**: **Active**. Claude MCP server for signing text/images.
+*  **`vouch-verify/`**: Streamlit app for media verification.
 
 ### 📂 Documentation (`docs/`)
-*   **Prior Art Disclosures (PADs)**: Defensively published IP.
-    *   PAD-001 to PAD-015.
+*  **Prior Art Disclosures (PADs)**: Defensively published IP.
+  *  PAD-001 to PAD-015.
 
 ---
 
 ## 3. Key Technical Decisions
 
 ### 🤖 Gemini 3 Integration
-*   **Purpose**: Deepfake detection and multimodal analysis.
-*   **Implementation**: Used in `demo/vouch-verify` to score image authenticity before C2PA verification.
+*  **Purpose**: Deepfake detection and multimodal analysis.
+*  **Implementation**: Used in `demo/vouch-verify` to score image authenticity before C2PA verification.
 
 ### 🛠️ Technical Constraints
-*   **Python Version**: 3.9+ compatibility required.
-*   **C2PA**: `c2pa-python` integration requires careful handling of binary extensions.
+*  **Python Version**: 3.9+ compatibility required.
+*  **C2PA**: `c2pa-python` integration requires careful handling of binary extensions.
 
 ---
 
@@ -63,31 +63,31 @@ We have published 15 PADs to protect our IP.
 
 > **📄 Full List**: See [`docs/disclosures/README.md`](./disclosures/README.md) for the complete list of PAD-001 to PAD-015.
 
-*   **Key High-Level Concepts**:
-    *   **Identity**: PAD-001 (Crypto Identity), PAD-003 (Sidecar).
-    *   **Verification**: PAD-004 (DOM Matching), PAD-015 (Ambient Witness).
-    *   **Governance**: PAD-012 (Covenants).
+*  **Key High-Level Concepts**:
+  *  **Identity**: PAD-001 (Crypto Identity), PAD-003 (Sidecar).
+  *  **Verification**: PAD-004 (DOM Matching), PAD-015 (Ambient Witness).
+  *  **Governance**: PAD-012 (Covenants).
 
 ---
 
 ## 5. Development Roadmap
 
 ### Completed ✅
-*   [x] Core Protocol v1.0
-*   [x] C2PA Integration (Images/Audio)
-*   [x] Browser Extension (Chrome)
-*   [x] v1.5.0 Release
-*   [x] PAD-001 to PAD-015
-*   [x] **Demo 1: Vouch Verify** (Streamlit)
-*   [x] **Demo 2: MCP Server** (Claude Integration)
+*  [x] Core Protocol v1.0
+*  [x] C2PA Integration (Images/Audio)
+*  [x] Browser Extension (Chrome)
+*  [x] v1.5.0 Release
+*  [x] PAD-001 to PAD-015
+*  [x] **Demo 1: Vouch Verify** (Streamlit)
+*  [x] **Demo 2: MCP Server** (Claude Integration)
 
 ### Active / Next Up 🚧
-*   [ ] **Demo 3: Journalist Workflow**
-    *   *Goal*: Org credentials for newsrooms.
-*   [ ] **Demo 4: Voice Covenant**
-    *   *Goal*: "Do not train on my voice" tag.
-*   [ ] **Demo 5: VouchCode**
-    *   *Goal*: Git commit signing for AI agents.
+*  [ ] **Demo 3: Journalist Workflow**
+  *  *Goal*: Org credentials for newsrooms.
+*  [ ] **Demo 4: Voice Covenant**
+  *  *Goal*: "Do not train on my voice" tag.
+*  [ ] **Demo 5: VouchCode**
+  *  *Goal*: Git commit signing for AI agents.
 
 ---
 
@@ -96,18 +96,18 @@ We have published 15 PADs to protect our IP.
 > **Context Tip**: Only document *stable, primary interfaces* here. Do not document every internal function; let the code speak for itself.
 
 ### `vouch.signer.Signer`
-*   `__init__(private_key: str, did: str)`: Initialize with Ed25519 JWK.
-*   `sign_credential(intent: dict) -> dict`: **(v1.0, preferred)** Returns a W3C Verifiable Credential with a Data Integrity proof (`eddsa-jcs-2022`). Intent must include `action`, `target`, `resource`.
-*   `sign_credential_hybrid(intent: dict) -> dict`: **(v1.0, optional PQ)** Returns a credential with a `hybrid-eddsa-mldsa44-jcs-2026` proof carrying both Ed25519 and ML-DSA-44 signatures.
-*   `sign(payload: dict) -> str`: **(legacy v0.x)** Returns a JWS Compact Token. Retained for backward compatibility.
+*  `__init__(private_key: str, did: str)`: Initialize with Ed25519 JWK.
+*  `sign_credential(intent: dict) -> dict`: **(v1.0, preferred)** Returns a Verifiable Credential with a Data Integrity proof (`eddsa-jcs-2022`). Intent must include `action`, `target`, `resource`.
+*  `sign_credential_hybrid(intent: dict) -> dict`: **(v1.0, optional PQ)** Returns a credential with a `hybrid-eddsa-mldsa44-jcs-2026` proof carrying both Ed25519 and ML-DSA-44 signatures.
+*  `sign(payload: dict) -> str`: **(legacy v0.x)** Returns a JWS Compact Token. Retained for backward compatibility.
 
 ### `vouch.media.c2pa.MediaSigner`
-*   `sign_image(source_path, output_path)`: Embeds C2PA manifest.
-    *   **Note**: Requires X.509 cert chain (self-signed allowed for dev).
+*  `sign_image(source_path, output_path)`: Embeds C2PA manifest.
+  *  **Note**: Requires X.509 cert chain (self-signed allowed for dev).
 
 ### `demo.vouch_mcp_server.server` (Tools)
-*   `sign_text(text, private_key_jwk, did)`: Returns JWS.
-*   `verify_text(token, public_key_jwk)`: Returns validation string.
+*  `sign_text(text, private_key_jwk, did)`: Returns JWS.
+*  `verify_text(token, public_key_jwk)`: Returns validation string.
 
 ---
 
@@ -115,38 +115,38 @@ We have published 15 PADs to protect our IP.
 
 ### 📸 Image Signing (`vouch.media.c2pa`)
 **Class**: `MediaSigner`
-*   **Purpose**: Embeds C2PA (Content Credentials) manifests into images/audio.
-*   **Key Dependencies**: `c2pa-python`, `cryptography` (for key handling).
-*   **Usage Flow**:
-    1.  Load Identity (`vouch.keys.KeyPair`).
-    2.  Convert JWK private key to `Ed25519PrivateKey`.
-    3.  Generate X.509 Certificate Chain (Self-signed for dev, CA for prod).
-    4.  Call `MediaSigner.sign_image(input, output)`.
+*  **Purpose**: Embeds C2PA (Content Credentials) manifests into images/audio.
+*  **Key Dependencies**: `c2pa-python`, `cryptography` (for key handling).
+*  **Usage Flow**:
+  1. Load Identity (`vouch.keys.KeyPair`).
+  2. Convert JWK private key to `Ed25519PrivateKey`.
+  3. Generate X.509 Certificate Chain (Self-signed for dev, CA for prod).
+  4. Call `MediaSigner.sign_image(input, output)`.
 
 ### 🌐 Browser Extension (`browser-extension/`)
 **Manifest**: Manifest V3
-*   **`content.js`**:
-    *   Implements **PAD-004 (DOM-Traversing Signature Matching)**.
-    *   Scans page for `[vouch-token]` attributes or linked C2PA images.
-    *   Injects "✓ Verified" badges into the DOM.
-*   **`background.js`**:
-    *   Handles context menu actions ("Verify Image with Vouch").
-    *   Manages local keyring state.
+*  **`content.js`**:
+  *  Implements **PAD-004 (DOM-Traversing Signature Matching)**.
+  *  Scans page for `[vouch-token]` attributes or linked C2PA images.
+  *  Injects "✓ Verified" badges into the DOM.
+*  **`background.js`**:
+  *  Handles context menu actions ("Verify Image with Vouch").
+  *  Manages local keyring state.
 
 ### 📝 Text & Action Signing (`vouch.signer`)
 **Class**: `Signer`
-*   **Default v1.0 format**: W3C Verifiable Credential secured by a Data Integrity proof using the `eddsa-jcs-2022` cryptosuite. Human-readable JSON with the proof attached as a sibling object.
-*   **Hybrid PQ profile (optional)**: `hybrid-eddsa-mldsa44-jcs-2026` carrying Ed25519 + ML-DSA-44 composite signatures.
-*   **Legacy v0.x format**: JWS Compact Serialization (`header.payload.signature`) with `{"alg": "EdDSA", "typ": "vouch+jwt"}`. Retained during the deprecation window.
-*   **Usage**: Used for signing agent intents, usage covenants (PAD-012), and prompt attribution.
+*  **Default v1.0 format**: Verifiable Credential secured by a Data Integrity proof using the `eddsa-jcs-2022` cryptosuite. Human-readable JSON with the proof attached as a sibling object.
+*  **Hybrid PQ profile (optional)**: `hybrid-eddsa-mldsa44-jcs-2026` carrying Ed25519 + ML-DSA-44 composite signatures.
+*  **Legacy v0.x format**: JWS Compact Serialization (`header.payload.signature`) with `{"alg": "EdDSA", "typ": "vouch+jwt"}`. Retained during the deprecation window.
+*  **Usage**: Used for signing agent intents, usage covenants (PAD-012), and prompt attribution.
 
 ### 🔗 Shortlinks & Verification
 **Domain**: `v.vouch-protocol.com` (and `vch.sh`)
-*   **Logic**: Handled by **Cloudflare Worker** (`cloudflare-worker/`).
-*   **Flow**:
-    *   Shortlink `vch.sh/{id}` -> 301 Redirect -> `vouch-protocol.com/v/{id}`.
-    *   Worker fetches verification data from KV store or on-chain registry.
-    *   Renders a dynamic OpenGraph meta tag for social previews.
+*  **Logic**: Handled by **Cloudflare Worker** (`cloudflare-worker/`).
+*  **Flow**:
+  *  Shortlink `vch.sh/{id}` -> 301 Redirect -> `vouch-protocol.com/v/{id}`.
+  *  Worker fetches verification data from KV store or on-chain registry.
+  *  Renders a dynamic OpenGraph meta tag for social previews.
 
 ---
 

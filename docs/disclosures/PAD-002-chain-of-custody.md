@@ -1,8 +1,8 @@
 # PAD-002: Cryptographic Binding of AI Agent Intent via Recursive Delegation
 
-**Publication Date:** January 03, 2026  
-**Author:** Ramprasad Anandam Gaddam  
-**Status:** Public Prior Art  
+**Publication Date:** January 03, 2026 
+**Author:** Ramprasad Anandam Gaddam 
+**Status:** Public Prior Art 
 **License:** Apache 2.0
 
 ## 1. Abstract
@@ -40,8 +40,8 @@ If any link in the chain fails to validate, or if the *Intent Payload* at any st
 
 ```
 User Alice --delegates--> Agent A --delegates--> Agent B --calls--> Database
-    │                         │                      │
-    └─ "Analyze my data"      └─ "Query tables"     └─ "SELECT * FROM users"
+  │             │           │
+  └─ "Analyze my data"   └─ "Query tables"   └─ "SELECT * FROM users"
 ```
 
 ## 4. Prior Art Acknowledgement & Differentiation
@@ -62,25 +62,25 @@ This disclosure specifically applies these chaining mechanisms to **Non-Determin
 
 ```json
 {
-  "vouch_payload": "base64_encoded_canonical_json",
-  "vouch_signature": "ed25519_signature",
-  "delegation_chain": [
-    {
-      "sub": "did:web:alice.com",
-      "aud": "did:web:travel_agent",
-      "intent": "Plan a trip to Paris",
-      "iat": 1704268800,
-      "sig": "signature_1"
-    },
-    {
-      "sub": "did:web:travel_agent",
-      "aud": "did:web:flight_bot",
-      "intent": "Find flights to CDG < $600",
-      "iat": 1704268810,
-      "parent_sig": "signature_1",
-      "sig": "signature_2"
-    }
-  ]
+ "vouch_payload": "base64_encoded_canonical_json",
+ "vouch_signature": "ed25519_signature",
+ "delegation_chain": [
+  {
+   "sub": "did:web:alice.com",
+   "aud": "did:web:travel_agent",
+   "intent": "Plan a trip to Paris",
+   "iat": 1704268800,
+   "sig": "signature_1"
+  },
+  {
+   "sub": "did:web:travel_agent",
+   "aud": "did:web:flight_bot",
+   "intent": "Find flights to CDG < $600",
+   "iat": 1704268810,
+   "parent_sig": "signature_1",
+   "sig": "signature_2"
+  }
+ ]
 }
 ```
 
@@ -88,26 +88,26 @@ This disclosure specifically applies these chaining mechanisms to **Non-Determin
 
 ```python
 def verify_chain(token, trusted_roots):
-    # 1. Verify outermost signature
-    if not verify_signature(token.vouch_signature, token.vouch_payload):
-        return False
-    
-    # 2. Walk chain backwards
-    for i in range(len(token.delegation_chain) - 1, 0, -1):
-        current = token.delegation_chain[i]
-        parent = token.delegation_chain[i - 1]
-        
-        # Verify current signed by parent
-        if not verify_signature(current.sig, current, parent.public_key):
-            return False
-        
-        # Optional: Check intent alignment
-        if not is_intent_aligned(parent.intent, current.intent):
-            return False
-    
-    # 3. Verify root is trusted
-    root = token.delegation_chain[0]
-    return root.sub in trusted_roots
+  # 1. Verify outermost signature
+  if not verify_signature(token.vouch_signature, token.vouch_payload):
+    return False
+
+  # 2. Walk chain backwards
+  for i in range(len(token.delegation_chain) - 1, 0, -1):
+    current = token.delegation_chain[i]
+    parent = token.delegation_chain[i - 1]
+
+    # Verify current signed by parent
+    if not verify_signature(current.sig, current, parent.public_key):
+      return False
+
+    # Optional: Check intent alignment
+    if not is_intent_aligned(parent.intent, current.intent):
+      return False
+
+  # 3. Verify root is trusted
+  root = token.delegation_chain[0]
+  return root.sub in trusted_roots
 ```
 
 ## 6. Claims
@@ -141,18 +141,18 @@ format of each link.
 
 This update discloses that when each delegation link is canonicalized
 via RFC 8785 JSON Canonicalization Scheme (JCS) prior to signing
-(matching the W3C Data Integrity `eddsa-jcs-2022` cryptosuite), the
+(matching the Data Integrity `eddsa-jcs-2022` cryptosuite), the
 chain-of-custody property gains a determinism guarantee:
 
 - Independent verifiers running independent implementations (Python,
-  TypeScript, Go) recompute byte-identical canonical bytes for any
-  given link, producing byte-identical signature inputs.
+ TypeScript, Go) recompute byte-identical canonical bytes for any
+ given link, producing byte-identical signature inputs.
 - A multi-party verification process (e.g., a quorum of validators
-  cross-checking each other) can therefore reach unanimous agreement on
-  link validity without trusting a specific serializer.
+ cross-checking each other) can therefore reach unanimous agreement on
+ link validity without trusting a specific serializer.
 - Replay or partial extraction attacks against a chain are detectable
-  because any modification of any link's canonical form invalidates the
-  signature deterministically across all verifiers.
+ because any modification of any link's canonical form invalidates the
+ signature deterministically across all verifiers.
 
 This determinism property strengthens the non-obvious nature of the
 recursive delegation mechanism by eliminating a previously-implicit

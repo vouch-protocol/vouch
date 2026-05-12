@@ -104,26 +104,26 @@ If the agent runtime directly holds the ML-DSA private key, this attack succeeds
 
 ```
 +--------------------------------------------------+
-|  Agent Runtime (untrusted)                        |
-|  +--------------------------------------------+  |
-|  | LLM / Agent Logic                          |  |
-|  | - Generates payload intent                 |  |
-|  | - NEVER possesses PQ key material          |  |
-|  | - Receives composite JWS for transmission   |  |
-|  +--------------------+-----------------------+  |
-|                       | payload                   |
-|  +--------------------v-----------------------+  |
-|  | Sidecar (TEE / SGX / isolated process)     |  |
-|  |                                            |  |
-|  | 1. Compute Ed25519 signature (64B)         |  |
-|  | 2. Compute ML-DSA signature (2,420-4,627B) |  |
-|  | 3. Generate ZK-SNARK proving ML-DSA valid  |  |
-|  |    (128-288B)                              |  |
-|  | 4. Discard raw ML-DSA signature            |  |
-|  |    (or archive for deferred settlement)    |  |
-|  | 5. Return composite JWS to agent           |  |
-|  |    (Ed25519 sig + ZK-SNARK = 192-352B)     |  |
-|  +--------------------------------------------+  |
+| Agent Runtime (untrusted)            |
+| +--------------------------------------------+ |
+| | LLM / Agent Logic             | |
+| | - Generates payload intent         | |
+| | - NEVER possesses PQ key material     | |
+| | - Receives composite JWS for transmission  | |
+| +--------------------+-----------------------+ |
+|            | payload          |
+| +--------------------v-----------------------+ |
+| | Sidecar (TEE / SGX / isolated process)   | |
+| |                      | |
+| | 1. Compute Ed25519 signature (64B)     | |
+| | 2. Compute ML-DSA signature (2,420-4,627B) | |
+| | 3. Generate ZK-SNARK proving ML-DSA valid | |
+| |  (128-288B)               | |
+| | 4. Discard raw ML-DSA signature      | |
+| |  (or archive for deferred settlement)  | |
+| | 5. Return composite JWS to agent      | |
+| |  (Ed25519 sig + ZK-SNARK = 192-352B)   | |
+| +--------------------------------------------+ |
 +--------------------------------------------------+
 ```
 
@@ -133,15 +133,15 @@ The ZK-SNARK proves the following statement in zero knowledge:
 
 ```
 Public inputs:
-  - payload_hash: SHA-256(payload)        [32 bytes]
-  - public_key: ML-DSA public key         [1,312-2,592 bytes]
-  - algorithm_id: ML-DSA parameter set    [1 byte]
+ - payload_hash: SHA-256(payload)    [32 bytes]
+ - public_key: ML-DSA public key     [1,312-2,592 bytes]
+ - algorithm_id: ML-DSA parameter set  [1 byte]
 
 Private witness (never transmitted):
-  - signature: ML-DSA signature           [2,420-4,627 bytes]
+ - signature: ML-DSA signature      [2,420-4,627 bytes]
 
 Statement proved:
-  ML-DSA.Verify(public_key, payload_hash, signature) = VALID
+ ML-DSA.Verify(public_key, payload_hash, signature) = VALID
 ```
 
 The verifier receives the public inputs and the ZK-SNARK proof. If the proof verifies, the verifier knows that someone possessing a valid ML-DSA signature generated this proof, without ever seeing the signature itself.
@@ -178,18 +178,18 @@ The compressed signature is packaged in a backward-compatible JWS structure:
 
 ```json
 {
-  "header": {
-    "alg": "EdDSA+ML-DSA-44-ZK",
-    "kid": "did:vouch:z6MkAgent123#key-1",
-    "pqc": {
-      "alg": "ML-DSA-44",
-      "proof_system": "groth16",
-      "srs_version": "vouch-pqc-v1",
-      "proof": "base64url_128_bytes"
-    }
-  },
-  "payload": "base64url_payload",
-  "signature": "base64url_ed25519_64_bytes"
+ "header": {
+  "alg": "EdDSA+ML-DSA-44-ZK",
+  "kid": "did:vouch:z6MkAgent123#key-1",
+  "pqc": {
+   "alg": "ML-DSA-44",
+   "proof_system": "groth16",
+   "srs_version": "vouch-pqc-v1",
+   "proof": "base64url_128_bytes"
+  }
+ },
+ "payload": "base64url_payload",
+ "signature": "base64url_ed25519_64_bytes"
 }
 ```
 
@@ -207,21 +207,21 @@ The compressed signature is packaged in a backward-compatible JWS structure:
 
 ```
 Verifier receives composite JWS:
-  |
-  1. Extract Ed25519 signature and verify against payload
-  |   (immediate classical security; 0.1ms)
-  |
-  2. Extract ZK-SNARK proof and public inputs
-  |
-  3. Load pre-compiled verification key for ML-DSA parameter set
-  |   (published as part of Vouch Protocol SRS distribution)
-  |
-  4. Verify ZK-SNARK: groth16.verify(vk, public_inputs, proof)
-  |   (post-quantum assurance; ~2ms)
-  |
-  5. If both pass: payload is authenticated with hybrid security
-  |   - Ed25519 provides classical security (today)
-  |   - ZK-SNARK proves ML-DSA signature exists (quantum-resistant)
+ |
+ 1. Extract Ed25519 signature and verify against payload
+ |  (immediate classical security; 0.1ms)
+ |
+ 2. Extract ZK-SNARK proof and public inputs
+ |
+ 3. Load pre-compiled verification key for ML-DSA parameter set
+ |  (published as part of Vouch Protocol SRS distribution)
+ |
+ 4. Verify ZK-SNARK: groth16.verify(vk, public_inputs, proof)
+ |  (post-quantum assurance; ~2ms)
+ |
+ 5. If both pass: payload is authenticated with hybrid security
+ |  - Ed25519 provides classical security (today)
+ |  - ZK-SNARK proves ML-DSA signature exists (quantum-resistant)
 ```
 
 **Graceful Degradation:**
@@ -239,12 +239,12 @@ For contexts requiring the raw post-quantum signature, the sidecar supports defe
 
 ```json
 {
-  "settlement_type": "ml-dsa-44-full",
-  "reference": "jws-id-2026-04-22-001",
-  "ml_dsa_signature": "base64url_2420_bytes",
-  "settlement_channel": "out-of-band-https",
-  "settlement_timestamp": "2026-04-22T10:00:05Z",
-  "archival_hash": "sha256:H(jws_id || ml_dsa_signature)"
+ "settlement_type": "ml-dsa-44-full",
+ "reference": "jws-id-2026-04-22-001",
+ "ml_dsa_signature": "base64url_2420_bytes",
+ "settlement_channel": "out-of-band-https",
+ "settlement_timestamp": "2026-04-22T10:00:05Z",
+ "archival_hash": "sha256:H(jws_id || ml_dsa_signature)"
 }
 ```
 
@@ -256,18 +256,18 @@ The sidecar enforces strict key material isolation:
 
 ```
 Agent Runtime Memory Space:
-  - payload, Ed25519 public key, composite JWS (output)
-  - NO access to: ML-DSA private key, ML-DSA signature, ZK witness
+ - payload, Ed25519 public key, composite JWS (output)
+ - NO access to: ML-DSA private key, ML-DSA signature, ZK witness
 
 Sidecar Memory Space:
-  - Ed25519 keypair, ML-DSA keypair, ZK proving key
-  - Ephemeral: ML-DSA signature (generated, used as witness, zeroed)
-  - Output: composite JWS only
+ - Ed25519 keypair, ML-DSA keypair, ZK proving key
+ - Ephemeral: ML-DSA signature (generated, used as witness, zeroed)
+ - Output: composite JWS only
 
 Communication Channel:
-  - Agent -> Sidecar: payload (plaintext or encrypted)
-  - Sidecar -> Agent: composite JWS (signed + compressed)
-  - NEVER: raw ML-DSA signature, private keys, ZK witness
+ - Agent -> Sidecar: payload (plaintext or encrypted)
+ - Sidecar -> Agent: composite JWS (signed + compressed)
+ - NEVER: raw ML-DSA signature, private keys, ZK witness
 ```
 
 The sidecar can be implemented as an Intel SGX enclave, ARM TrustZone secure world application, a separate process with seccomp-bpf sandboxing, or a WASM module with no memory sharing.
@@ -296,7 +296,7 @@ For universal trusted setups (PLONK), a single SRS supports all circuit sizes, a
 | NIST PQC Standards (FIPS 204) | No (raw signatures) | No | No | Problematic | No |
 | Hybrid TLS (draft-ietf-tls-hybrid) | No (concatenation) | No | No | TLS only | No |
 | ZCash / Ethereum ZK-rollups | ZK for transactions | Yes | No | Not HTTP | No |
-| W3C VC ZKP | ZK for credential presentation | Partial | No | JSON-LD | No |
+| VC ZKP | ZK for credential presentation | Partial | No | JSON-LD | No |
 | Signal Protocol (X3DH + PQ) | No compression | No | No | Not HTTP | No |
 | **This disclosure** | **94.7% compression** | **Yes (Groth16/PLONK)** | **Yes (TEE sidecar)** | **Yes (JWS)** | **Yes (AI agent)** |
 
@@ -358,13 +358,13 @@ This document is published as a defensive prior art disclosure under the Apache 
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment
+## Update (April 27, 2026): Data Integrity Embodiment
 
 The ZK-SNARK compression mechanism for post-quantum digital signatures
 described above is most directly applicable to JWS Compact Serialization
 where header-size constraints are most acute. This disclosure
 additionally covers the embodiment where the compressed signature appears
-inside a W3C Data Integrity proof object attached to a W3C Verifiable
+inside a Data Integrity proof object attached to a W3C Verifiable
 Credential, with the credential transmitted as the HTTP request body
 (`application/vouch+credential+json`).
 
@@ -374,6 +374,6 @@ proof asserting the existence of a valid ML-DSA-44 signature over the
 JCS-canonicalized credential under the public key referenced by
 `verificationMethod`. The compression ratio, sidecar isolation, witness
 generation, and stateless HTTP property are unchanged from the original
-disclosure. The W3C Data Integrity embodiment is disclosed as additional
+disclosure. The Data Integrity embodiment is disclosed as additional
 prior art for the same inventive ZK-compression mechanism, broadening
-the defensive coverage to W3C VC-bound deployments.
+the defensive coverage to VC-bound deployments.

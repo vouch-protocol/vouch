@@ -13,7 +13,7 @@
 
 ## 1. Abstract
 
-A system and method for enabling seamless, bidirectional credential translation between the Vouch Protocol's DID-based agent identity system and legacy enterprise authentication protocols (OAuth 2.0, OpenID Connect, SAML 2.0, API Keys, mTLS certificates, and W3C Verifiable Credentials). The protocol solves the **enterprise adoption barrier**: organizations with existing authentication infrastructure cannot adopt agent identity protocols that require wholesale replacement of their auth stack.
+A system and method for enabling seamless, bidirectional credential translation between the Vouch Protocol's DID-based agent identity system and legacy enterprise authentication protocols (OAuth 2.0, OpenID Connect, SAML 2.0, API Keys, mTLS certificates, and Verifiable Credentials). The protocol solves the **enterprise adoption barrier**: organizations with existing authentication infrastructure cannot adopt agent identity protocols that require wholesale replacement of their auth stack.
 
 The system introduces a **Federation Envelope** architecture with five interlocking mechanisms:
 
@@ -41,7 +41,7 @@ No enterprise will adopt DID-based agent identity if it means replacing their ex
 | SAML 2.0 | ~80% of enterprise SSO | Organizational change |
 | API Keys | ~99% of developer APIs | Millions of integrations |
 | mTLS | ~40% of service mesh | Infrastructure overhaul |
-| W3C Verifiable Credentials | ~5% (emerging) | Greenfield only |
+| Verifiable Credentials | ~5% (emerging) | Greenfield only |
 | **Vouch Protocol DID** | **<1% (new)** | **Requires bridge, not replacement** |
 
 ### 2.2 Current State: No Bridge Exists
@@ -59,14 +59,14 @@ No enterprise will adopt DID-based agent identity if it means replacing their ex
 When a Vouch-authenticated agent's request crosses into an OAuth-protected API, the cryptographic identity chain breaks:
 
 ```
-Vouch Domain                    | Federation Boundary |    OAuth Domain
-                                |                     |
-Agent DID: did:vouch:z6Mk...    |                     |
-Vouch Token: signed, auditable  |    ??? gap ???       |    Bearer token: opaque string
-Delegation chain: verified      |                     |    OAuth scope: "read"
-Reputation: Tier 4 (TRUSTED)    |                     |    No reputation context
-                                |                     |
-Full provenance available       |  Provenance lost    |    No provenance
+Vouch Domain          | Federation Boundary |  OAuth Domain
+                |           |
+Agent DID: did:vouch:z6Mk...  |           |
+Vouch Token: signed, auditable |  ??? gap ???    |  Bearer token: opaque string
+Delegation chain: verified   |           |  OAuth scope: "read"
+Reputation: Tier 4 (TRUSTED)  |           |  No reputation context
+                |           |
+Full provenance available    | Provenance lost  |  No provenance
 ```
 
 The enterprise loses all the trust signals that Vouch provides, reducing agent interactions to bare OAuth scope checks.
@@ -79,35 +79,35 @@ The enterprise loses all the trust signals that Vouch provides, reducing agent i
 
 ```
 +---------------------------------------------------------------+
-|  Vouch-Native Agent                                           |
-|  DID: did:vouch:z6MkAgent123                                 |
-|  Vouch Token: [signed intent + delegation + reputation]      |
+| Vouch-Native Agent                      |
+| DID: did:vouch:z6MkAgent123                 |
+| Vouch Token: [signed intent + delegation + reputation]   |
 +------------------------------+--------------------------------+
-                               |
-                               v
+                |
+                v
 +---------------------------------------------------------------+
-|  Credential Translation Engine (CTE)                          |
-|                                                               |
-|  1. Verify Vouch Token (PAD-003 validation)                  |
-|  2. Check reputation (PAD-036 query)                         |
-|  3. Apply Trust Anchor Mapping                               |
-|  4. Generate protocol-native credential                      |
-|  5. Embed provenance as private claims                       |
-|  6. Bind to federation session                               |
-|  7. Emit audit record                                        |
+| Credential Translation Engine (CTE)             |
+|                                |
+| 1. Verify Vouch Token (PAD-003 validation)         |
+| 2. Check reputation (PAD-036 query)             |
+| 3. Apply Trust Anchor Mapping                |
+| 4. Generate protocol-native credential           |
+| 5. Embed provenance as private claims            |
+| 6. Bind to federation session                |
+| 7. Emit audit record                    |
 +------------------------------+--------------------------------+
-                               |
-               +---------------+---------------+
-               |               |               |
-               v               v               v
-        +-----------+   +-----------+   +-----------+
-        | OAuth 2.0 |   | SAML 2.0  |   | OIDC      |
-        | Bearer    |   | Assertion |   | ID Token  |
-        | Token     |   |           |   |           |
-        +-----------+   +-----------+   +-----------+
-               |               |               |
-               v               v               v
-        Enterprise APIs  Enterprise SSO  Enterprise IdP
+                |
+        +---------------+---------------+
+        |        |        |
+        v        v        v
+    +-----------+  +-----------+  +-----------+
+    | OAuth 2.0 |  | SAML 2.0 |  | OIDC   |
+    | Bearer  |  | Assertion |  | ID Token |
+    | Token   |  |      |  |      |
+    +-----------+  +-----------+  +-----------+
+        |        |        |
+        v        v        v
+    Enterprise APIs Enterprise SSO Enterprise IdP
 ```
 
 ### 3.2 Credential Translation: Vouch to OAuth 2.0
@@ -118,32 +118,32 @@ The enterprise loses all the trust signals that Vouch provides, reducing agent i
 
 ```json
 {
-  "header": {
-    "alg": "ES256",
-    "typ": "at+jwt",
-    "kid": "cte-signing-key-001"
-  },
-  "payload": {
-    "iss": "https://federation.vouch-protocol.com",
-    "sub": "did:vouch:z6MkAgent123",
-    "aud": "https://api.enterprise.com",
-    "exp": 1713783660,
-    "iat": 1713783600,
-    "scope": "data:read api:query",
-    "client_id": "vouch-agent-z6MkAgent123",
+ "header": {
+  "alg": "ES256",
+  "typ": "at+jwt",
+  "kid": "cte-signing-key-001"
+ },
+ "payload": {
+  "iss": "https://federation.vouch-protocol.com",
+  "sub": "did:vouch:z6MkAgent123",
+  "aud": "https://api.enterprise.com",
+  "exp": 1713783660,
+  "iat": 1713783600,
+  "scope": "data:read api:query",
+  "client_id": "vouch-agent-z6MkAgent123",
 
-    "vouch_provenance": {
-      "vouch_token_hash": "sha256:H(original_vouch_token)",
-      "agent_did": "did:vouch:z6MkAgent123",
-      "delegation_depth": 1,
-      "delegation_root": "did:vouch:z6MkOperator789",
-      "reputation_tier": 4,
-      "reputation_score": 87.3,
-      "vouch_signature_alg": "Ed25519",
-      "federation_session_id": "fed-sess-2026-04-22-001"
-    }
-  },
-  "signature": "CTE_signs_with_ES256"
+  "vouch_provenance": {
+   "vouch_token_hash": "sha256:H(original_vouch_token)",
+   "agent_did": "did:vouch:z6MkAgent123",
+   "delegation_depth": 1,
+   "delegation_root": "did:vouch:z6MkOperator789",
+   "reputation_tier": 4,
+   "reputation_score": 87.3,
+   "vouch_signature_alg": "Ed25519",
+   "federation_session_id": "fed-sess-2026-04-22-001"
+  }
+ },
+ "signature": "CTE_signs_with_ES256"
 }
 ```
 
@@ -158,26 +158,26 @@ When a legacy OAuth-authenticated system needs to interact with Vouch-native age
 
 ```json
 {
-  "vouch_federation_envelope": {
-    "envelope_type": "oauth_bridge",
-    "bridge_did": "did:web:auth.enterprise.com",
-    "original_credential": {
-      "type": "oauth2_bearer",
-      "issuer": "https://auth.enterprise.com",
-      "subject": "service-account-inventory-bot",
-      "scopes": ["inventory:read", "inventory:write"],
-      "token_hash": "sha256:H(original_bearer_token)"
-    },
-    "vouch_mapping": {
-      "mapped_did": "did:web:auth.enterprise.com:service-account-inventory-bot",
-      "trust_level": "federation_bridge",
-      "capabilities": ["inventory:read", "inventory:write"],
-      "max_delegation_depth": 0,
-      "reputation_source": "enterprise_internal"
-    },
-    "federation_session_id": "fed-sess-2026-04-22-002",
-    "cte_signature": "ed25519:CTE_signs_envelope"
-  }
+ "vouch_federation_envelope": {
+  "envelope_type": "oauth_bridge",
+  "bridge_did": "did:web:auth.enterprise.com",
+  "original_credential": {
+   "type": "oauth2_bearer",
+   "issuer": "https://auth.enterprise.com",
+   "subject": "service-account-inventory-bot",
+   "scopes": ["inventory:read", "inventory:write"],
+   "token_hash": "sha256:H(original_bearer_token)"
+  },
+  "vouch_mapping": {
+   "mapped_did": "did:web:auth.enterprise.com:service-account-inventory-bot",
+   "trust_level": "federation_bridge",
+   "capabilities": ["inventory:read", "inventory:write"],
+   "max_delegation_depth": 0,
+   "reputation_source": "enterprise_internal"
+  },
+  "federation_session_id": "fed-sess-2026-04-22-002",
+  "cte_signature": "ed25519:CTE_signs_envelope"
+ }
 }
 ```
 
@@ -187,51 +187,51 @@ Enterprises define credential equivalence policies:
 
 ```yaml
 federation_policy:
-  name: "enterprise-vouch-integration-v1"
-  issuer_did: "did:web:api.enterprise.com"
+ name: "enterprise-vouch-integration-v1"
+ issuer_did: "did:web:api.enterprise.com"
 
-  vouch_to_oauth_mappings:
-    - name: "trusted-agent-full-access"
-      conditions:
-        reputation_tier: ">= 4"
-        delegation_depth: "<= 2"
-        delegation_root_did: "did:vouch:z6MkApprovedOperator*"
-        credential_age_hours: "<= 24"
-      grants:
-        oauth_scopes: ["data:read", "data:write", "api:query", "api:mutate"]
-        token_lifetime_seconds: 3600
-        refresh_allowed: true
+ vouch_to_oauth_mappings:
+  - name: "trusted-agent-full-access"
+   conditions:
+    reputation_tier: ">= 4"
+    delegation_depth: "<= 2"
+    delegation_root_did: "did:vouch:z6MkApprovedOperator*"
+    credential_age_hours: "<= 24"
+   grants:
+    oauth_scopes: ["data:read", "data:write", "api:query", "api:mutate"]
+    token_lifetime_seconds: 3600
+    refresh_allowed: true
 
-    - name: "provisional-agent-read-only"
-      conditions:
-        reputation_tier: ">= 2"
-        delegation_depth: "<= 1"
-      grants:
-        oauth_scopes: ["data:read", "api:query"]
-        token_lifetime_seconds: 300
-        refresh_allowed: false
+  - name: "provisional-agent-read-only"
+   conditions:
+    reputation_tier: ">= 2"
+    delegation_depth: "<= 1"
+   grants:
+    oauth_scopes: ["data:read", "api:query"]
+    token_lifetime_seconds: 300
+    refresh_allowed: false
 
-    - name: "unknown-agent-sandbox"
-      conditions:
-        reputation_tier: ">= 0"
-      grants:
-        oauth_scopes: ["sandbox:read"]
-        token_lifetime_seconds: 60
-        refresh_allowed: false
+  - name: "unknown-agent-sandbox"
+   conditions:
+    reputation_tier: ">= 0"
+   grants:
+    oauth_scopes: ["sandbox:read"]
+    token_lifetime_seconds: 60
+    refresh_allowed: false
 
-  oauth_to_vouch_mappings:
-    - name: "enterprise-service-accounts"
-      conditions:
-        oauth_issuer: "https://auth.enterprise.com"
-        required_scopes: ["service:verified"]
-      grants:
-        vouch_trust_level: "federation_bridge"
-        max_delegation_depth: 0
+ oauth_to_vouch_mappings:
+  - name: "enterprise-service-accounts"
+   conditions:
+    oauth_issuer: "https://auth.enterprise.com"
+    required_scopes: ["service:verified"]
+   grants:
+    vouch_trust_level: "federation_bridge"
+    max_delegation_depth: 0
 
-  revocation_policy:
-    on_vouch_heartbeat_failure: "revoke_all_derived_tokens"
-    on_vouch_mortality_event: "revoke_and_audit"
-    on_oauth_token_revocation: "invalidate_federation_session"
+ revocation_policy:
+  on_vouch_heartbeat_failure: "revoke_all_derived_tokens"
+  on_vouch_mortality_event: "revoke_and_audit"
+  on_oauth_token_revocation: "invalidate_federation_session"
 ```
 
 ### 3.5 Federation Session Binding
@@ -240,21 +240,21 @@ All translated credentials are bound to a cryptographic session:
 
 ```json
 {
-  "federation_session": {
-    "session_id": "fed-sess-2026-04-22-001",
-    "vouch_credential_hash": "sha256:H(vouch_token)",
-    "derived_credentials": [
-      {
-        "protocol": "oauth2",
-        "token_hash": "sha256:H(oauth_bearer_token)",
-        "issued_at": "2026-04-22T10:00:00Z",
-        "expires_at": "2026-04-22T11:00:00Z",
-        "target_system": "api.enterprise.com"
-      }
-    ],
-    "binding_mechanism": "session_id_embedded_in_all_derived_tokens",
-    "revocation_webhook": "https://federation.vouch-protocol.com/v1/sessions/fed-sess-001/revoke"
-  }
+ "federation_session": {
+  "session_id": "fed-sess-2026-04-22-001",
+  "vouch_credential_hash": "sha256:H(vouch_token)",
+  "derived_credentials": [
+   {
+    "protocol": "oauth2",
+    "token_hash": "sha256:H(oauth_bearer_token)",
+    "issued_at": "2026-04-22T10:00:00Z",
+    "expires_at": "2026-04-22T11:00:00Z",
+    "target_system": "api.enterprise.com"
+   }
+  ],
+  "binding_mechanism": "session_id_embedded_in_all_derived_tokens",
+  "revocation_webhook": "https://federation.vouch-protocol.com/v1/sessions/fed-sess-001/revoke"
+ }
 }
 ```
 
@@ -273,7 +273,7 @@ All translated credentials are bound to a cryptographic session:
 | Vouch Token | OIDC ID Token | ID token with Vouch claims in `vouch` namespace |
 | Vouch Token | mTLS Client Cert | Ephemeral X.509 cert with DID in SAN extension |
 | Vouch Token | API Key | API key mapped to DID in CTE's session store |
-| Vouch Token | W3C Verifiable Credential | VC with DID subject and Vouch proof |
+| Vouch Token | Verifiable Credential | VC with DID subject and Vouch proof |
 | OAuth 2.0 | Vouch Federation Envelope | Bridge DID derived from OAuth issuer |
 | SAML 2.0 | Vouch Federation Envelope | Bridge DID derived from SAML IdP EntityID |
 | API Key | Vouch Federation Envelope | Bridge DID derived from API key issuer |
@@ -284,26 +284,26 @@ Every credential translation produces a signed audit record:
 
 ```json
 {
-  "translation_audit": {
-    "audit_id": "audit-2026-04-22-a7f3c2e1",
-    "timestamp": "2026-04-22T10:00:00Z",
-    "direction": "vouch_to_oauth",
-    "input_credential": {
-      "type": "vouch_token",
-      "agent_did": "did:vouch:z6MkAgent123",
-      "token_hash": "sha256:H(vouch_token)"
-    },
-    "output_credential": {
-      "type": "oauth2_bearer",
-      "token_hash": "sha256:H(oauth_token)",
-      "scopes_granted": ["data:read", "api:query"],
-      "expires_at": "2026-04-22T11:00:00Z"
-    },
-    "policy_applied": "trusted-agent-full-access",
-    "reputation_at_translation": 87.3,
-    "federation_session_id": "fed-sess-2026-04-22-001",
-    "cte_signature": "ed25519:CTE_signs_audit"
-  }
+ "translation_audit": {
+  "audit_id": "audit-2026-04-22-a7f3c2e1",
+  "timestamp": "2026-04-22T10:00:00Z",
+  "direction": "vouch_to_oauth",
+  "input_credential": {
+   "type": "vouch_token",
+   "agent_did": "did:vouch:z6MkAgent123",
+   "token_hash": "sha256:H(vouch_token)"
+  },
+  "output_credential": {
+   "type": "oauth2_bearer",
+   "token_hash": "sha256:H(oauth_token)",
+   "scopes_granted": ["data:read", "api:query"],
+   "expires_at": "2026-04-22T11:00:00Z"
+  },
+  "policy_applied": "trusted-agent-full-access",
+  "reputation_at_translation": 87.3,
+  "federation_session_id": "fed-sess-2026-04-22-001",
+  "cte_signature": "ed25519:CTE_signs_audit"
+ }
 }
 ```
 
@@ -376,14 +376,14 @@ This document is published as a defensive prior art disclosure under the Apache 
 
 ---
 
-## Update (April 27, 2026): W3C Data Integrity Embodiment & JCS-Determinism Strengthening
+## Update (April 27, 2026): Data Integrity Embodiment & JCS-Determinism Strengthening
 
 The Credential Federation protocol translates between Vouch credentials
 and legacy enterprise authentication protocols. This disclosure
 additionally covers two refinements arising from the v1.0 specification:
 
 **Embodiment broadening:** The Vouch credential side of the translation
-boundary may be a W3C Verifiable Credential secured by a W3C Data
+boundary may be a Verifiable Credential secured by a W3C Data
 Integrity proof (`eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026`) in
 addition to the originally-described JWS form. The Credential Translation
 Engine, Trust Anchor Mapping, and Bidirectional Provenance Preservation
@@ -391,12 +391,12 @@ mechanisms operate identically against either form, since both expose
 the issuer DID, the intent payload, and the temporal claims to the
 translation layer.
 
-**JCS determinism strengthening:** The W3C VC embodiment enables the
+**JCS determinism strengthening:** The VC embodiment enables the
 Federation Envelope to preserve the issuer's original signed canonical
 form (the JCS-canonicalized credential bytes) when translating into
 legacy protocols. A legacy verifier receiving an OAuth Bearer token can,
 if it implements the Vouch Federation extension, recover and
-independently verify the original W3C Data Integrity proof against the
+independently verify the original Data Integrity proof against the
 issuer's Multikey verification method, without trusting the Credential
 Translation Engine's serializer. This determinism property strengthens
 the bidirectional provenance preservation claim by eliminating a

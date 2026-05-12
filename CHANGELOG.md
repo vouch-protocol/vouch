@@ -9,56 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-#### State Verifiability runtime (W3C CG Report §11, §15)
+#### State Verifiability runtime (Specification §11, §15)
 
 First-class implementation of the State Verifiability layer the spec
 previously described as informative. Six new Python modules animate the
 SessionVoucher VC format with a concrete renewal protocol:
 
 - **`vouch.trust_entropy`** — verifier-side decay computation per §11.5.
-  `compute_trust_at`, `evaluate_trust`, `check_trust_threshold`,
-  `half_life_seconds`, `time_until_threshold`. Closes the previous gap
-  where `decay_lambda` was round-tripped through credentials but never
-  consumed by any verifier.
+ `compute_trust_at`, `evaluate_trust`, `check_trust_threshold`,
+ `half_life_seconds`, `time_until_threshold`. Closes the previous gap
+ where `decay_lambda` was round-tripped through credentials but never
+ consumed by any verifier.
 - **`vouch.behavioral_attestation`** — per-interval signal collector
-  producing the §11.3 `behavioralDigest` (api calls, tokens consumed,
-  resources accessed, intent drift). Thread-safe `BehavioralCollector`
-  with three reference drift scorers (mean, max, EWMA).
+ producing the §11.3 `behavioralDigest` (api calls, tokens consumed,
+ resources accessed, intent drift). Thread-safe `BehavioralCollector`
+ with three reference drift scorers (mean, max, EWMA).
 - **`vouch.canary`** — commit/reveal chain per §11.3 / §11.7 giving the
-  Heartbeat Protocol a dead-man's-switch property. `CanaryChain` on the
-  agent side, `CanaryVerifier` on the validator side, both stateful and
-  thread-safe.
+ Heartbeat Protocol a dead-man's-switch property. `CanaryChain` on the
+ agent side, `CanaryVerifier` on the validator side, both stateful and
+ thread-safe.
 - **`vouch.merkle`** — binary Merkle tree primitives with RFC 6962 domain
-  separation. `MerkleTree`, `InclusionProof` (O(log n) selective
-  disclosure), `compute_action_merkle_root` for the §11.3
-  `actionMerkleRoot` field. Used by Heartbeat and adjacent to PAD-017
-  Reasoning Trees and PAD-042 transparency-log anchoring.
+ separation. `MerkleTree`, `InclusionProof` (O(log n) selective
+ disclosure), `compute_action_merkle_root` for the §11.3
+ `actionMerkleRoot` field. Used by Heartbeat and adjacent to PAD-017
+ Reasoning Trees and PAD-042 transparency-log anchoring.
 - **`vouch.heartbeat`** — orchestration per §11.3. `HeartbeatRequest`
-  wire format, `HeartbeatSession` (composes canary chain + behavioral
-  collector + action tracker), `HeartbeatScheduler` (asyncio periodic
-  firing with caller-supplied submit callback), `HeartbeatValidator`
-  (single-validator implementation that issues SessionVouchers and walks
-  per-session canary state and interval-index monotonicity).
+ wire format, `HeartbeatSession` (composes canary chain + behavioral
+ collector + action tracker), `HeartbeatScheduler` (asyncio periodic
+ firing with caller-supplied submit callback), `HeartbeatValidator`
+ (single-validator implementation that issues SessionVouchers and walks
+ per-session canary state and interval-index monotonicity).
 - **`vouch.quorum`** — M-of-N federation per §11.6. `QuorumValidator`
-  wraps a HeartbeatValidator with a role tag and optional weight;
-  `HeartbeatQuorum` coordinates N validators and aggregates trust
-  parameters across approvers (default: min `initial_trust`, max
-  `decay_lambda`, min validity window, intersection of scopes).
+ wraps a HeartbeatValidator with a role tag and optional weight;
+ `HeartbeatQuorum` coordinates N validators and aggregates trust
+ parameters across approvers (default: min `initial_trust`, max
+ `decay_lambda`, min validity window, intersection of scopes).
 
-#### W3C BitstringStatusList
+#### BitstringStatusList
 
-Reference implementation of W3C VC-BITSTRING-STATUS-LIST for
-credential-level revocation and suspension status (W3C CG Report §11.2)
+Reference implementation of VC-BITSTRING-STATUS-LIST for
+credential-level revocation and suspension status (Specification §11.2)
 across Python, TypeScript, and Go SDKs:
-  - `StatusList` class (in-memory bitstring with gzip + base64url multibase encoding per W3C §4.2, 131,072-bit minimum, deterministic gzip headers across languages).
-  - `build_status_list_credential` / `buildStatusListCredential` / `BuildStatusListCredential` issuers for `BitstringStatusListCredential` VCs.
-  - `build_status_list_entry` / `buildStatusListEntry` / `BuildStatusListEntry` builders for the `credentialStatus` reference attached to a Vouch Credential.
-  - `verify_status` / `verifyStatus` / `VerifyStatus` for verifier-side bit lookup with structural validation.
-  - `build_vouch_credential` (and TS / Go equivalents) accept an optional `credential_status` / `credentialStatus` / `CredentialStatus` parameter to attach a status entry at issuance.
-  - `StatusList.to_state_dict` / `from_state_dict` (and TS / Go equivalents) for persistence between issuer restarts, including the allocation cursor that is not recoverable from the encoded bitstring alone.
-  - `FilesystemStatusListStore` (Python) reference filesystem-backed store with atomic writes.
+ - `StatusList` class (in-memory bitstring with gzip + base64url multibase encoding per W3C §4.2, 131,072-bit minimum, deterministic gzip headers across languages).
+ - `build_status_list_credential` / `buildStatusListCredential` / `BuildStatusListCredential` issuers for `BitstringStatusListCredential` VCs.
+ - `build_status_list_entry` / `buildStatusListEntry` / `BuildStatusListEntry` builders for the `credentialStatus` reference attached to a Vouch Credential.
+ - `verify_status` / `verifyStatus` / `VerifyStatus` for verifier-side bit lookup with structural validation.
+ - `build_vouch_credential` (and TS / Go equivalents) accept an optional `credential_status` / `credentialStatus` / `CredentialStatus` parameter to attach a status entry at issuance.
+ - `StatusList.to_state_dict` / `from_state_dict` (and TS / Go equivalents) for persistence between issuer restarts, including the allocation cursor that is not recoverable from the encoded bitstring alone.
+ - `FilesystemStatusListStore` (Python) reference filesystem-backed store with atomic writes.
 - **HTTP fetcher for verifier-side status list retrieval** (`vouch.status_list_fetcher.StatusListFetcher`): in-memory TTL cache, conditional GETs via `ETag` / `If-Modified-Since`, configurable response-size limit, `force_refresh` for verification-failure handling. Uses the existing `httpx` dependency.
-- **Cross-language test vector** at `test-vectors/bitstring-status-list/vector.json` with a deterministic generator (`generate.py`). Python and TypeScript implementations produce byte-identical encoded output for the same revoked indices; Go's `compress/flate` produces a valid DEFLATE stream that decodes equivalently (the W3C-required equivalence).
+- **Cross-language test vector** at `test-vectors/bitstring-status-list/vector.json` with a deterministic generator (`generate.py`). Python and TypeScript implementations produce byte-identical encoded output for the same revoked indices; Go's `compress/flate` produces a valid DEFLATE stream that decodes equivalently (-required equivalence).
 
 ### Tests
 - 48 Python tests, 32 TypeScript tests, and 39 Go tests covering construction validation, bit operations, encoding round-trip, structural validation, end-to-end revocation flow, state dict persistence, filesystem store atomicity, HTTP fetcher caching and conditional GETs, package exports, and cross-language interop.
@@ -67,17 +67,17 @@ across Python, TypeScript, and Go SDKs:
 
 ### Added
 
-W3C-track alignment with backward-compatible coexistence of the legacy v0.x JWS path.
+standards-aligned alignment with backward-compatible coexistence of the legacy v0.x JWS path.
 
-- **W3C Verifiable Credentials issuance** (`Signer.sign_credential`): produces a W3C VC Data Model 2.0 credential carrying the agent's intent (`action`, `target`, required `resource`), reputation, and optional delegation chain.
-- **W3C Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (`Verifier.verify_credential`): proof attaches as a sibling object on the credential, no Base64-wrapping of the payload.
+- **Verifiable Credentials issuance** (`Signer.sign_credential`): produces a VC Data Model 2.0 credential carrying the agent's intent (`action`, `target`, required `resource`), reputation, and optional delegation chain.
+- **Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (`Verifier.verify_credential`): proof attaches as a sibling object on the credential, no Base64-wrapping of the payload.
 - **JCS canonicalization** (`vouch.jcs`): RFC 8785 implementation. Cross-implementation interop verified against shared test vectors at `test-vectors/jcs/vectors.json`.
 - **Multikey verification methods** (`vouch.multikey`): multibase + multicodec encoding for Ed25519 (`0xed01`) and ML-DSA-44 (`0x1207`). Algorithm-agnostic key resolution via `DIDDocument.get_ed25519_public_key()` (auto-falls-back to legacy JWK).
 - **Hybrid post-quantum profile** (`Signer.sign_credential_hybrid`): optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite. Both Ed25519 and ML-DSA-44 sign the same JCS canonical bytes for graceful verifier downgrade. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines. Requires `pip install vouch-protocol[pq]` for the optional `pqcrypto` dependency.
-- **W3C VC envelope helpers** (`vouch.vc`): `build_vouch_credential`, `build_session_voucher`.
+- **VC envelope helpers** (`vouch.vc`): `build_vouch_credential`, `build_session_voucher`.
 - **Async verifier credential path** (`AsyncVerifier.verify_credential`, `AsyncVerifier.check_vouch_credential`): mirrors the sync path with async DID resolution.
 - **Three-language interop** with TypeScript (`typescript/`) and Go (`go-sidecar/`) producing byte-identical canonical form.
-- **Three new defensive disclosures** (PAD-039, PAD-040, PAD-041) plus 16 amendments to existing PADs documenting W3C Data Integrity embodiments and JCS-determinism properties.
+- **Three new defensive disclosures** (PAD-039, PAD-040, PAD-041) plus 16 amendments to existing PADs documenting Data Integrity embodiments and JCS-determinism properties.
 
 ### Changed
 - `Signer` constructor now derives raw Ed25519 bytes from the JWK seed for the modern Data Integrity path. Existing callers using `Signer.sign()` are unaffected.
@@ -107,8 +107,8 @@ W3C-track alignment with backward-compatible coexistence of the legacy v0.x JWS 
 
 ### Added
 - **Vouch Git Workflow** - One-command SSH signing for git commits
-  - `vouch git init` - Configure SSH signing, install commit hooks, inject badge
-  - `vouch git status` - Show current Vouch git configuration
+ - `vouch git init` - Configure SSH signing, install commit hooks, inject badge
+ - `vouch git status` - Show current Vouch git configuration
 - Commit trailer hook with Vouch-DID for supply chain security
 - CI workflow for verifying Vouch signatures on PRs
 - README badge injection ("Protected by Vouch")

@@ -74,7 +74,7 @@ The developer's first user prompt is processed by the LLM with the policy alread
 The compactor produces a compact summary keyed for in-context efficiency:
 
 ```
-Active operational rules (W3C-style, machine-binding):
+Active operational rules (standard, machine-binding):
 
 1. [block] Never push files containing AWS_ACCESS_KEY_ID patterns. (workspace)
 2. [block] internal/payments/ is in regulatory freeze; no pushes until 2026-05-15. (directory: internal/payments)
@@ -129,13 +129,13 @@ Every session anchor (or skipped anchor) is logged:
 
 ```json
 {
-  "ts": "2026-04-30T08:34:12Z",
-  "session_id": "sess-...",
-  "assistant": "claude-code",
-  "anchored": true,
-  "rule_count": 5,
-  "compacted_token_estimate": 312,
-  "policy_hash": "sha256-..."
+ "ts": "2026-04-30T08:34:12Z",
+ "session_id": "sess-...",
+ "assistant": "claude-code",
+ "anchored": true,
+ "rule_count": 5,
+ "compacted_token_estimate": 312,
+ "policy_hash": "sha256-..."
 }
 ```
 
@@ -184,17 +184,17 @@ For assistants with explicit session boundaries (the conversation API has a `ses
 
 ```python
 def compact_for_anchor(policy):
-    lines = []
-    for r in policy.active_rules:
-        scope = format_scope(r.scope)
-        sev = f"[{r.severity}]"
-        body = r.body
-        expiry = format_remaining_lifetime(r) if r.expires else None
-        line = f"{sev} {body} ({scope})"
-        if expiry:
-            line += f" (expires in {expiry})"
-        lines.append(line)
-    return PREAMBLE + "\n".join(f"{i+1}. {l}" for i, l in enumerate(lines)) + POSTAMBLE
+  lines = []
+  for r in policy.active_rules:
+    scope = format_scope(r.scope)
+    sev = f"[{r.severity}]"
+    body = r.body
+    expiry = format_remaining_lifetime(r) if r.expires else None
+    line = f"{sev} {body} ({scope})"
+    if expiry:
+      line += f" (expires in {expiry})"
+    lines.append(line)
+  return PREAMBLE + "\n".join(f"{i+1}. {l}" for i, l in enumerate(lines)) + POSTAMBLE
 ```
 
 ### 5.3 Assistant-specific injection
@@ -203,16 +203,16 @@ The wrapper maintains an injection adapter per assistant. For Anthropic:
 
 ```typescript
 function injectAnthropic(request, summary) {
-  if (Array.isArray(request.system)) {
-    request.system = [{
-      type: "text",
-      text: summary,
-      cache_control: { type: "ephemeral" }
-    }, ...request.system];
-  } else {
-    request.system = `${summary}\n\n---\n\n${request.system ?? ""}`;
-  }
-  return request;
+ if (Array.isArray(request.system)) {
+  request.system = [{
+   type: "text",
+   text: summary,
+   cache_control: { type: "ephemeral" }
+  }, ...request.system];
+ } else {
+  request.system = `${summary}\n\n---\n\n${request.system ?? ""}`;
+ }
+ return request;
 }
 ```
 
@@ -220,11 +220,11 @@ For OpenAI:
 
 ```typescript
 function injectOpenAI(request, summary) {
-  request.messages = [
-    { role: "system", content: summary },
-    ...request.messages
-  ];
-  return request;
+ request.messages = [
+  { role: "system", content: summary },
+  ...request.messages
+ ];
+ return request;
 }
 ```
 

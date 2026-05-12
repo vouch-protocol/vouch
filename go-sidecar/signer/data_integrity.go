@@ -1,4 +1,4 @@
-// W3C Data Integrity proof builder and verifier, eddsa-jcs-2022 cryptosuite.
+// Data Integrity proof builder and verifier, eddsa-jcs-2022 cryptosuite.
 //
 // Mirrors vouch/data_integrity.py and typescript/src/data-integrity.ts.
 // Implements §3.1 of [VC-DI-EDDSA]:
@@ -10,7 +10,7 @@
 // no Base64 wrapping of the payload, the credential remains human-readable
 // JSON.
 //
-// Signing flow (W3C CG Report §7.1):
+// Signing flow (Specification §7.1):
 //
 //	1. Build credential with unsigned proof (no proofValue).
 //	2. JCS-canonicalize the entire object.
@@ -30,25 +30,25 @@ import (
 
 const (
 	CryptosuiteEddsaJcs2022 = "eddsa-jcs-2022"
-	ProofTypeDataIntegrity  = "DataIntegrityProof"
+	ProofTypeDataIntegrity = "DataIntegrityProof"
 )
 
-// DataIntegrityProof represents a W3C Data Integrity proof object.
+// DataIntegrityProof represents a Data Integrity proof object.
 type DataIntegrityProof struct {
-	Type               string `json:"type"`
-	Cryptosuite        string `json:"cryptosuite"`
-	Created            string `json:"created"`
+	Type        string `json:"type"`
+	Cryptosuite    string `json:"cryptosuite"`
+	Created      string `json:"created"`
 	VerificationMethod string `json:"verificationMethod"`
-	ProofPurpose       string `json:"proofPurpose"`
-	ProofValue         string `json:"proofValue,omitempty"`
+	ProofPurpose    string `json:"proofPurpose"`
+	ProofValue     string `json:"proofValue,omitempty"`
 }
 
 // BuildProofOptions configures BuildDataIntegrityProof.
 type BuildProofOptions struct {
-	PrivateKey         ed25519.PrivateKey
+	PrivateKey     ed25519.PrivateKey
 	VerificationMethod string
-	ProofPurpose       string // defaults to "assertionMethod"
-	Created            time.Time
+	ProofPurpose    string // defaults to "assertionMethod"
+	Created      time.Time
 }
 
 // BuildDataIntegrityProof generates a Data Integrity proof for the given
@@ -71,11 +71,11 @@ func BuildDataIntegrityProof(
 	}
 
 	proof := DataIntegrityProof{
-		Type:               ProofTypeDataIntegrity,
-		Cryptosuite:        CryptosuiteEddsaJcs2022,
-		Created:            formatISO8601(created),
+		Type:        ProofTypeDataIntegrity,
+		Cryptosuite:    CryptosuiteEddsaJcs2022,
+		Created:      formatISO8601(created),
 		VerificationMethod: opts.VerificationMethod,
-		ProofPurpose:       purpose,
+		ProofPurpose:    purpose,
 	}
 
 	// Build proof representation as a plain map matching the JSON shape
@@ -148,11 +148,11 @@ func VerifyDataIntegrityProof(
 
 func proofToMap(p DataIntegrityProof) map[string]any {
 	m := map[string]any{
-		"type":               p.Type,
-		"cryptosuite":        p.Cryptosuite,
-		"created":            p.Created,
+		"type":        p.Type,
+		"cryptosuite":    p.Cryptosuite,
+		"created":      p.Created,
 		"verificationMethod": p.VerificationMethod,
-		"proofPurpose":       p.ProofPurpose,
+		"proofPurpose":    p.ProofPurpose,
 	}
 	if p.ProofValue != "" {
 		m["proofValue"] = p.ProofValue

@@ -5,8 +5,8 @@
 //
 // Architecture:
 //
-//	Standard mode:   Payload -> Composite JWS (Ed25519 + ML-DSA) -> Output
-//	Sensitive mode:  Payload -> Composite JWS -> ML-KEM JWE Vault -> Output
+//	Standard mode:  Payload -> Composite JWS (Ed25519 + ML-DSA) -> Output
+//	Sensitive mode: Payload -> Composite JWS -> ML-KEM JWE Vault -> Output
 //
 // The sensitive mode ensures that only the designated recipient, holding the
 // corresponding ML-KEM private key, can decrypt and verify the signed identity
@@ -96,22 +96,22 @@ type SensitiveVault struct {
 // produces composite JWS tokens, optionally wrapped in a PQ JWE vault.
 //
 // In addition, the Signer may carry an ML-DSA-44 keypair used by the
-// hybrid-eddsa-mldsa44-jcs-2026 cryptosuite (W3C CG Report §13.2). The
+// hybrid-eddsa-mldsa44-jcs-2026 cryptosuite (Specification §13.2). The
 // ML-DSA-44 key is separate from the ML-DSA-65 key used by the legacy
 // composite JWS path: different parameter set, different deployment
-// profile (level-1 PQ security, smaller signatures, W3C-track usage).
+// profile (level-1 PQ security, smaller signatures, standards-aligned usage).
 type Signer struct {
-	did            string
-	defaultExpiry  int
+	did      string
+	defaultExpiry int
 	ed25519Private ed25519.PrivateKey
-	ed25519Public  ed25519.PublicKey
-	mldsaPrivate   *mldsa65.PrivateKey
-	mldsaPublic    *mldsa65.PublicKey
+	ed25519Public ed25519.PublicKey
+	mldsaPrivate  *mldsa65.PrivateKey
+	mldsaPublic  *mldsa65.PublicKey
 
 	// ML-DSA-44 keypair for the hybrid Data Integrity profile.
 	// Generated on demand if the caller did not supply one.
 	mldsa44Private *mldsa44.PrivateKey
-	mldsa44Public  *mldsa44.PublicKey
+	mldsa44Public *mldsa44.PublicKey
 }
 
 // Config holds the initialization parameters for a Signer.
@@ -127,7 +127,7 @@ type Config struct {
 	MLDSAPrivateKey *mldsa65.PrivateKey
 
 	// MLDSA44PrivateKey is the ML-DSA-44 private key used by the hybrid
-	// Data Integrity profile (W3C CG Report §13.2). If nil, a fresh
+	// Data Integrity profile (Specification §13.2). If nil, a fresh
 	// keypair is generated. Independent from MLDSAPrivateKey.
 	MLDSA44PrivateKey *mldsa44.PrivateKey
 
@@ -177,14 +177,14 @@ func New(cfg Config) (*Signer, error) {
 	}
 
 	return &Signer{
-		did:            cfg.DID,
-		defaultExpiry:  expiry,
+		did:      cfg.DID,
+		defaultExpiry: expiry,
 		ed25519Private: edPriv,
-		ed25519Public:  edPub,
-		mldsaPrivate:   mlPriv,
-		mldsaPublic:    mlPub,
+		ed25519Public: edPub,
+		mldsaPrivate:  mlPriv,
+		mldsaPublic:  mlPub,
 		mldsa44Private: ml44Priv,
-		mldsa44Public:  ml44Pub,
+		mldsa44Public: ml44Pub,
 	}, nil
 }
 
@@ -194,20 +194,20 @@ func New(cfg Config) (*Signer, error) {
 
 // joseHeader is the protected header for the composite JWS.
 type joseHeader struct {
-	Algorithm string   `json:"alg"`
-	Type      string   `json:"typ"`
-	KeyID     string   `json:"kid"`
+	Algorithm string  `json:"alg"`
+	Type   string  `json:"typ"`
+	KeyID   string  `json:"kid"`
 	Composite []string `json:"vouch_composite_alg"`
 }
 
 // Claims is the JWT claims payload for a Vouch Token.
 type Claims struct {
-	JTI   string         `json:"jti"`
-	ISS   string         `json:"iss"`
-	SUB   string         `json:"sub"`
-	IAT   int64          `json:"iat"`
-	NBF   int64          `json:"nbf"`
-	EXP   int64          `json:"exp"`
+	JTI  string     `json:"jti"`
+	ISS  string     `json:"iss"`
+	SUB  string     `json:"sub"`
+	IAT  int64     `json:"iat"`
+	NBF  int64     `json:"nbf"`
+	EXP  int64     `json:"exp"`
 	Vouch map[string]any `json:"vouch"`
 }
 
@@ -219,8 +219,8 @@ type compositeSignature struct {
 
 // compositeJWS is the full composite JWS structure.
 type compositeJWS struct {
-	Protected string             `json:"protected"`
-	Payload   string             `json:"payload"`
+	Protected string       `json:"protected"`
+	Payload  string       `json:"payload"`
 	Signature compositeSignature `json:"signature"`
 }
 
@@ -238,9 +238,9 @@ func (s *Signer) Sign(req SignRequest) ([]byte, error) {
 		// Standard mode: return the composite JWS directly.
 		out := VouchToken{
 			Token: string(jwsBytes),
-			Mode:  "standard",
+			Mode: "standard",
 		}
-		return json.MarshalIndent(out, "", "  ")
+		return json.MarshalIndent(out, "", " ")
 	}
 
 	// 2. Sensitive mode: wrap JWS inside ML-KEM JWE vault.
@@ -253,7 +253,7 @@ func (s *Signer) Sign(req SignRequest) ([]byte, error) {
 		return nil, fmt.Errorf("vouch: JWE vault construction failed: %w", err)
 	}
 
-	return json.MarshalIndent(vault, "", "  ")
+	return json.MarshalIndent(vault, "", " ")
 }
 
 // buildCompositeJWS creates the dual-signed JWS (Ed25519 + ML-DSA-65).
@@ -267,8 +267,8 @@ func (s *Signer) buildCompositeJWS(req SignRequest) ([]byte, error) {
 	// Protected header
 	hdr := joseHeader{
 		Algorithm: "EdDSA+ML-DSA-65",
-		Type:      "vouch+jwt",
-		KeyID:     s.did,
+		Type:   "vouch+jwt",
+		KeyID:   s.did,
 		Composite: []string{"EdDSA", "ML-DSA-65"},
 	}
 	hdrJSON, err := json.Marshal(hdr)
@@ -311,7 +311,7 @@ func (s *Signer) buildCompositeJWS(req SignRequest) ([]byte, error) {
 	// Assemble composite JWS
 	jws := compositeJWS{
 		Protected: hdrB64,
-		Payload:   payloadB64,
+		Payload:  payloadB64,
 		Signature: compositeSignature{
 			Ed25519: base64url(edSig),
 			MLDSA65: base64url(mlSig),
@@ -328,11 +328,11 @@ func (s *Signer) buildCompositeJWS(req SignRequest) ([]byte, error) {
 // wrapInJWEVault encrypts the composite JWS inside a PQ JWE vault.
 //
 // Process:
-//  1. Decode the recipient's ML-KEM-768 encapsulation (public) key.
-//  2. Encapsulate a 32-byte shared secret using ML-KEM-768.
-//  3. Derive an AES-256-GCM key from the shared secret via SHA-256.
-//  4. Encrypt the composite JWS using AES-256-GCM.
-//  5. Return the JWE vault containing ciphertext + KEM ciphertext.
+// 1. Decode the recipient's ML-KEM-768 encapsulation (public) key.
+// 2. Encapsulate a 32-byte shared secret using ML-KEM-768.
+// 3. Derive an AES-256-GCM key from the shared secret via SHA-256.
+// 4. Encrypt the composite JWS using AES-256-GCM.
+// 5. Return the JWE vault containing ciphertext + KEM ciphertext.
 func (s *Signer) wrapInJWEVault(jwsData []byte, recipientPubKeyB64 string) (*SensitiveVault, error) {
 	// Step 1: Decode recipient's ML-KEM-768 encapsulation key
 	ekBytes, err := base64decode(recipientPubKeyB64)
@@ -379,13 +379,13 @@ func (s *Signer) wrapInJWEVault(jwsData []byte, recipientPubKeyB64 string) (*Sen
 
 	// Step 5: Assemble the JWE vault
 	return &SensitiveVault{
-		Mode:          "sensitive",
-		Algorithm:     "ML-KEM-768",
-		Encryption:    "A256GCM",
+		Mode:     "sensitive",
+		Algorithm:   "ML-KEM-768",
+		Encryption:  "A256GCM",
 		KEMCiphertext: base64url(kemCiphertext),
-		Nonce:         base64url(nonce),
-		Ciphertext:    base64url(ciphertext),
-		Tag:           base64url(tag),
+		Nonce:     base64url(nonce),
+		Ciphertext:  base64url(ciphertext),
+		Tag:      base64url(tag),
 	}, nil
 }
 

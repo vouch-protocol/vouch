@@ -29,32 +29,32 @@ Layout signatures: drop caps on lede paragraphs, marginalia sidebars on FAQ and 
 ```
 src/
 ├── app/
-│   ├── layout.tsx               Root layout: nav, footer, fonts, GA
-│   ├── page.tsx                 Landing page
-│   ├── globals.css              Tailwind + classicism utilities
-│   ├── faq/
-│   │   ├── page.tsx             FAQ hero + container
-│   │   ├── FAQClient.tsx        Search + marginalia + Q&A renderer
-│   │   └── faq-data.ts          All Q&A content (single source of truth)
-│   ├── help/
-│   │   ├── page.tsx             Help hero + container
-│   │   ├── HelpClient.tsx       Search + marginalia + article renderer
-│   │   └── help-data.ts         All long-form guide content
-│   └── support/
-│       └── page.tsx             Channels, checklist, quick links
+│  ├── layout.tsx        Root layout: nav, footer, fonts, GA
+│  ├── page.tsx         Landing page
+│  ├── globals.css       Tailwind + classicism utilities
+│  ├── faq/
+│  │  ├── page.tsx       FAQ hero + container
+│  │  ├── FAQClient.tsx    Search + marginalia + Q&A renderer
+│  │  └── faq-data.ts     All Q&A content (single source of truth)
+│  ├── help/
+│  │  ├── page.tsx       Help hero + container
+│  │  ├── HelpClient.tsx    Search + marginalia + article renderer
+│  │  └── help-data.ts     All long-form guide content
+│  └── support/
+│    └── page.tsx       Channels, checklist, quick links
 ├── components/
-│   ├── Nav.tsx                  Top nav with mobile menu
-│   └── Footer.tsx               Five-column footer with double-rule top
+│  ├── Nav.tsx         Top nav with mobile menu
+│  └── Footer.tsx        Five-column footer with double-rule top
 public/
 └── assets/
-    ├── vouch-logo-icon.jpg      Favicon
-    ├── vouch-logo-full.png      OG image
-    └── vouch_icon.svg           Scalable logo
+  ├── vouch-logo-icon.jpg   Favicon
+  ├── vouch-logo-full.png   OG image
+  └── vouch_icon.svg      Scalable logo
 previews/
-├── theme-1-classicism.html      Standalone theme 1 preview
-├── theme-2-blueprint.html       Standalone theme 2 preview
-├── theme-3-vault.html           Standalone theme 3 preview
-├── theme-1-palette-variations.html  Palette switcher for theme 1
+├── theme-1-classicism.html   Standalone theme 1 preview
+├── theme-2-blueprint.html    Standalone theme 2 preview
+├── theme-3-vault.html      Standalone theme 3 preview
+├── theme-1-palette-variations.html Palette switcher for theme 1
 └── README.md
 ```
 
@@ -109,7 +109,7 @@ The `docs/blog/` directory is on a separate CNAME (`blog.vouch-protocol.com`) an
 
 ## Why these choices
 
-- **Classicism**: signals "serious W3C-track specification, not a SaaS product page" to standards reviewers.
+- **Classicism**: signals "serious open standard specification, not a SaaS product page" to standards reviewers.
 - **Burgundy**: most academic-traditional of the six classicism palettes considered.
 - **Source Serif 4 + JetBrains Mono**: serif body anchors the standards-document feel; mono for eyebrows, code, and metadata gives technical precision without breaking the typographic register.
 - **Static export to GH Pages**: no infra change, no Vercel migration, no DNS change. The site builds locally and ships via the existing pages workflow.

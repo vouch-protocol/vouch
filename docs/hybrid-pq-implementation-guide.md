@@ -9,7 +9,7 @@
 
 ## What it is
 
-`hybrid-eddsa-mldsa44-jcs-2026` is a W3C Data Integrity cryptosuite
+`hybrid-eddsa-mldsa44-jcs-2026` is a Data Integrity cryptosuite
 that signs every Vouch Credential with **both** Ed25519 (classical)
 and ML-DSA-44 (post-quantum) over the **same** JCS-canonicalized
 bytes. A verifier can require both signatures to validate, only
@@ -75,9 +75,9 @@ signer = Signer(private_key=jwk_str, did="did:web:agent.example.com")
 # Issue under the hybrid profile. The signer transparently generates
 # the ML-DSA-44 keypair if one is not already provisioned.
 credential = signer.sign_credential_hybrid(intent={
-    "action": "submit_clinical_finding",
-    "target": "trial:NCT00000001",
-    "resource": "https://fda-submissions.example.com/api/findings",
+  "action": "submit_clinical_finding",
+  "target": "trial:NCT00000001",
+  "resource": "https://fda-submissions.example.com/api/findings",
 })
 
 # The credential's proof.cryptosuite is "hybrid-eddsa-mldsa44-jcs-2026".
@@ -94,11 +94,11 @@ const mldsaKeys = await generateMLDSA44KeyPair();
 const signer = new Signer({ privateKey, did, mldsa44: mldsaKeys });
 
 const credential = await signer.signCredentialHybrid({
-  intent: {
-    action: 'submit_clinical_finding',
-    target: 'trial:NCT00000001',
-    resource: 'https://fda-submissions.example.com/api/findings',
-  },
+ intent: {
+  action: 'submit_clinical_finding',
+  target: 'trial:NCT00000001',
+  resource: 'https://fda-submissions.example.com/api/findings',
+ },
 });
 ```
 
@@ -108,16 +108,16 @@ const credential = await signer.signCredentialHybrid({
 import "github.com/vouch-protocol/vouch/go-sidecar/signer"
 
 s, _ := signer.New(signer.Config{
-    DID: "did:web:agent.example.com",
-    Ed25519Seed: ed25519Seed,  // 32-byte seed
+  DID: "did:web:agent.example.com",
+  Ed25519Seed: ed25519Seed, // 32-byte seed
 })
 
 cred, _ := s.SignCredentialHybrid(signer.SignCredentialOptions{
-    Intent: map[string]any{
-        "action": "submit_clinical_finding",
-        "target": "trial:NCT00000001",
-        "resource": "https://fda-submissions.example.com/api/findings",
-    },
+  Intent: map[string]any{
+    "action": "submit_clinical_finding",
+    "target": "trial:NCT00000001",
+    "resource": "https://fda-submissions.example.com/api/findings",
+  },
 })
 ```
 
@@ -136,9 +136,9 @@ Ed25519 signature, ignores the ML-DSA-44 portion.
 ```python
 # Python
 is_valid, passport = Verifier.verify_credential(
-    credential,
-    public_key=ed25519_public_key,
-    hybrid_mode="classical_only",
+  credential,
+  public_key=ed25519_public_key,
+  hybrid_mode="classical_only",
 )
 ```
 
@@ -151,9 +151,9 @@ Ed25519 portion.
 
 ```python
 is_valid, passport = Verifier.verify_credential(
-    credential,
-    public_key=mldsa44_public_key,
-    hybrid_mode="pq_only",
+  credential,
+  public_key=mldsa44_public_key,
+  hybrid_mode="pq_only",
 )
 ```
 
@@ -164,9 +164,9 @@ against the same canonical bytes for the credential to be accepted.
 
 ```python
 is_valid, passport = Verifier.verify_credential(
-    credential,
-    public_key=(ed25519_public_key, mldsa44_public_key),
-    hybrid_mode="both_required",
+  credential,
+  public_key=(ed25519_public_key, mldsa44_public_key),
+  hybrid_mode="both_required",
 )
 ```
 
@@ -176,27 +176,27 @@ A hybrid-issuing agent publishes both keys in its DID Document:
 
 ```json
 {
-  "@context": [
-    "https://www.w3.org/ns/did/v1",
-    "https://w3id.org/security/multikey/v1"
-  ],
-  "id": "did:web:agent.example.com",
-  "verificationMethod": [
-    {
-      "id": "did:web:agent.example.com#key-1",
-      "type": "Multikey",
-      "controller": "did:web:agent.example.com",
-      "publicKeyMultibase": "z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2"
-    },
-    {
-      "id": "did:web:agent.example.com#key-2",
-      "type": "Multikey",
-      "controller": "did:web:agent.example.com",
-      "publicKeyMultibase": "zM<...long base58btc string for ML-DSA-44, ~1.8 KB...>"
-    }
-  ],
-  "authentication": ["did:web:agent.example.com#key-1", "did:web:agent.example.com#key-2"],
-  "assertionMethod": ["did:web:agent.example.com#key-1", "did:web:agent.example.com#key-2"]
+ "@context": [
+  "https://www.w3.org/ns/did/v1",
+  "https://w3id.org/security/multikey/v1"
+ ],
+ "id": "did:web:agent.example.com",
+ "verificationMethod": [
+  {
+   "id": "did:web:agent.example.com#key-1",
+   "type": "Multikey",
+   "controller": "did:web:agent.example.com",
+   "publicKeyMultibase": "z6MkrJVnaZkeFzdQyMZu1cgjg7k1pZZ6pvBQ7XJPt4swbTQ2"
+  },
+  {
+   "id": "did:web:agent.example.com#key-2",
+   "type": "Multikey",
+   "controller": "did:web:agent.example.com",
+   "publicKeyMultibase": "zM<...long base58btc string for ML-DSA-44, ~1.8 KB...>"
+  }
+ ],
+ "authentication": ["did:web:agent.example.com#key-1", "did:web:agent.example.com#key-2"],
+ "assertionMethod": ["did:web:agent.example.com#key-1", "did:web:agent.example.com#key-2"]
 }
 ```
 
@@ -253,7 +253,7 @@ signatures fail when any byte of the canonical form is mutated.
 - [PAD-041: Algorithm-Agnostic Verification Method Resolution](./disclosures/PAD-041-multikey-algorithm-agnostic-verification.md)
 - [PAD-033: ZK PQ Signature Compression](./disclosures/PAD-033-zk-pq-signature-compression.md)
 - [PAD-035: Async Chunked Edge PQ Signatures](./disclosures/PAD-035-async-chunked-edge-pq-signatures.md)
-- [W3C CG Report §13: Crypto-Agility and Quantum-Safe Profile](./specs/w3c-cg-report.md#13-crypto-agility-and-quantum-safe-profile)
+- [Specification §13: Crypto-Agility and Quantum-Safe Profile](./specs/w3c-cg-report.md#13-crypto-agility-and-quantum-safe-profile)
 - [FIPS 204: Module-Lattice-Based Digital Signature Standard](https://csrc.nist.gov/pubs/fips/204/final)
 - [NIST CNSA 2.0 announcement](https://www.nsa.gov/Press-Room/News-Highlights/Article/Article/3608111/)
 - [U.S. National Security Memorandum 10 (NSM-10)](https://www.whitehouse.gov/briefing-room/statements-releases/2022/05/04/national-security-memorandum-on-promoting-united-states-leadership-in-quantum-computing-while-mitigating-risks-to-vulnerable-cryptographic-systems/)

@@ -2,7 +2,7 @@
 
 This tutorial shows you how to build an MCP server from scratch, then add Vouch for cryptographic authentication.
 
-**Time:** 15 minutes  
+**Time:** 15 minutes 
 **Prerequisites:** Python 3.9+, basic terminal skills
 
 ---
@@ -26,81 +26,81 @@ import sys
 import json
 
 def handle_request(request):
-    """Handle incoming MCP requests."""
-    method = request.get("method")
-    request_id = request.get("id")
-    
-    if method == "initialize":
-        return {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "result": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {"tools": {}},
-                "serverInfo": {"name": "my-agent", "version": "1.0.0"}
+  """Handle incoming MCP requests."""
+  method = request.get("method")
+  request_id = request.get("id")
+
+  if method == "initialize":
+    return {
+      "jsonrpc": "2.0",
+      "id": request_id,
+      "result": {
+        "protocolVersion": "2024-11-05",
+        "capabilities": {"tools": {}},
+        "serverInfo": {"name": "my-agent", "version": "1.0.0"}
+      }
+    }
+
+  if method == "tools/list":
+    return {
+      "jsonrpc": "2.0",
+      "id": request_id,
+      "result": {
+        "tools": [
+          {
+            "name": "send_email",
+            "description": "Send an email on behalf of the user",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "to": {"type": "string"},
+                "subject": {"type": "string"},
+                "body": {"type": "string"}
+              },
+              "required": ["to", "subject", "body"]
             }
+          }
+        ]
+      }
+    }
+
+  if method == "tools/call":
+    params = request.get("params", {})
+    tool_name = params.get("name")
+    arguments = params.get("arguments", {})
+
+    if tool_name == "send_email":
+      # ⚠️ PROBLEM: No proof this request came from an authorized agent!
+      # Any script could pretend to be this MCP server.
+      return {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": {
+          "content": [{
+            "type": "text",
+            "text": f"Email sent to {arguments.get('to')}"
+          }]
         }
-    
-    if method == "tools/list":
-        return {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "result": {
-                "tools": [
-                    {
-                        "name": "send_email",
-                        "description": "Send an email on behalf of the user",
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "to": {"type": "string"},
-                                "subject": {"type": "string"},
-                                "body": {"type": "string"}
-                            },
-                            "required": ["to", "subject", "body"]
-                        }
-                    }
-                ]
-            }
-        }
-    
-    if method == "tools/call":
-        params = request.get("params", {})
-        tool_name = params.get("name")
-        arguments = params.get("arguments", {})
-        
-        if tool_name == "send_email":
-            # ⚠️ PROBLEM: No proof this request came from an authorized agent!
-            # Any script could pretend to be this MCP server.
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {
-                    "content": [{
-                        "type": "text",
-                        "text": f"Email sent to {arguments.get('to')}"
-                    }]
-                }
-            }
-    
-    return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Unknown method"}}
+      }
+
+  return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Unknown method"}}
 
 
 def main():
-    """MCP server loop - reads JSON-RPC from stdin, writes to stdout."""
-    for line in sys.stdin:
-        if not line.strip():
-            continue
-        try:
-            request = json.loads(line)
-            response = handle_request(request)
-            print(json.dumps(response), flush=True)
-        except Exception as e:
-            print(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": str(e)}}), flush=True)
+  """MCP server loop - reads JSON-RPC from stdin, writes to stdout."""
+  for line in sys.stdin:
+    if not line.strip():
+      continue
+    try:
+      request = json.loads(line)
+      response = handle_request(request)
+      print(json.dumps(response), flush=True)
+    except Exception as e:
+      print(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": str(e)}}), flush=True)
 
 
 if __name__ == "__main__":
-    main()
+  main()
 ```
 
 ### Step 2: Test It
@@ -169,102 +169,102 @@ VOUCH_PRIVATE_KEY = os.getenv("VOUCH_PRIVATE_KEY")
 # Initialize signer (if credentials available)
 signer = None
 if VOUCH_DID and VOUCH_PRIVATE_KEY:
-    signer = Signer(private_key=VOUCH_PRIVATE_KEY, did=VOUCH_DID)
-    print(f"✓ Vouch identity loaded: {VOUCH_DID}", file=sys.stderr)
+  signer = Signer(private_key=VOUCH_PRIVATE_KEY, did=VOUCH_DID)
+  print(f"✓ Vouch identity loaded: {VOUCH_DID}", file=sys.stderr)
 
-# New v1.0 deployments should prefer the W3C VC + Data Integrity path:
-#     credential = signer.sign_credential(intent={
-#         'action': 'send_email',
-#         'target': f'recipient:{recipient}',
-#         'resource': 'https://mail.example.com/api/send',
-#     })
+# New v1.0 deployments should prefer the VC + Data Integrity path:
+#   credential = signer.sign_credential(intent={
+#     'action': 'send_email',
+#     'target': f'recipient:{recipient}',
+#     'resource': 'https://mail.example.com/api/send',
+#   })
 # The legacy JWS path used below remains supported during the deprecation window.
 
 
 def handle_request(request):
-    """Handle incoming MCP requests with Vouch signing."""
-    method = request.get("method")
-    request_id = request.get("id")
-    
-    if method == "initialize":
-        return {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "result": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {"tools": {}},
-                "serverInfo": {"name": "my-vouch-agent", "version": "1.0.0"}
+  """Handle incoming MCP requests with Vouch signing."""
+  method = request.get("method")
+  request_id = request.get("id")
+
+  if method == "initialize":
+    return {
+      "jsonrpc": "2.0",
+      "id": request_id,
+      "result": {
+        "protocolVersion": "2024-11-05",
+        "capabilities": {"tools": {}},
+        "serverInfo": {"name": "my-vouch-agent", "version": "1.0.0"}
+      }
+    }
+
+  if method == "tools/list":
+    return {
+      "jsonrpc": "2.0",
+      "id": request_id,
+      "result": {
+        "tools": [
+          {
+            "name": "send_email",
+            "description": "Send a signed email on behalf of the user",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "to": {"type": "string"},
+                "subject": {"type": "string"},
+                "body": {"type": "string"}
+              },
+              "required": ["to", "subject", "body"]
             }
+          },
+          {
+            "name": "get_identity",
+            "description": "Get this agent's cryptographic identity",
+            "inputSchema": {"type": "object", "properties": {}}
+          }
+        ]
+      }
+    }
+
+  if method == "tools/call":
+    params = request.get("params", {})
+    tool_name = params.get("name")
+    arguments = params.get("arguments", {})
+
+    if tool_name == "get_identity":
+      return {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": {
+          "content": [{
+            "type": "text",
+            "text": f"Agent DID: {VOUCH_DID or 'Not configured'}"
+          }]
         }
-    
-    if method == "tools/list":
+      }
+
+    if tool_name == "send_email":
+      if not signer:
         return {
-            "jsonrpc": "2.0",
-            "id": request_id,
-            "result": {
-                "tools": [
-                    {
-                        "name": "send_email",
-                        "description": "Send a signed email on behalf of the user",
-                        "inputSchema": {
-                            "type": "object",
-                            "properties": {
-                                "to": {"type": "string"},
-                                "subject": {"type": "string"},
-                                "body": {"type": "string"}
-                            },
-                            "required": ["to", "subject", "body"]
-                        }
-                    },
-                    {
-                        "name": "get_identity",
-                        "description": "Get this agent's cryptographic identity",
-                        "inputSchema": {"type": "object", "properties": {}}
-                    }
-                ]
-            }
+          "jsonrpc": "2.0",
+          "id": request_id,
+          "error": {"code": -32603, "message": "Vouch identity not configured"}
         }
-    
-    if method == "tools/call":
-        params = request.get("params", {})
-        tool_name = params.get("name")
-        arguments = params.get("arguments", {})
-        
-        if tool_name == "get_identity":
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {
-                    "content": [{
-                        "type": "text",
-                        "text": f"Agent DID: {VOUCH_DID or 'Not configured'}"
-                    }]
-                }
-            }
-        
-        if tool_name == "send_email":
-            if not signer:
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "error": {"code": -32603, "message": "Vouch identity not configured"}
-                }
-            
-            # ✅ SOLUTION: Sign the action with Vouch!
-            payload = {
-                "action": "send_email",
-                "to": arguments.get("to"),
-                "subject": arguments.get("subject"),
-            }
-            vouch_token = signer.sign(payload)
-            
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {
-                    "content": [{
-                        "type": "text",
-                        "text": f"""✅ Email action signed!
+
+      # ✅ SOLUTION: Sign the action with Vouch!
+      payload = {
+        "action": "send_email",
+        "to": arguments.get("to"),
+        "subject": arguments.get("subject"),
+      }
+      vouch_token = signer.sign(payload)
+
+      return {
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": {
+          "content": [{
+            "type": "text",
+            "text": f"""✅ Email action signed!
 
 To: {arguments.get('to')}
 Subject: {arguments.get('subject')}
@@ -273,28 +273,28 @@ Vouch-Token: {vouch_token}
 
 This token proves the request came from: {VOUCH_DID}
 External services can verify this token to confirm authenticity."""
-                    }]
-                }
-            }
-    
-    return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Unknown method"}}
+          }]
+        }
+      }
+
+  return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Unknown method"}}
 
 
 def main():
-    """MCP server loop."""
-    for line in sys.stdin:
-        if not line.strip():
-            continue
-        try:
-            request = json.loads(line)
-            response = handle_request(request)
-            print(json.dumps(response), flush=True)
-        except Exception as e:
-            print(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": str(e)}}), flush=True)
+  """MCP server loop."""
+  for line in sys.stdin:
+    if not line.strip():
+      continue
+    try:
+      request = json.loads(line)
+      response = handle_request(request)
+      print(json.dumps(response), flush=True)
+    except Exception as e:
+      print(json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": str(e)}}), flush=True)
 
 
 if __name__ == "__main__":
-    main()
+  main()
 ```
 
 ### Step 4: Test It
@@ -311,11 +311,11 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"send_email
 **Output:**
 ```json
 {
-  "result": {
-    "content": [{
-      "text": "✅ Email action signed!\n\nTo: alice@example.com\nSubject: Hello\n\nVouch-Token: eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9...\n\nThis token proves the request came from: did:vouch:abc123"
-    }]
-  }
+ "result": {
+  "content": [{
+   "text": "✅ Email action signed!\n\nTo: alice@example.com\nSubject: Hello\n\nVouch-Token: eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9...\n\nThis token proves the request came from: did:vouch:abc123"
+  }]
+ }
 }
 ```
 
@@ -333,15 +333,15 @@ Configure Claude Desktop to use it:
 
 ```json
 {
-  "mcpServers": {
-    "vouch": {
-      "command": "vouch-mcp",
-      "env": {
-        "VOUCH_PRIVATE_KEY": "<your key>",
-        "VOUCH_DID": "did:vouch:..."
-      }
-    }
+ "mcpServers": {
+  "vouch": {
+   "command": "vouch-mcp",
+   "env": {
+    "VOUCH_PRIVATE_KEY": "<your key>",
+    "VOUCH_DID": "did:vouch:..."
+   }
   }
+ }
 }
 ```
 

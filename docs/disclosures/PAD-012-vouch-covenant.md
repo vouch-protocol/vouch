@@ -1,12 +1,12 @@
 # PAD-012: Method for Embedding Executable Usage Covenants in Media Provenance Manifests
 
-**Identifier:** PAD-012  
-**Title:** Method for Embedding Executable Usage Covenants in Media Provenance Manifests ("Vouch Covenant")  
-**Publication Date:** January 20, 2026  
-**Prior Art Effective Date:** January 20, 2026  
-**Status:** Public Disclosure (Defensive Publication)  
-**Category:** Digital Rights Management / Generative AI / Smart Contracts  
-**Author:** Ramprasad Anandam Gaddam  
+**Identifier:** PAD-012 
+**Title:** Method for Embedding Executable Usage Covenants in Media Provenance Manifests ("Vouch Covenant") 
+**Publication Date:** January 20, 2026 
+**Prior Art Effective Date:** January 20, 2026 
+**Status:** Public Disclosure (Defensive Publication) 
+**Category:** Digital Rights Management / Generative AI / Smart Contracts 
+**Author:** Ramprasad Anandam Gaddam 
 
 ---
 
@@ -20,7 +20,7 @@ The Covenant schema defines constraints using a domain-specific language (DSL) w
 
 ## 2. Problem Statement
 
-Current digital provenance standards, including C2PA and W3C Verifiable Credentials, focus on **attestation** (who created what, when) but lack mechanisms for **enforcement** (how it may be used downstream).
+Current digital provenance standards, including C2PA and Verifiable Credentials, focus on **attestation** (who created what, when) but lack mechanisms for **enforcement** (how it may be used downstream).
 
 ### 2.1 Passive Metadata Failure
 - A metadata tag declaring `ai_training: false` or "Do Not Train" is routinely ignored by web scrapers and model training pipelines.
@@ -52,44 +52,44 @@ A JSON/CBOR schema defining:
 
 ```json
 {
-  "@context": "https://vouch-protocol.com/covenants/v1",
-  "@type": "VouchCovenant",
-  "version": "1.0",
-  "creator": "did:key:z6Mk...",
-  "effective_date": "2026-01-20T00:00:00Z",
-  "expiration_date": null,
-  "policies": [
-    {
-      "domain": "ai_training",
-      "rule": "DENY_ALL",
-      "exceptions": []
-    },
-    {
-      "domain": "derivative_works",
-      "rule": "ALLOW_IF",
-      "conditions": {
-        "attribution": "required",
-        "royalty": {
-          "percentage": 5,
-          "currency": "ETH",
-          "recipient": "0xCreatorWallet..."
-        }
-      }
-    },
-    {
-      "domain": "context",
-      "rule": "ALLOW_ONLY",
-      "permitted": ["news", "education", "research"],
-      "denied": ["advertising", "satire", "political_campaign"]
-    },
-    {
-      "domain": "modifications",
-      "rule": "DENY",
-      "operations": ["face_swap", "voice_clone", "style_transfer"]
+ "@context": "https://vouch-protocol.com/covenants/v1",
+ "@type": "VouchCovenant",
+ "version": "1.0",
+ "creator": "did:key:z6Mk...",
+ "effective_date": "2026-01-20T00:00:00Z",
+ "expiration_date": null,
+ "policies": [
+  {
+   "domain": "ai_training",
+   "rule": "DENY_ALL",
+   "exceptions": []
+  },
+  {
+   "domain": "derivative_works",
+   "rule": "ALLOW_IF",
+   "conditions": {
+    "attribution": "required",
+    "royalty": {
+     "percentage": 5,
+     "currency": "ETH",
+     "recipient": "0xCreatorWallet..."
     }
-  ],
-  "enforcement_mode": "STRICT",
-  "fallback_action": "REJECT_WITH_EXPLANATION"
+   }
+  },
+  {
+   "domain": "context",
+   "rule": "ALLOW_ONLY",
+   "permitted": ["news", "education", "research"],
+   "denied": ["advertising", "satire", "political_campaign"]
+  },
+  {
+   "domain": "modifications",
+   "rule": "DENY",
+   "operations": ["face_swap", "voice_clone", "style_transfer"]
+  }
+ ],
+ "enforcement_mode": "STRICT",
+ "fallback_action": "REJECT_WITH_EXPLANATION"
 }
 ```
 
@@ -100,10 +100,10 @@ A method where AI inference engines, image generators, and content processing pi
 1. **Pre-Processing Hook:** Before any input asset is processed, the CVM extracts and parses the Covenant from the C2PA manifest.
 2. **Policy Evaluation Engine:** A lightweight interpreter evaluates the Boolean logic gates against the current operation context (e.g., "Is this a training run? Is output commercial?").
 3. **Enforcement Response:**
-   - **ALLOW:** Operation proceeds normally.
-   - **CONDITIONAL_ALLOW:** Operation proceeds with constraints (e.g., embedded attribution, royalty deduction).
-   - **DENY:** Operation is blocked; model outputs null, noise, or an explanatory rejection message.
-   - **AUDIT_ONLY:** Operation proceeds but generates a compliance log for the creator.
+  - **ALLOW:** Operation proceeds normally.
+  - **CONDITIONAL_ALLOW:** Operation proceeds with constraints (e.g., embedded attribution, royalty deduction).
+  - **DENY:** Operation is blocked; model outputs null, noise, or an explanatory rejection message.
+  - **AUDIT_ONLY:** Operation proceeds but generates a compliance log for the creator.
 
 #### 3.1.3 Recursive Policy Inheritance (Provenance Genetics)
 
@@ -139,13 +139,13 @@ For expired signatures or key rotation scenarios:
 ### 4.2 Covenant DSL Grammar (Simplified)
 
 ```bnf
-covenant    := policy+
-policy      := domain ":" rule
-rule        := "ALLOW_ALL" | "DENY_ALL" | conditional
+covenant  := policy+
+policy   := domain ":" rule
+rule    := "ALLOW_ALL" | "DENY_ALL" | conditional
 conditional := ("ALLOW_IF" | "DENY_IF") conditions
-conditions  := condition ("&&" | "||" condition)*
-condition   := attribute operator value
-operator    := "==" | "!=" | "IN" | "NOT_IN" | ">" | "<"
+conditions := condition ("&&" | "||" condition)*
+condition  := attribute operator value
+operator  := "==" | "!=" | "IN" | "NOT_IN" | ">" | "<"
 ```
 
 ### 4.3 Cryptographic Binding
@@ -217,6 +217,6 @@ The Vouch Covenant system transforms digital provenance from passive attestation
 ## 9. References
 
 - C2PA Technical Specification v1.4
-- W3C Verifiable Credentials Data Model v2.0
+- Verifiable Credentials Data Model v2.0
 - Creative Commons Legal Code
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-011

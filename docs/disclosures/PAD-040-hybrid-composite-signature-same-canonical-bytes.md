@@ -16,7 +16,7 @@
 
 A method for constructing hybrid classical/post-quantum digital signatures
 in which both signature components (Ed25519 and ML-DSA-44) are computed
-over **identical canonical bytes** of a W3C Verifiable Credential, rather
+over **identical canonical bytes** of a Verifiable Credential, rather
 than over separately-hashed or separately-serialized variants of the same
 logical payload. The cryptosuite identifier
 `hybrid-eddsa-mldsa44-jcs-2026` defines the construction.
@@ -25,19 +25,19 @@ The same-bytes property enables three operationally critical verifier
 behaviors that prior PQ/T composite signature designs do not provide:
 
 1. **Graceful classical-only verification.** A verifier that has not yet
-   deployed ML-DSA-44 verification logic can verify the Ed25519
-   component in isolation, against the same canonical bytes, and obtain
-   the same security guarantee as a classical-only deployment, without
-   re-canonicalizing or re-issuing the credential.
+  deployed ML-DSA-44 verification logic can verify the Ed25519
+  component in isolation, against the same canonical bytes, and obtain
+  the same security guarantee as a classical-only deployment, without
+  re-canonicalizing or re-issuing the credential.
 
 2. **Graceful post-quantum-only verification.** A verifier that has
-   migrated past Ed25519 (regulatory mandate, trust-store policy) can
-   verify only the ML-DSA-44 component against the same canonical bytes.
+  migrated past Ed25519 (regulatory mandate, trust-store policy) can
+  verify only the ML-DSA-44 component against the same canonical bytes.
 
 3. **Both-required verification.** A regulated verifier requires both
-   signatures to validate. The verifier hashes the canonical bytes once,
-   runs both verification algorithms against the single hash, and accepts
-   only on simultaneous success.
+  signatures to validate. The verifier hashes the canonical bytes once,
+  runs both verification algorithms against the single hash, and accepts
+  only on simultaneous success.
 
 In all three cases, the verifier examines the same byte sequence. There
 is no risk of payload divergence between the classical and post-quantum
@@ -53,15 +53,15 @@ composite drafts) have proposed hybrid PQ/T signatures, but the
 predominant pattern is:
 
 - **Sign each algorithm over its own hash.** The classical signature
-  signs `H_classical(payload)` and the PQ signature signs
-  `H_pq(payload)`, where the two hash functions or pre-image
-  preparations may differ. This complicates downgrade and increases the
-  protocol surface area.
+ signs `H_classical(payload)` and the PQ signature signs
+ `H_pq(payload)`, where the two hash functions or pre-image
+ preparations may differ. This complicates downgrade and increases the
+ protocol surface area.
 
 - **Sign each algorithm over its own serialization.** The classical
-  signature is computed over a JWS Compact payload and the PQ signature
-  over a separately-encoded payload, requiring verifiers to handle two
-  different byte representations of "the same" credential.
+ signature is computed over a JWS Compact payload and the PQ signature
+ over a separately-encoded payload, requiring verifiers to handle two
+ different byte representations of "the same" credential.
 
 Both patterns make graceful verifier downgrade fragile: a verifier that
 implements only one algorithm cannot independently verify because it
@@ -74,16 +74,16 @@ cannot reconstruct the other algorithm's signed bytes.
 The signing pipeline is:
 
 ```
-1. Build credential as W3C VC (no proof yet).
+1. Build credential as VC (no proof yet).
 2. Build unsigned proof object with cryptosuite =
-   "hybrid-eddsa-mldsa44-jcs-2026".
+  "hybrid-eddsa-mldsa44-jcs-2026".
 3. Attach unsigned proof to credential.
 4. Run JCS canonicalization (RFC 8785) once. Output: canonical bytes B.
 5. Compute SHA-256 once: H = SHA-256(B).
 6. Compute Ed25519 signature S_ed = Ed25519.Sign(privEd, H).
 7. Compute ML-DSA-44 signature S_pq = ML-DSA-44.Sign(privPq, H).
 8. Encode proof.proofValue =
-   multibase("z" + base58btc(S_ed || S_pq)).
+  multibase("z" + base58btc(S_ed || S_pq)).
 9. Replace proof.proofValue back into the credential.
 ```
 
@@ -99,10 +99,10 @@ A verifier receives the credential and the multibase-encoded
 bytes). The verifier then:
 
 - **Mode A (classical-only):** Decode H from the canonical form, run
-  Ed25519.Verify(pubEd, H, S_ed). Accept on success.
+ Ed25519.Verify(pubEd, H, S_ed). Accept on success.
 
 - **Mode B (post-quantum-only):** Decode H from the canonical form,
-  run ML-DSA-44.Verify(pubPq, H, S_pq). Accept on success.
+ run ML-DSA-44.Verify(pubPq, H, S_pq). Accept on success.
 
 - **Mode C (both required):** Run both, accept on simultaneous success.
 
@@ -169,7 +169,7 @@ constrain both signatures to share a single canonical input, sacrificing
 some flexibility in algorithm-specific pre-image preparation in exchange
 for trivial verifier downgrade and elimination of the bind-each-
 algorithm-to-different-serialization attack class. The combination with
-W3C Data Integrity (`eddsa-jcs-2022` cryptosuite as the structural
+Data Integrity (`eddsa-jcs-2022` cryptosuite as the structural
 parent) and JCS canonicalization makes the same-bytes property
 implementable across heterogeneous runtimes without ambiguity.
 

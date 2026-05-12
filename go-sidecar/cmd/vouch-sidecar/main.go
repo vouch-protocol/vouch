@@ -21,7 +21,7 @@ import (
 )
 
 // Version of the Vouch Sidecar binary. First versioned release introduces
-// the W3C VC + Data Integrity credential path (eddsa-jcs-2022) and the
+// the VC + Data Integrity credential path (eddsa-jcs-2022) and the
 // hybrid post-quantum profile (hybrid-eddsa-mldsa44-jcs-2026) alongside
 // the legacy composite JWS path.
 const Version = "0.1.0"
@@ -53,8 +53,8 @@ func main() {
 	}
 
 	s, err := signer.New(signer.Config{
-		DID:                  *did,
-		Ed25519Seed:          seed,
+		DID:         *did,
+		Ed25519Seed:     seed,
 		DefaultExpirySeconds: 300,
 	})
 	if err != nil {
@@ -95,8 +95,8 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
 			"status": "operational",
-			"mode":   modeLabel(globalSensitive),
-			"did":    *did,
+			"mode":  modeLabel(globalSensitive),
+			"did":  *did,
 		})
 	})
 

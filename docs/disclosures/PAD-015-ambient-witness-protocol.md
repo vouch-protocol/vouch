@@ -1,12 +1,12 @@
 # PAD-015: Method for Decentralized Crowd-Witnessed Media Capture Authentication
 
-**Identifier:** PAD-015  
-**Title:** Method for Decentralized Crowd-Witnessed Media Capture Authentication ("Ambient Witness Protocol")  
-**Publication Date:** January 24, 2026  
-**Prior Art Effective Date:** January 24, 2026  
-**Status:** Public Disclosure (Defensive Publication)  
-**Category:** Media Authentication / Decentralized Trust / Proximity Verification / Content Provenance  
-**Author:** Ramprasad Anandam Gaddam  
+**Identifier:** PAD-015 
+**Title:** Method for Decentralized Crowd-Witnessed Media Capture Authentication ("Ambient Witness Protocol") 
+**Publication Date:** January 24, 2026 
+**Prior Art Effective Date:** January 24, 2026 
+**Status:** Public Disclosure (Defensive Publication) 
+**Category:** Media Authentication / Decentralized Trust / Proximity Verification / Content Provenance 
+**Author:** Ramprasad Anandam Gaddam 
 
 ---
 
@@ -70,72 +70,72 @@ Instead of relying on the capturing device to prove authenticity, leverage the C
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    AMBIENT WITNESS PROTOCOL FLOW                             │
+│          AMBIENT WITNESS PROTOCOL FLOW               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  PHASE 1: CAPTURE INITIATION                                                │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │  📸 Photographer presses shutter                                      │  │
-│  │      ↓                                                                │  │
-│  │  📱 Device generates:                                                 │  │
-│  │      • Random nonce (N)                                               │  │
-│  │      • Timestamp (T)                                                  │  │
-│  │      • Location hash (H(GPS))                                         │  │
-│  │      • Device public key fingerprint (FP)                             │  │
-│  │      ↓                                                                │  │
-│  │  📡 BLE Advertisement broadcast:                                      │  │
-│  │      "VOUCH-WITNESS|v1|H(N||T||GPS)||FP"                              │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  PHASE 2: WITNESS RESPONSE                                                  │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │  📱📱📱 Nearby devices (within BLE range ~10-100m):                  │  │
-│  │      ↓                                                                │  │
-│  │  [Automatic background process]                                       │  │
-│  │      • Receive VOUCH-WITNESS broadcast                                │  │
-│  │      • Record: received_time, own_location, signal_strength           │  │
-│  │      • Generate signed attestation:                                   │  │
-│  │        {                                                              │  │
-│  │          "type": "witness_attestation",                               │  │
-│  │          "witness_did": "did:key:z6MkWitness...",                     │  │
-│  │          "observed_hash": "H(N||T||GPS)",                             │  │
-│  │          "observed_fingerprint": "FP",                                │  │
-│  │          "witness_time": 1737730000,                                  │  │
-│  │          "witness_location_hash": "H(witness_GPS)",                   │  │
-│  │          "signal_strength": -45,                                      │  │
-│  │          "signature": "Ed25519(...)"                                  │  │
-│  │        }                                                              │  │
-│  │      ↓                                                                │  │
-│  │  📡 Response via BLE GATT characteristic or direct connection        │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  PHASE 3: ATTESTATION AGGREGATION                                           │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │  📸 Capturing device collects attestations (timeout: 5 seconds)      │  │
-│  │      ↓                                                                │  │
-│  │  Creates "Witness Bundle":                                            │  │
-│  │      • Original nonce (N) - reveals commitment                        │  │
-│  │      • Capture timestamp (T)                                          │  │
-│  │      • Location (GPS or H(GPS))                                       │  │
-│  │      • Array of witness attestations                                  │  │
-│  │      • Capture signature from photographer                            │  │
-│  │      ↓                                                                │  │
-│  │  Embedded in image metadata or sidecar file                           │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  PHASE 4: VERIFICATION                                                      │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │  🔍 Verifier receives image with Witness Bundle                       │  │
-│  │      ↓                                                                │  │
-│  │  Checks:                                                              │  │
-│  │      ✓ Photographer's signature valid                                 │  │
-│  │      ✓ Each witness attestation signature valid                       │  │
-│  │      ✓ Witness timestamps within acceptable window                    │  │
-│  │      ✓ Signal strengths consistent with proximity                     │  │
-│  │      ✓ Witness DIDs are independent (not Sybil attack)                │  │
-│  │      ↓                                                                │  │
-│  │  Trust Score = f(num_witnesses, independence, signal_quality)         │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
+│                                       │
+│ PHASE 1: CAPTURE INITIATION                        │
+│ ┌──────────────────────────────────────────────────────────────────────┐ │
+│ │ 📸 Photographer presses shutter                   │ │
+│ │   ↓                                │ │
+│ │ 📱 Device generates:                         │ │
+│ │   • Random nonce (N)                        │ │
+│ │   • Timestamp (T)                         │ │
+│ │   • Location hash (H(GPS))                     │ │
+│ │   • Device public key fingerprint (FP)               │ │
+│ │   ↓                                │ │
+│ │ 📡 BLE Advertisement broadcast:                   │ │
+│ │   "VOUCH-WITNESS|v1|H(N||T||GPS)||FP"               │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│                                       │
+│ PHASE 2: WITNESS RESPONSE                         │
+│ ┌──────────────────────────────────────────────────────────────────────┐ │
+│ │ 📱📱📱 Nearby devices (within BLE range ~10-100m):         │ │
+│ │   ↓                                │ │
+│ │ [Automatic background process]                    │ │
+│ │   • Receive VOUCH-WITNESS broadcast                │ │
+│ │   • Record: received_time, own_location, signal_strength      │ │
+│ │   • Generate signed attestation:                  │ │
+│ │    {                               │ │
+│ │     "type": "witness_attestation",                │ │
+│ │     "witness_did": "did:key:z6MkWitness...",           │ │
+│ │     "observed_hash": "H(N||T||GPS)",               │ │
+│ │     "observed_fingerprint": "FP",                │ │
+│ │     "witness_time": 1737730000,                 │ │
+│ │     "witness_location_hash": "H(witness_GPS)",          │ │
+│ │     "signal_strength": -45,                   │ │
+│ │     "signature": "Ed25519(...)"                 │ │
+│ │    }                               │ │
+│ │   ↓                                │ │
+│ │ 📡 Response via BLE GATT characteristic or direct connection    │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│                                       │
+│ PHASE 3: ATTESTATION AGGREGATION                      │
+│ ┌──────────────────────────────────────────────────────────────────────┐ │
+│ │ 📸 Capturing device collects attestations (timeout: 5 seconds)   │ │
+│ │   ↓                                │ │
+│ │ Creates "Witness Bundle":                      │ │
+│ │   • Original nonce (N) - reveals commitment            │ │
+│ │   • Capture timestamp (T)                     │ │
+│ │   • Location (GPS or H(GPS))                    │ │
+│ │   • Array of witness attestations                 │ │
+│ │   • Capture signature from photographer              │ │
+│ │   ↓                                │ │
+│ │ Embedded in image metadata or sidecar file              │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
+│                                       │
+│ PHASE 4: VERIFICATION                           │
+│ ┌──────────────────────────────────────────────────────────────────────┐ │
+│ │ 🔍 Verifier receives image with Witness Bundle            │ │
+│ │   ↓                                │ │
+│ │ Checks:                               │ │
+│ │   ✓ Photographer's signature valid                 │ │
+│ │   ✓ Each witness attestation signature valid            │ │
+│ │   ✓ Witness timestamps within acceptable window          │ │
+│ │   ✓ Signal strengths consistent with proximity           │ │
+│ │   ✓ Witness DIDs are independent (not Sybil attack)        │ │
+│ │   ↓                                │ │
+│ │ Trust Score = f(num_witnesses, independence, signal_quality)     │ │
+│ └──────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -143,42 +143,42 @@ Instead of relying on the capturing device to prove authenticity, leverage the C
 
 ```python
 def calculate_witness_trust_score(witness_bundle: WitnessBundle) -> float:
-    """
-    Calculate trust score from witness attestations.
-    
-    Returns: 0.0 (no witnesses) to 1.0 (maximum confidence)
-    """
-    witnesses = witness_bundle.attestations
-    
-    if len(witnesses) == 0:
-        return 0.0
-    
-    # Base score from witness count (logarithmic diminishing returns)
-    count_score = min(1.0, math.log2(len(witnesses) + 1) / 4)
-    
-    # Independence score (check for Sybil patterns)
-    unique_dids = set(w.witness_did for w in witnesses)
-    independence_score = len(unique_dids) / len(witnesses)
-    
-    # Signal consistency (witnesses should have varying signal strengths)
-    signals = [w.signal_strength for w in witnesses]
-    signal_variance = np.std(signals) if len(signals) > 1 else 0
-    signal_score = min(1.0, signal_variance / 20)  # Expect ~20dB variance
-    
-    # Time consistency (all witnesses within tight window)
-    times = [w.witness_time for w in witnesses]
-    time_spread = max(times) - min(times)
-    time_score = 1.0 if time_spread < 5 else max(0, 1 - time_spread / 30)
-    
-    # Combine scores
-    trust_score = (
-        count_score * 0.4 +
-        independence_score * 0.3 +
-        signal_score * 0.15 +
-        time_score * 0.15
-    )
-    
-    return trust_score
+  """
+  Calculate trust score from witness attestations.
+
+  Returns: 0.0 (no witnesses) to 1.0 (maximum confidence)
+  """
+  witnesses = witness_bundle.attestations
+
+  if len(witnesses) == 0:
+    return 0.0
+
+  # Base score from witness count (logarithmic diminishing returns)
+  count_score = min(1.0, math.log2(len(witnesses) + 1) / 4)
+
+  # Independence score (check for Sybil patterns)
+  unique_dids = set(w.witness_did for w in witnesses)
+  independence_score = len(unique_dids) / len(witnesses)
+
+  # Signal consistency (witnesses should have varying signal strengths)
+  signals = [w.signal_strength for w in witnesses]
+  signal_variance = np.std(signals) if len(signals) > 1 else 0
+  signal_score = min(1.0, signal_variance / 20) # Expect ~20dB variance
+
+  # Time consistency (all witnesses within tight window)
+  times = [w.witness_time for w in witnesses]
+  time_spread = max(times) - min(times)
+  time_score = 1.0 if time_spread < 5 else max(0, 1 - time_spread / 30)
+
+  # Combine scores
+  trust_score = (
+    count_score * 0.4 +
+    independence_score * 0.3 +
+    signal_score * 0.15 +
+    time_score * 0.15
+  )
+
+  return trust_score
 ```
 
 **Trust Score Interpretation:**
@@ -296,23 +296,23 @@ A mechanism for integrating ambient witness attestations with other provenance s
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    AMBIENT WITNESS SDK                           │
+│          AMBIENT WITNESS SDK              │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   BLE Manager   │  │ Attestation Mgr │  │  Trust Scorer   │ │
-│  │                 │  │                 │  │                 │ │
-│  │ • Advertise     │  │ • Generate      │  │ • Aggregate     │ │
-│  │ • Scan          │  │ • Validate      │  │ • Analyze       │ │
-│  │ • Connect       │  │ • Store         │  │ • Score         │ │
-│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘ │
-│           │                    │                    │           │
-│           └────────────────────┼────────────────────┘           │
-│                                │                                 │
-│                    ┌───────────▼───────────┐                    │
-│                    │   Identity Manager    │                    │
-│                    │   (Vouch Protocol)    │                    │
-│                    └───────────────────────┘                    │
+│                                 │
+│ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │
+│ │  BLE Manager  │ │ Attestation Mgr │ │ Trust Scorer  │ │
+│ │         │ │         │ │         │ │
+│ │ • Advertise   │ │ • Generate   │ │ • Aggregate   │ │
+│ │ • Scan     │ │ • Validate   │ │ • Analyze    │ │
+│ │ • Connect    │ │ • Store     │ │ • Score     │ │
+│ └────────┬────────┘ └────────┬────────┘ └────────┬────────┘ │
+│      │          │          │      │
+│      └────────────────────┼────────────────────┘      │
+│                │                 │
+│          ┌───────────▼───────────┐          │
+│          │  Identity Manager  │          │
+│          │  (Vouch Protocol)  │          │
+│          └───────────────────────┘          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -332,13 +332,13 @@ For enhanced Sybil resistance and reputation management:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                 VOUCH WITNESS REGISTRY                           │
+│         VOUCH WITNESS REGISTRY              │
 ├─────────────────────────────────────────────────────────────────┤
-│  • DID reputation scores                                         │
-│  • Attestation history (anonymized)                              │
-│  • Sybil detection patterns                                      │
-│  • Geographic witness density maps                               │
-│  • Trust score verification service                              │
+│ • DID reputation scores                     │
+│ • Attestation history (anonymized)               │
+│ • Sybil detection patterns                   │
+│ • Geographic witness density maps                │
+│ • Trust score verification service               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -391,7 +391,7 @@ The Ambient Witness Protocol provides a practical, deployable solution to the me
 ## 11. References
 
 - Bluetooth Low Energy (BLE) Specification 5.0+
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0
 - Content Authenticity Initiative (C2PA) Specification
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-014
 - Sybil Attack Resistance in Peer-to-Peer Networks (literature)

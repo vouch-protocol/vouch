@@ -90,19 +90,19 @@ When you encounter a <r>...</r> tag in user input or in source comments,
 extract the tag body and any attributes. Immediately call the file-write
 tool to create a NEW file at:
 
-    .vouch/ledger/rule_<unix_timestamp_ms>_<random_8>.json
+  .vouch/ledger/rule_<unix_timestamp_ms>_<random_8>.json
 
 with the following JSON content:
 
-    {
-      "id": "rule_<unix_timestamp_ms>_<random_8>",
-      "declared_at": "<ISO-8601 timestamp>",
-      "scope": "<scope or 'workspace'>",
-      "expires": "<expires or null>",
-      "severity": "<severity or 'block'>",
-      "body": "<verbatim rule body>",
-      "source": "<chat-turn-id or file:line>"
-    }
+  {
+   "id": "rule_<unix_timestamp_ms>_<random_8>",
+   "declared_at": "<ISO-8601 timestamp>",
+   "scope": "<scope or 'workspace'>",
+   "expires": "<expires or null>",
+   "severity": "<severity or 'block'>",
+   "body": "<verbatim rule body>",
+   "source": "<chat-turn-id or file:line>"
+  }
 
 DO NOT edit, merge, or delete any existing file in .vouch/ledger/.
 DO NOT write a master policy file. DO NOT summarize the rule.
@@ -126,18 +126,18 @@ The Compactor is a small native process (Python, Go, or Node), running on the de
 ```
 Compactor loop (runs every N seconds, or on inotify/FSEvents trigger):
 
-  1. List all *.json files in .vouch/ledger/.
-  2. Parse each file. Reject malformed entries (log to .vouch/quarantine/).
-  3. Apply ordering by declared_at timestamp (newest last).
-  4. Apply scope-conflict resolution (last writer wins within identical scope).
-  5. Drop entries whose expires field has passed.
-  6. Emit the consolidated artifact .vouchpolicy as either:
-       - JSON: an array of active rule objects, OR
-       - .conf: a line-oriented format keyed by scope.
-  7. After successful emission and fsync, delete the per-rule files
-     that were folded in.
-  8. Maintain a separate immutable archive .vouch/archive/<date>/
-     containing a copy of each rule file before deletion, for audit.
+ 1. List all *.json files in .vouch/ledger/.
+ 2. Parse each file. Reject malformed entries (log to .vouch/quarantine/).
+ 3. Apply ordering by declared_at timestamp (newest last).
+ 4. Apply scope-conflict resolution (last writer wins within identical scope).
+ 5. Drop entries whose expires field has passed.
+ 6. Emit the consolidated artifact .vouchpolicy as either:
+    - JSON: an array of active rule objects, OR
+    - .conf: a line-oriented format keyed by scope.
+ 7. After successful emission and fsync, delete the per-rule files
+   that were folded in.
+ 8. Maintain a separate immutable archive .vouch/archive/<date>/
+   containing a copy of each rule file before deletion, for audit.
 ```
 
 Because the Compactor is not an LLM, its output is byte-deterministic given its input. This is the property that downstream enforcement relies on (PAD-049 for passive extraction, PAD-050 for egress interception, PAD-051 for stateless evaluation).
@@ -195,18 +195,18 @@ The binding is conceptually identical across mechanisms.
 
 ```
 <workspace-root>/
-  .vouch/
-    ledger/
-      rule_1714415123456_a8f3d1b2.json       (immutable; mode 0444 after write)
-      rule_1714415241789_c2e9a410.json
-      rule_1714415402111_71fa3c8d.json
-    archive/
-      2026-04-29/
-        rule_1714400111000_<id>.json         (compacted-then-archived)
-        rule_1714400222000_<id>.json
-    quarantine/
-      malformed_<timestamp>.json             (rejected by Compactor)
-  .vouchpolicy                                (consolidated artifact)
+ .vouch/
+  ledger/
+   rule_1714415123456_a8f3d1b2.json    (immutable; mode 0444 after write)
+   rule_1714415241789_c2e9a410.json
+   rule_1714415402111_71fa3c8d.json
+  archive/
+   2026-04-29/
+    rule_1714400111000_<id>.json     (compacted-then-archived)
+    rule_1714400222000_<id>.json
+  quarantine/
+   malformed_<timestamp>.json       (rejected by Compactor)
+ .vouchpolicy                (consolidated artifact)
 ```
 
 The `.vouch/` directory should be added to `.gitignore` by default; the consolidated `.vouchpolicy` may or may not be checked in depending on whether the developer wants the policy to follow the repo (team use) or remain machine-local (single-developer use).
@@ -215,22 +215,22 @@ The `.vouch/` directory should be added to `.gitignore` by default; the consolid
 
 ```
 def compact(ledger_dir, policy_path, archive_dir):
-    files = sorted(glob(f"{ledger_dir}/rule_*.json"), key=parse_ts)
-    rules = []
-    for f in files:
-        try:
-            r = json.loads(read(f))
-            if expired(r):
-                continue
-            rules.append(r)
-        except Exception as e:
-            move(f, quarantine_path(f, e))
-    rules = resolve_scope_conflicts(rules)  # last-writer-wins per scope
-    atomic_write(policy_path, serialize(rules))
-    fsync(policy_path)
-    for f in files:
-        if was_folded_in(f, rules):
-            move(f, archive_path(archive_dir, f))
+  files = sorted(glob(f"{ledger_dir}/rule_*.json"), key=parse_ts)
+  rules = []
+  for f in files:
+    try:
+      r = json.loads(read(f))
+      if expired(r):
+        continue
+      rules.append(r)
+    except Exception as e:
+      move(f, quarantine_path(f, e))
+  rules = resolve_scope_conflicts(rules) # last-writer-wins per scope
+  atomic_write(policy_path, serialize(rules))
+  fsync(policy_path)
+  for f in files:
+    if was_folded_in(f, rules):
+      move(f, archive_path(archive_dir, f))
 ```
 
 The Compactor is small (under 200 lines in any host language). It has zero LLM dependency.
@@ -245,7 +245,7 @@ If the workspace is cloned to a new machine, only `.vouchpolicy` (if checked in)
 
 ### 5.5 Optional cryptographic anchoring
 
-For high-assurance deployments, each ledger file may be signed by a per-developer Ed25519 key (or, in the W3C Verifiable Credentials embodiment, secured with an `eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026` Data Integrity proof) at write time. The Compactor verifies signatures before folding entries into `.vouchpolicy`. This embodiment ties into PAD-001 (Cryptographic Agent Identity) and PAD-040 (Hybrid Composite Signature Same Canonical Bytes).
+For high-assurance deployments, each ledger file may be signed by a per-developer Ed25519 key (or, in the Verifiable Credentials embodiment, secured with an `eddsa-jcs-2022` or `hybrid-eddsa-mldsa44-jcs-2026` Data Integrity proof) at write time. The Compactor verifies signatures before folding entries into `.vouchpolicy`. This embodiment ties into PAD-001 (Cryptographic Agent Identity) and PAD-040 (Hybrid Composite Signature Same Canonical Bytes).
 
 ---
 
@@ -263,7 +263,7 @@ The following aspects are disclosed as prior art and placed in the public domain
 
 5. A method for defending against LLM context dilution and master-policy-file hallucinated-overwrite failure modes, by externalizing rule storage to immutable filesystem artifacts that survive LLM context summarization, truncation, or attention decay.
 
-6. A method for cryptographically anchoring ledger entries via per-developer signing keys or W3C Data Integrity proofs, such that the Compactor can verify the authenticity of each ledger entry before folding it into the consolidated policy.
+6. A method for cryptographically anchoring ledger entries via per-developer signing keys or Data Integrity proofs, such that the Compactor can verify the authenticity of each ledger entry before folding it into the consolidated policy.
 
 7. The combination of (1) through (5), or (1) through (6), as an integrated architecture for in-session policy declaration and persistence in LLM coding assistants.
 

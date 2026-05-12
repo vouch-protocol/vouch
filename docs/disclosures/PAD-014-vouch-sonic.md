@@ -1,12 +1,12 @@
 # PAD-014: Method for Robust Acoustic Provenance via Psychoacoustic Steganography
 
-**Identifier:** PAD-014  
-**Title:** Method for Robust Acoustic Provenance via Psychoacoustic Steganography ("Vouch Sonic")  
-**Publication Date:** January 20, 2026  
-**Prior Art Effective Date:** January 20, 2026  
-**Status:** Public Disclosure (Defensive Publication)  
-**Category:** Audio Security / Signal Processing / Deepfake Detection / Content Authentication  
-**Author:** Ramprasad Anandam Gaddam  
+**Identifier:** PAD-014 
+**Title:** Method for Robust Acoustic Provenance via Psychoacoustic Steganography ("Vouch Sonic") 
+**Publication Date:** January 20, 2026 
+**Prior Art Effective Date:** January 20, 2026 
+**Status:** Public Disclosure (Defensive Publication) 
+**Category:** Audio Security / Signal Processing / Deepfake Detection / Content Authentication 
+**Author:** Ramprasad Anandam Gaddam 
 
 ---
 
@@ -67,18 +67,18 @@ The embedded provenance packet contains:
 
 ```json
 {
-  "version": "1.0",
-  "type": "audio_provenance",
-  "signer_did": "did:key:z6MkhaXgBZDvotDkL5LmCWaEe...",
-  "content_hash": "sha256:a1b2c3d4...",
-  "timestamp_utc": 1737352800,
-  "nonce": "random_32_bytes_hex",
-  "signature": "ed25519_signature_base64",
-  "metadata": {
-    "title": "Interview Episode 42",
-    "duration_ms": 3600000,
-    "sample_rate": 48000
-  }
+ "version": "1.0",
+ "type": "audio_provenance",
+ "signer_did": "did:key:z6MkhaXgBZDvotDkL5LmCWaEe...",
+ "content_hash": "sha256:a1b2c3d4...",
+ "timestamp_utc": 1737352800,
+ "nonce": "random_32_bytes_hex",
+ "signature": "ed25519_signature_base64",
+ "metadata": {
+  "title": "Interview Episode 42",
+  "duration_ms": 3600000,
+  "sample_rate": 48000
+ }
 }
 ```
 
@@ -93,11 +93,11 @@ When a strong tone is present at frequency f₀, nearby frequencies within the c
 
 ```
 Masking Threshold Calculation:
-  T(f) = P(f₀) - spread_function(|f - f₀|)
+ T(f) = P(f₀) - spread_function(|f - f₀|)
 
 Where:
-  P(f₀) = Power of masking tone at f₀
-  spread_function = Empirical masking spread (Bark scale)
+ P(f₀) = Power of masking tone at f₀
+ spread_function = Empirical masking spread (Bark scale)
 ```
 
 **2. Temporal Masking (Time Domain)**
@@ -113,20 +113,20 @@ Below certain frequency-dependent thresholds, sounds are inaudible regardless of
 **Composite Masking Model:**
 ```python
 def calculate_injection_capacity(audio_frame):
-    spectrum = fft(audio_frame)
-    
-    # Frequency masking
-    freq_mask = compute_frequency_masking_curve(spectrum)
-    
-    # Temporal masking from previous frames
-    temp_mask = compute_temporal_masking(previous_frames)
-    
-    # Combine with absolute threshold
-    combined = max(freq_mask, temp_mask, absolute_threshold)
-    
-    # Available capacity = gap between signal and mask
-    capacity = spectrum - combined
-    return capacity[capacity > 0]
+  spectrum = fft(audio_frame)
+
+  # Frequency masking
+  freq_mask = compute_frequency_masking_curve(spectrum)
+
+  # Temporal masking from previous frames
+  temp_mask = compute_temporal_masking(previous_frames)
+
+  # Combine with absolute threshold
+  combined = max(freq_mask, temp_mask, absolute_threshold)
+
+  # Available capacity = gap between signal and mask
+  capacity = spectrum - combined
+  return capacity[capacity > 0]
 ```
 
 #### 3.1.3 Spread Spectrum Injection
@@ -154,35 +154,35 @@ The decoder is designed to recover provenance from degraded signals:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    DECODER PIPELINE                          │
+│          DECODER PIPELINE             │
 ├──────────────────────────────────────────────────────────────┤
-│  Audio Input                                                 │
-│      ↓                                                       │
-│  [Pre-Processing]                                            │
-│   - Noise reduction                                          │
-│   - Resampling to 44.1kHz                                    │
-│   - Normalization                                            │
-│      ↓                                                       │
-│  [Synchronization]                                           │
-│   - Chirp detection for frame alignment                      │
-│   - Time-scale compensation                                  │
-│      ↓                                                       │
-│  [Watermark Extraction]                                      │
-│   - FFT analysis                                             │
-│   - Correlation with known PN sequence                       │
-│   - Bit extraction from sub-bands                            │
-│      ↓                                                       │
-│  [Error Correction]                                          │
-│   - Reed-Solomon / LDPC decoding                             │
-│   - Majority voting across redundant copies                  │
-│      ↓                                                       │
-│  [Cryptographic Verification]                                │
-│   - Payload reconstruction                                   │
-│   - Ed25519 signature verification                           │
-│   - DID resolution and trust evaluation                      │
-│      ↓                                                       │
-│  [Output]                                                    │
-│   - Verified provenance or detection failure reason          │
+│ Audio Input                         │
+│   ↓                            │
+│ [Pre-Processing]                      │
+│  - Noise reduction                     │
+│  - Resampling to 44.1kHz                  │
+│  - Normalization                      │
+│   ↓                            │
+│ [Synchronization]                      │
+│  - Chirp detection for frame alignment           │
+│  - Time-scale compensation                 │
+│   ↓                            │
+│ [Watermark Extraction]                   │
+│  - FFT analysis                       │
+│  - Correlation with known PN sequence            │
+│  - Bit extraction from sub-bands              │
+│   ↓                            │
+│ [Error Correction]                     │
+│  - Reed-Solomon / LDPC decoding               │
+│  - Majority voting across redundant copies         │
+│   ↓                            │
+│ [Cryptographic Verification]                │
+│  - Payload reconstruction                  │
+│  - Ed25519 signature verification              │
+│  - DID resolution and trust evaluation           │
+│   ↓                            │
+│ [Output]                          │
+│  - Verified provenance or detection failure reason     │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -366,4 +366,4 @@ The Vouch Sonic protocol addresses the fundamental fragility of container-based 
 - M. Arnold, "Audio Watermarking: Features, Applications, and Algorithms"
 - I. Cox et al., "Digital Watermarking and Steganography"
 - Vouch Protocol: Prior Art Disclosures PAD-001 through PAD-013
-- W3C Decentralized Identifiers (DIDs) v1.0
+- Decentralized Identifiers (DIDs) v1.0

@@ -3,11 +3,11 @@
 Cryptographically sign your AI agent's actions. Works with Claude Desktop, Cursor, and any MCP client.
 
 > **v1.0 note.** The examples below use the legacy `Vouch-Token` HTTP
-> header form (JWS Compact). New deployments should prefer the W3C VC +
+> header form (JWS Compact). New deployments should prefer the VC +
 > Data Integrity path: `signer.sign_credential(intent={...})` returns a
 > credential that travels in the request body with content-type
 > `application/vouch+credential+json`. See the
-> [W3C CG Report](https://vouch-protocol.com/specs/CG-REPORT/) for the
+> [Specification](https://vouch-protocol.com/specs/SPEC/) for the
 > v1.0 normative spec. Both paths interoperate against the same DID.
 
 ---
@@ -46,15 +46,15 @@ Edit your config file:
 
 ```json
 {
-  "mcpServers": {
-    "vouch": {
-      "command": "vouch-mcp",
-      "env": {
-        "VOUCH_PRIVATE_KEY": "<paste your key here>",
-        "VOUCH_DID": "did:vouch:abc123..."
-      }
-    }
+ "mcpServers": {
+  "vouch": {
+   "command": "vouch-mcp",
+   "env": {
+    "VOUCH_PRIVATE_KEY": "<paste your key here>",
+    "VOUCH_DID": "did:vouch:abc123..."
+   }
   }
+ }
 }
 ```
 

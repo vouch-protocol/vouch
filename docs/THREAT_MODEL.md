@@ -15,7 +15,7 @@ Vouch Protocol provides cryptographic identity for AI agents. This document just
 | Asset | Description | Sensitivity |
 |-------|-------------|-------------|
 | Private Keys | Ed25519 signing keys (and optional ML-DSA-44 for hybrid profile) | **Critical** - Must never be exposed |
-| Vouch Credentials (v1.0) | W3C VCs secured by Data Integrity proofs | Medium - Contain claims, time-limited |
+| Vouch Credentials (v1.0) | Verifiable Credentials secured by Data Integrity proofs | Medium - Contain claims, time-limited |
 | Vouch Tokens (legacy v0.x) | Signed JWS tokens | Medium - Contain claims, time-limited |
 | Public Keys | Ed25519 (and optional ML-DSA-44) verification keys | Low - Intentionally public |
 | Agent DIDs | Decentralized identifiers | Low - Public identifiers |
@@ -26,21 +26,21 @@ Vouch Protocol provides cryptographic identity for AI agents. This document just
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    TRUSTED ZONE                              │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
-│  │ AI Agent    │───▶│ Vouch SDK   │───▶│ Private Key │      │
-│  │ (LangChain, │    │ (signing)   │    │ (keystore)  │      │
-│  │  CrewAI)    │    └─────────────┘    └─────────────┘      │
-│  └─────────────┘                                             │
+│          TRUSTED ZONE               │
+│ ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │
+│ │ AI Agent  │───▶│ Vouch SDK  │───▶│ Private Key │   │
+│ │ (LangChain, │  │ (signing)  │  │ (keystore) │   │
+│ │ CrewAI)  │  └─────────────┘  └─────────────┘   │
+│ └─────────────┘                       │
 └────────────────────────────┬────────────────────────────────┘
-                             │ Vouch-Token (HTTP Header)
-                             ▼
+               │ Vouch-Token (HTTP Header)
+               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   UNTRUSTED ZONE                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
-│  │ Network     │───▶│ API Server  │───▶│ Vouch SDK   │      │
-│  │ (Internet)  │    │ (receiver)  │    │ (verify)    │      │
-│  └─────────────┘    └─────────────┘    └─────────────┘      │
+│          UNTRUSTED ZONE               │
+│ ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │
+│ │ Network   │───▶│ API Server │───▶│ Vouch SDK  │   │
+│ │ (Internet) │  │ (receiver) │  │ (verify)  │   │
+│ └─────────────┘  └─────────────┘  └─────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -102,10 +102,10 @@ Vouch Protocol provides cryptographic identity for AI agents. This document just
 |-----------|-----------|-----------|
 | Default signing | Ed25519 (EdDSA, RFC 8032) | Modern, fast, small keys, no known weaknesses |
 | Hybrid signing (optional) | Ed25519 + ML-DSA-44 (FIPS 204) | Quantum-safe migration path; both signatures must validate |
-| Cryptosuite (default) | `eddsa-jcs-2022` (W3C Data Integrity) | W3C-aligned; no JOSE/JWS dependency in v1.0 |
-| Cryptosuite (hybrid) | `hybrid-eddsa-mldsa44-jcs-2026` | Defined per W3C CG Report §13.2 |
+| Cryptosuite (default) | `eddsa-jcs-2022` (Data Integrity) | standards-aligned; no JOSE/JWS dependency in v1.0 |
+| Cryptosuite (hybrid) | `hybrid-eddsa-mldsa44-jcs-2026` | Defined per Specification §13.2 |
 | Canonicalization | JCS (RFC 8785) | Deterministic, parser-independent, no JSON-LD overhead |
-| Key encoding | Multikey (W3C Controlled Identifiers) | Algorithm-agnostic, future-compatible |
+| Key encoding | Multikey (Controlled Identifiers) | Algorithm-agnostic, future-compatible |
 | Legacy token format (v0.x) | JWS Compact (RFC 7515) | Retained for backward compatibility window |
 | Key encryption | ChaCha20-Poly1305 | AEAD cipher, resistant to timing attacks |
 | Key derivation | Scrypt | Memory-hard, resistant to GPU/ASIC attacks |
@@ -132,8 +132,8 @@ in v1.0; v1.1 is expected to RECOMMEND it for regulated sectors.
 - [Ed25519 Paper](https://ed25519.cr.yp.to/)
 - [RFC 8032 - EdDSA](https://www.rfc-editor.org/rfc/rfc8032)
 - [RFC 8785 - JSON Canonicalization Scheme](https://www.rfc-editor.org/rfc/rfc8785)
-- [W3C Verifiable Credentials Data Model 2.0](https://www.w3.org/TR/vc-data-model-2.0/)
-- [W3C Data Integrity 1.0](https://www.w3.org/TR/vc-data-integrity/)
+- [Verifiable Credentials Data Model 2.0](https://www.w3.org/TR/vc-data-model-2.0/)
+- [Data Integrity 1.0](https://www.w3.org/TR/vc-data-integrity/)
 - [W3C `eddsa-jcs-2022` cryptosuite](https://www.w3.org/TR/vc-di-eddsa/#eddsa-jcs-2022)
 - [FIPS 204 - ML-DSA](https://csrc.nist.gov/pubs/fips/204/final)
 - [RFC 7515 - JWS (legacy)](https://tools.ietf.org/html/rfc7515)

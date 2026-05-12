@@ -17,7 +17,7 @@
 A method for resolving the verification algorithm of a Decentralized
 Identifier's signing key directly from the key's encoding, without
 out-of-band agreement, JOSE `alg` header negotiation, or protocol
-version coordination. The method uses W3C Multikey
+version coordination. The method uses Multikey
 (multibase + multicodec) such that the first two bytes after the
 multibase prefix unambiguously identify the cryptographic algorithm. A
 verifier reads the prefix, selects the algorithm, and proceeds.
@@ -44,10 +44,10 @@ mechanisms requires coordination:
 
 - Hardcoded algorithm: requires verifier code change and redeployment.
 - Signed envelope header: requires the verifier to accept and validate
-  the new header value. Algorithm-confusion attacks are a known class
-  of vulnerability when verifiers blindly trust the header.
+ the new header value. Algorithm-confusion attacks are a known class
+ of vulnerability when verifiers blindly trust the header.
 - Accept-list per issuer: requires operational coordination per issuer
-  per migration phase.
+ per migration phase.
 
 None of these are zero-coordination. All require the verifier to be
 told, somehow, that a new algorithm is now in scope.
@@ -56,7 +56,7 @@ told, somehow, that a new algorithm is now in scope.
 
 ### 3.1 Multikey-Encoded Verification Methods
 
-Every verification method in a DID Document is encoded as W3C Multikey:
+Every verification method in a DID Document is encoded as Multikey:
 
 ```
 publicKeyMultibase = "z" + base58btc(multicodec_prefix || raw_key_bytes)
@@ -76,7 +76,7 @@ The 2-byte multicodec prefix is the algorithm identifier:
 The verifier:
 
 1. Reads the verification method's `publicKeyMultibase` from the DID
-   Document.
+  Document.
 2. Decodes the multibase prefix (`z` -> base58btc).
 3. Reads the first 2 bytes of the decoded payload.
 4. Looks up the algorithm in a table.
@@ -93,9 +93,9 @@ A regulated agent issuer migrates from Ed25519 to ML-DSA-44 by:
 
 1. Generating a new ML-DSA-44 keypair.
 2. Publishing the new public key in the DID Document as a Multikey
-   verification method (`#key-2`).
+  verification method (`#key-2`).
 3. Issuing future credentials that point at `#key-2` in their `proof.
-   verificationMethod` field.
+  verificationMethod` field.
 
 Verifiers that already implement ML-DSA-44 begin verifying immediately,
 without any coordination. Verifiers that have not yet implemented
@@ -171,7 +171,7 @@ algorithm as a property of the key, declared once per public-key
 publication. The downstream effects (zero-coordination migration,
 elimination of algorithm-confusion attack surface, forward
 compatibility) follow from this single architectural decision and are
-not obvious from the prior art. Combined with W3C Data Integrity (where
+not obvious from the prior art. Combined with Data Integrity (where
 the cryptosuite identifier in the proof maps the proof's structural
 expectations) and the same-bytes hybrid construction (PAD-040), the
 result is an identity verification surface that admits algorithm

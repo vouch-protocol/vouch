@@ -1,4 +1,4 @@
-// Vouch Credential issuance using W3C Verifiable Credentials with
+// Vouch Credential issuance using Verifiable Credentials with
 // Data Integrity proofs (eddsa-jcs-2022).
 //
 // This file extends Signer with a credential-issuance path that coexists
@@ -23,7 +23,7 @@ const maxDelegationDepth = 5
 // SignCredentialOptions configures Signer.SignCredential.
 type SignCredentialOptions struct {
 	// Intent is the action being authorized. Must contain action, target,
-	// resource (W3C CG Report §5.4.1).
+	// resource (Specification §5.4.1).
 	Intent map[string]any
 
 	// ValidSeconds overrides the default validity window (Signer.defaultExpiry).
@@ -50,13 +50,13 @@ type SignCredentialOptions struct {
 
 	// CredentialStatus is an optional W3C credentialStatus entry, typically
 	// built via BuildStatusListEntry to reference a BitstringStatusListCredential
-	// (W3C CG Report §11.2). When non-nil, it is attached to the credential
+	// (Specification §11.2). When non-nil, it is attached to the credential
 	// as the `credentialStatus` property.
 	CredentialStatus map[string]any
 }
 
-// SignCredential issues a W3C Verifiable Credential with a Data Integrity
-// proof using the eddsa-jcs-2022 cryptosuite (W3C CG Report §5, §7.1).
+// SignCredential issues a Verifiable Credential with a Data Integrity
+// proof using the eddsa-jcs-2022 cryptosuite (Specification §5, §7.1).
 // Returns the credential as a map suitable for JSON serialization.
 func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, error) {
 	chain := opts.DelegationChain
@@ -74,13 +74,13 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
-		IssuerDID:        s.did,
-		Intent:           opts.Intent,
-		ValidSeconds:     validSeconds,
-		ReputationScore:  opts.ReputationScore,
-		DelegationChain:  chain,
-		CredentialID:     opts.CredentialID,
-		ValidFrom:        opts.ValidFrom,
+		IssuerDID:    s.did,
+		Intent:      opts.Intent,
+		ValidSeconds:   validSeconds,
+		ReputationScore: opts.ReputationScore,
+		DelegationChain: chain,
+		CredentialID:   opts.CredentialID,
+		ValidFrom:    opts.ValidFrom,
 		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 	}
 
 	proof, err := BuildDataIntegrityProof(cred, BuildProofOptions{
-		PrivateKey:         s.ed25519Private,
+		PrivateKey:     s.ed25519Private,
 		VerificationMethod: s.VerificationMethodID(),
 	})
 	if err != nil {
@@ -110,21 +110,21 @@ func (s *Signer) SignCredentialJSON(opts SignCredentialOptions) ([]byte, error) 
 }
 
 // VerificationMethodID returns the canonical verification method identifier
-// for this signer (W3C CG Report §5.5).
+// for this signer (Specification §5.5).
 func (s *Signer) VerificationMethodID() string {
 	return s.did + "#key-1"
 }
 
-// PublicKeyMultikey returns the Ed25519 public key in W3C Multikey format
+// PublicKeyMultikey returns the Ed25519 public key in Multikey format
 // (z-prefixed base58btc with the Ed25519 multicodec prefix). Used in
-// modern DID Documents per W3C CG Report §4.3.
+// modern DID Documents per Specification §4.3.
 func (s *Signer) PublicKeyMultikey() (string, error) {
 	return EncodeEd25519Public(s.ed25519Public)
 }
 
-// PublicKeyMLDSA44Multikey returns the ML-DSA-44 public key in W3C Multikey
+// PublicKeyMLDSA44Multikey returns the ML-DSA-44 public key in Multikey
 // format. Used in DID Documents alongside the Ed25519 entry when the
-// hybrid post-quantum profile is active (W3C CG Report §13.2).
+// hybrid post-quantum profile is active (Specification §13.2).
 func (s *Signer) PublicKeyMLDSA44Multikey() (string, error) {
 	pubBytes, err := s.mldsa44Public.MarshalBinary()
 	if err != nil {
@@ -149,7 +149,7 @@ func (s *Signer) DID() string {
 }
 
 // SignCredentialHybrid issues a Vouch Credential under the hybrid
-// post-quantum profile (W3C CG Report §13.2). The credential carries a
+// post-quantum profile (Specification §13.2). The credential carries a
 // hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof containing both an
 // Ed25519 signature and an ML-DSA-44 signature over the same canonical form.
 // Verification REQUIRES both signatures to validate.
@@ -173,13 +173,13 @@ func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]an
 	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
-		IssuerDID:        s.did,
-		Intent:           opts.Intent,
-		ValidSeconds:     validSeconds,
-		ReputationScore:  opts.ReputationScore,
-		DelegationChain:  chain,
-		CredentialID:     opts.CredentialID,
-		ValidFrom:        opts.ValidFrom,
+		IssuerDID:    s.did,
+		Intent:      opts.Intent,
+		ValidSeconds:   validSeconds,
+		ReputationScore: opts.ReputationScore,
+		DelegationChain: chain,
+		CredentialID:   opts.CredentialID,
+		ValidFrom:    opts.ValidFrom,
 		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
@@ -187,8 +187,8 @@ func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]an
 	}
 
 	proof, err := BuildHybridDataIntegrityProof(cred, BuildHybridProofOptions{
-		Ed25519PrivateKey:  s.ed25519Private,
-		MLDSA44PrivateKey:  s.mldsa44Private,
+		Ed25519PrivateKey: s.ed25519Private,
+		MLDSA44PrivateKey: s.mldsa44Private,
 		VerificationMethod: s.VerificationMethodID(),
 	})
 	if err != nil {
@@ -252,11 +252,11 @@ func (s *Signer) extendDelegationChain(
 	parentValidUntil, _ := parentCredential["validUntil"].(string)
 
 	newLink := map[string]any{
-		"issuer":           parentIssuer,
-		"subject":          s.did,
-		"intent":           currentIntent,
-		"validFrom":        parentValidFrom,
-		"validUntil":       parentValidUntil,
+		"issuer":      parentIssuer,
+		"subject":     s.did,
+		"intent":      currentIntent,
+		"validFrom":    parentValidFrom,
+		"validUntil":    parentValidUntil,
 		"parentProofValue": parentProofValue,
 	}
 

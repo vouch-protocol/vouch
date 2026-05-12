@@ -30,10 +30,10 @@ This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating
 
 - Check if the bug is already reported in [Issues](https://github.com/vouch-protocol/vouch/issues)
 - If not, create a new issue with:
-  - Clear title and description
-  - Steps to reproduce
-  - Expected vs actual behavior
-  - Python version and OS
+ - Clear title and description
+ - Steps to reproduce
+ - Expected vs actual behavior
+ - Python version and OS
 
 ### Suggesting Features
 
@@ -54,7 +54,7 @@ cd vouch
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -e ".[dev]"
@@ -66,26 +66,26 @@ pytest tests/ -v
 ## Pull Request Process
 
 1. **Create a branch** from `main`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+  ```bash
+  git checkout -b feature/your-feature-name
+  ```
 
 2. **Make changes** and add tests
 
 3. **Run tests** to ensure everything passes:
-   ```bash
-   pytest tests/ -v
-   ```
+  ```bash
+  pytest tests/ -v
+  ```
 
 4. **Commit with DCO sign-off** (required):
-   ```bash
-   git commit -s -m "feat: Add your feature description"
-   ```
+  ```bash
+  git commit -s -m "feat: Add your feature description"
+  ```
 
 5. **Push** to your fork:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+  ```bash
+  git push origin feature/your-feature-name
+  ```
 
 6. **Open a Pull Request** against `main`
 
@@ -121,35 +121,35 @@ Types:
 
 ```python
 def verify_credential(
-    credential: dict[str, Any] | str,
-    public_key: Ed25519PublicKey | str,
+  credential: dict[str, Any] | str,
+  public_key: Ed25519PublicKey | str,
 ) -> tuple[bool, Optional[CredentialPassport]]:
-    """
-    Verify a v1.0 Vouch Credential (W3C VC + Data Integrity).
+  """
+  Verify a v1.0 Vouch Credential (VC + Data Integrity).
 
-    Args:
-        credential: A Vouch Credential object or a JSON-encoded string.
-        public_key: An Ed25519PublicKey, a Multikey string, or a JWK form.
+  Args:
+    credential: A Vouch Credential object or a JSON-encoded string.
+    public_key: An Ed25519PublicKey, a Multikey string, or a JWK form.
 
-    Returns:
-        Tuple of (is_valid, CredentialPassport or None).
-    """
-    ...
+  Returns:
+    Tuple of (is_valid, CredentialPassport or None).
+  """
+  ...
 
 
 def verify_token(token: str, public_key: str) -> tuple[bool, Optional[Passport]]:
-    """
-    Verify a legacy v0.x Vouch-Token (JWS Compact). Retained for backward
-    compatibility during the deprecation window.
+  """
+  Verify a legacy v0.x Vouch-Token (JWS Compact). Retained for backward
+  compatibility during the deprecation window.
 
-    Args:
-        token: The JWS compact serialized token.
-        public_key: JWK JSON string of the public key.
+  Args:
+    token: The JWS compact serialized token.
+    public_key: JWK JSON string of the public key.
 
-    Returns:
-        Tuple of (is_valid, Passport or None).
-    """
-    ...
+  Returns:
+    Tuple of (is_valid, Passport or None).
+  """
+  ...
 ```
 
 ## DCO Sign-Off
@@ -192,16 +192,16 @@ git push --force-with-lease
 
 We follow Semantic Versioning. To create a new release:
 
-1.  **Update Version**: Bump version in `pyproject.toml`
-2.  **Commit**: `git commit -m "chore: bump version to X.Y.Z"`
-3.  **Tag**: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
-4.  **Push**: `git push origin main --tags`
-5.  **Build & Publish**:
-    ```bash
-    pip install build twine
-    python -m build
-    twine upload dist/*
-    ```
+1. **Update Version**: Bump version in `pyproject.toml`
+2. **Commit**: `git commit -m "chore: bump version to X.Y.Z"`
+3. **Tag**: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+4. **Push**: `git push origin main --tags`
+5. **Build & Publish**:
+  ```bash
+  pip install build twine
+  python -m build
+  twine upload dist/*
+  ```
 
 ---
 

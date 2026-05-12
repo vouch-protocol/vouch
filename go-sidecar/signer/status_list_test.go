@@ -1,4 +1,4 @@
-// Tests for the W3C BitstringStatusList implementation (W3C CG Report §11.2).
+// Tests for the BitstringStatusList implementation (Specification §11.2).
 //
 // Mirrors tests/test_status_list.py and packages/sdk-ts/tests/status-list.test.ts.
 // Cross-language interop is verified against the canonical test vector at
@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	testStatusURL  = "https://issuer.example/status/1"
-	testIssuerDID  = "did:web:issuer.example"
+	testStatusURL = "https://issuer.example/status/1"
+	testIssuerDID = "did:web:issuer.example"
 )
 
 // ---------------------------------------------------------------------------
@@ -205,7 +205,7 @@ func TestBuildStatusListCredentialShape(t *testing.T) {
 	sl, _ := NewStatusList(testStatusURL, "", 0)
 	_ = sl.Revoke(7)
 	vc, err := BuildStatusListCredential(BuildStatusListCredentialOptions{
-		IssuerDID:  testIssuerDID,
+		IssuerDID: testIssuerDID,
 		StatusList: sl,
 	})
 	if err != nil {
@@ -234,7 +234,7 @@ func TestBuildStatusListCredentialShape(t *testing.T) {
 func TestBuildStatusListEntryShape(t *testing.T) {
 	entry, err := BuildStatusListEntry(BuildStatusListEntryOptions{
 		StatusListCredential: testStatusURL,
-		StatusListIndex:      42,
+		StatusListIndex:   42,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -250,7 +250,7 @@ func TestBuildStatusListEntryShape(t *testing.T) {
 func TestBuildStatusListEntryRejectsNegativeIndex(t *testing.T) {
 	_, err := BuildStatusListEntry(BuildStatusListEntryOptions{
 		StatusListCredential: testStatusURL,
-		StatusListIndex:      -1,
+		StatusListIndex:   -1,
 	})
 	if err == nil {
 		t.Error("expected error for negative index")
@@ -268,7 +268,7 @@ func buildPair(t *testing.T, revoked ...int) (*StatusList, map[string]any) {
 		_ = sl.Revoke(idx)
 	}
 	vc, err := BuildStatusListCredential(BuildStatusListCredentialOptions{
-		IssuerDID:  testIssuerDID,
+		IssuerDID: testIssuerDID,
 		StatusList: sl,
 	})
 	if err != nil {
@@ -281,7 +281,7 @@ func TestVerifyStatusUnsetReturnsFalse(t *testing.T) {
 	_, vc := buildPair(t)
 	entry, _ := BuildStatusListEntry(BuildStatusListEntryOptions{
 		StatusListCredential: testStatusURL,
-		StatusListIndex:      10,
+		StatusListIndex:   10,
 	})
 	got, err := VerifyStatus(entry, vc)
 	if err != nil {
@@ -296,7 +296,7 @@ func TestVerifyStatusSetReturnsTrue(t *testing.T) {
 	_, vc := buildPair(t, 10)
 	entry, _ := BuildStatusListEntry(BuildStatusListEntryOptions{
 		StatusListCredential: testStatusURL,
-		StatusListIndex:      10,
+		StatusListIndex:   10,
 	})
 	got, err := VerifyStatus(entry, vc)
 	if err != nil {
@@ -311,7 +311,7 @@ func TestVerifyStatusIDMismatchRaises(t *testing.T) {
 	_, vc := buildPair(t)
 	entry, _ := BuildStatusListEntry(BuildStatusListEntryOptions{
 		StatusListCredential: "https://other.example/status/9",
-		StatusListIndex:      0,
+		StatusListIndex:   0,
 	})
 	if _, err := VerifyStatus(entry, vc); err == nil {
 		t.Error("expected error for id mismatch")
@@ -321,13 +321,13 @@ func TestVerifyStatusIDMismatchRaises(t *testing.T) {
 func TestVerifyStatusPurposeMismatchRaises(t *testing.T) {
 	sl, _ := NewStatusList(testStatusURL, StatusPurposeSuspension, 0)
 	vc, _ := BuildStatusListCredential(BuildStatusListCredentialOptions{
-		IssuerDID:  testIssuerDID,
+		IssuerDID: testIssuerDID,
 		StatusList: sl,
 	})
 	entry, _ := BuildStatusListEntry(BuildStatusListEntryOptions{
 		StatusListCredential: testStatusURL,
-		StatusListIndex:      0,
-		StatusPurpose:        StatusPurposeRevocation,
+		StatusListIndex:   0,
+		StatusPurpose:    StatusPurposeRevocation,
 	})
 	if _, err := VerifyStatus(entry, vc); err == nil {
 		t.Error("expected error for purpose mismatch")
@@ -339,16 +339,16 @@ func TestVerifyStatusPurposeMismatchRaises(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 type statusListVector struct {
-	StatusListID                    string         `json:"status_list_id"`
-	IssuerDID                       string         `json:"issuer_did"`
-	BitstringLengthBits             int            `json:"bitstring_length_bits"`
-	StatusPurpose                   string         `json:"status_purpose"`
-	RevokedIndices                  []int          `json:"revoked_indices"`
-	ActiveIndicesSample             []int          `json:"active_indices_sample"`
-	ExpectedEncodedList             string         `json:"expected_encoded_list"`
-	StatusListCredential            map[string]any `json:"status_list_credential"`
-	SampleCredentialStatusRevoked   map[string]any `json:"sample_credential_status_revoked"`
-	SampleCredentialStatusActive    map[string]any `json:"sample_credential_status_active"`
+	StatusListID          string     `json:"status_list_id"`
+	IssuerDID            string     `json:"issuer_did"`
+	BitstringLengthBits       int      `json:"bitstring_length_bits"`
+	StatusPurpose          string     `json:"status_purpose"`
+	RevokedIndices         []int     `json:"revoked_indices"`
+	ActiveIndicesSample       []int     `json:"active_indices_sample"`
+	ExpectedEncodedList       string     `json:"expected_encoded_list"`
+	StatusListCredential      map[string]any `json:"status_list_credential"`
+	SampleCredentialStatusRevoked  map[string]any `json:"sample_credential_status_revoked"`
+	SampleCredentialStatusActive  map[string]any `json:"sample_credential_status_active"`
 }
 
 func loadStatusListVector(t *testing.T) statusListVector {
@@ -372,7 +372,7 @@ func loadStatusListVector(t *testing.T) statusListVector {
 func TestStatusListInteropEncodingDecodesEquivalent(t *testing.T) {
 	// Go's compress/flate produces a valid DEFLATE stream that is byte-different
 	// from Python/zlib's output (different DEFLATE encoder), but both decompress
-	// to the same bitstring. W3C BitstringStatusList requires equivalence of the
+	// to the same bitstring. BitstringStatusList requires equivalence of the
 	// decompressed bitstring, not the gzip envelope, so the right interop check
 	// is decoded equivalence rather than encoded byte-identity.
 	v := loadStatusListVector(t)

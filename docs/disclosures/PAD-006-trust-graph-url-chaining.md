@@ -1,9 +1,9 @@
 # Defensive Disclosure: URL-Based Credential Chaining ("Trust Graph")
 
-**Disclosure ID:** PAD-006  
-**Publication Date:** January 10, 2026  
-**Author:** Ramprasad Anandam Gaddam  
-**Status:** Public Domain / Prior Art  
+**Disclosure ID:** PAD-006 
+**Publication Date:** January 10, 2026 
+**Author:** Ramprasad Anandam Gaddam 
+**Status:** Public Domain / Prior Art 
 
 ---
 
@@ -23,7 +23,7 @@ Verifying an organization's employee (e.g., "Alice at The New York Times") typic
 4. **Online Connectivity**: Real-time access to issuer verification endpoints
 
 These requirements create friction for:
-- Mobile verification (limited storage, intermittent connectivity)  
+- Mobile verification (limited storage, intermittent connectivity) 
 - Physical media (QR codes on printed documents)
 - Cross-platform interoperability (different apps for different issuers)
 
@@ -37,44 +37,44 @@ We disclose a transport mechanism that encodes a hierarchical Chain of Trust int
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  TRUST GRAPH URL FLOW                       │
+│         TRUST GRAPH URL FLOW            │
 ├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  THE ARTIFACT:                                              │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  QR Code / Short Link                                │   │
-│  │  vouch.me/v/abc123                                   │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│                           ▼                                 │
-│  THE FETCH:                                                 │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  GET vouch.me/v/abc123                               │   │
-│  │  Accept: application/ld+json                         │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│                           ▼                                 │
-│  THE RESPONSE (JSON-LD Credential Chain):                   │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  {                                                   │   │
-│  │    "@context": ["https://www.w3.org/2018/credentials/v1"],│
-│  │    "credentialChain": [                              │   │
-│  │      { ROOT: Protocol validates Org DID },           │   │
-│  │      { INTERMEDIATE: Org certifies Employee DID },   │   │
-│  │      { LEAF: Employee Key signs Content }            │   │
-│  │    ]                                                 │   │
-│  │  }                                                   │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                           │                                 │
-│                           ▼                                 │
-│  CLIENT VALIDATION:                                         │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  1. Verify ROOT: Is Org in trusted directory?        │   │
-│  │  2. Verify INTERMEDIATE: Is credential unexpired?    │   │
-│  │  3. Verify LEAF: Does signature match content?       │   │
-│  │  4. Display: "✅ Alice @ New York Times"             │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
+│                               │
+│ THE ARTIFACT:                       │
+│ ┌─────────────────────────────────────────────────────┐  │
+│ │ QR Code / Short Link                │  │
+│ │ vouch.me/v/abc123                  │  │
+│ └─────────────────────────────────────────────────────┘  │
+│              │                 │
+│              ▼                 │
+│ THE FETCH:                         │
+│ ┌─────────────────────────────────────────────────────┐  │
+│ │ GET vouch.me/v/abc123                │  │
+│ │ Accept: application/ld+json             │  │
+│ └─────────────────────────────────────────────────────┘  │
+│              │                 │
+│              ▼                 │
+│ THE RESPONSE (JSON-LD Credential Chain):          │
+│ ┌─────────────────────────────────────────────────────┐  │
+│ │ {                          │  │
+│ │  "@context": ["https://www.w3.org/2018/credentials/v1"],│
+│ │  "credentialChain": [               │  │
+│ │   { ROOT: Protocol validates Org DID },      │  │
+│ │   { INTERMEDIATE: Org certifies Employee DID },  │  │
+│ │   { LEAF: Employee Key signs Content }      │  │
+│ │  ]                         │  │
+│ │ }                          │  │
+│ └─────────────────────────────────────────────────────┘  │
+│              │                 │
+│              ▼                 │
+│ CLIENT VALIDATION:                     │
+│ ┌─────────────────────────────────────────────────────┐  │
+│ │ 1. Verify ROOT: Is Org in trusted directory?    │  │
+│ │ 2. Verify INTERMEDIATE: Is credential unexpired?  │  │
+│ │ 3. Verify LEAF: Does signature match content?    │  │
+│ │ 4. Display: "✅ Alice @ New York Times"       │  │
+│ └─────────────────────────────────────────────────────┘  │
+│                               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -82,42 +82,42 @@ We disclose a transport mechanism that encodes a hierarchical Chain of Trust int
 
 ```json
 {
-  "@context": [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://vouch-protocol.com/v1"
-  ],
-  "type": "VouchCredentialChain",
-  "credentialChain": [
-    {
-      "type": "OrganizationCredential",
-      "issuer": "did:vouch:protocol",
-      "credentialSubject": {
-        "id": "did:vouch:nyt",
-        "name": "The New York Times",
-        "domain": "nytimes.com",
-        "verificationMethod": "https://nytimes.com/.well-known/vouch.json"
-      },
-      "proof": { "type": "Ed25519Signature2020", ... }
-    },
-    {
-      "type": "EmploymentCredential", 
-      "issuer": "did:vouch:nyt",
-      "credentialSubject": {
-        "id": "did:key:z6MkhaXgBZD...",
-        "role": "Senior Photographer",
-        "department": "Editorial"
-      },
-      "expirationDate": "2027-01-08T00:00:00Z",
-      "proof": { "type": "Ed25519Signature2020", ... }
-    },
-    {
-      "type": "ContentSignature",
-      "signer": "did:key:z6MkhaXgBZD...",
-      "contentHash": "sha256:a7b3c9d2...",
-      "signedAt": "2026-01-08T12:00:00Z",
-      "proof": { "type": "Ed25519Signature2020", ... }
-    }
-  ]
+ "@context": [
+  "https://www.w3.org/2018/credentials/v1",
+  "https://vouch-protocol.com/v1"
+ ],
+ "type": "VouchCredentialChain",
+ "credentialChain": [
+  {
+   "type": "OrganizationCredential",
+   "issuer": "did:vouch:protocol",
+   "credentialSubject": {
+    "id": "did:vouch:nyt",
+    "name": "The New York Times",
+    "domain": "nytimes.com",
+    "verificationMethod": "https://nytimes.com/.well-known/vouch.json"
+   },
+   "proof": { "type": "Ed25519Signature2020", ... }
+  },
+  {
+   "type": "EmploymentCredential", 
+   "issuer": "did:vouch:nyt",
+   "credentialSubject": {
+    "id": "did:key:z6MkhaXgBZD...",
+    "role": "Senior Photographer",
+    "department": "Editorial"
+   },
+   "expirationDate": "2027-01-08T00:00:00Z",
+   "proof": { "type": "Ed25519Signature2020", ... }
+  },
+  {
+   "type": "ContentSignature",
+   "signer": "did:key:z6MkhaXgBZD...",
+   "contentHash": "sha256:a7b3c9d2...",
+   "signedAt": "2026-01-08T12:00:00Z",
+   "proof": { "type": "Ed25519Signature2020", ... }
+  }
+ ]
 }
 ```
 
@@ -125,40 +125,40 @@ We disclose a transport mechanism that encodes a hierarchical Chain of Trust int
 
 ```python
 def validate_chain(chain_url: str) -> VerificationResult:
-    # 1. Fetch chain from URL
-    response = fetch(chain_url, accept="application/ld+json")
-    chain = response.json()["credentialChain"]
-    
-    # 2. Validate ROOT (Organization is trusted)
-    org_cred = chain[0]
-    if not is_in_trusted_directory(org_cred["credentialSubject"]["id"]):
-        return VerificationResult(valid=False, error="Unknown organization")
-    if not verify_signature(org_cred):
-        return VerificationResult(valid=False, error="Invalid org signature")
-    
-    # 3. Validate INTERMEDIATE (Employee credential)
-    emp_cred = chain[1]
-    if emp_cred["issuer"] != org_cred["credentialSubject"]["id"]:
-        return VerificationResult(valid=False, error="Issuer mismatch")
-    if is_expired(emp_cred["expirationDate"]):
-        return VerificationResult(valid=False, error="Credential expired")
-    if not verify_signature(emp_cred):
-        return VerificationResult(valid=False, error="Invalid employee signature")
-    
-    # 4. Validate LEAF (Content signature)
-    content_sig = chain[2]
-    if content_sig["signer"] != emp_cred["credentialSubject"]["id"]:
-        return VerificationResult(valid=False, error="Signer mismatch")
-    if not verify_signature(content_sig):
-        return VerificationResult(valid=False, error="Invalid content signature")
-    
-    # 5. SUCCESS
-    return VerificationResult(
-        valid=True,
-        signer=emp_cred["credentialSubject"]["id"],
-        organization=org_cred["credentialSubject"]["name"],
-        role=emp_cred["credentialSubject"]["role"]
-    )
+  # 1. Fetch chain from URL
+  response = fetch(chain_url, accept="application/ld+json")
+  chain = response.json()["credentialChain"]
+
+  # 2. Validate ROOT (Organization is trusted)
+  org_cred = chain[0]
+  if not is_in_trusted_directory(org_cred["credentialSubject"]["id"]):
+    return VerificationResult(valid=False, error="Unknown organization")
+  if not verify_signature(org_cred):
+    return VerificationResult(valid=False, error="Invalid org signature")
+
+  # 3. Validate INTERMEDIATE (Employee credential)
+  emp_cred = chain[1]
+  if emp_cred["issuer"] != org_cred["credentialSubject"]["id"]:
+    return VerificationResult(valid=False, error="Issuer mismatch")
+  if is_expired(emp_cred["expirationDate"]):
+    return VerificationResult(valid=False, error="Credential expired")
+  if not verify_signature(emp_cred):
+    return VerificationResult(valid=False, error="Invalid employee signature")
+
+  # 4. Validate LEAF (Content signature)
+  content_sig = chain[2]
+  if content_sig["signer"] != emp_cred["credentialSubject"]["id"]:
+    return VerificationResult(valid=False, error="Signer mismatch")
+  if not verify_signature(content_sig):
+    return VerificationResult(valid=False, error="Invalid content signature")
+
+  # 5. SUCCESS
+  return VerificationResult(
+    valid=True,
+    signer=emp_cred["credentialSubject"]["id"],
+    organization=org_cred["credentialSubject"]["name"],
+    role=emp_cred["credentialSubject"]["role"]
+  )
 ```
 
 ### Benefits

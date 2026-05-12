@@ -4,7 +4,7 @@
 
 ## Current State (v1.5.0)
 
-Vouch Protocol is **feature-complete** across core identity, signing, verification, media, audio, and integrations. 22 PADs establish prior art. The protocol is ready for Linux Foundation AAIF submission and W3C specification donation.
+Vouch Protocol is **feature-complete** across core identity, signing, verification, media, audio, and integrations. 22 PADs establish prior art. The protocol is ready for Linux Foundation AAIF submission and external specification review.
 
 ---
 
@@ -16,7 +16,7 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 - [ ] Verify `pip install vouch-protocol` works cleanly on Python 3.9-3.12
 - [ ] Ensure `vouch init` → `vouch sign` → `vouch verify` flow works in under 60 seconds
 - [ ] First-run experience: `vouch init` should print a clear, beautiful welcome with DID
-- [ ] Add `vouch demo` command ,  guided walkthrough of sign → verify → git sign
+- [ ] Add `vouch demo` command , guided walkthrough of sign → verify → git sign
 
 ### 1.2 Documentation Site
 - [ ] Host docs at vouch-protocol.com/docs (or ReadTheDocs)
@@ -27,7 +27,7 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 - [ ] Architecture overview (DID resolution, token format, delegation)
 
 ### 1.3 Standards Documents
-- [ ] Finalize W3C Community Group Report
+- [ ] Finalize Vouch Specification (v1.6 normative)
 - [ ] Convert IETF Internet-Draft to xml2rfc format
 - [ ] Prepare LFAI submission materials
 - [ ] Create "Vouch Protocol in 5 Minutes" deck for Manu Sporny call
@@ -53,7 +53,7 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 
 ### 2.2 Git Signing UX
 *PAD-008 (Hybrid Identity Bootstrapping)*
-- [ ] `vouch git setup` ,  one-command SSH key generation + GitHub upload
+- [ ] `vouch git setup` , one-command SSH key generation + GitHub upload
 - [ ] Automatic `Vouched-By: did:vouch:name` trailer injection
 - [ ] GitHub verification badge via SSH public key
 - [ ] README badge: "Commits signed with Vouch Protocol"
@@ -101,7 +101,7 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 ### 3.4 Glass Channel (PAD-019)
 *Transparent Agent Communication*
 - [ ] Signed message bus between agents
-- [ ] Every inter-agent message carries a Vouch credential (v1.0 W3C VC + Data Integrity)
+- [ ] Every inter-agent message carries a Vouch credential (v1.0 VC + Data Integrity)
 - [ ] Audit trail of all agent-to-agent communications
 - [ ] Integration with LangGraph and CrewAI flows
 
@@ -167,8 +167,8 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 - [ ] React hooks: `useVouchVerify()`, `useVouchSign()`
 
 ### 5.3 Standards Milestones
-- [ ] W3C Community Group established
-- [ ] First W3C Working Draft
+- [ ] Independent specification review forum established
+- [ ] First Vouch Specification Working Draft (post v1.6)
 - [ ] IETF BOF session
 - [ ] C2PA membership contribution (agent identity assertions)
 - [ ] LFAI AAIF reference implementation recognition
@@ -179,20 +179,20 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 
 | PAD | Title | Implemented | Roadmap Phase |
 |-----|-------|-------------|---------------|
-| 001 | Cryptographic Agent Identity | ✅ Complete | ,  |
-| 002 | Delegation Chains | ✅ Complete | ,  |
-| 003 | Identity Sidecar | ✅ Complete | ,  |
-| 004 | DOM Signature Matching | ✅ Complete | ,  |
-| 005 | Detached Signature Recovery | ✅ Complete | ,  |
-| 006 | URL Credential Chaining | ✅ Complete | ,  |
-| 007 | Automated Provenance Telemetry | ✅ Complete | ,  |
+| 001 | Cryptographic Agent Identity | ✅ Complete | , |
+| 002 | Delegation Chains | ✅ Complete | , |
+| 003 | Identity Sidecar | ✅ Complete | , |
+| 004 | DOM Signature Matching | ✅ Complete | , |
+| 005 | Detached Signature Recovery | ✅ Complete | , |
+| 006 | URL Credential Chaining | ✅ Complete | , |
+| 007 | Automated Provenance Telemetry | ✅ Complete | , |
 | 008 | Hybrid Identity Bootstrapping | ✅ Core | Phase 2.2 |
 | 009 | Localhost Bridge | ✅ Core | Phase 2.1 |
 | 010 | Semantic Consent | Partial | Phase 2.1 |
 | 011 | Hierarchical Discovery | Partial | Phase 4.1 |
 | 012 | Executable Covenants | ✅ Audio | Phase 3.5 |
-| 013 | Air-Gapped Psychoacoustic | ✅ Complete | ,  |
-| 014 | Robust Acoustic Provenance | ✅ Complete | ,  |
+| 013 | Air-Gapped Psychoacoustic | ✅ Complete | , |
+| 014 | Robust Acoustic Provenance | ✅ Complete | , |
 | 015 | Ambient Witness (BLE) | Not started | Phase 3.6 |
 | 016 | Heartbeat Protocol | Not started | Phase 3.1 |
 | 017 | Proof of Reasoning | Not started | Phase 3.2 |
@@ -206,6 +206,6 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 
 ## Next Feature to Build
 
-**Recommendation: Phase 2.1 ,  MCP as Primary Adoption Path**
+**Recommendation: Phase 2.1 , MCP as Primary Adoption Path**
 
 MCP is the fastest path to developer adoption. Every Claude Code, Cursor, and Windsurf user is a potential Vouch user. One-line install, zero-config identity, instant provenance. This is the "npm install" moment for agent identity.
