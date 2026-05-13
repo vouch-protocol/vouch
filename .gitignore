@@ -57,6 +57,9 @@ arxiv/submissions/
 arxiv/
 scripts/package_arxiv.py
 
+# Personal notes / checklists (local-only, not for publication)
+notes/
+
 # LaTeX paper build artifacts (the PDF is rebuilt by `make`)
 papers/**/*.aux
 papers/**/*.log
