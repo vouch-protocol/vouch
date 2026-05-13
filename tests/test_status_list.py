@@ -435,11 +435,11 @@ class TestFilesystemStatusListStore:
     # First save creates the file.
     sl1 = StatusList(status_list_id=STATUS_URL)
     store.save(sl1)
-    first_size = store_path.stat().st_size
+    assert store_path.stat().st_size > 0
 
     # Second save overwrites cleanly (no .tmp leftovers).
     sl2 = StatusList(status_list_id=STATUS_URL)
-    for idx in range(10):
+    for _ in range(10):
       sl2.allocate_index()
     sl2.revoke(0)
     sl2.revoke(5)

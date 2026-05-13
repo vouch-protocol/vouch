@@ -184,7 +184,7 @@ class MerkleTree:
 
     steps: List[ProofStep] = []
     index = leaf_index
-    for level_idx, level in enumerate(self._levels[:-1]):
+    for level in self._levels[:-1]:
       if index % 2 == 0:
         sibling_idx = index + 1 if index + 1 < len(level) else index
         is_right = True
