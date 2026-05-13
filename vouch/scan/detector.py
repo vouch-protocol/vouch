@@ -20,39 +20,120 @@ from .patterns import VOUCH_PATTERNS, Kind, Severity, VouchPattern
 
 # File extensions we scan. We deliberately do not scan binary formats.
 TEXT_EXTENSIONS = {
-    ".py", ".pyi", ".pyx",
-    ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
-    ".go", ".rs", ".java", ".kt", ".swift", ".c", ".cc", ".cpp", ".h", ".hpp",
-    ".cs", ".rb", ".php", ".scala", ".clj", ".ex", ".exs", ".erl",
-    ".json", ".jsonc", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
-    ".xml", ".html", ".htm", ".md", ".mdx", ".rst", ".txt", ".env",
-    ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd",
-    ".sql", ".graphql", ".tf", ".dockerfile",
+    ".py",
+    ".pyi",
+    ".pyx",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".go",
+    ".rs",
+    ".java",
+    ".kt",
+    ".swift",
+    ".c",
+    ".cc",
+    ".cpp",
+    ".h",
+    ".hpp",
+    ".cs",
+    ".rb",
+    ".php",
+    ".scala",
+    ".clj",
+    ".ex",
+    ".exs",
+    ".erl",
+    ".json",
+    ".jsonc",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".ini",
+    ".cfg",
+    ".conf",
+    ".xml",
+    ".html",
+    ".htm",
+    ".md",
+    ".mdx",
+    ".rst",
+    ".txt",
+    ".env",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".fish",
+    ".ps1",
+    ".bat",
+    ".cmd",
+    ".sql",
+    ".graphql",
+    ".tf",
+    ".dockerfile",
 }
 
 # Directories we never descend into.
 SKIP_DIRS = {
-    ".git", ".hg", ".svn",
-    "node_modules", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
-    "venv", ".venv", "env", ".env",
-    "dist", "build", "target", "out", ".next", ".turbo",
-    ".tox", ".eggs", "*.egg-info",
-    ".idea", ".vscode",
+    ".git",
+    ".hg",
+    ".svn",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    "dist",
+    "build",
+    "target",
+    "out",
+    ".next",
+    ".turbo",
+    ".tox",
+    ".eggs",
+    "*.egg-info",
+    ".idea",
+    ".vscode",
 }
 
 # Files we never read (binary indicators / cache files).
 SKIP_FILES_EXACT = {
-    "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock",
-    "Cargo.lock", "go.sum", "Gemfile.lock",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "poetry.lock",
+    "Cargo.lock",
+    "go.sum",
+    "Gemfile.lock",
 }
 
 # Files we always treat as text regardless of their (Python-computed) suffix.
 # Python's Path.suffix for ".env" returns "" because the file is considered
 # extension-less; we whitelist these by name.
 TEXT_FILENAMES_EXACT = {
-    ".env", ".envrc", ".bashrc", ".zshrc", ".npmrc", ".gitconfig", ".gitignore",
-    "Dockerfile", "Makefile", "Procfile", "Gemfile", "Rakefile",
-    "README", "LICENSE", "CHANGELOG", "AUTHORS",
+    ".env",
+    ".envrc",
+    ".bashrc",
+    ".zshrc",
+    ".npmrc",
+    ".gitconfig",
+    ".gitignore",
+    "Dockerfile",
+    "Makefile",
+    "Procfile",
+    "Gemfile",
+    "Rakefile",
+    "README",
+    "LICENSE",
+    "CHANGELOG",
+    "AUTHORS",
 }
 
 # Filename prefixes we treat as text. ".env.local", ".env.production", ".env.test", etc.
@@ -67,11 +148,11 @@ class Finding:
 
     kind: Kind
     severity: Severity
-    file: str            # relative to the scan root
-    line: int            # 1-indexed line number of the start of the match
-    column: int          # 1-indexed column of the start of the match
-    snippet: str         # short excerpt of the match (truncated to 80 chars, secrets hashed)
-    matched_hash: str    # sha256 prefix of the full match — for cross-referencing without leaking
+    file: str  # relative to the scan root
+    line: int  # 1-indexed line number of the start of the match
+    column: int  # 1-indexed column of the start of the match
+    snippet: str  # short excerpt of the match (truncated to 80 chars, secrets hashed)
+    matched_hash: str  # sha256 prefix of the full match — for cross-referencing without leaking
     description: str
     remediation: str
     detected_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -115,7 +196,7 @@ def _redact_snippet(matched: str, max_len: int = 80) -> str:
 
 def _offset_to_line_col(text: str, offset: int) -> tuple[int, int]:
     """Convert a string offset to (1-indexed line, 1-indexed column)."""
-    prefix = text[: offset]
+    prefix = text[:offset]
     line = prefix.count("\n") + 1
     last_nl = prefix.rfind("\n")
     column = offset - last_nl if last_nl != -1 else offset + 1
@@ -157,6 +238,7 @@ def scan_file(path: Path, root: Path | None = None) -> list[Finding]:
 
     # Filename-based pattern fires regardless of file size or extension.
     from .patterns import VOUCH_CONFIG_FILENAME_RE
+
     if VOUCH_CONFIG_FILENAME_RE.match(str(path)):
         rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
         findings.append(
@@ -173,8 +255,7 @@ def scan_file(path: Path, root: Path | None = None) -> list[Finding]:
                     "contain private key material"
                 ),
                 remediation=(
-                    "Add the file to .gitignore if it carries keys. Move keys to a "
-                    "secret manager."
+                    "Add the file to .gitignore if it carries keys. Move keys to a secret manager."
                 ),
             )
         )
@@ -240,7 +321,9 @@ def findings_to_text(findings: list[Finding]) -> str:
         by_severity.setdefault(f.severity, []).append(f)
 
     lines: list[str] = []
-    lines.append(f"vouch scan: {len(findings)} finding{'s' if len(findings) != 1 else ''} detected\n")
+    lines.append(
+        f"vouch scan: {len(findings)} finding{'s' if len(findings) != 1 else ''} detected\n"
+    )
 
     severity_order = [Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM, Severity.LOW]
     for sev in severity_order:
