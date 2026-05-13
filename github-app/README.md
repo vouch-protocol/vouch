@@ -12,6 +12,22 @@ Core Logic: *"If the code author isn't a verified identity with valid permission
 | **Zero-Config** | Works immediately on install - no YAML needed |
 | **Auto-Setup** | One-click install via GitHub App Manifest |
 | **Auto-Badge** | Automatically opens PR to add protection badge |
+| **Leak Check (PAD-058)** | Scans every PR diff for Vouch-shaped private key material (Ed25519 JWKs, seed env vars, hybrid PQ keys, DID Docs carrying privates). Fails the check on critical findings. |
+
+### Two checks posted per PR
+
+This GitHub App posts **two** check runs against each pull request:
+
+1. **Vouch Gatekeeper** — the signature-policy check (existing, v1.0+).
+   Verifies that every commit in the PR is signed by an identity in
+   policy.
+2. **Vouch Leak Check** — the PAD-058 leak-detection check (new in v2.1).
+   Scans every file changed in the PR for Vouch-shaped private key
+   material. Fails the check (red X) on critical findings, neutral on
+   medium-severity filename matches, success on a clean scan.
+
+Both checks run concurrently. Either one failing blocks merge if branch
+protection requires them; you can require either, both, or neither.
 
 ---
 

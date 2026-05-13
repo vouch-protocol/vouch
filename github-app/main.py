@@ -19,6 +19,7 @@ import hashlib
 import asyncio
 import json
 import base64
+import logging
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import dataclass, field
@@ -30,6 +31,8 @@ import yaml
 from fastapi import FastAPI, Request, HTTPException, Header, Response
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
+
+logger = logging.getLogger("vouch-gatekeeper")
 
 # Import shared verification logic from vouch package
 # This ensures consistent verification between CLI and GitHub App
@@ -1149,11 +1152,18 @@ async def handle_pull_request(payload: Dict) -> Dict:
     pr_number = pr["number"]
     head_sha = pr["head"]["sha"]
     installation_id = payload["installation"]["id"]
-    
+
     # Initialize clients
     github = GitHubClient(installation_id)
     registry = VouchRegistryClient()
-    
+
+    # Run the PAD-058 leak check (M.2) concurrently. Posts its own check run
+    # so a slow leak scan does not delay the signature evaluation.
+    import asyncio
+    leak_task = asyncio.create_task(
+        _post_leak_check(github, owner, repo_name, pr_number, head_sha)
+    )
+
     # Select verifier based on mode
     if VOUCH_VERIFICATION_MODE == "trailer":
         # Enterprise mode: Check Vouch-DID trailer (no GPG required)
@@ -1206,6 +1216,13 @@ async def handle_pull_request(payload: Dict) -> Dict:
             text=result.details,
         )
         
+        # Ensure the leak-check task completed before returning.
+        # Don't let a leak-check failure block the signature result.
+        try:
+            await leak_task
+        except Exception as leak_exc:
+            logger.warning("leak_check task failed: %s", leak_exc)
+
         return {
             "status": "completed",
             "conclusion": result.conclusion.value,
@@ -1214,7 +1231,7 @@ async def handle_pull_request(payload: Dict) -> Dict:
             "passed": len(result.passed_commits),
             "failed": len(result.failed_commits),
         }
-        
+
     except Exception as e:
         await github.create_check_run(
             owner=owner,
@@ -1226,8 +1243,67 @@ async def handle_pull_request(payload: Dict) -> Dict:
             title="⚠️ Vouch Gatekeeper Error",
             summary=f"An error occurred: {str(e)}",
         )
-        
+        try:
+            await leak_task
+        except Exception as leak_exc:
+            logger.warning("leak_check task failed (after signature error): %s", leak_exc)
         return {"status": "error", "message": str(e)}
+
+
+async def _post_leak_check(
+    github: "GitHubClient",
+    owner: str,
+    repo_name: str,
+    pr_number: int,
+    head_sha: str,
+) -> None:
+    """Run the PAD-058 leak detector against a PR and post a check run.
+
+    Posts an in-progress check, runs the scan, and updates the check
+    with the result. Exceptions in this path are logged but do not
+    affect the signature evaluation pipeline.
+    """
+    from leak_check import run_leak_check  # noqa: PLC0415
+
+    try:
+        await github.create_check_run(
+            owner=owner,
+            repo=repo_name,
+            head_sha=head_sha,
+            name="Vouch Leak Check",
+            status="in_progress",
+            title="🔍 Scanning PR for Vouch-shaped key material...",
+            summary="Running PAD-058 detector against the files changed in this PR.",
+        )
+
+        result = await run_leak_check(github, owner, repo_name, pr_number)
+
+        await github.create_check_run(
+            owner=owner,
+            repo=repo_name,
+            head_sha=head_sha,
+            name="Vouch Leak Check",
+            status="completed",
+            conclusion=result.conclusion,
+            title=result.title,
+            summary=result.summary,
+            text=result.details_markdown(),
+        )
+    except Exception as exc:
+        logger.warning("leak_check posting failed: %s", exc)
+        try:
+            await github.create_check_run(
+                owner=owner,
+                repo=repo_name,
+                head_sha=head_sha,
+                name="Vouch Leak Check",
+                status="completed",
+                conclusion="neutral",
+                title="⚠️ Vouch Leak Check Error",
+                summary=f"Leak scanner failed: {exc}",
+            )
+        except Exception:
+            pass
 
 
 async def handle_check_suite_rerun(payload: Dict) -> Dict:
