@@ -23,9 +23,9 @@ class Severity(str, Enum):
     """Severity levels, intended for CI gating policy."""
 
     CRITICAL = "critical"  # private key material that can sign credentials
-    HIGH = "high"          # config that implies a key path; verify on review
-    MEDIUM = "medium"      # vouch-specific filename or suspicious env-var name
-    LOW = "low"            # informational; pattern-shaped but possibly benign
+    HIGH = "high"  # config that implies a key path; verify on review
+    MEDIUM = "medium"  # vouch-specific filename or suspicious env-var name
+    LOW = "low"  # informational; pattern-shaped but possibly benign
 
 
 class Kind(str, Enum):
@@ -74,7 +74,7 @@ HYBRID_PQ_PRIVATE_KEY_RE = re.compile(
 # Seed env vars (VOUCH_ED25519_SEED, ED25519_SEED, ED25519_PRIVATE_KEY_HEX, etc.).
 # Value is 32 bytes hex (64 hex chars).
 SEED_ENV_VAR_RE = re.compile(
-    r'\b(VOUCH_ED25519_SEED|ED25519_SEED|ED25519_PRIVATE_KEY(?:_HEX)?|VOUCH_PRIVATE_SEED)'
+    r"\b(VOUCH_ED25519_SEED|ED25519_SEED|ED25519_PRIVATE_KEY(?:_HEX)?|VOUCH_PRIVATE_SEED)"
     r'(?:\s*[:=]\s*|\s+is\s+)["\']?[0-9a-fA-F]{64}["\']?'
 )
 
@@ -86,7 +86,7 @@ DID_DOC_PRIVATE_KEY_RE = re.compile(
 
 # Vouch-specific config filenames that often carry keys.
 VOUCH_CONFIG_FILENAME_RE = re.compile(
-    r'^(?:.*/)?(?:vouch\.(?:json|jwk|key)|agent\.(?:jwk|key)|.*\.vouch\.(?:json|jwk|key))$',
+    r"^(?:.*/)?(?:vouch\.(?:json|jwk|key)|agent\.(?:jwk|key)|.*\.vouch\.(?:json|jwk|key))$",
     re.IGNORECASE,
 )
 
@@ -96,7 +96,7 @@ VOUCH_CONFIG_FILENAME_RE = re.compile(
 # words (each 3-8 chars) on a line and check for proximity to
 # "vouch-sidecar" or "VOUCH_SIDECAR" within 5 lines.
 MNEMONIC_LINE_RE = re.compile(
-    r'^\s*(?:[a-z]{3,8}\s+){11,23}[a-z]{3,8}\s*$',
+    r"^\s*(?:[a-z]{3,8}\s+){11,23}[a-z]{3,8}\s*$",
     re.MULTILINE,
 )
 
