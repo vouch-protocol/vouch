@@ -1328,7 +1328,12 @@ def main() -> int:
         "scan",
         help="Scan a path for Vouch-shaped private key material (PAD-058 detector)",
     )
-    p_scan.add_argument("path", nargs="?", default=".", help="File or directory to scan (default: current directory)")
+    p_scan.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="File or directory to scan (default: current directory)",
+    )
     p_scan.add_argument("--json", action="store_true", help="Output findings as JSON")
     p_scan.add_argument(
         "--exit-nonzero-on",
