@@ -44,7 +44,7 @@ export default function CodeBlock({ code, language, className = '' }: Props) {
                 onClick={copy}
                 aria-label={copied ? 'Copied to clipboard' : 'Copy code to clipboard'}
                 title={copied ? 'Copied' : 'Copy'}
-                className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-sm border border-parchment/25 text-parchment/70 hover:text-parchment hover:border-parchment/60 hover:bg-parchment/10 transition-colors bg-transparent opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-sm border border-parchment/30 text-parchment/70 hover:text-parchment hover:border-parchment/70 hover:bg-parchment/10 focus:text-parchment focus:border-parchment/70 transition-colors bg-transparent"
             >
                 {copied ? (
                     <svg
