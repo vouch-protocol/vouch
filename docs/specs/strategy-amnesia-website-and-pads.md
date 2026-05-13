@@ -190,7 +190,111 @@ In rough priority order:
   do not enumerate. Less to maintain, and the Assistant's behaviour
   matches what's visible on the site.
 
+## 7. PAD vs arXiv: when is each the right venue?
+
+This question came up specifically for PAD-060 (single-use audited override).
+The general decision framework:
+
+| Property | PAD | arXiv whitepaper |
+|---|---|---|
+| **Primary goal** | Establish prior art so the method cannot later be patented by someone else | Make a research contribution that can be cited and built on |
+| **Audience** | Patent examiners, IP lawyers, prior-art searches | Researchers, academics, peer review |
+| **Required contribution** | A concretely-described method or system | A theoretical contribution, an empirical evaluation, or a novel framework |
+| **Length** | 200-400 lines (medium) | 20-40 pages (long, with related work and evaluation) |
+| **Distribution** | CC0 in the GitHub repo; indexed by Google Scholar and prior-art crawlers | arXiv.org with persistent DOI |
+| **Cost to author** | Hours to draft | Weeks to write, plus endorsement requirements |
+| **Risk addressed** | Someone else patenting the same method | Lack of academic citability of the work |
+
+**Decision for PAD-060:** publish as a PAD. The single-use-override-with-audit
+pattern is an engineering method, not a research result. The risk we are
+hedging is "someone files a patent on this in 2027." PAD-060 blocks that. An
+arXiv paper would be a different artifact serving a different purpose.
+
+**What WOULD make sense on arXiv (later, not now):** a single-author or
+joint-author **systems whitepaper** that synthesizes the entire Amnesia
+architecture, cites PADs 048 through 061 as the underlying disclosure
+portfolio, and adds:
+
+- **Empirical evaluation:** rule retention over long sessions (Claude Code
+  sessions of 200+ turns), measured leak rates with and without Amnesia,
+  cross-IDE compatibility benchmarks.
+- **Theoretical framing:** position the recorder/enforcer separation in the
+  context of trusted-computing literature; relate the write-only ledger to
+  append-only-log + capability-based-security composition.
+- **User study:** how developers actually use `<r>` tags in practice, what
+  rule severities are most common, override frequency.
+
+That artifact has real research contribution. It is worth writing once
+Amnesia has six to twelve months of real-world usage data behind it.
+
+## 8. Future-strategy items for Amnesia (not yet decided)
+
+Captured here so they don't get lost between sessions:
+
+- **Team / enterprise mode.** Today's Amnesia is per-developer-machine.
+  Enterprise customers will want shared rule sets, central policy
+  distribution, and aggregated audit trails across a fleet of developer
+  machines. Design space: pull rules from a central policy server at
+  session start, push attestations to a central audit log. Open question:
+  is this Amnesia, or does it become its own product?
+- **Beyond `git push`: other egress points.** Pre-push catches code leaving
+  the developer machine via git. Other egress points worth covering:
+  CI/CD pipelines, container builds, package publication (`npm publish`,
+  `pip upload`), AI-coding-assistant tool calls that write to the
+  filesystem outside the repo, clipboard exfiltration. Each is a separate
+  enforcement hook.
+- **Code-review tool integration.** GitHub PR webhook reads the
+  `.vouchpolicy` and the diff, attaches an attestation comment to the PR.
+  Useful in regulated environments where the PR review itself is the
+  compliance gate.
+- **Distribution channels for Amnesia.** Currently the README says
+  `npm install -g @vouch-protocol/amnesia` once the package is published.
+  Decision item for a future session: actually publish the npm package,
+  pick a versioning policy, set up automated release notes.
+- **`<r>` tag syntax in non-text formats.** Should the same tag work
+  inside Jupyter notebook markdown cells? Inside RST docstrings? Inside
+  YAML front-matter? The cross-format portability decision affects the
+  Amnesia recorder's scope.
+- **Naming-collision risk with Vouch's `.vouch/` directory.** Amnesia
+  writes to `.vouch/ledger/` and `.vouchpolicy`. Vouch's own Python SDK
+  uses `~/.vouch/` for key storage. The shared `.vouch/` namespace is
+  intentional (it signals the family) but creates a small risk of tools
+  reaching for the wrong files. Worth documenting the convention
+  explicitly in both repos, perhaps as a `.vouch/README.md` that
+  enumerates which sibling project owns which path.
+- **Legal / admissibility framing.** A signed Vouch credential attesting
+  to an Amnesia egress decision is potentially admissible as evidence in
+  litigation or regulatory audit. We should not make legal claims, but
+  documenting the cryptographic chain-of-custody in a separate
+  "Compliance Evidence Framework" doc (probably under `docs/`) gives
+  customers a starting point for their legal teams.
+- **Bridge to Vouch's State Verifiability runtime.** Heartbeat-renewed
+  SessionVouchers could be the credential format that Amnesia signs its
+  egress attestations as. Today the bridge signs a one-shot Vouch
+  Credential per push. Future: a SessionVoucher that aggregates many
+  push events under a single agent-identity continuum. Relevant to
+  long-running CI agents.
+- **Cross-promotion taglines for the Vouch landing page.** "Identity for
+  AI agents, with optional memory via [Amnesia](https://github.com/vouch-protocol/amnesia)."
+  Decide later whether this belongs in the hero or only in a sub-section.
+- **The `.vouchpolicy` file format itself.** Currently described
+  informally in PAD-048. Could be formalized as its own small
+  specification (a YAML or JSON canonical form) that other tools can
+  consume. Possible PAD or possible small standalone spec doc.
+
+## 9. Decision log (running)
+
+| Date | Decision | Rationale |
+|---|---|---|
+| 2026-05-14 | PAD-059 to be drafted and published first | Highest-leverage: composes Vouch + Amnesia, signals the architectural pattern |
+| 2026-05-14 | PAD-060 to be drafted and published as a PAD, not arXiv | Engineering method, not research result; cost is zero; risk addressed is patenting |
+| 2026-05-14 | PAD-061 to be deferred | Per-tool conventions are public; META-pattern needs more cross-vendor implementations before it is defensibly novel |
+| 2026-05-14 | Amnesia website surface is four light touchpoints, no nav or hero | Sibling project, not a Vouch feature; cross-promote without diluting |
+| 2026-05-14 | Vouch Assistant scope is light (FAQ + Help only) | Less code to maintain; behaviour matches what is visible on the site |
+| 2026-05-14 | arXiv systems whitepaper is a six-to-twelve-month future artifact | Need real-world usage data first to make the empirical contribution credible |
+
 ---
 
 *End of strategy notes 2026-05-14. Next session: pick up at action items in
-§5, in the order listed.*
+§5, in the order listed. The decision log in §9 should be appended to as new
+strategic decisions are made.*

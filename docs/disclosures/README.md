@@ -68,7 +68,35 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-056](./PAD-056-allow-list-bounded-ai-assistant-signing.md) | Capability-Bounded AI Assistant Output via Intent Allow-List at the Identity Sidecar | 2026-05-14 | Published |
 | [PAD-057](./PAD-057-byo-llm-distribution-via-ai-tool-packaging.md) | BYO-LLM Distribution of Protocol Capabilities via AI Tool Packaging | 2026-05-14 | Published |
 | [PAD-058](./PAD-058-automated-key-rotation-on-leak-detection.md) | Automated DID Rotation and Verifier Broadcast Pipeline on Static Leak Detection (Classical + Hybrid PQ) | 2026-05-14 | Published |
+| [PAD-059](./PAD-059-vouch-amnesia-attestation-bridge.md) | Method for Cryptographically Anchoring Deterministic Pre-Push Policy Decisions of an AI Coding Assistant Workspace to W3C Verifiable Credentials with Optional Hybrid Post-Quantum Signatures | 2026-05-14 | Published |
+| [PAD-060](./PAD-060-single-use-audited-override-of-egress-block.md) | Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use | 2026-05-14 | Published |
 
+
+## May 14, 2026: Vouch-Amnesia Bridge and Override Pattern (PAD-059, PAD-060)
+
+Two disclosures published May 14, 2026 cover the composition of Vouch
+Protocol with the Amnesia AI-coding-assistant governance system, and
+the override mechanism that makes the composition operationally usable.
+
+- **PAD-059** documents the bridge that turns Amnesia's deterministic
+  egress decisions (block / attest / allow at `git push`) into signed
+  W3C Verifiable Credentials. The key novelty is composing
+  cryptographic attestation with deterministic policy: the credential
+  binds the commit range, the policy snapshot hash, the evaluator
+  version, and the decision into a single envelope that a third party
+  can re-verify by replaying the evaluator against the bound snapshot.
+  Supports the hybrid Ed25519 + ML-DSA-44 cryptosuite for multi-year
+  retention.
+- **PAD-060** documents the single-use audited override pattern that
+  Amnesia's `approve-once` command implements. Combines one-shot
+  consumption (pointer file deleted on use), scope binding to a
+  specific rule + commit range, time bounding via the credential's
+  `expires_at` field, and a structurally-required non-trivial reason
+  string. Produces a separately-signed override credential that
+  PAD-059's egress-decision credential embeds by reference.
+
+The pair is designed to be filed together but each is independently
+novel and independently published.
 
 ## May 14, 2026: AI Assistant Architecture and Identity Hygiene (PAD-056 through PAD-058)
 
