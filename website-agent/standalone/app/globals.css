@@ -1,0 +1,55 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #f6f6fa;
+    color: #1a1a23;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+a {
+    color: #2f1cd9;
+}
+
+.page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 100vh;
+}
+
+.page__header h1 {
+    margin: 0 0 6px;
+    font-size: 1.75rem;
+}
+
+.page__header p {
+    margin: 0;
+    color: #4a4a55;
+}
+
+.page__status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1px solid #e2e2e8;
+    border-radius: 10px;
+    font-size: 0.85rem;
+}
+
+.page__status span {
+    color: #4a4a55;
+}
+
+.page__chat {
+    height: 65vh;
+    min-height: 480px;
+}

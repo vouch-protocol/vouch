@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import ThemeToggle from './ThemeToggle';
 
 const LINKS = [
-    { href: '/faq/', label: 'FAQ' },
+    { href: '/blog/', label: 'Blog' },
     { href: '/help/', label: 'Guides' },
+    { href: '/faq/', label: 'FAQ' },
 ];
 
 export default function Nav() {
@@ -14,14 +16,14 @@ export default function Nav() {
     const [open, setOpen] = useState(false);
 
     return (
-        <nav className="bg-parchment border-b border-rule">
+        <nav className="sticky top-0 z-40 bg-parchment/95 backdrop-blur supports-[backdrop-filter]:bg-parchment/80 border-b border-rule">
             <div className="container-wide flex items-center justify-between py-5">
                 <Link href="/" className="flex items-baseline gap-3 no-underline text-ink">
                     <span className="font-serif font-bold text-[1.35rem] tracking-tight">Vouch Protocol</span>
                     <span className="small-caps text-burgundy hidden sm:inline">An Open Standard</span>
                 </Link>
 
-                <div className="hidden md:flex items-center gap-8">
+                <div className="hidden md:flex items-center gap-7">
                     {LINKS.map((link) => {
                         const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
                         return (
@@ -36,6 +38,19 @@ export default function Nav() {
                             </Link>
                         );
                     })}
+                    <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new CustomEvent('vouch-agent:open'))}
+                        className="group inline-flex items-center gap-2 font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy transition-colors no-underline border-b border-transparent hover:border-burgundy pb-0.5"
+                        aria-label="Open Vouch assistant"
+                    >
+                        <span
+                            aria-hidden="true"
+                            className="inline-block w-1.5 h-1.5 rounded-full bg-burgundy group-hover:animate-pulse"
+                        />
+                        Ask the assistant
+                    </button>
+                    <ThemeToggle />
                     <a
                         href="https://github.com/vouch-protocol/vouch"
                         target="_blank"
@@ -82,6 +97,17 @@ export default function Nav() {
                         >
                             GitHub
                         </a>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOpen(false);
+                                window.dispatchEvent(new CustomEvent('vouch-agent:open'));
+                            }}
+                            className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-burgundy hover:text-burgundy-dark text-left py-1"
+                        >
+                            Ask the assistant
+                        </button>
+                        <div className="pt-2"><ThemeToggle /></div>
                     </div>
                 </div>
             )}

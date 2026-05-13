@@ -57,6 +57,31 @@ arxiv/submissions/
 arxiv/
 scripts/package_arxiv.py
 
+# LaTeX paper build artifacts (the PDF is rebuilt by `make`)
+papers/**/*.aux
+papers/**/*.log
+papers/**/*.out
+papers/**/*.bbl
+papers/**/*.blg
+papers/**/*.toc
+papers/**/*.fls
+papers/**/*.fdb_latexmk
+papers/**/*.synctex.gz
+papers/**/*-arxiv.tar.gz
+papers/**/*.pdf
+
+# Website-agent local runtime (logs, ephemeral keys, indexes)
+website-agent/.run/
+website-agent/.env
+website-agent/backend/.index/
+website-agent/backend/.audit.jsonl
+website-agent/backend/.venv/
+website-agent/standalone/node_modules/
+website-agent/standalone/.next/
+website-agent/standalone/out/
+website-agent/backend/check_imports.py
+website-agent/backend/check_sidecar.py
+
 # C2PA CA private keys (NEVER commit!)
 c2pa-ca/
 

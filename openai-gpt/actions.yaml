@@ -1,0 +1,145 @@
+openapi: 3.1.0
+info:
+    title: Vouch Hosted Agent API
+    version: "0.1.0"
+    description: Sign and verify Vouch credentials via the hosted agent.
+servers:
+    - url: https://agent.vouch-protocol.org
+      description: Production hosted agent
+paths:
+    /sign:
+        post:
+            operationId: signCredential
+            summary: Sign a Vouch credential for a user-approved intent.
+            description: >
+                Builds and signs a Vouch credential. The action must be in the hosted
+                agent's allow-list (answer_question, generate_starter, open_github_issue,
+                send_email, share_quickstart). The signature is produced by the agent's
+                sidecar; no key material is exposed to ChatGPT.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/SignRequest"
+            responses:
+                "200":
+                    description: Signed Vouch credential.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SignResponse"
+                "400":
+                    description: Invalid intent (missing field or disallowed action).
+    /verify:
+        post:
+            operationId: verifyCredential
+            summary: Verify a Vouch credential.
+            description: >
+                Verifies the credential against the issuer's DID Document, checks
+                signature, freshness, and revocation. Returns the verifier's structured
+                decision.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/VerifyRequest"
+            responses:
+                "200":
+                    description: Verification result.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/VerifyResponse"
+    /audit:
+        get:
+            operationId: recentCredentials
+            summary: List recent credentials emitted by the hosted agent.
+            parameters:
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                      default: 20
+                      maximum: 100
+            responses:
+                "200":
+                    description: Recent credential summaries.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/AuditResponse"
+components:
+    schemas:
+        Intent:
+            type: object
+            required: [action, target, resource]
+            properties:
+                action:
+                    type: string
+                    enum:
+                        - answer_question
+                        - generate_starter
+                        - open_github_issue
+                        - send_email
+                        - share_quickstart
+                target:
+                    type: string
+                resource:
+                    type: string
+                    format: uri
+        SignRequest:
+            type: object
+            required: [intent]
+            properties:
+                intent:
+                    $ref: "#/components/schemas/Intent"
+                scope:
+                    type: array
+                    items: { type: string }
+        SignResponse:
+            type: object
+            properties:
+                credential:
+                    type: object
+                audit:
+                    type: object
+        VerifyRequest:
+            type: object
+            required: [credential]
+            properties:
+                credential:
+                    type: object
+        VerifyResponse:
+            type: object
+            properties:
+                ok:
+                    type: boolean
+                reasons:
+                    type: array
+                    items: { type: string }
+                issuer:
+                    type: string
+                cryptosuite:
+                    type: string
+        AuditEntry:
+            type: object
+            properties:
+                id:
+                    type: string
+                issuer:
+                    type: string
+                validFrom:
+                    type: string
+                intent:
+                    $ref: "#/components/schemas/Intent"
+                cryptosuite:
+                    type: string
+        AuditResponse:
+            type: object
+            properties:
+                entries:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/AuditEntry"

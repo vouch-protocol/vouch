@@ -1035,4 +1035,416 @@ All subcommands support \`--json\` for machine-readable output. The default is h
       },
     ],
   },
+
+  // =====================================================================
+  // STATE VERIFIABILITY RUNTIME (concrete quickstart, not just concepts)
+  // =====================================================================
+  {
+    id: 'state-verifiability',
+    title: 'State Verifiability Runtime',
+    description: 'Hands-on quickstart for the Heartbeat Protocol, trust entropy decay, behavioral attestation, canary commitments, and validator quorum.',
+    articles: [
+      {
+        id: 'state-verifiability-quickstart',
+        title: 'Heartbeat Quickstart',
+        summary: 'Stand up a heartbeat-renewing agent against a validator in under ten minutes.',
+        body: `
+The State Verifiability runtime ships in the Python SDK today. This quickstart wires the four primitives together: trust entropy, behavioral attestation, canary commitments, and validator quorum.
+
+## Install
+
+\`\`\`bash
+pip install vouch-protocol
+\`\`\`
+
+## Agent side: build a heartbeat session
+
+\`\`\`python
+from vouch import HeartbeatSession, HeartbeatScheduler, BehavioralCollector
+from vouch.behavioral_attestation import ewma_drift_scorer
+import asyncio
+import httpx
+
+session = HeartbeatSession(subject_did="did:web:agent.example.com")
+session.collector = BehavioralCollector(intent_drift_scorer=ewma_drift_scorer(alpha=0.3))
+
+# As the agent runs, record its activity
+session.record_action(b"submit_claim:HC-001")
+session.collector.record_api_call("https://api.example.com/orders", tokens=120)
+session.collector.record_resource_access("order:42")
+\`\`\`
+
+## Submit each heartbeat to the validator
+
+\`\`\`python
+VALIDATOR_URL = "https://validator.example.com/heartbeat"
+
+async def submit(request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.post(VALIDATOR_URL, json=request.to_dict())
+        resp.raise_for_status()
+        return resp.json()  # the new SessionVoucher
+
+scheduler = HeartbeatScheduler(
+    session=session,
+    interval_seconds=60,
+    submit_callback=submit,
+)
+scheduler.start()
+
+# ... agent runs as normal ...
+
+await scheduler.stop()
+\`\`\`
+
+The scheduler pulls the current behavioral digest from the collector, advances the canary commit/reveal chain, and includes the running Merkle root of actions performed since the last heartbeat. The validator's response is a fresh SessionVoucher with decayed-but-renewed trust.
+
+## Validator side: accept and renew
+
+\`\`\`python
+from vouch import HeartbeatValidator, MemoryHeartbeatStore
+
+validator = HeartbeatValidator(
+    validator_did="did:web:validator.example.com",
+    initial_trust=1.0,
+    decay_lambda=0.01,
+    voucher_valid_seconds=120,
+    scope=["agent_actions"],
+    store=MemoryHeartbeatStore(),  # swap for RedisHeartbeatStore in production
+)
+
+def handle_heartbeat(request_dict):
+    result = validator.validate(request_dict)
+    if result.ok:
+        return result.session_voucher
+    return {"error": "rejected", "reasons": result.reasons}
+\`\`\`
+
+The validator checks schema, behavioral digest structure, canary chain integrity, and interval-index monotonicity. A broken canary chain or stale interval index returns a structured rejection — the agent does not get a new voucher and its existing one expires.
+
+## Trust entropy: gate actions by current trust
+
+Each SessionVoucher carries \`initialTrust\` and \`decayLambda\`. The effective trust at time \`t\` is:
+
+\`\`\`
+trust(t) = initialTrust * exp(-decayLambda * (now - issuedAt_seconds))
+\`\`\`
+
+Gate sensitive actions by checking the current trust:
+
+\`\`\`python
+from vouch import compute_trust_at, check_trust_threshold
+from vouch.trust_entropy import (
+    TRUST_THRESHOLD_HIGH_STAKES,    # 0.9
+    TRUST_THRESHOLD_MEDIUM_STAKES,  # 0.75
+    TRUST_THRESHOLD_LOW_STAKES,     # 0.5
+)
+from datetime import datetime, timezone
+
+now = datetime.now(timezone.utc)
+
+if check_trust_threshold(session_voucher, TRUST_THRESHOLD_HIGH_STAKES, at_time=now):
+    allow_financial_transfer()
+elif check_trust_threshold(session_voucher, TRUST_THRESHOLD_MEDIUM_STAKES, at_time=now):
+    allow_phi_read()
+elif check_trust_threshold(session_voucher, TRUST_THRESHOLD_LOW_STAKES, at_time=now):
+    allow_status_query()
+else:
+    reject_action()
+\`\`\`
+
+Set your heartbeat interval to less than half the trust half-life so renewal stays ahead of decay. Half-life is \`ln(2) / decay_lambda\`.
+
+## Validator quorum: M-of-N approval
+
+A single validator is a single point of failure. For regulated deployments, require multiple validators with different responsibilities to approve each heartbeat:
+
+\`\`\`python
+from vouch import HeartbeatQuorum, QuorumValidator, ROLE_POLICY, ROLE_BEHAVIORAL, ROLE_BUDGET
+
+quorum = HeartbeatQuorum(
+    validators=[
+        QuorumValidator(validator=policy_validator,     role=ROLE_POLICY),
+        QuorumValidator(validator=behavioral_validator, role=ROLE_BEHAVIORAL),
+        QuorumValidator(validator=budget_validator,     role=ROLE_BUDGET),
+    ],
+    threshold=2,
+)
+
+result = quorum.validate(heartbeat_request_dict)
+if result.ok:
+    voucher = result.session_voucher
+    # voucher.issuer lists all approving validator DIDs
+\`\`\`
+
+Trust parameter aggregation is configurable. Defaults: \`initial_trust\` takes the minimum, \`decay_lambda\` takes the maximum, \`scope\` is the intersection of all approving validators' scopes.
+
+## Canary commitments: detect a silent failure
+
+The heartbeat carries a fresh canary commitment plus the prior commitment's reveal. If the agent skips a beat or sends a wrong reveal, the chain breaks and no subsequent heartbeat can resume it. Silent failure becomes loud.
+
+The \`HeartbeatSession\` and \`HeartbeatValidator\` manage this automatically. To use the primitive directly:
+
+\`\`\`python
+from vouch import CanaryChain, CanaryVerifier
+
+chain = CanaryChain()
+msg = chain.next_heartbeat()
+# msg.commitment is what to send this interval
+# msg.reveal is the previous secret (None on first interval)
+
+verifier = CanaryVerifier()
+ok = verifier.observe(msg.commitment, msg.reveal)
+if not ok:
+    revoke_session_voucher()
+\`\`\`
+
+Validator state is small (one string per agent), so it survives restarts via \`last_commitment\` persistence in your chosen \`HeartbeatStoreInterface\` backend.
+
+## What's not in this quickstart
+
+- TypeScript and Go ports of the runtime modules: data formats are cross-language; the orchestration is Python-only today.
+- Concrete persistence backends beyond \`MemoryHeartbeatStore\` (Redis, Postgres, S3): ship in the commercial Pro tier.
+- Custom drift scorers beyond \`mean_drift_scorer\`, \`max_drift_scorer\`, \`ewma_drift_scorer\`: subclass \`BehavioralCollector\` to add your own.
+
+See [PAD-016](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-016-dynamic-credential-renewal.md) for the full Heartbeat Protocol disclosure and [PAD-022](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-022-swarm-limits-protocol.md) for the rate-limiting companion.
+`,
+      },
+    ],
+  },
+
+  // =====================================================================
+  // AI ASSISTANTS — walkthroughs for each surface
+  // =====================================================================
+  {
+    id: 'ai-assistants',
+    title: 'AI Assistants',
+    description: 'Install and use the Claude Skill, OpenAI Custom GPT, Gemini Gem, and the Vouch Assistant on this website.',
+    articles: [
+      {
+        id: 'claude-skill-install',
+        title: 'Installing the Claude Skill',
+        summary: 'Drop-in skill that teaches Claude Code the Vouch SDK shapes, DID conventions, and integration patterns.',
+        body: `
+## Install
+
+Linux / macOS / WSL:
+
+\`\`\`bash
+git clone https://github.com/vouch-protocol/vouch
+cp -r vouch/claude-skill ~/.claude/skills/vouch-protocol
+\`\`\`
+
+Windows PowerShell:
+
+\`\`\`powershell
+git clone https://github.com/vouch-protocol/vouch
+Copy-Item -Recurse vouch\\claude-skill "$env:USERPROFILE\\.claude\\skills\\vouch-protocol"
+\`\`\`
+
+Restart Claude Code and run \`/skills\`. You should see \`vouch-protocol\` listed.
+
+## What triggers it
+
+The skill loads when your prompt mentions \`vouch-protocol\`, \`did:web\`, \`eddsa-jcs-2022\`, \`hybrid-eddsa-mldsa44-jcs-2026\`, \`BitstringStatusList\`, \`SessionVoucher\`, \`Heartbeat Protocol\`, or natural-language variants like "sign a credential with Vouch" or "verify a Vouch credential."
+
+## What's inside
+
+Eleven reference files: \`python-sdk.md\`, \`typescript-sdk.md\`, \`go-sidecar.md\`, \`credential-format.md\`, \`delegation.md\`, \`post-quantum.md\`, \`revocation.md\`, \`state-verifiability.md\`, \`integrations.md\`, \`sidecar.md\`, \`troubleshooting.md\`. Plus \`SKILL.md\` (the manifest) and \`README.md\`.
+
+## Updating
+
+\`\`\`bash
+cd ~/.claude/skills/vouch-protocol
+git pull
+\`\`\`
+
+The skill versions with the protocol. Pull whenever Vouch ships a new cryptosuite or SDK shape.
+
+## Customising for your team
+
+Fork the \`claude-skill/\` folder and edit references to add your DID prefix, your verifier hostname, your team's action vocabulary. Update \`SKILL.md\`'s description so it triggers on your terminology too.
+
+## What if I use Claude Desktop or the web app
+
+Skills are a Claude Code (CLI) feature. On Desktop or the web app, paste the contents of \`SKILL.md\` and the relevant \`reference/*.md\` files into your project's Custom Instructions.
+`,
+      },
+      {
+        id: 'openai-gpt-build',
+        title: 'Building the OpenAI Custom GPT',
+        summary: 'Configuration to build your own Vouch Protocol Assistant in ChatGPT.',
+        body: `
+We do not host a shared Custom GPT. Build your own from the configuration in \`openai-gpt/\` in the repo.
+
+## Build steps
+
+1. Open https://chatgpt.com/gpts/editor and click Create.
+2. Switch to the Configure tab.
+3. Paste each field from its file:
+   - **Name** ← \`name.txt\`
+   - **Description** ← \`description.txt\`
+   - **Instructions** ← \`instructions.md\` (the whole file)
+   - **Conversation starters** ← one line per starter from \`conversation-starters.md\`
+4. Upload all files in \`openai-gpt/knowledge/\` to the Knowledge section.
+5. Enable Web Browsing and Code Interpreter. Leave DALL-E off.
+6. Optionally add Actions: paste \`actions.yaml\`, configure auth per \`actions-auth.md\`. This lets the GPT call the hosted Vouch Assistant to sign for you.
+7. Save as "Only me" first. Test in the preview pane. Promote to "Anyone with the link" or "Public" when you are satisfied.
+
+## Why we publish the config instead of a shared GPT
+
+Custom GPTs are tied to one OpenAI account, change owner with acquisitions, and cannot be forked. Publishing the source of truth in the repo lets your team build a version it controls, audits, and updates.
+
+## Updating
+
+When Vouch ships a new SDK shape or cryptosuite, pull the latest \`openai-gpt/\` from the repo. In the GPT editor, replace the knowledge files (the builder deduplicates by filename) and bump the version note in the Instructions.
+`,
+      },
+      {
+        id: 'gemini-gem-create',
+        title: 'Creating the Gemini Gem',
+        summary: 'Configuration to build your own Vouch Protocol Helper in Google Gemini.',
+        body: `
+## Build steps
+
+Gemini Advanced or Google AI Pro for the full ten-file corpus; the free tier supports a smaller attachment.
+
+1. Open https://gemini.google.com/gems/create.
+2. Click New Gem.
+3. Paste \`gemini-gem/name.txt\`, \`description.txt\`, and \`instructions.md\`.
+4. Upload all files in \`gemini-gem/knowledge/\`.
+5. Add the prompts from \`examples.md\` as the Gem's Examples.
+6. Click Preview and run a test prompt.
+7. Save & share (Private / Anyone with the link / Workspace org).
+
+## Workspace integration
+
+Because Gems live inside Gemini, they automatically have access to Google Workspace tools. The Vouch Gem is instructed to:
+
+- Confirm before creating any Doc, Sheet, or email.
+- Use Google Search when you ask about current GitHub state.
+
+## Free tier vs Advanced
+
+Free tier: trim the corpus to four files (\`overview.md\`, \`quickstart.md\`, \`credential-format.md\`, \`troubleshooting.md\`). Gemini Advanced and Workspace plans support the full ten-file corpus and long context.
+
+## Sharing inside your Workspace org
+
+In the Gem's Save dialog, choose "Visible to anyone in [your org]". Workspace admins can install Gems for all users from the admin console.
+`,
+      },
+      {
+        id: 'assistant-local',
+        title: 'Running the Vouch Assistant locally',
+        summary: 'Three processes: dev sidecar, agent backend, chat widget. Browse to localhost:3200.',
+        body: `
+The chat helper on vouch-protocol.com is open source under \`website-agent/\` in the repo. You can self-host it.
+
+## Three processes, three terminals
+
+### 1. Dev sidecar (ephemeral Ed25519 key — dev only)
+
+\`\`\`bash
+cd ~/vouch-protocol/website-agent/backend
+python -m vouch_agent.dev_sidecar --did did:web:agent.example.com --port 8877
+\`\`\`
+
+### 2. Agent backend (FastAPI + RAG + signer client)
+
+\`\`\`bash
+cd ~/vouch-protocol/website-agent/backend
+cp ../.env.example ../.env
+# edit ../.env to add your LLM key
+uvicorn vouch_agent.main:app --host 127.0.0.1 --port 8000
+\`\`\`
+
+### 3. Chat widget (standalone Next.js harness)
+
+\`\`\`bash
+cd ~/vouch-protocol/website-agent/standalone
+npm install
+npm run dev    # http://localhost:3200
+\`\`\`
+
+Open **http://localhost:3200**. The status strip shows backend OK, sidecar OK, and the number of knowledge chunks indexed.
+
+## Pick an LLM provider
+
+The backend supports three:
+
+\`\`\`bash
+# Anthropic (default)
+export VOUCH_LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# OpenAI
+export VOUCH_LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-...
+
+# Google Gemini
+export VOUCH_LLM_PROVIDER=gemini
+export GEMINI_API_KEY=...
+\`\`\`
+
+Or set them in \`website-agent/.env\` (auto-loaded on backend start).
+
+## Production deployment
+
+For production, replace the dev sidecar with the Go sidecar (\`vouch-sidecar\`) backed by KMS, and run the agent backend behind a reverse proxy with TLS. The backend is self-contained; everything else (LLM provider, sidecar URL, CORS allow-list) is environment-driven.
+`,
+      },
+      {
+        id: 'sidecar-tiers',
+        title: 'Choosing a sidecar tier',
+        summary: 'Go for production, Python or TypeScript for lightweight self-hosting, Python `dev_sidecar` for local development.',
+        body: `
+Three reference sidecars ship with the protocol. They are not interchangeable in production. Pick by use case, not language preference.
+
+## Tier table
+
+| Tier | Language | Use case | Key storage |
+|---|---|---|---|
+| **Production** | Go (\`go-sidecar/\`) | Audited, regulated, high-throughput | KMS / HSM / file |
+| **Lightweight** | Python (\`vouch.sidecar.*\`) | Self-hosted Python stacks | File or env |
+| **Lightweight** | TypeScript (\`packages/sdk-ts/sidecar/\`) | Self-hosted Node stacks | File or env |
+| **Development** | Python \`dev_sidecar\` | Local dev only | Ephemeral, in-memory |
+
+**Rule of thumb**: if your auditor will ask about the sidecar, run the Go one.
+
+## Why the lightweight tier is lightweight on purpose
+
+The sidecar is security-critical, so smaller code surface is safer. The Python and TS sidecars intentionally omit:
+
+- Hybrid post-quantum signing (\`hybrid-eddsa-mldsa44-jcs-2026\`)
+- KMS / HSM integration
+- Sensitive-mode JWE wrapping
+- Heartbeat session validation
+- Multi-tenancy
+
+When you need any of those, switch to the Go sidecar. The wire format is identical, so the client only changes one environment variable.
+
+## Cross-language equivalence
+
+All three sidecars expose the same HTTP API:
+
+- \`GET /health\` — liveness probe
+- \`GET /did\` — the sidecar's DID
+- \`GET /.well-known/did.json\` — DID Document (optional)
+- \`POST /sign\` — sign an intent, return a Vouch credential
+
+A shared contract test suite at \`test-vectors/sidecar-contract/\` verifies that each implementation accepts and rejects the same inputs and emits semantically equivalent credentials.
+
+## Switching tiers
+
+The HTTP API is identical:
+
+\`\`\`bash
+export VOUCH_SIDECAR_URL=http://localhost:8877
+\`\`\`
+
+The agent code does not change. What changes is the DID (production agents use a real did:web on your domain) and the key material (production loads from KMS).
+`,
+      },
+    ],
+  },
 ];

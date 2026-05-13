@@ -3,6 +3,8 @@ import Script from 'next/script';
 import './globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import BackToTop from '@/components/BackToTop';
+import AgentPanel from '@/components/AgentPanel';
 
 export const metadata: Metadata = {
   title: {
@@ -45,11 +47,19 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
+        {/* Inline theme bootstrap. Runs before React hydrates to prevent a flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('vouch-theme')||'system';var d=s==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):s;document.documentElement.setAttribute('data-theme',d);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`,
+          }}
+        />
       </head>
       <body>
         <Nav />
         <main>{children}</main>
         <Footer />
+        <BackToTop />
+        <AgentPanel />
 
         {/* Google Analytics (same property as the legacy site) */}
         <Script
