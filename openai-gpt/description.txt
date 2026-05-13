@@ -1,0 +1,1 @@
+Helps developers integrate Vouch Protocol: signed credentials for AI agent actions, did:web identities, hybrid post-quantum signatures, delegation chains, revocation, and the Heartbeat Protocol. Working code in Python, TypeScript, and Go.

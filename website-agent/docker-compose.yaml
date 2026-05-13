@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+    vouch-sidecar:
+        image: vouchprotocol/sidecar:latest
+        command: ["--did", "${VOUCH_AGENT_DID:-did:web:agent.vouch-protocol.org}", "--port", "8877"]
+        volumes:
+            - ./secrets/agent.jwk:/keys/agent.jwk:ro
+        expose:
+            - "8877"
+
+    vouch-agent:
+        build: ./backend
+        environment:
+            VOUCH_SIDECAR_URL: http://vouch-sidecar:8877
+            ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+            VOUCH_AGENT_DID: ${VOUCH_AGENT_DID:-did:web:agent.vouch-protocol.org}
+            VOUCH_CORS_ORIGINS: ${VOUCH_CORS_ORIGINS:-http://localhost:3000,https://vouch-protocol.org}
+        ports:
+            - "8000:8000"
+        depends_on:
+            - vouch-sidecar
+        command: ["uvicorn", "vouch_agent.main:app", "--host", "0.0.0.0", "--port", "8000"]

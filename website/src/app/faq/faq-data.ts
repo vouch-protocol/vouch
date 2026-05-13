@@ -865,4 +865,181 @@ For coordinated revocations across a verifier fleet, share the cache (Redis) so 
       },
     ],
   },
+
+  // =====================================================================
+  // AI ASSISTANTS (Claude Skill, OpenAI GPT, Gemini Gem, Vouch Assistant)
+  // =====================================================================
+  {
+    id: 'ai-assistants',
+    audience: 'For Developers',
+    title: 'AI assistants that help you adopt Vouch',
+    items: [
+      {
+        q: 'What are the four AI assistants?',
+        a: `Four surfaces, one canonical knowledge base, pick whichever fits the tool you already use:
+
+- **Claude Skill** — a drop-in skill for Claude Code (the CLI). Reads your local repo, edits files, runs commands. Best for hands-on integration work.
+- **Vouch Assistant** — the chat helper on this website and the mobile app. Streams answers in your browser. Signs real Vouch credentials live so you can see the protocol in action.
+- **OpenAI Custom GPT** — a configuration you paste into ChatGPT's GPT builder. Optional Actions integration lets the GPT call the hosted assistant to sign for you.
+- **Gemini Gem** — a configuration for Google Gemini. Pairs naturally with Google Workspace (Docs, Sheets, Gmail, Search).
+
+All four route to the same documentation, so the answers are consistent. Pick the one that fits your daily tool.`,
+      },
+      {
+        q: 'How do I install the Claude Skill?',
+        a: `Two steps inside WSL bash, macOS, or Linux:
+
+\`\`\`bash
+mkdir -p ~/.claude/skills
+cp -r ~/vouch-protocol/claude-skill ~/.claude/skills/vouch-protocol
+\`\`\`
+
+Restart Claude Code and run \`/skills\` to confirm. You should see \`vouch-protocol\` in the list. Read the Guides section "Installing the Vouch Claude Skill" for screen-by-screen steps and triggers.`,
+        helpLinks: [{ label: 'Installing the Claude Skill', href: '/help/#claude-skill-install' }],
+      },
+      {
+        q: 'How do I build the OpenAI Custom GPT?',
+        a: `The configuration is published in the repo at \`openai-gpt/\`. Open https://chatgpt.com/gpts/editor, click Create, switch to Configure, and paste each field from the matching file (\`name.txt\`, \`description.txt\`, \`instructions.md\`, \`conversation-starters.md\`). Upload all files from \`openai-gpt/knowledge/\` to the Knowledge section. Optionally add the Actions integration using \`actions.yaml\` and \`actions-auth.md\`.
+
+We do not host a shared GPT because Custom GPTs are tied to one OpenAI account and cannot be forked. Every team builds and owns its own version.`,
+        helpLinks: [{ label: 'Building the OpenAI Custom GPT', href: '/help/#openai-gpt-build' }],
+      },
+      {
+        q: 'How do I create the Gemini Gem?',
+        a: `Open https://gemini.google.com/gems/create. Click New Gem. Paste \`name.txt\`, \`description.txt\`, and \`instructions.md\` from \`gemini-gem/\` in the repo. Upload all files from \`gemini-gem/knowledge/\`. Add the prompts in \`examples.md\` as Examples. Save.
+
+The Gem can use Google Workspace tools (drafting Docs, summarizing Sheets, composing Gmail). It always asks for confirmation before any Workspace write.`,
+        helpLinks: [{ label: 'Creating the Gemini Gem', href: '/help/#gemini-gem-create' }],
+      },
+      {
+        q: 'What is the Vouch Assistant on this website?',
+        a: `The chat helper you can open from "Ask the assistant" in the nav or the floating tab in the bottom-right. It answers questions about the protocol grounded in the canonical docs, and signs real Vouch credentials when you ask it to do something with consequences. The signed credential appears in the chat as a card with the issuer DID, intent, cryptosuite, and a Show raw JSON toggle.
+
+The assistant is open source under \`website-agent/\` in the repo. You can self-host it; the README has the local-run steps.`,
+        helpLinks: [{ label: 'Running the Vouch Assistant locally', href: '/help/#assistant-local' }],
+      },
+      {
+        q: 'Is the Vouch Assistant vulnerable to prompt injection?',
+        a: `The LLM portion is vulnerable, like any LLM. Vouch's defense is defense-in-depth: the signing key lives in a sidecar process that the LLM cannot reach. Even a fully prompt-injected LLM cannot leak a key it never had, and the sidecar refuses to sign anything outside a small allow-list of action types. So the assistant can be tricked into saying weird things in chat, but cannot mint arbitrary credentials.`,
+      },
+      {
+        q: 'Does the Vouch Assistant cost anything to run?',
+        a: `On this website, no. We pay the inference cost. For embedded use in your own product, you run the open-source backend yourself and supply your own LLM API key (Anthropic, OpenAI, or Google Gemini). The signing side is free; only the LLM provider charges for inference.
+
+The Claude Skill, OpenAI GPT, and Gemini Gem are the **Bring-Your-Own-LLM** route: they run inside your existing AI subscription, so we never see your queries and you never pay us for inference.`,
+      },
+      {
+        q: 'Which LLM providers does the Vouch Assistant support?',
+        a: `Anthropic Claude, OpenAI GPT, and Google Gemini. Configure with \`VOUCH_LLM_PROVIDER=anthropic|openai|gemini\` and the matching API key. The hosted instance on this website uses Gemini today.`,
+      },
+      {
+        q: 'How do I keep the Claude Skill, GPT, and Gem up to date?',
+        a: `**Claude Skill**: \`git pull\` inside \`~/.claude/skills/vouch-protocol/\` whenever the protocol ships a new cryptosuite or SDK shape. Restart Claude Code; no further action.
+
+**OpenAI Custom GPT**: in the GPT editor, replace the knowledge files (the builder deduplicates by filename). Bump the version note in the Instructions if you forked them.
+
+**Gemini Gem**: same pattern — re-upload the knowledge files in the Gem editor.
+
+All three follow the protocol's release cadence. Subscribe to releases on https://github.com/vouch-protocol/vouch.`,
+      },
+    ],
+  },
+
+  // =====================================================================
+  // SIDECARS (Go production, Python+TS lightweight)
+  // =====================================================================
+  {
+    id: 'sidecars',
+    audience: 'For Operators',
+    title: 'Which sidecar to run, and why',
+    items: [
+      {
+        q: 'What is the Vouch sidecar?',
+        a: `A separate process that holds the agent's signing key. The LLM-running process calls it over HTTP for signatures. Because the key lives in a different process from the LLM, prompt injection cannot exfiltrate what is not there.`,
+      },
+      {
+        q: 'Vouch ships sidecars in Go, Python, and TypeScript. Which one should I run?',
+        a: `They are tiered. Pick by use case, not by language preference:
+
+| Tier | Language | Use case |
+|---|---|---|
+| Production | **Go** | Real deployments. Small static binary, KMS / HSM keys, FIPS path in Pro tier. |
+| Lightweight | **Python** | Self-hosted, non-regulated stacks already in Python. File or env keys. |
+| Lightweight | **TypeScript** | Self-hosted Node stacks. File or env keys. |
+| Dev | **Python \`dev_sidecar\`** | Local iteration with an ephemeral key. Never for production. |
+
+Rule of thumb: if your auditor will ask about the sidecar, run the Go one. For everything else, pick the language your stack already uses.`,
+        helpLinks: [{ label: 'Choosing a sidecar tier', href: '/help/#sidecar-tiers' }],
+      },
+      {
+        q: 'Why are the Python and TypeScript sidecars minimal?',
+        a: `The sidecar is security-critical, so smaller code surface is safer. Python and TS sidecars implement the bare minimum to be useful (sign intents with Ed25519, return the credential) and intentionally leave out hybrid post-quantum, KMS integration, sensitive-mode JWE wrapping, Heartbeat validation, and multi-tenancy. When you need those, switch to the Go sidecar. That switch is the design intent, not a workaround.`,
+      },
+      {
+        q: 'How do I pick between Python and TypeScript for the lightweight tier?',
+        a: `Pick whichever runtime your existing application uses. There is no protocol-level difference; both pass the same contract test suite and emit semantically equivalent credentials.`,
+      },
+      {
+        q: 'Do all three sidecars produce byte-identical credentials?',
+        a: `Credentials are **semantically equivalent** across all three (same VC shape, same \`eddsa-jcs-2022\` cryptosuite, same JCS canonicalization). A cross-language contract test suite enforces this on every release. The bytes are identical when the inputs are identical.`,
+      },
+      {
+        q: 'Can the sidecar run as a serverless function (Lambda, Cloud Run, Fly Machines)?',
+        a: `Yes for the Go sidecar — it is a static binary and starts in milliseconds. The Python and TS sidecars work as serverless too but their cold-start latency makes them less suited to high-frequency signing. For typical agent workloads (one credential per minute), any of them is fine.`,
+      },
+    ],
+  },
+
+  // =====================================================================
+  // USING THIS SITE
+  // =====================================================================
+  {
+    id: 'using-this-site',
+    audience: 'About this site',
+    title: 'Using this site',
+    items: [
+      {
+        q: 'How do I switch between light and dark mode?',
+        a: `Click the sun / monitor / moon icon in the top navigation. It cycles Light → Dark → System. Your choice persists across visits.
+
+System mode follows your operating system or browser preference (\`prefers-color-scheme: dark\`).`,
+      },
+      {
+        q: 'Where did the blog go?',
+        a: `It is back. Open the **Blog** link in the top nav. The nine articles were briefly off-site after the website redesign; all are now restored with the same content and updated styling.`,
+      },
+      {
+        q: 'How do I copy code from the snippets on this site?',
+        a: `Every code block has a Copy button in the top-right corner. Hover the block and the button becomes clearly visible. Click it, and the entire snippet is copied to your clipboard. The button briefly shows "✓ Copied" to confirm.
+
+This works on the homepage, in every guide, in blog posts, and inside the Vouch Assistant's responses.`,
+      },
+      {
+        q: 'How do I open the Vouch Assistant?',
+        a: `Three ways:
+
+1. Click **Ask the assistant** in the top navigation.
+2. Click the small bordered tab labeled "ASK THE ASSISTANT" at the bottom-right of the page.
+3. On mobile, tap "Ask the assistant" in the menu.
+
+All three open the same slide-in panel. Inside the panel, use the diagonal-arrows icon in the panel's header to toggle between side-panel and full-screen mode.`,
+      },
+      {
+        q: 'The assistant gave me an answer that is wrong. What do I do?',
+        a: `Three things help:
+
+1. **Verify the answer against the canonical docs** — every answer carries a disclaimer with links to the guides, FAQ, and the source on GitHub.
+2. **Report the bad answer** at [https://github.com/vouch-protocol/vouch/issues](https://github.com/vouch-protocol/vouch/issues). Paste the question and the response. We update the knowledge base.
+3. **For protocol questions**, the source on GitHub is the ground truth. The assistant is grounded in the docs but is still an AI and can be wrong.`,
+      },
+      {
+        q: 'Why does the assistant ask before doing anything?',
+        a: `Because real actions go through a signing gate. The assistant signs a Vouch credential for every action it takes on your behalf, and shows you the credential before performing the action. You can see exactly what is being authorized. If anything looks wrong, refuse the confirmation and the action does not happen.`,
+      },
+      {
+        q: 'How do I jump back to the top of a long page?',
+        a: `After you scroll a bit, a small upward-arrow button appears in the bottom-left corner. Click it. Smooth scroll back to the top.`,
+      },
+    ],
+  },
 ];

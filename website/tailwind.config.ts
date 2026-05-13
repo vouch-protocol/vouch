@@ -1,26 +1,32 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Helper to consume an `R G B` CSS variable as a Tailwind color.
+ * Lets utilities like `bg-parchment/20` keep working via the / alpha syntax.
+ */
+const v = (token: string) => `rgb(var(--color-${token}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
-        // Classicism: Burgundy palette
-        'parchment': '#FAF7EE',
-        'parchment-warm': '#F2EBD9',
-        'parchment-deep': '#EFE9D5',
-        'ink': '#0F172A',
-        'ink-soft': '#334155',
-        'ink-faint': '#64748B',
-        'burgundy': '#7C2D3A',
-        'burgundy-dark': '#5C1F2C',
-        'burgundy-light': '#9B4051',
-        'rule': '#D9CFB6',
-        'rule-light': '#E8DFC9',
+        'parchment': v('parchment'),
+        'parchment-warm': v('parchment-warm'),
+        'parchment-deep': v('parchment-deep'),
+        'ink': v('ink'),
+        'ink-soft': v('ink-soft'),
+        'ink-faint': v('ink-faint'),
+        'burgundy': v('burgundy'),
+        'burgundy-dark': v('burgundy-dark'),
+        'burgundy-light': v('burgundy-light'),
+        'rule': v('rule'),
+        'rule-light': v('rule-light'),
       },
       fontFamily: {
         serif: ['"Source Serif 4"', 'Source Serif Pro', 'Georgia', 'serif'],

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import CodeBlock from '@/components/CodeBlock';
 
 const FEATURES = [
   {
@@ -77,7 +78,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="border-b border-rule">
         <div className="container-wide py-20 md:py-28">
-          <div className="eyebrow mb-6">v1.6.0 shipped &middot; Spec v0.1-draft &middot; standards-aligned</div>
+          <div className="eyebrow mb-6">v1.6.0 shipped &middot; standards-aligned</div>
           <h1 className="font-serif font-semibold text-ink leading-[1.05] tracking-tight mb-6 max-w-[920px] text-[clamp(2.5rem,5.2vw,4rem)]">
             Cryptographic identity &amp; accountability for autonomous AI agents.
           </h1>
@@ -142,9 +143,7 @@ export default function HomePage() {
             {LANGUAGE_TILES.map((lang) => (
               <div key={lang.name} className="border border-rule p-6">
                 <h3 className="font-serif font-semibold text-[1.2rem] mb-3">{lang.name}</h3>
-                <pre className="!bg-ink !text-parchment !p-3 text-[0.75rem] mb-3 overflow-x-auto">
-                  <code>{lang.install}</code>
-                </pre>
+                <CodeBlock code={lang.install} className="!p-3 text-[0.75rem] mb-3" />
                 <p className="text-ink-soft text-[0.9rem] leading-relaxed mb-3">{lang.note}</p>
                 <code className="font-mono text-burgundy text-[0.75rem] !bg-transparent !border-0 !p-0">{lang.repoPath}</code>
               </div>
@@ -190,8 +189,9 @@ export default function HomePage() {
           <p className="text-ink-soft max-w-prose mb-8 leading-relaxed">
             Sign a Vouch Credential in Python. The same credential is verifiable in TypeScript and Go.
           </p>
-          <pre className="text-sm">
-            <code>{`from vouch import Signer, build_vouch_credential
+          <CodeBlock
+            language="python"
+            code={`from vouch import Signer, build_vouch_credential
 
 signer = Signer.from_did("did:web:agent.example.com")
 
@@ -207,9 +207,9 @@ credential = build_vouch_credential(
 )
 
 signed = signer.sign_credential(credential)
-print(signed["proof"]["proofValue"]) # z-base58-encoded Ed25519 signature
-`}</code>
-          </pre>
+print(signed["proof"]["proofValue"])  # z-base58-encoded Ed25519 signature
+`}
+          />
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/help/#quickstart-python" className="btn-primary">Full Python quickstart</Link>
             <Link href="/help/#quickstart-typescript" className="btn-secondary">TypeScript quickstart</Link>

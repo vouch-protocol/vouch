@@ -65,6 +65,32 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-053](./PAD-053-time-bounded-ephemeral-rules.md) | Time-Bounded Ephemeral Rules with Auto-Expiry for LLM Coding Assistant Sessions | 2026-04-30 | Published |
 | [PAD-054](./PAD-054-filesystem-hierarchy-policy-inheritance.md) | Filesystem-Hierarchy Policy Inheritance for LLM Coding Assistant Workspaces | 2026-04-30 | Published |
 | [PAD-055](./PAD-055-cross-session-policy-re-anchoring.md) | Cross-Session Policy Re-Anchoring via Pre-Flight Context Replay | 2026-04-30 | Published |
+| [PAD-056](./PAD-056-allow-list-bounded-ai-assistant-signing.md) | Capability-Bounded AI Assistant Output via Intent Allow-List at the Identity Sidecar | 2026-05-14 | Published |
+| [PAD-057](./PAD-057-byo-llm-distribution-via-ai-tool-packaging.md) | BYO-LLM Distribution of Protocol Capabilities via AI Tool Packaging | 2026-05-14 | Published |
+| [PAD-058](./PAD-058-automated-key-rotation-on-leak-detection.md) | Automated DID Rotation and Verifier Broadcast Pipeline on Static Leak Detection (Classical + Hybrid PQ) | 2026-05-14 | Published |
+
+
+## May 14, 2026: AI Assistant Architecture and Identity Hygiene (PAD-056 through PAD-058)
+
+Three disclosures published May 14, 2026 close gaps in deploying
+Vouch-aware AI assistants and in keeping a protocol deployment's
+keys hygienic over time.
+
+- **PAD-056** disciplines the AI assistant's authority: an intent
+  allow-list enforced at the Identity Sidecar layer bounds what
+  credentials a prompt-injected LLM can mint to a configuration-
+  specified set, independent of LLM compromise.
+- **PAD-057** inverts the hosted-AI cost model for protocol-vendor
+  developer tooling: the protocol's developer capabilities are
+  shipped as packages for the developer's own AI tool subscription
+  (Claude Skill / OpenAI Custom GPT / Gemini Gem), eliminating
+  vendor-paid inference at any scale of adoption.
+- **PAD-058** closes the loop between generic secret scanning and
+  identity-system key rotation. On detection of Vouch-shaped key
+  material in a repository, a six-stage pipeline revokes, rotates,
+  publishes a dual-signed migration credential bridging old and
+  new keys (including the classical-to-hybrid-PQ cross-suite case),
+  and broadcasts the rotation to known verifiers within seconds.
 
 
 ## April 30, 2026: AI Coding Assistant Governance Series (PAD-048 through PAD-055)

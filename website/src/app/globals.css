@@ -2,6 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* -------------------------------------------------------------------------- */
+/* Theme palettes — driven by CSS variables, Tailwind reads them via         */
+/* tailwind.config.ts's colors map. Switch by setting `data-theme` on <html>.*/
+/* -------------------------------------------------------------------------- */
+
+:root,
+:root[data-theme='light'] {
+  --color-parchment: 250 247 238;          /* #FAF7EE */
+  --color-parchment-warm: 242 235 217;      /* #F2EBD9 */
+  --color-parchment-deep: 239 233 213;      /* #EFE9D5 */
+  --color-ink: 15 23 42;                    /* #0F172A */
+  --color-ink-soft: 51 65 85;               /* #334155 */
+  --color-ink-faint: 100 116 139;           /* #64748B */
+  --color-burgundy: 124 45 58;              /* #7C2D3A */
+  --color-burgundy-dark: 92 31 44;          /* #5C1F2C */
+  --color-burgundy-light: 155 64 81;        /* #9B4051 */
+  --color-rule: 217 207 182;                /* #D9CFB6 */
+  --color-rule-light: 232 223 201;          /* #E8DFC9 */
+
+  /* Code block surface */
+  --color-code-bg: 15 23 42;                /* ink */
+  --color-code-fg: 250 247 238;             /* parchment */
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  /* Background tones: deep, warm near-black. Reads as paper-on-night, not pure black. */
+  --color-parchment: 17 18 27;              /* #11121B - page bg */
+  --color-parchment-warm: 26 27 38;         /* #1A1B26 - cards / nav */
+  --color-parchment-deep: 34 36 50;         /* #222432 */
+
+  /* Foreground tones */
+  --color-ink: 234 230 215;                 /* #EAE6D7 - body text (warm off-white) */
+  --color-ink-soft: 195 191 175;            /* #C3BFAF */
+  --color-ink-faint: 145 142 130;           /* #918E82 */
+
+  /* Burgundy → adjusted to pop on dark without losing identity. Higher chroma, higher luminance for AA contrast. */
+  --color-burgundy: 230 124 142;            /* #E67C8E - lifted from 7C2D3A */
+  --color-burgundy-dark: 200 96 115;        /* #C86073 - hover state */
+  --color-burgundy-light: 245 161 175;      /* #F5A1AF */
+
+  /* Rules */
+  --color-rule: 64 65 80;                   /* #404150 */
+  --color-rule-light: 50 51 65;             /* #323341 */
+
+  /* Code block surface (slightly elevated above the page) */
+  --color-code-bg: 8 9 14;                  /* near-black */
+  --color-code-fg: 234 230 215;
+
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -12,6 +65,7 @@
     @apply bg-parchment text-ink antialiased;
     font-feature-settings: "kern", "liga", "onum";
     line-height: 1.65;
+    transition: background-color 0.18s ease, color 0.18s ease;
   }
 
   ::selection {
@@ -25,11 +79,16 @@
 
   /* Code blocks */
   pre {
-    @apply font-mono bg-ink text-parchment p-5 rounded-none border border-ink overflow-x-auto text-sm leading-relaxed;
+    @apply font-mono p-5 rounded-none overflow-x-auto text-sm leading-relaxed;
+    background-color: rgb(var(--color-code-bg));
+    color: rgb(var(--color-code-fg));
+    border: 1px solid rgb(var(--color-code-bg));
   }
 
   pre code {
-    @apply !bg-transparent !p-0 !text-parchment;
+    background: transparent !important;
+    padding: 0 !important;
+    color: inherit !important;
   }
 
   /* Heading defaults */
@@ -138,6 +197,98 @@
     border-top-style: double;
     @apply border-t-[4px] border-ink;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Blog body — styles applied to HTML imported via dangerouslySetInnerHTML */
+/* ------------------------------------------------------------------ */
+
+.vouch-blog-body {
+  @apply text-ink leading-relaxed;
+  font-size: 1.05rem;
+}
+
+.vouch-blog-body h2 {
+  @apply font-serif font-semibold text-ink mt-12 mb-4 text-[1.6rem] tracking-tight;
+}
+
+.vouch-blog-body h3 {
+  @apply font-serif font-semibold text-burgundy mt-8 mb-3 text-[1.2rem];
+}
+
+.vouch-blog-body p {
+  @apply mb-4 text-ink-soft;
+}
+
+.vouch-blog-body strong {
+  @apply text-ink font-semibold;
+}
+
+.vouch-blog-body a {
+  @apply text-burgundy underline decoration-1 underline-offset-2 hover:text-burgundy-dark;
+}
+
+.vouch-blog-body ul,
+.vouch-blog-body ol {
+  @apply mb-5 ml-6 text-ink-soft;
+  list-style-position: outside;
+}
+
+.vouch-blog-body ul { list-style-type: disc; }
+.vouch-blog-body ol { list-style-type: decimal; }
+
+.vouch-blog-body li {
+  @apply mb-2;
+}
+
+.vouch-blog-body pre {
+  @apply my-5;
+}
+
+.vouch-blog-body code:not(pre code) {
+  @apply font-mono text-[0.85em] bg-parchment-warm text-ink px-1.5 py-0.5 rounded-sm;
+}
+
+.vouch-blog-body .vouch-blog-callout {
+  @apply my-7 px-5 py-4 border-l-4 border-burgundy bg-parchment-warm text-ink;
+}
+
+.vouch-blog-body .vouch-blog-callout strong {
+  @apply text-burgundy;
+}
+
+.vouch-blog-body .step {
+  @apply my-6 border-l-2 border-rule pl-5;
+}
+
+.vouch-blog-body .step .step-number {
+  @apply inline-block font-mono text-burgundy mr-2;
+}
+
+.vouch-blog-body .success-badge {
+  @apply my-6 px-4 py-3 border border-rule text-ink-soft text-[0.95rem];
+}
+
+.vouch-blog-body table {
+  @apply w-full my-6 border border-rule text-left text-[0.92rem];
+  border-collapse: collapse;
+}
+
+.vouch-blog-body th,
+.vouch-blog-body td {
+  @apply border border-rule px-3 py-2 align-top;
+}
+
+.vouch-blog-body th {
+  @apply bg-parchment-warm font-mono uppercase text-[0.7rem] tracking-wider text-ink-soft;
+}
+
+.vouch-blog-body hr {
+  @apply my-8 border-rule;
+}
+
+.vouch-blog-body em {
+  @apply italic;
 }
 
 /* Print styles */
