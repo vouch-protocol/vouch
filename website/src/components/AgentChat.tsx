@@ -166,7 +166,7 @@ function CodeFence({ code, language }: { code: string; language?: string }) {
                 onClick={copy}
                 aria-label={copied ? 'Copied to clipboard' : 'Copy code to clipboard'}
                 title={copied ? 'Copied' : 'Copy'}
-                className="absolute top-1.5 right-1.5 z-10 p-1 rounded-sm border border-parchment/25 text-parchment/70 hover:text-parchment hover:border-parchment/60 hover:bg-parchment/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className="absolute top-1.5 right-1.5 z-10 p-1 rounded-sm border border-parchment/30 text-parchment/70 hover:text-parchment hover:border-parchment/70 hover:bg-parchment/10 focus:text-parchment focus:border-parchment/70 transition-colors"
             >
                 {copied ? (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-emerald-success" aria-hidden="true">
