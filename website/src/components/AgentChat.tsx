@@ -164,10 +164,20 @@ function CodeFence({ code, language }: { code: string; language?: string }) {
             <button
                 type="button"
                 onClick={copy}
-                aria-label={copied ? 'Copied' : 'Copy code'}
-                className="absolute top-1.5 right-2 z-10 px-2 py-0.5 text-[0.65rem] font-mono uppercase tracking-wider border border-parchment/30 text-parchment/80 hover:text-parchment hover:border-parchment/60 transition-colors opacity-70 group-hover:opacity-100"
+                aria-label={copied ? 'Copied to clipboard' : 'Copy code to clipboard'}
+                title={copied ? 'Copied' : 'Copy'}
+                className="absolute top-1.5 right-1.5 z-10 p-1 rounded-sm border border-parchment/25 text-parchment/70 hover:text-parchment hover:border-parchment/60 hover:bg-parchment/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
             >
-                {copied ? '✓ Copied' : 'Copy'}
+                {copied ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-emerald-success" aria-hidden="true">
+                        <path d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5" aria-hidden="true">
+                        <rect x="9" y="9" width="11" height="11" rx="1.5" />
+                        <path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15" />
+                    </svg>
+                )}
             </button>
             {language && (
                 <span className="absolute top-1.5 left-3 font-mono uppercase text-[0.6rem] tracking-[0.18em] text-parchment/50 pointer-events-none">
