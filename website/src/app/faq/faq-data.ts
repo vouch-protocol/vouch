@@ -708,7 +708,8 @@ Python, TypeScript, and Go all verify the same vectors. For BitstringStatusList 
 - Promote the State Verifiability runtime to fully normative once TypeScript and Go ports of the Python implementation land.
 - Expand the post-quantum profile from "hybrid Ed25519 + ML-DSA-44" to "pure ML-DSA" as NIST's CNSA 2.0 migration progresses and confidence in ML-DSA matures.
 - Federate the credential trust state across multiple validator quorums for multi-tenant deployments.
-- Propose the formal standards-track transition once we have enough implementer experience.`,
+- Propose the formal standards-track transition once we have enough implementer experience.
+- Publish a systems whitepaper on [arXiv](https://arxiv.org) that synthesizes the full architecture, Vouch's cryptographic identity layer, Amnesia's deterministic policy layer, and the bridge between them, with empirical evaluation from six to twelve months of real-world usage data.`,
       },
     ],
   },

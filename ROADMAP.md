@@ -173,6 +173,13 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 - [ ] C2PA membership contribution (agent identity assertions)
 - [ ] LFAI AAIF reference implementation recognition
 
+### 5.4 Systems Whitepaper on arXiv (6-12 months post-launch)
+- [ ] Accumulate six to twelve months of real-world Amnesia + Vouch usage data
+- [ ] Empirical evaluation: rule retention over long sessions, cross-IDE compatibility, override frequency, post-quantum overhead measurements
+- [ ] Theoretical framing: recorder/enforcer separation, write-only ledger composition with capability-based security, hybrid PQ signatures as audit-credential primitive
+- [ ] Submit to arXiv (cs.CR primary, cs.SE secondary) with PADs 048-060 cited as the underlying disclosure portfolio
+- [ ] Solicit endorsement if needed; coordinate publication timing with the W3C standards-track transition (§5.3)
+
 ---
 
 ## PAD Coverage Matrix
