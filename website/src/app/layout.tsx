@@ -47,10 +47,13 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
-        {/* Inline theme bootstrap. Runs before React hydrates to prevent a flash. */}
+        {/* Inline theme bootstrap. Runs before React hydrates to prevent a flash.
+            Defaults to 'light' unless the user has explicitly chosen 'dark'. The
+            OS preference is intentionally ignored: the user's pick on this site
+            is the source of truth. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('vouch-theme')||'system';var d=s==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):s;document.documentElement.setAttribute('data-theme',d);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`,
+            __html: `(function(){try{var s=localStorage.getItem('vouch-theme');var d=s==='dark'?'dark':'light';document.documentElement.setAttribute('data-theme',d);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`,
           }}
         />
       </head>

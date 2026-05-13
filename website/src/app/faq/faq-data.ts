@@ -1000,9 +1000,9 @@ Rule of thumb: if your auditor will ask about the sidecar, run the Go one. For e
     items: [
       {
         q: 'How do I switch between light and dark mode?',
-        a: `Click the sun / monitor / moon icon in the top navigation. It cycles Light → Dark → System. Your choice persists across visits.
+        a: `Click the sun (or moon) icon in the top navigation. It flips between Light and Dark on each click. Your choice is remembered across visits and pages.
 
-System mode follows your operating system or browser preference (\`prefers-color-scheme: dark\`).`,
+The site defaults to Light mode. If you want Dark, click the sun once.`,
       },
       {
         q: 'Where did the blog go?',
@@ -1010,7 +1010,7 @@ System mode follows your operating system or browser preference (\`prefers-color
       },
       {
         q: 'How do I copy code from the snippets on this site?',
-        a: `Every code block has a Copy button in the top-right corner. Hover the block and the button becomes clearly visible. Click it, and the entire snippet is copied to your clipboard. The button briefly shows "✓ Copied" to confirm.
+        a: `Every code block has a small burgundy clipboard icon in the top-right corner. Click it and the entire snippet is copied to your clipboard. The icon briefly turns into a green checkmark to confirm.
 
 This works on the homepage, in every guide, in blog posts, and inside the Vouch Assistant's responses.`,
       },
