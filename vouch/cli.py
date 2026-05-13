@@ -1203,6 +1203,36 @@ def _cmd_media_verify_c2pa(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_scan(args) -> int:
+    """Scan a path for Vouch-shaped private key material.
+
+    Implements the OSS detection stage of PAD-058. Use in pre-commit
+    hooks, CI gates, or one-off audits.
+    """
+    from vouch.scan import scan_path, Severity
+    from vouch.scan.detector import (
+        findings_to_json,
+        findings_to_text,
+        has_severity_at_or_above,
+    )
+
+    try:
+        findings = scan_path(args.path)
+    except FileNotFoundError as e:
+        print(f"vouch scan: {e}", file=sys.stderr)
+        return 2
+
+    if args.json:
+        print(findings_to_json(findings))
+    else:
+        print(findings_to_text(findings))
+
+    threshold = Severity(args.exit_nonzero_on)
+    if has_severity_at_or_above(findings, threshold):
+        return 1
+    return 0
+
+
 def main() -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -1293,6 +1323,20 @@ def main() -> int:
         "--c2pa", action="store_true", help="Verify C2PA manifest instead of Vouch signature"
     )
 
+    # scan command (PAD-058 detection stage; OSS leak scanner)
+    p_scan = subparsers.add_parser(
+        "scan",
+        help="Scan a path for Vouch-shaped private key material (PAD-058 detector)",
+    )
+    p_scan.add_argument("path", nargs="?", default=".", help="File or directory to scan (default: current directory)")
+    p_scan.add_argument("--json", action="store_true", help="Output findings as JSON")
+    p_scan.add_argument(
+        "--exit-nonzero-on",
+        choices=["critical", "high", "medium", "low"],
+        default="critical",
+        help="Exit with non-zero status when any finding is at or above this severity (default: critical)",
+    )
+
     args = parser.parse_args()
 
     setup_logging(args.verbose if hasattr(args, "verbose") else False)
@@ -1321,6 +1365,8 @@ def main() -> int:
         else:
             p_media.print_help()
             return 0
+    elif args.command == "scan":
+        return cmd_scan(args)
     else:
         parser.print_help()
         return 0
