@@ -1,9 +1,11 @@
-2:I[4217,["972","static/chunks/972-344ef090824a80bd.js","569","static/chunks/app/help/page-a35500c57ba2d5a5.js"],"default"]
-12:I[4707,[],""]
-13:I[6423,[],""]
-14:I[4486,["972","static/chunks/972-344ef090824a80bd.js","185","static/chunks/app/layout-d168bb46369b27d6.js"],"default"]
-15:I[2972,["972","static/chunks/972-344ef090824a80bd.js","931","static/chunks/app/page-e49f6abdaa52c62f.js"],""]
-16:I[8003,["972","static/chunks/972-344ef090824a80bd.js","185","static/chunks/app/layout-d168bb46369b27d6.js"],""]
+2:I[4217,["972","static/chunks/972-cd98585eebb47bc2.js","569","static/chunks/app/help/page-b5a9df2033462917.js"],"default"]
+18:I[4707,[],""]
+19:I[6423,[],""]
+1a:I[334,["972","static/chunks/972-cd98585eebb47bc2.js","640","static/chunks/640-fa4369a43e2495ed.js","185","static/chunks/app/layout-86c8bc04fd2ee708.js"],"default"]
+1b:I[2972,["972","static/chunks/972-cd98585eebb47bc2.js","931","static/chunks/app/page-7c97f1796255299c.js"],""]
+1c:I[9177,["972","static/chunks/972-cd98585eebb47bc2.js","640","static/chunks/640-fa4369a43e2495ed.js","185","static/chunks/app/layout-86c8bc04fd2ee708.js"],"default"]
+1d:I[1825,["972","static/chunks/972-cd98585eebb47bc2.js","640","static/chunks/640-fa4369a43e2495ed.js","185","static/chunks/app/layout-86c8bc04fd2ee708.js"],"default"]
+1e:I[8003,["972","static/chunks/972-cd98585eebb47bc2.js","640","static/chunks/640-fa4369a43e2495ed.js","185","static/chunks/app/layout-86c8bc04fd2ee708.js"],""]
 3:T609,
 ## Install
 
@@ -831,6 +833,360 @@ vouch revocation check --did did:web:agent.example.com
 ## Output formats
 
 All subcommands support `--json` for machine-readable output. The default is human-readable. Use `--env` to format output as shell exports for scripting.
-0:["w_bCrEX27M6PkVESC2gd-",[[["",{"children":["help",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],["",{"children":["help",{"children":["__PAGE__",{},[["$L1",[["$","section",null,{"className":"border-b border-rule","children":["$","div",null,{"className":"container-wide py-16 md:py-20","children":[["$","div",null,{"className":"eyebrow mb-5","children":"Help & Guides"}],["$","h1",null,{"className":"font-serif font-semibold text-ink leading-[1.1] tracking-tight mb-5 text-[clamp(2rem,4.2vw,3rem)]","children":"Long-form guides for getting Vouch into production."}],["$","p",null,{"className":"text-ink-soft text-[1.05rem] leading-relaxed max-w-prose","children":[5," parts covering ",16," guides: quickstarts in three languages, identity and key management, the hybrid post-quantum profile, delegation chains, sidecar deployment, KMS integration, reputation and revocation engines, framework integrations, and the complete CLI reference. Use the marginalia at left to navigate, or search across every guide."]}]]}]}],["$","section",null,{"children":["$","div",null,{"className":"container-wide py-12 md:py-16","children":["$","$L2",null,{"sections":[{"id":"getting-started","title":"Getting Started","description":"Pick a language, install the SDK, and sign your first credential in under five minutes.","articles":[{"id":"quickstart-python","title":"Python Quickstart","summary":"Five-minute path from pip install to a verified Vouch credential.","body":"$3"},{"id":"quickstart-typescript","title":"TypeScript Quickstart","summary":"Same flow in Node or browser. Cross-verifies with Python-signed credentials.","body":"$4"},{"id":"quickstart-go","title":"Go Sidecar Quickstart","summary":"Run the long-running signing daemon. Sign credentials from any language over HTTP.","body":"$5"}]},{"id":"identity-and-signing","title":"Identity & Signing","description":"Manage your agent's identity and keys, sign with post-quantum crypto, and build delegation chains.","articles":[{"id":"did-management","title":"Managing DIDs and Keys","summary":"did:web vs did:key, where keys live, how to rotate.","body":"$6"},{"id":"hybrid-pq","title":"Signing with Post-Quantum Crypto","summary":"How to make your signatures safe today and ready for the day quantum computers break Ed25519.","body":"$7"},{"id":"delegation-chains","title":"Building Permission Chains","summary":"When a human delegates to an agent that delegates to a sub-agent: how to track each step cryptographically.","body":"$8"}]},{"id":"deployment","title":"Production Deployment","description":"How to run Vouch reliably at scale: the sidecar, your KMS, revocation registries, metrics, rate limits.","articles":[{"id":"sidecar-deployment","title":"Deploying the Vouch Sidecar","summary":"Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.","body":"$9"},{"id":"kms-integration","title":"Connecting Your KMS","summary":"How to keep production signing keys in AWS, GCP, Azure, or an encrypted local file.","body":"\n## AWS KMS\n\n```python\nfrom vouch.kms import RotatingKeyProvider\n\nprovider = RotatingKeyProvider(\n  backend=\"aws-kms\",\n  key_id=\"alias/vouch-agent-prod\",\n  region=\"us-east-1\",\n)\n```\n\nRequires `boto3` and IAM permissions `kms:Sign` and `kms:GetPublicKey` on the key.\n\n## GCP KMS\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"gcp-kms\",\n  key_id=\"projects/my-proj/locations/global/keyRings/vouch/cryptoKeys/agent\",\n)\n```\n\nRequires `google-cloud-kms` and the `roles/cloudkms.signer` IAM role.\n\n## Azure Key Vault\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"azure-kv\",\n  key_id=\"https://vouch-kv.vault.azure.net/keys/agent/abc123\",\n)\n```\n\nRequires `azure-keyvault-keys` and the Key Vault Crypto Officer role.\n\n## Local file (development only)\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"local-file\",\n  key_id=\"/etc/vouch/agent.jwk\",\n  passphrase=os.environ[\"VOUCH_KEY_PASSPHRASE\"],\n)\n```\n"},{"id":"reputation","title":"Tracking Agent Reputation","summary":"How to score, decay, and slash reputations across a fleet of agents using Memory, Redis, or Kafka.","body":"$a"},{"id":"revocation","title":"Revoking an Entire Agent","summary":"When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.","body":"$b"},{"id":"credential-status","title":"Revoking Individual Credentials","summary":"How to revoke or suspend a single credential without invalidating everything else the agent ever signed.","body":"$c"},{"id":"metrics-and-observability","title":"Metrics & Observability","summary":"What Vouch emits to Prometheus and OpenTelemetry, plus what is worth alerting on.","body":"$d"}]},{"id":"integrations","title":"Framework Integrations","description":"Wire Vouch into the framework you already use, or into your GitHub workflow.","articles":[{"id":"integrations","title":"Which AI Frameworks Vouch Plugs Into","summary":"Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.","body":"$e"},{"id":"github-app","title":"The Vouch Gatekeeper GitHub App","summary":"Block unsigned commits and enforce your team policy on every pull request, with one click to install.","body":"$f"},{"id":"vouch-shield","title":"Adding Vouch Shield to Your Agent","summary":"Drop a small middleware in front of your agent so every tool call gets checked before it runs.","body":"$10"}]},{"id":"cli","title":"CLI Reference","description":"Every command, every flag, with copy-pasteable examples.","articles":[{"id":"cli-reference","title":"The vouch Command Reference","summary":"Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.","body":"$11"}]}]}]}]}]],null],null],null]},[null,["$","$L12",null,{"parallelRouterKey":"children","segmentPath":["children","help","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L13",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/381a08d5ec223546.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap","rel":"stylesheet"}]]}],["$","body",null,{"children":[["$","$L14",null,{}],["$","main",null,{"children":["$","$L12",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L13",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":"404"}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],"notFoundStyles":[]}]}],["$","footer",null,{"className":"mt-24 pb-12","children":["$","div",null,{"className":"container-wide","children":["$","div",null,{"className":"double-rule pt-12","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L15",null,{"href":"/","className":"font-serif font-bold text-[1.4rem] tracking-tight text-ink no-underline block mb-2","children":"Vouch Protocol"}],["$","p",null,{"className":"font-serif italic text-ink-faint text-[0.9rem] max-w-[280px]","children":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}]]}],[["$","div","Product",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Product"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","FAQ",{"children":["$","$L15",null,{"href":"/faq/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"FAQ"}]}],["$","li","Help & Guides",{"children":["$","$L15",null,{"href":"/help/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Help & Guides"}]}],["$","li","Support",{"children":["$","$L15",null,{"href":"/support/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Support"}]}]]}]]}],["$","div","Resources",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Resources"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","GitHub",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub"}]}],["$","li","Specification",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Specification"}]}],["$","li","Test Vectors",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/test-vectors","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Test Vectors"}]}],["$","li","CHANGELOG",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"CHANGELOG"}]}]]}]]}],["$","div","SDKs",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"SDKs"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Python (PyPI)",{"children":["$","a",null,{"href":"https://pypi.org/project/vouch-protocol/","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Python (PyPI)"}]}],["$","li","TypeScript (npm)",{"children":["$","a",null,{"href":"https://www.npmjs.com/package/@vouch-protocol/core","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"TypeScript (npm)"}]}],["$","li","Go sidecar",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/go-sidecar","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Go sidecar"}]}],["$","li","Browser extension",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/browser-extension","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Browser extension"}]}]]}]]}],["$","div","Community",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Community"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Discord",{"children":["$","a",null,{"href":"https://discord.gg/mMqx5cG9Y","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Discord"}]}],["$","li","GitHub issues",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/issues","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub issues"}]}],["$","li","X / Twitter",{"children":["$","a",null,{"href":"https://x.com/Vouch_Protocol","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"X / Twitter"}]}]]}]]}]]]}],["$","div",null,{"className":"mt-12 pt-6 border-t border-rule flex flex-col md:flex-row gap-3 items-start md:items-center justify-between font-mono text-[0.7rem] tracking-[0.1em] text-ink-faint","children":[["$","span",null,{"children":"© 2025-2026 Ramprasad Gaddam. Licensed under Apache 2.0."}],["$","span",null,{"children":"An open standard specification."}]]}]]}]}]}],["$","$L16",null,{"src":"https://www.googletagmanager.com/gtag/js?id=G-JHPT5HRW2F","strategy":"afterInteractive"}],["$","$L16",null,{"id":"gtag-init","strategy":"afterInteractive","children":"\n            window.dataLayer = window.dataLayer || [];\n            function gtag(){dataLayer.push(arguments);}\n            gtag('js', new Date());\n            gtag('config', 'G-JHPT5HRW2F');\n          "}]]}]]}]],null],null],["$L17",null]]]]
-17:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Help & Guides - Vouch Protocol"}],["$","meta","3",{"name":"description","content":"Long-form guides for Vouch Protocol: quickstarts in Python, TypeScript, and Go; key management; hybrid post-quantum signing; delegation chains; sidecar deployment; KMS integration; reputation and revocation; framework integrations; CLI reference."}],["$","meta","4",{"property":"og:title","content":"Vouch Protocol"}],["$","meta","5",{"property":"og:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","6",{"property":"og:url","content":"https://vouch-protocol.com/"}],["$","meta","7",{"property":"og:image","content":"https://vouch-protocol.com/assets/vouch-logo-full.png"}],["$","meta","8",{"property":"og:type","content":"website"}],["$","meta","9",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","10",{"name":"twitter:site","content":"@Vouch_Protocol"}],["$","meta","11",{"name":"twitter:title","content":"Vouch Protocol"}],["$","meta","12",{"name":"twitter:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","13",{"name":"twitter:image","content":"https://vouch-protocol.com/assets/vouch-logo-full.png"}],["$","link","14",{"rel":"icon","href":"/assets/vouch-logo-icon.jpg"}]]
+12:T181c,
+The State Verifiability runtime ships in the Python SDK today. This quickstart wires the four primitives together: trust entropy, behavioral attestation, canary commitments, and validator quorum.
+
+## Install
+
+```bash
+pip install vouch-protocol
+```
+
+## Agent side: build a heartbeat session
+
+```python
+from vouch import HeartbeatSession, HeartbeatScheduler, BehavioralCollector
+from vouch.behavioral_attestation import ewma_drift_scorer
+import asyncio
+import httpx
+
+session = HeartbeatSession(subject_did="did:web:agent.example.com")
+session.collector = BehavioralCollector(intent_drift_scorer=ewma_drift_scorer(alpha=0.3))
+
+# As the agent runs, record its activity
+session.record_action(b"submit_claim:HC-001")
+session.collector.record_api_call("https://api.example.com/orders", tokens=120)
+session.collector.record_resource_access("order:42")
+```
+
+## Submit each heartbeat to the validator
+
+```python
+VALIDATOR_URL = "https://validator.example.com/heartbeat"
+
+async def submit(request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.post(VALIDATOR_URL, json=request.to_dict())
+        resp.raise_for_status()
+        return resp.json()  # the new SessionVoucher
+
+scheduler = HeartbeatScheduler(
+    session=session,
+    interval_seconds=60,
+    submit_callback=submit,
+)
+scheduler.start()
+
+# ... agent runs as normal ...
+
+await scheduler.stop()
+```
+
+The scheduler pulls the current behavioral digest from the collector, advances the canary commit/reveal chain, and includes the running Merkle root of actions performed since the last heartbeat. The validator's response is a fresh SessionVoucher with decayed-but-renewed trust.
+
+## Validator side: accept and renew
+
+```python
+from vouch import HeartbeatValidator, MemoryHeartbeatStore
+
+validator = HeartbeatValidator(
+    validator_did="did:web:validator.example.com",
+    initial_trust=1.0,
+    decay_lambda=0.01,
+    voucher_valid_seconds=120,
+    scope=["agent_actions"],
+    store=MemoryHeartbeatStore(),  # swap for RedisHeartbeatStore in production
+)
+
+def handle_heartbeat(request_dict):
+    result = validator.validate(request_dict)
+    if result.ok:
+        return result.session_voucher
+    return {"error": "rejected", "reasons": result.reasons}
+```
+
+The validator checks schema, behavioral digest structure, canary chain integrity, and interval-index monotonicity. A broken canary chain or stale interval index returns a structured rejection — the agent does not get a new voucher and its existing one expires.
+
+## Trust entropy: gate actions by current trust
+
+Each SessionVoucher carries `initialTrust` and `decayLambda`. The effective trust at time `t` is:
+
+```
+trust(t) = initialTrust * exp(-decayLambda * (now - issuedAt_seconds))
+```
+
+Gate sensitive actions by checking the current trust:
+
+```python
+from vouch import compute_trust_at, check_trust_threshold
+from vouch.trust_entropy import (
+    TRUST_THRESHOLD_HIGH_STAKES,    # 0.9
+    TRUST_THRESHOLD_MEDIUM_STAKES,  # 0.75
+    TRUST_THRESHOLD_LOW_STAKES,     # 0.5
+)
+from datetime import datetime, timezone
+
+now = datetime.now(timezone.utc)
+
+if check_trust_threshold(session_voucher, TRUST_THRESHOLD_HIGH_STAKES, at_time=now):
+    allow_financial_transfer()
+elif check_trust_threshold(session_voucher, TRUST_THRESHOLD_MEDIUM_STAKES, at_time=now):
+    allow_phi_read()
+elif check_trust_threshold(session_voucher, TRUST_THRESHOLD_LOW_STAKES, at_time=now):
+    allow_status_query()
+else:
+    reject_action()
+```
+
+Set your heartbeat interval to less than half the trust half-life so renewal stays ahead of decay. Half-life is `ln(2) / decay_lambda`.
+
+## Validator quorum: M-of-N approval
+
+A single validator is a single point of failure. For regulated deployments, require multiple validators with different responsibilities to approve each heartbeat:
+
+```python
+from vouch import HeartbeatQuorum, QuorumValidator, ROLE_POLICY, ROLE_BEHAVIORAL, ROLE_BUDGET
+
+quorum = HeartbeatQuorum(
+    validators=[
+        QuorumValidator(validator=policy_validator,     role=ROLE_POLICY),
+        QuorumValidator(validator=behavioral_validator, role=ROLE_BEHAVIORAL),
+        QuorumValidator(validator=budget_validator,     role=ROLE_BUDGET),
+    ],
+    threshold=2,
+)
+
+result = quorum.validate(heartbeat_request_dict)
+if result.ok:
+    voucher = result.session_voucher
+    # voucher.issuer lists all approving validator DIDs
+```
+
+Trust parameter aggregation is configurable. Defaults: `initial_trust` takes the minimum, `decay_lambda` takes the maximum, `scope` is the intersection of all approving validators' scopes.
+
+## Canary commitments: detect a silent failure
+
+The heartbeat carries a fresh canary commitment plus the prior commitment's reveal. If the agent skips a beat or sends a wrong reveal, the chain breaks and no subsequent heartbeat can resume it. Silent failure becomes loud.
+
+The `HeartbeatSession` and `HeartbeatValidator` manage this automatically. To use the primitive directly:
+
+```python
+from vouch import CanaryChain, CanaryVerifier
+
+chain = CanaryChain()
+msg = chain.next_heartbeat()
+# msg.commitment is what to send this interval
+# msg.reveal is the previous secret (None on first interval)
+
+verifier = CanaryVerifier()
+ok = verifier.observe(msg.commitment, msg.reveal)
+if not ok:
+    revoke_session_voucher()
+```
+
+Validator state is small (one string per agent), so it survives restarts via `last_commitment` persistence in your chosen `HeartbeatStoreInterface` backend.
+
+## What's not in this quickstart
+
+- TypeScript and Go ports of the runtime modules: data formats are cross-language; the orchestration is Python-only today.
+- Concrete persistence backends beyond `MemoryHeartbeatStore` (Redis, Postgres, S3): ship in the commercial Pro tier.
+- Custom drift scorers beyond `mean_drift_scorer`, `max_drift_scorer`, `ewma_drift_scorer`: subclass `BehavioralCollector` to add your own.
+
+See [PAD-016](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-016-dynamic-credential-renewal.md) for the full Heartbeat Protocol disclosure and [PAD-022](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-022-swarm-limits-protocol.md) for the rate-limiting companion.
+13:T672,
+## Install
+
+Linux / macOS / WSL:
+
+```bash
+git clone https://github.com/vouch-protocol/vouch
+cp -r vouch/claude-skill ~/.claude/skills/vouch-protocol
+```
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/vouch-protocol/vouch
+Copy-Item -Recurse vouch\claude-skill "$env:USERPROFILE\.claude\skills\vouch-protocol"
+```
+
+Restart Claude Code and run `/skills`. You should see `vouch-protocol` listed.
+
+## What triggers it
+
+The skill loads when your prompt mentions `vouch-protocol`, `did:web`, `eddsa-jcs-2022`, `hybrid-eddsa-mldsa44-jcs-2026`, `BitstringStatusList`, `SessionVoucher`, `Heartbeat Protocol`, or natural-language variants like "sign a credential with Vouch" or "verify a Vouch credential."
+
+## What's inside
+
+Eleven reference files: `python-sdk.md`, `typescript-sdk.md`, `go-sidecar.md`, `credential-format.md`, `delegation.md`, `post-quantum.md`, `revocation.md`, `state-verifiability.md`, `integrations.md`, `sidecar.md`, `troubleshooting.md`. Plus `SKILL.md` (the manifest) and `README.md`.
+
+## Updating
+
+```bash
+cd ~/.claude/skills/vouch-protocol
+git pull
+```
+
+The skill versions with the protocol. Pull whenever Vouch ships a new cryptosuite or SDK shape.
+
+## Customising for your team
+
+Fork the `claude-skill/` folder and edit references to add your DID prefix, your verifier hostname, your team's action vocabulary. Update `SKILL.md`'s description so it triggers on your terminology too.
+
+## What if I use Claude Desktop or the web app
+
+Skills are a Claude Code (CLI) feature. On Desktop or the web app, paste the contents of `SKILL.md` and the relevant `reference/*.md` files into your project's Custom Instructions.
+14:T568,
+We do not host a shared Custom GPT. Build your own from the configuration in `openai-gpt/` in the repo.
+
+## Build steps
+
+1. Open https://chatgpt.com/gpts/editor and click Create.
+2. Switch to the Configure tab.
+3. Paste each field from its file:
+   - **Name** ← `name.txt`
+   - **Description** ← `description.txt`
+   - **Instructions** ← `instructions.md` (the whole file)
+   - **Conversation starters** ← one line per starter from `conversation-starters.md`
+4. Upload all files in `openai-gpt/knowledge/` to the Knowledge section.
+5. Enable Web Browsing and Code Interpreter. Leave DALL-E off.
+6. Optionally add Actions: paste `actions.yaml`, configure auth per `actions-auth.md`. This lets the GPT call the hosted Vouch Assistant to sign for you.
+7. Save as "Only me" first. Test in the preview pane. Promote to "Anyone with the link" or "Public" when you are satisfied.
+
+## Why we publish the config instead of a shared GPT
+
+Custom GPTs are tied to one OpenAI account, change owner with acquisitions, and cannot be forked. Publishing the source of truth in the repo lets your team build a version it controls, audits, and updates.
+
+## Updating
+
+When Vouch ships a new SDK shape or cryptosuite, pull the latest `openai-gpt/` from the repo. In the GPT editor, replace the knowledge files (the builder deduplicates by filename) and bump the version note in the Instructions.
+15:T486,
+## Build steps
+
+Gemini Advanced or Google AI Pro for the full ten-file corpus; the free tier supports a smaller attachment.
+
+1. Open https://gemini.google.com/gems/create.
+2. Click New Gem.
+3. Paste `gemini-gem/name.txt`, `description.txt`, and `instructions.md`.
+4. Upload all files in `gemini-gem/knowledge/`.
+5. Add the prompts from `examples.md` as the Gem's Examples.
+6. Click Preview and run a test prompt.
+7. Save & share (Private / Anyone with the link / Workspace org).
+
+## Workspace integration
+
+Because Gems live inside Gemini, they automatically have access to Google Workspace tools. The Vouch Gem is instructed to:
+
+- Confirm before creating any Doc, Sheet, or email.
+- Use Google Search when you ask about current GitHub state.
+
+## Free tier vs Advanced
+
+Free tier: trim the corpus to four files (`overview.md`, `quickstart.md`, `credential-format.md`, `troubleshooting.md`). Gemini Advanced and Workspace plans support the full ten-file corpus and long context.
+
+## Sharing inside your Workspace org
+
+In the Gem's Save dialog, choose "Visible to anyone in [your org]". Workspace admins can install Gems for all users from the admin console.
+16:T5f2,
+The chat helper on vouch-protocol.com is open source under `website-agent/` in the repo. You can self-host it.
+
+## Three processes, three terminals
+
+### 1. Dev sidecar (ephemeral Ed25519 key — dev only)
+
+```bash
+cd ~/vouch-protocol/website-agent/backend
+python -m vouch_agent.dev_sidecar --did did:web:agent.example.com --port 8877
+```
+
+### 2. Agent backend (FastAPI + RAG + signer client)
+
+```bash
+cd ~/vouch-protocol/website-agent/backend
+cp ../.env.example ../.env
+# edit ../.env to add your LLM key
+uvicorn vouch_agent.main:app --host 127.0.0.1 --port 8000
+```
+
+### 3. Chat widget (standalone Next.js harness)
+
+```bash
+cd ~/vouch-protocol/website-agent/standalone
+npm install
+npm run dev    # http://localhost:3200
+```
+
+Open **http://localhost:3200**. The status strip shows backend OK, sidecar OK, and the number of knowledge chunks indexed.
+
+## Pick an LLM provider
+
+The backend supports three:
+
+```bash
+# Anthropic (default)
+export VOUCH_LLM_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# OpenAI
+export VOUCH_LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-...
+
+# Google Gemini
+export VOUCH_LLM_PROVIDER=gemini
+export GEMINI_API_KEY=...
+```
+
+Or set them in `website-agent/.env` (auto-loaded on backend start).
+
+## Production deployment
+
+For production, replace the dev sidecar with the Go sidecar (`vouch-sidecar`) backed by KMS, and run the agent backend behind a reverse proxy with TLS. The backend is self-contained; everything else (LLM provider, sidecar URL, CORS allow-list) is environment-driven.
+17:T747,
+Three reference sidecars ship with the protocol. They are not interchangeable in production. Pick by use case, not language preference.
+
+## Tier table
+
+| Tier | Language | Use case | Key storage |
+|---|---|---|---|
+| **Production** | Go (`go-sidecar/`) | Audited, regulated, high-throughput | KMS / HSM / file |
+| **Lightweight** | Python (`vouch.sidecar.*`) | Self-hosted Python stacks | File or env |
+| **Lightweight** | TypeScript (`packages/sdk-ts/sidecar/`) | Self-hosted Node stacks | File or env |
+| **Development** | Python `dev_sidecar` | Local dev only | Ephemeral, in-memory |
+
+**Rule of thumb**: if your auditor will ask about the sidecar, run the Go one.
+
+## Why the lightweight tier is lightweight on purpose
+
+The sidecar is security-critical, so smaller code surface is safer. The Python and TS sidecars intentionally omit:
+
+- Hybrid post-quantum signing (`hybrid-eddsa-mldsa44-jcs-2026`)
+- KMS / HSM integration
+- Sensitive-mode JWE wrapping
+- Heartbeat session validation
+- Multi-tenancy
+
+When you need any of those, switch to the Go sidecar. The wire format is identical, so the client only changes one environment variable.
+
+## Cross-language equivalence
+
+All three sidecars expose the same HTTP API:
+
+- `GET /health` — liveness probe
+- `GET /did` — the sidecar's DID
+- `GET /.well-known/did.json` — DID Document (optional)
+- `POST /sign` — sign an intent, return a Vouch credential
+
+A shared contract test suite at `test-vectors/sidecar-contract/` verifies that each implementation accepts and rejects the same inputs and emits semantically equivalent credentials.
+
+## Switching tiers
+
+The HTTP API is identical:
+
+```bash
+export VOUCH_SIDECAR_URL=http://localhost:8877
+```
+
+The agent code does not change. What changes is the DID (production agents use a real did:web on your domain) and the key material (production loads from KMS).
+0:["o52RybRVPfemsr7ZOxjDy",[[["",{"children":["help",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",true],["",{"children":["help",{"children":["__PAGE__",{},[["$L1",[["$","section",null,{"className":"border-b border-rule","children":["$","div",null,{"className":"container-wide py-16 md:py-20","children":[["$","div",null,{"className":"eyebrow mb-5","children":"Help & Guides"}],["$","h1",null,{"className":"font-serif font-semibold text-ink leading-[1.1] tracking-tight mb-5 text-[clamp(2rem,4.2vw,3rem)]","children":"Long-form guides for getting Vouch into production."}],["$","p",null,{"className":"text-ink-soft text-[1.05rem] leading-relaxed max-w-prose","children":[7," parts covering ",22," guides: quickstarts in three languages, identity and key management, the hybrid post-quantum profile, delegation chains, sidecar deployment, KMS integration, reputation and revocation engines, framework integrations, and the complete CLI reference. Use the marginalia at left to navigate, or search across every guide."]}]]}]}],["$","section",null,{"children":["$","div",null,{"className":"container-wide py-12 md:py-16","children":["$","$L2",null,{"sections":[{"id":"getting-started","title":"Getting Started","description":"Pick a language, install the SDK, and sign your first credential in under five minutes.","articles":[{"id":"quickstart-python","title":"Python Quickstart","summary":"Five-minute path from pip install to a verified Vouch credential.","body":"$3"},{"id":"quickstart-typescript","title":"TypeScript Quickstart","summary":"Same flow in Node or browser. Cross-verifies with Python-signed credentials.","body":"$4"},{"id":"quickstart-go","title":"Go Sidecar Quickstart","summary":"Run the long-running signing daemon. Sign credentials from any language over HTTP.","body":"$5"}]},{"id":"identity-and-signing","title":"Identity & Signing","description":"Manage your agent's identity and keys, sign with post-quantum crypto, and build delegation chains.","articles":[{"id":"did-management","title":"Managing DIDs and Keys","summary":"did:web vs did:key, where keys live, how to rotate.","body":"$6"},{"id":"hybrid-pq","title":"Signing with Post-Quantum Crypto","summary":"How to make your signatures safe today and ready for the day quantum computers break Ed25519.","body":"$7"},{"id":"delegation-chains","title":"Building Permission Chains","summary":"When a human delegates to an agent that delegates to a sub-agent: how to track each step cryptographically.","body":"$8"}]},{"id":"deployment","title":"Production Deployment","description":"How to run Vouch reliably at scale: the sidecar, your KMS, revocation registries, metrics, rate limits.","articles":[{"id":"sidecar-deployment","title":"Deploying the Vouch Sidecar","summary":"Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.","body":"$9"},{"id":"kms-integration","title":"Connecting Your KMS","summary":"How to keep production signing keys in AWS, GCP, Azure, or an encrypted local file.","body":"\n## AWS KMS\n\n```python\nfrom vouch.kms import RotatingKeyProvider\n\nprovider = RotatingKeyProvider(\n  backend=\"aws-kms\",\n  key_id=\"alias/vouch-agent-prod\",\n  region=\"us-east-1\",\n)\n```\n\nRequires `boto3` and IAM permissions `kms:Sign` and `kms:GetPublicKey` on the key.\n\n## GCP KMS\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"gcp-kms\",\n  key_id=\"projects/my-proj/locations/global/keyRings/vouch/cryptoKeys/agent\",\n)\n```\n\nRequires `google-cloud-kms` and the `roles/cloudkms.signer` IAM role.\n\n## Azure Key Vault\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"azure-kv\",\n  key_id=\"https://vouch-kv.vault.azure.net/keys/agent/abc123\",\n)\n```\n\nRequires `azure-keyvault-keys` and the Key Vault Crypto Officer role.\n\n## Local file (development only)\n\n```python\nprovider = RotatingKeyProvider(\n  backend=\"local-file\",\n  key_id=\"/etc/vouch/agent.jwk\",\n  passphrase=os.environ[\"VOUCH_KEY_PASSPHRASE\"],\n)\n```\n"},{"id":"reputation","title":"Tracking Agent Reputation","summary":"How to score, decay, and slash reputations across a fleet of agents using Memory, Redis, or Kafka.","body":"$a"},{"id":"revocation","title":"Revoking an Entire Agent","summary":"When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.","body":"$b"},{"id":"credential-status","title":"Revoking Individual Credentials","summary":"How to revoke or suspend a single credential without invalidating everything else the agent ever signed.","body":"$c"},{"id":"metrics-and-observability","title":"Metrics & Observability","summary":"What Vouch emits to Prometheus and OpenTelemetry, plus what is worth alerting on.","body":"$d"}]},{"id":"integrations","title":"Framework Integrations","description":"Wire Vouch into the framework you already use, or into your GitHub workflow.","articles":[{"id":"integrations","title":"Which AI Frameworks Vouch Plugs Into","summary":"Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.","body":"$e"},{"id":"github-app","title":"The Vouch Gatekeeper GitHub App","summary":"Block unsigned commits and enforce your team policy on every pull request, with one click to install.","body":"$f"},{"id":"vouch-shield","title":"Adding Vouch Shield to Your Agent","summary":"Drop a small middleware in front of your agent so every tool call gets checked before it runs.","body":"$10"}]},{"id":"cli","title":"CLI Reference","description":"Every command, every flag, with copy-pasteable examples.","articles":[{"id":"cli-reference","title":"The vouch Command Reference","summary":"Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.","body":"$11"}]},{"id":"state-verifiability","title":"State Verifiability Runtime","description":"Hands-on quickstart for the Heartbeat Protocol, trust entropy decay, behavioral attestation, canary commitments, and validator quorum.","articles":[{"id":"state-verifiability-quickstart","title":"Heartbeat Quickstart","summary":"Stand up a heartbeat-renewing agent against a validator in under ten minutes.","body":"$12"}]},{"id":"ai-assistants","title":"AI Assistants","description":"Install and use the Claude Skill, OpenAI Custom GPT, Gemini Gem, and the Vouch Assistant on this website.","articles":[{"id":"claude-skill-install","title":"Installing the Claude Skill","summary":"Drop-in skill that teaches Claude Code the Vouch SDK shapes, DID conventions, and integration patterns.","body":"$13"},{"id":"openai-gpt-build","title":"Building the OpenAI Custom GPT","summary":"Configuration to build your own Vouch Protocol Assistant in ChatGPT.","body":"$14"},{"id":"gemini-gem-create","title":"Creating the Gemini Gem","summary":"Configuration to build your own Vouch Protocol Helper in Google Gemini.","body":"$15"},{"id":"assistant-local","title":"Running the Vouch Assistant locally","summary":"Three processes: dev sidecar, agent backend, chat widget. Browse to localhost:3200.","body":"$16"},{"id":"sidecar-tiers","title":"Choosing a sidecar tier","summary":"Go for production, Python or TypeScript for lightweight self-hosting, Python `dev_sidecar` for local development.","body":"$17"}]}]}]}]}]],null],null],null]},[null,["$","$L18",null,{"parallelRouterKey":"children","segmentPath":["children","help","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L19",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/00c4677c04acc60d.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap","rel":"stylesheet"}],["$","script",null,{"dangerouslySetInnerHTML":{"__html":"(function(){try{var s=localStorage.getItem('vouch-theme')||'system';var d=s==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):s;document.documentElement.setAttribute('data-theme',d);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();"}}]]}],["$","body",null,{"children":[["$","$L1a",null,{}],["$","main",null,{"children":["$","$L18",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L19",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":"404"}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],"notFoundStyles":[]}]}],["$","footer",null,{"className":"mt-24 pb-12","children":["$","div",null,{"className":"container-wide","children":["$","div",null,{"className":"double-rule pt-12","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L1b",null,{"href":"/","className":"font-serif font-bold text-[1.4rem] tracking-tight text-ink no-underline block mb-2","children":"Vouch Protocol"}],["$","p",null,{"className":"font-serif italic text-ink-faint text-[0.9rem] max-w-[280px]","children":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}]]}],[["$","div","Product",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Product"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","FAQ",{"children":["$","$L1b",null,{"href":"/faq/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"FAQ"}]}],["$","li","Help & Guides",{"children":["$","$L1b",null,{"href":"/help/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Help & Guides"}]}],["$","li","Support",{"children":["$","$L1b",null,{"href":"/support/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Support"}]}]]}]]}],["$","div","Resources",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Resources"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","GitHub",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub"}]}],["$","li","Specification",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Specification"}]}],["$","li","Test Vectors",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/test-vectors","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Test Vectors"}]}],["$","li","CHANGELOG",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"CHANGELOG"}]}]]}]]}],["$","div","SDKs",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"SDKs"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Python (PyPI)",{"children":["$","a",null,{"href":"https://pypi.org/project/vouch-protocol/","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Python (PyPI)"}]}],["$","li","TypeScript (npm)",{"children":["$","a",null,{"href":"https://www.npmjs.com/package/@vouch-protocol/core","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"TypeScript (npm)"}]}],["$","li","Go sidecar",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/go-sidecar","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Go sidecar"}]}],["$","li","Browser extension",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/browser-extension","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Browser extension"}]}]]}]]}],["$","div","Community",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Community"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Discord",{"children":["$","a",null,{"href":"https://discord.gg/mMqx5cG9Y","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Discord"}]}],["$","li","GitHub issues",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/issues","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub issues"}]}],["$","li","X / Twitter",{"children":["$","a",null,{"href":"https://x.com/Vouch_Protocol","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"X / Twitter"}]}]]}]]}]]]}],["$","div",null,{"className":"mt-12 pt-6 border-t border-rule flex flex-col md:flex-row gap-3 items-start md:items-center justify-between font-mono text-[0.7rem] tracking-[0.1em] text-ink-faint","children":[["$","span",null,{"children":"© 2025-2026 Ramprasad Gaddam. Licensed under Apache 2.0."}],["$","span",null,{"children":"An open standard specification."}]]}]]}]}]}],["$","$L1c",null,{}],["$","$L1d",null,{}],["$","$L1e",null,{"src":"https://www.googletagmanager.com/gtag/js?id=G-JHPT5HRW2F","strategy":"afterInteractive"}],["$","$L1e",null,{"id":"gtag-init","strategy":"afterInteractive","children":"\n            window.dataLayer = window.dataLayer || [];\n            function gtag(){dataLayer.push(arguments);}\n            gtag('js', new Date());\n            gtag('config', 'G-JHPT5HRW2F');\n          "}]]}]]}]],null],null],["$L1f",null]]]]
+1f:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Help & Guides - Vouch Protocol"}],["$","meta","3",{"name":"description","content":"Long-form guides for Vouch Protocol: quickstarts in Python, TypeScript, and Go; key management; hybrid post-quantum signing; delegation chains; sidecar deployment; KMS integration; reputation and revocation; framework integrations; CLI reference."}],["$","meta","4",{"property":"og:title","content":"Vouch Protocol"}],["$","meta","5",{"property":"og:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","6",{"property":"og:url","content":"https://vouch-protocol.com/"}],["$","meta","7",{"property":"og:image","content":"https://vouch-protocol.com/assets/vouch-logo-full.png"}],["$","meta","8",{"property":"og:type","content":"website"}],["$","meta","9",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","10",{"name":"twitter:site","content":"@Vouch_Protocol"}],["$","meta","11",{"name":"twitter:title","content":"Vouch Protocol"}],["$","meta","12",{"name":"twitter:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","13",{"name":"twitter:image","content":"https://vouch-protocol.com/assets/vouch-logo-full.png"}],["$","link","14",{"rel":"icon","href":"/assets/vouch-logo-icon.jpg"}]]
 1:null
