@@ -12,9 +12,10 @@ type Props = {
 };
 
 /**
- * Code block with a Copy button. The button copies the raw `code` prop
- * exactly (not the rendered text), so highlighters / line numbers cannot
- * pollute the clipboard.
+ * Code block with a clipboard-icon Copy button. The button copies the raw
+ * `code` prop exactly (not the rendered text), so highlighters or line
+ * numbers cannot pollute the clipboard. Icon flips to a checkmark for
+ * ~1.6 seconds after a successful copy.
  */
 export default function CodeBlock({ code, language, className = '' }: Props) {
     const [copied, setCopied] = useState(false);
@@ -31,22 +32,50 @@ export default function CodeBlock({ code, language, className = '' }: Props) {
 
     return (
         <div className="relative group my-4">
-            {(language || true) && (
+            {language && (
                 <div className="absolute top-2 left-3 flex items-center gap-2 pointer-events-none">
-                    {language && (
-                        <span className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-parchment/50">
-                            {language}
-                        </span>
-                    )}
+                    <span className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-parchment/50">
+                        {language}
+                    </span>
                 </div>
             )}
             <button
                 type="button"
                 onClick={copy}
-                aria-label={copied ? 'Copied' : 'Copy code'}
-                className="absolute top-1.5 right-2 z-10 px-2 py-1 text-[0.7rem] font-mono uppercase tracking-wider border border-parchment/30 text-parchment/80 hover:text-parchment hover:border-parchment/60 transition-colors bg-transparent opacity-70 group-hover:opacity-100"
+                aria-label={copied ? 'Copied to clipboard' : 'Copy code to clipboard'}
+                title={copied ? 'Copied' : 'Copy'}
+                className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-sm border border-parchment/25 text-parchment/70 hover:text-parchment hover:border-parchment/60 hover:bg-parchment/10 transition-colors bg-transparent opacity-0 group-hover:opacity-100 focus:opacity-100"
             >
-                {copied ? '✓ Copied' : 'Copy'}
+                {copied ? (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4 text-emerald-success"
+                        aria-hidden="true"
+                    >
+                        <path d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                ) : (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4"
+                        aria-hidden="true"
+                    >
+                        <rect x="9" y="9" width="11" height="11" rx="1.5" />
+                        <path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15" />
+                    </svg>
+                )}
             </button>
             <pre className={`text-sm ${className} ${language ? 'pt-7' : ''}`}>
                 <code>{code}</code>

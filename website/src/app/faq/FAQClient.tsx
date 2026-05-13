@@ -3,49 +3,72 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { FAQSection } from './faq-data';
+import CodeBlock from '@/components/CodeBlock';
 
-/** Inline link parser: [text](url) → anchor */
+/**
+ * Render a FAQ answer. Supports code fences (extracted first so internal
+ * blank lines are preserved), paragraphs, inline `code`, **bold**, and
+ * [text](url) links.
+ */
 function renderAnswer(text: string): React.ReactNode {
-    // Split into paragraphs first
-    const paragraphs = text.split(/\n\n+/);
-    return paragraphs.map((paragraph, pi) => {
-        // Detect code block (```...```)
-        const codeBlockMatch = paragraph.match(/^```(\w+)?\n([\s\S]+?)\n```$/);
-        if (codeBlockMatch) {
-            return (
-                <pre key={`p${pi}`}>
-                    <code>{codeBlockMatch[2]}</code>
-                </pre>
-            );
+    const trimmed = text.trim();
+    const segments: Array<
+        | { kind: 'code'; content: string; lang?: string }
+        | { kind: 'text'; content: string }
+    > = [];
+    const fenceRegex = /```(\w+)?\n([\s\S]*?)\n```/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = fenceRegex.exec(trimmed)) !== null) {
+        if (match.index > lastIndex) {
+            segments.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
         }
+        segments.push({ kind: 'code', content: match[2], lang: match[1] });
+        lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < trimmed.length) {
+        segments.push({ kind: 'text', content: trimmed.slice(lastIndex) });
+    }
+    if (segments.length === 0) {
+        segments.push({ kind: 'text', content: trimmed });
+    }
 
-        // Render paragraph with inline link / code parsing
-        const parts = paragraph.split(/(\[[^\]]+\]\([^)]+\)|`[^`]+`|\*\*[^*]+\*\*)/g);
-        return (
-            <p key={`p${pi}`}>
-                {parts.map((part, i) => {
-                    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-                    if (linkMatch) {
-                        const isExternal = linkMatch[2].startsWith('http');
-                        return isExternal ? (
-                            <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="prose-link">
-                                {linkMatch[1]}
-                            </a>
-                        ) : (
-                            <Link key={i} href={linkMatch[2]} className="prose-link">
-                                {linkMatch[1]}
-                            </Link>
-                        );
-                    }
-                    const codeMatch = part.match(/^`([^`]+)`$/);
-                    if (codeMatch) return <code key={i}>{codeMatch[1]}</code>;
-                    const strongMatch = part.match(/^\*\*([^*]+)\*\*$/);
-                    if (strongMatch) return <strong key={i}>{strongMatch[1]}</strong>;
-                    return <React.Fragment key={i}>{part}</React.Fragment>;
-                })}
-            </p>
-        );
+    const out: React.ReactNode[] = [];
+    segments.forEach((seg, si) => {
+        if (seg.kind === 'code') {
+            out.push(<CodeBlock key={`s${si}`} code={seg.content} language={seg.lang} />);
+            return;
+        }
+        const paragraphs = seg.content.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+        paragraphs.forEach((paragraph, pi) => {
+            const parts = paragraph.split(/(\[[^\]]+\]\([^)]+\)|`[^`]+`|\*\*[^*]+\*\*)/g);
+            out.push(
+                <p key={`s${si}-p${pi}`}>
+                    {parts.map((part, i) => {
+                        const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+                        if (linkMatch) {
+                            const isExternal = linkMatch[2].startsWith('http');
+                            return isExternal ? (
+                                <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="prose-link">
+                                    {linkMatch[1]}
+                                </a>
+                            ) : (
+                                <Link key={i} href={linkMatch[2]} className="prose-link">
+                                    {linkMatch[1]}
+                                </Link>
+                            );
+                        }
+                        const codeMatch = part.match(/^`([^`]+)`$/);
+                        if (codeMatch) return <code key={i}>{codeMatch[1]}</code>;
+                        const strongMatch = part.match(/^\*\*([^*]+)\*\*$/);
+                        if (strongMatch) return <strong key={i}>{strongMatch[1]}</strong>;
+                        return <React.Fragment key={i}>{part}</React.Fragment>;
+                    })}
+                </p>
+            );
+        });
     });
+    return out;
 }
 
 export default function FAQClient({ sections }: { sections: FAQSection[] }) {

@@ -3,100 +3,134 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { HelpSection } from './help-data';
+import CodeBlock from '@/components/CodeBlock';
 
-/** Render markdown-lite content: paragraphs, **bold**, `code`, code fences, [text](url), and pipe tables */
+/**
+ * Render markdown-lite content: paragraphs, **bold**, `code`, code fences,
+ * [text](url), pipe tables, bullet and ordered lists.
+ *
+ * Code fences are extracted FIRST as a single unit (so internal blank lines
+ * are preserved), then the remaining text is split on blank lines and each
+ * piece is rendered as a heading / list / table / paragraph.
+ */
 function renderBody(body: string): React.ReactNode {
-    const blocks = body.trim().split(/\n\n+/);
-    return blocks.map((block, bi) => {
-        // Code fence
-        const codeFence = block.match(/^```(\w+)?\n([\s\S]+?)\n```$/);
-        if (codeFence) {
-            return (
-                <pre key={`b${bi}`}>
-                    <code>{codeFence[2]}</code>
-                </pre>
-            );
+    const trimmed = body.trim();
+    const segments: Array<
+        | { kind: 'code'; content: string; lang?: string }
+        | { kind: 'text'; content: string }
+    > = [];
+    const fenceRegex = /```(\w+)?\n([\s\S]*?)\n```/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = fenceRegex.exec(trimmed)) !== null) {
+        if (match.index > lastIndex) {
+            segments.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
         }
+        segments.push({ kind: 'code', content: match[2], lang: match[1] });
+        lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < trimmed.length) {
+        segments.push({ kind: 'text', content: trimmed.slice(lastIndex) });
+    }
+    if (segments.length === 0) {
+        segments.push({ kind: 'text', content: trimmed });
+    }
 
-        // Heading
-        const h2 = block.match(/^## (.+)$/);
-        if (h2) {
-            return (
-                <h3 key={`b${bi}`} className="font-serif font-semibold text-[1.3rem] tracking-tight mt-10 mb-4 pb-2 border-b border-rule-light">
-                    {h2[1]}
-                </h3>
+    const out: React.ReactNode[] = [];
+    segments.forEach((seg, si) => {
+        if (seg.kind === 'code') {
+            out.push(
+                <CodeBlock key={`s${si}`} code={seg.content} language={seg.lang} />
             );
+            return;
         }
+        const blocks = seg.content.split(/\n\n+/).map((b) => b.trim()).filter(Boolean);
+        blocks.forEach((block, bi) => {
+            out.push(renderTextBlock(block, `s${si}-b${bi}`));
+        });
+    });
+    return out;
+}
 
-        const h3 = block.match(/^### (.+)$/);
-        if (h3) {
-            return (
-                <h4 key={`b${bi}`} className="font-serif font-semibold text-[1.1rem] mt-6 mb-3">
-                    {h3[1]}
-                </h4>
-            );
-        }
+function renderTextBlock(block: string, key: string): React.ReactNode {
+    // Heading
+    const h2 = block.match(/^## (.+)$/);
+    if (h2) {
+        return (
+            <h3 key={key} className="font-serif font-semibold text-[1.3rem] tracking-tight mt-10 mb-4 pb-2 border-b border-rule-light">
+                {h2[1]}
+            </h3>
+        );
+    }
 
-        // Table (pipe syntax with at least two rows)
-        if (block.includes('\n|') && block.split('\n').every((l) => l.trim().startsWith('|'))) {
-            const rows = block.split('\n').filter((l) => l.trim());
-            const header = rows[0].split('|').slice(1, -1).map((c) => c.trim());
-            const bodyRows = rows.slice(2).map((r) => r.split('|').slice(1, -1).map((c) => c.trim()));
-            return (
-                <div key={`b${bi}`} className="my-5 overflow-x-auto">
-                    <table className="w-full text-[0.92rem]">
-                        <thead>
-                            <tr className="border-b-2 border-ink">
-                                {header.map((h, i) => (
-                                    <th key={i} className="text-left py-2 pr-4 font-serif font-semibold">{h}</th>
+    const h3 = block.match(/^### (.+)$/);
+    if (h3) {
+        return (
+            <h4 key={key} className="font-serif font-semibold text-[1.1rem] mt-6 mb-3">
+                {h3[1]}
+            </h4>
+        );
+    }
+
+    // Table (pipe syntax with at least two rows)
+    if (block.includes('\n|') && block.split('\n').every((l) => l.trim().startsWith('|'))) {
+        const rows = block.split('\n').filter((l) => l.trim());
+        const header = rows[0].split('|').slice(1, -1).map((c) => c.trim());
+        const bodyRows = rows.slice(2).map((r) => r.split('|').slice(1, -1).map((c) => c.trim()));
+        return (
+            <div key={key} className="my-5 overflow-x-auto">
+                <table className="w-full text-[0.92rem]">
+                    <thead>
+                        <tr className="border-b-2 border-ink">
+                            {header.map((h, i) => (
+                                <th key={i} className="text-left py-2 pr-4 font-serif font-semibold">{h}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {bodyRows.map((row, ri) => (
+                            <tr key={ri} className="border-b border-rule-light">
+                                {row.map((cell, ci) => (
+                                    <td key={ci} className="py-2 pr-4 align-top">{renderInline(cell)}</td>
                                 ))}
                             </tr>
-                        </thead>
-                        <tbody>
-                            {bodyRows.map((row, ri) => (
-                                <tr key={ri} className="border-b border-rule-light">
-                                    {row.map((cell, ci) => (
-                                        <td key={ci} className="py-2 pr-4 align-top">{renderInline(cell)}</td>
-                                    ))}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            );
-        }
-
-        // Bullet list
-        if (block.split('\n').every((l) => /^[-*]\s/.test(l.trim()))) {
-            const items = block.split('\n').map((l) => l.replace(/^[-*]\s/, '').trim());
-            return (
-                <ul key={`b${bi}`} className="list-disc list-outside ml-5 my-4 space-y-1.5 text-ink-soft">
-                    {items.map((item, i) => (
-                        <li key={i} className="leading-relaxed">{renderInline(item)}</li>
-                    ))}
-                </ul>
-            );
-        }
-
-        // Ordered list
-        if (block.split('\n').every((l) => /^\d+\.\s/.test(l.trim()))) {
-            const items = block.split('\n').map((l) => l.replace(/^\d+\.\s/, '').trim());
-            return (
-                <ol key={`b${bi}`} className="list-decimal list-outside ml-5 my-4 space-y-1.5 text-ink-soft">
-                    {items.map((item, i) => (
-                        <li key={i} className="leading-relaxed">{renderInline(item)}</li>
-                    ))}
-                </ol>
-            );
-        }
-
-        // Plain paragraph
-        return (
-            <p key={`b${bi}`} className="text-ink-soft leading-relaxed my-3">
-                {renderInline(block)}
-            </p>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         );
-    });
+    }
+
+    // Bullet list
+    if (block.split('\n').every((l) => /^[-*]\s/.test(l.trim()))) {
+        const items = block.split('\n').map((l) => l.replace(/^[-*]\s/, '').trim());
+        return (
+            <ul key={key} className="list-disc list-outside ml-5 my-4 space-y-1.5 text-ink-soft">
+                {items.map((item, i) => (
+                    <li key={i} className="leading-relaxed">{renderInline(item)}</li>
+                ))}
+            </ul>
+        );
+    }
+
+    // Ordered list
+    if (block.split('\n').every((l) => /^\d+\.\s/.test(l.trim()))) {
+        const items = block.split('\n').map((l) => l.replace(/^\d+\.\s/, '').trim());
+        return (
+            <ol key={key} className="list-decimal list-outside ml-5 my-4 space-y-1.5 text-ink-soft">
+                {items.map((item, i) => (
+                    <li key={i} className="leading-relaxed">{renderInline(item)}</li>
+                ))}
+            </ol>
+        );
+    }
+
+    // Plain paragraph
+    return (
+        <p key={key} className="text-ink-soft leading-relaxed my-3">
+            {renderInline(block)}
+        </p>
+    );
 }
 
 /** Inline markdown: **bold**, `code`, [text](url) */
