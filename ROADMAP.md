@@ -71,6 +71,36 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 - [ ] Health check dashboard
 - [ ] Request/response logging for debugging
 
+### 2.5 Hosted Vouch Assistant: backend deployment
+*Added 2026-05-15. Owner: editor. Trigger: post Leaders Connect.*
+
+The chat assistant on vouch-protocol.com currently runs in graceful "coming soon" mode because no public backend exists yet. Steps to bring it live:
+
+- [ ] Choose host: Fly.io (best technical fit for FastAPI + SSE) or Vercel (matches the downstream stack but needs SSE rework). Default plan: Fly.io.
+- [ ] Provision `fly.toml`, deploy `website-agent/backend/` with the existing `Dockerfile`.
+- [ ] DNS: `agent.vouch-protocol.org` pointing at the deployed app.
+- [ ] Configure secrets: `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GEMINI_API_KEY`, `VOUCH_SIDECAR_URL`, `VOUCH_AGENT_DID`, `VOUCH_CORS_ORIGINS` (must include https://vouch-protocol.com).
+- [ ] Decide on rate limiting (per-IP, per-day) before going public; budget the LLM provider's monthly cost cap.
+- [ ] Deploy the Go sidecar alongside (KMS-backed key in production, not the dev sidecar).
+- [ ] Set `NEXT_PUBLIC_VOUCH_AGENT_URL=https://agent.vouch-protocol.org` in `.github/workflows/deploy-website.yml`. The website's graceful-fallback mode auto-switches to live mode when this is set.
+- [ ] Verify end-to-end: open the live site, click "Ask the assistant", confirm streaming response and credential card render.
+- [ ] Add backend monitoring (uptime, error rate, LLM provider latency) to observability.
+
+### 2.6 Structured error-code system (full implementation)
+*Added 2026-05-15. Owner: editor. Trigger: post Leaders Connect, paired with 2.5.*
+
+The chat widget today ships a frontend-only error-code registry at `website/src/lib/error-codes.ts` (codes `VCH-NET-001` through `VCH-UNK-001`). This is intentionally minimal: it catches what JavaScript can detect (network failures, HTTP status, parsed error events) and surfaces stable codes the user can quote in issues. Full implementation extends this into:
+
+- [ ] **Backend-issued codes.** Every error response from `website-agent/backend/` returns `{ "error": { "code": "VCH-XXX", "message": "...", "hint": "..." } }` instead of free-form strings. Update `vouch_agent/main.py` and `vouch_agent/signer.py`.
+- [ ] **`vouch.errors` Python module.** Typed exceptions in the SDK with stable `.code` attribute.
+- [ ] **Verifier reason mapping.** The Python `Verifier` already returns structured `reasons`. Add a `code` per reason mapped to `VCH-VRF-NNN`. Update the W3C CCG report's §8.4 (Failure Modes) to cite codes alongside reason strings.
+- [ ] **Docs page.** A single page at `/help/error-codes/` listing every code with description and remediation. Auto-generated where possible.
+- [ ] **TypeScript SDK.** Equivalent error classes in `packages/sdk-ts/`.
+- [ ] **Go sidecar.** Return structured errors from `/sign` with the same shape.
+- [ ] **Cross-language contract test.** Same malformed input produces the same `VCH-XXX` code across all three SDKs.
+
+Codes are **stable and append-only**. Once published, a code's meaning does not change; new conditions get new numbers.
+
 ---
 
 ## Phase 3: PAD-Driven Innovation (Month 1-3)

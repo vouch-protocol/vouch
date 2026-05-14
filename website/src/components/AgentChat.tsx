@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { classifyError, type VouchError } from '@/lib/error-codes';
 
 type Source = { source: string; score: number };
 type Credential = Record<string, unknown> & {
@@ -237,7 +238,7 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
     );
     const [draft, setDraft] = useState('');
     const [busy, setBusy] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<{ vouch: VouchError; raw: string } | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -260,7 +261,11 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ message: text }),
             });
-            if (!resp.ok || !resp.body) throw new Error(`agent returned ${resp.status}`);
+            if (!resp.ok || !resp.body) {
+                const bodyText = await resp.text().catch(() => '');
+                setError(classifyError(`agent returned ${resp.status}: ${bodyText}`.trim(), { status: resp.status, rawText: bodyText }));
+                return;
+            }
             const reader = resp.body.getReader();
             const decoder = new TextDecoder();
             let buf = '';
@@ -276,7 +281,7 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                 }
             }
         } catch (e) {
-            setError(e instanceof Error ? e.message : String(e));
+            setError(classifyError(e));
         } finally {
             setBusy(false);
         }
@@ -313,7 +318,7 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     return next;
                 });
             } else if (event === 'error') {
-                setError(parsed.error ?? 'unknown agent error');
+                setError(classifyError(parsed.error ?? 'unknown agent error'));
             }
         } catch {
             /* skip malformed frames */
@@ -389,8 +394,31 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     </div>
                 ))}
                 {error && (
-                    <div className="text-burgundy text-[0.85rem] border border-burgundy/40 px-3 py-2">
-                        {error}
+                    <div className="text-ink text-[0.85rem] border border-burgundy/40 bg-parchment-warm px-3 py-3 leading-relaxed">
+                        <div className="flex items-baseline gap-2 mb-1">
+                            <span
+                                className="font-mono text-[0.78rem] text-burgundy select-all"
+                                title="Copy this code into a GitHub issue if the error recurs"
+                            >
+                                {error.vouch.code}
+                            </span>
+                            <span className="font-serif font-semibold text-ink">{error.vouch.title}</span>
+                        </div>
+                        <p className="text-ink-soft mb-1">{error.vouch.description}</p>
+                        <p className="text-ink-soft text-[0.8rem]">
+                            <span className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-burgundy mr-1">Hint</span>
+                            {error.vouch.hint}
+                        </p>
+                        {error.raw && error.raw !== error.vouch.description && (
+                            <details className="mt-2">
+                                <summary className="cursor-pointer text-[0.75rem] text-ink-faint hover:text-ink">
+                                    Technical detail
+                                </summary>
+                                <pre className="mt-2 text-[0.7rem] !p-2 !bg-ink !text-parchment whitespace-pre-wrap break-words">
+                                    <code>{error.raw}</code>
+                                </pre>
+                            </details>
+                        )}
                     </div>
                 )}
             </div>
