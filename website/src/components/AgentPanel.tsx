@@ -131,12 +131,12 @@ function ComingSoonBody() {
         <div className="h-full flex flex-col">
             <div className="flex-1 overflow-y-auto px-5 py-6 text-ink-soft">
                 <p className="font-serif text-[1.05rem] leading-relaxed mb-4 text-ink">
-                    The hosted Vouch Assistant is not live yet.
+                    The hosted Vouch Assistant is not currently available.
                 </p>
                 <p className="text-[0.95rem] leading-relaxed mb-5">
-                    We are rolling out the public chat endpoint after the protocol's W3C Credentials
-                    Community Group incubation lands. Until then, the assistant runs locally against
-                    your own LLM key.
+                    You can run the assistant today against your own LLM key by self-hosting the
+                    backend, or use one of the four AI-tool packages below to get Vouch-aware
+                    answers in your existing AI subscription.
                 </p>
 
                 <div className="border-l-2 border-burgundy pl-4 py-2 mb-6">
