@@ -20,14 +20,31 @@ export const metadata: Metadata = {
       'Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.',
     type: 'website',
     url: 'https://vouch-protocol.com',
-    images: ['/assets/vouch-logo-full.png'],
+    images: [
+      {
+        url: '/assets/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Vouch Protocol',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@Vouch_Protocol',
+    images: ['/assets/og-image.png'],
   },
   icons: {
-    icon: '/assets/vouch-logo-icon.jpg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+    other: [
+      { rel: 'icon', url: '/android-chrome-192x192.png', sizes: '192x192' },
+      { rel: 'icon', url: '/android-chrome-512x512.png', sizes: '512x512' },
+    ],
   },
 };
 
