@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const FOOTER_GROUPS = [
   {
@@ -44,8 +45,19 @@ export default function Footer() {
         <div className="double-rule pt-12">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12">
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="font-serif font-bold text-[1.4rem] tracking-tight text-ink no-underline block mb-2">
-                Vouch Protocol
+              <Link
+                href="/"
+                aria-label="Vouch Protocol home"
+                className="block mb-4 no-underline"
+              >
+                <Image
+                  src="/assets/vouch-wordmark.png"
+                  alt="Vouch Protocol"
+                  width={1600}
+                  height={629}
+                  priority={false}
+                  className="h-12 md:h-14 w-auto max-w-full vouch-footer-wordmark"
+                />
               </Link>
               <p className="font-serif italic text-ink-faint text-[0.9rem] max-w-[280px]">
                 Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.
