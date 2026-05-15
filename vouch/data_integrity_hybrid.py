@@ -1,18 +1,38 @@
 """
 Hybrid Ed25519 + ML-DSA-44 Data Integrity proofs.
 
-Implements the hybrid-eddsa-mldsa44-jcs-2026 cryptosuite (Specification
-§13.2), an additive optional profile that pairs the classical Ed25519
-signature with a post-quantum ML-DSA-44 signature over the same
-JCS-canonicalized payload. Verification REQUIRES both signatures to
-validate.
+NOTE (2026-05-16): This module implements the v1.6.x transitional
+composite cryptosuite `hybrid-eddsa-mldsa44-jcs-2026`. Per Manu Sporny's
+review feedback on the W3C CG Report (recorded in the Editor Review Queue
+at the top of docs/specs/w3c-cg-report.md, entries 9-10), v1.7 of the
+specification reformulates the hybrid profile as **two independent
+Data Integrity proofs** on the same credential (one `eddsa-jcs-2022`
+proof, one `mldsa44-jcs-2026` proof), rather than a single composite
+cryptosuite with a concatenated proofValue.
+
+The cryptographic primitives are unchanged: Ed25519 + ML-DSA-44 over
+JCS-canonicalized credential bytes. Only the proof packaging changes
+(from concatenated proofValue inside one proof object to two separate
+proof objects in the credential's proof array).
+
+This module continues to ship for backward compatibility with v1.6.x
+deployments and tests. A successor module (`data_integrity_dual.py`
+or equivalent) will emit dual proofs and is gated on:
+  1. Digital Bazaar's `mldsa44-rdfc-2024-cryptosuite` family publishing
+     the JCS variant cryptosuite identifier (expected by 2026-Q3).
+  2. The W3C Data Integrity Working Group's formal registration of
+     the `mldsa44-jcs-*` cryptosuite identifier.
+
+Until both land, this composite-cryptosuite module remains the
+reference implementation. See PAD-040 §3.3a for the dual-proof carrier
+embodiment.
 
 Mirrors go-sidecar/signer/data_integrity_hybrid.go and
 typescript/src/data-integrity-hybrid.ts. Wire format is identical across
 all three implementations so that a credential signed by one can be
 verified by another.
 
-Wire format:
+Wire format (composite, v1.6.x transitional):
   proofValue = "z" + base58btc( ed25519_sig (64 bytes) || mldsa44_sig (2420 bytes) )
 
 DID Document layout:

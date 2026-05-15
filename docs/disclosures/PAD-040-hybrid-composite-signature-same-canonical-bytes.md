@@ -8,7 +8,11 @@
 **Category:** Post-Quantum Cryptography / Composite Signatures / Verifier Compatibility / Migration / Agent Identity
 **Author:** Ramprasad Anandam Gaddam
 **License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-033 (ZK PQ Signature Compression), PAD-034 (Composite Threshold Swarm Consensus), PAD-035 (Async Chunked Edge PQ Signatures)
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-033 (ZK PQ Signature Compression), PAD-034 (Composite Threshold Swarm Consensus), PAD-035 (Async Chunked Edge PQ Signatures), PAD-059 (Vouch-Amnesia Attestation Bridge)
+
+**Revision History:**
+- **2026-04-27** Original publication. Established prior art on the same-canonical-bytes property for hybrid classical/post-quantum signatures over JCS-canonicalized Verifiable Credentials, carried by the composite cryptosuite identifier `hybrid-eddsa-mldsa44-jcs-2026`. The prior-art effective date of this disclosure is unchanged from this date.
+- **2026-05-16** Reframed to reflect the dual-proof carrier formulation adopted in §13.2 of the W3C CG Report (Spec v0.1-draft, 2026-05-16 housekeeping pass). The novel claim is unchanged: both signatures (classical Ed25519 and post-quantum ML-DSA-44) are computed over the identical canonical bytes of the credential, enabling Mode A / B / C verification. The claim now applies to the same-bytes property whether expressed as a single composite cryptosuite with concatenated proofValue (the original carrier) or as two separate W3C Data Integrity proofs in the credential's `proof` array (the preferred carrier going forward). Section 3.3 below documents the dual-proof carrier explicitly. No prior-art priority is surrendered; the dual-proof carrier is an additional embodiment of the same novel mechanism.
 
 ---
 
@@ -125,6 +129,43 @@ re-issuing credentials:
 The same credential issued during the hybrid rollout phase is verifiable
 by any of these verifier states without re-issuance, because all
 verifiers operate over the same canonical bytes.
+
+### 3.3a Dual-Proof Carrier (added 2026-05-16)
+
+The same novel mechanism (both signatures over identical canonical bytes) can be carried by **two independent W3C Data Integrity proofs** attached to the same credential, rather than by a single composite cryptosuite with a concatenated `proofValue`. The dual-proof carrier is the preferred embodiment going forward; the composite-cryptosuite carrier of §3.1 is retained as a transitional alias.
+
+**Dual-proof signing pipeline:**
+
+```
+1. Build credential as VC (no proof yet).
+2. For each cryptosuite C in {eddsa-jcs-2022, mldsa44-jcs-2026}:
+   a. Build unsigned proof object with cryptosuite = C.
+   b. Attach unsigned proof to credential's proof array.
+   c. Run JCS canonicalization (RFC 8785). Output: canonical bytes B_C.
+   d. Compute signature using C's algorithm over B_C.
+   e. Replace proof.proofValue back into that proof object.
+   f. Remove this proof from the credential before adding the next proof.
+3. Attach all signed proofs to the credential's proof array.
+```
+
+Steps 2c for both cryptosuites produce **identical** canonical bytes when the credential body and the proof metadata (excluding `proofValue`) are byte-equivalent except for the `cryptosuite` field. The same-canonical-bytes claim of this disclosure applies: an auditor reconstructing either signature can independently re-canonicalize the credential, recompute the signature, and verify, without consulting the other proof.
+
+In practice, implementations exploit the fact that the credential body is invariant across the two proofs and JCS-canonicalize the body once, then prepend the per-cryptosuite proof metadata for signing. The cryptographic primitives (Ed25519 and ML-DSA-44) sign byte-identical credential bodies, satisfying the novel claim.
+
+**Why this carrier is preferred:**
+
+- Each proof uses a separately-standardized cryptosuite identifier (no Vouch-specific composite identifier required).
+- The Data Integrity `proof` field is already specified as an array; this is a natural use of existing primitives.
+- Future expansion to additional cryptosuites (ML-DSA-65, SLH-DSA, hash-based schemes) is additive: attach another proof. The composite carrier required a new composite identifier per algorithm combination.
+- Verifiers that understand only one cryptosuite remain interoperable without parsing a bespoke composite `proofValue`. The composite carrier required every verifier to understand the concatenation format even if it only validated one signature.
+- The carrier aligns with the Digital Bazaar [`mldsa44-rdfc-2024-cryptosuite`](https://github.com/digitalbazaar/mldsa44-rdfc-2024-cryptosuite) family and its forthcoming JCS variant, enabling Vouch credentials to use upstream-maintained PQ cryptosuites rather than a fork.
+
+**What is unchanged:**
+
+- The same-bytes property (both signatures cover identical canonical bytes).
+- The verifier modes A / B / C (classical-only, PQ-only, both-required).
+- The cross-implementation determinism guarantee inherited from PAD-039.
+- The defensive-publication priority date (2026-04-27).
 
 ### 3.4 Comparison to Prior Approaches
 

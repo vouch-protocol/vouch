@@ -1,17 +1,26 @@
 /**
  * Hybrid Ed25519 + ML-DSA-44 Data Integrity proofs (TypeScript).
  *
- * Implements the hybrid-eddsa-mldsa44-jcs-2026 cryptosuite (Specification
- * §13.2), an additive optional profile that pairs the classical Ed25519
- * signature with a post-quantum ML-DSA-44 signature over the same
- * JCS-canonicalized payload. Verification REQUIRES both signatures to
- * validate.
+ * NOTE (2026-05-16): This module implements the v1.6.x transitional
+ * composite cryptosuite `hybrid-eddsa-mldsa44-jcs-2026`. Per Manu Sporny's
+ * review feedback on the W3C CG Report, v1.7 of the specification
+ * reformulates the hybrid profile as TWO independent Data Integrity
+ * proofs on the same credential (`eddsa-jcs-2022` and `mldsa44-jcs-2026`),
+ * rather than a single composite cryptosuite with a concatenated
+ * proofValue. See PAD-040 §3.3a for the dual-proof carrier embodiment
+ * and the Editor Review Queue at the top of docs/specs/w3c-cg-report.md
+ * (entries 9-10) for the spec changes.
  *
- * Mirrors go-sidecar/signer/data_integrity_hybrid.go and the planned Python
+ * This module remains the reference implementation while the dual-proof
+ * rewrite waits on Digital Bazaar's forthcoming JCS variant of the
+ * `mldsa44-rdfc-2024-cryptosuite` family and W3C registration of the
+ * `mldsa44-jcs-*` cryptosuite identifier.
+ *
+ * Mirrors go-sidecar/signer/data_integrity_hybrid.go and the Python
  * counterpart. The wire format is identical across implementations so that
  * a credential signed by one can be verified by another.
  *
- * Wire format:
+ * Wire format (composite, v1.6.x transitional):
  *  proofValue = "z" + base58btc( ed25519_sig (64 bytes) || mldsa44_sig (2420 bytes) )
  */
 

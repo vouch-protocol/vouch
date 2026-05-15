@@ -19,7 +19,7 @@ A method for cryptographically anchoring the policy decisions of a deterministic
 - **The deterministic policy side:** a workspace ledger, a compactor daemon, a consolidated `.vouchpolicy` artifact, and a pre-push git hook that produces a structured `EgressDecision` object (block / attest / allow) at the moment of code egress.
 - **The cryptographic identity side:** a Decentralized Identifier (DID) controlled by the developer's machine or organization, used to sign a W3C Verifiable Credential whose `credentialSubject.intent` field binds the egress decision to the specific commit range, the active policy snapshot, the resource being pushed, and (optionally) the chain of human delegators who authorized the developer.
 
-The resulting Verifiable Credential is a non-repudiable, byte-deterministic, third-party-verifiable record that the developer machine performed a specific deterministic policy evaluation against a specific code diff at a specific moment, and that the result was the recorded one. The bridge supports the hybrid Ed25519 + ML-DSA-44 cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`) so that audit credentials produced today remain verifiable against future post-quantum adversaries without re-signing or re-issuance.
+The resulting Verifiable Credential is a non-repudiable, byte-deterministic, third-party-verifiable record that the developer machine performed a specific deterministic policy evaluation against a specific code diff at a specific moment, and that the result was the recorded one. The bridge supports the dual-proof post-quantum profile (one `eddsa-jcs-2022` proof plus one `mldsa44-jcs-2026` proof, both over the same JCS-canonicalized credential bytes; see PAD-040 §3.3a) so that audit credentials produced today remain verifiable against future post-quantum adversaries without re-signing or re-issuance.
 
 Key innovations of the bridge:
 
@@ -83,7 +83,7 @@ Many use cases for cryptographic signatures (ephemeral session tokens, short-liv
 
 A classical Ed25519 signature produced today is at risk of being broken by a sufficiently large quantum computer within the retention window. An audit credential whose signature can be retroactively forged is worse than no audit credential: it produces a false sense of evidentiary strength while the underlying record is repudiable.
 
-The hybrid Ed25519 + ML-DSA-44 cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`, PAD-040) addresses this directly: both signatures cover the same JCS-canonicalized bytes (PAD-039), and verification can independently check either signature. As classical Ed25519 weakens over time, the ML-DSA-44 portion of the credential remains valid and the credential continues to verify.
+The dual-proof post-quantum profile (Ed25519 alongside ML-DSA-44, expressed as two independent W3C Data Integrity proofs over the same JCS-canonicalized credential bytes; PAD-040 §3.3a) addresses this directly: each proof can be verified independently, and as classical Ed25519 weakens over time, the ML-DSA-44 proof remains valid and the credential continues to verify under any verifier policy that admits the post-quantum proof.
 
 ---
 
@@ -117,8 +117,8 @@ The hybrid Ed25519 + ML-DSA-44 cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`, PAD
                           W3C Verifiable Credential
                           { @context, type, issuer (DID),
                             credentialSubject (EgressDecision),
-                            proof (Data Integrity, eddsa-jcs-2022
-                                   OR hybrid-eddsa-mldsa44-jcs-2026) }
+                            proof: [ eddsa-jcs-2022 proof,
+                                    (optional) mldsa44-jcs-2026 proof ] }
                                           │
                                           ▼
                               local audit log  ─▶  optional remote sink
@@ -177,23 +177,33 @@ The signer wraps the `EgressDecision` as the `credentialSubject.intent` field of
     "id": "did:web:dev-machine-alice.example.com",
     "intent": { /* the EgressDecision object above */ }
   },
-  "proof": {
-    "type": "DataIntegrityProof",
-    "cryptosuite": "hybrid-eddsa-mldsa44-jcs-2026",
-    "created": "2026-05-14T03:42:11Z",
-    "verificationMethod": "did:web:dev-machine-alice.example.com#key-1",
-    "proofPurpose": "assertionMethod",
-    "proofValue": "z<base58btc(ed25519_sig || mldsa44_sig)>"
-  }
+  "proof": [
+    {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-05-14T03:42:11Z",
+      "verificationMethod": "did:web:dev-machine-alice.example.com#key-ed25519",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z<base58btc(ed25519_sig)>"
+    },
+    {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "mldsa44-jcs-2026",
+      "created": "2026-05-14T03:42:11Z",
+      "verificationMethod": "did:web:dev-machine-alice.example.com#key-mldsa44",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z<base58btc(mldsa44_sig)>"
+    }
+  ]
 }
 ```
 
-The credential is signed using either:
+The credential is signed using one of two profiles:
 
-- `eddsa-jcs-2022` (Ed25519 only, smaller credential, ~700 bytes total)
-- `hybrid-eddsa-mldsa44-jcs-2026` (Ed25519 + ML-DSA-44, post-quantum-ready, ~3.2 KB total)
+- **Classical only:** one `eddsa-jcs-2022` proof. Smaller credential, ~700 bytes total. Appropriate when post-quantum retention is not a constraint.
+- **Dual-proof post-quantum profile:** one `eddsa-jcs-2022` proof and one `mldsa44-jcs-2026` proof, both over the same JCS-canonicalized credential bytes (PAD-040 §3.3a). Post-quantum-ready, ~3.2 KB total.
 
-The choice is per-deployment. Regulated industries with multi-year retention windows are advised to use the hybrid profile.
+The choice is per-deployment. Regulated industries with multi-year retention windows are advised to emit the dual-proof profile.
 
 ### 3.4 Asynchronous attestation flow
 
@@ -250,11 +260,11 @@ Policy-as-code engines produce decisions and log them. The logs are typically pl
 
 ### 4.5 Post-quantum digital signature schemes (FIPS 204 ML-DSA, others)
 
-FIPS 204 standardized ML-DSA in August 2024. The post-quantum primitives themselves are publicly available. What is novel here is the **composition** of ML-DSA with W3C Data Integrity (the `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite) **applied to the specific use case of egress-time policy decisions for AI coding assistant workspaces**, with multi-year retention as the explicit design constraint.
+FIPS 204 standardized ML-DSA in August 2024. The post-quantum primitives themselves are publicly available. What is novel here is the **composition** of ML-DSA with W3C Data Integrity, expressed as a dual-proof attachment on the same credential (one `eddsa-jcs-2022` proof plus one `mldsa44-jcs-2026` proof, the latter aligning with the Digital Bazaar [`mldsa44-rdfc-2024-cryptosuite`](https://github.com/digitalbazaar/mldsa44-rdfc-2024-cryptosuite) family's forthcoming JCS variant), **applied to the specific use case of egress-time policy decisions for AI coding assistant workspaces**, with multi-year retention as the explicit design constraint.
 
 ### 4.6 The combination is novel
 
-No prior system combines (a) a deterministic egress-time policy evaluator for an AI coding assistant workspace, (b) W3C Verifiable Credentials as the attestation format, (c) policy-snapshot binding via content-addressed hashing, (d) asynchronous post-decision signing that does not delay the developer's push, (e) optional hybrid post-quantum signatures for multi-year retention, and (f) deterministic re-verification by re-running the evaluator against the bound snapshot. This disclosure establishes prior art on the composition.
+No prior system combines (a) a deterministic egress-time policy evaluator for an AI coding assistant workspace, (b) W3C Verifiable Credentials as the attestation format, (c) policy-snapshot binding via content-addressed hashing, (d) asynchronous post-decision signing that does not delay the developer's push, (e) an optional dual-proof post-quantum profile (one classical Data Integrity proof plus one ML-DSA-44 Data Integrity proof, both over the same JCS-canonicalized credential) for multi-year retention, and (f) deterministic re-verification by re-running the evaluator against the bound snapshot. This disclosure establishes prior art on the composition.
 
 ---
 
@@ -273,7 +283,7 @@ The credential is W3C VC 2.0 JSON with a Vouch-specific context. The minimum req
 
 ### 5.3 Cryptosuite selection
 
-The bridge supports both `eddsa-jcs-2022` and `hybrid-eddsa-mldsa44-jcs-2026`. The cryptosuite is selected per credential, encoded in the `proof.cryptosuite` field. Verifiers MUST check the cryptosuite field and refuse to verify if the cryptosuite is not in their accepted list (e.g., a long-term-archive verifier might refuse classical-only signatures and require the hybrid profile).
+The bridge supports the `eddsa-jcs-2022` cryptosuite alone (single classical proof) or in combination with `mldsa44-jcs-2026` (dual-proof post-quantum profile). The cryptosuite of each proof is encoded in its own `proof.cryptosuite` field; verifiers iterate over the `proof` array and apply local policy (e.g., a long-term-archive verifier might require the credential to carry an `mldsa44-jcs-2026` proof and refuse credentials that carry only the classical proof).
 
 ### 5.4 Audit log storage
 
