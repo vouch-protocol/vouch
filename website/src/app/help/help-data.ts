@@ -304,20 +304,40 @@ Go sidecar: pass \`--hybrid\` when starting the daemon.
 
 ## What the wire format looks like
 
-\`\`\`
-proof.cryptosuite = "hybrid-eddsa-mldsa44-jcs-2026"
-proof.proofValue = "z" + base58btc(ed25519_sig[64] || mldsa44_sig[2420])
+The credential's \`proof\` field is an array of two Data Integrity proofs:
+
+\`\`\`json
+{
+  "proof": [
+    {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "verificationMethod": "did:web:agent.example.com#key-ed25519",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z<base58btc(ed25519_sig)>"
+    },
+    {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "mldsa44-jcs-2026",
+      "verificationMethod": "did:web:agent.example.com#key-mldsa44",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z<base58btc(mldsa44_sig)>"
+    }
+  ]
+}
 \`\`\`
 
-Both signatures cover the **same** JCS-canonicalized credential bytes (PAD-040 same-bytes property).
+Both proofs cover the **same** JCS-canonicalized credential bytes (PAD-040 §3.3a same-bytes property under the dual-proof carrier).
+
+> **v1.6.x transitional note.** The v1.6.x reference implementations emit a single composite proof with cryptosuite \`hybrid-eddsa-mldsa44-jcs-2026\` and a concatenated proofValue (\`base58btc(ed25519_sig || mldsa44_sig)\`). Verifiers that need to interoperate with v1.6.x credentials should accept that form. The v1.7 rewrite emits dual proofs as shown above.
 
 ## Verifier modes
 
 A verifier can be configured for three modes:
 
-- **Mode A (classical-only)** - validates only the Ed25519 part
-- **Mode B (PQ-only)** - validates only the ML-DSA-44 part
-- **Mode C (both required)** - validates both, fails if either fails
+- **Mode A (classical-only)** - iterate the \`proof\` array, validate the \`eddsa-jcs-2022\` proof, ignore the rest
+- **Mode B (PQ-only)** - validate the \`mldsa44-jcs-2026\` proof, ignore the rest
+- **Mode C (both required)** - validate every proof in the array, fail if any one is invalid
 
 Mode C is the strictest. Mode A is useful for verifiers that have not yet been upgraded to support ML-DSA-44 (graceful downgrade during migration).
 

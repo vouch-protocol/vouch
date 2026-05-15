@@ -34,8 +34,8 @@ const FEATURES = [
   },
   {
     num: 'vi.',
-    title: 'Hybrid Post-Quantum Ready',
-    body: 'The cryptosuite hybrid-eddsa-mldsa44-jcs-2026 ships today. Ed25519 + ML-DSA-44 sign the same JCS bytes for graceful verifier downgrade.',
+    title: 'Post-Quantum Ready',
+    body: 'Attach two Data Integrity proofs to a credential, one Ed25519, one ML-DSA-44, both signing the same JCS bytes. Graceful verifier downgrade with no bespoke composite cryptosuite required.',
     spec: '§13 Crypto-Agility',
   },
 ];
