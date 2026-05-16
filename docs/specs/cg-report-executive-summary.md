@@ -31,8 +31,8 @@ On top of these primitives, Vouch contributes:
 3. **Trust Entropy**, deterministic, mathematical decay of credential trust over time, providing an objective alternative to subjective reputation scores.
 4. **Federated Validator Quorum**, independent M-of-N approval across policy, behavioral, and budget validators; no single compromise can issue valid credentials.
 5. **Resource-bound delegation chains**, every delegation link is bound to a specific resource URI, preventing confused-deputy attacks at the authorization layer.
-6. **Hybrid post-quantum profile**, optional Ed25519 + ML-DSA-44 composite signatures bound to the same JCS-canonicalized bytes, aligned with NIST CNSA 2.0 migration timelines.
-7. **Algorithm Quorum Verification (optional)**, M-of-N cryptosuite diversity for defense-in-depth during the post-quantum transition; the hybrid profile of (6) is the simplest 2-of-2 case, generalizable to any M-of-N.
+6. **Dual-proof post-quantum profile**, optional pairing of an `eddsa-jcs-2022` Data Integrity proof with an `mldsa44-jcs-2026` Data Integrity proof on the same credential, both signing identical JCS-canonicalized bytes. Aligned with NIST CNSA 2.0 migration timelines and with the Digital Bazaar `mldsa44-rdfc-2024-cryptosuite` family.
+7. **Algorithm Quorum Verification (optional)**, M-of-N cryptosuite diversity for defense-in-depth during the post-quantum transition; the dual-proof profile of (6) is the simplest 2-of-2 case, generalizable to any M-of-N.
 8. **LLM-specific threat coverage**, including RAG-anchored reasoning attestation and model-weight-binding for detection of weight substitution and unauthorized fine-tuning.
 9. **Cross-implementation determinism**, RFC 8785 JCS-canonicalized credentials reproduce byte-identically across the three reference implementations (Python, TypeScript, Go), eliminating ambiguity in multi-party trust state.
 
