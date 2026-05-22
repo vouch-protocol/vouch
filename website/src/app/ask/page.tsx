@@ -16,8 +16,10 @@
 import { useEffect } from 'react';
 import AgentChat from '@/components/AgentChat';
 
-const RAW_API_BASE =
-    (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_VOUCH_AGENT_URL) || '';
+// Must be a literal `process.env.NEXT_PUBLIC_X` so Next.js's DefinePlugin
+// substitutes the value at build time. See AgentPanel.tsx for the long
+// explanation; a `typeof process !== 'undefined'` guard breaks substitution.
+const RAW_API_BASE = process.env.NEXT_PUBLIC_VOUCH_AGENT_URL || '';
 
 const API_NOT_CONFIGURED =
     !RAW_API_BASE || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(RAW_API_BASE);

@@ -3,8 +3,12 @@
 import { useEffect, useState } from 'react';
 import AgentChat from './AgentChat';
 
-const RAW_API_BASE =
-    (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_VOUCH_AGENT_URL) || '';
+// IMPORTANT: this MUST be `process.env.NEXT_PUBLIC_X` as a literal expression.
+// Next.js's DefinePlugin only substitutes the value at build time when it sees
+// a direct `process.env.NEXT_PUBLIC_*` reference. A defensive guard like
+// `typeof process !== 'undefined' && process.env.X` causes webpack to bundle a
+// runtime `process` polyfill instead, and the substitution is silently skipped.
+const RAW_API_BASE = process.env.NEXT_PUBLIC_VOUCH_AGENT_URL || '';
 
 /**
  * True when no public backend has been configured for this build.
