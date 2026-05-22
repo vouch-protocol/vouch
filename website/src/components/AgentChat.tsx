@@ -507,15 +507,35 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                             {m.credential && <CredentialView credential={m.credential} />}
                             {m.sources && m.sources.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1.5">
-                                    {m.sources.map((s, j) => (
-                                        <span
-                                            key={j}
-                                            className="font-mono text-[0.65rem] uppercase tracking-wider px-2 py-0.5 border border-rule text-ink-faint"
-                                            title={`relevance ${s.score}`}
-                                        >
-                                            {s.source}
-                                        </span>
-                                    ))}
+                                    {/* RAG can return multiple chunks from the same file. Dedupe
+                                        by filename, keep the highest score, show ×N when a file
+                                        contributed more than one chunk. */}
+                                    {Object.values(
+                                        m.sources.reduce<Record<string, { source: string; score: number; count: number }>>(
+                                            (acc, s) => {
+                                                const existing = acc[s.source];
+                                                if (existing) {
+                                                    existing.count += 1;
+                                                    if (s.score > existing.score) existing.score = s.score;
+                                                } else {
+                                                    acc[s.source] = { source: s.source, score: s.score, count: 1 };
+                                                }
+                                                return acc;
+                                            },
+                                            {},
+                                        ),
+                                    )
+                                        .sort((a, b) => b.score - a.score)
+                                        .map((s) => (
+                                            <span
+                                                key={s.source}
+                                                className="font-mono text-[0.65rem] uppercase tracking-wider px-2 py-0.5 border border-rule text-ink-faint"
+                                                title={`best relevance ${s.score}${s.count > 1 ? `, ${s.count} chunks` : ''}`}
+                                            >
+                                                {s.source}
+                                                {s.count > 1 && <span className="ml-1 normal-case text-ink-faint/70">×{s.count}</span>}
+                                            </span>
+                                        ))}
                                 </div>
                             )}
                             {m.role === 'assistant' && m.interactionId && !busy && (
