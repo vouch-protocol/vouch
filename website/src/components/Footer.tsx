@@ -15,6 +15,8 @@ const FOOTER_GROUPS = [
     links: [
       { label: 'GitHub', href: 'https://github.com/vouch-protocol/vouch', external: true },
       { label: 'Specification', href: 'https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md', external: true },
+      { label: 'Conformance Levels', href: '/conformance/' },
+      { label: 'Regulatory Mapping', href: '/compliance/' },
       { label: 'Test Vectors', href: 'https://github.com/vouch-protocol/vouch/tree/main/test-vectors', external: true },
       { label: 'CHANGELOG', href: 'https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md', external: true },
     ],
@@ -61,6 +63,9 @@ export default function Footer() {
               </Link>
               <p className="font-serif italic text-ink-faint text-[0.9rem] max-w-[280px]">
                 Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.
+              </p>
+              <p className="font-mono text-[0.62rem] tracking-[0.14em] uppercase text-ink-faint mt-3 max-w-[280px]">
+                Vouch Protocol&trade; — common-law trademark
               </p>
             </div>
 
