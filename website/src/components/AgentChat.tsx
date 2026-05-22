@@ -15,6 +15,9 @@ type Message = {
     text: string;
     sources?: Source[];
     credential?: Credential;
+    interactionId?: string;
+    feedbackRating?: 1 | -1;
+    feedbackSubmitting?: boolean;
 };
 
 type Props = {
@@ -232,6 +235,91 @@ function CredentialView({ credential }: { credential: Credential }) {
     );
 }
 
+function FeedbackBar({
+    rating,
+    submitting,
+    onSubmit,
+}: {
+    apiBase: string;
+    interactionId: string;
+    rating?: 1 | -1;
+    submitting?: boolean;
+    onSubmit: (rating: 1 | -1, comment: string | null) => void;
+}) {
+    const [pendingNegative, setPendingNegative] = useState(false);
+    const [comment, setComment] = useState('');
+
+    // Already submitted (rating prop reflects parent state) → thank-you state.
+    if (rating !== undefined) {
+        return (
+            <div className="mt-2 text-[0.72rem] text-ink-faint italic">
+                {rating === 1 ? 'Thanks for the thumbs-up.' : 'Thanks. Logged so we can improve.'}
+            </div>
+        );
+    }
+
+    // User clicked ▼ No → show optional comment box before submitting.
+    if (pendingNegative) {
+        return (
+            <div className="mt-2 flex flex-col gap-2 text-[0.78rem]">
+                <p className="text-ink-faint italic">What was wrong? (optional)</p>
+                <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="e.g. the answer was off-topic, cited the wrong section, or was incorrect..."
+                    maxLength={2000}
+                    rows={3}
+                    disabled={submitting}
+                    className="border border-rule bg-parchment-warm px-2 py-1 text-[0.85rem] resize-vertical focus:outline-none focus:border-burgundy disabled:opacity-50"
+                />
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => onSubmit(-1, comment.trim() || null)}
+                        className="font-mono uppercase text-[0.65rem] tracking-[0.14em] text-ink border border-ink px-3 py-1 hover:bg-ink hover:text-parchment transition-colors disabled:opacity-50"
+                    >
+                        Send
+                    </button>
+                    <button
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => onSubmit(-1, null)}
+                        className="font-mono uppercase text-[0.65rem] tracking-[0.14em] text-ink-faint border border-transparent px-3 py-1 hover:text-ink disabled:opacity-50"
+                    >
+                        Skip
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Default — thumbs up / thumbs down buttons.
+    return (
+        <div className="mt-2 flex items-center gap-2 text-[0.78rem]">
+            <span className="text-ink-faint italic">Helpful?</span>
+            <button
+                type="button"
+                disabled={submitting}
+                onClick={() => onSubmit(1, null)}
+                aria-label="Helpful"
+                className="font-mono uppercase text-[0.7rem] tracking-[0.12em] text-ink-soft border border-rule px-2 py-0.5 hover:border-burgundy hover:text-burgundy transition-colors disabled:opacity-50"
+            >
+                ▲ Yes
+            </button>
+            <button
+                type="button"
+                disabled={submitting}
+                onClick={() => setPendingNegative(true)}
+                aria-label="Not helpful"
+                className="font-mono uppercase text-[0.7rem] tracking-[0.12em] text-ink-soft border border-rule px-2 py-0.5 hover:border-burgundy hover:text-burgundy transition-colors disabled:opacity-50"
+            >
+                ▼ No
+            </button>
+        </div>
+    );
+}
+
 export default function AgentChat({ apiBase, initialPrompt }: Props) {
     const [messages, setMessages] = useState<Message[]>(() =>
         initialPrompt ? [{ role: 'assistant', text: initialPrompt }] : [],
@@ -287,6 +375,45 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
         }
     }
 
+    async function submitFeedback(messageIndex: number, rating: 1 | -1, comment: string | null) {
+        const target = messages[messageIndex];
+        if (!target?.interactionId) return;
+
+        setMessages((prev) => {
+            const next = [...prev];
+            const m = next[messageIndex];
+            if (m) next[messageIndex] = { ...m, feedbackSubmitting: true };
+            return next;
+        });
+
+        try {
+            const resp = await fetch(`${apiBase}/feedback`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    interaction_id: target.interactionId,
+                    rating,
+                    comment: comment || null,
+                }),
+            });
+            if (!resp.ok) throw new Error(`feedback returned ${resp.status}`);
+            setMessages((prev) => {
+                const next = [...prev];
+                const m = next[messageIndex];
+                if (m) next[messageIndex] = { ...m, feedbackRating: rating, feedbackSubmitting: false };
+                return next;
+            });
+        } catch {
+            // Roll back submitting state on failure; keep no rating set.
+            setMessages((prev) => {
+                const next = [...prev];
+                const m = next[messageIndex];
+                if (m) next[messageIndex] = { ...m, feedbackSubmitting: false };
+                return next;
+            });
+        }
+    }
+
     function handleEvent(block: string) {
         const lines = block.split('\n');
         let event = 'message';
@@ -305,6 +432,7 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     if (last && last.role === 'assistant') {
                         last.sources = parsed.sources ?? last.sources;
                         last.credential = parsed.credential ?? last.credential;
+                        last.interactionId = parsed.interaction_id ?? last.interactionId;
                     }
                     return next;
                 });
@@ -389,6 +517,15 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                                         </span>
                                     ))}
                                 </div>
+                            )}
+                            {m.role === 'assistant' && m.interactionId && !busy && (
+                                <FeedbackBar
+                                    apiBase={apiBase}
+                                    interactionId={m.interactionId}
+                                    rating={m.feedbackRating}
+                                    submitting={m.feedbackSubmitting}
+                                    onSubmit={(rating, comment) => submitFeedback(i, rating, comment)}
+                                />
                             )}
                         </div>
                     </div>
