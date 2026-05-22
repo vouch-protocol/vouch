@@ -18,7 +18,15 @@ type Message = {
     interactionId?: string;
     feedbackRating?: 1 | -1;
     feedbackSubmitting?: boolean;
+    /** Parsed follow-up questions from the LLM's `---FOLLOWUPS---` tail. */
+    followups?: string[];
+    /** Internal: raw text accumulating after the followups marker. */
+    followupsRaw?: string;
+    /** Internal: true once we've crossed the `---FOLLOWUPS---` marker. */
+    inFollowupsMode?: boolean;
 };
+
+const FOLLOWUPS_MARKER = '---FOLLOWUPS---';
 
 type Props = {
     apiBase: string;
@@ -441,7 +449,41 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     const next = [...prev];
                     const last = next[next.length - 1];
                     if (last && last.role === 'assistant') {
-                        last.text += parsed.text ?? '';
+                        const piece = parsed.text ?? '';
+                        if (last.inFollowupsMode) {
+                            // Already past the marker — buffer raw follow-up text.
+                            last.followupsRaw = (last.followupsRaw ?? '') + piece;
+                        } else {
+                            // Append to the visible answer, then check if the marker has appeared.
+                            const combined = last.text + piece;
+                            const markerIdx = combined.indexOf(FOLLOWUPS_MARKER);
+                            if (markerIdx !== -1) {
+                                last.text = combined.slice(0, markerIdx).trimEnd();
+                                last.followupsRaw = combined.slice(markerIdx + FOLLOWUPS_MARKER.length);
+                                last.inFollowupsMode = true;
+                            } else {
+                                last.text = combined;
+                            }
+                        }
+                    }
+                    return next;
+                });
+            } else if (event === 'done') {
+                // Parse the accumulated follow-ups buffer into an array.
+                setMessages((prev) => {
+                    const next = [...prev];
+                    const last = next[next.length - 1];
+                    if (last && last.role === 'assistant' && last.followupsRaw) {
+                        const parsed_followups = last.followupsRaw
+                            .split('\n')
+                            .map((line) => line.trim())
+                            .filter((line) => line.startsWith('- ') || line.startsWith('* '))
+                            .map((line) => line.slice(2).trim())
+                            .filter((line) => line.length > 0 && line.length <= 200)
+                            .slice(0, 5);
+                        if (parsed_followups.length > 0) {
+                            last.followups = parsed_followups;
+                        }
                     }
                     return next;
                 });
@@ -536,6 +578,24 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                                                 {s.count > 1 && <span className="ml-1 normal-case text-ink-faint/70">×{s.count}</span>}
                                             </span>
                                         ))}
+                                </div>
+                            )}
+                            {m.role === 'assistant' && m.followups && m.followups.length > 0 && (
+                                <div className="mt-3 flex flex-col gap-1.5">
+                                    <p className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-ink-faint">
+                                        Keep going
+                                    </p>
+                                    {m.followups.map((q, j) => (
+                                        <button
+                                            key={j}
+                                            type="button"
+                                            disabled={busy}
+                                            onClick={() => void send(q)}
+                                            className="text-left px-3 py-1.5 border border-rule text-[0.86rem] text-ink-soft hover:border-burgundy hover:text-burgundy transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {q}
+                                        </button>
+                                    ))}
                                 </div>
                             )}
                             {m.role === 'assistant' && m.interactionId && !busy && (
