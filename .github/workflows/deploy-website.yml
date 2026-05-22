@@ -50,6 +50,13 @@ jobs:
 
       - name: Build static export
         working-directory: website
+        env:
+          # Public URL of the deployed Vouch Assistant backend. When unset
+          # (or pointed at localhost), AgentPanel.tsx renders a "coming soon"
+          # body and never tries to fetch. Set the GitHub repo variable
+          # VOUCH_AGENT_URL to https://agent.vouch-protocol.com once the
+          # Fly deploy is live (Settings > Secrets and variables > Actions > Variables).
+          NEXT_PUBLIC_VOUCH_AGENT_URL: ${{ vars.VOUCH_AGENT_URL }}
         run: npm run build
 
       - name: Copy output into docs/
