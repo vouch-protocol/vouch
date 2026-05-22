@@ -39,18 +39,6 @@ export default function Nav() {
                             </Link>
                         );
                     })}
-                    <button
-                        type="button"
-                        onClick={() => window.dispatchEvent(new CustomEvent('vouch-agent:open'))}
-                        className="group inline-flex items-center gap-2 font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy transition-colors no-underline border-b border-transparent hover:border-burgundy pb-0.5"
-                        aria-label="Open Vouch assistant"
-                    >
-                        <span
-                            aria-hidden="true"
-                            className="inline-block w-1.5 h-1.5 rounded-full bg-burgundy group-hover:animate-pulse"
-                        />
-                        Ask the assistant
-                    </button>
                     <ThemeToggle />
                     <a
                         href="https://github.com/vouch-protocol/vouch"
@@ -98,16 +86,6 @@ export default function Nav() {
                         >
                             GitHub
                         </a>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setOpen(false);
-                                window.dispatchEvent(new CustomEvent('vouch-agent:open'));
-                            }}
-                            className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-burgundy hover:text-burgundy-dark text-left py-1"
-                        >
-                            Ask the assistant
-                        </button>
                         <div className="pt-2"><ThemeToggle /></div>
                     </div>
                 </div>

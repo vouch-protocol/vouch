@@ -18,12 +18,18 @@ type Message = {
     interactionId?: string;
     feedbackRating?: 1 | -1;
     feedbackSubmitting?: boolean;
-    /** Parsed follow-up questions from the LLM's `---FOLLOWUPS---` tail. */
+    /**
+     * Follow-up questions to render below this reply. Authoritative source
+     * is the backend's `event: followups` SSE frame; the inline-marker
+     * parse is a defensive fallback only.
+     */
     followups?: string[];
     /** Internal: raw text accumulating after the followups marker. */
     followupsRaw?: string;
     /** Internal: true once we've crossed the `---FOLLOWUPS---` marker. */
     inFollowupsMode?: boolean;
+    /** True once the user has clicked any follow-up chip on this message. */
+    followupsConsumed?: boolean;
 };
 
 const FOLLOWUPS_MARKER = '---FOLLOWUPS---';
@@ -343,19 +349,38 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
         }
     }, [messages]);
 
-    async function send(override?: string) {
+    async function send(override?: string, opts?: { fromFollowupOf?: string }) {
         const text = (override ?? draft).trim();
         if (!text || busy) return;
         setError(null);
         setBusy(true);
-        setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: '' }]);
+        // If this send came from clicking a follow-up chip, mark the parent
+        // assistant message as "consumed" so its chip bank hides immediately,
+        // without waiting for the new reply to start streaming.
+        setMessages((prev) => {
+            const next = [...prev];
+            if (opts?.fromFollowupOf) {
+                for (const m of next) {
+                    if (m.interactionId === opts.fromFollowupOf) {
+                        m.followupsConsumed = true;
+                    }
+                }
+            }
+            next.push({ role: 'user', text }, { role: 'assistant', text: '' });
+            return next;
+        });
         setDraft('');
 
         try {
             const resp = await fetch(`${apiBase}/chat`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ message: text }),
+                body: JSON.stringify({
+                    message: text,
+                    // Backend logs this so we can later mine which suggested
+                    // follow-ups are actually getting clicked.
+                    from_followup_of: opts?.fromFollowupOf,
+                }),
             });
             if (!resp.ok || !resp.body) {
                 const bodyText = await resp.text().catch(() => '');
@@ -468,12 +493,39 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     }
                     return next;
                 });
-            } else if (event === 'done') {
-                // Parse the accumulated follow-ups buffer into an array.
+            } else if (event === 'followups') {
+                // Authoritative: backend has parsed the LLM tail (or picked a
+                // per-source fallback if the model forgot the marker) and
+                // sent the canonical list. Trust it over any inline-marker
+                // parse we did during streaming.
                 setMessages((prev) => {
                     const next = [...prev];
                     const last = next[next.length - 1];
-                    if (last && last.role === 'assistant' && last.followupsRaw) {
+                    if (last && last.role === 'assistant' && Array.isArray(parsed.questions)) {
+                        const cleaned = parsed.questions
+                            .filter((q: unknown): q is string => typeof q === 'string')
+                            .map((q: string) => q.trim())
+                            .filter((q: string) => q.length > 0 && q.length <= 200)
+                            .slice(0, 5);
+                        if (cleaned.length > 0) {
+                            last.followups = cleaned;
+                        }
+                    }
+                    return next;
+                });
+            } else if (event === 'done') {
+                // Defensive fallback: if the server never sent a followups
+                // frame (e.g. older deploy), use whatever we parsed inline
+                // from the `---FOLLOWUPS---` marker in the stream.
+                setMessages((prev) => {
+                    const next = [...prev];
+                    const last = next[next.length - 1];
+                    if (
+                        last &&
+                        last.role === 'assistant' &&
+                        !last.followups &&
+                        last.followupsRaw
+                    ) {
                         const parsed_followups = last.followupsRaw
                             .split('\n')
                             .map((line) => line.trim())
@@ -580,24 +632,30 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                                         ))}
                                 </div>
                             )}
-                            {m.role === 'assistant' && m.followups && m.followups.length > 0 && (
-                                <div className="mt-3 flex flex-col gap-1.5">
-                                    <p className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-ink-faint">
-                                        Keep going
-                                    </p>
-                                    {m.followups.map((q, j) => (
-                                        <button
-                                            key={j}
-                                            type="button"
-                                            disabled={busy}
-                                            onClick={() => void send(q)}
-                                            className="text-left px-3 py-1.5 border border-rule text-[0.86rem] text-ink-soft hover:border-burgundy hover:text-burgundy transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {q}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                            {m.role === 'assistant' &&
+                                !m.followupsConsumed &&
+                                m.followups &&
+                                m.followups.length > 0 &&
+                                !busy && (
+                                    <div className="mt-3 flex flex-col gap-1.5">
+                                        <p className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-ink-faint">
+                                            Keep going
+                                        </p>
+                                        {m.followups.map((q, j) => (
+                                            <button
+                                                key={j}
+                                                type="button"
+                                                disabled={busy}
+                                                onClick={() =>
+                                                    void send(q, { fromFollowupOf: m.interactionId })
+                                                }
+                                                className="text-left px-3 py-1.5 border border-rule text-[0.86rem] text-ink-soft hover:border-burgundy hover:text-burgundy transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {q}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             {m.role === 'assistant' && m.interactionId && !busy && (
                                 <FeedbackBar
                                     apiBase={apiBase}
