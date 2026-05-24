@@ -1,6 +1,6 @@
 ---
 name: vouch-protocol
-description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, or Go code. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol/core`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions.
+description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, or Go code. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol/sdk`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions.
 ---
 
 # Vouch Protocol
@@ -18,7 +18,7 @@ without forcing the user to read the full specification.
 Invoke when the user:
 
 - Asks how to sign or verify agent actions cryptographically
-- Mentions Vouch by name or package (`vouch-protocol`, `@vouch-protocol/core`, `vouch-sidecar`)
+- Mentions Vouch by name or package (`vouch-protocol`, `@vouch-protocol/sdk`, `vouch-sidecar`)
 - Wants to add agent identity to their LangChain / CrewAI / MCP / AutoGen / Vertex AI flow
 - Asks about Verifiable Credentials, Data Integrity proofs, or DIDs in the context of AI agents
 - Needs post-quantum signatures for regulated deployments (`hybrid-eddsa-mldsa44-jcs-2026`)

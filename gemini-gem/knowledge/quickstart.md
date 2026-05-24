@@ -34,11 +34,11 @@ assert result.ok
 ## TypeScript
 
 ```bash
-npm install @vouch-protocol/core
+npm install @vouch-protocol/sdk
 ```
 
 ```ts
-import { Signer, Verifier, buildVouchCredential } from '@vouch-protocol/core';
+import { Signer, Verifier, buildVouchCredential } from '@vouch-protocol/sdk';
 
 const signer = await Signer.generate({ did: 'did:web:agent.example.com' });
 

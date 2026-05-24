@@ -49,7 +49,7 @@ const LANGUAGE_TILES = [
   },
   {
     name: 'TypeScript',
-    install: 'npm install @vouch-protocol/core',
+    install: 'npm install @vouch-protocol/sdk',
     repoPath: 'packages/sdk-ts/',
     note: 'Browser and Node. Signer, verifier, JCS, hybrid PQ, vouch-client for sidecar RPC.',
   },

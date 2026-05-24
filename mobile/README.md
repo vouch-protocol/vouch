@@ -52,7 +52,7 @@ npx expo start
 
 The mobile app bridges to the Python `vouch-protocol` library via:
 
-1. **NPM Package**: `@vouch-protocol/core` (TypeScript)
+1. **NPM Package**: `@vouch-protocol/sdk` (TypeScript)
 2. **REST API**: For server-side signing operations
 3. **Direct Native**: For offline signing with device keys
 

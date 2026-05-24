@@ -47,7 +47,7 @@ present in the registry of trusted principals and not revoked."
 ## SDKs
 
 - Python: `pip install vouch-protocol`
-- TypeScript: `npm install @vouch-protocol/core`
+- TypeScript: `npm install @vouch-protocol/sdk`
 - Go: `go get github.com/vouch-protocol/vouch/go-sidecar/...`
 
 All three implementations are spec-aligned and interop on the wire.

@@ -115,11 +115,11 @@ signed = signer.sign_credential_hybrid(build_vouch_credential(...))
 ### TypeScript
 
 ```bash
-npm install @vouch-protocol/core @noble/post-quantum
+npm install @vouch-protocol/sdk @noble/post-quantum
 ```
 
 ```ts
-import { Signer, buildHybridProof, generateMLDSA44KeyPair } from '@vouch-protocol/core';
+import { Signer, buildHybridProof, generateMLDSA44KeyPair } from '@vouch-protocol/sdk';
 
 const signer = await Signer.fromDidWithHybrid('did:web:agent.example.com');
 const signed = await signer.signCredentialHybrid(credential);

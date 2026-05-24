@@ -108,13 +108,13 @@ Next: try [signing with the hybrid post-quantum profile](#hybrid-pq) or [adding 
 ## Install
 
 \`\`\`bash
-npm install @vouch-protocol/core
+npm install @vouch-protocol/sdk
 \`\`\`
 
 ## Sign a credential
 
 \`\`\`ts
-import { Signer, buildVouchCredential } from '@vouch-protocol/core';
+import { Signer, buildVouchCredential } from '@vouch-protocol/sdk';
 
 const signer = await Signer.fromDid('did:web:agent.example.com');
 
@@ -135,7 +135,7 @@ console.log(signed.proof.proofValue);
 ## Verify
 
 \`\`\`ts
-import { Verifier } from '@vouch-protocol/core';
+import { Verifier } from '@vouch-protocol/sdk';
 
 const verifier = new Verifier();
 const result = await verifier.verifyCredential(signed);
@@ -294,7 +294,7 @@ signed = signer.sign_credential_hybrid(credential)
 TypeScript:
 
 \`\`\`ts
-import { Signer } from '@vouch-protocol/core';
+import { Signer } from '@vouch-protocol/sdk';
 
 const signer = await Signer.fromDidWithHybrid('did:web:agent.example.com');
 const signed = await signer.signCredentialHybrid(credential);
@@ -643,7 +643,7 @@ BitstringStatusList (\`vc-bitstring-status-list\`) lets an issuer revoke or susp
 Vouch ships a cross-language reference implementation:
 
 - Python: \`vouch.status_list\` and \`vouch.status_list_fetcher\`
-- TypeScript: \`@vouch-protocol/core\` exports \`StatusList\`, \`buildStatusListCredential\`, \`buildStatusListEntry\`, \`verifyStatus\`
+- TypeScript: \`@vouch-protocol/sdk\` exports \`StatusList\`, \`buildStatusListCredential\`, \`buildStatusListEntry\`, \`verifyStatus\`
 - Go: \`go-sidecar/signer\` exports \`StatusList\`, \`BuildStatusListCredential\`, \`BuildStatusListEntry\`, \`VerifyStatus\`
 
 All three share a single canonical encoding (gzip + base64url multibase, 131,072-bit minimum bitstring) and a cross-language test vector at \`test-vectors/bitstring-status-list/\`.
@@ -743,7 +743,7 @@ The TypeScript and Go APIs mirror Python. Examples:
 import {
   StatusList, buildStatusListCredential, buildStatusListEntry,
   verifyStatus, buildVouchCredential,
-} from '@vouch-protocol/core';
+} from '@vouch-protocol/sdk';
 
 const statusList = new StatusList({ statusListId: 'https://issuer.example/status/1' });
 const index = statusList.allocateIndex();
