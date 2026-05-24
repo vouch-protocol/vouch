@@ -924,13 +924,13 @@ FastAPI service (\`github-app/main.py\`, ~1000 lines). Webhook endpoint at \`/we
 ## Install
 
 \`\`\`bash
-npm install @vouch-protocol/shield
+npm install vouch-shield
 \`\`\`
 
 ## Basic usage
 
 \`\`\`ts
-import { VouchShield, generateKeypair, signPayload } from '@vouch-protocol/shield';
+import { VouchShield, generateKeypair, signPayload } from 'vouch-shield';
 
 const shield = new VouchShield({ strictMode: true });
 

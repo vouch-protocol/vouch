@@ -248,7 +248,7 @@ Captured here so they don't get lost between sessions:
   Useful in regulated environments where the PR review itself is the
   compliance gate.
 - **Distribution channels for Amnesia.** Currently the README says
-  `npm install -g @vouch-protocol/amnesia` once the package is published.
+  `npm install -g vouch-amnesia` once the package is published.
   Decision item for a future session: actually publish the npm package,
   pick a versioning policy, set up automated release notes.
 - **`<r>` tag syntax in non-text formats.** Should the same tag work

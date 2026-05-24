@@ -109,7 +109,7 @@ index on startup (cached to `.index/`), and exposes:
 The Next.js website (`website/`) can mount the widget as:
 
 ```tsx
-import { VouchChat } from '@vouch-protocol/website-agent';
+import { VouchChat } from 'vouch-website-agent';
 
 export default function HelpPage() {
     return <VouchChat apiBase="https://agent.vouch-protocol.org" />;

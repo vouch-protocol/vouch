@@ -25,7 +25,7 @@ import type { Signer } from '../signer.js';
 /**
  * Shape of the Amnesia EgressDecision (matches amnesia/src/shared/policy.ts).
  * Imported as a structural type so this module has no hard dependency on
- * the @vouch-protocol/amnesia package.
+ * the vouch-amnesia package.
  */
 export interface AmnesiaEgressDecision {
   workspace: string;

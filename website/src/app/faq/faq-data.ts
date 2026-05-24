@@ -781,7 +781,7 @@ The v1.6.x reference implementations emit the transitional composite proof (\`hy
         q: 'What is Vouch Shield?',
         a: `Vouch Shield is a small TypeScript library that sits between your AI agent and the tools it tries to call. Before any tool runs, Shield checks: is this call signed? Is the signer on my trust list? Does this DID have permission to call this specific tool? If anything is off, the call is blocked and logged. If everything checks out, the call runs.
 
-\`npm install @vouch-protocol/shield\`. Source: [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield).`,
+\`npm install vouch-shield\`. Source: [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield).`,
         helpLinks: [{ label: 'Vouch Shield setup', href: '/help/#vouch-shield' }],
       },
       {
