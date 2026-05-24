@@ -1,7 +1,10 @@
 # Credential Format Reference
 
 A Vouch credential is a Verifiable Credential 2.0 JSON document with a
-Data Integrity proof sibling. Human-readable; no opaque envelopes.
+Data Integrity proof sibling. Human-readable; no opaque envelopes. It is
+**not** a JWT or JWS — the proof attaches as a sibling `proof` object
+using the `eddsa-jcs-2022` cryptosuite. (The legacy v0.x JWS token
+format is deprecated; see "Why not JWS / JWT?" at the end of this doc.)
 
 ## Anatomy of a signed Vouch credential
 

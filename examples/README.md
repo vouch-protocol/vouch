@@ -11,18 +11,24 @@ Each example is self-contained and can be run directly.
 
 | Example | Description | Run |
 |---------|-------------|-----|
-| [01_hello_world.py](01_quickstart/01_hello_world.py) | Your first signature in 10 lines | `python 01_quickstart/01_hello_world.py` |
+| [01_hello_world.py](01_quickstart/01_hello_world.py) | Your first credential (VC + `eddsa-jcs-2022`) | `python 01_quickstart/01_hello_world.py` |
 | [02_key_generation.py](01_quickstart/02_key_generation.py) | Create and manage identities | `python 01_quickstart/02_key_generation.py` |
-| [03_token_anatomy.py](01_quickstart/03_token_anatomy.py) | What's inside a Vouch token | `python 01_quickstart/03_token_anatomy.py` |
+| [03_token_anatomy.py](01_quickstart/03_token_anatomy.py) | Anatomy of a legacy v0.x JWS token | `python 01_quickstart/03_token_anatomy.py` |
 
 ---
 
 ## 🔐 Core Signing
 
+The modern path issues a Verifiable Credential with a Data Integrity
+proof (`eddsa-jcs-2022`). The `01_`/`02_` examples use the legacy v0.x
+JWS "Vouch-Token" path, retained during the deprecation window.
+
 | Example | Description | Run |
 |---------|-------------|-----|
-| [01_sign_request.py](02_core/01_sign_request.py) | Sign HTTP requests | `python 02_core/01_sign_request.py` |
-| [02_verify_token.py](02_core/02_verify_token.py) | Verify incoming tokens | `python 02_core/02_verify_token.py` |
+| [01a_sign_credential.py](02_core/01a_sign_credential.py) | **Issue a credential (VC + Data Integrity)** | `python 02_core/01a_sign_credential.py` |
+| [02a_verify_credential.py](02_core/02a_verify_credential.py) | **Verify a credential** | `python 02_core/02a_verify_credential.py` |
+| [01_sign_request.py](02_core/01_sign_request.py) | Sign HTTP requests (legacy JWS) | `python 02_core/01_sign_request.py` |
+| [02_verify_token.py](02_core/02_verify_token.py) | Verify incoming tokens (legacy JWS) | `python 02_core/02_verify_token.py` |
 | [03_delegation_chain.py](02_core/03_delegation_chain.py) | Agent-to-agent delegation | `python 02_core/03_delegation_chain.py` |
 | [04_audit_trail.py](02_core/04_audit_trail.py) | Create compliance audit trails | `python 02_core/04_audit_trail.py` |
 

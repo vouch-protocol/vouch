@@ -135,7 +135,7 @@ export const ONBOARD_STEPS: OnboardStep[] = [
     short: 'Wire tools',
     title: 'Wire the agent tool-call layer to /sign',
     blurb:
-      'The wizard generates a thin wrapper for your agent runtime. Every time the agent invokes a tool, the wrapper first calls the Sidecar /sign endpoint to mint a credential bound to that action; the verifier in step 5 will require the credential. The example below is Python; pass --lang typescript or --lang go for the other reference SDKs.',
+      'The wizard generates a thin wrapper for your agent runtime. Every time the agent invokes a tool, the wrapper first calls the Sidecar /sign endpoint to mint a credential bound to that action; the verifier in step 5 will require the credential. The example below is Python; pass --lang typescript or --lang go for the other reference SDKs. Note: this preview uses the legacy v0.x Vouch-Token header path; the v1.0 path issues a Verifiable Credential (content-type application/vouch+credential+json) via sign_credential().',
     command: 'vouch onboard --resume --lang python',
     artifact: 'vouch-toolwire.py',
     previewLanguage: 'python',
@@ -173,7 +173,7 @@ def vouch_tool(action: str) -> Callable:
     short: 'Verifier',
     title: 'Deploy a verifier at the API boundary',
     blurb:
-      'The verifier middleware sits at every endpoint that an agent can call. It checks the Vouch-Token header, validates the signature against the issuer DID, and rejects requests whose action is not in your allow-list. The wizard emits FastAPI, Express, and Gin variants; the FastAPI version is shown below.',
+      'The verifier middleware sits at every endpoint that an agent can call. It checks the Vouch-Token header, validates the signature against the issuer DID, and rejects requests whose action is not in your allow-list. The wizard emits FastAPI, Express, and Gin variants; the FastAPI version is shown below. Note: this preview verifies the legacy v0.x Vouch-Token; for v1.0 Verifiable Credentials use Verifier.verify_credential(credential).',
     command: 'vouch onboard --resume --lang python',
     artifact: 'vouch-verifier.py',
     previewLanguage: 'python',

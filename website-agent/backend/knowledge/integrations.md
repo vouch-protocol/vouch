@@ -7,11 +7,15 @@ signing (and optionally verification) step.
 Reference implementations live under `vouch/integrations/` in the Python
 SDK. Every import and symbol below is taken from that source tree.
 
-> **Signing path.** The framework adapters below emit a legacy JWS
-> `Vouch-Token` via `Signer.sign(payload)`. New code can instead issue a
-> v1.0 Verifiable Credential with `Signer.sign_credential(intent={...})`
-> (TypeScript: `signer.signCredential({...})`). The Amnesia adapter
-> already uses the VC path. Both interoperate against the same DID.
+> **Signing path.** The current Vouch format is a v1.0 Verifiable
+> Credential with a Data Integrity proof (`eddsa-jcs-2022`), issued via
+> `Signer.sign_credential(intent={...})` (TypeScript:
+> `signer.signCredential({...})`) — prefer it for new code. The framework
+> adapters below still emit the **legacy** JWS `Vouch-Token` via
+> `Signer.sign(payload)` during the deprecation window; migrating an
+> adapter means switching its signing call to `sign_credential`. The
+> Amnesia adapter already uses the VC path. Both interoperate against the
+> same DID.
 
 All Python signing adapters read the agent identity from the
 `VOUCH_PRIVATE_KEY` and `VOUCH_DID` environment variables (most also

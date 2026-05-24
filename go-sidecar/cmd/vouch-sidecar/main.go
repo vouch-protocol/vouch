@@ -1,7 +1,10 @@
 // Command vouch-sidecar runs the Vouch Protocol security sidecar as an
-// HTTP server. It exposes a /sign endpoint that produces composite JWS
-// tokens, optionally wrapped in a Post-Quantum JWE vault when the
-// -s (--sensitive) flag is active.
+// HTTP server. The signer package supports the modern v1.0 credential
+// path (W3C Verifiable Credentials with eddsa-jcs-2022 Data Integrity
+// proofs; see signer/data_integrity.go). The /sign HTTP endpoint
+// currently emits the legacy composite JWS "Vouch-Token", optionally
+// wrapped in a Post-Quantum JWE vault when the -s (--sensitive) flag is
+// active.
 //
 // Usage:
 //
