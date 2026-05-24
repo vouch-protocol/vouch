@@ -38,9 +38,7 @@ print(f"📝 cryptosuite: {credential['proof']['cryptosuite']}")
 # 4. Verify the credential.
 #    verify_credential() accepts an Ed25519PublicKey, a Multikey string,
 #    or a JWK (string or dict). It returns (is_valid, passport).
-is_valid, passport = Verifier.verify_credential(
-    credential, public_key=signer.get_public_key_jwk()
-)
+is_valid, passport = Verifier.verify_credential(credential, public_key=signer.get_public_key_jwk())
 
 print("\n🔍 Verification result:")
 print(f"   Valid: {is_valid}")
