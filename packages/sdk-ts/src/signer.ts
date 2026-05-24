@@ -219,15 +219,7 @@ export class Signer {
       validFrom: opts.validFrom,
     });
 
-    const privateKey = await this.rawPrivateKeyPromise;
-    const proof = buildProof(
-      credential as unknown as Record<string, unknown>,
-      {
-        privateKey,
-        verificationMethod: this.verificationMethodId(),
-      }
-    );
-    credential.proof = proof;
+    await this.attachProof(credential as unknown as Record<string, unknown>);
     return credential;
   }
 
@@ -237,6 +229,43 @@ export class Signer {
   async signCredentialJson(opts: SignCredentialOptions): Promise<string> {
     const cred = await this.signCredential(opts);
     return JSON.stringify(cred);
+  }
+
+  /**
+   * Attach an eddsa-jcs-2022 Data Integrity proof to an arbitrary
+   * credential document, signing with this signer's Ed25519 key. Mutates
+   * `credential` (sets `credential.proof`) and returns it. Use this to sign
+   * credentials whose shape is not the standard VouchCredential, e.g.
+   * domain-specific Verifiable Credentials.
+   */
+  async attachProof(
+    credential: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const privateKey = await this.rawPrivateKeyPromise;
+    credential.proof = buildProof(credential, {
+      privateKey,
+      verificationMethod: this.verificationMethodId(),
+    });
+    return credential;
+  }
+
+  /**
+   * Attach a hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof (Ed25519 +
+   * ML-DSA-44) to an arbitrary credential document. Mutates `credential`
+   * and returns it. Counterpart to `attachProof` for the post-quantum
+   * hybrid profile.
+   */
+  async attachHybridProof(
+    credential: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    this.ensureMldsa44KeyPair();
+    const ed25519PrivateKey = await this.rawPrivateKeyPromise;
+    credential.proof = buildHybridProof(credential, {
+      ed25519PrivateKey,
+      mldsa44SecretKey: this.mldsa44SecretKey!,
+      verificationMethod: this.verificationMethodId(),
+    });
+    return credential;
   }
 
   /**
@@ -269,17 +298,7 @@ export class Signer {
       validFrom: opts.validFrom,
     });
 
-    this.ensureMldsa44KeyPair();
-    const ed25519PrivateKey = await this.rawPrivateKeyPromise;
-    const proof = buildHybridProof(
-      credential as unknown as Record<string, unknown>,
-      {
-        ed25519PrivateKey,
-        mldsa44SecretKey: this.mldsa44SecretKey!,
-        verificationMethod: this.verificationMethodId(),
-      }
-    );
-    credential.proof = proof;
+    await this.attachHybridProof(credential as unknown as Record<string, unknown>);
     return credential;
   }
 
