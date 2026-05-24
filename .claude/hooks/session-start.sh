@@ -1,13 +1,19 @@
 #!/bin/bash
 # Vouch Protocol SessionStart hook for Claude Code on the web.
-# Installs the dependencies needed to run tests and linters so they are
-# available before the session starts. Safe to run repeatedly.
+# Installs the dependencies needed to run tests and linters. Runs in async
+# mode: dependencies install in the background while the session starts.
+# Safe to run repeatedly.
 set -euo pipefail
 
 # Only run in remote (Claude Code on the web) environments.
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
+
+# Async mode: emit this first so the install runs in the background and the
+# session starts without waiting (timeout 5 min). Trade-off: the agent may
+# start before deps finish installing.
+echo '{"async": true, "asyncTimeout": 300000}'
 
 cd "${CLAUDE_PROJECT_DIR:-.}"
 
