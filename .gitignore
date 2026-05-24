@@ -112,8 +112,11 @@ docs/patents/
 # AI assistant config
 claude.md
 
-# Claude Code local-only state (permission allowlist, agent settings, etc.)
-.claude/
+# Claude Code: ignore local-only state, but track the shared project hook
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+.claude/settings.local.json
 
 # Discarded icon set (kept locally for reference, not shipped)
 docs/assets/icons-green/

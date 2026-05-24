@@ -15,12 +15,16 @@ import hashlib
 
 try:
     from PIL import Image, ImageDraw, ImageFont
-    import qrcode
 
     PIL_AVAILABLE = True
-    QR_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
+
+try:
+    import qrcode
+
+    QR_AVAILABLE = True
+except ImportError:
     QR_AVAILABLE = False
 
 
