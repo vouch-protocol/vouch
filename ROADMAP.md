@@ -191,7 +191,7 @@ Codes are **stable and append-only**. Once published, a code's meaning does not 
 - [ ] Chrome Web Store + Firefox Add-ons
 
 ### 5.2 TypeScript SDK
-- [ ] `npm install @vouch-protocol/sdk`
+- [ ] `npm install vouch-protocol`
 - [ ] Browser-compatible Ed25519 signing (WebCrypto API)
 - [ ] Token verification in the browser
 - [ ] React hooks: `useVouchVerify()`, `useVouchSign()`

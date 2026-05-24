@@ -12,7 +12,7 @@ Cause: the `pqcrypto` dependency needs C headers and a compiler.
 - Ubuntu/Debian: `apt install build-essential libssl-dev` then retry
 - Windows: install Visual C++ Build Tools or use WSL
 
-### `npm install @vouch-protocol/sdk` fails on Node 16
+### `npm install vouch-protocol` fails on Node 16
 
 The SDK requires Node 18+. Upgrade Node.
 
@@ -240,7 +240,7 @@ print(canonical.hex())
 
 ```bash
 python -m vouch.jcs canonicalize < credential.json > python.bin
-node -e "console.log(require('@vouch-protocol/sdk').canonicalize(...))" < credential.json > ts.bin
+node -e "console.log(require('vouch-protocol').canonicalize(...))" < credential.json > ts.bin
 diff python.bin ts.bin
 ```
 

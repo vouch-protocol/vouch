@@ -1,4 +1,4 @@
-# @vouch-protocol/sdk
+# vouch-protocol
 
 Official TypeScript SDK for the [Vouch Protocol](https://vouch-protocol.com).
 
@@ -7,7 +7,7 @@ The open standards-aligned standard for cryptographic identity and provenance of
 ## Installation
 
 ```bash
-npm install @vouch-protocol/sdk
+npm install vouch-protocol
 
 # Optional: for the hybrid post-quantum profile
 npm install @noble/post-quantum
@@ -23,7 +23,7 @@ This package exports two complementary APIs:
 ## Quick Start: Cryptographic SDK (v1.0+)
 
 ```typescript
-import { Signer, Verifier, generateIdentity } from '@vouch-protocol/sdk';
+import { Signer, Verifier, generateIdentity } from 'vouch-protocol';
 
 // Generate a fresh agent identity
 const keys = await generateIdentity('agent.example.com');
@@ -53,7 +53,7 @@ if (result.isValid) {
 ## Quick Start: Daemon Client
 
 ```typescript
-import { VouchClient } from '@vouch-protocol/sdk';
+import { VouchClient } from 'vouch-protocol';
 
 const client = new VouchClient();
 
@@ -69,7 +69,7 @@ if (await client.connect()) {
 Optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite carries Ed25519 + ML-DSA-44 composite signatures over the same canonical bytes. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines.
 
 ```typescript
-import { Signer, generateMLDSA44KeyPair } from '@vouch-protocol/sdk';
+import { Signer, generateMLDSA44KeyPair } from 'vouch-protocol';
 
 const mldsaKeys = await generateMLDSA44KeyPair();
 // ...sign and verify under the hybrid profile...

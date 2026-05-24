@@ -6,7 +6,7 @@
  * 
  * @example
  * ```typescript
- * import { VouchClient } from '@vouch-protocol/sdk';
+ * import { VouchClient } from 'vouch-protocol';
  * 
  * const client = new VouchClient();
  * 

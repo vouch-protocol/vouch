@@ -171,7 +171,7 @@ A Vouch delegation chain captures all three steps cryptographically. Each step n
         a: `Three reference SDKs that produce byte-identical credentials thanks to JCS canonicalization:
 
 - **Python**: \`pip install vouch-protocol\` (most complete: signer, verifier, async verifier, KMS, reputation, revocation, cache, rate-limit, metrics, CLI)
-- **TypeScript**: \`npm install @vouch-protocol/sdk\` (browser and Node: signer, verifier, JCS, hybrid PQ, vouch-client for sidecar RPC)
+- **TypeScript**: \`npm install vouch-protocol\` (browser and Node: signer, verifier, JCS, hybrid PQ, vouch-client for sidecar RPC)
 - **Go**: \`go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar\` (long-running daemon for the Identity Sidecar pattern)
 
 Cross-language test vectors are published at [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors).`,

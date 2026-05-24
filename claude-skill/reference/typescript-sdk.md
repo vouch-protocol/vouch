@@ -1,12 +1,12 @@
 # TypeScript SDK Reference
 
-`@vouch-protocol/sdk` on npm. Works in Node and browser. Produces
+`vouch-protocol` on npm. Works in Node and browser. Produces
 byte-identical credentials with the Python and Go SDKs.
 
 ## Install
 
 ```bash
-npm install @vouch-protocol/sdk
+npm install vouch-protocol
 # Optional post-quantum:
 npm install @noble/post-quantum
 ```
@@ -14,7 +14,7 @@ npm install @noble/post-quantum
 ## Identity
 
 ```ts
-import { Signer, generateIdentity } from '@vouch-protocol/sdk';
+import { Signer, generateIdentity } from 'vouch-protocol';
 
 // Generate
 const keys = await generateIdentity('agent.example.com');
@@ -32,7 +32,7 @@ const signer = await Signer.fromDid('did:web:agent.example.com');
 ## Credential issuance
 
 ```ts
-import { buildVouchCredential } from '@vouch-protocol/sdk';
+import { buildVouchCredential } from 'vouch-protocol';
 
 const credential = buildVouchCredential({
     issuerDid: 'did:web:agent.example.com',
@@ -62,7 +62,7 @@ import {
     buildHybridProof,
     generateMLDSA44KeyPair,
     HYBRID_CRYPTOSUITE_ID,
-} from '@vouch-protocol/sdk';
+} from 'vouch-protocol';
 
 // Caller manages MLDSA keys for now; see data-integrity-hybrid.ts
 const mldsa = await generateMLDSA44KeyPair();
@@ -80,7 +80,7 @@ credential.proof = proof;
 ## Verification
 
 ```ts
-import { Verifier } from '@vouch-protocol/sdk';
+import { Verifier } from 'vouch-protocol';
 
 const verifier = new Verifier();
 const result = await verifier.verifyCredential(signed);
@@ -100,7 +100,7 @@ import {
     buildStatusListCredential,
     buildStatusListEntry,
     verifyStatus,
-} from '@vouch-protocol/sdk';
+} from 'vouch-protocol';
 
 const list = new StatusList({
     statusListId: 'https://issuer.example/status/1',
@@ -138,7 +138,7 @@ const restored = StatusList.fromStateDict(JSON.parse(await redis.get(...)));
 If you run the Go sidecar, the TS SDK has a client:
 
 ```ts
-import { VouchClient } from '@vouch-protocol/sdk';
+import { VouchClient } from 'vouch-protocol';
 
 const client = new VouchClient({ endpoint: 'http://localhost:8877' });
 const signed = await client.sign({

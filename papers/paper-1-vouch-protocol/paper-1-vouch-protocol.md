@@ -790,7 +790,7 @@ Full disclosure portfolio: https://github.com/vouch-protocol/vouch/tree/main/doc
 ## Appendix A: Reference Implementations
 
 - **Python**: `pip install vouch-protocol`. Source: https://github.com/vouch-protocol/vouch/tree/main/vouch/
-- **TypeScript**: `npm install @vouch-protocol/sdk`. Source: https://github.com/vouch-protocol/vouch/tree/main/packages/sdk-ts/
+- **TypeScript**: `npm install vouch-protocol`. Source: https://github.com/vouch-protocol/vouch/tree/main/packages/sdk-ts/
 - **Go**: `go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest`. Source: https://github.com/vouch-protocol/vouch/tree/main/go-sidecar/
 
 ## Appendix B: Test Vectors

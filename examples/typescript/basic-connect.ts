@@ -4,7 +4,7 @@
  * The simplest example - check if the daemon is running.
  */
 
-import { VouchClient, VouchConnectionError } from '@vouch-protocol/sdk';
+import { VouchClient, VouchConnectionError } from 'vouch-protocol';
 
 async function main() {
     // Create a client (uses default localhost:21000)

@@ -278,11 +278,11 @@ implement as a decorator. The Python SDK includes both patterns.
 ## Browser extension flow
 
 For human-driven actions in a browser, sign with the TypeScript SDK
-(`@vouch-protocol/sdk`). The extension's background script holds the
+(`vouch-protocol`). The extension's background script holds the
 user's key and prompts for approval before signing.
 
 ```ts
-import { Signer } from '@vouch-protocol/sdk';
+import { Signer } from 'vouch-protocol';
 
 const signer = new Signer({ privateKey: privateKeyJwk, did });
 
@@ -298,7 +298,7 @@ const credential = await signer.signCredential({
 window.postMessage({ type: 'vouch-credential', credential }, '*');
 ```
 
-`@vouch-protocol/sdk` also exports a Daemon Client for delegating signing
+`vouch-protocol` also exports a Daemon Client for delegating signing
 to a locally-running Vouch Bridge daemon when the key should not live in
 the extension.
 

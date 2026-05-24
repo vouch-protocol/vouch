@@ -4,7 +4,7 @@
  * Demonstrates signing files and binary data using the SDK.
  */
 
-import { VouchClient, VouchConnectionError } from '@vouch-protocol/sdk';
+import { VouchClient, VouchConnectionError } from 'vouch-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -9,7 +9,7 @@ import {
     VouchConnectionError,
     NoKeysConfiguredError,
     UserDeniedSignatureError,
-} from '@vouch-protocol/sdk';
+} from 'vouch-protocol';
 
 async function signBasicText() {
     const client = new VouchClient();

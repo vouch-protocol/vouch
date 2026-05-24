@@ -89,6 +89,6 @@ publish-all:
 	cd packages/bridge && python -m build && twine upload dist/*
 	@echo "Publishing vouch-sdk to PyPI..."
 	cd packages/sdk-py && python -m build && twine upload dist/*
-	@echo "Publishing @vouch-protocol/sdk to npm..."
+	@echo "Publishing vouch-protocol to npm..."
 	cd packages/sdk-ts && npm publish --access public
 	@echo "✅ All packages published!"

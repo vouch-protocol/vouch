@@ -10,8 +10,8 @@
  *
  * Usage:
  *
- *  import { attestDecision } from '@vouch-protocol/sdk/integrations/amnesia';
- *  import { Signer } from '@vouch-protocol/sdk';
+ *  import { attestDecision } from 'vouch-protocol/integrations/amnesia';
+ *  import { Signer } from 'vouch-protocol';
  *
  *  const signer = await Signer.fromDidWeb('did:web:agent.example.com');
  *  const vc = await attestDecision(decision, signer);

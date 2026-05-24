@@ -25,7 +25,7 @@ const FOOTER_GROUPS = [
     title: 'SDKs',
     links: [
       { label: 'Python (PyPI)', href: 'https://pypi.org/project/vouch-protocol/', external: true },
-      { label: 'TypeScript (npm)', href: 'https://www.npmjs.com/package/@vouch-protocol/sdk', external: true },
+      { label: 'TypeScript (npm)', href: 'https://www.npmjs.com/package/vouch-protocol', external: true },
       { label: 'Go sidecar', href: 'https://github.com/vouch-protocol/vouch/tree/main/go-sidecar', external: true },
       { label: 'Browser extension', href: 'https://github.com/vouch-protocol/vouch/tree/main/browser-extension', external: true },
     ],

@@ -10,7 +10,7 @@ import {
     VouchConnectionError,
     NoKeysConfiguredError,
     UserDeniedSignatureError,
-} from '@vouch-protocol/sdk';
+} from 'vouch-protocol';
 
 // ============================================================================
 // Pattern 1: Specific Exception Handling

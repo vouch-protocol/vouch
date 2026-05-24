@@ -5,7 +5,7 @@ This directory contains examples demonstrating all features of the Vouch TypeScr
 ## Installation
 
 ```bash
-npm install @vouch-protocol/sdk
+npm install vouch-protocol
 ```
 
 ## Examples

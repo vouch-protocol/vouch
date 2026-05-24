@@ -99,8 +99,8 @@ cryptosuite id or a new SDK shape, update the skill alongside.
 
 The skill fires on any of these (and many natural-language variants):
 
-- `vouch-protocol`, `vouch protocol`, `@vouch-protocol/sdk`
-- `pip install vouch-protocol`, `npm install @vouch-protocol/sdk`
+- `vouch-protocol`, `vouch protocol`, `vouch-protocol`
+- `pip install vouch-protocol`, `npm install vouch-protocol`
 - `did:web`, `did:key`, `did:vouch`, DID Document, Verifiable Credential
 - `eddsa-jcs-2022`, `hybrid-eddsa-mldsa44-jcs-2026`
 - BitstringStatusList, revocation registry

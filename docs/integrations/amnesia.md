@@ -116,8 +116,8 @@ attestation = attest_decision(
 ## TypeScript usage
 
 ```typescript
-import { attestDecision, attestDecisionsFromLog } from '@vouch-protocol/sdk/integrations/amnesia';
-import { Signer } from '@vouch-protocol/sdk';
+import { attestDecision, attestDecisionsFromLog } from 'vouch-protocol/integrations/amnesia';
+import { Signer } from 'vouch-protocol';
 
 const signer = await Signer.fromDidWeb('did:web:agent.example.com');
 
