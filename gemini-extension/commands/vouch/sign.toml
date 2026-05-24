@@ -1,0 +1,18 @@
+description = "Sign an agent action intent as a Vouch credential"
+
+prompt = """
+The user wants to sign an action intent with Vouch.
+
+Intent (and optional target) provided by the user: {{args}}
+
+Steps:
+1. Parse the intent from the arguments. If no intent was given, ask for
+   one (e.g. `read_email`, `send_payment`, `access_database`) and stop.
+2. Call the `sign_action` tool with `intent` (and `target` if the user
+   named a resource).
+3. Show the returned `Vouch-Token` and exactly where it attaches:
+   as the `Vouch-Token:` HTTP header on the corresponding request.
+4. If the tool reports that VOUCH_PRIVATE_KEY / VOUCH_DID are unset, tell
+   the user to run `vouch init --env`, export the printed values, and
+   restart Gemini CLI. Do not ask them to paste the key into the chat.
+"""
