@@ -39,7 +39,7 @@ Ramprasad Anandam Gaddam is Director of AI and Machine Learning Engineering with
 
 Ramprasad's interest in agent identity standards stems from a concrete operational problem: as autonomous AI agents are deployed to make real-world decisions on behalf of organizations and individuals, existing authentication frameworks (API keys, OAuth bearer tokens, session cookies) do not provide the cryptographic chain-of-custody, intent attestation, or behavioral attestation that regulated environments require. Vouch Protocol began as an attempt to fill this gap using primitives that are already familiar to the W3C community: Decentralized Identifiers, Verifiable Credentials, and Data Integrity proofs.
 
-Ramprasad has 20 years of experience in Healthcare & Manufacturing industries, with over 16 years in healthcare. He is a Master Inventor with 20 patents filed in Blockchain, Cybersecurity, Artificial Intelligence, Healthcare processes & Information Technology. He has 60 defensive disclosures with Vouch Protocol to encourage open adoption. He is a member of other standard boards like The Linux Foundation, Coalition for Content Provenance & Authenticity (C2PA), Content Authenticity Initiative (CAI), Decentralized Identity Foundation (DIF) and IEEE. He is currently employed with Optum, UnitedHealth Group and heads Responsible AI Acceleration Service for Optum Health. He was inducted into UHG Inventor Hall of Fame twice, is a member of Patent Review Boards, Optum National Council & AI Sub-council. He is winner of Optum Technology Make IT Happen award twice - its an annual recognition award from Optum Technology that honors team members who help move tech forward by advancing tech pillars.
+Ramprasad has 20 years of experience in Healthcare & Manufacturing industries, with over 16 years in healthcare. He is a Master Inventor with 20 patents filed in Blockchain, Cybersecurity, Artificial Intelligence, Healthcare processes & Information Technology. He has 60 defensive disclosures with Vouch Protocol to encourage open adoption. He is a member of other standard boards like The Linux Foundation, Coalition for Content Provenance & Authenticity (C2PA), Content Authenticity Initiative (CAI), Decentralized Identity Foundation (DIF) and IEEE. He is currently employed with Optum, UnitedHealth Group and heads Responsible AI Acceleration Service for Optum Health. He was inducted into UHG Inventor Hall of Fame twice, is a member of Patent Review Boards, Optum National Council & AI Sub-council. He is winner of Optum Technology Make IT Happen award twice; it is an annual recognition award from Optum Technology that honors team members who help move tech forward by advancing tech pillars.
 
 ---
 
@@ -899,7 +899,7 @@ The threat model above rests on a small set of primitive choices. Each is summar
 | Component | Algorithm | Rationale |
 |---|---|---|
 | Default signature | Ed25519 [RFC 8032] | Modern, fast, small signatures, no known weaknesses |
-| Hybrid signature (optional) | Ed25519 + ML-DSA-44 [FIPS 204] | Quantum-safe migration path; see Section 13 |
+| Dual-proof signature (optional) | Ed25519 + ML-DSA-44 [FIPS 204] | Quantum-safe migration path; see Section 13 |
 | Cryptosuite | `eddsa-jcs-2022` [VC-DI-EDDSA] | W3C Data Integrity standard with JCS canonicalization |
 | Canonicalization | JCS [RFC 8785] | Deterministic, parser-independent, no JSON-LD overhead |
 | Key encoding | Multikey [W3C Controlled Identifiers] | Algorithm-agnostic, future-compatible |
@@ -1096,10 +1096,11 @@ This specification is accompanied by three open-source reference implementations
 
 All three reference implementations interoperate at the credential wire
 format level. Test vectors at `test-vectors/` cover JCS canonicalization,
-the eddsa-jcs-2022 cryptosuite, the hybrid eddsa-mldsa44-jcs-2026
-cryptosuite, and BitstringStatusList. A shared sidecar-contract test
-suite verifies that the Production-tier and Lightweight-tier sidecars
-(Section 10.6) accept and reject equivalent inputs.
+the `eddsa-jcs-2022` cryptosuite, the dual-proof Ed25519 + ML-DSA-44
+post-quantum profile (Section 13), and BitstringStatusList. A shared
+sidecar-contract test suite verifies that the Production-tier and
+Lightweight-tier sidecars (Section 10.6) accept and reject equivalent
+inputs.
 
 These implementations are reference implementations only and do not
 imply endorsement of any specific deployment by their maintainers.
@@ -1123,21 +1124,7 @@ For organizations evaluating the protocol for production deployment, these tooli
 
 ### 16.3 Implementer Interest, Sponsors, and Reviewers
 
-This subsection will list organizations that have indicated implementer
-interest, charter sponsorship, or intent to vote in favor of advancing
-this specification through the W3C process. The list will be populated
-as the specification progresses through CCG incubation.
-
-**Implementer Interest**:
-*[To be populated]*
-
-**Charter Sponsors**:
-*[To be populated]*
-
-**Acknowledged Reviewers**:
-*[To be populated]*
-
-Organizations interested in being listed are invited to contact the editor at the address above.
+Organizations indicating implementer interest, sponsorship of the work item, or formal review will be listed here as the work item progresses through CCG incubation. Organizations interested in being listed are invited to contact the editor at the address above.
 
 ---
 
@@ -1248,7 +1235,7 @@ This appendix describes how Vouch Protocol relates to existing standards. The fr
 
 A companion series of disclosures, [[PAD-048](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-048-write-only-async-context-ledger.md)] through [[PAD-055](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-055-cross-session-policy-re-anchoring.md)], addresses operational governance of LLM coding assistants in developer workflows: in-session policy declaration via inline rule tags, write-only filesystem ledgers, deterministic egress interception at `git push` time, ephemeral rule semantics, hierarchical policy inheritance, and cross-session re-anchoring. These mechanisms are out of scope for this report (which addresses agent identity and accountability at runtime, not developer-time tooling), but are referenced for completeness. The full series and a reference implementation are available at `https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures/`.
 
-Where the coding-assistant series produces structured policy decisions that warrant cryptographic anchoring as long-term audit evidence (regulatory record-retention periods of 7+ years are common in regulated sectors), the **Vouch-Amnesia Attestation Bridge** described in [[PAD-059](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-059-vouch-amnesia-attestation-bridge.md)] composes the coding-assistant series with the Vouch Credential format defined by this specification. The bridge signs the *decision output* of the deterministic policy evaluator (block / attest / allow) rather than the source events, binding it to a content-addressed hash of the active policy snapshot at decision time. When issued under the hybrid `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite of Section 13, the resulting audit credentials remain verifiable against post-quantum adversaries without re-signing or re-issuance, making the Vouch Credential format a candidate substrate for multi-year audit log retention in regulated environments. The bridge itself is informative companion material; it does not impose any normative requirement on this specification, and conforming Vouch implementations are not required to support it.
+Where the coding-assistant series produces structured policy decisions that warrant cryptographic anchoring as long-term audit evidence (regulatory record-retention periods of 7+ years are common in regulated sectors), the **Vouch-Amnesia Attestation Bridge** described in [[PAD-059](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-059-vouch-amnesia-attestation-bridge.md)] composes the coding-assistant series with the Vouch Credential format defined by this specification. The bridge signs the *decision output* of the deterministic policy evaluator (block / attest / allow) rather than the source events, binding it to a content-addressed hash of the active policy snapshot at decision time. When issued under the dual-proof post-quantum profile of Section 13, the resulting audit credentials remain verifiable against post-quantum adversaries without re-signing or re-issuance, making the Vouch Credential format a candidate substrate for multi-year audit log retention in regulated environments. The bridge itself is informative companion material; it does not impose any normative requirement on this specification, and conforming Vouch implementations are not required to support it.
 
 The companion disclosure [[PAD-060](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-060-single-use-audited-override-of-egress-block.md)] (Single-Use Audited Override of a Deterministic Egress Block) addresses the operational pattern of one-time, time-bounded overrides of policy blocks and is bundled with the coding-assistant series for the same reason: it is operational tooling that composes with the Vouch Credential format but does not extend the protocol surface.
 
@@ -1322,7 +1309,7 @@ Implementations claiming conformance MUST pass all test vectors in this revision
 - **[VC-BITSTRING-STATUS-LIST]** "Bitstring Status List v1.0", W3C Recommendation.
 - **[draft-ietf-jose-pq-composite-sigs]** IETF JOSE Working Group, "PQ/T Composite Signatures for JOSE", Internet-Draft.
 - **[C2PA]** "C2PA Technical Specification", Coalition for Content Provenance and Authenticity, v2.1, 2024.
-- **[MCP]** "Model Context Protocol", Anthropic / Linux Foundation Agentic AI Foundation, 2024.
+- **[MCP]** "Model Context Protocol", Anthropic, 2024.
 
 ### Defensive Disclosures (Vouch Protocol Prior Art Portfolio)
 
@@ -1377,4 +1364,4 @@ The following disclosures address operational deployment of Vouch-aware AI assis
 
 ---
 
-*Copyright 2025-2026 Ramprasad Gaddam. Licensed under the Apache License, Version 2.0.*
+*Copyright 2025-2026 Ramprasad Gaddam. Specification contributions under the W3C Community Contributor License Agreement; reference implementations under the Apache License, Version 2.0.*
