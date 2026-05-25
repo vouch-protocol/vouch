@@ -2,7 +2,7 @@
 
 ## W3C Community Group Report
 
-**Draft Community Group Report, 25 May 2026**
+**Community Group Report, 25 May 2026**
 
 **Specification revision:** v1.6.1
 
@@ -19,6 +19,9 @@ Ramprasad Gaddam (Vouch Protocol), ram@vouch-protocol.com
 
 **Authors:**
 Ramprasad Gaddam (Vouch Protocol)
+
+**Co-sponsor:**
+Manu Sporny (Digital Bazaar), msporny@digitalbazaar.com
 
 **Participate:**
 - W3C Credentials Community Group mailing list: public-credentials@w3.org (archives: https://lists.w3.org/Archives/Public/public-credentials/)
