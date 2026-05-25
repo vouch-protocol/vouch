@@ -119,9 +119,32 @@ export default function OnboardClient() {
         <h2 className="font-serif font-semibold text-ink leading-tight tracking-tight mb-5 text-[clamp(1.6rem,3.2vw,2.2rem)]">
           {step.title}
         </h2>
-        <p className="text-ink-soft text-[1.02rem] leading-relaxed max-w-prose mb-8">
-          {step.blurb}
-        </p>
+        {(() => {
+          // Split out the optional "TRY IT LOCALLY FIRST:" trailing tip and
+          // render it as a distinct callout so the production blurb stays
+          // the primary read.
+          const MARKER = 'TRY IT LOCALLY FIRST:';
+          const idx = step.blurb.indexOf(MARKER);
+          const main = idx === -1 ? step.blurb : step.blurb.slice(0, idx).trim();
+          const local = idx === -1 ? '' : step.blurb.slice(idx + MARKER.length).trim();
+          return (
+            <>
+              <p className="text-ink-soft text-[1.02rem] leading-relaxed max-w-prose mb-6">
+                {main}
+              </p>
+              {local && (
+                <div className="border-l-2 border-burgundy pl-4 py-2 mb-8 max-w-prose">
+                  <div className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-burgundy mb-1">
+                    Try it locally first
+                  </div>
+                  <p className="text-ink-soft text-[0.95rem] leading-relaxed">
+                    {local}
+                  </p>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         <div className="mb-8">
           <div className="font-mono uppercase text-[0.62rem] tracking-[0.16em] text-ink-soft mb-2">

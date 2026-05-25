@@ -194,7 +194,7 @@ Transmit credentials in the request body, not headers:
 
 ```
 POST /api/action HTTP/1.1
-Content-Type: application/vouch+credential+json
+Content-Type: application/vc+vouch
 
 {...the full credential...}
 ```

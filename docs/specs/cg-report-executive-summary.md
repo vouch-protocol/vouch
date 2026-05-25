@@ -2,7 +2,7 @@
 
 **Continuous State Verifiability for Autonomous AI Agents**
 
-*Companion to the W3C CG Report, 30 April 2026*
+*Companion to the W3C CG Report, 25 May 2026 (v1.6.1)*
 
 ---
 
@@ -36,7 +36,7 @@ On top of these primitives, Vouch contributes:
 8. **LLM-specific threat coverage**, including RAG-anchored reasoning attestation and model-weight-binding for detection of weight substitution and unauthorized fine-tuning.
 9. **Cross-implementation determinism**, RFC 8785 JCS-canonicalized credentials reproduce byte-identically across the three reference implementations (Python, TypeScript, Go), eliminating ambiguity in multi-party trust state.
 
-## Why This Matters Across Industries
+## Regulatory Drivers by Sector
 
 | Sector | Regulatory Driver | Vouch Capability That Addresses It |
 |---|---|---|
@@ -46,29 +46,21 @@ On top of these primitives, Vouch contributes:
 | **Pharma** | 21 CFR Part 11, GxP | Cryptographic continuity of agent-driven electronic records |
 | **Capital Markets** | SEC Rule 15c3-5, MiFID II | Pre-trade risk attestation for algorithmic-trading agents |
 | **EU horizontal** | EU AI Act (high-risk systems) | Required auditability and human-oversight evidence |
-| **Cross-cutting** | NIST CNSA 2.0, NSM-10 | Hybrid Ed25519 + ML-DSA quantum migration profile |
-
-## Path to Standard
-
-| Phase | Body | Gating signal | Outcome |
-|---|---|---|---|
-| Incubation | W3C Credentials Community Group | Active now | CG Report (Spec v0.1-draft), multi-vendor implementations, test vectors |
-| Transition Proposal | W3C VCWG / DIWG | When community traction supports it (multiple implementations, broad agreement, charter readiness) | Charter or rechartering proposal |
-| Standards Track | W3C VCWG / DIWG | Following transition | Working Draft to Candidate Recommendation to Recommendation |
+| **Cross-cutting** | NIST CNSA 2.0, NSM-10 | Dual-proof Ed25519 + ML-DSA-44 post-quantum migration profile |
 
 ## What We Are Asking For
 
-**For implementers**: Run the reference implementation, file conformance test results, contribute to the test vector suite.
+**For implementers.** Run the reference implementations (Python, TypeScript, Go), file conformance test results, contribute to the cross-language test-vector suite, and report interoperability findings against your existing identity stack.
 
-**For potential charter sponsors (CVS, UHG, JPMorgan Chase, Wells Fargo, Pfizer, Microsoft, Cloudflare, AWS, and similarly-positioned organizations)**: Indicate interest. Voting in favor of a recharter to add agent state verifiability does not require commercial commitment, only signal that this is a problem your organization recognizes.
+**For organizations in regulated sectors with autonomous-agent deployments.** Read the Report and the regulatory mapping table above. If agent state verifiability is a problem your organization recognizes, indicate that on the public-credentials@w3.org list or in this work item's GitHub Issue thread. Such an indication carries no commercial commitment; it is a community signal that helps the CCG calibrate incubation priority.
 
-**For W3C members**: Review, comment, and engage at upcoming Wednesday CCG calls (with Asia-Pacific-friendly times under request), and at upcoming W3C face-to-face meetings.
+**For W3C Credentials Community Group members.** Review, comment, and engage on the public-credentials list and at the CCG's regular calls. Asia-Pacific-friendly call times are welcome.
 
-**For DIF members and contributors to adjacent agent identity specifications**: Vouch Protocol is designed to compose with your work. We welcome cross-pollination on the State Verifiability layer that sits beneath identity and authorization.
+**For contributors to adjacent agent identity specifications.** Vouch Protocol is designed to compose with identity and authorization specifications rather than replace them. Cross-pollination on the State Verifiability layer (the runtime trust and behavioral attestation surface that sits beneath identity and authorization) is welcomed; the editor will coordinate review threads with any related work item the CCG flags during incubation.
 
 ---
 
 **Editor**: Ramprasad Gaddam, ram@vouch-protocol.com
 **Repository**: https://github.com/vouch-protocol/vouch
-**Full specification**: https://vouch-protocol.com/specs/CG-REPORT/2026-04-30/
-**License**: Apache License 2.0 (specification); CC0 (55-disclosure prior-art portfolio)
+**Full specification**: https://vouch-protocol.com/specs/CG-REPORT/2026-05-25/
+**License**: Apache License 2.0 (reference implementations); CC0 (60-disclosure prior-art portfolio). Specification contributions are governed by the W3C Community Contributor License Agreement.

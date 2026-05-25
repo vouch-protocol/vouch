@@ -5,7 +5,7 @@ import OnboardClient from './OnboardClient';
 export const metadata: Metadata = {
   title: 'Onboard',
   description:
-    'Six-step adoption path for Vouch Protocol: issuer DID, sidecar tier, allow-list, tool-call wiring, verifier middleware, and heartbeat quorum. Driven by the vouch onboard CLI wizard. Roughly thirty interactive minutes for the credential layer.',
+    'Six-step adoption path for Vouch Protocol: issuer DID, sidecar tier, allow-list, tool-call wiring, verifier middleware, and heartbeat quorum. Driven by the vouch onboard CLI wizard. Every step can be tried locally first, then graduated to a hosted deployment. Roughly thirty interactive minutes for the credential layer.',
 };
 
 export default function OnboardPage() {
@@ -18,13 +18,22 @@ export default function OnboardPage() {
           <h1 className="font-serif font-semibold text-ink leading-[1.1] tracking-tight mb-5 text-[clamp(2rem,4.2vw,3rem)]">
             Adopt Vouch in six guided steps.
           </h1>
-          <p className="text-ink-soft text-[1.05rem] leading-relaxed max-w-prose mb-8">
+          <p className="text-ink-soft text-[1.05rem] leading-relaxed max-w-prose mb-4">
             The Vouch Protocol paper describes a six-step adoption path. The{' '}
             <code className="font-mono text-[0.95em]">vouch onboard</code> CLI wizard
             walks you through each step, generates the artifacts, and persists your
             progress so an interrupted session resumes where you left off. This page
             mirrors the wizard step-by-step; use it to look before you leap, then run
             the command on your own machine.
+          </p>
+          <p className="text-ink-soft text-[0.98rem] leading-relaxed max-w-prose mb-8 italic">
+            Every step below has a{' '}
+            <span className="font-mono uppercase not-italic text-[0.7rem] tracking-[0.14em] text-burgundy">
+              Try it locally first
+            </span>{' '}
+            note so you can prove the loop end-to-end in your dev env, no domain or
+            hosting required, before you publish anything. The production command for
+            each step is unchanged.
           </p>
           <div className="max-w-prose">
             <CodeBlock code="pip install vouch-protocol && vouch onboard" language="bash" />

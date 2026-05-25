@@ -4,10 +4,17 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Support',
   description:
-    'How to get help with Vouch Protocol: community channels, GitHub issues, security disclosure, and editorial contact.',
+    'How to get help with Vouch Protocol: the Vouch Assistant chat for fast answers, the public-credentials mailing list for specification questions, GitHub Issues for bugs, Discord for community discussion, and a private channel for security disclosure.',
 };
 
 const CHANNELS = [
+  {
+    eyebrow: 'For quick answers',
+    title: 'Vouch Assistant',
+    body: 'A retrieval-grounded assistant that knows the specification, the SDKs, the conformance levels, and the compliance mappings. Every reply is itself signed by a real Vouch credential. Use the web chat for the fastest path, send an email if you prefer text in your inbox, or run one of the AI-tool packages on your own subscription (Claude Skill, OpenAI Custom GPT, Gemini Gem).',
+    cta: { label: 'Open the chat', href: '/ask/' },
+    secondary: { label: 'ask@vouch-protocol.com', href: 'mailto:ask@vouch-protocol.com' },
+  },
   {
     eyebrow: 'For specification questions',
     title: 'open standards body',
@@ -37,6 +44,7 @@ const CHANNELS = [
 ];
 
 const QUICK_LINKS = [
+  { label: 'Vouch Assistant', href: '/ask/', body: 'Retrieval-grounded chat over the entire knowledge base. Signs every reply.' },
   { label: 'FAQ', href: '/faq/', body: 'Plain-English answers to common questions across every audience.' },
   { label: 'Help & Guides', href: '/help/', body: 'Long-form guides for quickstarts, deployment, and integrations.' },
   { label: 'Specification', href: 'https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md', external: true, body: 'Executive summary of the specification.' },
@@ -54,9 +62,10 @@ export default function SupportPage() {
             How to get help.
           </h1>
           <p className="text-ink-soft text-[1.05rem] leading-relaxed max-w-prose">
-            Four channels, each with a clear scope. The right channel depends on whether you have a
-            specification question, an implementation bug, a community-level discussion, or a security
-            disclosure.
+            Five channels, each with a clear scope. The Vouch Assistant answers most "how does X work"
+            and "give me a sample of Y" questions in seconds; the other four are for normative
+            specification questions, implementation bugs, community-level discussion, and security
+            disclosures.
           </p>
         </div>
       </section>
@@ -100,11 +109,67 @@ export default function SupportPage() {
         </div>
       </section>
 
+      {/* AI-tool packages: same answers on the visitor's own AI subscription */}
+      <section className="border-b border-rule">
+        <div className="container-wide py-16">
+          <div className="section-heading mb-6">
+            <span className="num">§ II</span>
+            <h2>Run the assistant on your own AI subscription</h2>
+          </div>
+          <p className="text-ink-soft leading-relaxed max-w-prose mb-6">
+            The same canonical Vouch knowledge that powers{' '}
+            <Link href="/ask/" className="underline decoration-1 underline-offset-2 hover:text-burgundy">
+              the web chat
+            </Link>{' '}
+            is also packaged for three other AI tools, so you can ask Vouch questions inside the
+            interface you already use. These run on{' '}<em>your</em>{' '}plan, not ours.
+          </p>
+          <div className="grid md:grid-cols-3 gap-6 max-w-prose-wide">
+            <a
+              href="https://github.com/vouch-protocol/vouch/tree/main/claude-skill"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block border border-rule p-5 hover:border-burgundy transition-colors no-underline"
+            >
+              <h3 className="font-serif font-semibold text-[1.1rem] mb-2">Claude Skill</h3>
+              <p className="text-ink-soft text-[0.9rem] leading-relaxed">
+                Drop the <code className="font-mono text-[0.85em]">claude-skill/</code> folder into{' '}
+                <code className="font-mono text-[0.85em]">~/.claude/skills/</code>. Claude Code picks it up automatically.
+              </p>
+            </a>
+            <a
+              href="https://github.com/vouch-protocol/vouch/tree/main/openai-gpt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block border border-rule p-5 hover:border-burgundy transition-colors no-underline"
+            >
+              <h3 className="font-serif font-semibold text-[1.1rem] mb-2">OpenAI Custom GPT</h3>
+              <p className="text-ink-soft text-[0.9rem] leading-relaxed">
+                Paste the configuration from{' '}
+                <code className="font-mono text-[0.85em]">openai-gpt/</code> into ChatGPT&apos;s GPT builder.
+              </p>
+            </a>
+            <a
+              href="https://github.com/vouch-protocol/vouch/tree/main/gemini-gem"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block border border-rule p-5 hover:border-burgundy transition-colors no-underline"
+            >
+              <h3 className="font-serif font-semibold text-[1.1rem] mb-2">Gemini Gem</h3>
+              <p className="text-ink-soft text-[0.9rem] leading-relaxed">
+                Paste the configuration from{' '}
+                <code className="font-mono text-[0.85em]">gemini-gem/</code> into Gemini&apos;s Gem creator.
+              </p>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Before opening an issue */}
       <section className="border-b border-rule">
         <div className="container-wide py-16">
           <div className="section-heading">
-            <span className="num">§ II</span>
+            <span className="num">§ III</span>
             <h2>Before opening an issue</h2>
           </div>
           <p className="text-ink-soft leading-relaxed max-w-prose mb-6">
@@ -139,7 +204,7 @@ export default function SupportPage() {
       <section>
         <div className="container-wide py-16">
           <div className="section-heading">
-            <span className="num">§ III</span>
+            <span className="num">§ IV</span>
             <h2>Quick links</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

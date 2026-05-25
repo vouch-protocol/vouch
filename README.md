@@ -1,8 +1,10 @@
-# Vouch Protocol
+# Vouch Protocol™
 
 <p align="center">
  <img src="docs/assets/vouch-wordmark.png" alt="Vouch Protocol" width="400">
 </p>
+
+<sub><em>Vouch Protocol™ — common-law trademark.</em></sub>
 
 <p align="center">The Open Standard for Identity & Provenance of AI Agents</strong>
 </p>
@@ -119,14 +121,14 @@ flowchart LR
 
   P -->|"Delegation VC"| A
   A -->|"sign_credential(intent)"| C
-  C -->|"HTTP body<br/>application/vouch+credential+json"| API
+  C -->|"HTTP body<br/>application/vc+vouch"| API
   API -->|"verify_credential()"| V
 ```
 
 **4 Simple Steps:**
 1. **Generate Identity**: Create an Ed25519 keypair and a DID, publish a DID Document with a Multikey verification method.
 2. **Sign Action**: Agent's sidecar issues a Verifiable Credential carrying `action`, `target`, and `resource`, secured by an `eddsa-jcs-2022` Data Integrity proof.
-3. **Send to API**: Transmit the credential as the HTTP request body with `Content-Type: application/vouch+credential+json` (or via the legacy `Vouch-Token` header for v0.x compatibility).
+3. **Send to API**: Transmit the credential as the HTTP request body with `Content-Type: application/vc+vouch` (or via the legacy `Vouch-Token` header for v0.x compatibility; the prior `application/vouch+credential+json` Content-Type is retained as a transitional alias).
 4. **Verify**: API resolves the issuer's DID, validates the Data Integrity proof, checks temporal claims and the resource binding, returns a `CredentialPassport`.
 
 ### The Trust Model
@@ -204,7 +206,7 @@ credential = signer.sign_credential(intent={
   'resource': 'https://api.example.com/v1/users',
 })
 # Send credential as the JSON body of the API request, content-type
-# application/vouch+credential+json
+# application/vc+vouch  (legacy: application/vouch+credential+json)
 ```
 
 **Legacy v0.x path (JWS, still supported):**

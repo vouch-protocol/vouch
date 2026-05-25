@@ -30,12 +30,12 @@ export const HELP_SECTIONS: HelpSection[] = [
   {
     id: 'getting-started',
     title: 'Getting Started',
-    description: 'Pick a language, install the SDK, and sign your first credential in under five minutes.',
+    description: 'Pick a language, install the SDK, and prove the sign-and-verify loop works in your dev env (no domain, no hosting) in under five minutes. Each quickstart ends with the two-line change to graduate to production.',
     articles: [
       {
         id: 'quickstart-python',
         title: 'Python Quickstart',
-        summary: 'Five-minute path from pip install to a verified Vouch credential.',
+        summary: 'Five-minute path from pip install to a sign-and-verify loop running entirely in your dev env.',
         body: `
 ## Install
 
@@ -43,59 +43,110 @@ export const HELP_SECTIONS: HelpSection[] = [
 pip install vouch-protocol
 \`\`\`
 
-For the optional hybrid post-quantum profile, also install the pqcrypto extra:
+The hybrid post-quantum profile (\`hybrid-eddsa-mldsa44-jcs-2026\`) is bundled by default; nothing else to install.
 
-\`\`\`bash
-pip install 'vouch-protocol[pq]'
-\`\`\`
+## Step 1 - Sign and verify locally
 
-## Generate an identity
-
-\`\`\`bash
-vouch init --domain agent.example.com
-\`\`\`
-
-This creates an Ed25519 keypair, derives a did:web DID, and stores the private key in your platform's secure key store. The public key is published in a DID Document you can serve at \`https://agent.example.com/.well-known/did.json\`.
-
-## Sign a credential
+Start in your dev env. No domain, no hosting, no internet. Everything runs in your own Python process:
 
 \`\`\`python
-from vouch import Signer, build_vouch_credential
+from vouch.keys import generate_identity
+from vouch.signer import Signer
+from vouch.verifier import Verifier
 
-signer = Signer.from_did("did:web:agent.example.com")
+# Generate an in-memory identity. The "domain" string is just a label
+# inside the DID; nothing is published anywhere yet.
+identity = generate_identity(domain="localhost")
 
-credential = build_vouch_credential(
-  subject_did="did:web:agent.example.com",
-  intent={
+signer = Signer(
+    private_key=identity.private_key_jwk,
+    did=identity.did,
+)
+
+token = signer.sign({
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
-  },
-  valid_seconds=300,
+})
+
+# trusted_roots is the local-dev escape hatch: in production the verifier
+# fetches did.json from the issuer's domain instead.
+verifier = Verifier(
+    trusted_roots={identity.did: identity.public_key_jwk},
+    allow_did_resolution=False,
+)
+ok, passport = verifier.check_vouch(token)
+assert ok
+print("verified intent:", passport.payload)
+\`\`\`
+
+That round-trip is the entire credential layer: keypair, signed action, verified action, all in your own process. No webserver, no public DNS, no .well-known path.
+
+## Step 2 - Switch to the modern VC + Data Integrity proof
+
+The legacy JWS form above stays for backward compatibility. New code should prefer the W3C Verifiable Credential form with a Data Integrity proof (\`eddsa-jcs-2022\`):
+
+\`\`\`python
+from vouch import build_vouch_credential
+
+credential = build_vouch_credential(
+    subject_did=identity.did,
+    intent={
+        "action": "submit_claim",
+        "target": "claim:HC-001",
+        "resource": "https://insurance.example.com/claims/HC-001",
+    },
+    valid_seconds=300,
 )
 
 signed = signer.sign_credential(credential)
 print(signed["proof"]["proofValue"])
 \`\`\`
 
-The \`signed\` dict is the full Verifiable Credential with a Data Integrity proof attached.
-
-## Verify it
+Verify it with the same Verifier (the credential carries its issuer DID, the Verifier looks up the key in \`trusted_roots\`):
 
 \`\`\`python
-from vouch import Verifier
 import asyncio
+from vouch import Verifier
 
-verifier = Verifier()
+verifier = Verifier(
+    trusted_roots={identity.did: identity.public_key_jwk},
+    allow_did_resolution=False,
+)
 result = asyncio.run(verifier.verify_credential(signed))
 print(result.valid, result.reasons)
 \`\`\`
 
+For the hybrid post-quantum profile, swap \`sign_credential\` for \`sign_credential_hybrid\`. The required \`pqcrypto\` library is already bundled with \`vouch-protocol\`, so nothing else to install. Everything else stays the same.
+
+## Step 3 - When you are ready to publish
+
+The local trial used \`did:web:localhost\` and an in-memory keypair. Taking an agent to production is a two-line change:
+
+1. Replace \`domain="localhost"\` with a real domain you control.
+2. Publish the DID Document at \`https://your-domain/.well-known/did.json\` so any verifier on the internet can resolve it.
+
+Then drop \`trusted_roots\` from your Verifier:
+
+\`\`\`python
+# Production: verifier resolves the DID over HTTPS at verification time.
+verifier = Verifier()
+ok, passport = verifier.check_vouch(token)
+\`\`\`
+
+Generate the production keypair and DID Document with the CLI:
+
+\`\`\`bash
+vouch init --domain agent.example.com
+\`\`\`
+
+That writes the private key into your platform's secure key store (Keychain on macOS, DPAPI on Windows, secret-service on Linux) and emits a did.json you can publish.
+
 ## What you have now
 
-- A DID controlled by your local key
-- A signed VC binding an action to a specific resource
-- Verification that runs anywhere with internet access to your DID Document
+- A signed-and-verified credential running entirely in a Python REPL
+- A modern VC + Data Integrity form, ready for the wire
+- A clear two-line upgrade path when you decide to expose the agent to the public internet
 
 Next: try [signing with the hybrid post-quantum profile](#hybrid-pq) or [adding a delegation chain](#delegation-chains).
 `,
@@ -103,7 +154,7 @@ Next: try [signing with the hybrid post-quantum profile](#hybrid-pq) or [adding 
       {
         id: 'quickstart-typescript',
         title: 'TypeScript Quickstart',
-        summary: 'Same flow in Node or browser. Cross-verifies with Python-signed credentials.',
+        summary: 'Same flow in Node. No domain, no hosting; cross-verifies with Python-signed credentials.',
         body: `
 ## Install
 
@@ -111,35 +162,68 @@ Next: try [signing with the hybrid post-quantum profile](#hybrid-pq) or [adding 
 npm install @vouch-protocol/core
 \`\`\`
 
-## Sign a credential
+## Step 1 - Sign and verify locally
+
+Start in Node. No webserver, no domain, no internet. Save as \`try-vouch.ts\` and run with \`tsx try-vouch.ts\` (or compile and run with \`node\`):
 
 \`\`\`ts
-import { Signer, buildVouchCredential } from '@vouch-protocol/core';
+import {
+  Signer,
+  Verifier,
+  generateIdentity,
+  buildVouchCredential,
+} from '@vouch-protocol/core';
 
-const signer = await Signer.fromDid('did:web:agent.example.com');
+async function main() {
+  // Generate an in-memory identity. The "domain" string is just a label
+  // inside the DID; nothing is published anywhere yet.
+  const identity = await generateIdentity('localhost');
 
-const credential = buildVouchCredential({
-  subjectDid: 'did:web:agent.example.com',
-  intent: {
-    action: 'submit_claim',
-    target: 'claim:HC-001',
-    resource: 'https://insurance.example.com/claims/HC-001',
-  },
-  validSeconds: 300,
-});
+  const signer = new Signer({
+    privateKey: identity.privateKeyJwk,
+    did: identity.did!,
+  });
 
-const signed = await signer.signCredential(credential);
-console.log(signed.proof.proofValue);
+  const credential = buildVouchCredential({
+    subjectDid: identity.did!,
+    intent: {
+      action: 'submit_claim',
+      target: 'claim:HC-001',
+      resource: 'https://insurance.example.com/claims/HC-001',
+    },
+    validSeconds: 300,
+  });
+
+  const signed = await signer.signCredential(credential);
+  console.log('signed proof value:', signed.proof.proofValue);
+
+  // trustedRoots is the local-dev escape hatch: in production the verifier
+  // fetches did.json from the issuer's domain instead.
+  const verifier = new Verifier({
+    trustedRoots: { [identity.did!]: identity.publicKeyJwk },
+    allowDidResolution: false,
+  });
+  const result = await verifier.verifyCredential(signed);
+  console.log('valid:', result.valid, 'reasons:', result.reasons);
+}
+
+main().catch(console.error);
 \`\`\`
 
-## Verify
+That round-trip is the entire credential layer: keypair, signed credential with a Data Integrity proof (\`eddsa-jcs-2022\`), and verification, all in one Node process.
+
+## Step 2 - When you are ready to publish
+
+The local trial used \`did:web:localhost\` and an in-memory keypair. To take an agent to production:
+
+1. Pass your real domain to \`generateIdentity\` (or generate once with the Python CLI and import the JWK).
+2. Publish the DID Document at \`https://your-domain/.well-known/did.json\`.
+
+Then drop \`trustedRoots\` and \`allowDidResolution\`:
 
 \`\`\`ts
-import { Verifier } from '@vouch-protocol/core';
-
-const verifier = new Verifier();
+const verifier = new Verifier();              // resolves did:web over HTTPS
 const result = await verifier.verifyCredential(signed);
-console.log(result.valid, result.reasons);
 \`\`\`
 
 ## Cross-language interop
@@ -148,15 +232,17 @@ A credential signed in Python verifies byte-identically in TypeScript and vice v
 
 ## Browser vs Node
 
-The TypeScript SDK works in both. In the browser, key storage falls back to IndexedDB (with optional WebAuthn-gated unlock) rather than the platform key store. In Node, you can pass a custom KMS provider.
+The TypeScript SDK works in both. In Node, the example above runs as-is. In the browser, key storage falls back to IndexedDB (with optional WebAuthn-gated unlock) rather than a platform key store; the sign/verify APIs are otherwise identical.
 `,
       },
       {
         id: 'quickstart-go',
         title: 'Go Sidecar Quickstart',
-        summary: 'Run the long-running signing daemon. Sign credentials from any language over HTTP.',
+        summary: 'Run the signing daemon on your laptop. Sign credentials from any language over localhost HTTP.',
         body: `
-## Build the binary
+## Step 1 - Build and run on localhost
+
+Build the binary from source:
 
 \`\`\`bash
 git clone https://github.com/vouch-protocol/vouch
@@ -170,27 +256,27 @@ Or via go install:
 go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
 \`\`\`
 
-## Run
+Run it locally with a placeholder DID. The sidecar binds to localhost only by default; no inbound firewall change is needed:
 
 \`\`\`bash
-./vouch-sidecar --did did:web:agent.example.com --port 8877
+./vouch-sidecar --did did:web:localhost --port 8877
 \`\`\`
 
 Optional flags:
 
 - \`--sensitive\` or \`-s\` - wrap the response in a JWE so the credential is encrypted in flight
-- \`--hybrid\` - use the hybrid post-quantum cryptosuite
+- \`--hybrid\` - use the W3C-aligned hybrid post-quantum cryptosuite (\`hybrid-eddsa-mldsa44-jcs-2026\`)
 - \`--verbose\` - detailed startup logs
 
-## Sign a credential
+## Step 2 - Sign a credential over localhost
 
-Any language can sign by POSTing to the sidecar:
+Any language can sign by POSTing to the sidecar on \`127.0.0.1\`:
 
 \`\`\`bash
 curl -X POST http://localhost:8877/sign \\
   -H 'Content-Type: application/json' \\
   -d '{
-    "subjectDid": "did:web:agent.example.com",
+    "subjectDid": "did:web:localhost",
     "intent": {
       "action": "submit_claim",
       "target": "claim:HC-001",
@@ -200,13 +286,23 @@ curl -X POST http://localhost:8877/sign \\
   }'
 \`\`\`
 
-The response is the full signed VC.
+The response is the full signed Verifiable Credential. Pipe it into your Python or TypeScript verifier (configured with \`trusted_roots\` / \`trustedRoots\` pointing at the sidecar's public key, fetched from \`GET http://localhost:8877/.well-known/did.json\`) to close the loop.
+
+## Step 3 - When you are ready to publish
+
+Three things change when you graduate to production:
+
+1. Replace \`did:web:localhost\` with the DID anchored at your real domain.
+2. Run the sidecar on your service network (not localhost) and front it with mTLS or your platform's internal-call auth.
+3. Verifiers stop using \`trustedRoots\` and resolve the DID over HTTPS instead.
+
+The signing code in your agent does not change. Only the URL the sidecar exposes and the DID string change.
 
 ## Why a sidecar?
 
 The Identity Sidecar pattern keeps the private signing key out of the LLM's process. The LLM emits a tool-call object; the orchestration layer (your Python or TypeScript code) asks the sidecar to sign on the agent's behalf; the sidecar returns a credential bound to the action.
 
-This makes prompt-injection key-exfiltration impossible: even if the LLM is jailbroken to leak its context, the key is not in that context.
+This makes prompt-injection key-exfiltration impossible: even if the LLM is jailbroken to leak its context, the key is not in that context. The local-dev sidecar gives you the exact same isolation boundary on your laptop that you will have in production.
 `,
       },
     ],
@@ -267,8 +363,10 @@ The DID Document publishes both the current and the previous keys during the ove
 Python:
 
 \`\`\`bash
-pip install 'vouch-protocol[pq]'
+pip install vouch-protocol
 \`\`\`
+
+(\`pqcrypto\` is bundled by default. It provides ML-DSA-44 via the PQClean reference and ships prebuilt wheels for all mainstream Python + platform combinations, so no compiler is needed.)
 
 TypeScript:
 

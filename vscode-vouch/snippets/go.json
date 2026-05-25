@@ -1,0 +1,41 @@
+{
+  "Vouch: sidecar sign request (localhost)": {
+    "prefix": ["vouch-sidecar-sign", "vouch-quickstart"],
+    "description": "POST a sign request to a local vouch-sidecar (no hosting required).",
+    "body": [
+      "package main",
+      "",
+      "import (",
+      "\t\"bytes\"",
+      "\t\"fmt\"",
+      "\t\"io\"",
+      "\t\"net/http\"",
+      ")",
+      "",
+      "func main() {",
+      "\tbody := []byte(`{",
+      "\t\t\"subjectDid\": \"did:web:${1:localhost}\",",
+      "\t\t\"intent\": {",
+      "\t\t\t\"action\": \"${2:submit_claim}\",",
+      "\t\t\t\"target\": \"${3:claim:HC-001}\",",
+      "\t\t\t\"resource\": \"${4:https://insurance.example.com/claims/HC-001}\"",
+      "\t\t},",
+      "\t\t\"validSeconds\": 300",
+      "\t}`)",
+      "",
+      "\tresp, err := http.Post(",
+      "\t\t\"http://localhost:8877/sign\",",
+      "\t\t\"application/json\",",
+      "\t\tbytes.NewReader(body),",
+      "\t)",
+      "\tif err != nil {",
+      "\t\tpanic(err)",
+      "\t}",
+      "\tdefer resp.Body.Close()",
+      "",
+      "\tout, _ := io.ReadAll(resp.Body)",
+      "\tfmt.Println(string(out))$0",
+      "}"
+    ]
+  }
+}

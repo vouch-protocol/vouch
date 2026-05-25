@@ -33,6 +33,11 @@ dependencies = [
     "cryptography",
     "pydantic>=2.0.0",
     "httpx>=0.24.0",
+    # Hybrid post-quantum profile (Specification 13.2; W3C-aligned cryptosuite
+    # `hybrid-eddsa-mldsa44-jcs-2026`). Bundled by default: pqcrypto ships
+    # prebuilt wheels for all mainstream platforms (~80 KB, no compiler needed)
+    # and the PQ story is core to Vouch, so we do not gate it behind an extra.
+    "pqcrypto>=0.4.0",
 ]
 
 [project.optional-dependencies]
@@ -60,6 +65,12 @@ enterprise = [
 aws = ["aioboto3>=12.0.0"]
 gcp = ["google-cloud-kms>=2.0.0"]
 azure = ["azure-keyvault-keys>=4.0.0"]
+
+# Hybrid post-quantum profile is now bundled by default (see required
+# `dependencies` above). The `pq` extra is retained as a no-op alias so
+# `pip install 'vouch-protocol[pq]'` keeps working for anyone who already
+# wrote that into a Dockerfile or requirements.txt.
+pq = []
 
 # OpenTelemetry tracing
 tracing = [

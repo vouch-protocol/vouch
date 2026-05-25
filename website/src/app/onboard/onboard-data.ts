@@ -38,7 +38,7 @@ export const ONBOARD_STEPS: OnboardStep[] = [
     short: 'Identity',
     title: 'Generate the issuer DID',
     blurb:
-      'The wizard generates an Ed25519 keypair, derives a did:web identifier from your domain, and writes a standards-aligned DID Document. You publish the document at /.well-known/did.json on the domain you chose; everything downstream resolves the issuer through that path.',
+      'The wizard generates an Ed25519 keypair, derives a did:web identifier from your domain, and writes a standards-aligned DID Document. You publish the document at /.well-known/did.json on the domain you chose; everything downstream resolves the issuer through that path.\n\nTRY IT LOCALLY FIRST: pass --domain localhost. The wizard still emits a valid keypair and a did.json, but you do not publish it. The signer and verifier in later steps will work end-to-end against the in-memory key, so you can prove the whole loop before owning a domain.',
     command:
       'vouch onboard --domain agent.acme.example --tier standard --lang python',
     artifact: 'did.json',
@@ -72,7 +72,7 @@ export const ONBOARD_STEPS: OnboardStep[] = [
     short: 'Tier',
     title: 'Choose a Sidecar tier',
     blurb:
-      'Edge runs the signer in-process for the lowest latency; Standard runs a colocated sidecar with KMS-backed keys for multi-agent deployments; Regulated runs the sidecar in a separate VPC with HSM-backed keys and a mandatory heartbeat quorum of three. The wizard records your choice and adjusts later steps to match.',
+      'Edge runs the signer in-process for the lowest latency; Standard runs a colocated sidecar with KMS-backed keys for multi-agent deployments; Regulated runs the sidecar in a separate VPC with HSM-backed keys and a mandatory heartbeat quorum of three. The wizard records your choice and adjusts later steps to match.\n\nTRY IT LOCALLY FIRST: pick Edge for the trial. The signer runs in the same Python process as your agent, with no extra service to start. You can switch to Standard or Regulated later by re-running the wizard with --tier standard or --tier regulated; only the deployment artifacts change, the application code stays the same.',
     command: '# answered inline; the wizard will prompt',
     artifact: '~/.vouch/onboarding.json (tier field)',
     previewLanguage: 'json',
@@ -94,7 +94,7 @@ export const ONBOARD_STEPS: OnboardStep[] = [
     short: 'Allow-list',
     title: 'Define the action vocabulary',
     blurb:
-      'Every action your agent is permitted to take needs a name, a description, and a resource scope. The wizard ships three starter vocabularies (read-only, read-write-scoped, regulated) and lets you paste your own. The verifier in step 5 will reject any credential whose action is not in this list.',
+      'Every action your agent is permitted to take needs a name, a description, and a resource scope. The wizard ships three starter vocabularies (read-only, read-write-scoped, regulated) and lets you paste your own. The verifier in step 5 will reject any credential whose action is not in this list.\n\nTRY IT LOCALLY FIRST: this step is already purely local. The allow-list is a static JSON file in your repo, not a hosted service. Use the read-only or read-write-scoped preset to start; you can edit vouch-allowlist.json and re-run the verifier with no redeploy.',
     command: '# pick a preset interactively',
     artifact: 'vouch-allowlist.json',
     previewLanguage: 'json',
@@ -135,7 +135,7 @@ export const ONBOARD_STEPS: OnboardStep[] = [
     short: 'Wire tools',
     title: 'Wire the agent tool-call layer to /sign',
     blurb:
-      'The wizard generates a thin wrapper for your agent runtime. Every time the agent invokes a tool, the wrapper first calls the Sidecar /sign endpoint to mint a credential bound to that action; the verifier in step 5 will require the credential. The example below is Python; pass --lang typescript or --lang go for the other reference SDKs.',
+      'The wizard generates a thin wrapper for your agent runtime. Every time the agent invokes a tool, the wrapper first calls the Sidecar /sign endpoint to mint a credential bound to that action; the verifier in step 5 will require the credential. The example below is Python; pass --lang typescript or --lang go for the other reference SDKs.\n\nTRY IT LOCALLY FIRST: the wrapper points at SIDECAR_URL = "http://localhost:8787/sign" by default, so an Edge-tier sidecar started on your laptop just works. On the Edge tier you can also skip the HTTP hop entirely and call the signer in-process; the wrapper module documents both modes.',
     command: 'vouch onboard --resume --lang python',
     artifact: 'vouch-toolwire.py',
     previewLanguage: 'python',
@@ -173,7 +173,7 @@ def vouch_tool(action: str) -> Callable:
     short: 'Verifier',
     title: 'Deploy a verifier at the API boundary',
     blurb:
-      'The verifier middleware sits at every endpoint that an agent can call. It checks the Vouch-Token header, validates the signature against the issuer DID, and rejects requests whose action is not in your allow-list. The wizard emits FastAPI, Express, and Gin variants; the FastAPI version is shown below.',
+      'The verifier middleware sits at every endpoint that an agent can call. It checks the Vouch-Token header, validates the signature against the issuer DID, and rejects requests whose action is not in your allow-list. The wizard emits FastAPI, Express, and Gin variants; the FastAPI version is shown below.\n\nTRY IT LOCALLY FIRST: in dev mode, point the verifier at a trusted_roots dict (DID -> public JWK string) instead of letting it resolve did:web over HTTPS. Pass Verifier(trusted_roots={your_did: your_pubkey_jwk}, allow_did_resolution=False) and the entire sign-and-verify loop runs end-to-end on localhost with no public DNS or .well-known path. Production deployments drop those two arguments and the verifier resolves the DID over HTTPS instead.',
     command: 'vouch onboard --resume --lang python',
     artifact: 'vouch-verifier.py',
     previewLanguage: 'python',
@@ -210,7 +210,7 @@ async def vouch_middleware(request: Request, call_next):
     short: 'Heartbeat',
     title: 'Deploy a heartbeat validator',
     blurb:
-      'Long-running agents need a continuous trust signal; the heartbeat validator polls the agent and votes on session health. A single validator is enough for most workloads; the Regulated tier requires a quorum of three, which the wizard sets automatically. Short-lived agents can skip this step.',
+      'Long-running agents need a continuous trust signal; the heartbeat validator polls the agent and votes on session health. A single validator is enough for most workloads; the Regulated tier requires a quorum of three, which the wizard sets automatically. Short-lived agents can skip this step.\n\nTRY IT LOCALLY FIRST: docker compose up against the YAML below brings up a single validator on your laptop; point your dev agent at http://localhost:8088/heartbeat and you get the full session-health signal without a Kubernetes cluster. The same YAML is what the wizard ships for production, just applied via kubectl apply -f instead.',
     command: 'vouch onboard --resume',
     artifact: 'vouch-heartbeat.yaml',
     previewLanguage: 'yaml',

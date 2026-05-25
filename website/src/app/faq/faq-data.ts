@@ -204,10 +204,10 @@ The \`signed\` dict has a \`proof\` object with a \`proofValue\` (z-base58 encod
       },
       {
         q: 'How do I sign with the hybrid post-quantum profile?',
-        a: `Use \`sign_credential_hybrid()\` instead of \`sign_credential()\`. You need the optional \`pqcrypto\` dependency:
+        a: `Use \`sign_credential_hybrid()\` instead of \`sign_credential()\`. The required \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so nothing else to install:
 
 \`\`\`bash
-pip install 'vouch-protocol[pq]'
+pip install vouch-protocol
 \`\`\`
 
 Then:
@@ -746,11 +746,7 @@ You can issue dual-proof credentials right now and they remain valid whether you
       },
       {
         q: 'How do I turn on the post-quantum profile?',
-        a: `In Python, install the post-quantum extra and call the hybrid signer:
-
-\`\`\`bash
-pip install 'vouch-protocol[pq]'
-\`\`\`
+        a: `Just call the hybrid signer. The \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so a plain \`pip install vouch-protocol\` gives you everything needed:
 
 \`\`\`python
 signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
@@ -824,8 +820,18 @@ Run the credential through the JCS reference test vectors at [test-vectors/](htt
         meta: 'Specification §13.2',
       },
       {
-        q: 'pip install vouch-protocol[pq] fails. What do I do?',
-        a: `The \`pqcrypto\` dependency (\`pip install pqcrypto\` separately) requires a C compiler and the liboqs headers on some platforms. On macOS with Homebrew: \`brew install liboqs\` then retry. On Ubuntu: \`apt install build-essential libssl-dev\` then retry. If you only need verification and not signing of hybrid credentials, you can skip the \`[pq]\` extra; verification can be done with a pure-Python ML-DSA-44 implementation in a follow-up version.`,
+        q: 'pip install vouch-protocol fails on pqcrypto. What do I do?',
+        a: `\`pqcrypto\` (bundled with \`vouch-protocol\` since v1.6.0) ships prebuilt wheels for Python 3.9-3.13 on Linux x86_64/arm64, macOS x86_64/arm64, and Windows x86_64. On any of those, no compiler is needed.
+
+If you are on a rare platform with no wheel, pip will fall back to building from source and you need a C toolchain:
+
+- macOS: \`xcode-select --install\`
+- Ubuntu/Debian: \`apt install build-essential\`
+- Windows: install the "C++ build tools" workload from Visual Studio Installer
+
+After that, \`pip install vouch-protocol\` succeeds.
+
+Special case: if you genuinely cannot install \`pqcrypto\` at all (e.g. an extremely locked-down build environment), open a GitHub issue. A pure-Python ML-DSA-44 verifier (without signing) is on the roadmap for read-only environments.`,
       },
       {
         q: 'The Go sidecar refuses to start. What should I check?',

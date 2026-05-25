@@ -366,7 +366,8 @@ where header-size constraints are most acute. This disclosure
 additionally covers the embodiment where the compressed signature appears
 inside a Data Integrity proof object attached to a W3C Verifiable
 Credential, with the credential transmitted as the HTTP request body
-(`application/vouch+credential+json`).
+(`application/vc+vouch`; the prior `application/vouch+credential+json`
+media-type identifier is retained as a transitional alias).
 
 Specifically, the embodiment defines a cryptosuite identifier
 `zksnark-mldsa44-jcs-2026` whose `proofValue` encodes a Groth16 or PLONK

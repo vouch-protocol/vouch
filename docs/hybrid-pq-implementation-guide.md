@@ -219,8 +219,10 @@ The `proof.verificationMethod` field of the credential points at
 
 The hybrid profile credentials exceed typical HTTP header size
 budgets. **Always transmit hybrid credentials in the HTTP request
-body** with `Content-Type: application/vouch+credential+json`. Header
-transport is not supported for the hybrid profile.
+body** with `Content-Type: application/vc+vouch` (the prior
+`application/vouch+credential+json` form is retained as a transitional
+alias for backward compatibility). Header transport is not supported
+for the hybrid profile.
 
 ## Migration path within the hybrid profile
 
