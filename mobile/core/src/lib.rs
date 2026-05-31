@@ -103,7 +103,7 @@ pub enum SonicError {
 // Implement uniffi compatible error conversion
 impl From<SonicError> for uniffi::UnexpectedUniFFICallbackError {
     fn from(err: SonicError) -> Self {
-        uniffi::UnexpectedUniFFICallbackError::from_reason(err.to_string())
+        uniffi::UnexpectedUniFFICallbackError::new(err.to_string())
     }
 }
 
@@ -296,7 +296,7 @@ impl DspEngine {
     /// Generate pseudo-random noise sequence (deterministic from seed)
     fn generate_pn_sequence(length: usize) -> Vec<f32> {
         use rand::{Rng, SeedableRng};
-        let mut rng = rand::rngs::StdRng::seed_from_u64(0xVOUCH5ON1C); // Fixed seed
+        let mut rng = rand::rngs::StdRng::seed_from_u64(0xC0DE_C0DE_u64); // Fixed seed (was invalid hex 0xVOUCH5ON1C)
         
         (0..length)
             .map(|_| if rng.gen::<bool>() { 1.0 } else { -1.0 })
@@ -529,30 +529,31 @@ pub struct SonicListener {
 
 impl SonicListener {
     /// Create a new SonicListener with the given configuration
-    pub fn new(config: SonicConfig) -> Result<Arc<Self>, SonicError> {
+    pub fn new(config: SonicConfig) -> Result<Self, SonicError> {
         config.validate()?;
         
         let dsp_engine = DspEngine::new(&config);
         
-        Ok(Arc::new(Self {
+        Ok(Self {
             config: RwLock::new(config),
             state: RwLock::new(ListenerState::Idle),
             is_running: AtomicBool::new(false),
             dsp_engine: RwLock::new(dsp_engine),
             callback: RwLock::new(None),
-        }))
+        })
     }
 
     /// Start listening for watermarks
     pub fn start_listening(
         self: &Arc<Self>,
-        callback: Arc<dyn WatermarkCallback>,
+        callback: Box<dyn WatermarkCallback>,
     ) -> Result<(), SonicError> {
         if self.is_running.load(Ordering::SeqCst) {
             return Err(SonicError::ListenerAlreadyRunning);
         }
 
-        // Store callback
+        // Foreign callback arrives as Box (uniffi 0.28 callback interface); keep as Arc.
+        let callback: Arc<dyn WatermarkCallback> = Arc::from(callback);
         *self.callback.write() = Some(callback.clone());
         
         // Update state
@@ -703,8 +704,8 @@ pub struct VerificationResult {
 pub struct SignatureVerifier;
 
 impl SignatureVerifier {
-    pub fn new() -> Arc<Self> {
-        Arc::new(Self)
+    pub fn new() -> Self {
+        Self
     }
 
     /// Verify Ed25519 signature
