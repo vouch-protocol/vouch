@@ -2,7 +2,7 @@
 
 **Continuous State Verifiability for Autonomous AI Agents**
 
-*Companion to the W3C CG Report, 25 May 2026 (v1.6.1)*
+*Companion to the W3C CG Report, 31 May 2026 (v1.6.2)*
 
 ---
 
@@ -61,6 +61,9 @@ On top of these primitives, Vouch contributes:
 ---
 
 **Editor**: Ramprasad Gaddam, ram@vouch-protocol.com
+**Authors**: Ramprasad Gaddam (Vouch Protocol), Manu Sporny (Digital Bazaar)
+**Co-sponsor**: Manu Sporny (Digital Bazaar), msporny@digitalbazaar.com
 **Repository**: https://github.com/vouch-protocol/vouch
-**Full specification**: https://vouch-protocol.com/specs/CG-REPORT/2026-05-25/
+**Full specification**: https://vouch-protocol.com/specs/CG-REPORT/2026-05-31/
+**Tagged release (GitHub)**: https://github.com/vouch-protocol/vouch/releases/tag/v1.6.2
 **License**: Apache License 2.0 (reference implementations); CC0 (60-disclosure prior-art portfolio). Specification contributions are governed by the W3C Community Contributor License Agreement.
