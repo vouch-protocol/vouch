@@ -1,0 +1,14 @@
+# Build output
+build/
+plugin/build/
+
+# Dependencies
+node_modules/
+
+# Vendored / derived from ../core (regenerated via scripts/vendor.sh)
+rust/
+android/src/main/java/uniffi/
+android/src/main/jniLibs/
+
+# Rust build artifacts
+**/target/

@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Real-time watermark detection captures microphone audio. The consuming
+       app is responsible for requesting this permission at runtime. -->
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+</manifest>

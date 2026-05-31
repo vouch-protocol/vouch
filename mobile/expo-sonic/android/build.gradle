@@ -1,0 +1,70 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'expo.modules.vouchsoniccore'
+version = '1.0.0'
+
+// Wire the Expo Modules Core gradle helpers (provides Kotlin + core deps).
+def expoModulesCorePlugin = new File(
+  project(":expo-modules-core").projectDir.absolutePath,
+  "ExpoModulesCorePlugin.gradle"
+)
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useCoreDependencies()
+
+// -----------------------------------------------------------------------------
+// Rust build (UniFFI core -> jniLibs) via cargo-ndk.
+//
+// Prerequisites on the build machine (local or EAS):
+//   - Rust toolchain + the four Android targets
+//       rustup target add aarch64-linux-android armv7-linux-androideabi \
+//                         x86_64-linux-android i686-linux-android
+//   - cargo-ndk:  cargo install cargo-ndk
+//   - Android NDK (ANDROID_NDK_HOME / ndkVersion below)
+//
+// On EAS, install these in an `eas-build-pre-install` hook (see README).
+// Set `-Pvouch.skipRustBuild=true` to skip (e.g. when jniLibs are prebuilt
+// and vendored into the package).
+// -----------------------------------------------------------------------------
+def rustDir = file("${projectDir}/../rust")
+def jniLibsDir = file("${projectDir}/src/main/jniLibs")
+def skipRustBuild = project.hasProperty('vouch.skipRustBuild')
+
+tasks.register('buildRustAndroid', Exec) {
+  onlyIf { !skipRustBuild && rustDir.exists() }
+  workingDir rustDir
+  commandLine 'cargo', 'ndk',
+    '-t', 'arm64-v8a',
+    '-t', 'armeabi-v7a',
+    '-t', 'x86_64',
+    '-t', 'x86',
+    '-o', jniLibsDir.absolutePath,
+    'build', '--release'
+}
+
+android {
+  namespace 'expo.modules.vouchsoniccore'
+  compileSdkVersion safeExtGet('compileSdkVersion', 35)
+
+  defaultConfig {
+    minSdkVersion safeExtGet('minSdkVersion', 24)
+    targetSdkVersion safeExtGet('targetSdkVersion', 35)
+  }
+
+  sourceSets {
+    main {
+      // UniFFI-generated Kotlin bindings are vendored under
+      // src/main/java/uniffi/vouch_sonic_core/ ; .so files land in jniLibs.
+      jniLibs.srcDirs += jniLibsDir
+    }
+  }
+}
+
+// Compile Rust before the Kotlin/Java is packaged.
+tasks.named('preBuild').configure { dependsOn('buildRustAndroid') }
+
+dependencies {
+  // UniFFI Kotlin bindings require JNA (the @aar variant for Android).
+  implementation 'net.java.dev.jna:jna:5.14.0@aar'
+}
