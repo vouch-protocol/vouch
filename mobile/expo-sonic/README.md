@@ -7,8 +7,8 @@ implementations with the actual DSP core.
 
 - New-Architecture compatible (Expo SDK 54 / RN 0.81+, `expo-modules-core` 3.x).
 - Registered as the native module **`VouchSonicCore`**.
-- **Android-first**: this release ships the Android implementation. iOS is
-  scaffolded separately and tracked as the next increment (see *Status*).
+- **Android + iOS** native bridges (both compile the Rust core from source on
+  the build machine / EAS workers — see *Building the native binaries*).
 
 ## Install
 
@@ -84,11 +84,15 @@ the cargo step.
 
 - ✅ Android module (Kotlin bridge over UniFFI), config plugin, cargo-ndk wiring.
 - ✅ TypeScript API (type-checked against expo-modules-core 3.0.29).
-- ⏳ iOS: Swift bridge + podspec + xcframework build (compiles on EAS macOS
-  workers). Tracked as the next increment.
-- ⚠️ **Validation:** the Kotlin/Gradle path has not yet been compiled in a real
-  EAS/Android build in this environment. Validate with a dev-client build
-  before production.
+- ✅ iOS module (Swift bridge over UniFFI) + `VouchSonicCore.podspec` that
+  compiles the Rust core per-triple (`aarch64-apple-ios` / `-sim`) in a
+  `before_compile` script phase on the EAS macOS worker. iOS workers need the
+  Rust toolchain + targets (`rustup target add aarch64-apple-ios aarch64-apple-ios-sim`),
+  same `eas-build-pre-install` pattern as Android.
+- ⚠️ **Validation:** neither the Android (Gradle/cargo-ndk) nor iOS
+  (podspec/cargo) native path has been compiled in a real EAS build from this
+  environment (no Android NDK, no macOS here). Exercise both in dev-client
+  builds before production.
 
 ## Note on detection vs. web embedding
 

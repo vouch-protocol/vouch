@@ -9,6 +9,7 @@ node_modules/
 rust/
 android/src/main/java/uniffi/
 android/src/main/jniLibs/
+ios/uniffi/
 
 # Rust build artifacts
 **/target/
