@@ -7,7 +7,7 @@ name = "vouch-bridge"
 version = "1.1.0"
 description = "Vouch Bridge Daemon - Local key management and signing service for Vouch Protocol"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 authors = [
     { name = "Ramprasad Anandam Gaddam" }
 ]
@@ -25,7 +25,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: No Input/Output (Daemon)",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

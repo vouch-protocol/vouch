@@ -1,6 +1,6 @@
 {
- "name": "@vouch-protocol/sdk",
- "version": "1.0.0",
+ "name": "@vouch-protocol-official/sdk",
+ "version": "1.0.1",
  "description": "Official TypeScript SDK for Vouch Protocol. Verifiable Credentials with Data Integrity proofs (eddsa-jcs-2022), Multikey verification methods, optional hybrid post-quantum profile (Ed25519 + ML-DSA-44), plus a daemon client for delegating signing operations.",
  "keywords": [
   "vouch",
@@ -26,7 +26,7 @@
   "cryptography"
  ],
  "author": "Ramprasad Anandam Gaddam",
- "license": "MIT",
+ "license": "Apache-2.0",
  "repository": {
   "type": "git",
   "url": "https://github.com/vouch-protocol/vouch.git",
@@ -49,14 +49,25 @@
     "types": "./dist/index.d.ts",
     "default": "./dist/index.js"
    }
-  }
+  },
+  "./portable": {
+   "import": {
+    "types": "./dist/portable.d.mts",
+    "default": "./dist/portable.mjs"
+   },
+   "require": {
+    "types": "./dist/portable.d.ts",
+    "default": "./dist/portable.js"
+   }
+  },
+  "./package.json": "./package.json"
  },
  "files": [
   "dist",
   "README.md"
  ],
  "scripts": {
-  "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+  "build": "tsup src/index.ts src/portable.ts --format cjs,esm --dts --clean",
   "prepublishOnly": "npm run build",
   "typecheck": "tsc --noEmit",
   "lint": "eslint src --ext .ts",

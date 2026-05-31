@@ -7,8 +7,6 @@
  * proof (eddsa-jcs-2022).
  */
 
-import * as crypto from 'crypto';
-
 export const VC_CONTEXT_V2 = 'https://www.w3.org/ns/credentials/v2';
 export const VOUCH_CONTEXT_V1 = 'https://vouch-protocol.com/contexts/v1';
 
@@ -131,9 +129,39 @@ function validateIntent(intent: Intent): void {
 }
 
 function newUuidUrn(): string {
-  // crypto.randomUUID is available on Node 14.17+ and modern browsers.
-  const id = crypto.randomUUID();
-  return `urn:uuid:${id}`;
+  // Resolve a UUID v4 from Web Crypto so this module stays free of the Node
+  // `crypto` import and is importable in React Native (Hermes). Works in:
+  //   - Node 18+ and modern browsers (globalThis.crypto.randomUUID)
+  //   - React Native with a getRandomValues polyfill but no randomUUID
+  //     (e.g. react-native-get-random-values) via the v4 fallback below.
+  const webCrypto: Crypto | undefined = (globalThis as { crypto?: Crypto }).crypto;
+  if (webCrypto && typeof webCrypto.randomUUID === 'function') {
+    return `urn:uuid:${webCrypto.randomUUID()}`;
+  }
+  if (webCrypto && typeof webCrypto.getRandomValues === 'function') {
+    return `urn:uuid:${uuidV4FromRandomValues(webCrypto)}`;
+  }
+  throw new Error(
+    'No Web Crypto RNG available to generate a credential id. Pass ' +
+    '`credentialId` explicitly, or install a getRandomValues polyfill ' +
+    '(e.g. react-native-get-random-values).'
+  );
+}
+
+function uuidV4FromRandomValues(webCrypto: Crypto): string {
+  const bytes = new Uint8Array(16);
+  webCrypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10xx
+  const hex: string[] = [];
+  for (let i = 0; i < 16; i++) hex.push(bytes[i].toString(16).padStart(2, '0'));
+  return (
+    hex[0] + hex[1] + hex[2] + hex[3] + '-' +
+    hex[4] + hex[5] + '-' +
+    hex[6] + hex[7] + '-' +
+    hex[8] + hex[9] + '-' +
+    hex[10] + hex[11] + hex[12] + hex[13] + hex[14] + hex[15]
+  );
 }
 
 function iso(d: Date): string {

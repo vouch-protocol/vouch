@@ -25,6 +25,7 @@
  */
 
 import * as crypto from 'crypto';
+import { createRequire } from 'node:module';
 
 import { canonicalize } from './jcs';
 import { b58decode, b58encode } from './multikey';
@@ -33,23 +34,51 @@ import {
 } from './data-integrity';
 import type { DataIntegrityProof } from './data-integrity';
 
-// We pin @noble/post-quantum to ^0.4 because that release line still
-// publishes a CJS build, which keeps the TypeScript test suite simple
-// (ts-jest defaults to CJS). Newer 0.6+ releases are ESM-only and require
-// Node 20.19+; switching to them is a separate test-runner upgrade.
+// @noble/post-quantum is an OPTIONAL peer dependency. It is loaded lazily on
+// first use (not at module load) so that importing the SDK never requires it
+// to be installed, and so the package imports cleanly under ESM. We pin to
+// ^0.4 because that line ships a CJS build resolvable via `createRequire`.
 //
 // API note: the 0.4.x signature is `sign(secretKey, msg)` and
 // `verify(publicKey, msg, sig)`. The 0.6.x line moved to `sign(msg, secretKey)`
 // and `verify(sig, msg, publicKey)`. We follow 0.4.x here. Wire format
 // (raw signature bytes) is identical across versions.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { ml_dsa44 } = require('@noble/post-quantum/ml-dsa') as {
-  ml_dsa44: {
-    keygen(seed?: Uint8Array): { secretKey: Uint8Array; publicKey: Uint8Array };
-    sign(secretKey: Uint8Array, msg: Uint8Array): Uint8Array;
-    verify(publicKey: Uint8Array, msg: Uint8Array, sig: Uint8Array): boolean;
-  };
-};
+interface MlDsa44 {
+  keygen(seed?: Uint8Array): { secretKey: Uint8Array; publicKey: Uint8Array };
+  sign(secretKey: Uint8Array, msg: Uint8Array): Uint8Array;
+  verify(publicKey: Uint8Array, msg: Uint8Array, sig: Uint8Array): boolean;
+}
+
+let _mlDsa44: MlDsa44 | undefined;
+
+/**
+ * Lazily resolve the ML-DSA-44 implementation from the optional
+ * `@noble/post-quantum` peer dependency. Uses `createRequire` so it works in
+ * both the CJS and ESM builds (esbuild rewrites a bare `require()` into a
+ * throwing shim in ESM output). Throws a clear, actionable error if the
+ * optional dependency is not installed.
+ */
+function getMlDsa44(): MlDsa44 {
+  if (_mlDsa44) return _mlDsa44;
+  let mod: { ml_dsa44?: MlDsa44; default?: { ml_dsa44?: MlDsa44 } };
+  try {
+    const req = createRequire(import.meta.url);
+    mod = req('@noble/post-quantum/ml-dsa');
+  } catch (err) {
+    throw new Error(
+      'The hybrid post-quantum profile requires the optional peer dependency ' +
+      '"@noble/post-quantum" (^0.4). Install it with `npm install @noble/post-quantum` ' +
+      'to use hybrid Ed25519 + ML-DSA-44 proofs. Original error: ' +
+      (err instanceof Error ? err.message : String(err))
+    );
+  }
+  const impl = mod.ml_dsa44 ?? mod.default?.ml_dsa44;
+  if (!impl) {
+    throw new Error('@noble/post-quantum/ml-dsa did not export `ml_dsa44`.');
+  }
+  _mlDsa44 = impl;
+  return _mlDsa44;
+}
 
 export const HYBRID_CRYPTOSUITE_ID = 'hybrid-eddsa-mldsa44-jcs-2026';
 
@@ -66,6 +95,7 @@ export interface HybridKeyPair {
  * Generate a fresh ML-DSA-44 keypair via @noble/post-quantum.
  */
 export function generateMLDSA44KeyPair(seed?: Uint8Array): HybridKeyPair {
+  const ml_dsa44 = getMlDsa44();
   const { secretKey, publicKey } = ml_dsa44.keygen(seed);
   return { secretKey, publicKey };
 }
@@ -106,7 +136,7 @@ export function buildHybridProof(
   }
 
   // ML-DSA-44 via @noble/post-quantum (0.4.x: secretKey, msg order).
-  const mlSig = ml_dsa44.sign(opts.mldsa44SecretKey, digest);
+  const mlSig = getMlDsa44().sign(opts.mldsa44SecretKey, digest);
   if (mlSig.length !== MLDSA44_SIG_SIZE) {
     throw new Error(`unexpected ML-DSA-44 sig size ${mlSig.length}`);
   }
@@ -166,7 +196,7 @@ export function verifyHybridProof(
     return false;
   }
   // 0.4.x order: publicKey, msg, sig
-  if (!ml_dsa44.verify(mldsa44PublicKey, digest, mlSig)) {
+  if (!getMlDsa44().verify(mldsa44PublicKey, digest, mlSig)) {
     return false;
   }
   return true;

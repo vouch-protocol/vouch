@@ -6,7 +6,7 @@
  * 
  * @example
  * ```typescript
- * import { VouchClient } from '@vouch-protocol/sdk';
+ * import { VouchClient } from '@vouch-protocol-official/sdk';
  * 
  * const client = new VouchClient();
  * 
@@ -17,7 +17,7 @@
  * ```
  * 
  * @author Ramprasad Anandam Gaddam
- * @license MIT
+ * @license Apache-2.0
  */
 
 // =============================================================================

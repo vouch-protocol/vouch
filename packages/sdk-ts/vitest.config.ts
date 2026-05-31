@@ -7,6 +7,7 @@ export default defineConfig({
         // explicitly from 'vitest' continue to work.
         globals: true,
         environment: 'node',
+        setupFiles: ['./vitest.setup.ts'],
         include: [
             'src/**/*.test.ts',
             'tests/**/*.test.ts',
