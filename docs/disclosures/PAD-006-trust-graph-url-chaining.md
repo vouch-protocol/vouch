@@ -1,9 +1,9 @@
 # Defensive Disclosure: URL-Based Credential Chaining ("Trust Graph")
 
-**Disclosure ID:** PAD-006 
-**Publication Date:** January 10, 2026 
-**Author:** Ramprasad Anandam Gaddam 
-**Status:** Public Domain / Prior Art 
+**Disclosure ID:** PAD-006  
+**Publication Date:** January 10, 2026  
+**Author:** Ramprasad Anandam Gaddam  
+**Status:** Public Domain / Prior Art  
 
 ---
 

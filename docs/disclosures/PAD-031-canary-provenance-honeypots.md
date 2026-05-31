@@ -1,13 +1,13 @@
 # PAD-031: Adversarial Provenance Honeypots via Synthetic Canary Identities
 
-**Identifier:** PAD-031
-**Title:** Method for Detecting Provenance Forgery, Stripping, and Credential Reuse Through Synthetic Canary Identities and Trap Watermarks
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Adversarial Detection / Content Provenance / Deception Detection / Counterintelligence / Decentralized Identity
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-005 (Reverse Lookup Registry), PAD-014 (Vouch Sonic), PAD-023 (Content Policy Watermarking), PAD-028 (Cross-Modal Identity-Bound Provenance)
+**Identifier:** PAD-031  
+**Title:** Method for Detecting Provenance Forgery, Stripping, and Credential Reuse Through Synthetic Canary Identities and Trap Watermarks  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Adversarial Detection / Content Provenance / Deception Detection / Counterintelligence / Decentralized Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-005 (Reverse Lookup Registry), PAD-014 (Vouch Sonic), PAD-023 (Content Policy Watermarking), PAD-028 (Cross-Modal Identity-Bound Provenance)  
 
 ---
 

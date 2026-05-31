@@ -1,13 +1,13 @@
 # PAD-033: Zero-Knowledge Proof Compression for Post-Quantum Digital Signatures over HTTP
 
-**Identifier:** PAD-033
-**Title:** Method for Bandwidth-Efficient Post-Quantum Identity Verification via ZK-SNARK Compression of Module-Lattice Signatures in Stateless HTTP Architectures
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Post-Quantum Cryptography / Zero-Knowledge Proofs / HTTP Transport / Digital Signatures / Agent Identity
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-003 (Vouch-Token Specification), PAD-016 (Dynamic Credential Renewal), PAD-025 (Edge-First Content Provenance)
+**Identifier:** PAD-033  
+**Title:** Method for Bandwidth-Efficient Post-Quantum Identity Verification via ZK-SNARK Compression of Module-Lattice Signatures in Stateless HTTP Architectures  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Post-Quantum Cryptography / Zero-Knowledge Proofs / HTTP Transport / Digital Signatures / Agent Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-003 (Vouch-Token Specification), PAD-016 (Dynamic Credential Renewal), PAD-025 (Edge-First Content Provenance)  
 
 ---
 

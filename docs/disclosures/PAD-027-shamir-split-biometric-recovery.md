@@ -1,13 +1,13 @@
 # PAD-027: Method for Shamir Secret Sharing of Biometric Enrollment Data Bound to Decentralized Identifiers
 
-**Identifier:** PAD-027
-**Title:** Method for Shamir Secret Sharing of Biometric Enrollment Data Bound to Decentralized Identifiers
-**Publication Date:** February 28, 2026
-**Prior Art Effective Date:** February 28, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Biometric Recovery / Secret Sharing / Decentralized Identity / Privacy
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-026 (DID-Linked Voiceprint Enrollment), PAD-014 (Vouch Sonic)
+**Identifier:** PAD-027  
+**Title:** Method for Shamir Secret Sharing of Biometric Enrollment Data Bound to Decentralized Identifiers  
+**Publication Date:** February 28, 2026  
+**Prior Art Effective Date:** February 28, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Biometric Recovery / Secret Sharing / Decentralized Identity / Privacy  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-026 (DID-Linked Voiceprint Enrollment), PAD-014 (Vouch Sonic)  
 
 ---
 

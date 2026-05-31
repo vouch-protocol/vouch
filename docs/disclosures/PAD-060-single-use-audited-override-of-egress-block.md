@@ -1,14 +1,14 @@
 # PAD-060: Single-Use Audited Override of a Deterministic Egress Block
 
-**Identifier:** PAD-060
-**Title:** Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use
-**Publication Date:** May 14, 2026
-**Prior Art Effective Date:** May 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / LLM Coding-Assistant Governance / Policy Override Mechanisms / Cryptographic Audit Trail / Exception Handling Patterns
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-002 (Chain of Custody), PAD-010 (Semantic Consent Signing), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-050 (Zero-Context Deterministic Egress Interception), PAD-053 (Time-Bounded Ephemeral Rules), PAD-059 (Vouch-Amnesia Attestation Bridge)
+**Identifier:** PAD-060  
+**Title:** Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use  
+**Publication Date:** May 14, 2026  
+**Prior Art Effective Date:** May 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / LLM Coding-Assistant Governance / Policy Override Mechanisms / Cryptographic Audit Trail / Exception Handling Patterns  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-002 (Chain of Custody), PAD-010 (Semantic Consent Signing), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-050 (Zero-Context Deterministic Egress Interception), PAD-053 (Time-Bounded Ephemeral Rules), PAD-059 (Vouch-Amnesia Attestation Bridge)  
 
 ---
 

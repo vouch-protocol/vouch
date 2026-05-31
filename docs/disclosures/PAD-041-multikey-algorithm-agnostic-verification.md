@@ -1,14 +1,14 @@
 # PAD-041: Algorithm-Agnostic Verification Method Resolution via Multikey Multicodec Discrimination
 
-**Identifier:** PAD-041
-**Title:** Method for Zero-Coordination Algorithm Migration in Decentralized Agent Identity via Multikey Multicodec Discrimination
-**Publication Date:** April 27, 2026
-**Prior Art Effective Date:** April 27, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Decentralized Identity / Verification Method Resolution / Algorithm Migration / Multikey / Agent Identity
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-039 (JCS Multi-Party Trust State), PAD-040 (Hybrid Composite Signature Same-Bytes)
+**Identifier:** PAD-041  
+**Title:** Method for Zero-Coordination Algorithm Migration in Decentralized Agent Identity via Multikey Multicodec Discrimination  
+**Publication Date:** April 27, 2026  
+**Prior Art Effective Date:** April 27, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Decentralized Identity / Verification Method Resolution / Algorithm Migration / Multikey / Agent Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-039 (JCS Multi-Party Trust State), PAD-040 (Hybrid Composite Signature Same-Bytes)  
 
 ---
 

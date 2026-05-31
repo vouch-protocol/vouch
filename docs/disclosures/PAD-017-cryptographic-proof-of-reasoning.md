@@ -1,12 +1,12 @@
 # PAD-017: Method for Cryptographic Proof of Reasoning with Adaptive Commitment Depth
 
-**Identifier:** PAD-017
-**Title:** Method for Cryptographic Proof of Reasoning with Adaptive Commitment Depth ("Proof of Reasoning Protocol")
-**Publication Date:** February 14, 2026
-**Prior Art Effective Date:** February 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Auditability / Non-Repudiation / Alignment Verification
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-017  
+**Title:** Method for Cryptographic Proof of Reasoning with Adaptive Commitment Depth ("Proof of Reasoning Protocol")  
+**Publication Date:** February 14, 2026  
+**Prior Art Effective Date:** February 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Auditability / Non-Repudiation / Alignment Verification  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

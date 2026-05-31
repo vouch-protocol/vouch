@@ -1,13 +1,13 @@
 # PAD-030: Zero-Knowledge Reputation Portability for Autonomous Agents
 
-**Identifier:** PAD-030
-**Title:** Method for Privacy-Preserving Cross-Platform Reputation Transfer Using Zero-Knowledge Proofs Bound to Decentralized Identifiers
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Reputation Systems / Zero-Knowledge Proofs / Decentralized Identity / Agent Trust / Privacy
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-016 (Dynamic Credential Renewal), PAD-017 (Cryptographic Proof of Reasoning), PAD-020 (Ratchet Lock Protocol)
+**Identifier:** PAD-030  
+**Title:** Method for Privacy-Preserving Cross-Platform Reputation Transfer Using Zero-Knowledge Proofs Bound to Decentralized Identifiers  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Reputation Systems / Zero-Knowledge Proofs / Decentralized Identity / Agent Trust / Privacy  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-016 (Dynamic Credential Renewal), PAD-017 (Cryptographic Proof of Reasoning), PAD-020 (Ratchet Lock Protocol)  
 
 ---
 

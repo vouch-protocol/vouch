@@ -1,14 +1,14 @@
 # PAD-058: Automated DID Rotation and Verifier Broadcast Pipeline Triggered by Static Detection of Cryptographic Identity Material in Source Repositories
 
-**Identifier:** PAD-058
-**Title:** Synchronous Leak-Detection-to-Rotation Pipeline for Decentralized Identifiers, with Dual-Signed Migration Credentials Bridging Classical and Post-Quantum Keypairs
-**Publication Date:** May 14, 2026
-**Prior Art Effective Date:** May 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Key Management / Incident Response / DevSecOps / Decentralized Identifiers / Post-Quantum Migration
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-016 (Dynamic Credential Renewal), PAD-031 (Canary Provenance Honeypots), PAD-040 (Hybrid Composite Signature), PAD-041 (Multikey Algorithm-Agnostic Verification), PAD-046 (Algorithm Quorum)
+**Identifier:** PAD-058  
+**Title:** Synchronous Leak-Detection-to-Rotation Pipeline for Decentralized Identifiers, with Dual-Signed Migration Credentials Bridging Classical and Post-Quantum Keypairs  
+**Publication Date:** May 14, 2026  
+**Prior Art Effective Date:** May 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Key Management / Incident Response / DevSecOps / Decentralized Identifiers / Post-Quantum Migration  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-016 (Dynamic Credential Renewal), PAD-031 (Canary Provenance Honeypots), PAD-040 (Hybrid Composite Signature), PAD-041 (Multikey Algorithm-Agnostic Verification), PAD-046 (Algorithm Quorum)  
 
 ---
 

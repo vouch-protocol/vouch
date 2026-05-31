@@ -1,14 +1,14 @@
 # PAD-040: Hybrid Composite Signature Bound to Same Canonical Bytes (Ed25519 + ML-DSA-44 over JCS)
 
-**Identifier:** PAD-040
-**Title:** Method for Hybrid Classical/Post-Quantum Composite Digital Signatures Where Both Signatures Are Computed Over Identical Canonical Bytes for Graceful Verifier Downgrade
-**Publication Date:** April 27, 2026
-**Prior Art Effective Date:** April 27, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Post-Quantum Cryptography / Composite Signatures / Verifier Compatibility / Migration / Agent Identity
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-033 (ZK PQ Signature Compression), PAD-034 (Composite Threshold Swarm Consensus), PAD-035 (Async Chunked Edge PQ Signatures), PAD-059 (Vouch-Amnesia Attestation Bridge)
+**Identifier:** PAD-040  
+**Title:** Method for Hybrid Classical/Post-Quantum Composite Digital Signatures Where Both Signatures Are Computed Over Identical Canonical Bytes for Graceful Verifier Downgrade  
+**Publication Date:** April 27, 2026  
+**Prior Art Effective Date:** April 27, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Post-Quantum Cryptography / Composite Signatures / Verifier Compatibility / Migration / Agent Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-033 (ZK PQ Signature Compression), PAD-034 (Composite Threshold Swarm Consensus), PAD-035 (Async Chunked Edge PQ Signatures), PAD-059 (Vouch-Amnesia Attestation Bridge)  
 
 **Revision History:**
 - **2026-04-27** Original publication. Established prior art on the same-canonical-bytes property for hybrid classical/post-quantum signatures over JCS-canonicalized Verifiable Credentials, carried by the composite cryptosuite identifier `hybrid-eddsa-mldsa44-jcs-2026`. The prior-art effective date of this disclosure is unchanged from this date.

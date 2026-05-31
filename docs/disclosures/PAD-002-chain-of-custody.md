@@ -1,9 +1,9 @@
 # PAD-002: Cryptographic Binding of AI Agent Intent via Recursive Delegation
 
-**Publication Date:** January 03, 2026 
-**Author:** Ramprasad Anandam Gaddam 
-**Status:** Public Prior Art 
-**License:** Apache 2.0
+**Publication Date:** January 03, 2026  
+**Author:** Ramprasad Anandam Gaddam  
+**Status:** Public Prior Art  
+**License:** Apache 2.0  
 
 ## 1. Abstract
 

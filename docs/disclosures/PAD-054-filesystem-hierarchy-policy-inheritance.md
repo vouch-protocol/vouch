@@ -1,14 +1,14 @@
 # PAD-054: Filesystem-Hierarchy Policy Inheritance for LLM Coding Assistant Workspaces
 
-**Identifier:** PAD-054
-**Title:** Method for Cascading Operational Policy Across Nested Directory Hierarchies in LLM Coding Assistant Workspaces with Override Semantics, Union Semantics, and Explicit Inheritance Blocking
-**Publication Date:** April 30, 2026
-**Prior Art Effective Date:** April 30, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / LLM Coding-Assistant Governance / Monorepo Tooling / Policy Composition / Filesystem-Hierarchy Semantics
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-022 (Swarm Limits Protocol), PAD-038 (Agent Capability Discovery), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-050 (Zero-Context Deterministic Egress Interception)
+**Identifier:** PAD-054  
+**Title:** Method for Cascading Operational Policy Across Nested Directory Hierarchies in LLM Coding Assistant Workspaces with Override Semantics, Union Semantics, and Explicit Inheritance Blocking  
+**Publication Date:** April 30, 2026  
+**Prior Art Effective Date:** April 30, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / LLM Coding-Assistant Governance / Monorepo Tooling / Policy Composition / Filesystem-Hierarchy Semantics  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-022 (Swarm Limits Protocol), PAD-038 (Agent Capability Discovery), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-050 (Zero-Context Deterministic Egress Interception)  
 
 ---
 

@@ -1,13 +1,13 @@
 # PAD-028: Unified Cross-Modal Identity-Bound Provenance System
 
-**Identifier:** PAD-028
-**Title:** Method for Unified Cross-Modal Content Provenance Under a Single Decentralized Identifier
-**Publication Date:** March 1, 2026
-**Prior Art Effective Date:** March 1, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Content Authentication / Multi-Modal Provenance / Decentralized Identity / Media Security
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-014 (Vouch Sonic), PAD-026 (DID-Linked Voiceprint Enrollment), PAD-025 (Edge-First Content Provenance), PAD-001 (Cryptographic Agent Identity)
+**Identifier:** PAD-028  
+**Title:** Method for Unified Cross-Modal Content Provenance Under a Single Decentralized Identifier  
+**Publication Date:** March 1, 2026  
+**Prior Art Effective Date:** March 1, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Content Authentication / Multi-Modal Provenance / Decentralized Identity / Media Security  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-014 (Vouch Sonic), PAD-026 (DID-Linked Voiceprint Enrollment), PAD-025 (Edge-First Content Provenance), PAD-001 (Cryptographic Agent Identity)  
 
 ---
 
@@ -151,7 +151,7 @@ The system reports this compound score to the verifier:
 ### 3.4 Enterprise Cross-Modal Provenance
 
 For enterprise use cases, the system extends cross-modal provenance with enterprise identity:
-- All content signed under the enterprise's verified identity includes a `org.enterprise` assertion identifying the organization.
+- All content signed under the enterprise's verified identity includes an `org.enterprise` assertion identifying the organization.
 - The enterprise DID is counter-signed by the service provider (see related patent filing for Content Provenance Certificate Authority).
 - Enterprise provenance labels (e.g., "Captured by Zomato") are consistent across all modalities: the same label appears in C2PA manifests, is retrievable from Sonic watermark lookups, and is associated with voice-verified recordings.
 

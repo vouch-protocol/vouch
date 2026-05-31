@@ -1,12 +1,12 @@
 # PAD-012: Method for Embedding Executable Usage Covenants in Media Provenance Manifests
 
-**Identifier:** PAD-012 
-**Title:** Method for Embedding Executable Usage Covenants in Media Provenance Manifests ("Vouch Covenant") 
-**Publication Date:** January 20, 2026 
-**Prior Art Effective Date:** January 20, 2026 
-**Status:** Public Disclosure (Defensive Publication) 
-**Category:** Digital Rights Management / Generative AI / Smart Contracts 
-**Author:** Ramprasad Anandam Gaddam 
+**Identifier:** PAD-012  
+**Title:** Method for Embedding Executable Usage Covenants in Media Provenance Manifests ("Vouch Covenant")  
+**Publication Date:** January 20, 2026  
+**Prior Art Effective Date:** January 20, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Digital Rights Management / Generative AI / Smart Contracts  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

@@ -1,12 +1,12 @@
 # PAD-023: Method for Embedding Machine-Readable Content Usage Policies in Audio Watermarks
 
-**Identifier:** PAD-023
-**Title:** Method for Embedding Machine-Readable Content Usage Policies in Audio Watermarks
-**Publication Date:** February 22, 2026
-**Prior Art Effective Date:** February 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Content Rights / Audio Security / AI Governance / Digital Rights Management
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-023  
+**Title:** Method for Embedding Machine-Readable Content Usage Policies in Audio Watermarks  
+**Publication Date:** February 22, 2026  
+**Prior Art Effective Date:** February 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Content Rights / Audio Security / AI Governance / Digital Rights Management  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

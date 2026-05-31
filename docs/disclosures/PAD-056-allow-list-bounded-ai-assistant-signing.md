@@ -1,14 +1,14 @@
 # PAD-056: Capability-Bounded AI Assistant Output via Intent Allow-List Enforced at the Identity Sidecar Layer
 
-**Identifier:** PAD-056
-**Title:** Capability-Bounded AI Assistant Output via Intent Allow-List Enforced at the Identity Sidecar Layer
-**Publication Date:** May 14, 2026
-**Prior Art Effective Date:** May 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Security / Prompt Injection Defense / Capability-Bounded Computing / Conversational Agent Architecture
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-003 (Identity Sidecar), PAD-010 (Semantic Consent Signing), PAD-021 (Inverse Capability Protocol), PAD-042 (Standardized Metadata Schema), PAD-045 (Proof of Non-Hallucination)
+**Identifier:** PAD-056  
+**Title:** Capability-Bounded AI Assistant Output via Intent Allow-List Enforced at the Identity Sidecar Layer  
+**Publication Date:** May 14, 2026  
+**Prior Art Effective Date:** May 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Security / Prompt Injection Defense / Capability-Bounded Computing / Conversational Agent Architecture  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-003 (Identity Sidecar), PAD-010 (Semantic Consent Signing), PAD-021 (Inverse Capability Protocol), PAD-042 (Standardized Metadata Schema), PAD-045 (Proof of Non-Hallucination)  
 
 ---
 

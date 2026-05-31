@@ -1,13 +1,13 @@
 # PAD-038: Decentralized Agent Capability Discovery Protocol
 
-**Identifier:** PAD-038
-**Title:** Method for Cryptographically Verified Agent Capability Advertisement and Trust-Weighted Discovery in Decentralized Multi-Agent Ecosystems
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Agent Discovery / Capability Attestation / Service Registry / Multi-Agent Systems / Decentralized Infrastructure
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-002 (Chain of Custody), PAD-022 (Swarm Limits Protocol), PAD-036 (Aggregated Reputation Scoring), PAD-037 (Credential Federation)
+**Identifier:** PAD-038  
+**Title:** Method for Cryptographically Verified Agent Capability Advertisement and Trust-Weighted Discovery in Decentralized Multi-Agent Ecosystems  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Agent Discovery / Capability Attestation / Service Registry / Multi-Agent Systems / Decentralized Infrastructure  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-002 (Chain of Custody), PAD-022 (Swarm Limits Protocol), PAD-036 (Aggregated Reputation Scoring), PAD-037 (Credential Federation)  
 
 ---
 

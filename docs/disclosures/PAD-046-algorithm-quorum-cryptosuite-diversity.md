@@ -1,14 +1,14 @@
 # PAD-046: Algorithm Quorum Verification via M-of-N Cryptosuite Diversity
 
-**Identifier:** PAD-046
-**Title:** Method for Defending AI Agent Identity Against Algorithm-Specific Compromise via M-of-N Diversity Across Independent Cryptographic Algorithms
-**Publication Date:** April 29, 2026
-**Prior Art Effective Date:** April 29, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Post-Quantum Cryptography / Algorithm Diversity / Threat Resilience / Defense in Depth / Agent Identity
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-040 (Same-Bytes Hybrid Composite Signature), PAD-041 (Multikey Algorithm-Agnostic Verification), PAD-043 (Cryptographic Weight Binding)
+**Identifier:** PAD-046  
+**Title:** Method for Defending AI Agent Identity Against Algorithm-Specific Compromise via M-of-N Diversity Across Independent Cryptographic Algorithms  
+**Publication Date:** April 29, 2026  
+**Prior Art Effective Date:** April 29, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Post-Quantum Cryptography / Algorithm Diversity / Threat Resilience / Defense in Depth / Agent Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-040 (Same-Bytes Hybrid Composite Signature), PAD-041 (Multikey Algorithm-Agnostic Verification), PAD-043 (Cryptographic Weight Binding)  
 
 ---
 

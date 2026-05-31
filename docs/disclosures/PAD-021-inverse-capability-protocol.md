@@ -1,12 +1,12 @@
 # PAD-021: Graduated Autonomy Scaling via Inverse Capability Correlation
 
-**Identifier:** PAD-021
-**Title:** Graduated Autonomy Scaling via Inverse Capability Correlation ("Inverse Capability Protocol")
-**Publication Date:** February 14, 2026
-**Prior Art Effective Date:** February 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Governance / Autonomous Agent Oversight / Alignment-Aware Credential Management
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-021  
+**Title:** Graduated Autonomy Scaling via Inverse Capability Correlation ("Inverse Capability Protocol")  
+**Publication Date:** February 14, 2026  
+**Prior Art Effective Date:** February 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Governance / Autonomous Agent Oversight / Alignment-Aware Credential Management  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

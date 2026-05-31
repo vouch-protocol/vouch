@@ -1,14 +1,14 @@
 # PAD-057: Bring-Your-Own-LLM Distribution of Protocol Capabilities via AI Tool Packaging
 
-**Identifier:** PAD-057
-**Title:** Distribution of Protocol-Specific Developer Capabilities Through User-Owned AI Tool Subscriptions, Inverting the Hosted-Inference Model
-**Publication Date:** May 14, 2026
-**Prior Art Effective Date:** May 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Developer Tooling / AI Agent Distribution / Open-Source Economics / Protocol Adoption
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-003 (Identity Sidecar), PAD-038 (Agent Capability Discovery), PAD-042 (Standardized Metadata Schema), PAD-056 (Allow-List Bounded AI Assistant Signing)
+**Identifier:** PAD-057  
+**Title:** Distribution of Protocol-Specific Developer Capabilities Through User-Owned AI Tool Subscriptions, Inverting the Hosted-Inference Model  
+**Publication Date:** May 14, 2026  
+**Prior Art Effective Date:** May 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Developer Tooling / AI Agent Distribution / Open-Source Economics / Protocol Adoption  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-003 (Identity Sidecar), PAD-038 (Agent Capability Discovery), PAD-042 (Standardized Metadata Schema), PAD-056 (Allow-List Bounded AI Assistant Signing)  
 
 ---
 

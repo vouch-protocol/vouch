@@ -1,14 +1,14 @@
 # PAD-052: UI State Sniffing for Policy Extraction from Closed-Box AI Coding Applications
 
-**Identifier:** PAD-052
-**Title:** Method for Extracting User-Declared Operational Policy from Closed-Source AI Coding Applications via Operating-System-Level Passive File-System Monitoring of Application State Caches Without Modification of the Target Application
-**Publication Date:** April 30, 2026
-**Prior Art Effective Date:** April 30, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / LLM Coding-Assistant Governance / Reverse-Compatibility / OS-Level Observation / Closed-Source Tool Augmentation
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-051 (Parallel Intent Extraction via Local Shadow Models)
+**Identifier:** PAD-052  
+**Title:** Method for Extracting User-Declared Operational Policy from Closed-Source AI Coding Applications via Operating-System-Level Passive File-System Monitoring of Application State Caches Without Modification of the Target Application  
+**Publication Date:** April 30, 2026  
+**Prior Art Effective Date:** April 30, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / LLM Coding-Assistant Governance / Reverse-Compatibility / OS-Level Observation / Closed-Source Tool Augmentation  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-051 (Parallel Intent Extraction via Local Shadow Models)  
 
 ---
 

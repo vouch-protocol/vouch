@@ -1,14 +1,14 @@
 # PAD-048: Write-Only Asynchronous Context Ledger for LLM Coding Assistants
 
-**Identifier:** PAD-048
-**Title:** Method for Defending Against LLM Context Dilution Using a Write-Only Asynchronous Filesystem Ledger and a Trust-Domain-Separated Compactor Daemon
-**Publication Date:** April 29, 2026
-**Prior Art Effective Date:** April 29, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / LLM Coding-Assistant Governance / IP Leak Prevention / Long-Session Policy Enforcement / Local-First Tooling
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-002 (Chain of Custody), PAD-010 (Semantic Consent Signing), PAD-017 (Cryptographic Proof of Reasoning), PAD-031 (Adversarial Provenance Honeypots), PAD-042 (Standardized Metadata Schema)
+**Identifier:** PAD-048  
+**Title:** Method for Defending Against LLM Context Dilution Using a Write-Only Asynchronous Filesystem Ledger and a Trust-Domain-Separated Compactor Daemon  
+**Publication Date:** April 29, 2026  
+**Prior Art Effective Date:** April 29, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / LLM Coding-Assistant Governance / IP Leak Prevention / Long-Session Policy Enforcement / Local-First Tooling  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-002 (Chain of Custody), PAD-010 (Semantic Consent Signing), PAD-017 (Cryptographic Proof of Reasoning), PAD-031 (Adversarial Provenance Honeypots), PAD-042 (Standardized Metadata Schema)  
 
 ---
 

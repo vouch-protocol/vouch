@@ -1,12 +1,12 @@
 # PAD-019: Method for Transparent Agent-to-Agent Communication with Collusion Detection
 
-**Identifier:** PAD-019
-**Title:** Method for Transparent Agent-to-Agent Communication with Collusion Detection ("Glass Channel Protocol")
-**Publication Date:** February 14, 2026
-**Prior Art Effective Date:** February 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Multi-Agent Governance / Communication Auditing / Collusion Detection
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-019  
+**Title:** Method for Transparent Agent-to-Agent Communication with Collusion Detection ("Glass Channel Protocol")  
+**Publication Date:** February 14, 2026  
+**Prior Art Effective Date:** February 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Multi-Agent Governance / Communication Auditing / Collusion Detection  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

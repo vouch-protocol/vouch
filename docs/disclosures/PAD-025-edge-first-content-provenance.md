@@ -1,13 +1,13 @@
 # PAD-025: Edge-First Content Provenance Architecture
 
-**Identifier:** PAD-025
-**Title:** Edge-First Content Provenance via Client-Side WebAssembly and On-Device Machine Learning
-**Publication Date:** February 28, 2026
-**Prior Art Effective Date:** February 28, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Content Authentication / Privacy-Preserving Computing / Edge Computing / WebAssembly
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-014 (Vouch Sonic), PAD-023 (Content Policy Watermarking), PAD-012 (VouchCovenant)
+**Identifier:** PAD-025  
+**Title:** Edge-First Content Provenance via Client-Side WebAssembly and On-Device Machine Learning  
+**Publication Date:** February 28, 2026  
+**Prior Art Effective Date:** February 28, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Content Authentication / Privacy-Preserving Computing / Edge Computing / WebAssembly  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-014 (Vouch Sonic), PAD-023 (Content Policy Watermarking), PAD-012 (VouchCovenant)  
 
 ---
 

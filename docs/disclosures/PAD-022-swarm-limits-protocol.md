@@ -1,12 +1,12 @@
 # PAD-022: Method for Cryptographic Agent Population Governance via Aggregate Behavioral Bounds
 
-**Identifier:** PAD-022
-**Title:** Method for Cryptographic Agent Population Governance via Aggregate Behavioral Bounds ("Swarm Limits Protocol")
-**Publication Date:** February 14, 2026
-**Prior Art Effective Date:** February 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Population Governance / Swarm Containment / Aggregate Resource Control
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-022  
+**Title:** Method for Cryptographic Agent Population Governance via Aggregate Behavioral Bounds ("Swarm Limits Protocol")  
+**Publication Date:** February 14, 2026  
+**Prior Art Effective Date:** February 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Population Governance / Swarm Containment / Aggregate Resource Control  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

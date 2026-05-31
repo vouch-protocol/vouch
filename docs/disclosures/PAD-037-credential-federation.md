@@ -1,13 +1,13 @@
 # PAD-037: Cross-Protocol Agent Credential Federation
 
-**Identifier:** PAD-037
-**Title:** Method for Bidirectional Credential Translation Between Decentralized Agent Identity and Legacy Enterprise Authentication Protocols
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Identity Federation / Enterprise Integration / Authentication / Interoperability / Standards Bridge
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-003 (Vouch-Token Specification), PAD-016 (Dynamic Credential Renewal), PAD-036 (Aggregated Reputation Scoring)
+**Identifier:** PAD-037  
+**Title:** Method for Bidirectional Credential Translation Between Decentralized Agent Identity and Legacy Enterprise Authentication Protocols  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Identity Federation / Enterprise Integration / Authentication / Interoperability / Standards Bridge  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-003 (Vouch-Token Specification), PAD-016 (Dynamic Credential Renewal), PAD-036 (Aggregated Reputation Scoring)  
 
 ---
 

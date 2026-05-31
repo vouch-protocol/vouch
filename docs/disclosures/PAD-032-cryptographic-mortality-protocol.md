@@ -1,13 +1,13 @@
 # PAD-032: Cryptographic Mortality Protocol for Agent Identity Termination
 
-**Identifier:** PAD-032
-**Title:** Method for Pre-Committed Identity Termination, Capability Inheritance, and Forensic State Sealing via Dead-Man's-Switch Liveness Proofs
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Identity Lifecycle / Key Management / Forensic Preservation / Agent Continuity / Decentralized Identity
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-002 (Chain of Custody), PAD-016 (Dynamic Credential Renewal), PAD-020 (Ratchet Lock Protocol), PAD-027 (Shamir Split Biometric Recovery)
+**Identifier:** PAD-032  
+**Title:** Method for Pre-Committed Identity Termination, Capability Inheritance, and Forensic State Sealing via Dead-Man's-Switch Liveness Proofs  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Identity Lifecycle / Key Management / Forensic Preservation / Agent Continuity / Decentralized Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-002 (Chain of Custody), PAD-016 (Dynamic Credential Renewal), PAD-020 (Ratchet Lock Protocol), PAD-027 (Shamir Split Biometric Recovery)  
 
 ---
 

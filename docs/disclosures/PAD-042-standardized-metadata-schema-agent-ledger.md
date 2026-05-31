@@ -1,14 +1,14 @@
 # PAD-042: Standardized Metadata Schema for AI Agent Ledger Signatures
 
-**Identifier:** PAD-042
-**Title:** Open Specification for Verifiable AI Agent Execution Payloads and Cryptographic Attestations
-**Publication Date:** April 29, 2026
-**Prior Art Effective Date:** April 29, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Verifiable Credentials / Agent Logging / Audit / Interoperability / Forensic Reconstruction
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-016 (Dynamic Credential Renewal), PAD-017 (Cryptographic Proof of Reasoning), PAD-018 (Model Lineage Provenance), PAD-039 (JCS Multi-Party Trust State)
+**Identifier:** PAD-042  
+**Title:** Open Specification for Verifiable AI Agent Execution Payloads and Cryptographic Attestations  
+**Publication Date:** April 29, 2026  
+**Prior Art Effective Date:** April 29, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Verifiable Credentials / Agent Logging / Audit / Interoperability / Forensic Reconstruction  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-016 (Dynamic Credential Renewal), PAD-017 (Cryptographic Proof of Reasoning), PAD-018 (Model Lineage Provenance), PAD-039 (JCS Multi-Party Trust State)  
 
 ---
 

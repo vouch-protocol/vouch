@@ -1,13 +1,13 @@
 # PAD-034: Composite Threshold Aggregation for Multi-Agent Swarm Consensus
 
-**Identifier:** PAD-034
-**Title:** Method for Bandwidth-Efficient Post-Quantum Multi-Agent Consensus via BLS Threshold Aggregation with Singular ML-DSA Representative Signatures
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Post-Quantum Cryptography / Multi-Agent Systems / Threshold Signatures / Swarm Consensus / Distributed Identity
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-002 (Chain of Custody), PAD-022 (Swarm Limits Protocol), PAD-033 (ZK PQ Signature Compression)
+**Identifier:** PAD-034  
+**Title:** Method for Bandwidth-Efficient Post-Quantum Multi-Agent Consensus via BLS Threshold Aggregation with Singular ML-DSA Representative Signatures  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Post-Quantum Cryptography / Multi-Agent Systems / Threshold Signatures / Swarm Consensus / Distributed Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-002 (Chain of Custody), PAD-022 (Swarm Limits Protocol), PAD-033 (ZK PQ Signature Compression)  
 
 ---
 

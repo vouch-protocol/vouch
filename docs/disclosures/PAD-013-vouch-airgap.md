@@ -1,12 +1,12 @@
 # PAD-013: Method for Air-Gapped Identity Verification via Psychoacoustic Steganography
 
-**Identifier:** PAD-013 
-**Title:** Method for Air-Gapped Identity Verification via Psychoacoustic Steganography ("Vouch AirGap") 
-**Publication Date:** January 20, 2026 
-**Prior Art Effective Date:** January 20, 2026 
-**Status:** Public Disclosure (Defensive Publication) 
-**Category:** Biometrics / Signal Processing / Security / Deepfake Defense 
-**Author:** Ramprasad Anandam Gaddam 
+**Identifier:** PAD-013  
+**Title:** Method for Air-Gapped Identity Verification via Psychoacoustic Steganography ("Vouch AirGap")  
+**Publication Date:** January 20, 2026  
+**Prior Art Effective Date:** January 20, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Biometrics / Signal Processing / Security / Deepfake Defense  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

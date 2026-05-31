@@ -1,14 +1,14 @@
 # PAD-044: Ephemeral ZK-State Channels for Agentic Layer 2 Scalability
 
-**Identifier:** PAD-044
-**Title:** Method for High-Frequency Machine-to-Machine Negotiation via Ephemeral Peer-to-Peer State Channels with ZK-SNARK Rollup of Vouch Credentials
-**Publication Date:** April 29, 2026
-**Prior Art Effective Date:** April 29, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Scalability / State Channels / Zero-Knowledge Proofs / Agent-to-Agent Negotiation / Layer 2 Architectures
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-019 (Glass Channel Protocol), PAD-022 (Swarm Limits Protocol), PAD-033 (ZK PQ Signature Compression), PAD-039 (JCS Multi-Party Trust State)
+**Identifier:** PAD-044  
+**Title:** Method for High-Frequency Machine-to-Machine Negotiation via Ephemeral Peer-to-Peer State Channels with ZK-SNARK Rollup of Vouch Credentials  
+**Publication Date:** April 29, 2026  
+**Prior Art Effective Date:** April 29, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Scalability / State Channels / Zero-Knowledge Proofs / Agent-to-Agent Negotiation / Layer 2 Architectures  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-019 (Glass Channel Protocol), PAD-022 (Swarm Limits Protocol), PAD-033 (ZK PQ Signature Compression), PAD-039 (JCS Multi-Party Trust State)  
 
 ---
 
@@ -19,7 +19,7 @@ between two or more AI agents at millisecond latency, without
 broadcasting every micro-interaction to the public Vouch base layer.
 Two agents use their Vouch identities to open a temporary,
 peer-to-peer **Agentic State Channel**, lock initial state on a
-settlement layer (e.g., the commercial clearinghouse, an enterprise
+settlement layer (e.g., a commercial clearinghouse, an enterprise
 settlement service, or a public decentralized ledger), conduct
 thousands of micro-intents locally with full cryptographic guarantees,
 and then **roll up the entire interaction history into a single
@@ -86,7 +86,7 @@ Two agents A and B, each with Vouch identities (`did:web:agentA` and
 - Specifies the channel scope (resource URIs in scope, intent types
  permitted, maximum interaction count, expiry).
 - Locks initial state on a settlement layer. The settlement layer can
- be the commercial clearinghouse, an enterprise settlement service, a
+ be a commercial clearinghouse, an enterprise settlement service, a
  public decentralized ledger, or any anchoring registry that supports
  content-addressed state commits.
 - Carries a Vouch Data Integrity proof signed by both A and B (or a
@@ -267,8 +267,8 @@ The non-obvious elements of this disclosure are:
   credential interoperable with the base layer.
 
 3. **Settlement-layer agnosticism.** The architecture works against
-  any anchoring registry: a centralized clearinghouse (Operator,
-  enterprise settlement service), a public blockchain, an internal
+  any anchoring registry: a centralized clearinghouse (a commercial
+  or enterprise settlement service), a public blockchain, an internal
   transparency log, or a hybrid. The base mechanism does not
   require a specific Layer 1.
 

@@ -1,12 +1,12 @@
 # PAD-020: Method for Capability Acquisition Containment via Cryptographic Manifest Governance
 
-**Identifier:** PAD-020
-**Title:** Method for Capability Acquisition Containment via Cryptographic Manifest Governance ("Ratchet Lock Protocol")
-**Publication Date:** February 14, 2026
-**Prior Art Effective Date:** February 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Capability Governance / Autonomous Agent Containment / Privilege Escalation Prevention
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-020  
+**Title:** Method for Capability Acquisition Containment via Cryptographic Manifest Governance ("Ratchet Lock Protocol")  
+**Publication Date:** February 14, 2026  
+**Prior Art Effective Date:** February 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Capability Governance / Autonomous Agent Containment / Privilege Escalation Prevention  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

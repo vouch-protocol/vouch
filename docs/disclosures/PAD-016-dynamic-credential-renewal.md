@@ -1,12 +1,12 @@
 # PAD-016: Method for Continuous Trust Maintenance via Dynamic Credential Renewal
 
-**Identifier:** PAD-016
-**Title:** Method for Continuous Trust Maintenance via Dynamic Credential Renewal ("The Heartbeat Protocol")
-**Publication Date:** February 14, 2026
-**Prior Art Effective Date:** February 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Security / AI Safety / Credential Lifecycle / Autonomous Agent Governance
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-016  
+**Title:** Method for Continuous Trust Maintenance via Dynamic Credential Renewal ("The Heartbeat Protocol")  
+**Publication Date:** February 14, 2026  
+**Prior Art Effective Date:** February 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Security / AI Safety / Credential Lifecycle / Autonomous Agent Governance  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

@@ -1,12 +1,12 @@
 # PAD-024: Method for Temporal Perceptual Hashing of Video Content for Provenance-Linked Reverse Search
 
-**Identifier:** PAD-024
-**Title:** Method for Temporal Perceptual Hashing of Video Content for Provenance-Linked Reverse Search
-**Publication Date:** February 20, 2026
-**Prior Art Effective Date:** February 20, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Video Authentication / Content Provenance / Perceptual Hashing / Reverse Search
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-024  
+**Title:** Method for Temporal Perceptual Hashing of Video Content for Provenance-Linked Reverse Search  
+**Publication Date:** February 20, 2026  
+**Prior Art Effective Date:** February 20, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Video Authentication / Content Provenance / Perceptual Hashing / Reverse Search  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

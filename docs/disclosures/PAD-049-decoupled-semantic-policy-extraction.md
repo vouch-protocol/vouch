@@ -1,14 +1,14 @@
 # PAD-049: Decoupled Semantic Policy Extraction via Passive Source Monitoring
 
-**Identifier:** PAD-049
-**Title:** Method for Extracting Operational Policy Rules from Source Code Comments via Passive File-System Monitoring with Intentional LLM Non-Enforcement
-**Publication Date:** April 30, 2026
-**Prior Art Effective Date:** April 30, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / LLM Coding-Assistant Governance / Source Annotation Parsing / Decoupled Enforcement Architecture
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-010 (Semantic Consent Signing), PAD-017 (Cryptographic Proof of Reasoning), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-050 (Zero-Context Deterministic Egress Interception)
+**Identifier:** PAD-049  
+**Title:** Method for Extracting Operational Policy Rules from Source Code Comments via Passive File-System Monitoring with Intentional LLM Non-Enforcement  
+**Publication Date:** April 30, 2026  
+**Prior Art Effective Date:** April 30, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / LLM Coding-Assistant Governance / Source Annotation Parsing / Decoupled Enforcement Architecture  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-010 (Semantic Consent Signing), PAD-017 (Cryptographic Proof of Reasoning), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-050 (Zero-Context Deterministic Egress Interception)  
 
 ---
 

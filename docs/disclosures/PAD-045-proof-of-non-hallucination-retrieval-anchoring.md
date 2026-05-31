@@ -1,14 +1,14 @@
 # PAD-045: Proof of Non-Hallucination via Cryptographic Retrieval Anchoring
 
-**Identifier:** PAD-045
-**Title:** Method for Cryptographically Proving an AI Agent's Output Was Grounded in Specific Retrieved Context, Not Hallucinated
-**Publication Date:** April 29, 2026
-**Prior Art Effective Date:** April 29, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Hallucination Mitigation / Retrieval-Augmented Generation / Agent Trust / Inference-Time Provenance
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-017 (Cryptographic Proof of Reasoning), PAD-018 (Model Lineage Provenance), PAD-042 (Metadata Schema), PAD-043 (Cryptographic Weight Binding)
+**Identifier:** PAD-045  
+**Title:** Method for Cryptographically Proving an AI Agent's Output Was Grounded in Specific Retrieved Context, Not Hallucinated  
+**Publication Date:** April 29, 2026  
+**Prior Art Effective Date:** April 29, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Hallucination Mitigation / Retrieval-Augmented Generation / Agent Trust / Inference-Time Provenance  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-017 (Cryptographic Proof of Reasoning), PAD-018 (Model Lineage Provenance), PAD-042 (Metadata Schema), PAD-043 (Cryptographic Weight Binding)  
 
 ---
 

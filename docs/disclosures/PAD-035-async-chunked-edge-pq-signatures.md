@@ -1,13 +1,13 @@
 # PAD-035: Asynchronous Chunked Verification and Edge-Optimized Post-Quantum Signatures
 
-**Identifier:** PAD-035
-**Title:** Method for Progressive Post-Quantum Signature Verification via HTTP/2 Streamed Chunks and Hardware-Accelerated Lattice Sampling on Edge Devices
-**Publication Date:** April 22, 2026
-**Prior Art Effective Date:** April 22, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Post-Quantum Cryptography / Edge Computing / HTTP Transport / Hardware Acceleration / Agent Identity
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-025 (Edge-First Content Provenance), PAD-033 (ZK PQ Signature Compression), PAD-034 (Composite Threshold Swarm Consensus)
+**Identifier:** PAD-035  
+**Title:** Method for Progressive Post-Quantum Signature Verification via HTTP/2 Streamed Chunks and Hardware-Accelerated Lattice Sampling on Edge Devices  
+**Publication Date:** April 22, 2026  
+**Prior Art Effective Date:** April 22, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Post-Quantum Cryptography / Edge Computing / HTTP Transport / Hardware Acceleration / Agent Identity  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-025 (Edge-First Content Provenance), PAD-033 (ZK PQ Signature Compression), PAD-034 (Composite Threshold Swarm Consensus)  
 
 ---
 

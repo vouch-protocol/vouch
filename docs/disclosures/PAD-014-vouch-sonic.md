@@ -1,12 +1,12 @@
 # PAD-014: Method for Robust Acoustic Provenance via Psychoacoustic Steganography
 
-**Identifier:** PAD-014 
-**Title:** Method for Robust Acoustic Provenance via Psychoacoustic Steganography ("Vouch Sonic") 
-**Publication Date:** January 20, 2026 
-**Prior Art Effective Date:** January 20, 2026 
-**Status:** Public Disclosure (Defensive Publication) 
-**Category:** Audio Security / Signal Processing / Deepfake Detection / Content Authentication 
-**Author:** Ramprasad Anandam Gaddam 
+**Identifier:** PAD-014  
+**Title:** Method for Robust Acoustic Provenance via Psychoacoustic Steganography ("Vouch Sonic")  
+**Publication Date:** January 20, 2026  
+**Prior Art Effective Date:** January 20, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Audio Security / Signal Processing / Deepfake Detection / Content Authentication  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

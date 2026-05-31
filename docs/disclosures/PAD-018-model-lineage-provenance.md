@@ -1,12 +1,12 @@
 # PAD-018: Method for Cryptographic Model Lineage Provenance via Birth Certificate Protocol
 
-**Identifier:** PAD-018
-**Title:** Method for Cryptographic Model Lineage Provenance via Birth Certificate Protocol ("Birth Certificate Protocol")
-**Publication Date:** February 14, 2026
-**Prior Art Effective Date:** February 14, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Model Provenance / Supply Chain Integrity / Recursive Self-Improvement Governance
-**Author:** Ramprasad Anandam Gaddam
+**Identifier:** PAD-018  
+**Title:** Method for Cryptographic Model Lineage Provenance via Birth Certificate Protocol ("Birth Certificate Protocol")  
+**Publication Date:** February 14, 2026  
+**Prior Art Effective Date:** February 14, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Model Provenance / Supply Chain Integrity / Recursive Self-Improvement Governance  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

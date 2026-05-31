@@ -1,12 +1,12 @@
 # PAD-015: Method for Decentralized Crowd-Witnessed Media Capture Authentication
 
-**Identifier:** PAD-015 
-**Title:** Method for Decentralized Crowd-Witnessed Media Capture Authentication ("Ambient Witness Protocol") 
-**Publication Date:** January 24, 2026 
-**Prior Art Effective Date:** January 24, 2026 
-**Status:** Public Disclosure (Defensive Publication) 
-**Category:** Media Authentication / Decentralized Trust / Proximity Verification / Content Provenance 
-**Author:** Ramprasad Anandam Gaddam 
+**Identifier:** PAD-015  
+**Title:** Method for Decentralized Crowd-Witnessed Media Capture Authentication ("Ambient Witness Protocol")  
+**Publication Date:** January 24, 2026  
+**Prior Art Effective Date:** January 24, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Media Authentication / Decentralized Trust / Proximity Verification / Content Provenance  
+**Author:** Ramprasad Anandam Gaddam  
 
 ---
 

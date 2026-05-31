@@ -1,14 +1,14 @@
 # PAD-053: Time-Bounded Ephemeral Rules with Auto-Expiry for LLM Coding Assistant Sessions
 
-**Identifier:** PAD-053
-**Title:** Method for Declaring Time-Bounded Ephemeral Operational Rules in LLM Coding Assistant Sessions with Deterministic Auto-Expiry, Optional Severity Escalation, and Audit Trail of Expiry Events
-**Publication Date:** April 30, 2026
-**Prior Art Effective Date:** April 30, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / LLM Coding-Assistant Governance / Policy Lifetime Management / Mode Switching / Audit Trail
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-016 (Dynamic Credential Renewal), PAD-032 (Cryptographic Mortality Protocol), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-050 (Zero-Context Deterministic Egress Interception)
+**Identifier:** PAD-053  
+**Title:** Method for Declaring Time-Bounded Ephemeral Operational Rules in LLM Coding Assistant Sessions with Deterministic Auto-Expiry, Optional Severity Escalation, and Audit Trail of Expiry Events  
+**Publication Date:** April 30, 2026  
+**Prior Art Effective Date:** April 30, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / LLM Coding-Assistant Governance / Policy Lifetime Management / Mode Switching / Audit Trail  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-016 (Dynamic Credential Renewal), PAD-032 (Cryptographic Mortality Protocol), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-050 (Zero-Context Deterministic Egress Interception)  
 
 ---
 

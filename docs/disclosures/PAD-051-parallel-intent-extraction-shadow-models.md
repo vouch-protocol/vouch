@@ -1,14 +1,14 @@
 # PAD-051: Parallel Intent Extraction from LLM Prompts via a Local Shadow Small-Language-Model
 
-**Identifier:** PAD-051
-**Title:** Method for Out-of-Band Extraction of Operational Policy from Natural-Language Prompts to LLM Coding Assistants Using a Parallel Local Small Language Model with Zero Token Overhead on the Primary Assistant
-**Publication Date:** April 30, 2026
-**Prior Art Effective Date:** April 30, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / LLM Coding-Assistant Governance / Local-First AI / Out-of-Band Extraction / Token-Budget Engineering
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-017 (Cryptographic Proof of Reasoning), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-052 (UI State Sniffing)
+**Identifier:** PAD-051  
+**Title:** Method for Out-of-Band Extraction of Operational Policy from Natural-Language Prompts to LLM Coding Assistants Using a Parallel Local Small Language Model with Zero Token Overhead on the Primary Assistant  
+**Publication Date:** April 30, 2026  
+**Prior Art Effective Date:** April 30, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / LLM Coding-Assistant Governance / Local-First AI / Out-of-Band Extraction / Token-Budget Engineering  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-017 (Cryptographic Proof of Reasoning), PAD-048 (Write-Only Asynchronous Context Ledger), PAD-049 (Decoupled Semantic Policy Extraction), PAD-052 (UI State Sniffing)  
 
 ---
 

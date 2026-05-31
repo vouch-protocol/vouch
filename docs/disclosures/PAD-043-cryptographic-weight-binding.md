@@ -1,14 +1,14 @@
 # PAD-043: Cryptographic Weight Binding for Model-Intrinsic AI Identity
 
-**Identifier:** PAD-043
-**Title:** Method for Deriving an AI Agent's Cryptographic Identity Key Directly from a Cryptographic Hash of the Model's Tensor Weights
-**Publication Date:** April 29, 2026
-**Prior Art Effective Date:** April 29, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Identity / Model Provenance / Tensor Fingerprinting / Key Derivation / Open AI Standards
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-001 (Cryptographic Agent Identity), PAD-003 (Identity Sidecar), PAD-018 (Model Lineage Provenance), PAD-040 (Hybrid Composite Signature), PAD-042 (Metadata Schema)
+**Identifier:** PAD-043  
+**Title:** Method for Deriving an AI Agent's Cryptographic Identity Key Directly from a Cryptographic Hash of the Model's Tensor Weights  
+**Publication Date:** April 29, 2026  
+**Prior Art Effective Date:** April 29, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Identity / Model Provenance / Tensor Fingerprinting / Key Derivation / Open AI Standards  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-001 (Cryptographic Agent Identity), PAD-003 (Identity Sidecar), PAD-018 (Model Lineage Provenance), PAD-040 (Hybrid Composite Signature), PAD-042 (Metadata Schema)  
 
 ---
 

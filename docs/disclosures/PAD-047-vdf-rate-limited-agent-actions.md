@@ -1,14 +1,14 @@
 # PAD-047: Verifiable Delay Functions for Cryptographic Rate-Limiting of Autonomous Agent Actions
 
-**Identifier:** PAD-047
-**Title:** Method for Cryptographically Enforcing Minimum Elapsed Time Between High-Stakes Autonomous Agent Actions Using Verifiable Delay Functions
-**Publication Date:** April 29, 2026
-**Prior Art Effective Date:** April 29, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** AI Safety / Agent Governance / Verifiable Delay Functions / Runaway Loop Prevention / Autonomous Agent Containment
-**Author:** Ramprasad Anandam Gaddam
-**License:** Apache 2.0
-**Related:** PAD-016 (Dynamic Credential Renewal), PAD-020 (Ratchet Lock Protocol), PAD-022 (Swarm Limits Protocol), PAD-039 (JCS Multi-Party Trust State), PAD-042 (Metadata Schema)
+**Identifier:** PAD-047  
+**Title:** Method for Cryptographically Enforcing Minimum Elapsed Time Between High-Stakes Autonomous Agent Actions Using Verifiable Delay Functions  
+**Publication Date:** April 29, 2026  
+**Prior Art Effective Date:** April 29, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** AI Safety / Agent Governance / Verifiable Delay Functions / Runaway Loop Prevention / Autonomous Agent Containment  
+**Author:** Ramprasad Anandam Gaddam  
+**License:** Apache 2.0  
+**Related:** PAD-016 (Dynamic Credential Renewal), PAD-020 (Ratchet Lock Protocol), PAD-022 (Swarm Limits Protocol), PAD-039 (JCS Multi-Party Trust State), PAD-042 (Metadata Schema)  
 
 ---
 

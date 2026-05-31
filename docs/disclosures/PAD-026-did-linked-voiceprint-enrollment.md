@@ -1,13 +1,13 @@
 # PAD-026: DID-Linked Voiceprint Enrollment with Privacy-Preserving Feature Vectors
 
-**Identifier:** PAD-026
-**Title:** Method for Decentralized Identity-Linked Voice Biometric Enrollment Using Privacy-Preserving Feature Vectors and Centroid Averaging
-**Publication Date:** February 28, 2026
-**Prior Art Effective Date:** February 28, 2026
-**Status:** Public Disclosure (Defensive Publication)
-**Category:** Biometric Authentication / Voice Processing / Decentralized Identity / Privacy
-**Author:** Ramprasad Anandam Gaddam
-**Related:** PAD-014 (Vouch Sonic), PAD-025 (Edge-First Content Provenance), PAD-001 (Cryptographic Agent Identity)
+**Identifier:** PAD-026  
+**Title:** Method for Decentralized Identity-Linked Voice Biometric Enrollment Using Privacy-Preserving Feature Vectors and Centroid Averaging  
+**Publication Date:** February 28, 2026  
+**Prior Art Effective Date:** February 28, 2026  
+**Status:** Public Disclosure (Defensive Publication)  
+**Category:** Biometric Authentication / Voice Processing / Decentralized Identity / Privacy  
+**Author:** Ramprasad Anandam Gaddam  
+**Related:** PAD-014 (Vouch Sonic), PAD-025 (Edge-First Content Provenance), PAD-001 (Cryptographic Agent Identity)  
 
 ---
 
