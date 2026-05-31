@@ -2,14 +2,14 @@
 
 ## W3C Community Group Report
 
-**Community Group Report, 25 May 2026**
+**Community Group Report, 31 May 2026**
 
-**Specification revision:** v1.6.1
+**Specification revision:** v1.6.2
 
 ---
 
 **This version:**
-https://vouch-protocol.com/specs/CG-REPORT/2026-05-25/
+https://vouch-protocol.com/specs/CG-REPORT/2026-05-31/
 
 **Latest published version:**
 https://vouch-protocol.com/specs/CG-REPORT/
@@ -18,7 +18,7 @@ https://vouch-protocol.com/specs/CG-REPORT/
 Ramprasad Gaddam (Vouch Protocol), ram@vouch-protocol.com
 
 **Authors:**
-Ramprasad Gaddam (Vouch Protocol)
+Ramprasad Gaddam (Vouch Protocol), Manu Sporny (Digital Bazaar)
 
 **Co-sponsor:**
 Manu Sporny (Digital Bazaar), msporny@digitalbazaar.com
@@ -35,11 +35,11 @@ Apache License 2.0
 
 ## About the Editor
 
-Ramprasad Anandam Gaddam is Director of AI and Machine Learning Engineering with extensive experience designing and operating AI systems at scale within highly regulated industries. Ramprasad's professional focus has centered on the intersection of autonomous AI systems and the regulatory, liability, and accountability frameworks that govern healthcare, and other safety-critical sectors. This perspective, that of a practitioner who must answer regulators, auditors, and patients/customers when an AI system acts, has shaped the design priorities of this specification.
+Ramprasad Anandam Gaddam is Director of AI and Machine Learning Engineering at Optum, UnitedHealth Group with extensive experience in designing and operating AI systems at scale within highly regulated industries. Ramprasad's professional focus has centered on the intersection of autonomous AI systems and the regulatory, liability, and accountability frameworks that govern banking, healthcare, and other safety-critical sectors. This perspective, that of a practitioner who must answer regulators, auditors, and patients/customers when an AI system acts, has shaped the design priorities of this specification.
 
 Ramprasad's interest in agent identity standards stems from a concrete operational problem: as autonomous AI agents are deployed to make real-world decisions on behalf of organizations and individuals, existing authentication frameworks (API keys, OAuth bearer tokens, session cookies) do not provide the cryptographic chain-of-custody, intent attestation, or behavioral attestation that regulated environments require. Vouch Protocol began as an attempt to fill this gap using primitives that are already familiar to the W3C community: Decentralized Identifiers, Verifiable Credentials, and Data Integrity proofs.
 
-Ramprasad has 20 years of experience in Healthcare & Manufacturing industries, with over 16 years in healthcare. He is a Master Inventor with 20 patents filed in Blockchain, Cybersecurity, Artificial Intelligence, Healthcare processes & Information Technology. He has 60 defensive disclosures with Vouch Protocol to encourage open adoption. He is a member of other standard boards like The Linux Foundation, Coalition for Content Provenance & Authenticity (C2PA), Content Authenticity Initiative (CAI), Decentralized Identity Foundation (DIF) and IEEE. He is currently employed with Optum, UnitedHealth Group and heads Responsible AI Acceleration Service for Optum Health. He was inducted into UHG Inventor Hall of Fame twice, is a member of Patent Review Boards, Optum National Council & AI Sub-council. He is winner of Optum Technology Make IT Happen award twice; it is an annual recognition award from Optum Technology that honors team members who help move tech forward by advancing tech pillars.
+Ramprasad has 20 years of experience in Healthcare & Manufacturing industries, with over 16 years in healthcare. He is a Master Inventor with 20 patents filed in Blockchain, Cybersecurity, Artificial Intelligence, Healthcare processes & Information Technology. He has 60 defensive disclosures with Vouch Protocol to encourage open adoption. He is a member of other standard boards like The Linux Foundation, Coalition for Content Provenance & Authenticity (C2PA), Content Authenticity Initiative (CAI), Decentralized Identity Foundation (DIF) and IEEE. He is currently employed with Optum, UnitedHealth Group and heads Responsible AI Acceleration Service for Optum Health. He was inducted into UHG Inventor Hall of Fame twice, is a member of Patent Review Boards, Optum National Council & AI Sub-council. He is also UHG AI Review Board member. He is winner of Optum Technology Make IT Happen award twice; it is an annual recognition award from Optum Technology that honors team members who help move tech forward by advancing tech pillars.
 
 ---
 

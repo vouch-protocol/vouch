@@ -54,7 +54,7 @@ On top of these primitives, Vouch contributes:
 
 **For organizations in regulated sectors with autonomous-agent deployments.** Read the Report and the regulatory mapping table above. If agent state verifiability is a problem your organization recognizes, indicate that on the public-credentials@w3.org list or in this work item's GitHub Issue thread. Such an indication carries no commercial commitment; it is a community signal that helps the CCG calibrate incubation priority.
 
-**For W3C Credentials Community Group members.** Review, comment, and engage on the public-credentials list and at the CCG's regular calls. Asia-Pacific-friendly call times are welcome.
+**For W3C Credentials Community Group members.** Review, comment, and engage on the public-credentials list and at the CCG's regular calls.
 
 **For contributors to adjacent agent identity specifications.** Vouch Protocol is designed to compose with identity and authorization specifications rather than replace them. Cross-pollination on the State Verifiability layer (the runtime trust and behavioral attestation surface that sits beneath identity and authorization) is welcomed; the editor will coordinate review threads with any related work item the CCG flags during incubation.
 
