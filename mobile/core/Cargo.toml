@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Ramprasad Anandam Gaddam"]
 description = "Vouch Sonic Engine - Real-time audio watermark detection for mobile"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/vouch-protocol/vouch"
 
 [lib]
@@ -28,6 +28,7 @@ rubato = "0.15"
 # Cryptography
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 sha2 = "0.10"
+bs58 = "0.5"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
