@@ -34,9 +34,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use parking_lot::RwLock;
-use rustfft::{num_complex::Complex, FftPlanner};
-use sha2::{Digest, Sha256};
 use thiserror::Error;
+use vouch_sonic_dsp as dsp;
 
 // =============================================================================
 // UniFFI Scaffolding
@@ -47,9 +46,6 @@ uniffi::include_scaffolding!("vouch_sonic_core");
 // =============================================================================
 // Constants
 // =============================================================================
-
-/// Vouch Sonic watermark magic bytes (for mock detection)
-const WATERMARK_MAGIC: [u8; 4] = [0x56, 0x53, 0x4E, 0x43]; // "VSNC"
 
 /// Minimum audio samples required for detection
 const MIN_SAMPLES: usize = 1024;
@@ -65,9 +61,6 @@ const DEFAULT_THRESHOLD: f32 = 0.5;
 
 /// Default spreading factor
 const DEFAULT_SPREADING_FACTOR: u32 = 100;
-
-/// Mock DID for testing
-const MOCK_SIGNER_DID: &str = "did:key:z6MkhaXgBZDvotDkL5257faEnNg2dFg857faEnNg";
 
 // =============================================================================
 // Errors
@@ -160,11 +153,6 @@ impl SonicConfig {
         }
         Ok(())
     }
-
-    /// Calculate samples per frame
-    fn samples_per_frame(&self) -> usize {
-        (self.sample_rate * self.frame_size_ms / 1000) as usize
-    }
 }
 
 // =============================================================================
@@ -211,22 +199,22 @@ impl WatermarkResult {
         }
     }
 
-    /// Create a detected result with mock data (for FFI testing)
-    fn mock_detected(confidence: f32) -> Self {
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .ok();
-
+    /// Map a `vouch-sonic-dsp` detection result into the FFI `WatermarkResult`.
+    ///
+    /// The v3 codec recovers a compact watermark **ID** (and its `payload_hash`
+    /// = SHA-256 of that ID), which is the server lookup key. The signer DID,
+    /// signing timestamp, and covenant are resolved server-side from that hash,
+    /// so they remain `None` here.
+    fn from_dsp(d: dsp::DetectResult) -> Self {
         Self {
-            detected: true,
-            confidence,
-            signer_did: Some(MOCK_SIGNER_DID.into()),
-            timestamp,
-            payload_hash: Some("a1b2c3d4e5f67890".into()),
-            covenant_json: Some(r#"{"ai_training":false,"voice_cloning":false}"#.into()),
-            audio_quality: 0.95,
-            detection_method: "mock".into(),
+            detected: d.detected,
+            confidence: d.confidence,
+            signer_did: None,
+            timestamp: None,
+            payload_hash: d.payload_hash,
+            covenant_json: None,
+            audio_quality: d.audio_quality,
+            detection_method: d.detection_method,
         }
     }
 }
@@ -269,249 +257,19 @@ pub trait WatermarkCallback: Send + Sync {
 }
 
 // =============================================================================
-// DSP Engine (Core Processing)
+// Detection helper
 // =============================================================================
 
-/// Digital Signal Processing engine for watermark detection
-struct DspEngine {
-    config: SonicConfig,
-    fft_planner: FftPlanner<f32>,
-    pn_sequence: Vec<f32>,
-    frame_buffer: Vec<f32>,
-}
-
-impl DspEngine {
-    fn new(config: &SonicConfig) -> Self {
-        // Generate pseudo-random noise sequence for correlation
-        let pn_sequence = Self::generate_pn_sequence(config.spreading_factor as usize);
-        
-        Self {
-            config: config.clone(),
-            fft_planner: FftPlanner::new(),
-            pn_sequence,
-            frame_buffer: Vec::with_capacity(config.samples_per_frame()),
-        }
+/// Convert float samples (mono, -1.0..1.0) to 16-bit LE PCM bytes — the input
+/// format the shared `vouch-sonic-dsp` codec expects.
+fn samples_to_pcm_le16(samples: &[f32]) -> Vec<u8> {
+    let mut pcm = Vec::with_capacity(samples.len() * 2);
+    for &s in samples {
+        let clamped = s.max(-1.0).min(1.0);
+        let i16_val = (clamped * 32767.0) as i16;
+        pcm.extend_from_slice(&i16_val.to_le_bytes());
     }
-
-    /// Generate pseudo-random noise sequence (deterministic from seed)
-    fn generate_pn_sequence(length: usize) -> Vec<f32> {
-        use rand::{Rng, SeedableRng};
-        let mut rng = rand::rngs::StdRng::seed_from_u64(0xC0DE_C0DE_u64); // Fixed seed (was invalid hex 0xVOUCH5ON1C)
-        
-        (0..length)
-            .map(|_| if rng.gen::<bool>() { 1.0 } else { -1.0 })
-            .collect()
-    }
-
-    /// Compute FFT of audio samples
-    fn compute_fft(&mut self, samples: &[f32]) -> Vec<Complex<f32>> {
-        let len = samples.len().next_power_of_two();
-        let fft = self.fft_planner.plan_fft_forward(len);
-        
-        let mut buffer: Vec<Complex<f32>> = samples
-            .iter()
-            .map(|&s| Complex::new(s, 0.0))
-            .collect();
-        
-        // Pad to power of 2
-        buffer.resize(len, Complex::new(0.0, 0.0));
-        
-        fft.process(&mut buffer);
-        buffer
-    }
-
-    /// Estimate audio quality based on spectral analysis
-    fn estimate_quality(&mut self, samples: &[f32]) -> f32 {
-        if samples.len() < 256 {
-            return 0.5;
-        }
-        
-        // Simple quality estimation based on high-frequency content
-        let spectrum = self.compute_fft(samples);
-        let len = spectrum.len();
-        
-        // Ratio of energy in upper half vs lower half
-        let low_energy: f32 = spectrum[..len / 4]
-            .iter()
-            .map(|c| c.norm_sqr())
-            .sum();
-        let high_energy: f32 = spectrum[len / 4..len / 2]
-            .iter()
-            .map(|c| c.norm_sqr())
-            .sum();
-        
-        // Good quality audio has balanced spectrum
-        let ratio = high_energy / (low_energy + 1e-10);
-        (ratio.min(1.0) * 0.5 + 0.5).min(1.0)
-    }
-
-    /// Detect spread spectrum watermark using correlation
-    fn detect_spread_spectrum(&mut self, samples: &[f32]) -> (bool, f32) {
-        if samples.len() < self.pn_sequence.len() {
-            return (false, 0.0);
-        }
-        
-        // Cross-correlation with PN sequence
-        let mut max_correlation: f32 = 0.0;
-        let step = self.pn_sequence.len();
-        
-        for start in (0..samples.len() - step).step_by(step / 2) {
-            let chunk = &samples[start..start + step.min(samples.len() - start)];
-            
-            let correlation: f32 = chunk
-                .iter()
-                .zip(self.pn_sequence.iter())
-                .map(|(a, b)| a * b)
-                .sum::<f32>()
-                .abs() / step as f32;
-            
-            max_correlation = max_correlation.max(correlation);
-        }
-        
-        // Normalize to 0-1 range
-        let confidence = (max_correlation * 10.0).min(1.0);
-        let detected = confidence > self.config.detection_threshold;
-        
-        (detected, confidence)
-    }
-
-    /// Detect chirp synchronization markers
-    fn detect_chirp_sync(&mut self, samples: &[f32]) -> bool {
-        if !self.config.enable_chirp_sync || samples.len() < 512 {
-            return false;
-        }
-        
-        // Simple chirp detection via instantaneous frequency analysis
-        let spectrum = self.compute_fft(&samples[..512.min(samples.len())]);
-        
-        // Look for characteristic chirp pattern (rising frequency)
-        let mut prev_peak_bin = 0;
-        let mut rising_count = 0;
-        
-        for chunk_start in (0..spectrum.len() / 2).step_by(16) {
-            let chunk = &spectrum[chunk_start..chunk_start + 16.min(spectrum.len() / 2 - chunk_start)];
-            
-            let peak_bin = chunk
-                .iter()
-                .enumerate()
-                .max_by(|(_, a), (_, b)| a.norm_sqr().partial_cmp(&b.norm_sqr()).unwrap())
-                .map(|(i, _)| i + chunk_start)
-                .unwrap_or(0);
-            
-            if peak_bin > prev_peak_bin {
-                rising_count += 1;
-            }
-            prev_peak_bin = peak_bin;
-        }
-        
-        // Need consistent rising pattern for chirp
-        rising_count > 3
-    }
-
-    /// Process audio samples and detect watermark
-    fn process(&mut self, samples: &[f32]) -> WatermarkResult {
-        if samples.len() < MIN_SAMPLES {
-            return WatermarkResult::not_detected();
-        }
-        
-        // Estimate audio quality
-        let quality = self.estimate_quality(samples);
-        
-        // Try spread spectrum detection
-        let (ss_detected, ss_confidence) = self.detect_spread_spectrum(samples);
-        
-        // Try chirp sync detection
-        let chirp_detected = self.detect_chirp_sync(samples);
-        
-        // Combine detection results
-        let detected = ss_detected || chirp_detected;
-        let confidence = if chirp_detected {
-            ss_confidence.max(0.7)  // Chirp detection boosts confidence
-        } else {
-            ss_confidence
-        };
-        
-        if detected && confidence > self.config.detection_threshold {
-            // For now, return mock data when detected
-            // Real implementation would extract payload from watermark
-            let mut result = WatermarkResult::mock_detected(confidence);
-            result.audio_quality = quality;
-            result.detection_method = if chirp_detected {
-                "chirp_sync".into()
-            } else {
-                "spread_spectrum".into()
-            };
-            result
-        } else {
-            WatermarkResult {
-                detected: false,
-                confidence,
-                audio_quality: quality,
-                detection_method: "spread_spectrum".into(),
-                ..Default::default()
-            }
-        }
-    }
-}
-
-// =============================================================================
-// Mock Detector (for FFI testing)
-// =============================================================================
-
-/// Mock detector that looks for specific patterns in audio
-struct MockDetector;
-
-impl MockDetector {
-    /// Detect mock watermark by looking for magic bytes in PCM data
-    fn detect_in_bytes(data: &[u8]) -> WatermarkResult {
-        // Look for magic bytes
-        if data.len() >= 4 {
-            for i in 0..data.len() - 4 {
-                if data[i..i + 4] == WATERMARK_MAGIC {
-                    return WatermarkResult::mock_detected(0.99);
-                }
-            }
-        }
-        
-        // Also detect based on high-frequency energy pattern
-        // (simulates finding spread spectrum watermark)
-        if data.len() >= 1024 {
-            let high_byte_count = data[512..].iter().filter(|&&b| b > 200).count();
-            let ratio = high_byte_count as f32 / (data.len() - 512) as f32;
-            
-            if ratio > 0.1 {
-                return WatermarkResult::mock_detected(ratio.min(0.95));
-            }
-        }
-        
-        WatermarkResult::not_detected()
-    }
-
-    /// Detect in float samples by analyzing energy pattern
-    fn detect_in_samples(samples: &[f32]) -> WatermarkResult {
-        if samples.len() < MIN_SAMPLES {
-            return WatermarkResult::not_detected();
-        }
-        
-        // Look for characteristic high-frequency pattern
-        let mut high_energy = 0.0f32;
-        let mut total_energy = 0.0f32;
-        
-        for window in samples.windows(2) {
-            let diff = (window[1] - window[0]).abs();
-            high_energy += diff * diff;
-            total_energy += window[0] * window[0];
-        }
-        
-        let ratio = high_energy / (total_energy + 1e-10);
-        
-        // High ratio indicates high-frequency watermark
-        if ratio > 0.3 {
-            WatermarkResult::mock_detected((ratio * 2.0).min(0.95))
-        } else {
-            WatermarkResult::not_detected()
-        }
-    }
+    pcm
 }
 
 // =============================================================================
@@ -523,7 +281,6 @@ pub struct SonicListener {
     config: RwLock<SonicConfig>,
     state: RwLock<ListenerState>,
     is_running: AtomicBool,
-    dsp_engine: RwLock<DspEngine>,
     callback: RwLock<Option<Arc<dyn WatermarkCallback>>>,
 }
 
@@ -531,14 +288,11 @@ impl SonicListener {
     /// Create a new SonicListener with the given configuration
     pub fn new(config: SonicConfig) -> Result<Self, SonicError> {
         config.validate()?;
-        
-        let dsp_engine = DspEngine::new(&config);
-        
+
         Ok(Self {
             config: RwLock::new(config),
             state: RwLock::new(ListenerState::Idle),
             is_running: AtomicBool::new(false),
-            dsp_engine: RwLock::new(dsp_engine),
             callback: RwLock::new(None),
         })
     }
@@ -589,7 +343,10 @@ impl SonicListener {
         Ok(())
     }
 
-    /// Process PCM audio buffer (16-bit signed, little-endian)
+    /// Process PCM audio buffer (16-bit signed, little-endian).
+    ///
+    /// Runs the real shared `vouch-sonic-dsp` v3 detector (chirp matched-filter
+    /// sync + multi-layer FSK + CRC-validated soft decode) over the buffer.
     pub fn process_buffer(&self, pcm_data: &[u8]) -> Result<WatermarkResult, SonicError> {
         if pcm_data.len() < MIN_SAMPLES * 2 {
             return Err(SonicError::BufferTooShort(MIN_SAMPLES * 2));
@@ -597,26 +354,41 @@ impl SonicListener {
 
         *self.state.write() = ListenerState::Processing;
 
-        // Also run mock detector for magic byte detection
-        let mock_result = MockDetector::detect_in_bytes(pcm_data);
-        if mock_result.detected {
-            self.emit_detection(&mock_result);
-            return Ok(mock_result);
+        // Emit audio level for UI (RMS over the decoded samples).
+        let level_db = {
+            let mut sumsq = 0.0f64;
+            let mut count = 0usize;
+            for chunk in pcm_data.chunks_exact(2) {
+                let s = i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0;
+                sumsq += (s * s) as f64;
+                count += 1;
+            }
+            let rms = if count > 0 { (sumsq / count as f64).sqrt() as f32 } else { 0.0 };
+            20.0 * rms.max(1e-10).log10()
+        };
+        if let Some(callback) = self.callback.read().as_ref() {
+            callback.on_audio_level_changed(level_db);
         }
 
-        // Convert PCM bytes to float samples
-        let samples: Vec<f32> = pcm_data
-            .chunks_exact(2)
-            .map(|chunk| {
-                let sample = i16::from_le_bytes([chunk[0], chunk[1]]);
-                sample as f32 / 32768.0
-            })
-            .collect();
+        let sample_rate = self.config.read().sample_rate;
+        let result = self.detect_pcm(pcm_data, sample_rate);
 
-        self.process_samples(&samples)
+        if result.detected {
+            self.emit_detection(&result);
+        }
+
+        *self.state.write() = if self.is_running.load(Ordering::SeqCst) {
+            ListenerState::Listening
+        } else {
+            ListenerState::Idle
+        };
+
+        Ok(result)
     }
 
-    /// Process float samples directly
+    /// Process float samples directly.
+    ///
+    /// Converts to 16-bit LE PCM and runs the real shared v3 detector.
     pub fn process_samples(&self, samples: &[f32]) -> Result<WatermarkResult, SonicError> {
         if samples.len() < MIN_SAMPLES {
             return Err(SonicError::BufferTooShort(MIN_SAMPLES));
@@ -627,22 +399,16 @@ impl SonicListener {
         // Calculate audio level for UI
         let rms: f32 = (samples.iter().map(|s| s * s).sum::<f32>() / samples.len() as f32).sqrt();
         let level_db = 20.0 * rms.max(1e-10).log10();
-        
+
         // Emit audio level
         if let Some(callback) = self.callback.read().as_ref() {
             callback.on_audio_level_changed(level_db);
         }
 
-        // Run mock detector first (for testing)
-        let mock_result = MockDetector::detect_in_samples(samples);
-        if mock_result.detected {
-            self.emit_detection(&mock_result);
-            return Ok(mock_result);
-        }
+        let sample_rate = self.config.read().sample_rate;
+        let pcm = samples_to_pcm_le16(samples);
+        let result = self.detect_pcm(&pcm, sample_rate);
 
-        // Run DSP engine
-        let result = self.dsp_engine.write().process(samples);
-        
         // Emit detection if found
         if result.detected {
             self.emit_detection(&result);
@@ -655,6 +421,17 @@ impl SonicListener {
         };
 
         Ok(result)
+    }
+
+    /// Run the shared DSP v3 detector over 16-bit LE PCM and map to the FFI
+    /// `WatermarkResult`. A clip shorter than the DSP minimum (or any DSP-level
+    /// error) maps to a clean "not detected" result rather than an FFI error,
+    /// since real-time callers feed short rolling buffers.
+    fn detect_pcm(&self, pcm_data: &[u8], sample_rate: u32) -> WatermarkResult {
+        match dsp::detect(pcm_data, sample_rate) {
+            Ok(d) => WatermarkResult::from_dsp(d),
+            Err(_) => WatermarkResult::not_detected(),
+        }
     }
 
     /// Emit watermark detected event to callback
@@ -683,7 +460,6 @@ impl SonicListener {
     pub fn set_detection_threshold(&self, threshold: f32) {
         if threshold >= 0.0 && threshold <= 1.0 {
             self.config.write().detection_threshold = threshold;
-            self.dsp_engine.write().config.detection_threshold = threshold;
         }
     }
 }
@@ -844,18 +620,10 @@ mod tests {
     use super::*;
     use std::sync::atomic::AtomicU32;
 
+    #[derive(Default)]
     struct TestCallback {
         detections: AtomicU32,
         levels: AtomicU32,
-    }
-
-    impl TestCallback {
-        fn new() -> Arc<Self> {
-            Arc::new(Self {
-                detections: AtomicU32::new(0),
-                levels: AtomicU32::new(0),
-            })
-        }
     }
 
     impl WatermarkCallback for TestCallback {
@@ -898,12 +666,13 @@ mod tests {
     #[test]
     fn test_listener_start_stop() {
         let config = SonicConfig::default();
-        let listener = SonicListener::new(config).unwrap();
-        let callback = TestCallback::new();
-        
-        assert!(listener.start_listening(callback.clone()).is_ok());
+        // `start_listening` takes `self: &Arc<Self>` (uniffi callback interface),
+        // so the listener must be held in an Arc; the callback is passed boxed.
+        let listener = Arc::new(SonicListener::new(config).unwrap());
+
+        assert!(listener.start_listening(Box::new(TestCallback::default())).is_ok());
         assert!(listener.is_listening());
-        
+
         assert!(listener.stop_listening().is_ok());
         assert!(!listener.is_listening());
     }
@@ -921,15 +690,72 @@ mod tests {
         assert!(!result.unwrap().detected);
     }
 
+    // Deterministic broadband host so the v3 masking model has cover energy in
+    // every embedding band (silence gives the watermark nothing to hide under).
+    fn gen_broadband(n: usize, sample_rate: f32, seed: u64) -> Vec<f32> {
+        let mut state = seed ^ 0x9E37_79B9_7F4A_7C15;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        let mut unit = || (next() >> 40) as f32 / (1u64 << 24) as f32;
+        let parts: Vec<(f32, f32)> = (0..64)
+            .map(|_| {
+                let f = 150.0 + unit() * (20_000.0 - 150.0);
+                let p = unit() * std::f32::consts::TAU;
+                (f, p)
+            })
+            .collect();
+        (0..n)
+            .map(|i| {
+                let t = i as f32 / sample_rate;
+                let mut s = 0.0_f32;
+                for (f, p) in &parts {
+                    s += (std::f32::consts::TAU * f * t + p).sin();
+                }
+                (s / parts.len() as f32 * 0.6).clamp(-1.0, 1.0)
+            })
+            .collect()
+    }
+
+    // ACCEPTANCE: the FFI `detect_watermark` on a real v3-embedded clip must
+    // report detected=true with a payload_hash (no longer a mock). The clip is
+    // produced by the shared `dsp::embed` — i.e. the same bytes a browser embed
+    // would emit — and the recovered payload_hash must equal the embed's.
     #[test]
-    fn test_mock_detection_magic_bytes() {
-        // Create audio with magic bytes
-        let mut data: Vec<u8> = vec![0u8; 2048];
-        data[100..104].copy_from_slice(&WATERMARK_MAGIC);
-        
-        let result = MockDetector::detect_in_bytes(&data);
-        assert!(result.detected);
-        assert!(result.confidence > 0.9);
+    fn test_detect_watermark_real_embedded_clip() {
+        let sr = 44_100u32;
+        let n = (sr as f32 * 13.0) as usize;
+        let pcm = samples_to_pcm_le16(&gen_broadband(n, sr as f32, 7));
+
+        let emb = dsp::embed(&pcm, sr, "did:key:z6MkMobileDetect", 1_700_000_000_000)
+            .expect("embed should succeed on a valid broadband clip");
+
+        let result = detect_watermark(&emb.watermarked_audio, sr);
+        assert!(result.detected, "real v3 detect must find the embedded watermark");
+        assert_eq!(
+            result.payload_hash.as_deref(),
+            Some(emb.payload_hash.as_str()),
+            "recovered payload_hash must equal the embed payload_hash"
+        );
+        assert_eq!(result.detection_method, "chirp_v3");
+        // The mock path is gone: signer_did / timestamp / covenant resolve
+        // server-side from payload_hash, so they are absent here.
+        assert!(result.signer_did.is_none());
+        assert!(result.covenant_json.is_none());
+    }
+
+    // A non-watermarked clip must NOT be detected (negative / false-positive
+    // guard, now that detection is real and CRC-gated).
+    #[test]
+    fn test_detect_watermark_clean_clip_negative() {
+        let sr = 44_100u32;
+        let n = (sr as f32 * 13.0) as usize;
+        let pcm = samples_to_pcm_le16(&gen_broadband(n, sr as f32, 99));
+        let result = detect_watermark(&pcm, sr);
+        assert!(!result.detected, "un-watermarked audio must not be detected");
     }
 
     #[test]
