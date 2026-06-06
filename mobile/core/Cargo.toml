@@ -16,6 +16,11 @@ name = "uniffi-bindgen"
 path = "uniffi-bindgen.rs"
 
 [dependencies]
+# Shared pure-Rust DSP core (single source of truth for the v3 codec).
+# Backs real watermark detection (chirp sync + multi-layer FSK + CRC), shared
+# byte-for-byte with the browser `vouch-sonic-wasm` build.
+vouch-sonic-dsp = { path = "../sonic-dsp" }
+
 # UniFFI for cross-language bindings
 uniffi = { version = "0.28", features = ["cli"] }
 

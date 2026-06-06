@@ -41,4 +41,13 @@ cp "$CORE/uniffi-bindgen.rs" "$HERE/rust/uniffi-bindgen.rs"
 cp "$CORE/src/lib.rs" "$HERE/rust/src/lib.rs"
 cp "$CORE/src/vouch_sonic_core.udl" "$HERE/rust/src/vouch_sonic_core.udl"
 
+echo "==> vendoring shared vouch-sonic-dsp crate (the UniFFI core depends on it)"
+DSP="$(cd "$CORE/../sonic-dsp" && pwd)"
+rm -rf "$HERE/rust/sonic-dsp"
+mkdir -p "$HERE/rust/sonic-dsp/src"
+cp "$DSP/Cargo.toml" "$HERE/rust/sonic-dsp/Cargo.toml"
+cp "$DSP/src/lib.rs" "$HERE/rust/sonic-dsp/src/lib.rs"
+# Re-point the path dependency from ../sonic-dsp (monorepo) to the vendored copy.
+sed -i 's#path = "\.\./sonic-dsp"#path = "sonic-dsp"#' "$HERE/rust/Cargo.toml"
+
 echo "==> done"
