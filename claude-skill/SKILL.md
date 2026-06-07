@@ -1,6 +1,6 @@
 ---
 name: vouch-protocol
-description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, or Go code. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol/core`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions.
+description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, Go, and more, all over one shared Rust core. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol-official/core-wasm`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions.
 ---
 
 # Vouch Protocol
@@ -10,7 +10,7 @@ cryptographic identity, intent attestation, and continuous trust
 verification. It's the "SSL certificate for AI agents."
 
 This skill helps developers integrate Vouch into their codebase across
-three languages (Python, TypeScript, Go) and explain protocol behaviour
+many languages over one shared Rust core (Python, TypeScript, Go, Swift, JVM, .NET, C, and WebAssembly) and explain protocol behaviour
 without forcing the user to read the full specification.
 
 ## When to use this skill
@@ -18,7 +18,7 @@ without forcing the user to read the full specification.
 Invoke when the user:
 
 - Asks how to sign or verify agent actions cryptographically
-- Mentions Vouch by name or package (`vouch-protocol`, `@vouch-protocol/core`, `vouch-sidecar`)
+- Mentions Vouch by name or package (`vouch-protocol`, `@vouch-protocol-official/core-wasm`, `vouch-sidecar`)
 - Wants to add agent identity to their LangChain / CrewAI / MCP / AutoGen / Vertex AI flow
 - Asks about Verifiable Credentials, Data Integrity proofs, or DIDs in the context of AI agents
 - Needs post-quantum signatures for regulated deployments (`hybrid-eddsa-mldsa44-jcs-2026`)
@@ -52,9 +52,10 @@ A credential signed in Python verifies in TypeScript or Go and vice versa.
 Three-line Python:
 
 ```python
-from vouch import Signer, build_vouch_credential
+from vouch import generate_identity, Signer, build_vouch_credential
 
-signer = Signer.from_did("did:web:agent.example.com")
+keys = generate_identity("agent.example.com")  # returns a KeyPair
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 credential = build_vouch_credential(
     issuer_did="did:web:agent.example.com",
     intent={
@@ -77,14 +78,13 @@ TypeScript and Go equivalents in `reference/typescript-sdk.md` and
 
 ```python
 from vouch import Verifier
-import asyncio
 
-verifier = Verifier()
-result = asyncio.run(verifier.verify_credential(signed))
-if result.valid:
-    print(f"Verified: {result.passport.subject_did} did {result.passport.intent}")
+# verify_credential returns a (is_valid, passport) tuple
+is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
+if is_valid:
+    print(f"Verified: {passport.subject_did} did {passport.intent}")
 else:
-    print(f"Rejected: {result.reasons}")
+    print("Rejected")
 ```
 
 Verification checks: schema, signature math, validity window, nonce
@@ -102,8 +102,12 @@ pip install 'vouch-protocol[pq]'
 Then:
 
 ```python
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(credential)
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+signed = signer.sign_credential_hybrid(intent={
+    "action": "submit_claim",
+    "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+})
 ```
 
 The proof becomes a single multibase blob concatenating an Ed25519
@@ -140,7 +144,7 @@ See `reference/delegation.md` for the construction and verification flow.
 
 ### "How do I revoke a specific credential?"
 
-W3C BitstringStatusList: flip the bit at the credential's index, re-sign
+BitstringStatusList: flip the bit at the credential's index, re-sign
 the BitstringStatusListCredential, and republish. Verifiers fetch the
 list and check the bit.
 
@@ -220,7 +224,7 @@ When you see these in a user's code, mention the issue:
 
 ## Style for responses
 
-- Show code, not just descriptions. Vouch has three SDKs and developers
+- Show code, not just descriptions. Vouch has SDKs on every major platform and developers
   copy-paste.
 - Prefer the **Python SDK** for first examples (most complete); follow
   with TS and Go only if the user explicitly asks.

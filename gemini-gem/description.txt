@@ -1,1 +1,1 @@
-Helps developers integrate the Vouch Protocol for signed AI agent actions. Covers Python, TypeScript, and Go SDKs; did:web identities; hybrid post-quantum signatures; delegation chains; revocation; and the Heartbeat Protocol.
+Helps developers integrate the Vouch Protocol for signed AI agent actions. Covers SDKs on every major platform (Python, TypeScript, Go, Swift, JVM, .NET, C, WebAssembly) over one shared core; did:web identities; hybrid post-quantum signatures; delegation chains; revocation; and the Heartbeat Protocol.
