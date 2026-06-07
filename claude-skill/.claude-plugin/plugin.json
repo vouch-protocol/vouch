@@ -1,11 +1,24 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "vouch-protocol",
-  "description": "Integrate the Vouch Protocol: cryptographic identity and accountability for autonomous AI agents. Signing and verifying agent actions, did:web and did:key, Data Integrity proofs, hybrid post-quantum, delegation chains, and revocation, across SDKs on every major platform.",
+  "displayName": "Vouch Protocol",
   "version": "0.1.0",
+  "description": "Integrate the Vouch Protocol: cryptographic identity and accountability for autonomous AI agents. Signing and verifying agent actions, did:web and did:key, Data Integrity proofs, hybrid post-quantum, delegation chains, and revocation, across SDKs on every major platform.",
   "author": {
-    "name": "Ramprasad Anandam Gaddam"
+    "name": "Ramprasad Anandam Gaddam",
+    "url": "https://vouch-protocol.com"
   },
   "homepage": "https://vouch-protocol.com",
   "repository": "https://github.com/vouch-protocol/vouch",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "keywords": [
+    "vouch",
+    "verifiable-credentials",
+    "ai-agents",
+    "agent-identity",
+    "did",
+    "post-quantum",
+    "delegation",
+    "cryptography"
+  ]
 }
