@@ -159,7 +159,7 @@ Next: try [signing with the hybrid post-quantum profile](#hybrid-pq) or [adding 
 ## Install
 
 \`\`\`bash
-npm install @vouch-protocol/core
+npm install @vouch-protocol-official/sdk
 \`\`\`
 
 ## Step 1 - Sign and verify locally
@@ -172,7 +172,7 @@ import {
   Verifier,
   generateIdentity,
   buildVouchCredential,
-} from '@vouch-protocol/core';
+} from '@vouch-protocol-official/sdk';
 
 async function main() {
   // Generate an in-memory identity. The "domain" string is just a label
@@ -392,7 +392,7 @@ signed = signer.sign_credential_hybrid(credential)
 TypeScript:
 
 \`\`\`ts
-import { Signer } from '@vouch-protocol/core';
+import { Signer } from '@vouch-protocol-official/sdk';
 
 const signer = await Signer.fromDidWithHybrid('did:web:agent.example.com');
 const signed = await signer.signCredentialHybrid(credential);
@@ -741,7 +741,7 @@ BitstringStatusList (\`vc-bitstring-status-list\`) lets an issuer revoke or susp
 Vouch ships a cross-language reference implementation:
 
 - Python: \`vouch.status_list\` and \`vouch.status_list_fetcher\`
-- TypeScript: \`@vouch-protocol/core\` exports \`StatusList\`, \`buildStatusListCredential\`, \`buildStatusListEntry\`, \`verifyStatus\`
+- TypeScript: \`@vouch-protocol-official/sdk\` exports \`StatusList\`, \`buildStatusListCredential\`, \`buildStatusListEntry\`, \`verifyStatus\`
 - Go: \`go-sidecar/signer\` exports \`StatusList\`, \`BuildStatusListCredential\`, \`BuildStatusListEntry\`, \`VerifyStatus\`
 
 All three share a single canonical encoding (gzip + base64url multibase, 131,072-bit minimum bitstring) and a cross-language test vector at \`test-vectors/bitstring-status-list/\`.
@@ -841,7 +841,7 @@ The TypeScript and Go APIs mirror Python. Examples:
 import {
   StatusList, buildStatusListCredential, buildStatusListEntry,
   verifyStatus, buildVouchCredential,
-} from '@vouch-protocol/core';
+} from '@vouch-protocol-official/sdk';
 
 const statusList = new StatusList({ statusListId: 'https://issuer.example/status/1' });
 const index = statusList.allocateIndex();

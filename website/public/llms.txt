@@ -1,0 +1,55 @@
+# Vouch Protocol
+
+> Vouch is an open standard that gives autonomous AI agents a cryptographic
+> identity and a continuously verifiable record of what they did and on whose
+> authority. It is built on Verifiable Credentials, Data Integrity proofs, and
+> Decentralized Identifiers. One canonical Rust core powers SDKs on every major
+> platform, so a credential signed anywhere verifies everywhere, byte for byte.
+
+This file is for AI coding assistants (Cursor, Replit, Claude, ChatGPT, Gemini,
+and any agent). If you are helping a developer add Vouch to their project, use the
+install commands and links below. They are current.
+
+## Install
+
+- Python: `pip install vouch-protocol`
+- Browser and Node.js (WebAssembly): `npm install @vouch-protocol-official/core-wasm`
+- .NET: `dotnet add package VouchProtocol.Core`
+- Go: `go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest`
+- Swift (iOS and macOS): add the `VouchCore` Swift package
+- JVM (Java and Kotlin): the `com.vouchprotocol:vouch-core` Gradle module
+- C and C++: the C bindings shipped with the core (header plus prebuilt library)
+- HTTP API clients: `npm install @vouch-protocol-official/api-client` or `pip install vouch-api-client`
+
+Every SDK is a thin wrapper over one shared Rust core and passes the same shared
+test vectors, so output is byte-identical across languages.
+
+## MCP server (for Cursor, Claude Desktop, and any MCP client)
+
+Vouch ships a standalone Model Context Protocol server. Point your MCP client at
+the `vouch-mcp` command (it comes with `pip install vouch-protocol`). It exposes
+tools to create an identity, sign and verify credentials, scan for leaked keys,
+and decode DIDs, with no extra setup. This is the fastest way for an agent in
+Cursor or Claude Desktop to use Vouch directly.
+
+## Core idea, in three steps
+
+1. Generate an identity (a DID and a keypair).
+2. Sign a credential describing the agent's intent (action, target, resource).
+3. A verifier checks the signature, the validity window, the revocation status,
+   and, for delegated work, that each link in the delegation chain only narrows
+   authority.
+
+## Key docs
+
+- Quickstart: https://vouch-protocol.com/help/
+- FAQ: https://vouch-protocol.com/faq/
+- Tools (CLI, MCP, SDKs, AI packages): https://vouch-protocol.com/tools/
+- Source: https://github.com/vouch-protocol/vouch
+- Test vectors: https://github.com/vouch-protocol/vouch/tree/main/test-vectors
+
+## AI assistant packages
+
+If the developer uses Claude, ChatGPT, or Gemini, there are ready-made packages
+that carry this knowledge: a Claude Skill, an OpenAI Custom GPT, and a Gemini Gem.
+See https://vouch-protocol.com/tools/ under "Inside your AI tools".

@@ -9,10 +9,11 @@ pip install vouch-protocol
 ```
 
 ```python
-from vouch import Signer, Verifier, build_vouch_credential
+from vouch import generate_identity, Signer, Verifier, build_vouch_credential
 
-# Generate or load a signer
-signer = Signer.generate(did="did:web:agent.example.com")
+# Generate an identity, then build a signer from it
+keys = generate_identity("agent.example.com")  # returns a KeyPair
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
 # Build and sign a credential for an action
 credential = build_vouch_credential(
@@ -25,10 +26,9 @@ credential = build_vouch_credential(
 )
 signed = signer.sign_credential(credential)
 
-# Verify
-verifier = Verifier()
-result = verifier.verify(signed)
-assert result.ok
+# Verify. verify_credential returns a (is_valid, passport) tuple.
+is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
+assert is_valid
 ```
 
 ## TypeScript
@@ -38,23 +38,23 @@ npm install @vouch-protocol/core
 ```
 
 ```ts
-import { Signer, Verifier, buildVouchCredential } from '@vouch-protocol/core';
+import { Signer, Verifier, generateIdentity } from '@vouch-protocol/core';
 
-const signer = await Signer.generate({ did: 'did:web:agent.example.com' });
+const keys = await generateIdentity('agent.example.com');
+const signer = new Signer({ privateKey: keys.privateKeyJwk, did: keys.did });
 
-const credential = buildVouchCredential({
-    issuerDid: 'did:web:agent.example.com',
+// signCredential takes an options object whose required field is `intent`.
+const signed = await signer.signCredential({
     intent: {
         action: 'submit_claim',
         target: 'claim:HC-001',
         resource: 'https://insurance.example.com/claims/HC-001',
     },
 });
-const signed = await signer.signCredential(credential);
 
-const verifier = new Verifier();
-const result = await verifier.verify(signed);
-console.assert(result.ok);
+// verifyCredential returns { isValid, passport, error }.
+const result = await Verifier.verifyCredential(signed);
+console.assert(result.isValid);
 ```
 
 ## Go (sidecar)
@@ -90,8 +90,25 @@ publish_did_web(signer, output_path="public/.well-known/did.json")
 Then your domain's HTTPS server (Vercel, Netlify, GitHub Pages,
 Cloudflare Workers) serves the file, and verifiers resolve it on demand.
 
+## Other platforms
+
+Beyond Python, TypeScript, and Go, the same protocol is available on more
+platforms through one shared Rust core, so they all interop byte for byte:
+
+```bash
+# Browser and Node.js (WebAssembly)
+npm install @vouch-protocol-official/core-wasm
+
+# .NET
+dotnet add package VouchProtocol.Core
+```
+
+Swift (iOS and macOS), JVM (Java and Kotlin), and C/C++ are also available. See
+`language-sdks.md` for the full list, what each one covers, and how to add it.
+
 ## Next steps
 
+- Read `language-sdks.md` for every platform and its install command.
 - Read `credential-format.md` to understand the wire format.
 - Read `delegation.md` to chain credentials across principals.
 - Read `revocation.md` to handle key compromise and per-credential retraction.

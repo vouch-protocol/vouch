@@ -23,7 +23,7 @@ present in the registry of trusted principals and not revoked."
 
 ## Layers
 
-1. **Credential layer**: W3C VC 2.0 credentials with Vouch-specific
+1. **Credential layer**: Verifiable Credentials 2.0 with Vouch-specific
    intent fields. Signed with Ed25519 by default; hybrid post-quantum
    profile available for forward-looking deployments.
 2. **State Verifiability layer**: SessionVoucher credentials that
@@ -46,11 +46,21 @@ present in the registry of trusted principals and not revoked."
 
 ## SDKs
 
-- Python: `pip install vouch-protocol`
-- TypeScript: `npm install @vouch-protocol/core`
-- Go: `go get github.com/vouch-protocol/vouch/go-sidecar/...`
+One canonical Rust core (`vouch-core`) does the cryptography once, and every
+platform is a thin wrapper over it, so a credential signed anywhere verifies
+everywhere, byte for byte.
 
-All three implementations are spec-aligned and interop on the wire.
+- Python: `pip install vouch-protocol`
+- TypeScript and Go: the existing reference SDKs
+- Browser and Node.js (WebAssembly): `npm install @vouch-protocol-official/core-wasm`
+- Swift (iOS and macOS): the `VouchCore` Swift package, over the core via UniFFI
+- JVM (Java and Kotlin): the `com.vouchprotocol:vouch-core` Gradle module
+- .NET: `VouchProtocol.Core` on NuGet, over the C ABI
+- C and C++: the C bindings shipped with the core (header plus prebuilt library)
+
+Every implementation produces and verifies identical bytes and passes the same
+shared test vectors. See language-sdks.md for what each one covers and how to
+install it.
 
 ## Identity Sidecar
 
