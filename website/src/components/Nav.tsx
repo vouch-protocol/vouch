@@ -6,6 +6,7 @@ import { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
 
 const LINKS = [
+    { href: '/tools/', label: 'Tools' },
     { href: '/onboard/', label: 'Onboard' },
     { href: '/blog/', label: 'Blog' },
     { href: '/help/', label: 'Guides' },
@@ -39,6 +40,14 @@ export default function Nav() {
                             </Link>
                         );
                     })}
+                    <a
+                        href="https://index.vouch-protocol.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b border-transparent pb-0.5 text-ink-soft hover:text-burgundy hover:border-burgundy transition-colors"
+                    >
+                        Index
+                    </a>
                     <ThemeToggle />
                     <a
                         href="https://github.com/vouch-protocol/vouch"
@@ -78,6 +87,14 @@ export default function Nav() {
                                 {link.label}
                             </Link>
                         ))}
+                        <a
+                            href="https://index.vouch-protocol.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy no-underline py-1"
+                        >
+                            Index
+                        </a>
                         <a
                             href="https://github.com/vouch-protocol/vouch"
                             target="_blank"

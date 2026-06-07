@@ -48,16 +48,55 @@ const LANGUAGE_TILES = [
     note: 'Reference SDK. Signer, verifier, async verifier, KMS, reputation, revocation, cache, rate-limit, metrics, CLI.',
   },
   {
-    name: 'TypeScript',
-    install: 'npm install @vouch-protocol/core',
-    repoPath: 'packages/sdk-ts/',
-    note: 'Browser and Node. Signer, verifier, JCS, hybrid PQ, vouch-client for sidecar RPC.',
+    name: 'TypeScript / Browser',
+    install: 'npm install @vouch-protocol-official/core-wasm',
+    repoPath: 'core/wasm/',
+    note: 'The Rust core compiled to WebAssembly. Runs in browsers and Node.js. The reference TypeScript SDK also ships for Node.',
   },
   {
     name: 'Go',
     install: 'go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar',
     repoPath: 'go-sidecar/',
     note: 'Long-running daemon for the Identity Sidecar pattern. HTTP /sign endpoint, ed25519 and hybrid signing.',
+  },
+  {
+    name: 'Swift (iOS / macOS)',
+    install: 'add VouchCore via Swift Package Manager',
+    repoPath: 'sdks/swift/',
+    note: 'Over the core via UniFFI, packaged as an XCFramework.',
+  },
+  {
+    name: 'JVM (Java / Kotlin)',
+    install: 'com.vouchprotocol:vouch-core',
+    repoPath: 'sdks/jvm/',
+    note: 'Gradle module. A plain Java class, plus the generated Kotlin binding.',
+  },
+  {
+    name: '.NET',
+    install: 'dotnet add package VouchProtocol.Core',
+    repoPath: 'sdks/dotnet/',
+    note: 'Over the C ABI via P/Invoke. NuGet package.',
+  },
+  {
+    name: 'C / C++',
+    install: 'header + prebuilt library',
+    repoPath: 'sdks/cpp/',
+    note: 'The C bindings shipped with the core, with a Makefile and CMake example.',
+  },
+];
+
+const AI_ASSISTANTS = [
+  {
+    name: 'Claude Skill',
+    note: 'A retrieval-grounded assistant that knows the specification, the SDKs, the conformance levels, and the compliance mappings. Runs on your own Claude subscription.',
+  },
+  {
+    name: 'OpenAI Custom GPT',
+    note: 'The same knowledge as a Custom GPT, for ChatGPT users.',
+  },
+  {
+    name: 'Gemini Gem',
+    note: 'The same knowledge as a Gemini Gem.',
   },
 ];
 
@@ -78,7 +117,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="border-b border-rule">
         <div className="container-wide py-20 md:py-28">
-          <div className="eyebrow mb-6">v1.6.0 shipped &middot; standards-aligned</div>
+          <div className="eyebrow mb-6">SDKs on every platform &middot; standards-aligned</div>
           <h1 className="font-serif font-semibold text-ink leading-[1.05] tracking-tight mb-6 max-w-[920px] text-[clamp(2.5rem,5.2vw,4rem)]">
             Cryptographic identity &amp; accountability for autonomous AI agents.
           </h1>
@@ -86,8 +125,8 @@ export default function HomePage() {
             The Vouch Protocol is an open standard specification for establishing continuous state
             verifiability of autonomous AI agents, a layer that sits beneath, and complements, agent
             identity and delegation specifications. Built on Verifiable Credentials, Data Integrity
-            proofs, and Decentralized Identifiers, with reference implementations in Python, TypeScript,
-            and Go.
+            proofs, and Decentralized Identifiers, with one byte-exact core and SDKs for every major
+            platform: web, mobile, JVM, .NET, and native, plus the Python, TypeScript, and Go references.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/faq/" className="btn-primary">Read the FAQ</Link>
@@ -128,16 +167,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Three language SDKs */}
+      {/* One core, every platform */}
       <section className="border-b border-rule">
         <div className="container-wide py-20">
           <div className="section-heading">
             <span className="num">§ II</span>
-            <h2>Three language SDKs, one wire format</h2>
+            <h2>One core, every platform</h2>
           </div>
           <p className="text-ink-soft max-w-prose mb-12 leading-relaxed">
-            Every credential signed by any implementation is byte-identical (RFC 8785 JCS canonicalization)
-            and cross-verifiable. Test vectors published at <code>test-vectors/hybrid-eddsa-mldsa44/</code>.
+            One canonical Rust core does the cryptography once. Every SDK is a thin wrapper over it, so a
+            credential signed on any platform verifies on every other, byte for byte (RFC 8785 JCS
+            canonicalization). They all pass the same shared test vectors at <code>test-vectors/</code>.
           </p>
           <div className="grid md:grid-cols-3 gap-6">
             {LANGUAGE_TILES.map((lang) => (
@@ -146,6 +186,23 @@ export default function HomePage() {
                 <CodeBlock code={lang.install} className="!p-3 text-[0.75rem] mb-3" />
                 <p className="text-ink-soft text-[0.9rem] leading-relaxed mb-3">{lang.note}</p>
                 <code className="font-mono text-burgundy text-[0.75rem] !bg-transparent !border-0 !p-0">{lang.repoPath}</code>
+              </div>
+            ))}
+          </div>
+
+          <div className="section-heading mt-20">
+            <span className="num">§ II.b</span>
+            <h2>An assistant that knows the protocol</h2>
+          </div>
+          <p className="text-ink-soft max-w-prose mb-12 leading-relaxed">
+            The same specification, SDKs, and compliance mappings, packaged as a retrieval-grounded
+            assistant for the tool you already use. It answers from the actual docs, not a guess.
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {AI_ASSISTANTS.map((a) => (
+              <div key={a.name} className="border border-rule p-6">
+                <h3 className="font-serif font-semibold text-[1.2rem] mb-3">{a.name}</h3>
+                <p className="text-ink-soft text-[0.9rem] leading-relaxed">{a.note}</p>
               </div>
             ))}
           </div>

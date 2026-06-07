@@ -5,8 +5,10 @@ const FOOTER_GROUPS = [
   {
     title: 'Product',
     links: [
+      { label: 'Tools', href: '/tools/' },
       { label: 'FAQ', href: '/faq/' },
       { label: 'Help & Guides', href: '/help/' },
+      { label: 'Agent Trust Index', href: 'https://index.vouch-protocol.com', external: true },
       { label: 'Support', href: '/support/' },
     ],
   },
@@ -25,8 +27,10 @@ const FOOTER_GROUPS = [
     title: 'SDKs',
     links: [
       { label: 'Python (PyPI)', href: 'https://pypi.org/project/vouch-protocol/', external: true },
-      { label: 'TypeScript (npm)', href: 'https://www.npmjs.com/package/@vouch-protocol/core', external: true },
+      { label: 'WASM core (npm)', href: 'https://www.npmjs.com/package/@vouch-protocol-official/core-wasm', external: true },
+      { label: 'API client (PyPI)', href: 'https://pypi.org/project/vouch-api-client/', external: true },
       { label: 'Go sidecar', href: 'https://github.com/vouch-protocol/vouch/tree/main/go-sidecar', external: true },
+      { label: 'Swift, JVM, .NET, C', href: 'https://github.com/vouch-protocol/vouch/tree/main/sdks', external: true },
       { label: 'Browser extension', href: 'https://github.com/vouch-protocol/vouch/tree/main/browser-extension', external: true },
     ],
   },

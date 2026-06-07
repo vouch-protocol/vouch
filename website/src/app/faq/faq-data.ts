@@ -168,13 +168,16 @@ A Vouch delegation chain captures all three steps cryptographically. Each step n
     items: [
       {
         q: 'Which languages have Vouch SDKs?',
-        a: `Three reference SDKs that produce byte-identical credentials thanks to JCS canonicalization:
+        a: `One canonical Rust core does the cryptography once, and every language is a thin wrapper over it, so a credential signed on any platform verifies on every other, byte for byte (JCS canonicalization):
 
-- **Python**: \`pip install vouch-protocol\` (most complete: signer, verifier, async verifier, KMS, reputation, revocation, cache, rate-limit, metrics, CLI)
-- **TypeScript**: \`npm install @vouch-protocol/core\` (browser and Node: signer, verifier, JCS, hybrid PQ, vouch-client for sidecar RPC)
-- **Go**: \`go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar\` (long-running daemon for the Identity Sidecar pattern)
+- **Python**: \`pip install vouch-protocol\` (the most complete: signer, verifier, async verifier, KMS, reputation, revocation, cache, rate-limit, metrics, CLI)
+- **TypeScript and Go**: the reference SDKs for Node and for the Identity Sidecar
+- **Browser and Node.js (WebAssembly)**: \`npm install @vouch-protocol-official/core-wasm\`
+- **.NET**: \`dotnet add package VouchProtocol.Core\`
+- **Swift (iOS and macOS)**, **JVM (Java and Kotlin)**, and **C/C++**: native wrappers over the same core
+- **HTTP API clients** for the Bridge service: \`npm install @vouch-protocol-official/api-client\` or \`pip install vouch-api-client\`
 
-Cross-language test vectors are published at [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors).`,
+Every implementation passes the same cross-language test vectors at [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors).`,
         helpLinks: [
           { label: 'Python quickstart', href: '/help/#quickstart-python' },
           { label: 'TypeScript quickstart', href: '/help/#quickstart-typescript' },
