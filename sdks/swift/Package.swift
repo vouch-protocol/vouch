@@ -19,11 +19,13 @@ let package = Package(
     ],
     targets: [
         // The compiled Rust core + the C FFI module header, built locally by
-        // build-xcframework.sh (run on macOS or CI). For distribution, replace
-        // `path:` with `url:`/`checksum:` to host a binary release.
+        // build-xcframework.sh (run on macOS or CI). The hosted release below is
+        // produced by .github/workflows/swift-xcframework.yml, so consumers need
+        // no local Mac. To rebuild locally, swap back to a `path:` binaryTarget.
         .binaryTarget(
             name: "vouch_coreFFI",
-            path: "Frameworks/vouch_coreFFI.xcframework"
+            url: "https://github.com/vouch-protocol/vouch/releases/download/swift-v0.1.0/vouch_coreFFI.xcframework.zip",
+            checksum: "307ecf0f5ba2e31b3d04cc2db23d9b4858fffb4161fed04b0c4ef127279e83dc"
         ),
         .target(
             name: "VouchCore",
