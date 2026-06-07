@@ -101,9 +101,25 @@ const GROUPS: Group[] = [
         title: 'Add Vouch from where you already work',
         intro: 'Packages that teach your AI assistant how to wire Vouch into your code, running on your own subscription.',
         tools: [
-            { name: 'Claude Skill', blurb: 'Ask Claude to add Vouch to your repo and it knows how.' },
-            { name: 'OpenAI Custom GPT', blurb: 'The same help inside ChatGPT.' },
-            { name: 'Gemini Gem', blurb: 'The same help inside Gemini.' },
+            {
+                name: 'Claude Skill',
+                blurb: 'Install it as a Claude Code plugin from the Vouch marketplace, then Claude knows how to add Vouch to your repo. It loads automatically when you mention Vouch.',
+                start: '/plugin marketplace add vouch-protocol/vouch\n/plugin install vouch-protocol@vouch',
+                href: '/help/#claude-skill-install',
+                hrefLabel: 'Install guide →',
+            },
+            {
+                name: 'OpenAI Custom GPT',
+                blurb: 'The same knowledge inside ChatGPT. Open the shared GPT and ask it to wire Vouch into your code.',
+                href: '/help/#openai-gpt-build',
+                hrefLabel: 'How to use →',
+            },
+            {
+                name: 'Gemini Gem',
+                blurb: 'The same knowledge inside Gemini. Open the shared Gem and ask it to wire Vouch into your code.',
+                href: '/help/#gemini-gem-create',
+                hrefLabel: 'How to use →',
+            },
         ],
     },
     {
@@ -137,7 +153,7 @@ const GROUPS: Group[] = [
             {
                 name: 'Agent Trust Index',
                 blurb: 'Scans agents in the wild and measures how many can actually prove who they are. Today, fewer than one percent can.',
-                href: 'https://index.vouch-protocol.com',
+                href: '/agent-trust-index/',
                 hrefLabel: 'View the Index →',
             },
         ],

@@ -19,23 +19,25 @@ import { Signer, generateIdentity } from '@vouch-protocol/core';
 // Generate
 const keys = await generateIdentity('agent.example.com');
 
-// Sign-ready
+// Sign-ready (constructor takes the private key JWK and the DID)
 const signer = new Signer({
     privateKey: keys.privateKeyJwk,
     did: keys.did,
 });
 
-// Or load by DID (browser falls back to IndexedDB; Node uses platform key store)
-const signer = await Signer.fromDid('did:web:agent.example.com');
+// To reload an existing identity, read its stored privateKeyJwk and did
+// and construct a Signer the same way:
+const reloaded = new Signer({
+    privateKey: storedPrivateKeyJwk,
+    did: 'did:web:agent.example.com',
+});
 ```
 
 ## Credential issuance
 
 ```ts
-import { buildVouchCredential } from '@vouch-protocol/core';
-
-const credential = buildVouchCredential({
-    issuerDid: 'did:web:agent.example.com',
+// signCredential takes an options object whose required field is `intent`.
+const signed = await signer.signCredential({
     intent: {
         action: 'submit_claim',
         target: 'claim:HC-001',
@@ -43,38 +45,23 @@ const credential = buildVouchCredential({
     },
     validSeconds: 300,
     reputationScore: 85,
-    credentialStatus: {  // optional BitstringStatusList entry
-        id: '...#42',
-        type: 'BitstringStatusListEntry',
-        statusPurpose: 'revocation',
-        statusListIndex: '42',
-        statusListCredential: 'https://issuer.example/status/1',
-    },
 });
-
-const signed = await signer.signCredential(credential);
+// `signed` is a full Verifiable Credential dict with a Data Integrity proof.
 ```
 
 ## Hybrid post-quantum
 
 ```ts
-import {
-    buildHybridProof,
-    generateMLDSA44KeyPair,
-    HYBRID_CRYPTOSUITE_ID,
-} from '@vouch-protocol/core';
-
-// Caller manages MLDSA keys for now; see data-integrity-hybrid.ts
-const mldsa = await generateMLDSA44KeyPair();
-
-const proof = await buildHybridProof({
-    credential,
-    ed25519PrivateKey: signer.privateKey,
-    mldsa44PrivateKey: mldsa.secretKey,
-    verificationMethod: signer.verificationMethodId,
+// The Signer manages its own ML-DSA-44 keypair. Call signCredentialHybrid
+// with the same options shape as signCredential.
+const signedHybrid = await signer.signCredentialHybrid({
+    intent: {
+        action: 'submit_claim',
+        target: 'claim:HC-001',
+        resource: 'https://insurance.example.com/claims/HC-001',
+    },
 });
-
-credential.proof = proof;
+// signedHybrid.proof.cryptosuite === 'hybrid-eddsa-mldsa44-jcs-2026'
 ```
 
 ## Verification
@@ -82,13 +69,13 @@ credential.proof = proof;
 ```ts
 import { Verifier } from '@vouch-protocol/core';
 
-const verifier = new Verifier();
-const result = await verifier.verifyCredential(signed);
+// verifyCredential returns { isValid, passport, error }
+const result = await Verifier.verifyCredential(signed);
 
-if (result.valid) {
+if (result.isValid) {
     console.log('OK', result.passport);
 } else {
-    console.log('Rejected', result.reasons);
+    console.log('Rejected', result.error);
 }
 ```
 
@@ -150,9 +137,9 @@ This keeps signing keys out of the TS / Node process entirely.
 
 ## Browser specifics
 
-In the browser, `Signer.fromDid` falls back to IndexedDB for key storage,
-with optional WebAuthn-gated unlock. For server-side key custody, pass a
-KMS provider or use the daemon client.
+In the browser, construct the `Signer` from a private key JWK you load out
+of IndexedDB (optionally WebAuthn-gated). For server-side key custody, keep
+the key in a sidecar and use the daemon client below.
 
 ## Modules quick-map
 

@@ -23,16 +23,12 @@ keys = generate_identity("agent.example.com")  # returns KeyPair
 # keys.private_key_jwk    = JWK JSON string (store securely)
 # keys.public_key_jwk     = JWK JSON string (publish in DID Doc)
 
-# Create a signer
+# Create a signer (constructor takes the private key JWK and the DID)
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
-# Or load by DID from your platform key store
-signer = Signer.from_did("did:web:agent.example.com")
-
-# Or use a KMS provider
-from vouch.kms import AWSKMSProvider
-kms = AWSKMSProvider(region="us-east-1", key_id="alias/vouch-agent")
-signer = Signer(kms=kms, did="did:web:agent.example.com")
+# Reload an existing identity from your own key store the same way:
+# read the stored private_key_jwk and did, then construct a Signer.
+signer = Signer(private_key=stored_private_key_jwk, did="did:web:agent.example.com")
 ```
 
 ## Credential issuance
@@ -67,36 +63,39 @@ signed = signer.sign_credential(credential)
 ## Hybrid post-quantum issuance
 
 ```python
-signer_pq = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed_pq = signer_pq.sign_credential_hybrid(credential)
-# signed_pq.proof.cryptosuite == "hybrid-eddsa-mldsa44-jcs-2026"
+signer_pq = Signer(private_key=keys.private_key_jwk, did=keys.did)
+signed_pq = signer_pq.sign_credential_hybrid(intent={
+    "action": "submit_claim",
+    "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+})
+# signed_pq["proof"]["cryptosuite"] == "hybrid-eddsa-mldsa44-jcs-2026"
 ```
 
 ## Verification
 
 ```python
 from vouch import Verifier
-import asyncio
 
-verifier = Verifier()
-result = asyncio.run(verifier.verify_credential(signed))
+# verify_credential returns a (is_valid, passport) tuple
+is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
 
-if result.valid:
-    p = result.passport
+if is_valid:
+    p = passport
     print(f"Agent {p.subject_did} did {p.intent['action']} on {p.intent['resource']}")
 else:
-    for r in result.reasons:
-        print(f"Rejected: {r}")
+    print("Rejected")
 ```
 
-Async verifier with concurrent DID resolution and caching:
+Async verifier with concurrent DID resolution and caching. It returns the
+same `(is_valid, passport)` tuple:
 
 ```python
 from vouch import AsyncVerifier
 
 async def main():
     verifier = AsyncVerifier()
-    result = await verifier.verify_credential(signed)
+    is_valid, passport = await verifier.verify_credential(signed)
 ```
 
 ## Session Vouchers (Heartbeat Protocol)

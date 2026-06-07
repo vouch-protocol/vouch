@@ -23,47 +23,41 @@ wrong cryptosuite ids, no made-up SDK methods.
 
 ## Install
 
-The skill lives in this folder:
+This folder is a Claude Code plugin, published through the Vouch marketplace:
 
 ```
 claude-skill/
-├── SKILL.md
-├── README.md           (this file)
-└── reference/
-    ├── credential-format.md
-    ├── delegation.md
-    ├── go-sidecar.md
-    ├── integrations.md
-    ├── post-quantum.md
-    ├── python-sdk.md
-    ├── revocation.md
-    ├── sidecar.md
-    ├── state-verifiability.md
-    ├── troubleshooting.md
-    └── typescript-sdk.md
+├── .claude-plugin/
+│   └── plugin.json
+├── README.md                  (this file)
+└── skills/
+    └── vouch-protocol/
+        ├── SKILL.md
+        └── reference/         (the SDKs, delegation, post-quantum, revocation, ...)
 ```
 
-### For Claude Code (CLI)
+### For Claude Code (recommended): the marketplace
 
-Copy the folder into your Claude Code skills directory:
+```
+/plugin marketplace add vouch-protocol/vouch
+/plugin install vouch-protocol@vouch
+```
+
+Run `/plugin` to confirm it is enabled. The skill loads automatically when you mention Vouch topics.
+
+### For Claude Code: manual
+
+Copy just the skill folder into your skills directory:
 
 ```bash
 # Linux / macOS / WSL
-mkdir -p ~/.claude/skills
-cp -r claude-skill ~/.claude/skills/vouch-protocol
+cp -r claude-skill/skills/vouch-protocol ~/.claude/skills/vouch-protocol
 
 # Windows (PowerShell)
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills"
-Copy-Item -Recurse claude-skill "$env:USERPROFILE\.claude\skills\vouch-protocol"
+Copy-Item -Recurse claude-skill\skills\vouch-protocol "$env:USERPROFILE\.claude\skills\vouch-protocol"
 ```
 
-Restart Claude Code. The skill registers automatically; check with:
-
-```bash
-/skills
-```
-
-You should see `vouch-protocol` in the list.
+Restart Claude Code and run `/skills`; you should see `vouch-protocol` in the list.
 
 ### For Claude Desktop / web app
 

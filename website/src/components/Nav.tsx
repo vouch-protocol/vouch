@@ -40,14 +40,14 @@ export default function Nav() {
                             </Link>
                         );
                     })}
-                    <a
-                        href="https://index.vouch-protocol.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b border-transparent pb-0.5 text-ink-soft hover:text-burgundy hover:border-burgundy transition-colors"
+                    <Link
+                        href="/agent-trust-index/"
+                        className={`font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b pb-0.5 transition-colors ${
+                            pathname?.startsWith('/agent-trust-index') ? 'text-burgundy border-burgundy' : 'border-transparent text-ink-soft hover:text-burgundy hover:border-burgundy'
+                        }`}
                     >
                         Index
-                    </a>
+                    </Link>
                     <ThemeToggle />
                     <a
                         href="https://github.com/vouch-protocol/vouch"
@@ -87,14 +87,13 @@ export default function Nav() {
                                 {link.label}
                             </Link>
                         ))}
-                        <a
-                            href="https://index.vouch-protocol.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <Link
+                            href="/agent-trust-index/"
+                            onClick={() => setOpen(false)}
                             className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy no-underline py-1"
                         >
                             Index
-                        </a>
+                        </Link>
                         <a
                             href="https://github.com/vouch-protocol/vouch"
                             target="_blank"
