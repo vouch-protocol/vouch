@@ -42,7 +42,7 @@ Maintain a single `StatusList` per status purpose (revocation, or optionally sus
 
 ```python
 from vouch import (
-    Signer, StatusList, FilesystemStatusListStore,
+    generate_identity, Signer, StatusList, FilesystemStatusListStore,
     build_status_list_credential, build_status_list_entry,
     build_vouch_credential,
 )
@@ -54,7 +54,8 @@ try:
 except FileNotFoundError:
     status_list = StatusList(status_list_id="https://issuer.example/status/1")
 
-signer = Signer.from_did("did:web:issuer.example")
+issuer_keys = generate_identity("issuer.example")
+signer = Signer(private_key=issuer_keys.private_key_jwk, did=issuer_keys.did)
 ```
 
 #### Issue a credential with a status entry
@@ -146,7 +147,7 @@ or S3 (with ETag-based optimistic concurrency).
 
 ## Sizing
 
-W3C BitstringStatusList §4.2 minimum bitstring length: 131,072 bits
+BitstringStatusList §4.2 minimum bitstring length: 131,072 bits
 (16 KiB uncompressed; ~50 bytes compressed when empty). That holds
 131,072 credentials per status list.
 

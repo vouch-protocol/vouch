@@ -8,7 +8,7 @@ const FOOTER_GROUPS = [
       { label: 'Tools', href: '/tools/' },
       { label: 'FAQ', href: '/faq/' },
       { label: 'Help & Guides', href: '/help/' },
-      { label: 'Agent Trust Index', href: 'https://index.vouch-protocol.com', external: true },
+      { label: 'Agent Trust Index', href: '/agent-trust-index/' },
       { label: 'Support', href: '/support/' },
     ],
   },

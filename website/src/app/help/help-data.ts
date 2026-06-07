@@ -1344,20 +1344,33 @@ See [PAD-016](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures
         title: 'Installing the Claude Skill',
         summary: 'Drop-in skill that teaches Claude Code the Vouch SDK shapes, DID conventions, and integration patterns.',
         body: `
-## Install
+## Install (recommended): the marketplace
+
+Add the Vouch marketplace once, then install the plugin:
+
+\`\`\`
+/plugin marketplace add vouch-protocol/vouch
+/plugin install vouch-protocol@vouch
+\`\`\`
+
+Run \`/plugin\` to confirm it is enabled. The skill loads automatically when you mention Vouch topics, so there is nothing else to do.
+
+## Install (manual)
+
+Prefer to drop it in by hand? Copy the skill folder into your skills directory.
 
 Linux / macOS / WSL:
 
 \`\`\`bash
 git clone https://github.com/vouch-protocol/vouch
-cp -r vouch/claude-skill ~/.claude/skills/vouch-protocol
+cp -r vouch/claude-skill/skills/vouch-protocol ~/.claude/skills/vouch-protocol
 \`\`\`
 
 Windows PowerShell:
 
 \`\`\`powershell
 git clone https://github.com/vouch-protocol/vouch
-Copy-Item -Recurse vouch\\claude-skill "$env:USERPROFILE\\.claude\\skills\\vouch-protocol"
+Copy-Item -Recurse vouch\\claude-skill\\skills\\vouch-protocol "$env:USERPROFILE\\.claude\\skills\\vouch-protocol"
 \`\`\`
 
 Restart Claude Code and run \`/skills\`. You should see \`vouch-protocol\` listed.
@@ -1368,16 +1381,17 @@ The skill loads when your prompt mentions \`vouch-protocol\`, \`did:web\`, \`edd
 
 ## What's inside
 
-Eleven reference files: \`python-sdk.md\`, \`typescript-sdk.md\`, \`go-sidecar.md\`, \`credential-format.md\`, \`delegation.md\`, \`post-quantum.md\`, \`revocation.md\`, \`state-verifiability.md\`, \`integrations.md\`, \`sidecar.md\`, \`troubleshooting.md\`. Plus \`SKILL.md\` (the manifest) and \`README.md\`.
+The plugin lives at \`claude-skill/\`: \`SKILL.md\` (the skill) under \`skills/vouch-protocol/\`, a \`.claude-plugin/plugin.json\` manifest, and a \`reference/\` folder covering the language SDKs, the credential format, delegation, post-quantum, revocation, state verifiability, integrations, and troubleshooting.
 
 ## Updating
 
-\`\`\`bash
-cd ~/.claude/skills/vouch-protocol
-git pull
+If you installed from the marketplace:
+
+\`\`\`
+/plugin marketplace update vouch
 \`\`\`
 
-The skill versions with the protocol. Pull whenever Vouch ships a new cryptosuite or SDK shape.
+If you installed manually, pull the repo and re-copy the folder. The skill versions with the protocol, so update whenever Vouch ships a new cryptosuite or SDK shape.
 
 ## Customising for your team
 
