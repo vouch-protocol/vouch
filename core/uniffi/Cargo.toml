@@ -1,0 +1,32 @@
+[package]
+name = "vouch-core-uniffi"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ramprasad Anandam Gaddam"]
+description = "Vouch Protocol core: UniFFI bindings (Swift, Kotlin) and C-FFI over the canonical vouch-core crate. One byte-exact implementation for native and mobile SDKs."
+license = "Apache-2.0"
+repository = "https://github.com/vouch-protocol/vouch"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "lib"]
+name = "vouch_core_uniffi"
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+
+[dependencies]
+vouch-core = { path = "../vouch-core" }
+uniffi = { version = "0.28", features = ["cli"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+base64 = "0.22"
+thiserror = "1"
+
+[build-dependencies]
+uniffi = { version = "0.28", features = ["build"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "z"
+strip = true

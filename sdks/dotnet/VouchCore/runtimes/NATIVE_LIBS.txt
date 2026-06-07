@@ -1,0 +1,2 @@
+Native libraries for other RIDs are placed here by build-native.sh on each OS:
+osx-arm64 (macOS arm64, libvouch_core_uniffi.dylib), win-x64 (Windows, vouch_core_uniffi.dll), linux-x64 (already bundled).

@@ -1,0 +1,96 @@
+// Vouch Protocol core, UniFFI interface.
+//
+// Defines the API exposed to Swift (iOS), Kotlin/Java (Android/JVM), and, via
+// the generated C header, to .NET and C/C++. Binary values cross as
+// sequence<u8> (bytes); credentials and proofs cross as JSON strings. Every
+// function delegates to the canonical vouch-core crate.
+
+namespace vouch_core {
+    string version();
+
+    // JCS canonicalization (RFC 8785).
+    [Throws=CoreError]
+    string canonicalize(string json);
+
+    // Ed25519.
+    [Throws=CoreError]
+    Ed25519KeyPair generate_ed25519();
+    [Throws=CoreError]
+    bytes ed25519_sign(bytes seed, bytes message);
+    [Throws=CoreError]
+    boolean ed25519_verify(bytes public_key, bytes message, bytes signature);
+
+    // Multikey and did:key.
+    [Throws=CoreError]
+    string encode_ed25519_multikey(bytes public_key);
+    [Throws=CoreError]
+    DecodedKey decode_multikey(string multikey);
+    [Throws=CoreError]
+    string did_key_from_ed25519(bytes public_key);
+    [Throws=CoreError]
+    bytes ed25519_from_did_key(string did);
+
+    // Data Integrity (eddsa-jcs-2022).
+    [Throws=CoreError]
+    string build_proof(string credential_json, bytes seed, string verification_method, string created);
+    [Throws=CoreError]
+    string sign_credential(string credential_json, bytes seed, string verification_method, string created);
+    [Throws=CoreError]
+    boolean verify_proof(string credential_json, bytes public_key);
+
+    // Credential verification with validity window.
+    [Throws=CoreError]
+    VerifyResult verify_credential(string credential_json, bytes public_key, string now_iso, i64 clock_skew_seconds);
+
+    // Delegation: build a link and validate a chain's time-bound rule.
+    [Throws=CoreError]
+    string build_delegation_link(string issuer, string subject, string intent_json, string? valid_from, string? valid_until, string? parent_proof_value);
+    [Throws=CoreError]
+    boolean verify_chain_time_bound(string chain_json, string now_iso, i64 clock_skew_seconds);
+
+    // Post-quantum ML-DSA-44 and dual proofs.
+    [Throws=CoreError]
+    MlDsaKeyPair generate_mldsa44();
+    [Throws=CoreError]
+    bytes mldsa44_sign(bytes secret, bytes public_key, bytes message);
+    [Throws=CoreError]
+    boolean mldsa44_verify(bytes public_key, bytes message, bytes signature);
+    [Throws=CoreError]
+    string sign_dual(string credential_json, bytes ed25519_seed, bytes mldsa_secret, bytes mldsa_public, string ed25519_vm, string mldsa_vm, string created);
+    [Throws=CoreError]
+    boolean verify_dual(string credential_json, bytes ed25519_public, bytes mldsa_public);
+    [Throws=CoreError]
+    boolean verify_composite(string credential_json, bytes ed25519_public, bytes mldsa_public);
+
+    // Revocation (BitstringStatusList).
+    [Throws=CoreError]
+    boolean verify_status(string credential_status_json, string status_list_credential_json);
+};
+
+dictionary Ed25519KeyPair {
+    bytes seed;
+    bytes public_key;
+    string multikey;
+    string did_key;
+};
+
+dictionary MlDsaKeyPair {
+    bytes secret_key;
+    bytes public_key;
+};
+
+dictionary DecodedKey {
+    string algorithm;
+    bytes raw_key;
+};
+
+dictionary VerifyResult {
+    boolean proof_valid;
+    boolean time_valid;
+    boolean valid;
+};
+
+[Error]
+enum CoreError {
+    "Core",
+};
