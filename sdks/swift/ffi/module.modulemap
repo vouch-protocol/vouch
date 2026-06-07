@@ -1,0 +1,4 @@
+module vouch_coreFFI {
+    header "vouch_coreFFI.h"
+    export *
+}

@@ -1,0 +1,3 @@
+Native libraries for other platforms are placed here by build-native.sh
+(run on each OS): darwin-aarch64 (macOS arm64), win32-x86-64 (Windows x64),
+linux-x86-64 (already bundled). JNA loads the right one for the host.

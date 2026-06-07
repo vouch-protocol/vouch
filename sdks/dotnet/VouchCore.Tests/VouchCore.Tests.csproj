@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageReference Include="xunit" Version="2.8.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../VouchCore/VouchCore.csproj" />
+  </ItemGroup>
+
+  <!-- Copy the shared interop vector and the native lib next to the test output. -->
+  <ItemGroup>
+    <None Include="../../../core/uniffi/target/release/libvouch_core_uniffi.so" Condition="Exists('../../../core/uniffi/target/release/libvouch_core_uniffi.so')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libvouch_core_uniffi.so</Link>
+    </None>
+    <None Include="../../../test-vectors/data-integrity-eddsa-jcs-2022/vector.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>vector.json</Link>
+    </None>
+  </ItemGroup>
+
+</Project>

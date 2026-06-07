@@ -1,0 +1,63 @@
+{
+  "description": "Shared eddsa-jcs-2022 Data Integrity interop vector. The Rust core, the TypeScript SDK, and Python MUST (1) reproduce proofValue exactly from (ed25519.seed_b64, unsigned_credential, verificationMethod, created), and (2) verify signed_credential against ed25519.public_key_b64. Ed25519 (RFC 8032), JCS (RFC 8785), and SHA-256 are all deterministic, so the proofValue is reproducible byte-for-byte.",
+  "cryptosuite": "eddsa-jcs-2022",
+  "ed25519": {
+    "seed_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE=",
+    "public_key_b64": "TLWr9q15+/WrvMr8wmnYXNJlHtS4hbWGnyQa7fCluik="
+  },
+  "verificationMethod": "did:web:test.example.com#key-1",
+  "created": "2026-04-26T10:00:00Z",
+  "unsigned_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "VouchCredential"
+    ],
+    "issuer": "did:web:test.example.com",
+    "validFrom": "2026-04-26T10:00:00Z",
+    "validUntil": "2026-04-26T10:05:00Z",
+    "credentialSubject": {
+      "id": "did:web:test.example.com",
+      "vouchVersion": "1.0",
+      "intent": {
+        "action": "read_database",
+        "target": "users_table",
+        "resource": "https://api.example.com/v1/users"
+      }
+    }
+  },
+  "signed_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "VouchCredential"
+    ],
+    "issuer": "did:web:test.example.com",
+    "validFrom": "2026-04-26T10:00:00Z",
+    "validUntil": "2026-04-26T10:05:00Z",
+    "credentialSubject": {
+      "id": "did:web:test.example.com",
+      "vouchVersion": "1.0",
+      "intent": {
+        "action": "read_database",
+        "target": "users_table",
+        "resource": "https://api.example.com/v1/users"
+      }
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-04-26T10:00:00Z",
+      "verificationMethod": "did:web:test.example.com#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z24FsZHuADF9uwHAfsjW3okmynrNCCN4QkQirEPfEy5MtcXzg4uhFqz4o3RVH57cFvVXg9oarC4m51YEmNu5UQRLQ"
+    }
+  },
+  "proofValue": "z24FsZHuADF9uwHAfsjW3okmynrNCCN4QkQirEPfEy5MtcXzg4uhFqz4o3RVH57cFvVXg9oarC4m51YEmNu5UQRLQ"
+}

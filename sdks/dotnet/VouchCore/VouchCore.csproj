@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>VouchProtocol.Core</RootNamespace>
+    <AssemblyName>VouchProtocol.Core</AssemblyName>
+
+    <PackageId>VouchProtocol.Core</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Ramprasad Anandam Gaddam</Authors>
+    <Company>Vouch Protocol</Company>
+    <Product>Vouch Protocol Core</Product>
+    <Description>Vouch Protocol .NET SDK: JCS, Ed25519, did:key/multikey, Data Integrity (eddsa-jcs-2022), credentials, delegation, dual-proof ML-DSA-44, and BitstringStatusList revocation, over the canonical Rust core via C-FFI.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://vouch-protocol.com</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>vouch;verifiable-credentials;did;ed25519;ml-dsa;post-quantum;agents;data-integrity</PackageTags>
+    <RepositoryUrl>https://github.com/vouch-protocol/vouch</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Bundle the native core per runtime identifier. NuGet places these under
+         runtimes/<rid>/native and the loader resolves them transparently.
+         build-native.sh fills in additional RIDs (osx-arm64, win-x64, ...). -->
+    <None Include="runtimes/**" Pack="true" PackagePath="runtimes" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>
