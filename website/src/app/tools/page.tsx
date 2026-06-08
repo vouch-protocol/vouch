@@ -161,9 +161,9 @@ const GROUPS: Group[] = [
 ];
 
 function Start({ cmd }: { cmd: string }) {
-    // Copyable command, consistent with the code blocks used across the site.
-    // Generous vertical padding so the copy icon has clear space above the line.
-    return <CodeBlock code={cmd} className="!px-3 !py-6 text-[0.8rem] mt-3" />;
+    // Copyable command, using the same default code-block style as the Help guides
+    // (uniform p-5 padding from globals.css) so the copy icon is evenly inset.
+    return <CodeBlock code={cmd} className="text-[0.8rem] mt-3" />;
 }
 
 export default function ToolsPage() {
