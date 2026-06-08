@@ -183,7 +183,7 @@ export default function HomePage() {
             {LANGUAGE_TILES.map((lang) => (
               <div key={lang.name} className="border border-rule p-6">
                 <h3 className="font-serif font-semibold text-[1.2rem] mb-3">{lang.name}</h3>
-                <CodeBlock code={lang.install} className="!px-3 !py-6 text-[0.75rem] mb-3" />
+                <CodeBlock code={lang.install} className="text-[0.75rem] mb-3" />
                 <p className="text-ink-soft text-[0.9rem] leading-relaxed mb-3">{lang.note}</p>
                 <code className="font-mono text-burgundy text-[0.75rem] !bg-transparent !border-0 !p-0">{lang.repoPath}</code>
               </div>
