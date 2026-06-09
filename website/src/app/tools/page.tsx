@@ -161,9 +161,11 @@ const GROUPS: Group[] = [
 ];
 
 function Start({ cmd }: { cmd: string }) {
-    // Copyable command, using the same default code-block style as the Help guides
-    // (uniform p-5 padding from globals.css) so the copy icon is evenly inset.
-    return <CodeBlock code={cmd} className="text-[0.8rem] mt-3" />;
+    // Copyable command, same default code-block style as the Help guides. No margin
+    // class here: a top margin would push the <pre> down while the copy button stays
+    // pinned to the wrapper, leaving the icon floating above the box. Spacing comes
+    // from the CodeBlock wrapper's own my-4.
+    return <CodeBlock code={cmd} className="text-[0.8rem]" />;
 }
 
 export default function ToolsPage() {
