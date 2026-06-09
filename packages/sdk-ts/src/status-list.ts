@@ -17,6 +17,10 @@ import { VC_CONTEXT_V2, VC_TYPE } from './vc';
 // BitstringStatusList §4.2: minimum bitstring length is 131,072 bits (16 KiB).
 export const DEFAULT_BITSTRING_LENGTH = 131_072;
 
+// Upper bound on a decoded status list to prevent a gzip decompression bomb.
+// 16 MiB is far beyond any realistic status list (~134M entries).
+export const MAX_STATUS_LIST_BYTES = 16 * 1024 * 1024;
+
 // BitstringStatusList §4.1
 export const STATUS_PURPOSE_REVOCATION = 'revocation';
 export const STATUS_PURPOSE_SUSPENSION = 'suspension';
@@ -181,7 +185,10 @@ export class StatusList {
     let raw: Buffer;
     try {
       const compressed = base64UrlDecodeNoPad(encoded.slice(1));
-      raw = zlib.gunzipSync(compressed);
+      // Cap decompressed size to prevent a gzip bomb (node throws if exceeded).
+      raw = zlib.gunzipSync(compressed, {
+        maxOutputLength: MAX_STATUS_LIST_BYTES,
+      });
     } catch (err) {
       throw new StatusListError(
         `failed to decode bitstring: ${(err as Error).message}`

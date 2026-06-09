@@ -1,0 +1,16 @@
+/* Shared design tokens pulled from website/src/app/globals.css.
+   Each preview HTML inlines its own selectors but reads these vars. */
+:root {
+  --parchment:       #FAF7EE;
+  --parchment-warm:  #F2EBD9;
+  --parchment-deep:  #EFE9D5;
+  --ink:             #0F172A;
+  --ink-soft:        #334155;
+  --ink-faint:       #64748B;
+  --burgundy:        #7C2D3A;
+  --burgundy-dark:   #5C1F2C;
+  --rule:            #D9CFB6;
+  --rule-light:      #E8DFC9;
+  --code-bg:         #0F172A;
+  --code-fg:         #FAF7EE;
+}

@@ -106,10 +106,15 @@ pip install 'vouch-protocol[pq]'
 ```
 
 ```python
-from vouch import Signer, build_vouch_credential
+from vouch import generate_identity, Signer
 
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(build_vouch_credential(...))
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+signed = signer.sign_credential_hybrid(intent={
+    "action": "submit_claim",
+    "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+})
 ```
 
 ### TypeScript
@@ -119,10 +124,17 @@ npm install @vouch-protocol/core @noble/post-quantum
 ```
 
 ```ts
-import { Signer, buildHybridProof, generateMLDSA44KeyPair } from '@vouch-protocol/core';
+import { Signer, generateIdentity } from '@vouch-protocol/core';
 
-const signer = await Signer.fromDidWithHybrid('did:web:agent.example.com');
-const signed = await signer.signCredentialHybrid(credential);
+const keys = await generateIdentity('agent.example.com');
+const signer = new Signer({ privateKey: keys.privateKeyJwk, did: keys.did });
+const signed = await signer.signCredentialHybrid({
+  intent: {
+    action: 'submit_claim',
+    target: 'claim:HC-001',
+    resource: 'https://insurance.example.com/claims/HC-001',
+  },
+});
 ```
 
 ### Go

@@ -1,0 +1,36 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://vouch-protocol.com/contexts/v1"
+  ],
+  "id": "urn:uuid:39b098f0-70f1-426e-a173-33608eab88c7",
+  "type": [
+    "VerifiableCredential",
+    "VouchCredential",
+    "DIDBindingCredential"
+  ],
+  "issuer": "did:web:vouch-protocol.com",
+  "validFrom": "2026-05-15T20:01:09.239816Z",
+  "validUntil": "2126-04-21T20:01:09.239816Z",
+  "credentialSubject": {
+    "id": "did:web:vouch-protocol.com:u:rampy",
+    "vouchVersion": "1.0",
+    "intent": {
+      "action": "bind_identity",
+      "target": "did:web:vouch-protocol.com:u:rampy",
+      "resource": "https://vouch-protocol.com/u/rampy/did.json",
+      "person": {
+        "name": "Ramprasad Anandam Gaddam",
+        "email": "ram@vouch-protocol.com"
+      }
+    }
+  },
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-05-15T20:01:09Z",
+    "verificationMethod": "did:web:vouch-protocol.com#key-1",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z214fi6mN4PckGQgqTV9eqEReYWFXpxuk4TaWSB8Y67F1tGMDSBfjqucyVwMGT9bRM6dtWJcaDCVeJa8rLdy2tkLc"
+  }
+}

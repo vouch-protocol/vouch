@@ -100,36 +100,35 @@ class TestDelegationChain:
         assert passport.delegation_chain[1].iss == agent_a_identity.did
         assert passport.delegation_chain[1].sub == agent_b_identity.did
 
-    def test_max_depth_enforcement(
+    def test_deep_chain_no_hard_depth_limit(
         self, user_identity, agent_a_identity, agent_b_identity, agent_c_identity
     ):
-        """Test that max chain depth (5) is enforced."""
-        # Build a chain of 6 agents (which creates 5 delegation links - the max)
-        identities = [generate_identity(domain=f"agent-{i}.ai") for i in range(7)]
+        """v1.7 (CH-001): the fixed depth cap is removed.
 
-        # Start with first agent (no parent - no chain yet)
+        Authority is controlled by the capability-attenuation rule, not a hard
+        depth number, so a chain may extend as far as it keeps narrowing. Depth
+        is a verifier-side cost budget (Specification v1.7 Section 9.4), not a
+        build-time hard limit. Building a chain well beyond the old cap of five
+        links now succeeds and verifies.
+        """
+        identities = [generate_identity(domain=f"agent-{i}.ai") for i in range(8)]
+
+        # Start with the first agent (no parent, no chain yet).
         current_token = Signer(
             private_key=identities[0].private_key_jwk, did=identities[0].did
         ).sign({"action": "step_0"})
 
-        # Build 5 more delegations (creates 5 links - the max allowed)
-        for i in range(1, 6):
+        # Build seven delegations: this was rejected at the sixth link in v1.6.2.
+        for i in range(1, 8):
             current_token = Signer(
                 private_key=identities[i].private_key_jwk, did=identities[i].did
             ).sign({"action": f"step_{i}"}, parent_token=current_token)
 
-        # This should work (5 links)
         is_valid, passport = Verifier.verify(
-            current_token, public_key_jwk=identities[5].public_key_jwk
+            current_token, public_key_jwk=identities[7].public_key_jwk
         )
         assert is_valid
-        assert len(passport.delegation_chain) == 5  # Exactly at max
-
-        # Trying to add 6th link should fail
-        with pytest.raises(ValueError, match="max depth"):
-            Signer(private_key=identities[6].private_key_jwk, did=identities[6].did).sign(
-                {"action": "step_6"}, parent_token=current_token
-            )
+        assert len(passport.delegation_chain) == 7  # well beyond the old cap of 5
 
     def test_delegation_chain_with_reputation(self, user_identity, agent_a_identity):
         """Test delegation chain combined with reputation score."""

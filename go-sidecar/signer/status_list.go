@@ -26,6 +26,10 @@ const (
 	// bitstring length in bits (16 KiB).
 	DefaultBitstringLength = 131_072
 
+	// maxStatusListBytes bounds the decompressed status list to prevent a gzip
+	// decompression bomb. 16 MiB is far beyond any realistic status list.
+	maxStatusListBytes = 16 << 20
+
 	StatusPurposeRevocation = "revocation"
 	StatusPurposeSuspension = "suspension"
 	StatusPurposeMessage  = "message"
@@ -212,9 +216,16 @@ func DecodeStatusList(encoded, statusListID, statusPurpose string) (*StatusList,
 		return nil, fmt.Errorf("gzip reader: %w", err)
 	}
 	defer gz.Close()
-	raw, err := io.ReadAll(gz)
+	// Bound decompression to prevent a gzip bomb: a tiny encodedList can
+	// otherwise inflate to gigabytes during a revocation check.
+	raw, err := io.ReadAll(io.LimitReader(gz, maxStatusListBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("gzip read: %w", err)
+	}
+	if len(raw) > maxStatusListBytes {
+		return nil, fmt.Errorf(
+			"status list decompresses to more than %d bytes", maxStatusListBytes,
+		)
 	}
 
 	length := len(raw) * 8

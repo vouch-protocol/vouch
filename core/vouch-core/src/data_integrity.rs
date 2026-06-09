@@ -126,6 +126,29 @@ pub fn verify_proof(credential: &Value, raw_public_key: &[u8]) -> Result<bool> {
         Some(CRYPTOSUITE_ID) => {}
         other => return Err(CoreError::Json(format!("unexpected cryptosuite: {other:?}"))),
     }
+
+    // Bind the proof to the issuer and enforce its purpose. A signature only
+    // means something if the key that made it is the issuer's key, used for the
+    // assertion purpose. Without this a key trusted for one issuer could sign a
+    // credential claiming another issuer, and a proof made for another purpose
+    // could be replayed as an assertion.
+    match proof.get("proofPurpose").and_then(|v| v.as_str()) {
+        Some("assertionMethod") => {}
+        other => return Err(CoreError::Json(format!("unexpected proofPurpose: {other:?}"))),
+    }
+    if let Some(issuer) = issuer_did(obj) {
+        let vm = proof
+            .get("verificationMethod")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| CoreError::Json("proof missing verificationMethod".into()))?;
+        let vm_did = vm.split('#').next().unwrap_or(vm);
+        if vm_did != issuer {
+            return Err(CoreError::Json(
+                "verificationMethod does not belong to issuer".into(),
+            ));
+        }
+    }
+
     let proof_value = proof
         .get("proofValue")
         .and_then(|v| v.as_str())
@@ -145,6 +168,16 @@ pub fn verify_proof(credential: &Value, raw_public_key: &[u8]) -> Result<bool> {
 pub fn verify_with_seed(credential: &Value, raw_private_seed: &[u8]) -> Result<bool> {
     let kp = Ed25519KeyPair::from_seed_slice(raw_private_seed)?;
     verify_proof(credential, &kp.public_key())
+}
+
+/// Extract the issuer DID from a credential object. The `issuer` may be a
+/// string or an array whose first element is the DID. Returns None if absent.
+pub(crate) fn issuer_did(obj: &Map<String, Value>) -> Option<&str> {
+    match obj.get("issuer") {
+        Some(Value::String(s)) => Some(s.as_str()),
+        Some(Value::Array(arr)) => arr.first().and_then(|v| v.as_str()),
+        _ => None,
+    }
 }
 
 /// Return the `verificationMethod` declared by the credential's proof. Callers

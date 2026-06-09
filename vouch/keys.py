@@ -6,15 +6,19 @@ Uses Scrypt for key derivation and ChaCha20Poly1305 for authenticated encryption
 """
 
 import os
+import re
 import json
 import base64
 import glob
+import logging
 from dataclasses import dataclass, asdict
 from typing import Optional, List, Dict, Any
 
 from jwcrypto import jwk
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+
+logger = logging.getLogger(__name__)
 
 # Constants
 VOUCH_DIR = os.path.expanduser("~/.vouch")
@@ -43,9 +47,20 @@ class KeyManager:
             os.makedirs(self.key_dir, mode=0o700, exist_ok=True)
 
     def _get_filename(self, did: str) -> str:
-        """Convert DID to filename (replace : with -)."""
-        safe_name = did.replace(":", "-")
-        return os.path.join(self.key_dir, f"{safe_name}.json")
+        """
+        Convert a DID to a safe filename. Whitelists filename characters so a
+        crafted DID (containing '/', '\\', or '..') cannot escape the key
+        directory via path traversal. For normal DIDs this matches the historic
+        scheme (':' becomes '-'), so existing files keep their names.
+        """
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "-", did).strip(".")
+        if not safe_name:
+            raise ValueError(f"DID does not yield a safe filename: {did!r}")
+        path = os.path.join(self.key_dir, f"{safe_name}.json")
+        # Defense in depth: the resolved path must stay inside key_dir.
+        if os.path.dirname(os.path.realpath(path)) != os.path.realpath(self.key_dir):
+            raise ValueError(f"unsafe key path for DID {did!r}")
+        return path
 
     def save_identity(self, identity: KeyPair, password: Optional[str] = None):
         """
@@ -103,15 +118,24 @@ class KeyManager:
                 "ciphertext": base64.b64encode(ciphertext).decode("utf-8"),
             }
         else:
-            # Warning: Plain text storage
+            # Plaintext storage: discouraged. The private key sits unencrypted
+            # on disk; prefer passing a password.
+            logger.warning(
+                "Saving identity %s WITHOUT a password: the private key is "
+                "stored in plaintext. Provide a password to encrypt it.",
+                identity.did,
+            )
             data["private_key"] = identity.private_key_jwk
 
-        # Write to file
-        with open(filename, "w") as f:
-            json.dump(data, f, indent=2)
-
-        # Set restricted permissions (Read/Write for user only)
-        os.chmod(filename, 0o600)
+        # Write with 0o600 at creation so there is no window where the file is
+        # world/group-readable (umask only removes permission bits, never adds
+        # them). chmod afterwards also tightens a pre-existing looser file.
+        fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(data, f, indent=2)
+        finally:
+            os.chmod(filename, 0o600)
 
     def load_identity(self, did: str, password: Optional[str] = None) -> KeyPair:
         """

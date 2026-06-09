@@ -125,7 +125,12 @@ export function verifyProofPortable(
   const canonical = canonicalize(credForCheck);
   const digest = sha256(canonical);
 
-  return ed25519.verify(signature, digest, rawPublicKey);
+  // zip215:false selects strict RFC 8032 verification, which rejects the
+  // non-canonical / malleable signatures that noble's permissive default
+  // accepts. This keeps the portable (React Native) verifier consistent with
+  // the Node and Go verifiers, so a signature is accepted (or rejected) the
+  // same way across every stack.
+  return ed25519.verify(signature, digest, rawPublicKey, { zip215: false });
 }
 
 function formatIso8601(d: Date): string {

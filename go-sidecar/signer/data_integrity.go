@@ -25,6 +25,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -118,6 +119,25 @@ func VerifyDataIntegrityProof(
 	if c, _ := proofMap["cryptosuite"].(string); c != CryptosuiteEddsaJcs2022 {
 		return false, fmt.Errorf("unexpected cryptosuite: %v", proofMap["cryptosuite"])
 	}
+
+	// Bind the proof to the issuer and enforce its purpose. A signature only
+	// means something if the key that made it is the issuer's key, used for
+	// the assertion purpose. Without this, a key trusted for issuer A could
+	// sign a credential claiming issuer B, and a proof made for another purpose
+	// could be replayed as an assertion.
+	if pp, _ := proofMap["proofPurpose"].(string); pp != "assertionMethod" {
+		return false, fmt.Errorf("unexpected proofPurpose: %v", proofMap["proofPurpose"])
+	}
+	if issuerDID := issuerDIDOf(credential); issuerDID != "" {
+		vm, _ := proofMap["verificationMethod"].(string)
+		if vm == "" {
+			return false, errors.New("proof missing verificationMethod")
+		}
+		if didPart(vm) != issuerDID {
+			return false, errors.New("verificationMethod does not belong to issuer")
+		}
+	}
+
 	pv, _ := proofMap["proofValue"].(string)
 	if pv == "" || pv[0] != 'z' {
 		return false, errors.New("missing or malformed proofValue")
@@ -158,6 +178,31 @@ func proofToMap(p DataIntegrityProof) map[string]any {
 		m["proofValue"] = p.ProofValue
 	}
 	return m
+}
+
+// issuerDIDOf extracts the issuer DID from a credential. The issuer may be a
+// string or an array whose first element is the DID. Returns "" if absent.
+func issuerDIDOf(credential map[string]any) string {
+	switch v := credential["issuer"].(type) {
+	case string:
+		return v
+	case []any:
+		if len(v) > 0 {
+			if s, ok := v[0].(string); ok {
+				return s
+			}
+		}
+	}
+	return ""
+}
+
+// didPart returns the DID portion of a verificationMethod, i.e. everything
+// before the first '#'.
+func didPart(verificationMethod string) string {
+	if i := strings.IndexByte(verificationMethod, '#'); i >= 0 {
+		return verificationMethod[:i]
+	}
+	return verificationMethod
 }
 
 func copyMap(m map[string]any) map[string]any {

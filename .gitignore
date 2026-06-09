@@ -107,6 +107,7 @@ docs/specs/vouch-sponsor-brief.md
 #   Google Drive / email distribution, the canonical source is the .md.
 docs/specs/manu-reply-*.md
 docs/specs/github-issue-manu-review-reconciliation.md
+docs/specs/list-response-*.md
 docs/specs/w3c-cg-report.docx
 docs/specs/cg-report-executive-summary.docx
 
@@ -136,3 +137,28 @@ docs/preview-green.html
 
 # Wave 1 diagrams (work in progress, kept local until ready)
 docs/diagrams/
+
+# v1.7 change tracker (editor working artifact, local only)
+docs/specs/v1.7-changelog-tracker.md
+
+# Supporter outreach coordination sheet (private, W3C links, not for public repo)
+docs/specs/supporter-contribution-menu.md
+docs/specs/supporter-contribution-menu.docx
+
+# Pre-publication spec drafts (protect from accidental commit; decide per-file whether to publish or move to Execution Documents)
+docs/specs/w3c-cg-report-v1.7-draft.md
+docs/specs/did-vouch-agent-method-profile.md
+docs/specs/draft-gaddam-vouch-agent-identity-00.md
+
+# Patent-sensitive vault (NEVER commit to the open repo; keep private)
+vouch/sensitive_vault.py
+packages/sdk-ts/src/sensitive-vault.ts
+packages/sdk-ts/src/sensitive-vault.test.ts
+tests/test_sensitive_vault.py
+test-vectors/sensitive-vault/
+
+# Local junk / regenerable
+cloudflare-worker/.wrangler/
+*.bak
+~$*.docx
+mobile/core/generated/

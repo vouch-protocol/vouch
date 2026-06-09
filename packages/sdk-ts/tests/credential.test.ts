@@ -333,16 +333,18 @@ describe('Delegation chains', () => {
 
     const parentCred = await parent.signCredential({
       intent: {
-        action: 'plan_trip',
+        action: 'manage_bookings',
         target: 'destination:Paris',
         resource: 'https://travel-api.example.com/v1/bookings',
       },
     });
 
+    // v1.7 attenuation: action and target are held equal (no broadening), and
+    // the resource is narrowed to a sub-path.
     const childCred = await child.signCredential({
       intent: {
-        action: 'book_flight',
-        target: 'flight:AF123',
+        action: 'manage_bookings',
+        target: 'destination:Paris',
         resource:
           'https://travel-api.example.com/v1/bookings/flight-AF123',
       },
@@ -377,11 +379,13 @@ describe('Delegation chains', () => {
       },
     });
 
+    // Action and target are held equal; only the resource points at a sibling
+    // path that is not a sub-resource. Resource broadens, so it is rejected.
     await expect(
       child.signCredential({
         intent: {
           action: 'read',
-          target: 'admin',
+          target: 'users',
           resource: 'https://api.example.com/v1/admin',
         },
         parentCredential: parentCred,
@@ -389,7 +393,10 @@ describe('Delegation chains', () => {
     ).rejects.toThrow(/resource-narrowing/);
   });
 
-  test('enforces the depth limit', async () => {
+  test('builds deep chains without a depth cap (v1.7)', async () => {
+    // v1.7 (CH-001): the fixed depth cap is removed. A chain that keeps its
+    // capability equal or narrower at each hop builds past the old cap of five
+    // links. Depth is a verifier-side cost budget, not a build-time limit.
     const commonResource = 'https://api.example.com/v1/data';
     const intentTpl: Intent = {
       action: 'read',
@@ -398,7 +405,7 @@ describe('Delegation chains', () => {
     };
 
     const signers = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       const s = await newSigner(`did:web:agent${i}.example.com`);
       signers.push(s.signer);
     }
@@ -406,20 +413,14 @@ describe('Delegation chains', () => {
     let cred: VouchCredential = await signers[0].signCredential({
       intent: intentTpl,
     });
-    for (let i = 1; i < 6; i++) {
+    // Build seven hops: the sixth was rejected in v1.6.2, now it is allowed.
+    for (let i = 1; i < 8; i++) {
       cred = await signers[i].signCredential({
         intent: intentTpl,
         parentCredential: cred,
       });
     }
-    expect(cred.credentialSubject.delegationChain).toHaveLength(5);
-
-    await expect(
-      signers[6].signCredential({
-        intent: intentTpl,
-        parentCredential: cred,
-      })
-    ).rejects.toThrow(/max depth/);
+    expect(cred.credentialSubject.delegationChain).toHaveLength(7);
   });
 });
 

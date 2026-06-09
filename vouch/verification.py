@@ -207,17 +207,17 @@ def verify_git_signature(commit_hash: str, ssh_key_path: Optional[Path] = None) 
     # Git outputs signature info to stderr
     output = result.stderr
 
+    # SECURITY: trust ONLY the exit code of `git verify-commit`. Do not promote
+    # `verified` to True by string-matching the command output: that output can
+    # contain attacker-influenced text (e.g. the committer/signer identity),
+    # which would let a crafted commit message spoof a "Good signature" line.
     info = {
         "verified": result.returncode == 0,
         "key_fingerprint": None,
         "signer": None,
     }
 
-    # Parse SSH signature info (e.g., "Good signature from...")
-    if "Good signature" in output or "good signature" in output.lower():
-        info["verified"] = True
-
-    # Try to extract key fingerprint
+    # Try to extract key fingerprint (informational only; never affects verified)
     for line in output.split("\n"):
         if "SHA256:" in line:
             match = re.search(r"SHA256:(\S+)", line)

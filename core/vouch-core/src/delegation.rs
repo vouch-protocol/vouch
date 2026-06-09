@@ -68,8 +68,19 @@ pub fn verify_chain_time_bound(
     let mut parent: Option<(Option<i64>, Option<i64>)> = None;
 
     for link in chain {
-        let (vf, vu) = link_window(link)?;
+        let (mut vf, mut vu) = link_window(link)?;
         if let Some((pf, pu)) = parent {
+            // A child that omits a bound inherits the parent's bound: it may
+            // only narrow the window, never widen it. Filling missing child
+            // bounds from the parent closes a widening gap where, for example,
+            // a child with no validUntil under a time-limited parent would
+            // otherwise be treated as unbounded and outlive its parent.
+            if vf.is_none() {
+                vf = pf;
+            }
+            if vu.is_none() {
+                vu = pu;
+            }
             if let (Some(f), Some(pf)) = (vf, pf) {
                 if f < pf {
                     return Ok(false); // child starts before parent

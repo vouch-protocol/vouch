@@ -1,4 +1,4 @@
-# Help Guide Draft (NOT PUBLISHED — awaiting your approval)
+# Help Guide Draft (NOT PUBLISHED, awaiting your approval)
 
 Long-form help content for the website. Probable home: a new page under
 `/help/ai-assistants` (or merged into the existing `/help` route) for
@@ -7,7 +7,7 @@ tiering. Show the user this file before merging.
 
 ---
 
-# Part 1 — Pick your sidecar
+# Part 1: Pick your sidecar
 
 The Vouch sidecar holds the agent's signing key. Three implementations
 ship today (Go, Python, TypeScript) and they are not interchangeable in
@@ -59,10 +59,10 @@ design intent, not a workaround.
 
 All three sidecars expose the same HTTP API:
 
-- `GET  /health` — liveness probe
-- `GET  /did` — the sidecar's DID
-- `GET  /.well-known/did.json` — DID Document (optional, dev-friendly)
-- `POST /sign` — sign an intent, return a Verifiable Credential
+- `GET  /health`: liveness probe
+- `GET  /did`: the sidecar's DID
+- `GET  /.well-known/did.json`: DID Document (optional, dev-friendly)
+- `POST /sign`: sign an intent, return a Verifiable Credential
 
 A contract test suite (`test-vectors/sidecar-contract/`) verifies that
 each implementation accepts and rejects the same inputs and emits
@@ -84,7 +84,7 @@ a real did:web rooted on your domain), and the key material changes
 
 ---
 
-# Part 2 — Use the Vouch AI assistants
+# Part 2: Use the Vouch AI assistants
 
 Vouch ships four AI surfaces. Pick the one that matches the tool you
 already use; all four route to the same canonical documentation.
@@ -107,7 +107,7 @@ already use; all four route to the same canonical documentation.
 
 ---
 
-## Walkthrough — Claude Skill
+## Walkthrough: Claude Skill
 
 ### Install
 
@@ -144,7 +144,8 @@ Here is a minimal end-to-end example.
   from vouch import Signer, Verifier, build_vouch_credential
   ...
 
-Verifier returns result.ok == True. The credential carries a
+Verifier.verify_credential returns an (is_valid, passport) tuple, so
+is_valid is True. The credential carries a
 proof.cryptosuite of eddsa-jcs-2022 by default.
 ```
 
@@ -178,7 +179,7 @@ new cryptosuite or SDK shape.
 
 ---
 
-## Walkthrough — Vouch Agent
+## Walkthrough: Vouch Agent
 
 ### Where to find it
 
@@ -212,7 +213,7 @@ page and on the homepage. On the mobile app, it's the Help tab.
 Three processes, three terminals:
 
 ```bash
-# Terminal 1: dev sidecar (ephemeral key — dev only)
+# Terminal 1: dev sidecar (ephemeral key, dev only)
 cd ~/vouch-protocol/website-agent/backend
 python -m vouch_agent.dev_sidecar --did did:web:agent.example.com --port 8877
 ```
@@ -276,7 +277,7 @@ Or set them in `website-agent/.env` (auto-loaded on backend start).
 
 ---
 
-## Walkthrough — OpenAI Custom GPT
+## Walkthrough: OpenAI Custom GPT
 
 ### Build your own
 
@@ -330,7 +331,7 @@ note in the Instructions.
 
 ---
 
-## Walkthrough — Gemini Gem
+## Walkthrough: Gemini Gem
 
 ### Build the Gem
 
@@ -415,7 +416,7 @@ release notifications on https://github.com/vouch-protocol/vouch.
 - Screenshots are intentionally omitted; add them after capturing
   the screens you want shown.
 - The "agent.example.com" host in code blocks is a placeholder; if you
-  prefer "agent.vouch-protocol.org" use that consistently. Same for
+  prefer "agent.vouch-protocol.com" use that consistently. Same for
   any other example DID.
 - The "Pro tier adds FIPS 140-3" line in Part 1 is a forward-looking
   commitment; reword if you don't want a public mention yet.

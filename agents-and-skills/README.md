@@ -1,4 +1,4 @@
-# Agents and Skills — Index
+# Agents and Skills: Index
 
 Four ways to put Vouch help in front of users, plus the supporting
 testing and documentation drafts.
@@ -12,19 +12,19 @@ vouch-protocol/
 └── agents-and-skills/    # This folder
     ├── README.md         # You are here
     ├── TESTING.md        # Test/verification steps for all four
-    ├── FAQ-DRAFT.md      # FAQ entries — NOT PUBLISHED
-    └── HELP-GUIDE-DRAFT.md  # Help guide page — NOT PUBLISHED
+    ├── FAQ-DRAFT.md      # FAQ entries (NOT PUBLISHED)
+    └── HELP-GUIDE-DRAFT.md  # Help guide page (NOT PUBLISHED)
 ```
 
 ## What is shipped vs. what is staged
 
-- `claude-skill/` — ready to install locally with `cp` into
+- `claude-skill/`: ready to install locally with `cp` into
   `~/.claude/skills/`. Not auto-pushed.
-- `website-agent/` — backend and frontend ready for local run via
+- `website-agent/`: backend and frontend ready for local run via
   `docker compose up` (you supply LLM key + signing key).
-- `openai-gpt/` and `gemini-gem/` — config files ready to paste into
+- `openai-gpt/` and `gemini-gem/`: config files ready to paste into
   the respective builders. Nothing is auto-created in either platform.
-- `agents-and-skills/FAQ-DRAFT.md` and `HELP-GUIDE-DRAFT.md` — content
+- `agents-and-skills/FAQ-DRAFT.md` and `HELP-GUIDE-DRAFT.md`: content
   drafts. **Not** added to `website/data/faq-data.ts` or the website's
   `/help` route until you approve.
 
@@ -46,7 +46,7 @@ Before any of this lands on the live website or in shared accounts:
    Decide on the final route(s) (`/help/sidecars`, `/help/ai-assistants`,
    or merge into existing `/help`).
 3. Decide whether the hosted Vouch agent gets the
-   `agent.vouch-protocol.org` hostname or another.
+   `agent.vouch-protocol.com` hostname or another.
 4. Confirm the retention claim (30-day audit log) matches your actual
    policy.
 5. Decide whether to publish a shared Custom GPT / Gemini Gem under a

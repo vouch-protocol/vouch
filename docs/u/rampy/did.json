@@ -1,0 +1,37 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/multikey/v1"
+  ],
+  "id": "did:web:vouch-protocol.com:u:rampy",
+  "alsoKnownAs": [
+    "mailto:ram@vouch-protocol.com",
+    "https://vouch-protocol.com/u/rampy/"
+  ],
+  "verificationMethod": [
+    {
+      "id": "did:web:vouch-protocol.com:u:rampy#key-1",
+      "type": "Multikey",
+      "controller": "did:web:vouch-protocol.com:u:rampy",
+      "publicKeyMultibase": "z6MkksG51moXgfKbDogMveiGpxRLCBWYfSwdgrAxUFY8C3t6"
+    }
+  ],
+  "assertionMethod": [
+    "did:web:vouch-protocol.com:u:rampy#key-1"
+  ],
+  "authentication": [
+    "did:web:vouch-protocol.com:u:rampy#key-1"
+  ],
+  "service": [
+    {
+      "id": "did:web:vouch-protocol.com:u:rampy#vouch-binding",
+      "type": "VouchBindingCredential",
+      "serviceEndpoint": "https://vouch-protocol.com/u/rampy/binding.jsonld"
+    }
+  ],
+  "_meta": {
+    "subject": "Ramprasad Anandam Gaddam",
+    "issuedBy": "did:web:vouch-protocol.com",
+    "note": "This DID is the personal Vouch identity of the named subject, bound to the Vouch Protocol publishing identity by the credential at the `service` endpoint above."
+  }
+}

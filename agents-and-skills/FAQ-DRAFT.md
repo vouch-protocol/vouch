@@ -1,4 +1,4 @@
-# FAQ Draft (NOT PUBLISHED — awaiting your approval)
+# FAQ Draft (NOT PUBLISHED, awaiting your approval)
 
 Proposed FAQ entries for the website's `faq-data.ts`. Show the user this
 file before merging into the live FAQ. Each entry is in the same shape
@@ -40,7 +40,7 @@ to the Go sidecar.
 **Q: How do I pick between Python and TypeScript for the lightweight
 tier?**
 A: Pick whichever runtime your existing application uses. There is no
-protocol-level difference — both pass the same contract test suite.
+protocol-level difference, both pass the same contract test suite.
 
 **Q: Can I run all three side by side?**
 A: Yes, but you should not. They serve the same role. Run one, decide
@@ -52,7 +52,7 @@ shape, same `eddsa-jcs-2022` cryptosuite, same JCS canonicalization).
 A cross-language contract test suite enforces this on every release.
 
 **Q: Can the sidecar run as a serverless function (Lambda, Cloud Run)?**
-A: Yes for the Go sidecar — it's a static binary and starts in
+A: Yes for the Go sidecar. It's a static binary and starts in
 milliseconds. The Python and TS sidecars work as serverless too but
 their cold-start latency makes them less suited to high-frequency
 signing. For agent workloads (one credential per minute), any of them
@@ -211,7 +211,7 @@ see it.
 **Q: Can I run the GPT without ChatGPT Plus?**
 A: Custom GPTs require ChatGPT Plus, Team, or Enterprise. The Vouch
 content also works as plain instructions you paste into a free ChatGPT
-session — you lose the Knowledge file feature but get the same
+session. You lose the Knowledge file feature but get the same
 guidance.
 
 **Q: Can I keep the GPT private to my team?**
@@ -284,7 +284,7 @@ deduplicates by filename so the upload replaces in place.
 
 ## Hosted agent
 
-**Q: What is https://agent.vouch-protocol.org?**
+**Q: What is https://agent.vouch-protocol.com?**
 A: The hosted instance of the Vouch Agent. It powers the chat
 assistant on the website and exposes a small public API (`/chat`,
 `/sign`, `/audit`, `/healthz`). The same code is open source under
@@ -296,8 +296,8 @@ hosted agent rate-limits anonymous traffic and only signs intents in
 its allow-list. For higher quota, contact us about a managed instance.
 
 **Q: What signing key does the hosted agent use?**
-A: A did:web DID rooted at vouch-protocol.org. The DID Document is
-public at https://vouch-protocol.org/.well-known/did.json. Verification
+A: A did:web DID rooted at vouch-protocol.com. The DID Document is
+public at https://vouch-protocol.com/.well-known/did.json. Verification
 methods rotate quarterly; the prior keys remain in the document for
 the lifetime of credentials they signed.
 
@@ -330,7 +330,7 @@ investigate within five business days.
 
 ## Notes for the user reviewing this draft
 
-- "https://agent.vouch-protocol.org" is the proposed hostname for the
+- "https://agent.vouch-protocol.com" is the proposed hostname for the
   hosted agent; substitute the actual host once you provision it.
 - The "30-day retention for abuse monitoring" claim is a placeholder;
   set this to whatever policy you intend to publish.

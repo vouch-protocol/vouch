@@ -346,7 +346,7 @@ async function verifyVouchAuth(request, env, payload) {
         const apiKey = request.headers.get('X-Vouch-API-Key');
         if (apiKey) {
             const validKeys = (env.PRO_API_KEYS || '').split(',').filter(k => k);
-            return { isPro: validKeys.includes(apiKey), signer: null };
+            return { isPro: isValidProKey(apiKey, validKeys), signer: null };
         }
         return { isPro: false, signer: null };
     }
@@ -379,17 +379,21 @@ async function verifyVouchAuth(request, env, payload) {
             return { isPro: false, signer: issuer, error: 'Only GitHub-based identities supported' };
         }
 
-        // Check if signer is in Pro list
-        // Note: We trust the issuer claim from the signed Vouch token
-        // Full signature verification could be added via WebCrypto when Ed25519 support improves
-        const isPro = PRO_SIGNERS.includes(githubUsername);
-
+        // SECURITY: the JWS signature is NOT verified here, and the issuer claim
+        // is attacker-controlled (anyone can craft a token with iss="github:<x>").
+        // We therefore MUST NOT grant Pro entitlement from the issuer claim. Doing
+        // so was a complete authentication bypass of the paid tier. Entitlement
+        // comes only from a configured API key (X-Vouch-API-Key / PRO_API_KEYS).
+        // The signer string below is informational only and is never trusted for
+        // access control. Real token-based Pro requires verifying the JWS against
+        // the signer's published key, which needs a trusted GitHub-identity to
+        // key resolution mechanism (tracked as a follow-up).
         return {
-            isPro,
+            isPro: false,
             signer: issuer,
             githubUsername,
-            verified: true,
-            note: 'Issuer from signed Vouch token, on Pro signers list'
+            verified: false,
+            note: 'Issuer claim is unverified and not trusted for entitlement'
         };
 
     } catch (error) {
@@ -397,10 +401,31 @@ async function verifyVouchAuth(request, env, payload) {
     }
 }
 
-// Legacy: Validate Pro API key 
+// Constant-time string equality (avoids a timing oracle on secrets/API keys).
+function timingSafeEqualStr(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    if (a.length !== b.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < a.length; i++) {
+        mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return mismatch === 0;
+}
+
+// Check an API key against the configured Pro keys without early-exit, so the
+// match is not leaked by timing.
+function isValidProKey(apiKey, validKeys) {
+    let ok = false;
+    for (const k of validKeys) {
+        if (timingSafeEqualStr(apiKey, k)) ok = true;
+    }
+    return ok;
+}
+
+// Legacy: Validate Pro API key
 async function validateProKey(env, apiKey) {
     const validKeys = (env.PRO_API_KEYS || '').split(',').filter(k => k);
-    return validKeys.includes(apiKey);
+    return isValidProKey(apiKey, validKeys);
 }
 
 // =============================================================================
@@ -982,12 +1007,26 @@ function handlePaperPage(id, env) {
 
         const displayTitle = sanitizeTitle(data.title);
 
+        // Escape every interpolated value. The paper fields (id, title, author,
+        // signer, sha256) come from the unauthenticated /api/paper/register
+        // endpoint, so they are attacker-controlled. Without escaping this is a
+        // stored XSS on vouch-protocol.com.
+        const escapeHtml = (str) => {
+            if (str === undefined || str === null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+
         const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vouch Paper Verification - ${id}</title>
+    <title>Vouch Paper Verification - ${escapeHtml(id)}</title>
     <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
@@ -1018,24 +1057,24 @@ function handlePaperPage(id, env) {
         </div>
         <div class="field">
             <div class="label">Paper ID</div>
-            <div class="value">${data.id}</div>
+            <div class="value">${escapeHtml(data.id)}</div>
         </div>
         ${displayTitle ? `
         <div class="field">
             <div class="label">Title</div>
-            <div class="value">${displayTitle}</div>
+            <div class="value">${escapeHtml(displayTitle)}</div>
         </div>` : ''}
         <div class="field">
             <div class="label">Author</div>
-            <div class="value">${data.author}</div>
+            <div class="value">${escapeHtml(data.author)}</div>
         </div>
         <div class="field">
             <div class="label">Signer</div>
-            <div class="value">${data.signer}</div>
+            <div class="value">${escapeHtml(data.signer)}</div>
         </div>
         <div class="field">
             <div class="label">SHA-256 Hash</div>
-            <div class="value hash">${data.sha256}</div>
+            <div class="value hash">${escapeHtml(data.sha256)}</div>
         </div>
         <div class="field">
             <div class="label">Registered</div>
@@ -1052,7 +1091,7 @@ function handlePaperPage(id, env) {
         </div>
         ` : `
         <h1 class="not-found">✗ Paper Not Found</h1>
-        <p>No paper registered with ID: <strong>${id}</strong></p>
+        <p>No paper registered with ID: <strong>${escapeHtml(id)}</strong></p>
         <div class="footer">
             <a href="https://vouch-protocol.com">vouch-protocol.com</a>
         </div>

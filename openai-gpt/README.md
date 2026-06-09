@@ -7,13 +7,13 @@ the developer's behalf via the hosted Vouch agent.
 
 ## Files
 
-- `name.txt` — display name to paste into the builder
-- `description.txt` — short description (under 300 chars)
-- `instructions.md` — the system prompt
-- `conversation-starters.md` — four starters for the builder
-- `actions.yaml` — OpenAPI schema for ChatGPT Actions (optional)
-- `actions-auth.md` — auth setup for Actions
-- `knowledge/` — files to upload as the GPT's Knowledge
+- `name.txt`: display name to paste into the builder
+- `description.txt`: short description (under 300 chars)
+- `instructions.md`: the system prompt
+- `conversation-starters.md`: four starters for the builder
+- `actions.yaml`: OpenAPI schema for ChatGPT Actions (optional)
+- `actions-auth.md`: auth setup for Actions
+- `knowledge/`: files to upload as the GPT's Knowledge
 
 ## Creating the GPT
 
@@ -42,6 +42,6 @@ Whenever the protocol changes:
 ## Not included
 
 - A logo (provide a 512x512 PNG matching the Vouch website's icon set)
-- Actions hosting (point the GPT at https://agent.vouch-protocol.org)
+- Actions hosting (point the GPT at https://agent.vouch-protocol.com)
 - Analytics (ChatGPT does not expose per-GPT analytics outside the
   builder's "Usage" tab)

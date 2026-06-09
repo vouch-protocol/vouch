@@ -12,13 +12,10 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
 )
-
-const maxDelegationDepth = 5
 
 // SignCredentialOptions configures Signer.SignCredential.
 type SignCredentialOptions struct {
@@ -44,8 +41,10 @@ type SignCredentialOptions struct {
 
 	// ParentCredential, if non-nil, indicates this signer is acting as a
 	// sub-agent. The chain is extended by appending a new link from the
-	// parent's subject to this signer's DID, enforcing the 5-hop depth
-	// limit (§9.4) and the resource-narrowing rule (§9.3 step 5).
+	// parent's subject to this signer's DID. Under v1.7 (CH-001) there is no
+	// fixed depth limit: the builder blocks only outright broadening via the
+	// capability-attenuation rule (Sections 9.3 to 9.5); depth is a
+	// verifier-side cost budget.
 	ParentCredential map[string]any
 
 	// CredentialStatus is an optional W3C credentialStatus entry, typically
@@ -223,28 +222,33 @@ func (s *Signer) extendDelegationChain(
 		parentChain = raw
 	}
 
-	if len(parentChain) >= maxDelegationDepth {
+	// v1.7 (CH-001): no fixed depth cap. The capability-attenuation rule is the
+	// control; depth becomes a verifier-side cost budget. The builder blocks
+	// only outright broadening (a delegator cannot grant more than it holds);
+	// the verifier enforces the full attenuation rule.
+	parentCap := capabilityFromCredential(parentIntent, parentCredential)
+	childCap := capabilityFromCredential(currentIntent, parentCredential)
+	if broadened := FindBroadenedDimension(parentCap, childCap, nil); broadened != "" {
+		if broadened == "resource" {
+			return nil, fmt.Errorf(
+				"delegation violates resource-narrowing rule: child resource %q is not a sub-resource of parent %q",
+				currentIntent["resource"], parentIntent["resource"],
+			)
+		}
 		return nil, fmt.Errorf(
-			"delegation chain exceeds max depth of %d",
-			maxDelegationDepth,
+			"delegation violates the capability-attenuation rule: child capability broadens the parent on dimension %q",
+			broadened,
 		)
 	}
 
-	parentResource, _ := parentIntent["resource"].(string)
-	childResource, _ := currentIntent["resource"].(string)
-	if parentResource != "" && childResource != "" {
-		if !isSubResource(childResource, parentResource) {
-			return nil, fmt.Errorf(
-				"delegation violates resource-narrowing rule: child resource %q is not a sub-resource of parent %q",
-				childResource, parentResource,
-			)
-		}
-	}
-
 	parentProof, _ := parentCredential["proof"].(map[string]any)
+	// Store the FULL parent proofValue. A truncated 64-char prefix is not a
+	// verifiable commitment (it is collision-prone and cannot be matched against
+	// the parent's actual signature). The delegationChain lives inside the
+	// signed credentialSubject, so the full value is tamper-evident.
 	parentProofValue, _ := parentProof["proofValue"].(string)
-	if len(parentProofValue) > 64 {
-		parentProofValue = parentProofValue[:64]
+	if parentProofValue == "" {
+		return nil, fmt.Errorf("parent credential has no proofValue to bind the delegation link to")
 	}
 
 	parentIssuer, _ := parentCredential["issuer"].(string)
@@ -261,12 +265,4 @@ func (s *Signer) extendDelegationChain(
 	}
 
 	return append(parentChain, newLink), nil
-}
-
-func isSubResource(child, parent string) bool {
-	if child == parent {
-		return true
-	}
-	trimmed := strings.TrimRight(parent, "/")
-	return strings.HasPrefix(child, trimmed+"/")
 }

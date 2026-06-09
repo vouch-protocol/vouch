@@ -64,9 +64,19 @@ export function decode(multikey: string): { algorithm: string; rawKey: Uint8Arra
   if (decoded.length < 2) throw new Error('Multikey too short');
   const prefix = decoded.slice(0, 2);
 
-  for (const [pat, alg] of PREFIX_TABLE) {
+  for (const [pat, alg, role] of PREFIX_TABLE) {
     if (prefix[0] === pat[0] && prefix[1] === pat[1]) {
-      return { algorithm: alg, rawKey: decoded.slice(2) };
+      if (role === 'private') {
+        // A verificationMethod must carry a PUBLIC key. Refuse a private-key
+        // multicodec prefix so private material is never treated as a key.
+        throw new Error('Multikey carries a private-key prefix; a public key is required');
+      }
+      const rawKey = decoded.slice(2);
+      const expected = alg === 'Ed25519' ? 32 : 1312;
+      if (rawKey.length !== expected) {
+        throw new Error(`${alg} public key must be ${expected} bytes, got ${rawKey.length}`);
+      }
+      return { algorithm: alg, rawKey };
     }
   }
   throw new Error(

@@ -27,6 +27,7 @@ from vouch.verifier import (
 from vouch.cache import CacheInterface, MemoryCache
 from vouch.nonce import NonceTrackerInterface, MemoryNonceTracker
 from vouch import did_web
+from vouch.revocation import RevocationCheckError, RevocationRegistry
 
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,7 @@ class AsyncVerifier:
         clock_skew_seconds: int = 30,
         http_timeout: float = 10.0,
         max_connections: int = 100,
+        revocation_registry: Optional[RevocationRegistry] = None,
     ):
         """
         Initialize the async verifier.
@@ -84,15 +86,21 @@ class AsyncVerifier:
           clock_skew_seconds: Allowed clock drift for timestamp validation.
           http_timeout: Timeout for DID resolution requests.
           max_connections: Max concurrent HTTP connections.
+          revocation_registry: Optional registry consulted by
+            `check_vouch_credential`. A revoked issuer or subject DID causes
+            rejection, and a revocation check that cannot complete also causes
+            rejection (fail closed).
         """
         self._trusted_roots: Dict[str, jwk.JWK] = {}
         self._cache = cache or MemoryCache()
         self._nonce_tracker = nonce_tracker
         self._allow_resolution = allow_did_resolution
         self._clock_skew = clock_skew_seconds
+        self._revocation_registry = revocation_registry
         self._http_timeout = http_timeout
         self._max_connections = max_connections
         self._http_client: Optional[httpx.AsyncClient] = None
+        self._warned_no_nonce_tracker = False
 
         # Stats
         self._stats = {
@@ -178,6 +186,14 @@ class AsyncVerifier:
 
             # Check nonce for replay
             jti = claims.get("jti", "")
+            if check_nonce and not self._nonce_tracker and jti and not self._warned_no_nonce_tracker:
+                # Surface (once) that replay protection is silently off: the
+                # token carries a jti but no nonce tracker was configured.
+                logger.warning(
+                    "Token has a jti but no nonce_tracker is configured; replay "
+                    "protection is DISABLED. Pass a nonce_tracker to enable it."
+                )
+                self._warned_no_nonce_tracker = True
             if check_nonce and self._nonce_tracker and jti:
                 if await self._nonce_tracker.is_used(jti):
                     logger.warning(f"Replay attack blocked: jti={jti}")
@@ -430,11 +446,25 @@ class AsyncVerifier:
                 logger.warning(f"Could not resolve Multikey for: {issuer_did}")
                 return False, None
 
-            return Verifier.verify_credential(
+            valid, passport = Verifier.verify_credential(
                 cred,
                 public_key=public_key,
                 clock_skew_seconds=self._clock_skew,
             )
+
+            # Revocation gate. A revoked issuer or subject DID must not verify,
+            # and a check that cannot complete must reject (fail closed).
+            if valid and self._revocation_registry is not None:
+                subject_id = passport.sub if passport else None
+                for check_did in (issuer_did, subject_id):
+                    if check_did and await self._revocation_registry.is_revoked(check_did):
+                        logger.warning(f"Credential rejected: revoked DID {check_did}")
+                        return False, None
+
+            return valid, passport
+        except RevocationCheckError as e:
+            logger.warning(f"Revocation status unavailable, rejecting credential: {e}")
+            return False, None
         except Exception as e:
             logger.debug(f"check_vouch_credential error: {e}")
             return False, None

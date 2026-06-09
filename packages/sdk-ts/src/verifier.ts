@@ -21,8 +21,13 @@
 import * as crypto from 'crypto';
 import * as jose from 'jose';
 
-import { verifyProof } from './data-integrity';
+import { verifyProof, CRYPTOSUITE_ID } from './data-integrity';
+import {
+  verifyHybridProof,
+  HYBRID_CRYPTOSUITE_ID,
+} from './data-integrity-hybrid';
 import { decode as decodeMultikey } from './multikey';
+import { validateDelegationChain } from './attenuation';
 import type {
   CredentialPassport,
   CredentialVerificationResult,
@@ -207,7 +212,17 @@ export class Verifier {
   static async verifyCredential(
     credential: VouchCredential | Record<string, unknown> | string,
     publicKey?: crypto.KeyObject | string | Record<string, unknown>,
-    clockSkewSeconds: number = 30
+    clockSkewSeconds: number = 30,
+    options: {
+      /** ML-DSA-44 public key, required to verify a hybrid PQ proof. */
+      mldsa44PublicKey?: Uint8Array;
+      /**
+       * If set, the proof's cryptosuite MUST equal this value. Use
+       * HYBRID_CRYPTOSUITE_ID to require post-quantum protection and refuse a
+       * downgrade to the Ed25519-only suite.
+       */
+      requiredCryptosuite?: string;
+    } = {}
   ): Promise<CredentialVerificationResult> {
     if (!credential) {
       return { isValid: false, passport: null, error: 'Empty credential' };
@@ -231,7 +246,29 @@ export class Verifier {
       return { isValid: false, passport: null, error: 'Malformed credential' };
     }
 
-    // Cryptographic verification (if a key was provided).
+    // Determine the proof and its cryptosuite up front so we can both dispatch
+    // verification correctly and refuse a post-quantum downgrade.
+    const proofObj = (cred.proof as Record<string, unknown> | undefined);
+    const cryptosuite =
+      proofObj && typeof proofObj === 'object'
+        ? (proofObj.cryptosuite as string | undefined)
+        : undefined;
+
+    // Downgrade protection: if the caller requires a specific cryptosuite
+    // (e.g. the hybrid PQ suite), reject anything else. This is what stops an
+    // attacker stripping the ML-DSA-44 half of a hybrid proof and presenting
+    // it as plain Ed25519.
+    if (options.requiredCryptosuite && cryptosuite !== options.requiredCryptosuite) {
+      return {
+        isValid: false,
+        passport: null,
+        error: `Required cryptosuite ${options.requiredCryptosuite}, got ${cryptosuite ?? 'none'}`,
+      };
+    }
+
+    // Cryptographic verification (if a key was provided). Dispatch on the
+    // cryptosuite: the Ed25519-only path and the hybrid path are NOT
+    // interchangeable, and an unknown suite is rejected rather than ignored.
     if (publicKey !== undefined) {
       const resolved = await coerceEd25519PublicKey(publicKey);
       if (!resolved) {
@@ -242,7 +279,26 @@ export class Verifier {
         };
       }
       try {
-        if (!verifyProof(cred, resolved)) {
+        let proofOk: boolean;
+        if (cryptosuite === HYBRID_CRYPTOSUITE_ID) {
+          if (!options.mldsa44PublicKey) {
+            return {
+              isValid: false,
+              passport: null,
+              error: 'Hybrid proof requires an ML-DSA-44 public key',
+            };
+          }
+          proofOk = verifyHybridProof(cred, resolved, options.mldsa44PublicKey);
+        } else if (cryptosuite === CRYPTOSUITE_ID) {
+          proofOk = verifyProof(cred, resolved);
+        } else {
+          return {
+            isValid: false,
+            passport: null,
+            error: `Unsupported cryptosuite: ${cryptosuite ?? 'none'}`,
+          };
+        }
+        if (!proofOk) {
           return {
             isValid: false,
             passport: null,
@@ -256,6 +312,44 @@ export class Verifier {
           error:
             e instanceof Error ? e.message : 'Proof verification error',
         };
+      }
+    }
+
+    // Bind the proof to the issuer and enforce its purpose. A key trusted for
+    // one issuer must not validate a credential claiming a different issuer,
+    // and a proof made for another purpose must not be replayed as an
+    // assertion.
+    if (proofObj && typeof proofObj === 'object') {
+      if (proofObj.proofPurpose !== 'assertionMethod') {
+        return {
+          isValid: false,
+          passport: null,
+          error: 'Proof proofPurpose is not assertionMethod',
+        };
+      }
+      const issuerField = cred.issuer;
+      const issuerDid =
+        typeof issuerField === 'string'
+          ? issuerField
+          : Array.isArray(issuerField)
+           ? (issuerField[0] as string) || ''
+           : '';
+      if (issuerDid) {
+        const vm = proofObj.verificationMethod;
+        if (typeof vm !== 'string' || !vm) {
+          return {
+            isValid: false,
+            passport: null,
+            error: 'Proof missing verificationMethod',
+          };
+        }
+        if (vm.split('#', 1)[0] !== issuerDid) {
+          return {
+            isValid: false,
+            passport: null,
+            error: 'verificationMethod does not belong to issuer',
+          };
+        }
       }
     }
 
@@ -300,6 +394,34 @@ export class Verifier {
         passport: null,
         error: 'Missing required intent.resource',
       };
+    }
+
+    // v1.7 (CH-001): verifier-side capability-attenuation check. Each link must
+    // be a proper subset of the prior link across at least one of
+    // action/target/resource/time/rate/policy, and broader on none. There is no
+    // fixed depth limit; depth is a verifier-side cost budget (Section 9.4).
+    const attenuation = validateDelegationChain(cred);
+    if (!attenuation.ok) {
+      return {
+        isValid: false,
+        passport: null,
+        error: `Delegation chain rejected: ${attenuation.reason} (${attenuation.detail})`,
+      };
+    }
+
+    // Each delegation link must carry a non-empty parentProofValue binding it
+    // to its parent credential. The chain lives inside the signed
+    // credentialSubject, so a present value is tamper-evident; a missing one
+    // indicates a forged or spliced chain claiming unearned parent authority.
+    const rawChain = (subject.delegationChain as Array<Record<string, unknown>> | undefined) ?? [];
+    for (const link of rawChain) {
+      if (link && typeof link === 'object' && !link.parentProofValue) {
+        return {
+          isValid: false,
+          passport: null,
+          error: 'Delegation link missing parentProofValue',
+        };
+      }
     }
 
     // Build the passport.

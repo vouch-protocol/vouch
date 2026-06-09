@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ONDC Buyer App · Verify a Vouch-signed listing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" type="image/png" sizes="32x32" href="https://vouch-protocol.com/favicon-32x32.png" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --parchment:#FAF7EE; --parchment-warm:#F2EBD9; --parchment-deep:#EFE9D5;
+    --ink:#0F172A; --ink-soft:#334155; --ink-faint:#64748B;
+    --burgundy:#7C2D3A; --burgundy-dark:#5C1F2C;
+    --rule:#D9CFB6; --rule-light:#E8DFC9;
+    --code-bg:#0F172A; --code-fg:#FAF7EE;
+    --success:#1e7f3a;
+    --success-bg:#e6f3eb;
+    --error:#b54040;
+    --error-bg:#fce9e9;
+    --teal-buyer:#1e6f7f; /* slightly different accent than seller's burgundy */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .role-bar {
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 12px 24px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .role-bar .accent { color: #4ec3d4; }
+  .frame { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+  h1 { font-weight: 600; font-size: 1.8rem; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--ink-soft); margin: 0 0 40px; font-style: italic; }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 8px;
+  }
+
+  .card {
+    background: var(--parchment);
+    border: 1px solid var(--rule);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+  }
+
+  .step {
+    display: inline-block;
+    width: 24px; height: 24px;
+    background: var(--teal-buyer);
+    color: var(--parchment);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 24px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 12px 14px;
+    border: 1px solid var(--rule);
+    background: var(--parchment-warm);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+    line-height: 1.5;
+    border-radius: 0;
+    resize: vertical;
+  }
+  textarea:focus { outline: 2px solid var(--teal-buyer); outline-offset: -1px; }
+
+  .dropzone {
+    border: 2px dashed var(--rule);
+    background: var(--parchment-warm);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .dropzone:hover, .dropzone.dragover { border-color: var(--teal-buyer); background: var(--parchment-deep); }
+  .dropzone p { margin: 6px 0; color: var(--ink-soft); }
+  .dropzone .hint { font-size: 0.85rem; color: var(--ink-faint); }
+  .dropzone input[type="file"] { display: none; }
+
+  .photo-preview {
+    display: flex; gap: 18px; align-items: flex-start;
+    background: var(--parchment-warm); padding: 14px; border: 1px solid var(--rule); margin-top: 12px;
+  }
+  .photo-preview img { max-width: 160px; max-height: 160px; border: 1px solid var(--rule); background: white; }
+  .photo-info .row { margin: 4px 0; font-size: 0.85rem; }
+  .photo-info .label { display: inline-block; min-width: 90px; color: var(--ink-faint); font-family: "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.7rem; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  .mono.small { font-size: 0.78rem; color: var(--ink-soft); word-break: break-all; }
+
+  .actions { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .btn {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--parchment);
+    background: var(--teal-buyer);
+    border: 1px solid var(--teal-buyer);
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: background-color 0.15s, opacity 0.15s;
+  }
+  .btn:hover:not(:disabled) { background: #144a55; border-color: #144a55; }
+  .btn:disabled { background: var(--rule); border-color: var(--rule); color: var(--ink-faint); cursor: not-allowed; }
+  .btn.ghost {
+    background: var(--parchment); color: var(--ink); border-color: var(--ink);
+  }
+  .btn.ghost:hover:not(:disabled) { background: var(--ink); color: var(--parchment); }
+  .btn.danger {
+    background: var(--parchment); color: var(--error); border-color: var(--error);
+  }
+  .btn.danger:hover { background: var(--error); color: var(--parchment); }
+
+  /* Verdict */
+  .verdict { display: none; margin-top: 32px; padding: 24px 28px; border: 2px solid; }
+  .verdict.show { display: block; }
+  .verdict.ok { background: var(--success-bg); border-color: var(--success); }
+  .verdict.fail { background: var(--error-bg); border-color: var(--error); }
+  .verdict h2 {
+    margin: 0 0 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 1.1rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .verdict.ok h2 { color: var(--success); }
+  .verdict.ok h2::before { content: "✓ "; font-weight: 700; }
+  .verdict.fail h2 { color: var(--error); }
+  .verdict.fail h2::before { content: "✗ "; font-weight: 700; }
+
+  .check-list { margin: 16px 0 0; padding: 0; list-style: none; }
+  .check-list li {
+    padding: 6px 0;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .check-list li::before {
+    display: inline-block;
+    width: 1.4em;
+    text-align: center;
+    margin-right: 8px;
+    font-weight: 600;
+  }
+  .check-list li.ok::before { content: "✓"; color: var(--success); }
+  .check-list li.fail::before { content: "✗"; color: var(--error); }
+  .check-list li.info::before { content: "›"; color: var(--ink-faint); }
+  .check-list li .detail { color: var(--ink-faint); font-size: 0.78rem; display: block; margin-left: 1.4em; padding-left: 8px; word-break: break-all; }
+
+  .facts { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rule); }
+  .facts .row { display: flex; gap: 12px; margin: 6px 0; }
+  .facts .label { min-width: 140px; color: var(--ink-faint); font-family: "JetBrains Mono", monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; padding-top: 2px; }
+  .facts .value { flex: 1; word-break: break-all; }
+  .facts .value.mono { font-family: "JetBrains Mono", monospace; font-size: 0.85rem; }
+
+  .tamper-zone {
+    margin-top: 32px;
+    padding: 20px 24px;
+    border: 1px dashed var(--rule);
+    background: var(--parchment-warm);
+  }
+  .tamper-zone h3 { margin: 0 0 12px; font-size: 1rem; font-weight: 600; }
+  .tamper-zone p { margin: 0 0 12px; color: var(--ink-soft); font-size: 0.9rem; font-style: italic; }
+
+  .footer-note {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule-light);
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+  .footer-note a { color: var(--teal-buyer); text-decoration: none; border-bottom: 1px solid var(--teal-buyer); }
+</style>
+</head>
+<body>
+
+<div class="role-bar">
+  <span class="accent">●</span>&nbsp;&nbsp;Buyer App&nbsp;&nbsp;|&nbsp;&nbsp;ONDC Network&nbsp;&nbsp;|&nbsp;&nbsp;Offline verification
+</div>
+
+<div class="frame">
+
+  <h1>Verify a Vouch-signed listing</h1>
+  <p class="subtitle">
+    Paste a verifiable bundle from the seller, drop in the product photo,
+    and the page checks the cryptographic chain locally — no network calls,
+    no buyer-app server lookups, no trust in the seller's domain.
+  </p>
+
+  <!-- ============================== STEP 1: Bundle ============================== -->
+  <div class="card">
+    <p class="eyebrow"><span class="step">1</span>Paste the verifiable bundle (or load .json)</p>
+    <textarea id="bundle-input" placeholder='Paste the JSON from the Seller App here, e.g.:
+{
+  "credential": { ... },
+  "didDocument": { ... }
+}'></textarea>
+    <div class="actions">
+      <input type="file" id="bundle-file" accept=".json" style="display: none;" />
+      <button class="btn ghost" id="load-file-btn">Load .json file</button>
+      <button class="btn ghost" id="clear-btn">Clear</button>
+    </div>
+  </div>
+
+  <!-- ============================== STEP 2: Photo ============================== -->
+  <div class="card">
+    <p class="eyebrow"><span class="step">2</span>Drop the product photo you received</p>
+    <div class="dropzone" id="dropzone">
+      <p><strong>Drag the JPEG/PNG here</strong> or click to choose.</p>
+      <p class="hint">Same file the seller signed. We recompute the SHA-256 and compare.</p>
+      <input type="file" id="photo-input" accept="image/*" />
+    </div>
+    <div id="photo-display" style="display: none;">
+      <div class="photo-preview">
+        <img id="photo-img" alt="Photo preview" />
+        <div class="photo-info">
+          <div class="row"><span class="label">Filename</span> <span id="photo-name" class="mono small"></span></div>
+          <div class="row"><span class="label">Size</span> <span id="photo-size" class="mono small"></span></div>
+          <div class="row"><span class="label">SHA-256</span> <span id="photo-hash" class="mono small"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== STEP 3: Verify ============================== -->
+  <div class="actions">
+    <button class="btn" id="verify-btn" disabled>Verify offline</button>
+  </div>
+
+  <!-- ============================== Verdict ============================== -->
+  <div class="verdict" id="verdict">
+    <h2 id="verdict-title">…</h2>
+    <ul class="check-list" id="checks"></ul>
+    <div class="facts" id="facts"></div>
+  </div>
+
+  <!-- ============================== Tamper buttons ============================== -->
+  <div class="tamper-zone" id="tamper-zone" style="display: none;">
+    <h3>Try the failure modes</h3>
+    <p>These are the attacks Vouch is supposed to catch. Click and re-verify.</p>
+    <div class="actions" style="margin: 0;">
+      <button class="btn danger" id="tamper-photo">Tamper with the photo</button>
+      <button class="btn danger" id="tamper-title">Tamper with the listing title</button>
+      <button class="btn danger" id="tamper-signature">Flip one bit of the signature</button>
+      <button class="btn ghost" id="restore-btn">Restore original</button>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    Verification runs entirely in this browser tab. Cryptography:
+    <code>eddsa-jcs-2022</code> over RFC 8785 JCS, Ed25519 signature, SHA-256 digest.
+    Same algorithm as Vouch reference implementations in Python, TypeScript, and Go.
+    See <a href="https://vouch-protocol.com">vouch-protocol.com</a>.
+  </p>
+
+</div>
+
+<script type="module">
+import {
+  verifyCredential, sha256, sha256Hex, multibaseDecodeEd25519Pub,
+} from "./lib/vouch-browser.js";
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let originalBundle = null;     // verbatim from input
+let originalPhoto = null;      // { bytes, hashHex, file }
+let activeBundle = null;       // possibly tampered version
+let activePhoto = null;        // possibly tampered version
+
+// ---------------------------------------------------------------------------
+// Bundle input
+// ---------------------------------------------------------------------------
+const bundleInput = document.getElementById("bundle-input");
+bundleInput.addEventListener("input", () => {
+  document.getElementById("verify-btn").disabled = !(bundleInput.value.trim() && activePhoto);
+});
+
+document.getElementById("load-file-btn").addEventListener("click", () => {
+  document.getElementById("bundle-file").click();
+});
+document.getElementById("bundle-file").addEventListener("change", async (e) => {
+  if (e.target.files.length) {
+    const text = await e.target.files[0].text();
+    bundleInput.value = text;
+    bundleInput.dispatchEvent(new Event("input"));
+  }
+});
+document.getElementById("clear-btn").addEventListener("click", () => {
+  bundleInput.value = "";
+  bundleInput.dispatchEvent(new Event("input"));
+});
+
+// ---------------------------------------------------------------------------
+// Photo input
+// ---------------------------------------------------------------------------
+const dz = document.getElementById("dropzone");
+const photoInput = document.getElementById("photo-input");
+dz.addEventListener("click", () => photoInput.click());
+dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("dragover"); });
+dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+dz.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dz.classList.remove("dragover");
+  if (e.dataTransfer.files.length) handlePhoto(e.dataTransfer.files[0]);
+});
+photoInput.addEventListener("change", (e) => {
+  if (e.target.files.length) handlePhoto(e.target.files[0]);
+});
+
+async function handlePhoto(file) {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const hashHex = await sha256Hex(bytes);
+  originalPhoto = { file, bytes, hashHex };
+  activePhoto = originalPhoto;
+
+  document.getElementById("photo-display").style.display = "block";
+  document.getElementById("photo-img").src = URL.createObjectURL(file);
+  document.getElementById("photo-name").textContent = file.name;
+  document.getElementById("photo-size").textContent = `${file.size.toLocaleString()} bytes`;
+  document.getElementById("photo-hash").textContent = hashHex;
+  document.getElementById("verify-btn").disabled = !bundleInput.value.trim();
+}
+
+// ---------------------------------------------------------------------------
+// Verify
+// ---------------------------------------------------------------------------
+document.getElementById("verify-btn").addEventListener("click", async () => {
+  let parsed;
+  try {
+    parsed = JSON.parse(bundleInput.value);
+  } catch (e) {
+    showFail([{ ok: false, label: "Bundle is valid JSON", detail: e.message }]);
+    return;
+  }
+
+  // Accept either { credential, didDocument } OR a bare credential
+  let credential = parsed.credential || parsed;
+  let didDocument = parsed.didDocument || null;
+
+  if (!originalBundle) {
+    originalBundle = JSON.parse(JSON.stringify({ credential, didDocument }));
+    activeBundle = { credential, didDocument };
+    document.getElementById("tamper-zone").style.display = "block";
+  } else {
+    activeBundle = { credential, didDocument };
+  }
+
+  await runChecks(activeBundle, activePhoto);
+});
+
+async function runChecks(bundle, photo) {
+  const checks = [];
+  const { credential, didDocument } = bundle;
+
+  // Check 1: bundle has required shape
+  if (!credential || !credential.proof) {
+    checks.push({ ok: false, label: "Bundle contains a credential with a proof",
+      detail: "Missing credential or proof field" });
+    showVerdict(false, checks);
+    return;
+  }
+  checks.push({ ok: true, label: "Bundle contains a credential with a proof" });
+
+  // Check 2: cryptosuite is what we expect
+  const cs = credential.proof.cryptosuite;
+  if (cs !== "eddsa-jcs-2022") {
+    checks.push({ ok: false, label: `Cryptosuite is eddsa-jcs-2022`,
+      detail: `Got: ${cs}` });
+    showVerdict(false, checks);
+    return;
+  }
+  checks.push({ ok: true, label: "Cryptosuite is eddsa-jcs-2022 (Ed25519 over RFC 8785 JCS)" });
+
+  // Check 3: DID Document is provided and matches issuer
+  if (!didDocument) {
+    checks.push({ ok: false, label: "DID Document attached or resolvable",
+      detail: "No didDocument in bundle (in production: fetched from did:web URL)" });
+    showVerdict(false, checks);
+    return;
+  }
+  if (didDocument.id !== credential.issuer) {
+    checks.push({ ok: false, label: "DID Document matches credential issuer",
+      detail: `issuer=${credential.issuer} vs didDocument.id=${didDocument.id}` });
+    showVerdict(false, checks);
+    return;
+  }
+  checks.push({ ok: true, label: "DID Document matches credential issuer",
+    detail: didDocument.id });
+
+  // Check 4: extract the Multikey public key from the DID Document
+  const vm = (didDocument.verificationMethod || []).find(v =>
+    v.id === credential.proof.verificationMethod && v.type === "Multikey"
+  );
+  if (!vm) {
+    checks.push({ ok: false, label: "Verification method is in the DID Document",
+      detail: `Looking for ${credential.proof.verificationMethod}` });
+    showVerdict(false, checks);
+    return;
+  }
+  let pubKey;
+  try {
+    pubKey = multibaseDecodeEd25519Pub(vm.publicKeyMultibase);
+  } catch (e) {
+    checks.push({ ok: false, label: "Public key is a valid Ed25519 Multikey",
+      detail: e.message });
+    showVerdict(false, checks);
+    return;
+  }
+  checks.push({ ok: true, label: "Resolved Ed25519 public key from DID Document",
+    detail: vm.publicKeyMultibase });
+
+  // Check 5: photo SHA-256 matches the target in the credential's intent
+  if (!photo) {
+    checks.push({ ok: false, label: "Photo provided to compare against credential",
+      detail: "Drop the product photo into the photo zone above" });
+    showVerdict(false, checks);
+    return;
+  }
+  const expectedTarget = credential.credentialSubject?.intent?.target || "";
+  const expectedHash = expectedTarget.startsWith("sha256:") ? expectedTarget.slice(7) : "";
+  if (photo.hashHex !== expectedHash) {
+    checks.push({ ok: false, label: "Photo SHA-256 matches the credential",
+      detail: `computed: ${photo.hashHex}\nexpected: ${expectedHash}` });
+    showVerdict(false, checks);
+    return;
+  }
+  checks.push({ ok: true, label: "Photo SHA-256 matches the credential's bound hash" });
+
+  // Check 6: cryptographic verification of the credential
+  const res = await verifyCredential(credential, pubKey);
+  if (!res.ok) {
+    checks.push({ ok: false, label: "Ed25519 signature verifies against the canonical credential",
+      detail: res.reason });
+    showVerdict(false, checks);
+    return;
+  }
+  checks.push({ ok: true, label: "Ed25519 signature verifies against the canonical credential" });
+
+  showVerdict(true, checks);
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+function showVerdict(ok, checks) {
+  const v = document.getElementById("verdict");
+  v.classList.remove("ok", "fail");
+  v.classList.add(ok ? "ok" : "fail");
+  v.classList.add("show");
+
+  document.getElementById("verdict-title").textContent = ok ?
+    "Verified — this listing is authentic" :
+    "Verification failed";
+
+  const ul = document.getElementById("checks");
+  ul.innerHTML = "";
+  for (const c of checks) {
+    const li = document.createElement("li");
+    li.className = c.ok ? "ok" : "fail";
+    const label = document.createElement("span");
+    label.textContent = c.label;
+    li.appendChild(label);
+    if (c.detail) {
+      const d = document.createElement("span");
+      d.className = "detail";
+      d.textContent = c.detail;
+      li.appendChild(d);
+    }
+    ul.appendChild(li);
+  }
+
+  const facts = document.getElementById("facts");
+  facts.innerHTML = "";
+  if (ok && activeBundle) {
+    const cred = activeBundle.credential;
+    const listing = cred.credentialSubject?.intent?.listing || {};
+    addFact(facts, "Signer DID", cred.issuer, true);
+    addFact(facts, "Listing ID", listing.id || "(unknown)", true);
+    addFact(facts, "Title", listing.title || "(unknown)", false);
+    addFact(facts, "Signed at", cred.proof.created, true);
+    addFact(facts, "Cryptosuite", `${cred.proof.cryptosuite} (Ed25519 + RFC 8785 JCS + SHA-256)`, true);
+  }
+
+  v.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function addFact(parent, label, value, mono) {
+  const row = document.createElement("div");
+  row.className = "row";
+  const l = document.createElement("div");
+  l.className = "label";
+  l.textContent = label;
+  const v = document.createElement("div");
+  v.className = "value" + (mono ? " mono" : "");
+  v.textContent = value;
+  row.appendChild(l);
+  row.appendChild(v);
+  parent.appendChild(row);
+}
+
+function showFail(checks) {
+  showVerdict(false, checks);
+}
+
+// ---------------------------------------------------------------------------
+// Tamper buttons
+// ---------------------------------------------------------------------------
+document.getElementById("tamper-photo").addEventListener("click", async () => {
+  if (!originalPhoto) return;
+  // Replace last 16 bytes with random data → SHA changes, sig should fail
+  const bytes = new Uint8Array(originalPhoto.bytes);
+  const tampered = new Uint8Array(bytes);
+  const rand = crypto.getRandomValues(new Uint8Array(16));
+  tampered.set(rand, Math.max(0, tampered.length - 16));
+  const hashHex = await sha256Hex(tampered);
+  activePhoto = { file: { name: originalPhoto.file.name + " (tampered)", size: tampered.length }, bytes: tampered, hashHex };
+  document.getElementById("photo-name").textContent = activePhoto.file.name;
+  document.getElementById("photo-hash").textContent = hashHex;
+  await runChecks(activeBundle, activePhoto);
+});
+
+document.getElementById("tamper-title").addEventListener("click", async () => {
+  if (!originalBundle) return;
+  const tamperedCred = JSON.parse(JSON.stringify(originalBundle.credential));
+  tamperedCred.credentialSubject.intent.listing.title =
+    (tamperedCred.credentialSubject.intent.listing.title || "") + " — ACTUALLY FAKE";
+  activeBundle = { credential: tamperedCred, didDocument: originalBundle.didDocument };
+  bundleInput.value = JSON.stringify({
+    _comment: "Title tampered after signing",
+    credential: tamperedCred,
+    didDocument: originalBundle.didDocument,
+  }, null, 2);
+  await runChecks(activeBundle, activePhoto);
+});
+
+document.getElementById("tamper-signature").addEventListener("click", async () => {
+  if (!originalBundle) return;
+  const tamperedCred = JSON.parse(JSON.stringify(originalBundle.credential));
+  const pv = tamperedCred.proof.proofValue;
+  // Flip one character somewhere safely inside the base58
+  const mid = Math.floor((pv.length - 1) / 2) + 1; // skip the 'z' prefix
+  const orig = pv[mid];
+  const flipped = orig === "A" ? "B" : "A";
+  tamperedCred.proof.proofValue = pv.slice(0, mid) + flipped + pv.slice(mid + 1);
+  activeBundle = { credential: tamperedCred, didDocument: originalBundle.didDocument };
+  bundleInput.value = JSON.stringify({
+    _comment: "Signature bit flipped after signing",
+    credential: tamperedCred,
+    didDocument: originalBundle.didDocument,
+  }, null, 2);
+  await runChecks(activeBundle, activePhoto);
+});
+
+document.getElementById("restore-btn").addEventListener("click", async () => {
+  if (!originalBundle || !originalPhoto) return;
+  activeBundle = { credential: originalBundle.credential, didDocument: originalBundle.didDocument };
+  activePhoto = originalPhoto;
+  bundleInput.value = JSON.stringify({
+    credential: originalBundle.credential,
+    didDocument: originalBundle.didDocument,
+  }, null, 2);
+  document.getElementById("photo-name").textContent = originalPhoto.file.name;
+  document.getElementById("photo-hash").textContent = originalPhoto.hashHex;
+  await runChecks(activeBundle, activePhoto);
+});
+</script>
+
+</body>
+</html>

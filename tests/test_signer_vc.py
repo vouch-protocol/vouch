@@ -174,18 +174,20 @@ def test_delegation_chain_appends_link_from_parent():
     parent = _new_signer("did:web:alice.example.com")
     child = _new_signer("did:web:assistant.example.com")
 
+    # v1.7 attenuation: the child narrows every dimension it changes (action and
+    # target are subsets of the parent's; resource is a sub-path).
     parent_cred = parent.sign_credential(
         intent={
-            "action": "plan_trip",
-            "target": "destination:Paris",
+            "action": ["plan_trip", "book_flight"],
+            "target": ["destination:Paris", "flight:AF123"],
             "resource": "https://travel-api.example.com/v1/bookings",
         }
     )
 
     child_cred = child.sign_credential(
         intent={
-            "action": "book_flight",
-            "target": "flight:AF123",
+            "action": ["book_flight"],
+            "target": ["flight:AF123"],
             "resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
         },
         parent_credential=parent_cred,
@@ -209,12 +211,13 @@ def test_delegation_chain_resource_narrowing_violation_raises():
         }
     )
 
-    # Child tries to access a different resource entirely. Must be rejected.
+    # Child keeps action and target identical but points at a sibling resource
+    # that is not a sub-path. Resource broadens, so it must be rejected.
     with pytest.raises(ValueError, match="resource-narrowing"):
         child.sign_credential(
             intent={
                 "action": "read",
-                "target": "admin",
+                "target": "users",
                 "resource": "https://api.example.com/v1/admin",
             },
             parent_credential=parent_cred,
@@ -233,11 +236,12 @@ def test_delegation_chain_resource_narrowing_allows_sub_path():
         }
     )
 
-    # /v1/users/42 is a sub-resource of /v1/users, so this is allowed.
+    # /v1/users/42 is a sub-resource of /v1/users, so this is allowed. Action
+    # and target are held equal (no broadening on those dimensions).
     grand_cred = child.sign_credential(
         intent={
             "action": "read",
-            "target": "user_42",
+            "target": "users",
             "resource": "https://api.example.com/v1/users/42",
         },
         parent_credential=parent_cred,
@@ -245,8 +249,14 @@ def test_delegation_chain_resource_narrowing_allows_sub_path():
     assert len(grand_cred["credentialSubject"]["delegationChain"]) == 1
 
 
-def test_delegation_chain_depth_limit_enforced():
-    """A chain of 5 parents should reject a 6th hop."""
+def test_deep_chain_builds_without_depth_cap():
+    """v1.7 (CH-001): there is no fixed depth cap.
+
+    The builder blocks only outright broadening, never a hop count. A chain that
+    keeps its capability equal or narrower at each hop builds past the old cap of
+    five links. Depth is a verifier-side cost budget (Section 9.4), not a
+    build-time hard limit.
+    """
     common_resource = "https://api.example.com/v1/data"
     intent_template = {
         "action": "read",
@@ -254,18 +264,14 @@ def test_delegation_chain_depth_limit_enforced():
         "resource": common_resource,
     }
 
-    signers = [_new_signer(f"did:web:agent{i}.example.com") for i in range(7)]
+    signers = [_new_signer(f"did:web:agent{i}.example.com") for i in range(8)]
 
     cred = signers[0].sign_credential(intent=intent_template)
-    # Build chain of length 5 (max allowed)
-    for s in signers[1:6]:
+    # Build seven hops: the sixth was rejected in v1.6.2, now it is allowed.
+    for s in signers[1:8]:
         cred = s.sign_credential(intent=intent_template, parent_credential=cred)
 
-    assert len(cred["credentialSubject"]["delegationChain"]) == 5
-
-    # The 6th hop must fail
-    with pytest.raises(ValueError, match="max depth"):
-        signers[6].sign_credential(intent=intent_template, parent_credential=cred)
+    assert len(cred["credentialSubject"]["delegationChain"]) == 7
 
 
 # ---------------------------------------------------------------------------

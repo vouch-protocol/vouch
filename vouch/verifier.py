@@ -33,6 +33,7 @@ from jwcrypto.common import JWException
 import httpx
 
 from . import data_integrity, did_web, multikey
+from .revocation import RevocationCheckError, RevocationRegistry
 
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,29 @@ class CredentialPassport:
     delegation_chain: List[CredentialDelegationLink] = field(default_factory=list)
 
 
+def _link_capability(link: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Project a delegation link onto a capability dict for the attenuation checks:
+    action/target/resource from intent, time from validFrom/validUntil, and the
+    optional rate/policy dimensions (Specification v1.7, Section 9.2).
+    """
+    cap: Dict[str, Any] = {}
+    intent = link.get("intent") or {}
+    if isinstance(intent, dict):
+        for k in ("action", "target", "resource"):
+            if intent.get(k) is not None:
+                cap[k] = intent[k]
+    if link.get("validFrom"):
+        cap["validFrom"] = link["validFrom"]
+    if link.get("validUntil"):
+        cap["validUntil"] = link["validUntil"]
+    if link.get("rate") is not None:
+        cap["rate"] = link["rate"]
+    if link.get("policy") is not None:
+        cap["policy"] = link["policy"]
+    return cap
+
+
 class Verifier:
     """
     Verifies Vouch-Tokens using Ed25519 public keys.
@@ -159,12 +183,16 @@ class Verifier:
     # Cache for resolved DID public keys
     _key_cache: Dict[str, Tuple[jwk.JWK, float]] = {}
     _cache_ttl: int = 300  # 5 minutes
+    # Bound the cache so distinct attacker-supplied DIDs cannot grow it without
+    # limit (memory DoS).
+    _key_cache_max: int = 1024
 
     def __init__(
         self,
         trusted_roots: Optional[Dict[str, str]] = None,
         allow_did_resolution: bool = True,
         clock_skew_seconds: int = 30,
+        revocation_registry: Optional[RevocationRegistry] = None,
     ):
         """
         Initialize the Verifier.
@@ -173,10 +201,15 @@ class Verifier:
           trusted_roots: Dict mapping DIDs to their public JWK strings.
           allow_did_resolution: If True, attempt to fetch unknown DIDs.
           clock_skew_seconds: Allowed clock drift for timestamp validation.
+          revocation_registry: Optional registry consulted by
+            `check_vouch_credential`. When provided, a revoked issuer or
+            subject DID causes rejection, and a revocation check that cannot
+            complete also causes rejection (fail closed).
         """
         self._trusted_roots: Dict[str, jwk.JWK] = {}
         self._allow_resolution = allow_did_resolution
         self._clock_skew = clock_skew_seconds
+        self._revocation_registry = revocation_registry
 
         if trusted_roots:
             for did, key_json in trusted_roots.items():
@@ -345,6 +378,10 @@ class Verifier:
         if self._allow_resolution and did.startswith("did:web:"):
             resolved_key = self._resolve_did_web(did)
             if resolved_key:
+                if len(self._key_cache) >= self._key_cache_max and did not in self._key_cache:
+                    # Evict the oldest entry to keep the cache bounded.
+                    oldest = min(self._key_cache, key=lambda d: self._key_cache[d][1])
+                    del self._key_cache[oldest]
                 self._key_cache[did] = (resolved_key, time.time())
                 return resolved_key
 
@@ -473,6 +510,27 @@ class Verifier:
             except InvalidSignature:
                 return False, None
 
+        # Bind the proof to the issuer and enforce its purpose. A signature is
+        # only meaningful if the key that made it is the issuer's key, used for
+        # the right purpose. Without this, a key trusted for issuer A could sign
+        # a credential claiming issuer B (cross-issuer reuse), and a proof made
+        # for an unrelated purpose could be replayed as an assertion.
+        proof = cred.get("proof")
+        if isinstance(proof, dict):
+            if proof.get("proofPurpose") != "assertionMethod":
+                logger.debug("Proof proofPurpose is not assertionMethod")
+                return False, None
+            issuer = cred.get("issuer")
+            issuer_did = issuer[0] if isinstance(issuer, list) and issuer else issuer
+            vm = proof.get("verificationMethod")
+            if isinstance(issuer_did, str) and issuer_did:
+                if not isinstance(vm, str) or not vm:
+                    logger.debug("Proof missing verificationMethod")
+                    return False, None
+                if vm.split("#", 1)[0] != issuer_did:
+                    logger.debug("verificationMethod does not belong to issuer")
+                    return False, None
+
         # Validate temporal claims
         now = datetime.now(timezone.utc)
         valid_from = _parse_iso8601(cred.get("validFrom"))
@@ -519,6 +577,27 @@ class Verifier:
             except Exception as e:  # pragma: no cover
                 logger.debug(f"Invalid delegation link: {e}")
 
+        # v1.7 (CH-001): verifier-side capability-attenuation check. Each link
+        # must be a proper subset of the prior link across at least one of
+        # action/target/resource/time/rate/policy, and broader on none. There is
+        # no fixed depth limit; depth is a verifier-side cost budget (Section 9.4).
+        atten_result = Verifier.validate_delegation_chain(cred)
+        if not atten_result.ok:
+            logger.debug(
+                f"Delegation chain rejected: {atten_result.reason} "
+                f"({atten_result.detail})"
+            )
+            return False, None
+
+        # Each delegation link must carry a non-empty parentProofValue binding
+        # it to its parent credential. The chain lives inside the signed
+        # credentialSubject, so a present value is tamper-evident; a missing one
+        # indicates a forged or spliced chain claiming unearned parent authority.
+        for raw_link in subject.get("delegationChain", []) or []:
+            if isinstance(raw_link, dict) and not raw_link.get("parentProofValue"):
+                logger.debug("Delegation link missing parentProofValue")
+                return False, None
+
         rep_score = subject.get("reputationScore")
         if rep_score is not None:
             try:
@@ -541,6 +620,31 @@ class Verifier:
         )
 
         return True, passport
+
+    @staticmethod
+    def validate_delegation_chain(
+        credential: Dict[str, Any],
+        budget: Optional["VerifierBudget"] = None,
+    ) -> "AttenuationResult":
+        """
+        Verifier-side capability-attenuation check (Specification v1.7, 9.3-9.5).
+
+        Extracts the ordered capability list from the credential's
+        ``delegationChain`` and applies the attenuation rule plus any optional
+        verifier cost budget. Returns an ``AttenuationResult``; ``ok`` True means
+        the chain is valid. A chain of 0 or 1 link has nothing to attenuate (the
+        root grant has no parent in the chain). There is no fixed depth limit in
+        v1.7; depth, when a verifier chooses to cap it, is part of ``budget`` and
+        surfaces as ``verifier_budget_exceeded``.
+        """
+        from . import attenuation
+
+        subject = credential.get("credentialSubject") or {}
+        raw_chain = subject.get("delegationChain") or []
+        capabilities = [
+            _link_capability(link) for link in raw_chain if isinstance(link, dict)
+        ]
+        return attenuation.validate_chain(capabilities, budget=budget)
 
     def check_vouch_credential(
         self,
@@ -575,14 +679,48 @@ class Verifier:
                 logger.warning(f"Could not resolve Multikey/JWK for: {issuer_did}")
                 return False, None
 
-            return Verifier.verify_credential(
+            valid, passport = Verifier.verify_credential(
                 cred,
                 public_key=public_key,
                 clock_skew_seconds=self._clock_skew,
             )
+
+            # Revocation gate. A revoked issuer or subject DID must not verify,
+            # and a check that cannot complete must reject (fail closed).
+            if valid and self._revocation_registry is not None:
+                subject_id = passport.sub if passport else None
+                for check_did in (issuer_did, subject_id):
+                    if check_did and self._is_revoked_blocking(check_did):
+                        logger.warning(f"Credential rejected: revoked DID {check_did}")
+                        return False, None
+
+            return valid, passport
+        except RevocationCheckError as e:
+            logger.warning(f"Revocation status unavailable, rejecting credential: {e}")
+            return False, None
         except Exception as e:
             logger.debug(f"check_vouch_credential error: {e}")
             return False, None
+
+    def _is_revoked_blocking(self, did: str) -> bool:
+        """
+        Run the async revocation check from synchronous code. If called from
+        within a running event loop (where blocking is unsafe), fail closed by
+        raising, since we cannot determine the DID's revocation status. Use
+        AsyncVerifier in async contexts.
+        """
+        import asyncio
+
+        if self._revocation_registry is None:
+            return False
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self._revocation_registry.is_revoked(did))
+        raise RevocationCheckError(
+            "synchronous revocation check requested inside a running event loop; "
+            "use AsyncVerifier for revocation-aware verification in async code"
+        )
 
     def _resolve_credential_public_key(
         self,

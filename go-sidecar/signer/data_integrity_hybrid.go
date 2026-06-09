@@ -156,6 +156,22 @@ func VerifyHybridDataIntegrityProof(
 	if c, _ := proofMap["cryptosuite"].(string); c != CryptosuiteHybridEddsaMldsa44 {
 		return false, fmt.Errorf("unexpected cryptosuite: %v", proofMap["cryptosuite"])
 	}
+
+	// Bind the proof to the issuer and enforce its purpose (same rationale as
+	// VerifyDataIntegrityProof).
+	if pp, _ := proofMap["proofPurpose"].(string); pp != "assertionMethod" {
+		return false, fmt.Errorf("unexpected proofPurpose: %v", proofMap["proofPurpose"])
+	}
+	if issuerDID := issuerDIDOf(credential); issuerDID != "" {
+		vm, _ := proofMap["verificationMethod"].(string)
+		if vm == "" {
+			return false, errors.New("proof missing verificationMethod")
+		}
+		if didPart(vm) != issuerDID {
+			return false, errors.New("verificationMethod does not belong to issuer")
+		}
+	}
+
 	pv, _ := proofMap["proofValue"].(string)
 	if pv == "" || pv[0] != 'z' {
 		return false, errors.New("missing or malformed proofValue")

@@ -82,6 +82,46 @@
         }
       },
       "canonical": "{\"@context\":[\"https://www.w3.org/ns/credentials/v2\",\"https://vouch-protocol.com/contexts/v1\"],\"credentialSubject\":{\"id\":\"did:web:agent.example.com\",\"intent\":{\"action\":\"read_database\",\"resource\":\"https://api.example.com/v1/users\",\"target\":\"users_table\"},\"vouchVersion\":\"1.0\"},\"issuer\":\"did:web:agent.example.com\",\"type\":[\"VerifiableCredential\",\"VouchCredential\"],\"validFrom\":\"2026-04-26T10:00:00Z\",\"validUntil\":\"2026-04-26T10:05:00Z\"}"
+    },
+    {
+      "name": "float-tenth",
+      "input": { "n": 0.1 },
+      "canonical": "{\"n\":0.1}"
+    },
+    {
+      "name": "float-half",
+      "input": { "n": 1.5 },
+      "canonical": "{\"n\":1.5}"
+    },
+    {
+      "name": "float-integer-valued",
+      "input": { "n": 100.0 },
+      "canonical": "{\"n\":100}"
+    },
+    {
+      "name": "float-decimal",
+      "input": { "n": 12345.678 },
+      "canonical": "{\"n\":12345.678}"
+    },
+    {
+      "name": "float-large-exponential",
+      "input": { "n": 1e21 },
+      "canonical": "{\"n\":1e+21}"
+    },
+    {
+      "name": "float-small-exponential",
+      "input": { "n": 1e-7 },
+      "canonical": "{\"n\":1e-7}"
+    },
+    {
+      "name": "float-boundary-1e20-positional",
+      "input": { "n": 1e20 },
+      "canonical": "{\"n\":100000000000000000000}"
+    },
+    {
+      "name": "float-boundary-1e-6-positional",
+      "input": { "n": 1e-6 },
+      "canonical": "{\"n\":0.000001}"
     }
   ]
 }

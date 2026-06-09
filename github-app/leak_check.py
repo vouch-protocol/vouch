@@ -1,4 +1,4 @@
-"""Vouch Gatekeeper — leak-check extension.
+"""Vouch Gatekeeper leak-check extension.
 
 PR-scoped scan that runs the OSS PAD-058 detector (`vouch.scan`)
 against every file changed in the pull request. Fails the check
@@ -232,7 +232,7 @@ def _make_filename_finding(filename: str) -> Finding:
         snippet=filename,
         matched_hash="sha256:" + hashlib.sha256(filename.encode()).hexdigest()[:16],
         description=(
-            "Vouch-specific config filename — verify the file does not "
+            "Vouch-specific config filename. Verify the file does not "
             "contain private key material"
         ),
         remediation=(

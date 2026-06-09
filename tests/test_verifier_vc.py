@@ -244,7 +244,7 @@ def test_verify_credential_extracts_delegation_chain():
     child_cred = child.sign_credential(
         intent={
             "action": "read",
-            "target": "user_42",
+            "target": "users",
             "resource": "https://api.example.com/v1/users/42",
         },
         parent_credential=parent_cred,

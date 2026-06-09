@@ -87,9 +87,16 @@ pub fn decode(multikey: &str) -> Result<DecodedKey> {
         return Err(CoreError::InvalidMultikey("too short".into()));
     }
     let prefix = [decoded[0], decoded[1]];
-    let algorithm = match prefix {
-        ED25519_PUB_PREFIX | ED25519_PRIV_PREFIX => "Ed25519",
-        MLDSA44_PUB_PREFIX | MLDSA44_PRIV_PREFIX => "ML-DSA-44",
+    let (algorithm, expected_len) = match prefix {
+        ED25519_PUB_PREFIX => ("Ed25519", ED25519_PUBLIC_LEN),
+        MLDSA44_PUB_PREFIX => ("ML-DSA-44", MLDSA44_PUBLIC_LEN),
+        ED25519_PRIV_PREFIX | MLDSA44_PRIV_PREFIX => {
+            // A verificationMethod must carry a PUBLIC key. Refuse a private-key
+            // multicodec prefix so private material is never treated as a key.
+            return Err(CoreError::InvalidMultikey(
+                "Multikey carries a private-key prefix; a public key is required".into(),
+            ));
+        }
         _ => {
             return Err(CoreError::UnknownMulticodec(format!(
                 "{:02x}{:02x}",
@@ -97,9 +104,16 @@ pub fn decode(multikey: &str) -> Result<DecodedKey> {
             )))
         }
     };
+    let raw_key = decoded[2..].to_vec();
+    if raw_key.len() != expected_len {
+        return Err(CoreError::InvalidMultikey(format!(
+            "{algorithm} public key must be {expected_len} bytes, got {}",
+            raw_key.len()
+        )));
+    }
     Ok(DecodedKey {
         algorithm: algorithm.to_string(),
-        raw_key: decoded[2..].to_vec(),
+        raw_key,
     })
 }
 

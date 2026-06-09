@@ -67,15 +67,23 @@ func MultikeyDecode(multikey string) (algorithm string, rawKey []byte, err error
 		return "", nil, errors.New("Multikey too short")
 	}
 	prefix := decoded[:2]
+	raw := decoded[2:]
 	switch {
 	case prefix[0] == Ed25519PubPrefix[0] && prefix[1] == Ed25519PubPrefix[1]:
-		return "Ed25519", decoded[2:], nil
-	case prefix[0] == Ed25519PrivPrefix[0] && prefix[1] == Ed25519PrivPrefix[1]:
-		return "Ed25519", decoded[2:], nil
+		if len(raw) != 32 {
+			return "", nil, fmt.Errorf("Ed25519 public key must be 32 bytes, got %d", len(raw))
+		}
+		return "Ed25519", raw, nil
 	case prefix[0] == MLDSA44PubPrefix[0] && prefix[1] == MLDSA44PubPrefix[1]:
-		return "ML-DSA-44", decoded[2:], nil
-	case prefix[0] == MLDSA44PrivPrefix[0] && prefix[1] == MLDSA44PrivPrefix[1]:
-		return "ML-DSA-44", decoded[2:], nil
+		if len(raw) != 1312 {
+			return "", nil, fmt.Errorf("ML-DSA-44 public key must be 1312 bytes, got %d", len(raw))
+		}
+		return "ML-DSA-44", raw, nil
+	case (prefix[0] == Ed25519PrivPrefix[0] && prefix[1] == Ed25519PrivPrefix[1]) ||
+		(prefix[0] == MLDSA44PrivPrefix[0] && prefix[1] == MLDSA44PrivPrefix[1]):
+		// A verificationMethod must carry a PUBLIC key. Refuse a private-key
+		// multicodec prefix so private material is never treated as a verify key.
+		return "", nil, errors.New("Multikey carries a private-key prefix; a public key is required")
 	}
 	return "", nil, fmt.Errorf("unknown multicodec prefix: %02x%02x", prefix[0], prefix[1])
 }

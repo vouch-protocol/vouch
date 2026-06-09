@@ -14,6 +14,7 @@ Auth:
 
 import base64
 import hashlib
+import hmac
 import json as _json
 import tempfile
 from pathlib import Path
@@ -99,6 +100,17 @@ app.include_router(audio_router)
 _settings: Optional[BridgeSettings] = None
 
 
+# Upper bound on a decoded media payload to prevent memory-exhaustion DoS. The
+# base64 string is checked before decoding so a huge body is never materialized.
+MAX_MEDIA_BYTES = 25 * 1024 * 1024  # 25 MiB
+_MAX_MEDIA_B64_CHARS = (MAX_MEDIA_BYTES // 3 + 1) * 4 + 16
+
+
+def _too_large_b64(b64: str) -> bool:
+    """True if a base64 string clearly exceeds the media size limit."""
+    return len(b64) > _MAX_MEDIA_B64_CHARS
+
+
 def get_settings() -> BridgeSettings:
     global _settings
     if _settings is None:
@@ -114,7 +126,8 @@ def _check_auth(authorization: Optional[str]) -> None:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     token = authorization[len("Bearer ") :]
-    if token != settings.bridge_secret:
+    # Constant-time comparison to avoid a timing oracle on the shared secret.
+    if not hmac.compare_digest(token, settings.bridge_secret):
         raise HTTPException(status_code=403, detail="Invalid bridge secret")
 
 
@@ -345,7 +358,9 @@ async def sign_image(
     if not C2PA_AVAILABLE:
         return SignResponse(success=False, error="c2pa-python not installed or Python < 3.10")
 
-    # Decode image
+    # Decode image (bounded: reject oversize before allocating).
+    if _too_large_b64(req.image_base64):
+        return SignResponse(success=False, error="Image data too large")
     try:
         image_bytes = base64.b64decode(req.image_base64)
     except Exception:
@@ -353,6 +368,8 @@ async def sign_image(
 
     if len(image_bytes) < 100:
         return SignResponse(success=False, error="Image data too small")
+    if len(image_bytes) > MAX_MEDIA_BYTES:
+        return SignResponse(success=False, error="Image data too large")
 
     # Detect format
     ext = _detect_extension(image_bytes)
@@ -486,7 +503,9 @@ async def verify_image(
     if not C2PA_AVAILABLE:
         return VerifyResponse(is_valid=False, error="c2pa-python not installed or Python < 3.10")
 
-    # Decode image
+    # Decode image (bounded: reject oversize before allocating).
+    if _too_large_b64(req.image_base64):
+        return VerifyResponse(is_valid=False, error="Image data too large")
     try:
         image_bytes = base64.b64decode(req.image_base64)
     except Exception:

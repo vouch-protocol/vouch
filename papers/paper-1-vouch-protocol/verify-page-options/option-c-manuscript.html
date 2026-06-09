@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Verify · arxiv-1 · Option C (Manuscript)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment:       #FAF7EE;
+    --parchment-warm:  #F2EBD9;
+    --parchment-deep:  #EFE9D5;
+    --ink:             #0F172A;
+    --ink-soft:        #334155;
+    --ink-faint:       #64748B;
+    --burgundy:        #7C2D3A;
+    --burgundy-dark:   #5C1F2C;
+    --rule:            #D9CFB6;
+    --rule-light:      #E8DFC9;
+    --code-bg:         #0F172A;
+    --code-fg:         #FAF7EE;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    padding: 64px 24px;
+    min-height: 100vh;
+  }
+  .frame { max-width: 760px; margin: 0 auto; }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  /* Masthead */
+  .masthead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 24px;
+  }
+  .masthead-left { display: flex; align-items: center; gap: 14px; }
+  .masthead-left img { width: 32px; height: 32px; }
+  .masthead-left .wordmark {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    letter-spacing: 0.01em;
+  }
+  .masthead-right {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--burgundy);
+  }
+  .masthead-right::before {
+    content: "✓";
+    margin-right: 6px;
+    font-weight: 600;
+  }
+
+  /* Issue line: No. 1   ·   date */
+  .issueline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--ink-faint);
+    font-style: italic;
+    padding-bottom: 64px;
+    border-bottom: 1px solid var(--rule-light);
+  }
+  .issueline .lhs { font-family: "JetBrains Mono", monospace; font-size: 0.85rem; font-style: normal; letter-spacing: 0.05em; color: var(--ink-soft); }
+  .issueline .rhs { font-family: "JetBrains Mono", monospace; font-size: 0.85rem; font-style: normal; letter-spacing: 0.05em; color: var(--ink-soft); }
+
+  /* Title block */
+  .title-block {
+    text-align: center;
+    padding: 64px 24px;
+  }
+  h1.title {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: 2rem;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    margin: 0 0 24px;
+  }
+  .byline {
+    color: var(--ink-soft);
+    margin: 0;
+    font-style: italic;
+    font-size: 1.05rem;
+  }
+  .byline::before { content: "— "; }
+
+  /* Sections */
+  .section {
+    margin: 48px 0;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule-light);
+  }
+  .section-eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--burgundy);
+    margin: 0 0 16px;
+  }
+  .section-eyebrow::before {
+    content: "✦";
+    margin-right: 10px;
+    color: var(--burgundy);
+  }
+  .section-body p { margin: 6px 0; }
+  .section-body .mono {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.92rem;
+    word-break: break-all;
+  }
+  .section-body .mono.small { font-size: 0.85rem; color: var(--ink-soft); }
+  .section-body .caption {
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 0.9rem;
+    margin-top: 4px;
+  }
+
+  /* Text block (for free-text signatures) */
+  .text-quoted {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--parchment-warm);
+    border-left: 3px solid var(--burgundy);
+    padding: 20px 24px;
+    margin: 8px 0;
+    font-style: italic;
+  }
+  .text-quoted::before { content: "\201C"; color: var(--burgundy); font-size: 1.5em; line-height: 0; margin-right: 4px; }
+  .text-quoted::after { content: "\201D"; color: var(--burgundy); font-size: 1.5em; line-height: 0; margin-left: 4px; }
+
+  /* Terminal block */
+  .terminal {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 20px 22px;
+    margin: 12px 0;
+    overflow-x: auto;
+  }
+  .terminal .prompt { color: #80c08a; user-select: none; }
+  .terminal .comment { color: #91a4b8; font-style: italic; }
+
+  /* CTA */
+  .cta-end {
+    margin: 64px 0 32px;
+    text-align: center;
+  }
+  .btn {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    padding: 12px 24px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .btn:hover { background: var(--ink); color: var(--parchment); }
+
+  .pagefoot {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+  }
+  .pagefoot a { color: var(--ink-faint); text-decoration: none; border-bottom: 1px dotted var(--rule); }
+  .pagefoot a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .variant-divider {
+    margin: 128px 0 64px;
+    padding: 24px 0;
+    text-align: center;
+    color: var(--ink-faint);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- =================================
+       PAPER VARIANT
+       ================================= -->
+  <article id="paper">
+
+    <header class="masthead">
+      <div class="masthead-left">
+        <img src="https://vouch-protocol.com/assets/vouch-icon.png" alt="Vouch" />
+        <span class="wordmark">Vouch Papers</span>
+      </div>
+      <div class="masthead-right">Verified</div>
+    </header>
+
+    <div class="issueline">
+      <span class="lhs">No. 1</span>
+      <span class="rhs">15 May 2026 · 17:20 UTC</span>
+    </div>
+
+    <div class="title-block">
+      <h1 class="title">Vouch Protocol: Cryptographic Identity and Continuous State Verifiability for Autonomous AI Agents</h1>
+      <p class="byline">Ramprasad Anandam Gaddam</p>
+    </div>
+
+    <section class="section">
+      <p class="section-eyebrow">Artefact</p>
+      <div class="section-body">
+        <p>Paper, 19 pages, PDF</p>
+        <p class="mono small">sha256: c7c997e26cc38d5367d1f695f814358938450b9c862d40ca01ac42aec17a1d61</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <p class="section-eyebrow">Provenance</p>
+      <div class="section-body">
+        <p>Signed by <span class="mono">did:web:vouch-protocol.com:u:rampyg</span></p>
+        <p class="caption">Personal Vouch identity, bound by the protocol</p>
+        <p style="margin-top: 14px;">Cryptosuite <span class="mono small">eddsa-jcs-2022</span> · Ed25519 over RFC 8785 JCS</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <p class="section-eyebrow">Verify locally</p>
+      <div class="section-body">
+        <div class="terminal">
+<span class="comment"># Match the SHA-256 against the PDF you have</span>
+<span class="prompt">$</span> sha256sum paper-1-vouch-protocol.pdf
+
+<span class="comment"># Or run the full Vouch verification</span>
+<span class="prompt">$</span> vouch verify arxiv-1
+        </div>
+      </div>
+    </section>
+
+    <div class="cta-end">
+      <a class="btn" href="https://github.com/vouch-protocol/vouch/blob/main/papers/paper-1-vouch-protocol/paper-1-vouch-protocol.pdf">Read the paper →</a>
+    </div>
+
+  </article>
+
+
+  <!-- =================================
+       FREE-TEXT SIGNATURE VARIANT
+       ================================= -->
+  <div class="variant-divider">↓ Same template, applied to a free-text signature ↓</div>
+
+  <article id="signature">
+
+    <header class="masthead">
+      <div class="masthead-left">
+        <img src="https://vouch-protocol.com/assets/vouch-icon.png" alt="Vouch" />
+        <span class="wordmark">Vouch Signatures</span>
+      </div>
+      <div class="masthead-right">Verified</div>
+    </header>
+
+    <div class="issueline">
+      <span class="lhs">ab12cd</span>
+      <span class="rhs">14 May 2026 · 16:12 UTC</span>
+    </div>
+
+    <div class="title-block">
+      <h1 class="title">Signed message</h1>
+      <p class="byline">Ramprasad Anandam Gaddam</p>
+    </div>
+
+    <section class="section">
+      <p class="section-eyebrow">Statement</p>
+      <div class="section-body">
+        <div class="text-quoted">I confirm that I delivered the Vouch Protocol talk at the W3C Credentials Community Group on 14 May 2026, and that this transcript is accurate.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <p class="section-eyebrow">Provenance</p>
+      <div class="section-body">
+        <p>Signed by <span class="mono">did:web:vouch-protocol.com:u:rampyg</span></p>
+        <p class="caption">Personal Vouch identity, bound by the protocol</p>
+        <p style="margin-top: 14px;" class="mono small">public key: z6MkpTHR8VNsBxYAAWHut2Geadd9JSrqV4o4qrhhKVz4HZbF</p>
+        <p class="mono small">signature: z2vY3jBkjUkqzPWyhQAEqGZMTcN8XfFqzCqGTuxYn3uMJoLDHnCMfBJ5wmKpD8ZqYVbsYUe3jL2hT1nN7vN9aBdAk</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <p class="section-eyebrow">Verify locally</p>
+      <div class="section-body">
+        <div class="terminal">
+<span class="prompt">$</span> vouch verify ab12cd
+        </div>
+      </div>
+    </section>
+
+    <div class="cta-end">
+      <a class="btn" href="https://vouch-protocol.com">Sign your work with Vouch →</a>
+    </div>
+
+  </article>
+
+  <div class="pagefoot">
+    <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+    &nbsp;·&nbsp; this is a preview rendering with sample data
+  </div>
+
+</div>
+
+</body>
+</html>

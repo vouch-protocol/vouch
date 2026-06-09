@@ -354,15 +354,17 @@ func TestDelegationAppendsLinkFromParent(t *testing.T) {
 
 	parentCred, _ := parent.SignCredential(SignCredentialOptions{
 		Intent: map[string]any{
-			"action":  "plan_trip",
+			"action":  "manage_bookings",
 			"target":  "destination:Paris",
 			"resource": "https://travel-api.example.com/v1/bookings",
 		},
 	})
+	// v1.7 attenuation: action and target are held equal (no broadening), and
+	// the resource is narrowed to a sub-path.
 	childCred, err := child.SignCredential(SignCredentialOptions{
 		Intent: map[string]any{
-			"action":  "book_flight",
-			"target":  "flight:AF123",
+			"action":  "manage_bookings",
+			"target":  "destination:Paris",
 			"resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
 		},
 		ParentCredential: parentCred,
@@ -402,10 +404,12 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 		},
 	})
 
+	// Action and target are held equal; only the resource points at a sibling
+	// path that is not a sub-resource. Resource broadens, so it is rejected.
 	_, err := child.SignCredential(SignCredentialOptions{
 		Intent: map[string]any{
 			"action":  "read",
-			"target":  "admin",
+			"target":  "users",
 			"resource": "https://api.example.com/v1/admin",
 		},
 		ParentCredential: parentCred,
@@ -418,14 +422,17 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 	}
 }
 
-func TestDelegationDepthLimit(t *testing.T) {
+func TestDeepChainNoDepthCap(t *testing.T) {
+	// v1.7 (CH-001): the fixed depth cap is removed. A chain that keeps its
+	// capability equal or narrower at each hop builds past the old cap of five
+	// links. Depth is a verifier-side cost budget, not a build-time limit.
 	intent := map[string]any{
 		"action":  "read",
 		"target":  "data",
 		"resource": "https://api.example.com/v1/data",
 	}
 
-	signers := make([]*Signer, 7)
+	signers := make([]*Signer, 8)
 	for i := range signers {
 		signers[i] = newTestSigner(t, fmt.Sprintf("did:web:agent%d.example.com", i))
 	}
@@ -434,7 +441,8 @@ func TestDelegationDepthLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := 1; i <= 5; i++ {
+	// Build seven hops: the sixth was rejected in v1.6.2, now it is allowed.
+	for i := 1; i <= 7; i++ {
 		cred, err = signers[i].SignCredential(SignCredentialOptions{
 			Intent:      intent,
 			ParentCredential: cred,
@@ -445,15 +453,8 @@ func TestDelegationDepthLimit(t *testing.T) {
 	}
 	subject := cred["credentialSubject"].(map[string]any)
 	chain := subject["delegationChain"].([]any)
-	if len(chain) != 5 {
-		t.Fatalf("expected 5 links, got %d", len(chain))
-	}
-
-	if _, err := signers[6].SignCredential(SignCredentialOptions{
-		Intent:      intent,
-		ParentCredential: cred,
-	}); err == nil {
-		t.Fatal("expected depth-limit error on 6th hop")
+	if len(chain) != 7 {
+		t.Fatalf("expected 7 links, got %d", len(chain))
 	}
 }
 

@@ -1,0 +1,48 @@
+{
+  "id": "arxiv-1",
+  "sha256": "37d15832283e854ebdf92b507a7a41ea45f75e966394706a897994dd7e95e15a",
+  "author": "Ramprasad Anandam Gaddam",
+  "signer": "did:web:vouch-protocol.com:u:rampy",
+  "signature": "z4HZ4hvC86qPXiyH6kVVGp8D9PWsk3Mn2cpZzzGUQe6MPEtW8ZUECF29tZZBnYeTC4F6XFWCu91qPSFFeoLUB3Tyf",
+  "title": "Vouch Protocol: Cryptographic Identity and Continuous State Verifiability for Autonomous AI Agents",
+  "resource": "https://github.com/vouch-protocol/vouch/blob/main/papers/paper-1-vouch-protocol/paper-1-vouch-protocol.pdf",
+  "cryptosuite": "eddsa-jcs-2022",
+  "registered": "2026-05-17T19:05:05.784609Z",
+  "type": "paper",
+  "tier": "pro",
+  "credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:714ac0be-e634-4843-b15b-a339695ff371",
+    "type": [
+      "VerifiableCredential",
+      "VouchCredential"
+    ],
+    "issuer": "did:web:vouch-protocol.com:u:rampy",
+    "validFrom": "2026-05-17T19:05:05Z",
+    "validUntil": "2126-04-23T19:05:05Z",
+    "credentialSubject": {
+      "id": "did:web:vouch-protocol.com:u:rampy",
+      "vouchVersion": "1.0",
+      "intent": {
+        "action": "publish_paper",
+        "target": "sha256:37d15832283e854ebdf92b507a7a41ea45f75e966394706a897994dd7e95e15a",
+        "resource": "https://github.com/vouch-protocol/vouch/blob/main/papers/paper-1-vouch-protocol/paper-1-vouch-protocol.pdf",
+        "title": "Vouch Protocol: Cryptographic Identity and Continuous State Verifiability for Autonomous AI Agents",
+        "shortlink": "https://vch.sh/arxiv-1",
+        "paperId": "arxiv-1"
+      }
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-05-17T19:05:05Z",
+      "verificationMethod": "did:web:vouch-protocol.com:u:rampy#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z4HZ4hvC86qPXiyH6kVVGp8D9PWsk3Mn2cpZzzGUQe6MPEtW8ZUECF29tZZBnYeTC4F6XFWCu91qPSFFeoLUB3Tyf"
+    }
+  },
+  "shortlink": "https://vch.sh/arxiv-1"
+}

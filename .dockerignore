@@ -1,0 +1,66 @@
+# Limit the Docker build context for website-agent/deploy/Dockerfile.
+#
+# The Fly builder uploads the entire context on every deploy, so we
+# exclude everything that's not referenced by any Dockerfile in the
+# repo. The vouch-agent image only needs:
+#   - go-sidecar/  (excluding test fixtures)
+#   - website-agent/backend/  (vouch_agent/, knowledge/, pyproject.toml)
+#   - website-agent/deploy/   (Dockerfile, start.sh, did.json)
+#
+# Other Dockerfiles in the repo (examples/hasura/, vouch/bridge/,
+# website-agent/backend/Dockerfile) reference paths inside their own
+# subtree, so these excludes do not break them. Add narrower
+# .dockerignore files alongside those Dockerfiles if you ever need to
+# customise per-image.
+
+# --- VCS, editor, OS noise -------------------------------------------------
+.git
+.gitignore
+.github
+.idea
+.vscode
+.claude
+**/.DS_Store
+**/Thumbs.db
+
+# --- Build outputs & caches -----------------------------------------------
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/node_modules
+**/.next
+**/out
+**/dist
+**/build
+**/.venv
+**/venv
+**/.cache
+
+# --- Large dirs unrelated to the agent image ------------------------------
+mobile
+website
+typescript
+packages
+browser-extension
+c2pa-ca
+cloudflare-worker
+github-app-worker
+examples
+docs/blog
+tests
+papers
+notes
+vouch-protocol-pre-rewrite-backup
+vouch-protocol-pro
+
+# --- Secrets — defence in depth (these should never reach a builder) ------
+**/.env
+**/.env.*
+!**/.env.example
+**/secrets
+**/*.key
+**/*.pem
+**/*.jwk
+**/seed.hex

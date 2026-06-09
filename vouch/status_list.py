@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import base64
 import gzip
+import zlib
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
@@ -29,6 +30,26 @@ from typing import Any, Dict, Optional
 
 # BitstringStatusList §4.2: minimum bitstring length is 131,072 bits (16 KiB).
 DEFAULT_BITSTRING_LENGTH = 131_072
+
+# Upper bound on a decoded status list to prevent a gzip decompression bomb: a
+# tiny encodedList can otherwise inflate to gigabytes during a revocation check.
+# 16 MiB allows ~134 million entries, far beyond any realistic status list.
+MAX_STATUS_LIST_BYTES = 16 * 1024 * 1024
+
+
+def _gunzip_bounded(compressed: bytes, max_output: int) -> bytes:
+    """
+    Gzip-decompress with a hard output cap. Raises StatusListError if the
+    decompressed size would exceed `max_output` (a decompression bomb).
+    """
+    # 16 + MAX_WBITS selects gzip (rather than raw zlib) framing.
+    d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    out = d.decompress(compressed, max_output)
+    if d.unconsumed_tail:
+        raise StatusListError(
+            f"status list decompresses to more than {max_output} bytes"
+        )
+    return out
 
 # BitstringStatusList §4.1
 STATUS_PURPOSE_REVOCATION = "revocation"
@@ -182,7 +203,9 @@ class StatusList:
         b64 = payload + ("=" * padding)
         try:
             compressed = base64.urlsafe_b64decode(b64)
-            bits = gzip.decompress(compressed)
+            bits = _gunzip_bounded(compressed, MAX_STATUS_LIST_BYTES)
+        except StatusListError:
+            raise
         except Exception as exc:
             raise StatusListError(f"failed to decode bitstring: {exc}") from exc
 

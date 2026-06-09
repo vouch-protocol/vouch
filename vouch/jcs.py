@@ -69,25 +69,43 @@ def _emit_number(value: float | int) -> str:
         if value.is_integer() and -(2**53) <= value <= (2**53):
             value = int(value)
         else:
-            # ECMAScript Number.prototype.toString equivalent — Python's repr()
-            # is close but emits `1e+20` where ECMAScript emits `100000000000000000000`.
-            # Use a shortest-round-trip serialization.
-            s = repr(value)
-            # Normalize exponent capitalization and sign formatting per ES.
-            return _normalize_float_repr(s)
+            # ECMAScript Number.prototype.toString (RFC 8785 number serialization).
+            return _es_number_to_string(value)
     if isinstance(value, bool):  # bool is a subclass of int in Python; guard above.
         raise TypeError("JCS: booleans handled by separate branch")
     return str(int(value))
 
 
-def _normalize_float_repr(s: str) -> str:
-    # Python repr for floats may produce forms like '1e+20' or '0.5'.
-    # ECMAScript toString uses lowercase 'e', no '+' after 'e' for positive,
-    # and uses positional form for magnitudes between 1e-6 and 1e21 (exclusive).
-    # This is a best-effort minimal normalizer; full ES coverage requires a
-    # dedicated library if exotic floats are encountered.
-    s = s.lower().replace("e+", "e")
-    return s
+def _es_number_to_string(x: float) -> str:
+    """ECMAScript ``Number.prototype.toString`` for a finite, non-zero float.
+
+    Implements the algorithm exactly (positional form for exponents in
+    (-6, 21], exponential "Ne+M" / "Ne-M" otherwise, with no leading zeros in
+    the exponent), so the canonical form is byte-identical to JavaScript and to
+    the Rust (ryu-js) and TypeScript SDKs. Python's ``repr`` agrees on the
+    shortest digits but uses different exponential thresholds and exponent
+    formatting, which would silently diverge across implementations.
+    """
+    from decimal import Decimal
+
+    sign = "-" if x < 0 else ""
+    _, digits, exp = Decimal(repr(abs(x))).as_tuple()
+    all_digits = "".join(str(d) for d in digits)
+    digit_str = all_digits.rstrip("0") or "0"
+    exp += len(all_digits) - len(digit_str)
+    k = len(digit_str)
+    n = exp + k  # value == int(digit_str) * 10**(n - k); n is the point position
+    if k <= n <= 21:
+        return sign + digit_str + "0" * (n - k)
+    if 0 < n <= 21:
+        return sign + digit_str[:n] + "." + digit_str[n:]
+    if -6 < n <= 0:
+        return sign + "0." + "0" * (-n) + digit_str
+    e = n - 1
+    e_str = ("+" if e >= 0 else "-") + str(abs(e))
+    if k == 1:
+        return sign + digit_str + "e" + e_str
+    return sign + digit_str[0] + "." + digit_str[1:] + "e" + e_str
 
 
 def _emit_string(value: str) -> str:

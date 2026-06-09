@@ -1,0 +1,19 @@
+name = "vouch-email-assistant"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# This worker handles inbound email at ask@vouch-protocol.com.
+# Routing is configured via the Cloudflare dashboard:
+#   Email > Email Routing > Routes > Custom address
+#     ask@vouch-protocol.com  →  Send to a Worker  →  vouch-email-assistant
+
+# Secrets (set via `npx wrangler secret put NAME`):
+#   GEMINI_API_KEY    - https://aistudio.google.com/app/apikey (free tier)
+#   RESEND_API_KEY    - https://resend.com/api-keys (free tier: 3000/month)
+#   FORWARD_TO        - your personal address for visibility copies (e.g., ram@vouch-protocol.com)
+
+[vars]
+FROM_ADDRESS = "ask@vouch-protocol.com"
+FROM_NAME    = "Vouch Assistant"
+SIGNED_BY    = "did:web:vouch-protocol.com:u:rampy"

@@ -61,37 +61,14 @@ async function initializeKeys() {
             isSecure: !keyInfo.isFallback,
         };
     } catch (error) {
-        console.error('Vouch: Secure key initialization failed, using fallback', error);
-
-        // Fallback to legacy method if SecureKeys fails
-        const stored = await chrome.storage.local.get([
-            STORAGE_KEYS.SECRET_KEY,
-            STORAGE_KEYS.PUBLIC_KEY,
-        ]);
-
-        if (stored[STORAGE_KEYS.SECRET_KEY] && stored[STORAGE_KEYS.PUBLIC_KEY]) {
-            console.warn('Vouch: Using legacy keys from chrome.storage (less secure)');
-            return {
-                publicKey: stored[STORAGE_KEYS.PUBLIC_KEY],
-                secretKey: stored[STORAGE_KEYS.SECRET_KEY],
-                isSecure: false,
-            };
-        }
-
-        // Generate new keypair (fallback)
-        console.log('Vouch: Generating fallback keypair...');
-        const keypair = generateKeypair();
-
-        await chrome.storage.local.set({
-            [STORAGE_KEYS.SECRET_KEY]: keypair.secretKey,
-            [STORAGE_KEYS.PUBLIC_KEY]: keypair.publicKey,
-        });
-
-        return {
-            publicKey: keypair.publicKey,
-            secretKey: keypair.secretKey,
-            isSecure: false,
-        };
+        // FAIL CLOSED. Never persist a raw private key to chrome.storage.local:
+        // it is unencrypted at rest and readable by the entire extension context.
+        // SecureKeys.initialize() already handles WebCrypto-absent environments
+        // with an in-IndexedDB TweetNaCl fallback and migrates any legacy keys,
+        // so reaching this catch means secure key storage itself is unavailable.
+        // We refuse to silently downgrade to a world-readable key.
+        console.error('Vouch: Secure key initialization failed; refusing to fall back to plaintext key storage', error);
+        throw new Error('Secure key storage is unavailable. Vouch cannot sign without a protected key.');
     }
 }
 

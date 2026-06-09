@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Verify-page redesign · pick A / B / C</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment:       #FAF7EE;
+    --parchment-warm:  #F2EBD9;
+    --ink:             #0F172A;
+    --ink-faint:       #64748B;
+    --burgundy:        #7C2D3A;
+    --rule:            #D9CFB6;
+  }
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    margin: 0;
+    padding: 80px 24px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-weight: 600; font-size: 1.6rem; letter-spacing: -0.01em; margin: 0 0 12px; }
+  .lede { color: var(--ink-faint); font-style: italic; margin: 0 0 48px; }
+  .options { display: grid; gap: 18px; }
+  a.option {
+    display: block;
+    padding: 24px;
+    border: 1px solid var(--rule);
+    background: var(--parchment-warm);
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  a.option:hover {
+    border-color: var(--ink);
+    background: var(--parchment);
+  }
+  a.option .label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--burgundy);
+    margin-bottom: 6px;
+  }
+  a.option h2 {
+    margin: 0 0 8px;
+    font-weight: 600;
+    font-size: 1.25rem;
+  }
+  a.option p { margin: 0; color: var(--ink-faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Verify-page redesign — pick one</h1>
+  <p class="lede">Each option shows the paper variant first, then the same template applied to a free-text signature. Open in any browser. Sample data is the live <code>arxiv-1</code> record with the new <code>did:web:vouch-protocol.com:u:rampyg</code> signer label.</p>
+
+  <div class="options">
+    <a class="option" href="option-a-document-card.html">
+      <div class="label">Option A</div>
+      <h2>Document Card</h2>
+      <p>Quietest. Vertical card layout, single burgundy accent rule, eyebrow labels, ghost buttons. Closest to the rest of the site.</p>
+    </a>
+    <a class="option" href="option-b-stamp-seal.html">
+      <div class="label">Option B</div>
+      <h2>Stamp &amp; Seal</h2>
+      <p>Most theatrical. A double-bordered burgundy "seal" at the top with the V mark, then centred sections. Reads as a wax-seal verdict.</p>
+    </a>
+    <a class="option" href="option-c-manuscript.html">
+      <div class="label">Option C</div>
+      <h2>Manuscript</h2>
+      <p>Most editorial. Masthead with "Vouch Papers" wordmark, issue number, sections marked ARTEFACT / PROVENANCE / VERIFY LOCALLY.</p>
+    </a>
+  </div>
+</div>
+</body>
+</html>

@@ -46,7 +46,12 @@ const corsHeaders = {
  * Verify GitHub webhook signature
  */
 async function verifyWebhookSignature(payload, signature, secret) {
-    if (!signature) return false;
+    // Fail closed: no configured secret or no signature means no verification.
+    if (!secret || !signature || !signature.startsWith('sha256=')) return false;
+
+    const hex = signature.slice('sha256='.length);
+    if (hex.length !== 64 || /[^0-9a-fA-F]/.test(hex)) return false;
+    const sigBytes = new Uint8Array(hex.match(/../g).map((h) => parseInt(h, 16)));
 
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -54,15 +59,12 @@ async function verifyWebhookSignature(payload, signature, secret) {
         encoder.encode(secret),
         { name: 'HMAC', hash: 'SHA-256' },
         false,
-        ['sign']
+        ['verify']
     );
 
-    const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
-    const computed = 'sha256=' + Array.from(new Uint8Array(sig))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-
-    return computed === signature;
+    // crypto.subtle.verify performs a constant-time comparison internally,
+    // avoiding the timing oracle of a plain string `===`.
+    return await crypto.subtle.verify('HMAC', key, sigBytes, encoder.encode(payload));
 }
 
 /**

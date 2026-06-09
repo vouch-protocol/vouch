@@ -1026,16 +1026,25 @@ APP_MANIFEST = {
 
 
 def verify_webhook_signature(payload: bytes, signature: str) -> bool:
-    """Verify GitHub webhook signature."""
+    """Verify GitHub webhook signature.
+
+    Fails closed: if no webhook secret is configured, or no signature was
+    supplied, verification fails. A missing secret is a misconfiguration, not
+    a licence to accept unsigned events.
+    """
     if not GITHUB_WEBHOOK_SECRET:
-        return True
-    
+        logger.error("GITHUB_WEBHOOK_SECRET is not configured; rejecting webhook")
+        return False
+
+    if not signature:
+        return False
+
     expected = "sha256=" + hmac.new(
         GITHUB_WEBHOOK_SECRET.encode(),
         payload,
         hashlib.sha256
     ).hexdigest()
-    
+
     return hmac.compare_digest(expected, signature)
 
 
@@ -1118,10 +1127,12 @@ async def handle_webhook(
 ):
     """Main webhook handler for GitHub events."""
     body = await request.body()
-    
-    if x_hub_signature_256 and not verify_webhook_signature(body, x_hub_signature_256):
+
+    # Always require a valid signature. A missing X-Hub-Signature-256 header
+    # must be rejected, not treated as exempt from verification.
+    if not x_hub_signature_256 or not verify_webhook_signature(body, x_hub_signature_256):
         raise HTTPException(status_code=401, detail="Invalid signature")
-    
+
     payload = await request.json()
     
     # Route by event type

@@ -24,6 +24,11 @@ import {
   buildHybridProof,
   generateMLDSA44KeyPair,
 } from './data-integrity-hybrid';
+import {
+  findBroadenedDimension,
+  capabilityFromCredential,
+  type Capability,
+} from './attenuation';
 import { encodeEd25519Public, encodeMLDSA44Public } from './multikey';
 import type {
   SignCredentialOptions,
@@ -36,8 +41,6 @@ import {
   type Intent,
   type VouchCredential,
 } from './vc';
-
-const MAX_CHAIN_DEPTH = 5;
 
 /**
  * Signer for creating Vouch credentials (modern) or Vouch-Tokens (legacy).
@@ -311,8 +314,11 @@ export class Signer {
   /**
    * Build a delegation link from `parentCredential` to this signer.
    *
-   * Implements Specification §9.2 link structure. Validates depth limit
-   * (§9.4) and resource-narrowing (§9.3 step 5).
+   * Implements Specification v1.7 link structure (Section 9.2) and the
+   * capability-attenuation rule (Sections 9.3 to 9.5). There is no fixed depth
+   * limit in v1.7 (CH-001): depth becomes a verifier-side cost budget. The
+   * builder blocks only outright broadening (a delegator cannot grant more than
+   * it holds); the verifier enforces the full attenuation rule.
    */
   private extendDelegationChainFromParent(
     parentCredential: VouchCredential,
@@ -322,34 +328,40 @@ export class Signer {
     const parentIntent = parentSubject.intent;
     const parentChain: DelegationLink[] = parentSubject.delegationChain ?? [];
 
-    if (parentChain.length >= MAX_CHAIN_DEPTH) {
-      throw new Error(
-        `Delegation chain exceeds max depth of ${MAX_CHAIN_DEPTH}`
-      );
-    }
-
-    const parentResource = parentIntent.resource ?? '';
-    const childResource = currentIntent.resource ?? '';
-    if (
-      parentResource &&
-      childResource &&
-      !isSubResource(childResource, parentResource)
-    ) {
+    const parentCap = capabilityFromCredential(parentIntent, parentCredential);
+    const childCap = capabilityFromCredential(currentIntent, parentCredential);
+    const broadened = findBroadenedDimension(parentCap, childCap);
+    if (broadened === 'resource') {
       throw new Error(
         'Delegation violates resource-narrowing rule: child resource ' +
-        `${JSON.stringify(childResource)} is not a sub-resource of parent ` +
-        `${JSON.stringify(parentResource)}`
+        `${JSON.stringify(currentIntent.resource)} is not a sub-resource of ` +
+        `parent ${JSON.stringify(parentIntent.resource)}`
+      );
+    }
+    if (broadened !== null) {
+      throw new Error(
+        'Delegation violates the capability-attenuation rule: child ' +
+        `capability broadens the parent on dimension ${JSON.stringify(broadened)}`
       );
     }
 
     const parentProof = (parentCredential as { proof?: { proofValue?: string } }).proof;
+    // Store the FULL parent proofValue, not a 64-char prefix. A truncated value
+    // is not a verifiable commitment. The chain is inside the signed
+    // credentialSubject, so the full value is tamper-evident.
+    const parentProofValue = parentProof?.proofValue;
+    if (!parentProofValue) {
+      throw new Error(
+        'parent credential has no proofValue to bind the delegation link to'
+      );
+    }
     const newLink: DelegationLink = {
       issuer: parentCredential.issuer,
       subject: this.did,
       intent: currentIntent,
       validFrom: parentCredential.validFrom,
       validUntil: parentCredential.validUntil,
-      parentProofValue: parentProof?.proofValue?.slice(0, 64),
+      parentProofValue,
     };
 
     return [...parentChain, newLink];

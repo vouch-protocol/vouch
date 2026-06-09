@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ONDC Seller App · Vouch-signed listing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" type="image/png" sizes="32x32" href="https://vouch-protocol.com/favicon-32x32.png" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --parchment:#FAF7EE; --parchment-warm:#F2EBD9; --parchment-deep:#EFE9D5;
+    --ink:#0F172A; --ink-soft:#334155; --ink-faint:#64748B;
+    --burgundy:#7C2D3A; --burgundy-dark:#5C1F2C;
+    --rule:#D9CFB6; --rule-light:#E8DFC9;
+    --code-bg:#0F172A; --code-fg:#FAF7EE;
+    --seller-accent:#7C2D3A; /* burgundy for seller side */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .role-bar {
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 12px 24px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .role-bar .accent { color: var(--burgundy-light, #E69BAA); }
+  .frame { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+
+  h1 { font-weight: 600; font-size: 1.8rem; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--ink-soft); margin: 0 0 40px; font-style: italic; }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 8px;
+  }
+
+  .card {
+    background: var(--parchment);
+    border: 1px solid var(--rule);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+  }
+  .card.identity { background: var(--parchment-warm); }
+  .card h2 { margin: 0 0 16px; font-weight: 600; font-size: 1.05rem; }
+
+  .field { margin: 16px 0; }
+  .field label.eyebrow { display: block; }
+  .field input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    background: var(--parchment);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.95rem;
+    color: var(--ink);
+    border-radius: 0;
+  }
+  .field input[type="text"]:focus { outline: 2px solid var(--burgundy); outline-offset: -1px; }
+
+  .mono { font-family: "JetBrains Mono", monospace; font-size: 0.9rem; word-break: break-all; }
+  .mono.small { font-size: 0.8rem; color: var(--ink-soft); }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--rule);
+    background: var(--parchment-warm);
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .dropzone:hover, .dropzone.dragover { border-color: var(--burgundy); background: var(--parchment-deep); }
+  .dropzone p { margin: 6px 0; color: var(--ink-soft); }
+  .dropzone .hint { font-size: 0.85rem; color: var(--ink-faint); }
+  .dropzone input[type="file"] { display: none; }
+
+  .photo-preview {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    background: var(--parchment-warm);
+    padding: 16px;
+    border: 1px solid var(--rule);
+  }
+  .photo-preview img {
+    max-width: 200px;
+    max-height: 200px;
+    border: 1px solid var(--rule);
+    background: white;
+  }
+  .photo-info { flex: 1; }
+  .photo-info .row { margin: 6px 0; }
+  .photo-info .label { display: inline-block; min-width: 100px; color: var(--ink-faint); font-size: 0.85rem; font-family: "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Button */
+  .btn {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--parchment);
+    background: var(--burgundy);
+    border: 1px solid var(--burgundy);
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .btn:hover:not(:disabled) { background: var(--burgundy-dark); border-color: var(--burgundy-dark); }
+  .btn:disabled { background: var(--rule); border-color: var(--rule); color: var(--ink-faint); cursor: not-allowed; }
+  .btn.ghost {
+    background: var(--parchment);
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+  .btn.ghost:hover { background: var(--ink); color: var(--parchment); }
+
+  .actions { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* Result block */
+  .result { display: none; margin-top: 32px; }
+  .result.show { display: block; }
+  .result .badge {
+    display: inline-block;
+    background: var(--burgundy);
+    color: var(--parchment);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    margin-bottom: 16px;
+  }
+  pre {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 18px 20px;
+    margin: 12px 0;
+    overflow-x: auto;
+    line-height: 1.5;
+    border-radius: 0;
+  }
+  pre .k { color: #80c08a; }
+  pre .s { color: #f4cb78; }
+  pre .n { color: #a3d4ff; }
+
+  .footer-note {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule-light);
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+  .footer-note a { color: var(--burgundy); text-decoration: none; border-bottom: 1px solid var(--burgundy); }
+
+  .step {
+    display: inline-block;
+    width: 24px; height: 24px;
+    background: var(--burgundy);
+    color: var(--parchment);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 24px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="role-bar">
+  <span class="accent">●</span>&nbsp;&nbsp;Seller App&nbsp;&nbsp;|&nbsp;&nbsp;ONDC Network&nbsp;&nbsp;|&nbsp;&nbsp;Vouch-signed listings
+</div>
+
+<div class="frame">
+
+  <h1>Sign a product listing</h1>
+  <p class="subtitle">
+    On ONDC, your product listings reach buyers through dozens of buyer apps you don't control.
+    Sign each photo and listing with your Vouch identity so any buyer app, anywhere in the network,
+    can verify it came from you — without calling back to your server.
+  </p>
+
+  <!-- ============================== STEP 1: Identity ============================== -->
+  <div class="card identity">
+    <p class="eyebrow"><span class="step">1</span>Your Vouch identity</p>
+    <p style="margin: 0 0 14px;">Generated once in your browser and stored locally. Same identity across every listing you sign.</p>
+    <div class="field">
+      <p class="eyebrow">Seller DID</p>
+      <p class="mono" id="seller-did">…loading…</p>
+    </div>
+    <div class="field">
+      <p class="eyebrow">Public key (Multikey)</p>
+      <p class="mono small" id="seller-pub">…loading…</p>
+    </div>
+  </div>
+
+  <!-- ============================== STEP 2: Product ============================== -->
+  <div class="card">
+    <p class="eyebrow"><span class="step">2</span>Product listing</p>
+    <div class="field">
+      <label class="eyebrow" for="listing-id">Listing ID</label>
+      <input type="text" id="listing-id" value="L-789-saree-handblock" />
+    </div>
+    <div class="field">
+      <label class="eyebrow" for="listing-title">Title</label>
+      <input type="text" id="listing-title" value="Hand-block printed cotton saree" />
+    </div>
+  </div>
+
+  <!-- ============================== STEP 3: Photo ============================== -->
+  <div class="card">
+    <p class="eyebrow"><span class="step">3</span>Product photo</p>
+    <div class="dropzone" id="dropzone">
+      <p><strong>Drag a JPEG/PNG here</strong> or click to choose a file.</p>
+      <p class="hint">The photo bytes never leave your browser. Only the SHA-256 hash is embedded in the credential.</p>
+      <input type="file" id="photo-input" accept="image/*" />
+    </div>
+    <div id="photo-display" style="display: none; margin-top: 16px;">
+      <div class="photo-preview">
+        <img id="photo-img" alt="Product photo preview" />
+        <div class="photo-info">
+          <div class="row"><span class="label">Filename</span><span id="photo-name" class="mono small"></span></div>
+          <div class="row"><span class="label">Size</span><span id="photo-size" class="mono small"></span></div>
+          <div class="row"><span class="label">SHA-256</span><span id="photo-hash" class="mono small"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== STEP 4: Sign ============================== -->
+  <div class="actions">
+    <button class="btn" id="sign-btn" disabled>Sign listing with Vouch</button>
+    <button class="btn ghost" id="reset-btn">Reset identity</button>
+  </div>
+
+  <!-- ============================== Result ============================== -->
+  <div class="result" id="result">
+    <span class="badge">✓ Signed</span>
+    <h2 style="margin: 8px 0 16px; font-weight: 600;">Verifiable bundle</h2>
+    <p style="color: var(--ink-soft); margin: 0 0 16px;">
+      Copy or download this bundle, then open the
+      <a href="buyer-app.html" style="color: var(--burgundy);">Buyer App</a>
+      in a different tab to verify it offline.
+    </p>
+    <div class="actions" style="margin-top: 0; margin-bottom: 20px;">
+      <button class="btn ghost" id="copy-btn">Copy bundle JSON</button>
+      <button class="btn ghost" id="download-btn">Download .json</button>
+      <button class="btn ghost" id="open-verifier-btn">Open Buyer App →</button>
+    </div>
+    <pre id="bundle-json"></pre>
+  </div>
+
+  <p class="footer-note">
+    Reference implementation. Built with the same <code>eddsa-jcs-2022</code>
+    cryptosuite as the rest of Vouch — credentials produced here verify in the
+    Python and TypeScript reference implementations too.
+    See <a href="https://vouch-protocol.com">vouch-protocol.com</a>.
+  </p>
+</div>
+
+<script type="module">
+import {
+  generateKeypair, signCredential, sha256, sha256Hex,
+  ed25519PublicMultibase, uuidV4, isoNow, bytesToHex, hexToBytes,
+} from "./lib/vouch-browser.js";
+
+// ---------------------------------------------------------------------------
+// 1. Load-or-generate the seller's identity from localStorage.
+// ---------------------------------------------------------------------------
+const STORE_KEY = "vouch-ondc-demo-seller";
+
+async function loadOrGenerateSeller() {
+  const raw = localStorage.getItem(STORE_KEY);
+  if (raw) {
+    try {
+      const d = JSON.parse(raw);
+      return {
+        handle: d.handle,
+        did: d.did,
+        privateKey: hexToBytes(d.privHex),
+        publicKey: hexToBytes(d.pubHex),
+        publicMultibase: d.pubMultibase,
+      };
+    } catch (e) { /* fall through, regenerate */ }
+  }
+  const { privateKey, publicKey } = await generateKeypair();
+  const handle = "seller-" + crypto.randomUUID().slice(0, 8);
+  const did = `did:web:vouch-protocol.com:u:${handle}`;
+  const publicMultibase = ed25519PublicMultibase(publicKey);
+  const seller = { handle, did, privateKey, publicKey, publicMultibase };
+  persistSeller(seller);
+  return seller;
+}
+
+function persistSeller(s) {
+  localStorage.setItem(STORE_KEY, JSON.stringify({
+    handle: s.handle,
+    did: s.did,
+    privHex: bytesToHex(s.privateKey),
+    pubHex: bytesToHex(s.publicKey),
+    pubMultibase: s.publicMultibase,
+  }));
+}
+
+let seller = await loadOrGenerateSeller();
+document.getElementById("seller-did").textContent = seller.did;
+document.getElementById("seller-pub").textContent = seller.publicMultibase;
+
+// ---------------------------------------------------------------------------
+// 2. Photo drop / file input.
+// ---------------------------------------------------------------------------
+let photo = null;
+
+const dz = document.getElementById("dropzone");
+const fileInput = document.getElementById("photo-input");
+
+dz.addEventListener("click", () => fileInput.click());
+dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("dragover"); });
+dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+dz.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dz.classList.remove("dragover");
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", (e) => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+async function handleFile(file) {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const hashHex = await sha256Hex(bytes);
+  photo = { file, bytes, hashHex };
+
+  document.getElementById("photo-display").style.display = "block";
+  document.getElementById("photo-img").src = URL.createObjectURL(file);
+  document.getElementById("photo-name").textContent = file.name;
+  document.getElementById("photo-size").textContent = `${file.size.toLocaleString()} bytes`;
+  document.getElementById("photo-hash").textContent = hashHex;
+  document.getElementById("sign-btn").disabled = false;
+}
+
+// ---------------------------------------------------------------------------
+// 3. Sign action.
+// ---------------------------------------------------------------------------
+let lastBundle = null;
+
+document.getElementById("sign-btn").addEventListener("click", async () => {
+  if (!photo) return;
+  const listingId = document.getElementById("listing-id").value.trim();
+  const title = document.getElementById("listing-title").value.trim();
+  if (!listingId || !title) {
+    alert("Listing ID and title are required.");
+    return;
+  }
+
+  const credential = {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1",
+    ],
+    id: `urn:uuid:${uuidV4()}`,
+    type: ["VerifiableCredential", "VouchCredential", "ONDCListingPhoto"],
+    issuer: seller.did,
+    validFrom: isoNow(),
+    credentialSubject: {
+      id: seller.did,
+      vouchVersion: "1.0",
+      intent: {
+        action: "list_product",
+        target: `sha256:${photo.hashHex}`,
+        resource: `ondc://listing/${listingId}`,
+        listing: {
+          id: listingId,
+          title: title,
+          photoFilename: photo.file.name,
+          photoBytes: photo.file.size,
+          sellerHandle: seller.handle,
+        },
+      },
+    },
+  };
+
+  const signed = await signCredential(
+    credential,
+    seller.privateKey,
+    `${seller.did}#key-1`,
+  );
+
+  const didDocument = {
+    "@context": ["https://www.w3.org/ns/did/v1", "https://w3id.org/security/multikey/v1"],
+    id: seller.did,
+    verificationMethod: [{
+      id: `${seller.did}#key-1`,
+      type: "Multikey",
+      controller: seller.did,
+      publicKeyMultibase: seller.publicMultibase,
+    }],
+    assertionMethod: [`${seller.did}#key-1`],
+  };
+
+  const bundle = {
+    _comment: "Vouch ONDC verifiable bundle. Open in Buyer App to verify offline.",
+    credential: signed,
+    didDocument,
+  };
+
+  lastBundle = bundle;
+  document.getElementById("bundle-json").textContent = JSON.stringify(bundle, null, 2);
+  document.getElementById("result").classList.add("show");
+  document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+// ---------------------------------------------------------------------------
+// 4. Copy / download / open verifier.
+// ---------------------------------------------------------------------------
+document.getElementById("copy-btn").addEventListener("click", async () => {
+  if (!lastBundle) return;
+  await navigator.clipboard.writeText(JSON.stringify(lastBundle, null, 2));
+  const btn = document.getElementById("copy-btn");
+  const orig = btn.textContent;
+  btn.textContent = "Copied ✓";
+  setTimeout(() => { btn.textContent = orig; }, 1500);
+});
+
+document.getElementById("download-btn").addEventListener("click", () => {
+  if (!lastBundle) return;
+  const blob = new Blob([JSON.stringify(lastBundle, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${lastBundle.credential.credentialSubject.intent.listing.id}.vouch.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("open-verifier-btn").addEventListener("click", () => {
+  window.open("buyer-app.html", "_blank");
+});
+
+// ---------------------------------------------------------------------------
+// 5. Reset identity (rare).
+// ---------------------------------------------------------------------------
+document.getElementById("reset-btn").addEventListener("click", async () => {
+  if (!confirm("This generates a brand-new Seller DID. All previously signed listings will appear as 'unknown issuer' to buyers. Continue?")) return;
+  localStorage.removeItem(STORE_KEY);
+  location.reload();
+});
+</script>
+
+</body>
+</html>

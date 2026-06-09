@@ -182,26 +182,62 @@ func writeJSONNumber(buf *bytes.Buffer, s string) error {
 	return fmt.Errorf("jcs: cannot parse number %q", s)
 }
 
-// writeFloat matches RFC 8785 §3.2.2.5 (ECMAScript ToString) closely enough
-// for the magnitudes we expect (timestamps, counters, scores). Negative zero
-// is normalized to 0.
+// writeFloat serializes a float per RFC 8785 3.2.2.5 (ECMAScript ToString).
+// Negative zero is normalized to 0.
 func writeFloat(buf *bytes.Buffer, f float64) error {
 	if math.IsNaN(f) || math.IsInf(f, 0) {
 		return errors.New("jcs: cannot serialize NaN or Infinity")
 	}
 	if f == 0 {
-		// Normalizes -0 to 0.
-		buf.WriteByte('0')
+		buf.WriteByte('0') // normalizes -0 to 0
 		return nil
 	}
-	if f == math.Trunc(f) && math.Abs(f) < 1e21 {
-		buf.WriteString(strconv.FormatInt(int64(f), 10))
-		return nil
-	}
-	// strconv with prec=-1 produces the shortest round-trip representation,
-	// which matches ECMA ToString for most non-extreme floats.
-	buf.WriteString(strconv.FormatFloat(f, 'g', -1, 64))
+	buf.WriteString(esNumberToString(f))
 	return nil
+}
+
+// esNumberToString implements ECMAScript Number.prototype.toString exactly:
+// positional form for a decimal-point position in (-6, 21], exponential
+// "Ne+M" / "Ne-M" otherwise, with no leading zeros in the exponent. This matches
+// JavaScript and the Rust (ryu-js) and Python SDKs byte-for-byte, including
+// integer-valued floats beyond int64 range (which the previous int64 cast
+// silently corrupted).
+func esNumberToString(f float64) string {
+	sign := ""
+	if f < 0 {
+		sign = "-"
+		f = -f
+	}
+	// Shortest round-trip mantissa and base-10 exponent, e.g. "1.2345678e+04".
+	s := strconv.FormatFloat(f, 'e', -1, 64)
+	mant := s
+	exp := 0
+	if i := strings.IndexByte(s, 'e'); i >= 0 {
+		mant = s[:i]
+		exp, _ = strconv.Atoi(s[i+1:])
+	}
+	digits := strings.Replace(mant, ".", "", 1)
+	k := len(digits)
+	n := exp + 1 // position of the decimal point within `digits`
+	switch {
+	case k <= n && n <= 21:
+		return sign + digits + strings.Repeat("0", n-k)
+	case 0 < n && n <= 21:
+		return sign + digits[:n] + "." + digits[n:]
+	case -6 < n && n <= 0:
+		return sign + "0." + strings.Repeat("0", -n) + digits
+	default:
+		e := n - 1
+		eSign := "+"
+		if e < 0 {
+			eSign = "-"
+			e = -e
+		}
+		if k == 1 {
+			return sign + digits + "e" + eSign + strconv.Itoa(e)
+		}
+		return sign + digits[:1] + "." + digits[1:] + "e" + eSign + strconv.Itoa(e)
+	}
 }
 
 // writeJSONString writes an RFC 8259 / JCS-conformant JSON string literal.

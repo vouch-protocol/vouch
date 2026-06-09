@@ -1,0 +1,10 @@
+{
+  "id": "arxiv-1",
+  "sha256": "9957ac845eeb1004761541c197b5babc2a6d25b369828b2643ad76b3dfae8dd5",
+  "author": "Ramprasad Anandam Gaddam",
+  "signer": "did:web:vouch-protocol.com:u:rampy",
+  "signature": "z5AL2pYYVW13PsiN9SuougkLHkQnibCpNyAAPgXFvYG99XMR6yx3bmL1DpWM8uQs23M8dRpk8udmCSsbMRPEatwSZ",
+  "title": "Vouch Protocol: Cryptographic Identity and Continuous State Verifiability for Autonomous AI Agents",
+  "resource": "https://github.com/vouch-protocol/vouch/blob/main/papers/paper-1-vouch-protocol/paper-1-vouch-protocol.pdf",
+  "cryptosuite": "eddsa-jcs-2022"
+}

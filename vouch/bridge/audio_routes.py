@@ -18,6 +18,7 @@ processing) that cannot use WASM. Browser clients should always prefer WASM.
 
 import base64
 import hashlib
+import hmac
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -130,7 +131,8 @@ def _check_auth(authorization: Optional[str]) -> None:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     token = authorization[len("Bearer ") :]
-    if token != settings.bridge_secret:
+    # Constant-time comparison to avoid a timing oracle on the shared secret.
+    if not hmac.compare_digest(token, settings.bridge_secret):
         raise HTTPException(status_code=403, detail="Invalid bridge secret")
 
 

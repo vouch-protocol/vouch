@@ -1,0 +1,57 @@
+# Fly.io configuration for the Vouch Website Agent.
+#
+# Single app, single container, two processes (Go sidecar + FastAPI),
+# supervised by website-agent/deploy/start.sh. The sidecar is reachable
+# from the FastAPI process on 127.0.0.1:8877; it is NOT exposed to the
+# public internet.
+#
+# Region: iad (US-East). Pick whatever is closest to your visitors; this
+# can be changed later with `fly scale count` + region flags.
+#
+# Resources: 1 shared CPU, 512 MB. The RAG index is ~99 chunks of plain
+# text; embeddings live in memory. Bump memory if the index grows.
+
+app              = "vouch-agent"
+primary_region   = "iad"
+kill_signal      = "SIGTERM"
+kill_timeout     = "15s"
+
+[build]
+  dockerfile = "website-agent/deploy/Dockerfile"
+
+[env]
+  # Public defaults. Secrets (GEMINI_API_KEY, VOUCH_ED25519_SEED) come
+  # from `fly secrets set` and are injected at runtime.
+  PORT                     = "8000"
+  VOUCH_AGENT_DID          = "did:web:agent.vouch-protocol.com"
+  VOUCH_LLM_PROVIDER       = "gemini"
+  GEMINI_MODEL             = "gemini-2.5-flash"
+  VOUCH_SIDECAR_URL        = "http://127.0.0.1:8877"
+  VOUCH_SIDECAR_PORT       = "8877"
+  VOUCH_DID_DOCUMENT_PATH  = "/app/did.json"
+  VOUCH_CORS_ORIGINS       = "https://vouch-protocol.com,https://www.vouch-protocol.com,http://localhost:3000"
+
+[http_service]
+  internal_port       = 8000
+  force_https         = true
+  auto_stop_machines  = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes           = ["app"]
+
+  [http_service.concurrency]
+    type       = "requests"
+    soft_limit = 25
+    hard_limit = 50
+
+  [[http_service.checks]]
+    grace_period  = "10s"
+    interval      = "30s"
+    method        = "GET"
+    timeout       = "5s"
+    path          = "/healthz"
+
+[[vm]]
+  size   = "shared-cpu-1x"
+  memory = "512mb"
+  cpus   = 1

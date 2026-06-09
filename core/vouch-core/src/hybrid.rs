@@ -129,6 +129,32 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
                 let proof_obj = p
                     .as_object()
                     .ok_or_else(|| CoreError::Json("ml-dsa proof must be an object".into()))?;
+
+                // Bind the ML-DSA proof to the issuer and enforce its purpose,
+                // matching the Ed25519 path (which gets this via verify_proof).
+                match proof_obj.get("proofPurpose").and_then(|v| v.as_str()) {
+                    Some("assertionMethod") => {}
+                    other => {
+                        return Err(CoreError::Json(format!(
+                            "unexpected proofPurpose: {other:?}"
+                        )))
+                    }
+                }
+                if let Some(issuer) = base.as_object().and_then(data_integrity::issuer_did) {
+                    let vm = proof_obj
+                        .get("verificationMethod")
+                        .and_then(|v| v.as_str())
+                        .ok_or_else(|| {
+                            CoreError::Json("ml-dsa proof missing verificationMethod".into())
+                        })?;
+                    let vm_did = vm.split('#').next().unwrap_or(vm);
+                    if vm_did != issuer {
+                        return Err(CoreError::Json(
+                            "verificationMethod does not belong to issuer".into(),
+                        ));
+                    }
+                }
+
                 let pv = proof_obj
                     .get("proofValue")
                     .and_then(|v| v.as_str())

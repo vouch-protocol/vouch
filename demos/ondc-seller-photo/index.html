@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Vouch × ONDC · Verifiable seller listings</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" type="image/png" sizes="32x32" href="https://vouch-protocol.com/favicon-32x32.png" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --parchment:#FAF7EE; --parchment-warm:#F2EBD9; --parchment-deep:#EFE9D5;
+    --ink:#0F172A; --ink-soft:#334155; --ink-faint:#64748B;
+    --burgundy:#7C2D3A; --burgundy-dark:#5C1F2C;
+    --teal-buyer:#1e6f7f;
+    --rule:#D9CFB6; --rule-light:#E8DFC9;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--parchment); color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 17px; line-height: 1.7;
+    min-height: 100vh;
+  }
+  .frame { max-width: 760px; margin: 0 auto; padding: 64px 24px; }
+
+  .masthead { padding-bottom: 18px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; display: flex; align-items: center; gap: 12px; }
+  .masthead img { width: 30px; height: 30px; }
+  .masthead .wordmark { font-weight: 600; font-size: 1.05rem; }
+  .masthead .right { margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--burgundy); }
+
+  h1 { font-weight: 600; font-size: 2.1rem; line-height: 1.2; margin: 0 0 16px; letter-spacing: -0.015em; }
+  .lede { color: var(--ink-soft); font-size: 1.1rem; margin: 0 0 40px; }
+
+  h2 { font-weight: 600; font-size: 1.3rem; margin: 36px 0 12px; }
+  p { margin: 12px 0; }
+
+  .eyebrow { font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--burgundy); margin: 40px 0 12px; }
+  .eyebrow::before { content: "✦"; margin-right: 10px; }
+
+  .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 24px 0; }
+  @media (max-width: 640px) { .card-row { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--rule);
+    padding: 24px 26px;
+    background: var(--parchment-warm);
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.15s, background 0.15s;
+    display: block;
+  }
+  .card:hover { border-color: var(--ink); background: var(--parchment); }
+  .card.seller { border-left: 4px solid var(--burgundy); }
+  .card.buyer { border-left: 4px solid var(--teal-buyer); }
+  .card .role { font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 8px; }
+  .card h3 { margin: 0 0 8px; font-weight: 600; font-size: 1.15rem; }
+  .card p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+
+  .steps { padding-left: 0; list-style: none; counter-reset: step; }
+  .steps li { padding-left: 50px; position: relative; margin: 20px 0; counter-increment: step; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: 0;
+    width: 36px; height: 36px;
+    background: var(--burgundy); color: var(--parchment);
+    border-radius: 50%;
+    text-align: center; line-height: 36px;
+    font-family: "JetBrains Mono", monospace; font-size: 0.85rem; font-weight: 600;
+  }
+  .steps li b { font-weight: 600; }
+
+  .callout {
+    background: var(--parchment-warm);
+    border-left: 3px solid var(--burgundy);
+    padding: 18px 22px;
+    margin: 24px 0;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  code { font-family: "JetBrains Mono", monospace; font-size: 0.92em; background: var(--parchment-warm); padding: 1px 6px; }
+  pre {
+    font-family: "JetBrains Mono", monospace; font-size: 0.82rem;
+    background: #0F172A; color: var(--parchment);
+    padding: 16px 18px; overflow-x: auto; line-height: 1.6;
+  }
+
+  .footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--rule); color: var(--ink-faint); font-size: 0.85rem; text-align: center; }
+  .footer a { color: var(--ink-faint); border-bottom: 1px dotted var(--rule); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <header class="masthead">
+    <img src="https://vouch-protocol.com/assets/vouch-icon.png" alt="Vouch" />
+    <span class="wordmark">Vouch &times; ONDC</span>
+    <span class="right">Live demo</span>
+  </header>
+
+  <h1>A seller listing that any buyer app can verify, offline.</h1>
+  <p class="lede">
+    On ONDC, a single seller listing reaches buyers through dozens of buyer apps the
+    seller never sees, never authenticates with, and has no shared session with.
+    Today, those buyer apps can only trust the listing's claims as far as they trust the
+    seller app it came through. This demo shows what changes when every listing
+    carries its own portable cryptographic proof.
+  </p>
+
+  <p class="eyebrow">The Problem</p>
+  <p>
+    A seller posts a saree on a Seller App. The listing flows down the ONDC
+    pipe, gets cached by a few buyer apps, gets indexed by aggregators, gets shown
+    to a buyer. The buyer's app rendered a photo and a title and a price. Three
+    questions it cannot answer cryptographically:
+  </p>
+  <ul>
+    <li><b>Did this seller actually publish that photo</b>, or did someone in the
+      pipeline swap it for a stolen one?</li>
+    <li><b>Is the title the seller wrote</b>, or did an intermediary adjust it?</li>
+    <li>If the buyer disputes the order later, <b>what does the seller's signed
+      version of this listing look like</b>?</li>
+  </ul>
+
+  <div class="callout">
+    Today the answer is "we trust the seller app's API" — a network-level trust.
+    What ONDC needs is per-artefact trust: a portable proof that travels with
+    each listing wherever it goes.
+  </div>
+
+  <p class="eyebrow">The Demo</p>
+  <p>
+    Two pages, running entirely in your browser. No server, no API key, no network
+    after page load. The cryptography is the same <code>eddsa-jcs-2022</code>
+    cryptosuite used by every Vouch reference implementation.
+  </p>
+
+  <div class="card-row">
+    <a class="card seller" href="seller-app.html">
+      <p class="role">Seller side</p>
+      <h3>Seller App →</h3>
+      <p>Generate a stable seller identity, sign a product photo + listing fields, export a verifiable bundle.</p>
+    </a>
+    <a class="card buyer" href="buyer-app.html">
+      <p class="role">Buyer side</p>
+      <h3>Buyer App →</h3>
+      <p>Paste the bundle, drop the photo, see the verdict. Then try tampering: photo, title, signature.</p>
+    </a>
+  </div>
+
+  <p class="eyebrow">How To Demo</p>
+  <ol class="steps">
+    <li>Open the <b>Seller App</b>. It generates your seller DID
+      (<code>did:web:vouch-protocol.com:u:seller-...</code>) on first run.</li>
+    <li>Pick any image from your laptop. Set a listing ID and title (defaults are fine).
+      Click <b>Sign listing with Vouch</b>.</li>
+    <li>Copy the bundle JSON. Open the <b>Buyer App</b> in another tab. Paste it.
+      Drop the same image. Click <b>Verify offline</b>.</li>
+    <li>Watch the six-step verification pass: signer DID resolved → public key extracted →
+      photo hash matches → signature verifies.</li>
+    <li>Try the three tamper buttons. Each one breaks a different layer:
+      the photo (hash mismatch), the listing title (canonicalization mismatch),
+      the signature (Ed25519 verification fails).</li>
+  </ol>
+
+  <p class="eyebrow">Why It's Different From "Just C2PA" or "Just Signed URLs"</p>
+  <ul>
+    <li><b>Portable identity</b> — the signer is a DID, not a domain or an API key.
+      The seller can move buyer apps, change hosting, drop a vendor; the identity
+      attached to past listings stays valid.</li>
+    <li><b>Self-describing intent</b> — the credential carries the listing ID,
+      title, seller handle, and the photo hash, all under one signature.
+      Tamper with any one and the whole proof fails.</li>
+    <li><b>Verifiable offline</b> — the buyer app needs the credential + the DID
+      Document + the photo. None of those require a live network call.
+      Important for low-bandwidth buyer apps, kiosks, and disputes where the
+      seller has gone offline.</li>
+    <li><b>Network-neutral</b> — works regardless of which buyer app, which logistics
+      partner, which gateway. The proof travels with the artefact.</li>
+  </ul>
+
+  <p class="eyebrow">What This Buys ONDC</p>
+  <ul>
+    <li><b>Dispute resolution with cryptographic ground truth.</b> When a buyer
+      claims "the photo I saw isn't the product I got", there is a signed canonical
+      version to compare against. The current ONDC dispute flow has no equivalent.</li>
+    <li><b>Image-theft attribution.</b> When seller A's photos appear on seller B's
+      listing, the signed timestamp on A's credential is a tie-breaker no buyer
+      app or logistics partner can manipulate.</li>
+    <li><b>Cross-app catalog integrity.</b> Buyer apps and aggregators that
+      re-index ONDC catalogs can verify each listing once at ingestion and serve
+      a "✓ Verified" badge, with zero ongoing trust in the seller app.</li>
+    <li><b>Network-level audit.</b> Regulators or the ONDC technical office can
+      verify any disputed listing without depending on either party's logs.</li>
+  </ul>
+
+  <p class="eyebrow">What's Next, If This Lands</p>
+  <ul>
+    <li>Bind the credential to ONDC's existing <code>provider.id</code> and
+      <code>item.id</code> fields so it slots into the current schema without breaking
+      buyer apps.</li>
+    <li>Extend to other artefacts: KYC documents, GST certificates, return-eligibility
+      certifications, delivery acknowledgements.</li>
+    <li>Reverse the flow: have buyer apps issue Vouch credentials for received-order
+      acknowledgements, signed with the buyer's identity, for closing the loop on
+      "did the order arrive as described".</li>
+  </ul>
+
+  <p class="eyebrow">Open The Apps</p>
+  <div class="card-row">
+    <a class="card seller" href="seller-app.html">
+      <p class="role">Start here</p>
+      <h3>Seller App →</h3>
+    </a>
+    <a class="card buyer" href="buyer-app.html">
+      <p class="role">Then verify</p>
+      <h3>Buyer App →</h3>
+    </a>
+  </div>
+
+  <div class="footer">
+    Reference implementation. Crypto:
+    <code>eddsa-jcs-2022</code> · Ed25519 · RFC 8785 JCS · SHA-256.
+    Built with the same primitives as Vouch's Python/TypeScript/Go reference impls.
+    <br /><br />
+    <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+  </div>
+
+</div>
+
+</body>
+</html>

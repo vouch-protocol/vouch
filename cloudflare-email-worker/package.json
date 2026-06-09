@@ -1,0 +1,17 @@
+{
+  "name": "vouch-email-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Email Worker that auto-responds to ask@vouch-protocol.com using Gemini",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "postal-mime": "^2.2.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.110.0"
+  }
+}

@@ -9,12 +9,23 @@ import time
 import logging
 import json
 import asyncio
+
+from . import ssrf
 from abc import ABC, abstractmethod
 from typing import Optional, List, Dict
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+
+class RevocationCheckError(Exception):
+    """
+    Raised when a revocation status cannot be determined (for example a remote
+    registry is unreachable or returns an error). Callers MUST treat this as a
+    failure and reject the credential: a revocation check that cannot complete
+    must never be interpreted as "not revoked" (fail closed, not fail open).
+    """
 
 
 @dataclass
@@ -178,8 +189,10 @@ class RedisRevocationStore(RevocationStoreInterface):
 
             return True
         except Exception as e:
+            # FAIL CLOSED: if we cannot reach Redis we do not know whether the
+            # DID is revoked, so we must not answer "not revoked".
             logger.warning(f"Redis check error: {e}")
-            return False
+            raise RevocationCheckError(f"Redis revocation check failed: {e}") from e
 
     async def get_revocation(self, did: str) -> Optional[RevocationRecord]:
         """Get revocation record from Redis."""
@@ -243,11 +256,19 @@ class HTTPRevocationStore(RevocationStoreInterface):
         url = f"https://{domain}/.well-known/did-revocations.json"
 
         try:
-            async with httpx.AsyncClient(timeout=self._timeout) as client:
+            ssrf.validate_url(url)  # https-only, public IPs only (blocks SSRF)
+        except ssrf.SSRFError as e:
+            logger.warning(f"refusing to fetch revocations from unsafe URL {url}: {e}")
+            raise RevocationCheckError(str(e)) from e
+
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout, follow_redirects=False
+            ) as client:
                 response = await client.get(url)
 
                 if response.status_code == 404:
-                    return []  # No revocations published
+                    return []  # No revocations published (a definitive answer)
 
                 response.raise_for_status()
                 data = response.json()
@@ -257,9 +278,16 @@ class HTTPRevocationStore(RevocationStoreInterface):
                     records.append(RevocationRecord.from_dict(item))
 
                 return records
+        except RevocationCheckError:
+            raise
         except Exception as e:
-            logger.debug(f"Failed to fetch revocations from {domain}: {e}")
-            return []
+            # FAIL CLOSED: a fetch error (timeout, TLS, 5xx, DNS, malformed
+            # body) is NOT evidence that the DID is unrevoked. Surface it so the
+            # caller rejects rather than silently treating it as "not revoked".
+            logger.warning(f"Failed to fetch revocations from {domain}: {e}")
+            raise RevocationCheckError(
+                f"Could not fetch revocation list from {domain}: {e}"
+            ) from e
 
     def _extract_domain(self, did: str) -> Optional[str]:
         """Extract domain from did:web identifier."""
@@ -283,8 +311,20 @@ class HTTPRevocationStore(RevocationStoreInterface):
                 if time.time() - fetched_at < self._cache_ttl:
                     return any(r.did == did for r in records)
 
-            # Fetch fresh
-            records = await self._fetch_revocations(domain)
+            # Fetch fresh. On failure, fall back to the last-good cached list
+            # (stale is better than blind), but if we have never successfully
+            # fetched, propagate so the caller fails closed.
+            try:
+                records = await self._fetch_revocations(domain)
+            except RevocationCheckError:
+                if domain in self._cache:
+                    stale_records, _ = self._cache[domain]
+                    logger.warning(
+                        f"Revocation fetch failed for {domain}; using stale cache"
+                    )
+                    return any(r.did == did for r in stale_records)
+                raise
+
             self._cache[domain] = (records, time.time())
 
             return any(r.did == did for r in records)

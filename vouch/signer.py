@@ -155,7 +155,6 @@ class Signer:
 
     def _build_delegation_chain(self, parent_token: str, current_payload: Dict[str, Any]) -> list:
         """Legacy delegation chain assembly (operates on JWS tokens)."""
-        MAX_CHAIN_DEPTH = 5
         try:
             jws_token = jws.JWS()
             jws_token.deserialize(parent_token)
@@ -167,9 +166,8 @@ class Signer:
             parent_claims = json.loads(payload_bytes.decode("utf-8"))
             parent_vouch = parent_claims.get("vouch", {})
             existing_chain = parent_vouch.get("delegation_chain", [])
-
-            if len(existing_chain) >= MAX_CHAIN_DEPTH:
-                raise ValueError(f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}")
+            # v1.7 (CH-001): the fixed depth cap is removed. Depth is now a
+            # verifier-side cost budget, not a build-time hard limit.
 
             new_link = {
                 "iss": parent_claims.get("iss", ""),
@@ -341,41 +339,49 @@ class Signer:
         """
         Build a delegation link from `parent_credential` to this signer.
 
-        Implements Specification §9.2 link structure. Validates depth limit
-        (§9.4) and resource-narrowing (§9.3 step 5).
+        Implements Specification v1.7 link structure (Section 9.2) and the
+        capability-attenuation rule (Sections 9.3 to 9.5). There is no fixed
+        depth limit in v1.7 (CH-001): depth becomes a verifier-side cost budget.
+        The builder blocks only outright broadening (a delegator cannot grant
+        more than it holds); the verifier enforces the full attenuation rule.
         """
-        MAX_CHAIN_DEPTH = 5
+        from . import attenuation as _atten
 
         parent_subject = parent_credential.get("credentialSubject", {})
         parent_intent = parent_subject.get("intent", {})
         parent_chain = parent_subject.get("delegationChain") or []
 
-        if len(parent_chain) >= MAX_CHAIN_DEPTH:
-            raise ValueError(f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}")
-
-        # Resource-narrowing check (§9.3): child resource must be a sub-resource
-        # of (or equal to) the parent's resource.
-        parent_resource = parent_intent.get("resource", "")
-        child_resource = current_intent.get("resource", "")
-        if (
-            parent_resource
-            and child_resource
-            and not _is_sub_resource(child_resource, parent_resource)
-        ):
+        parent_cap = _capability_from_credential(parent_intent, parent_credential)
+        child_cap = _capability_from_credential(current_intent, parent_credential)
+        broadened = _atten.find_broadened_dimension(parent_cap, child_cap)
+        if broadened == "resource":
             raise ValueError(
                 "Delegation violates resource-narrowing rule: child resource "
-                f"{child_resource!r} is not a sub-resource of parent "
-                f"{parent_resource!r}"
+                f"{current_intent.get('resource')!r} is not a sub-resource of "
+                f"parent {parent_intent.get('resource')!r}"
+            )
+        if broadened is not None:
+            raise ValueError(
+                "Delegation violates the capability-attenuation rule: child "
+                f"capability broadens the parent on dimension {broadened!r}"
             )
 
         parent_proof = parent_credential.get("proof", {}) or {}
+        # Store the FULL parent proofValue, not a 64-char prefix. A truncated
+        # value is not a verifiable commitment. The chain is inside the signed
+        # credentialSubject, so the full value is tamper-evident.
+        parent_proof_value = parent_proof.get("proofValue", "")
+        if not parent_proof_value:
+            raise ValueError(
+                "parent credential has no proofValue to bind the delegation link to"
+            )
         new_link = {
             "issuer": parent_credential.get("issuer", ""),
             "subject": self.did,
             "intent": current_intent,
             "validFrom": parent_credential.get("validFrom"),
             "validUntil": parent_credential.get("validUntil"),
-            "parentProofValue": parent_proof.get("proofValue", "")[:64],
+            "parentProofValue": parent_proof_value,
         }
 
         return list(parent_chain) + [new_link]
@@ -422,3 +428,30 @@ def _is_sub_resource(child: str, parent: str) -> bool:
     if child.startswith(parent.rstrip("/") + "/"):
         return True
     return False
+
+
+def _capability_from_credential(
+    intent: Dict[str, Any], credential: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Project a credential (and its intent) onto a capability dict for the
+    attenuation checks: action/target/resource from intent, time from the
+    credential, and optional rate/policy from the credentialSubject.
+    """
+    cap: Dict[str, Any] = {}
+    if isinstance(intent, dict):
+        for k in ("action", "target", "resource"):
+            if intent.get(k) is not None:
+                cap[k] = intent[k]
+    if isinstance(credential, dict):
+        if credential.get("validFrom"):
+            cap["validFrom"] = credential["validFrom"]
+        if credential.get("validUntil"):
+            cap["validUntil"] = credential["validUntil"]
+        subj = credential.get("credentialSubject") or {}
+        if isinstance(subj, dict):
+            if subj.get("rate") is not None:
+                cap["rate"] = subj["rate"]
+            if subj.get("policy") is not None:
+                cap["policy"] = subj["policy"]
+    return cap

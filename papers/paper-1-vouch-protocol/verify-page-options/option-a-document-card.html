@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Verify · arxiv-1 · Option A (Document Card)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment:       #FAF7EE;
+    --parchment-warm:  #F2EBD9;
+    --parchment-deep:  #EFE9D5;
+    --ink:             #0F172A;
+    --ink-soft:        #334155;
+    --ink-faint:       #64748B;
+    --burgundy:        #7C2D3A;
+    --rule:            #D9CFB6;
+    --rule-light:      #E8DFC9;
+    --code-bg:         #0F172A;
+    --code-fg:         #FAF7EE;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    font-feature-settings: "kern","liga","onum";
+    padding: 64px 24px;
+    min-height: 100vh;
+  }
+  .frame { max-width: 720px; margin: 0 auto; }
+
+  /* Eyebrow / small caps label */
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 6px;
+  }
+
+  /* Card */
+  .card {
+    background: var(--parchment);
+    border: 1px solid var(--rule);
+    padding: 48px 56px;
+  }
+
+  /* Header */
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .card-header img { width: 36px; height: 36px; }
+  .card-header .verified-line {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--burgundy);
+  }
+  .card-header .verified-line::before {
+    content: "✓";
+    margin-right: 8px;
+    color: var(--burgundy);
+    font-weight: 600;
+  }
+  .header-rule {
+    height: 1px;
+    background: var(--rule);
+    margin-bottom: 32px;
+  }
+  .header-rule.accent {
+    height: 2px;
+    background: var(--burgundy);
+    width: 48px;
+    margin-bottom: 24px;
+  }
+
+  h1.title {
+    font-family: "Source Serif 4", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.6rem;
+    line-height: 1.25;
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+  }
+  .byline {
+    color: var(--ink-soft);
+    margin: 0 0 32px;
+    font-style: italic;
+  }
+
+  /* Field grid */
+  .field { margin: 24px 0; }
+  .field .value {
+    font-size: 1.05rem;
+    color: var(--ink);
+  }
+  .field .sub {
+    color: var(--ink-faint);
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  /* Mono blocks: hash, command */
+  .mono-block {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    background: var(--parchment-warm);
+    border: 1px solid var(--rule-light);
+    padding: 12px 14px;
+    word-break: break-all;
+    color: var(--ink);
+  }
+
+  /* Terminal-like block for the verify command */
+  .terminal {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85rem;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 16px 18px;
+    margin: 12px 0;
+    overflow-x: auto;
+  }
+  .terminal .prompt { color: #80c08a; user-select: none; }
+  .terminal .comment { color: #91a4b8; font-style: italic; }
+
+  /* Buttons (mirrors Nav.tsx "Get Started" style) */
+  .btn {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    padding: 9px 16px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .btn:hover { background: var(--ink); color: var(--parchment); }
+  .btn.muted {
+    color: var(--ink-faint);
+    border-color: var(--rule);
+  }
+  .btn.muted:hover {
+    background: var(--ink-faint);
+    color: var(--parchment);
+    border-color: var(--ink-faint);
+  }
+
+  .cta-row { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+
+  /* Footer */
+  .pagefoot {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule-light);
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+  }
+  .pagefoot a { color: var(--ink-faint); text-decoration: none; border-bottom: 1px dotted var(--rule); }
+  .pagefoot a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* Section divider for the second variant */
+  .variant-divider {
+    margin: 96px 0 48px;
+    padding: 24px 0;
+    text-align: center;
+    color: var(--ink-faint);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-top: 1px solid var(--rule-light);
+    border-bottom: 1px solid var(--rule-light);
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- ==============================================================
+       PAPER VARIANT
+       ============================================================== -->
+  <article class="card" id="paper">
+    <div class="card-header">
+      <img src="https://vouch-protocol.com/assets/vouch-icon.png" alt="Vouch" />
+      <div class="verified-line">Authenticated Paper</div>
+    </div>
+
+    <div class="header-rule accent"></div>
+
+    <h1 class="title">Vouch Protocol: Cryptographic Identity and Continuous State Verifiability for Autonomous AI Agents</h1>
+    <p class="byline">Ramprasad Anandam Gaddam</p>
+
+    <div class="field">
+      <p class="eyebrow">Reference ID</p>
+      <p class="value">arxiv-1</p>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">Signer</p>
+      <p class="value" style="font-family: 'JetBrains Mono', monospace; font-size: 0.92rem;">did:web:vouch-protocol.com:u:rampyg</p>
+      <p class="sub">Personal Vouch identity, bound by the protocol</p>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">SHA-256</p>
+      <div class="mono-block">c7c997e26cc38d5367d1f695f814358938450b9c862d40ca01ac42aec17a1d61</div>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">Cryptosuite</p>
+      <p class="value" style="font-family: 'JetBrains Mono', monospace; font-size: 0.92rem;">eddsa-jcs-2022 · Ed25519 over RFC 8785 JCS</p>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">Registered</p>
+      <p class="value">15 May 2026 · 17:20 UTC</p>
+    </div>
+
+    <div class="header-rule" style="margin-top: 40px; margin-bottom: 24px;"></div>
+
+    <div class="field" style="margin-top: 0;">
+      <p class="eyebrow">Verify locally</p>
+      <div class="terminal">
+<span class="comment"># Option 1: matching SHA-256</span>
+<span class="prompt">$</span> sha256sum paper-1-vouch-protocol.pdf
+
+<span class="comment"># Option 2: full Vouch verification (signature + chain)</span>
+<span class="prompt">$</span> vouch verify arxiv-1
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <a class="btn" href="https://github.com/vouch-protocol/vouch/blob/main/papers/paper-1-vouch-protocol/paper-1-vouch-protocol.pdf">Read the original →</a>
+      <a class="btn muted" href="https://vouch-protocol.com">Sign your own with Vouch</a>
+    </div>
+  </article>
+
+  <!-- ==============================================================
+       FREE-TEXT SIGNATURE VARIANT (same template, different fields)
+       ============================================================== -->
+  <div class="variant-divider">↓ Same template, applied to a free-text signature ↓</div>
+
+  <article class="card" id="signature">
+    <div class="card-header">
+      <img src="https://vouch-protocol.com/assets/vouch-icon.png" alt="Vouch" />
+      <div class="verified-line">Authenticated Signature</div>
+    </div>
+
+    <div class="header-rule accent"></div>
+
+    <h1 class="title">Signed message</h1>
+
+    <div class="field">
+      <p class="eyebrow">Signed text</p>
+      <div class="mono-block" style="background: var(--parchment-warm); font-family: 'Source Serif 4', Georgia, serif; word-break: normal; padding: 18px 20px; line-height: 1.55;">I confirm that I delivered the Vouch Protocol talk at the W3C Credentials Community Group on 14 May 2026, and that this transcript is accurate.</div>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">Signer</p>
+      <p class="value" style="font-family: 'JetBrains Mono', monospace; font-size: 0.92rem;">did:web:vouch-protocol.com:u:rampyg</p>
+      <p class="sub">Personal Vouch identity, bound by the protocol</p>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">Public key</p>
+      <div class="mono-block">z6MkpTHR8VNsBxYAAWHut2Geadd9JSrqV4o4qrhhKVz4HZbF</div>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">Signature</p>
+      <div class="mono-block">z2vY3jBkjUkqzPWyhQAEqGZMTcN8XfFqzCqGTuxYn3uMJoLDHnCMfBJ5wmKpD8ZqYVbsYUe3jL2hT1nN7vN9aBdAk</div>
+    </div>
+
+    <div class="field">
+      <p class="eyebrow">Signed on</p>
+      <p class="value">14 May 2026 · 16:12 UTC</p>
+    </div>
+
+    <div class="header-rule" style="margin-top: 40px; margin-bottom: 24px;"></div>
+
+    <div class="field" style="margin-top: 0;">
+      <p class="eyebrow">Verify locally</p>
+      <div class="terminal">
+<span class="comment"># Recompute and compare</span>
+<span class="prompt">$</span> vouch verify ab12cd
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <a class="btn" href="https://vouch-protocol.com">Sign your own with Vouch</a>
+    </div>
+  </article>
+
+  <div class="pagefoot">
+    <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+    &nbsp;·&nbsp; this is a preview rendering with sample data
+  </div>
+
+</div>
+
+</body>
+</html>

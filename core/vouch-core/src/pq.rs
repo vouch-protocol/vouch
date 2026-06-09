@@ -22,6 +22,15 @@ pub struct MlDsa44KeyPair {
     public_bytes: [u8; MLDSA44_PUBLIC_LEN],
 }
 
+impl Drop for MlDsa44KeyPair {
+    fn drop(&mut self) {
+        // Wipe the secret key bytes from memory on drop. The public bytes are
+        // not sensitive, so they are left as-is.
+        use zeroize::Zeroize;
+        self.secret_bytes.zeroize();
+    }
+}
+
 impl MlDsa44KeyPair {
     /// Generate a fresh key pair using the platform CSPRNG.
     pub fn generate() -> Result<Self> {

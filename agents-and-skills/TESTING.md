@@ -31,7 +31,7 @@ produce protocol-correct output.
 
 | Prompt | Expected file | Expected behavior |
 |---|---|---|
-| "Show me a Python quickstart for signing a Vouch credential." | `reference/python-sdk.md` | Code with `Signer.generate`, `build_vouch_credential`, `sign_credential`, `Verifier` |
+| "Show me a Python quickstart for signing a Vouch credential." | `reference/python-sdk.md` | Code with `generate_identity`, `Signer(private_key=..., did=...)`, `build_vouch_credential`, `sign_credential`, `Verifier.verify_credential` |
 | "Enable the hybrid post-quantum signature for my agent." | `reference/post-quantum.md` | Code that sets cryptosuite to `hybrid-eddsa-mldsa44-jcs-2026` |
 | "Wrap a LangChain tool with Vouch." | `reference/integrations.md` | `VouchTool` wrapper code with `intent_template` |
 | "Why is my verifier returning verificationMethod_not_found?" | `reference/troubleshooting.md` | Three causes (rotation, cache, mismatch) |
@@ -76,14 +76,14 @@ You need three terminals.
 
 ```bash
 cd go-sidecar
-go run ./cmd/vouch-sidecar --did did:web:agent.vouch-protocol.org --port 8877
+go run ./cmd/vouch-sidecar --did did:web:agent.vouch-protocol.com --port 8877
 ```
 
 If you don't have Go installed, use the Python bridge:
 
 ```bash
 pip install 'vouch-protocol[server]'
-vouch-bridge --did did:web:agent.vouch-protocol.org --port 8877
+vouch-bridge --did did:web:agent.vouch-protocol.com --port 8877
 ```
 
 **Terminal 2: Agent backend**
@@ -115,7 +115,7 @@ curl -s -X POST http://localhost:8000/sign \
         "intent": {
             "action": "answer_question",
             "target": "session:abc",
-            "resource": "https://vouch-protocol.org/help"
+            "resource": "https://vouch-protocol.com/help"
         }
     }' | jq
 # Expect: { "credential": { ... signed VC ... }, "audit": { ... } }
@@ -210,7 +210,7 @@ Run each:
 
 In the GPT preview, type:
 
-> "Sign a credential for me with action=answer_question target=test-session-1 resource=https://vouch-protocol.org/help"
+> "Sign a credential for me with action=answer_question target=test-session-1 resource=https://vouch-protocol.com/help"
 
 The GPT should:
 1. Summarize the credential it is about to sign.

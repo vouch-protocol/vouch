@@ -72,8 +72,16 @@ def decode(multikey: str) -> Tuple[str, bytes]:
     prefix = decoded[:2]
     if prefix not in _PREFIX_TO_ALG:
         raise ValueError(f"Unknown multicodec prefix: {prefix.hex()}")
-    alg, _kind = _PREFIX_TO_ALG[prefix]
-    return alg, decoded[2:]
+    alg, kind = _PREFIX_TO_ALG[prefix]
+    if kind == "private":
+        # A verificationMethod must carry a PUBLIC key. Refuse a private-key
+        # multicodec prefix so private material is never treated as a key.
+        raise ValueError("Multikey carries a private-key prefix; a public key is required")
+    raw = decoded[2:]
+    expected = 32 if alg == "Ed25519" else 1312
+    if len(raw) != expected:
+        raise ValueError(f"{alg} public key must be {expected} bytes, got {len(raw)}")
+    return alg, raw
 
 
 def algorithm_of(multikey: str) -> str:

@@ -135,43 +135,21 @@ async function hasLocalKeys() {
 }
 
 /**
- * Export keys to Bridge Daemon
- * 
- * This sends the private key to the Bridge's /import-key endpoint.
- * The Bridge will show a consent popup and store in system keyring.
+ * Export keys to Bridge Daemon - DISABLED.
+ *
+ * SECURITY: transmitting a raw private key over the wire, even to localhost
+ * over plain HTTP, is forbidden. Any local process bound to the Bridge port
+ * (or anything able to reach loopback) could capture the key. Private key
+ * material must never leave its secure store. Migration is now a pairing flow
+ * (see migrateKeysToBridge): the Bridge holds its own key and the extension
+ * switches to proxy mode, signing via the Bridge. This function remains only
+ * to fail loudly if any caller still attempts a key export.
  */
 async function exportKeysToBridge() {
-    // Get local keys
-    const stored = await chrome.storage.local.get([
-        BRIDGE_STORAGE_KEYS.SECRET_KEY,
-        BRIDGE_STORAGE_KEYS.PUBLIC_KEY,
-    ]);
-
-    if (!stored[BRIDGE_STORAGE_KEYS.SECRET_KEY] || !stored[BRIDGE_STORAGE_KEYS.PUBLIC_KEY]) {
-        throw new Error('No local keys to export');
-    }
-
-    // Send to Bridge
-    const response = await fetch(`${BRIDGE_URL}/import-key`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            private_key_hex: stored[BRIDGE_STORAGE_KEYS.SECRET_KEY],
-            public_key_hex: stored[BRIDGE_STORAGE_KEYS.PUBLIC_KEY],
-            source: 'browser-extension',
-        }),
-    });
-
-    if (response.status === 403) {
-        throw new Error('Key import denied by user');
-    }
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Key import failed');
-    }
-
-    return response.json();
+    throw new Error(
+        'Key export is disabled for security: Vouch never transmits a private key. ' +
+        'Generate a key inside the Bridge daemon and pair instead.'
+    );
 }
 
 /**
@@ -193,39 +171,38 @@ async function wipeLocalKeys() {
  * 4. Switch to proxy mode
  */
 async function migrateKeysToBridge() {
-    console.log('Vouch: Starting key migration to Bridge...');
+    console.log('Vouch: Starting Bridge pairing...');
 
     // Verify Bridge is running
     if (!await isBridgeAvailable()) {
         throw new Error('Bridge Daemon is not running');
     }
 
-    // Check if we have keys to migrate
-    if (!await hasLocalKeys()) {
-        console.log('Vouch: No local keys to migrate');
-        return { success: false, message: 'No local keys to migrate' };
+    // SECURITY: never transmit a private key. The Bridge must hold its own key.
+    // If it does not yet, the user sets one up inside the Bridge first.
+    if (!await bridgeHasKeys()) {
+        return {
+            success: false,
+            message: 'Set up a key inside the Bridge daemon first, then pair. ' +
+                'Vouch will not transmit your private key.',
+        };
     }
 
-    // Export to Bridge (will show consent popup)
-    const importResult = await exportKeysToBridge();
+    // Pair: adopt the Bridge identity and switch to proxy mode. All signing is
+    // delegated to the Bridge from now on; the private key never moved.
+    const bridgeKey = await getBridgePublicKey();
+    await setProxyMode(bridgeKey.did);
 
-    if (!importResult.success) {
-        throw new Error('Key import failed');
-    }
-
-    // Wipe local keys
+    // Wipe any legacy local key material now that we sign via the Bridge.
     await wipeLocalKeys();
 
-    // Switch to proxy mode
-    await setProxyMode(importResult.did);
-
-    console.log('Vouch: Migration complete!', importResult);
+    console.log('Vouch: Pairing complete (proxy mode)');
 
     return {
         success: true,
-        did: importResult.did,
-        fingerprint: importResult.fingerprint,
-        message: 'Keys migrated to Bridge Daemon',
+        did: bridgeKey.did,
+        fingerprint: bridgeKey.fingerprint,
+        message: 'Paired with Bridge Daemon (proxy mode). Private key was not transmitted.',
     };
 }
 

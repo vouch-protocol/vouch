@@ -82,8 +82,8 @@ action = sub_signer.sign_credential_with_chain(
 ```
 
 The SDK helpers `sign_credential_with_parent` and
-`sign_credential_with_chain` handle parent-proof binding and depth
-enforcement.
+`sign_credential_with_chain` handle parent-proof binding and the
+capability-attenuation rule (each link can only narrow the parent).
 
 ## Verification
 
@@ -98,14 +98,21 @@ result = await verifier.verify_credential(action)
 The verifier checks at each link:
 
 1. Signature math: the link's `proof` validates against the issuer's DID Doc
-2. Resource narrowing: this link's `resource` is a subset of the parent's
+2. Capability attenuation: this link narrows the parent on at least one of action, target, resource, time, rate, or policy, and is broader on none (resource narrowing, below, is the resource case of this rule)
 3. Validity window: now is within each link's `validFrom..validUntil`
 4. Issuer-of-this-link == subject-of-previous-link (chain integrity)
-5. Total chain depth <= 5 (Specification §9.4)
 
 If any check fails, the whole action credential is rejected with a
-specific reason (`delegation_chain_invalid`, `resource_not_narrowed`,
-`chain_depth_exceeded`, etc.).
+specific reason (`delegation_chain_invalid`, `capability_not_attenuated`,
+`resource_not_narrowed`, etc.).
+
+There is no fixed limit on chain length. Because authority only ever
+narrows as it passes down a chain, a chain ends naturally when nothing is
+left to narrow. A verifier MAY still set its own cost budget (by depth, by
+total verification time, or by cumulative validity across the chain). If a
+chain exceeds that budget, the verifier rejects it with
+`verifier_budget_exceeded` and names the limit it hit, so the delegating
+agent knows to narrow earlier instead of routing around the block.
 
 ## Resource narrowing rule
 
@@ -134,15 +141,25 @@ If a chain doesn't terminate at a trusted principal, it fails with
 `untrusted_principal`. This prevents an attacker from signing their own
 "principal" delegation.
 
-## Why depth = 5?
+## Why no fixed depth limit?
 
-Empirical limit from PAD-006 (trust-graph URL chaining). Five hops is
-enough for nearly all realistic multi-agent flows. The cap prevents
-unbounded chain growth that would explode the verifier's walk cost.
+Earlier versions capped a chain at five hops. That cap turned out to do
+more harm than good: an agent that hit the limit but still needed to hand
+a narrower slice of its authority to another agent could not delegate, so
+it would proxy the other agent's requests or share its credentials instead.
+Both of those hand over more authority than intended and erase the audit
+trail.
 
-For flows that need deeper nesting, restructure to use Validator
-Quorum issuance instead of pure delegation (the validator becomes the
-intermediate authority).
+The control now is attenuation itself. Every link must be strictly smaller
+than its parent, so a chain cannot grow in authority no matter how long it
+gets, and it stops on its own once there is nothing left to narrow. If a
+verifier wants to bound how much work it spends walking a chain, it sets a
+local cost budget (depth, verification time, or cumulative validity) and
+reports `verifier_budget_exceeded` when a chain crosses it.
+
+For flows that need a different shape than a linear chain, you can still
+use Validator Quorum issuance, where a validator becomes the intermediate
+authority.
 
 ## Common errors
 
@@ -151,7 +168,12 @@ intermediate authority).
   Usually means the chain was reassembled out of order.
 - **`resource_not_narrowed: ...`**: a child link tried to grant access
   beyond its parent's scope.
-- **`chain_depth_exceeded`**: more than 5 links. Restructure.
+- **`capability_not_attenuated`**: a child link did not narrow the parent
+  on any dimension, or was broader on one. Narrow action, target, resource,
+  time, rate, or policy.
+- **`verifier_budget_exceeded`**: the chain crossed a verifier's local cost
+  budget (depth, verification time, or cumulative validity). Narrow earlier
+  or split the work; this is the verifier's choice, not a protocol limit.
 - **`untrusted_principal`**: the chain root isn't in the verifier's trust
   set.
 - **`link_signature_invalid`**: a delegation link's signature failed

@@ -1,0 +1,230 @@
+{
+  "description": "Capability-attenuation delegation vectors (Specification v1.7, Sections 9.3 to 9.5, CH-001). Every Vouch Protocol implementation (Python, TypeScript, Go) MUST produce identical accept/reject decisions and identical rejection-reason strings for every vector. Each 'chain' is an ordered list of capability nodes, broadest (root grant) first to narrowest (leaf) last, matching the per-link capabilities of a credential's delegationChain. The attenuation rule: each node MUST be a proper subset of the prior node across at least one of action/target/resource/time/rate/policy, and broader on none. There is no fixed depth limit; depth is an optional verifier-side cost budget.",
+  "version": "1.0",
+  "spec": "docs/specs/w3c-cg-report-v1.7-draft.md",
+  "reasons": [
+    "capability_not_attenuated",
+    "resource_not_narrowed",
+    "verifier_budget_exceeded"
+  ],
+  "parent_template": {
+    "action": ["read", "write"],
+    "target": ["db", "cache"],
+    "resource": "https://api.example.com/v1/bookings",
+    "validFrom": "2026-04-26T09:00:00Z",
+    "validUntil": "2026-04-26T12:00:00Z",
+    "rate": { "limit": 100, "window": "PT1H" },
+    "policy": { "minHeartbeatAgeSeconds": 300 }
+  },
+  "vectors": [
+    {
+      "name": "valid-narrow-action",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "valid-narrow-target",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "valid-narrow-resource",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings/123", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "valid-narrow-time",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T10:00:00Z", "validUntil": "2026-04-26T11:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "valid-narrow-rate",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 50, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "valid-narrow-policy",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300, "requireMfa": true } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "invalid-widen-action",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write", "delete"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "capability_not_attenuated"
+    },
+    {
+      "name": "invalid-widen-target",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache", "fs"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "capability_not_attenuated"
+    },
+    {
+      "name": "invalid-widen-resource",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "resource_not_narrowed"
+    },
+    {
+      "name": "invalid-widen-time",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T18:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "capability_not_attenuated"
+    },
+    {
+      "name": "invalid-widen-rate",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 200, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "capability_not_attenuated"
+    },
+    {
+      "name": "invalid-widen-policy",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": {} }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "capability_not_attenuated"
+    },
+    {
+      "name": "invalid-no-narrowing-identical",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "capability_not_attenuated"
+    },
+    {
+      "name": "valid-chain-terminates-at-leaf",
+      "comment": "Each hop narrows a different dimension down to a read-only, single-resource, single-use leaf. The chain ends naturally; no further narrowing is possible.",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db"], "resource": "https://api.example.com/v1/bookings/123", "validFrom": "2026-04-26T10:00:00Z", "validUntil": "2026-04-26T11:00:00Z", "rate": { "limit": 1, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "reject-verifier-budget-depth",
+      "comment": "A fully valid 3-node (depth 3) chain rejected only because the verifier capped depth at 2. Not a protocol error: a verifier-local cost budget.",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db"], "resource": "https://api.example.com/v1/bookings/123", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": { "max_depth": 2 },
+      "accept": false,
+      "reason": "verifier_budget_exceeded"
+    },
+    {
+      "name": "reject-verifier-budget-cumulative-ttl",
+      "comment": "A valid attenuating chain rejected because the verifier capped cumulative TTL. Parent window 3h + child window 1h = 4h (14400s) exceeds the 7200s budget.",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T10:00:00Z", "validUntil": "2026-04-26T11:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": { "max_cumulative_ttl_seconds": 7200 },
+      "accept": false,
+      "reason": "verifier_budget_exceeded"
+    },
+    {
+      "name": "accept-within-verifier-budget-depth",
+      "comment": "Same valid chain as the depth-budget rejection, but the verifier's depth cap (3) is not exceeded, so it is accepted.",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read"], "target": ["db"], "resource": "https://api.example.com/v1/bookings/123", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": { "max_depth": 3 },
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "valid-single-link-root-grant",
+      "comment": "A single delegation link (the root grant) has no parent in the chain to attenuate against, so it is accepted.",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": true,
+      "reason": null
+    },
+    {
+      "name": "invalid-resource-path-traversal",
+      "comment": "Security: the child resource passes a naive prefix check but uses a '..' segment to escape the granted scope on resolution. Must be rejected.",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings/../admin", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "resource_not_narrowed"
+    },
+    {
+      "name": "invalid-rate-malformed-window",
+      "comment": "Security: the child presents a malformed rate (window 0) to dodge the rate cap. A present-but-unparseable rate must be treated as broadening, not silently inherited.",
+      "chain": [
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": "PT1H" }, "policy": { "minHeartbeatAgeSeconds": 300 } },
+        { "action": ["read", "write"], "target": ["db", "cache"], "resource": "https://api.example.com/v1/bookings", "validFrom": "2026-04-26T09:00:00Z", "validUntil": "2026-04-26T12:00:00Z", "rate": { "limit": 100, "window": 0 }, "policy": { "minHeartbeatAgeSeconds": 300 } }
+      ],
+      "budget": null,
+      "accept": false,
+      "reason": "capability_not_attenuated"
+    }
+  ]
+}

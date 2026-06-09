@@ -4,7 +4,7 @@ info:
     version: "0.1.0"
     description: Sign and verify Vouch credentials via the hosted agent.
 servers:
-    - url: https://agent.vouch-protocol.org
+    - url: https://agent.vouch-protocol.com
       description: Production hosted agent
 paths:
     /sign:
