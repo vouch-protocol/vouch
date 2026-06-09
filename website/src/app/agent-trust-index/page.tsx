@@ -1,32 +1,35 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ATI_SUMMARY, ATI_AGENTS } from './ati-data';
+import AtiLeaderboard from './AtiLeaderboard';
+
+const TOTAL = ATI_SUMMARY.total.toLocaleString('en-US');
 
 export const metadata: Metadata = {
     title: 'Agent Trust Index - Vouch Protocol',
-    description:
-        'An open benchmark of how many autonomous agents can prove who they are. The first sweep checked 11,168 public agents from the Model Context Protocol registry. 98.7% cannot present a verifiable identity.',
+    description: `An open benchmark of how many autonomous agents can prove who they are. The first sweep checked ${TOTAL} public agents from the Model Context Protocol registry. ${ATI_SUMMARY.pctCannot}% cannot present a verifiable identity.`,
 };
 
 const HEADLINE = [
     {
-        stat: '98.7%',
-        label: 'of the 11,168 agents checked cannot present an identity anyone can verify.',
+        stat: `${ATI_SUMMARY.pctCannot}%`,
+        label: `of the ${TOTAL} agents checked cannot present an identity anyone can verify.`,
     },
     {
-        stat: '1.34%',
-        label: 'can prove who they are with a resolvable did:web identity. That is 150 agents.',
+        stat: `${ATI_SUMMARY.pctVerifiable}%`,
+        label: `can prove who they are with a resolvable did:web identity. That is ${ATI_SUMMARY.verifiable} agents.`,
     },
     {
-        stat: '0',
+        stat: `${ATI_SUMMARY.pqCount}`,
         label: 'agents are post-quantum ready. Not one carries an ML-DSA key.',
     },
 ];
 
 const PROPERTIES = [
-    { name: 'Can prove who they are (resolvable did:web identity)', count: '150', share: '1.34%' },
-    { name: 'Agent card references a key or signature', count: '98', share: '0.88%' },
-    { name: 'Publishes a service endpoint (revocation, MCP, A2A)', count: '72', share: '0.64%' },
-    { name: 'Post-quantum ready (an ML-DSA key)', count: '0', share: '0.00%' },
+    { name: 'Can prove who they are (resolvable did:web identity)', count: ATI_SUMMARY.verifiable, share: `${ATI_SUMMARY.pctVerifiable}%` },
+    { name: 'Agent card references a key or signature', count: ATI_SUMMARY.cardCount, share: `${ATI_SUMMARY.pctCard}%` },
+    { name: 'Publishes a service endpoint (revocation, MCP, A2A)', count: ATI_SUMMARY.revCount, share: `${ATI_SUMMARY.pctRev}%` },
+    { name: 'Post-quantum ready (an ML-DSA key)', count: ATI_SUMMARY.pqCount, share: `${ATI_SUMMARY.pctPq}%` },
 ];
 
 export default function AgentTrustIndexPage() {
@@ -43,8 +46,8 @@ export default function AgentTrustIndexPage() {
                     whose authority it acts, and that it has not been tampered with?
                 </p>
                 <p className="text-ink-soft max-w-prose mb-12">
-                    The first sweep checked <strong>11,168 unique agents</strong> from the public Model
-                    Context Protocol registry on <strong>7 June 2026</strong>. The answer is
+                    The first sweep checked <strong>{TOTAL} unique agents</strong> from the public Model
+                    Context Protocol registry on <strong>{ATI_SUMMARY.generated}</strong>. The answer is
                     uncomfortable.
                 </p>
 
@@ -84,23 +87,34 @@ export default function AgentTrustIndexPage() {
                     once). Both are runtime properties.
                 </p>
 
+                <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-2">The agents that can prove it</h2>
+                <p className="text-ink-soft max-w-prose mb-6">
+                    The {ATI_SUMMARY.verifiable} agents that publish a verifiable signal, scored from 0
+                    to 100 and graded. The other {ATI_SUMMARY.cannot.toLocaleString('en-US')} scored
+                    zero. Filter by grade.
+                </p>
+                <div className="mb-16">
+                    <AtiLeaderboard agents={ATI_AGENTS} />
+                </div>
+
                 <div className="border border-rule bg-parchment-warm p-8 max-w-prose">
                     <p className="eyebrow text-burgundy mb-2">How the score works</p>
                     <h2 className="font-serif font-semibold text-[1.4rem] tracking-tight mb-3">Open methodology</h2>
                     <p className="text-ink-soft leading-relaxed mb-4">
                         Each agent gets a Trust Score from 0 to 100 and a letter grade. For this first
                         version the source is the public Model Context Protocol registry, and the check
-                        is a resolvable decentralized identity: a did:web document at the agent's own
+                        is a resolvable decentralized identity: a did:web document at the agent&apos;s own
                         domain (60 points) carrying a usable public key (40 points). A is 90 or above,
                         then B, C, D, and F below 40. The scoring is open so anyone can audit how a
                         number is reached. Nobody signs up; the Index finds agents on its own.
                     </p>
                     <div className="flex flex-wrap gap-3">
+                        <Link href="/agent-trust-index/methodology/" className="btn-primary">Read the full methodology</Link>
                         <a
                             href="https://github.com/vouch-protocol/vouch"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn-primary"
+                            className="btn-secondary"
                         >
                             Follow on GitHub
                         </a>

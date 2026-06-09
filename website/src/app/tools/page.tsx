@@ -152,7 +152,7 @@ const GROUPS: Group[] = [
         tools: [
             {
                 name: 'Agent Trust Index',
-                blurb: 'Scans agents in the wild and measures how many can actually prove who they are. In the first sweep of 11,168 public agents, just 1.34% could.',
+                blurb: 'Scans agents in the wild and measures how many can actually prove who they are. In the first sweep of 11,168 public agents, just 1.3% could.',
                 href: '/agent-trust-index/',
                 hrefLabel: 'View the Index →',
             },
