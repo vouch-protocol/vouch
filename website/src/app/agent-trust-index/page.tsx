@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import CodeBlock from '@/components/CodeBlock';
 import { ATI_SUMMARY, ATI_AGENTS } from './ati-data';
 import AtiLeaderboard from './AtiLeaderboard';
+
+const ACCOUNTABILITY = [
+    { h: 'Who authorized it', p: 'A delegation chain shows who gave the agent its authority, on whose behalf, and within what limits, all verifiable.' },
+    { h: 'Is it still trustworthy', p: 'Continuous trust means an agent has to keep proving itself, not get trusted once and forever.' },
+    { h: 'Can it be stopped', p: 'Revocation lets you pull an agent\'s authority the moment it goes wrong, and anyone can check the status.' },
+];
 
 const TOTAL = ATI_SUMMARY.total.toLocaleString('en-US');
 
@@ -58,6 +65,39 @@ export default function AgentTrustIndexPage() {
                             <p className="text-ink-soft text-[0.95rem] leading-relaxed">{f.label}</p>
                         </div>
                     ))}
+                </div>
+
+                <div className="border border-burgundy bg-parchment-warm p-8 md:p-10 max-w-3xl mb-16 text-center">
+                    <h2 className="font-serif font-semibold text-[1.7rem] tracking-tight mb-3">Most agents are anonymous. Yours does not have to be.</h2>
+                    <p className="text-ink-soft leading-relaxed max-w-prose mx-auto mb-5">
+                        Give your agent a verifiable identity in one command. It is free and open source,
+                        and you keep control of your own keys.
+                    </p>
+                    <div className="max-w-xs mx-auto mb-6 text-left">
+                        <CodeBlock code="pip install vouch-protocol" className="text-[0.85rem]" />
+                    </div>
+                    <div className="flex flex-wrap gap-3 justify-center">
+                        <Link href="/onboard/" className="btn-primary">Get started</Link>
+                        <a href="https://github.com/vouch-protocol/vouch" target="_blank" rel="noopener noreferrer" className="btn-secondary">View on GitHub</a>
+                    </div>
+                </div>
+
+                <div className="max-w-3xl mb-16">
+                    <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-3">Identity is the floor. Accountability is the core.</h2>
+                    <p className="text-ink-soft leading-relaxed max-w-prose mb-6">
+                        Knowing which agent acted is only the start. The harder questions are who
+                        authorized it, whether it is still behaving, and whether it can be stopped. A bare
+                        identity does not answer those. The Vouch Protocol does, and this Index will grow
+                        to measure all of it.
+                    </p>
+                    <div className="grid sm:grid-cols-3 gap-6">
+                        {ACCOUNTABILITY.map((c) => (
+                            <div key={c.h} className="border-t-2 border-burgundy pt-3">
+                                <h3 className="font-mono uppercase text-[0.65rem] tracking-[0.14em] text-burgundy mb-2">{c.h}</h3>
+                                <p className="text-ink-soft text-[0.95rem] leading-relaxed">{c.p}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-5">What the first sweep found</h2>
