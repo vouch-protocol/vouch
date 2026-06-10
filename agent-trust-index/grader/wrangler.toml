@@ -1,0 +1,10 @@
+# Agent Trust Index, self-check grader Worker.
+# Local only. Run with `wrangler dev` from this folder. Do not deploy.
+name = "agent-trust-grader"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Local dev defaults. The page (index.html) calls http://127.0.0.1:8787/grade
+# when opened locally, and the deployed Worker URL when hosted.
+[dev]
+port = 8787

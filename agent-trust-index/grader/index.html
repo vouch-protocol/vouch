@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check your agent, Agent Trust Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --parchment:#FAF7EE; --parchment-warm:#F2EBD9; --parchment-deep:#EFE9D5;
+ --ink:#0F172A; --ink-soft:#334155; --ink-faint:#64748b;
+ --burgundy:#7C2D3A; --burgundy-dark:#5C1F2C; --rule:#D9CFB6; --rule-light:#E7DEC8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--parchment);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;line-height:1.6;font-feature-settings:"kern","liga","onum"}
+.wrap{max-width:820px;margin:0 auto;padding:0 24px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.eyebrow{font-family:"JetBrains Mono",monospace;text-transform:uppercase;color:var(--burgundy);font-size:0.7rem;letter-spacing:0.16em}
+header.top{padding:44px 0 0;text-align:center}
+header.top h1{font-weight:700;font-size:2.2rem;line-height:1.12;letter-spacing:-0.01em;margin:10px 0 0}
+header.top .lede{font-style:italic;color:var(--ink-soft);font-size:1.12rem;max-width:54ch;margin:12px auto 0}
+
+form.check{display:flex;gap:10px;margin:30px 0 6px;flex-wrap:wrap;justify-content:center}
+form.check input{flex:1;min-width:260px;font-family:"JetBrains Mono",monospace;font-size:1rem;padding:13px 15px;border:1px solid var(--rule);background:#fff;color:var(--ink)}
+form.check input:focus{outline:none;border-color:var(--burgundy)}
+form.check button{font-family:"Source Serif 4",serif;font-weight:600;font-size:1rem;padding:13px 24px;border:none;background:var(--burgundy);color:var(--parchment);cursor:pointer}
+form.check button:hover{background:var(--burgundy-dark)}
+form.check button:disabled{opacity:0.6;cursor:default}
+.hint{text-align:center;color:var(--ink-faint);font-size:0.88rem;margin:0}
+
+.status{text-align:center;color:var(--ink-soft);padding:18px 0}
+.err{text-align:center;color:var(--burgundy);background:var(--parchment-warm);border:1px solid var(--rule);padding:14px;margin:20px 0}
+
+.result{margin:28px 0;display:none}
+.gradecard{background:var(--parchment-warm);border:1px solid var(--rule);padding:26px 24px;text-align:center}
+.gradecard .domain{font-family:"JetBrains Mono",monospace;font-size:0.92rem;color:var(--ink-soft);word-break:break-all}
+.gradecard .did{font-family:"JetBrains Mono",monospace;font-size:0.78rem;color:var(--ink-faint);margin-top:2px;word-break:break-all}
+.gradecard .grade{font-weight:700;font-size:5rem;line-height:1.05;margin:6px 0 0}
+.gradecard .scoreline{font-size:1.15rem}
+.gradecard .method{font-family:"JetBrains Mono",monospace;font-size:0.8rem;color:var(--ink-faint);margin-top:6px}
+
+.section{padding:26px 0;border-top:1px solid var(--rule);margin-top:24px}
+.section h2{font-weight:600;font-size:1.35rem;margin:0 0 12px}
+table{width:100%;border-collapse:collapse;font-size:0.95rem}
+th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--rule-light);vertical-align:top}
+th{font-family:"JetBrains Mono",monospace;text-transform:uppercase;font-size:0.62rem;letter-spacing:0.12em;color:var(--ink-faint);font-weight:600}
+td.pts{font-variant-numeric:tabular-nums;font-family:"JetBrains Mono",monospace;white-space:nowrap;color:var(--ink-soft)}
+.mark{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:0.68rem;font-weight:600;padding:2px 7px;border-radius:4px;color:#fff}
+.mark.pass{background:#2f7d4f}
+.mark.miss{background:#9b3b44}
+.mark.bonus{background:#9a7d1f}
+
+ol.fixes{margin:0;padding-left:0;list-style:none;counter-reset:f}
+ol.fixes li{counter-increment:f;border:1px solid var(--rule);background:var(--parchment-warm);padding:16px 18px;margin-bottom:12px}
+ol.fixes li .ft{font-weight:600;font-size:1.05rem}
+ol.fixes li .ft::before{content:counter(f);display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;background:var(--burgundy);color:var(--parchment);font-family:"JetBrains Mono",monospace;font-size:0.8rem;border-radius:50%;margin-right:10px}
+ol.fixes li .worth{font-family:"JetBrains Mono",monospace;font-size:0.72rem;color:var(--burgundy);margin-left:6px}
+ol.fixes li .fd{color:var(--ink-soft);margin:8px 0 0;font-size:0.98rem}
+.allgood{background:var(--parchment-warm);border:1px solid var(--rule);padding:18px;text-align:center;color:#2f7d4f;font-weight:600}
+
+.badge-wrap{background:var(--parchment-warm);border:1px solid var(--rule);padding:18px}
+.badge-wrap img{display:block;margin:0 0 14px}
+.badge-wrap label{font-family:"JetBrains Mono",monospace;text-transform:uppercase;font-size:0.62rem;letter-spacing:0.12em;color:var(--ink-faint);display:block;margin:10px 0 4px}
+.badge-wrap textarea{width:100%;font-family:"JetBrains Mono",monospace;font-size:0.78rem;padding:9px 11px;border:1px solid var(--rule);background:#fff;color:var(--ink);resize:vertical}
+
+.cta{background:var(--parchment-warm);border:1px solid var(--rule);padding:24px;margin:26px 0;text-align:center}
+.cta p{margin:0 auto 10px;max-width:58ch}
+.cta code{font-family:"JetBrains Mono",monospace;font-size:0.9rem;background:var(--ink);color:var(--parchment);padding:6px 12px;display:inline-block}
+.cta a{color:var(--burgundy);text-decoration:underline;text-underline-offset:2px}
+
+footer{color:var(--ink-faint);font-size:0.85rem;padding:36px 0;border-top:1px solid var(--rule);margin-top:36px;text-align:center}
+footer a{color:var(--burgundy)}
+@media(max-width:620px){.gradecard .grade{font-size:3.6rem}header.top h1{font-size:1.7rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+<p class="eyebrow">Agent Trust Index, self-check</p>
+<h1>Check your agent</h1>
+<p class="lede">Enter your agent's domain. We look up whether it can prove who it is, give it a grade out of 100, and tell you exactly what to fix.</p>
+</header>
+
+<form class="check" id="checkForm" autocomplete="off">
+<input id="domain" type="text" placeholder="enter your agent's domain" aria-label="your agent's domain" spellcheck="false">
+<button type="submit" id="goBtn">Check it</button>
+</form>
+<p class="hint">For example feedoracle.io, or your own did:web identifier. Nothing is stored.</p>
+
+<div class="status" id="status" style="display:none"></div>
+<div class="err" id="error" style="display:none"></div>
+
+<div class="result" id="result">
+
+  <div class="gradecard">
+    <div class="domain" id="rDomain"></div>
+    <div class="did" id="rDid"></div>
+    <div class="grade" id="rGrade"></div>
+    <div class="scoreline">Trust Score <strong id="rScore"></strong> / 100</div>
+    <div class="method" id="rMethod"></div>
+  </div>
+
+  <div class="section">
+    <h2>Breakdown</h2>
+    <table>
+      <thead><tr><th>Check</th><th>Result</th><th>Points</th></tr></thead>
+      <tbody id="rBreakdown"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="fixSection">
+    <h2>How to improve</h2>
+    <ol class="fixes" id="rFixes"></ol>
+    <div class="allgood" id="rAllGood" style="display:none">Nothing to fix. Your agent is fully verifiable. Nice work.</div>
+  </div>
+
+  <div class="section">
+    <h2>Your badge</h2>
+    <div class="badge-wrap">
+      <img id="rBadge" alt="Agent Trust badge" height="20">
+      <label>Markdown</label>
+      <textarea id="rBadgeMd" rows="2" readonly></textarea>
+      <label>HTML</label>
+      <textarea id="rBadgeHtml" rows="3" readonly></textarea>
+    </div>
+  </div>
+
+</div>
+
+<div class="cta">
+<p>Most agents are anonymous. Yours does not have to be. Give it a verifiable identity in one command. It is free and open source, and you keep control of your own keys.</p>
+<p><code>pip install vouch-protocol</code></p>
+<p><a href="https://github.com/vouch-protocol/vouch">github.com/vouch-protocol/vouch</a></p>
+</div>
+
+<footer>
+An open benchmark, built on the Vouch Protocol. The grade you see here is the same grade the public Index gives.
+</footer>
+
+</div>
+
+<script>
+// Point at the local Worker when opened from disk or localhost, otherwise at the
+// hosted Worker on the same origin (path /grade).
+const LOCAL_WORKER = "http://127.0.0.1:8787";
+function workerBase(){
+  const h = location.hostname;
+  if (location.protocol === "file:" || h === "localhost" || h === "127.0.0.1") return LOCAL_WORKER;
+  return ""; // same origin
+}
+
+const GRADE_COLORS = {A:"#2f7d4f",B:"#3fa05f",C:"#9a7d1f",D:"#b56b28",F:"#9b3b44"};
+const BADGE_BASE = "https://index.vouch-protocol.com/badges";
+
+const form = document.getElementById("checkForm");
+const input = document.getElementById("domain");
+const goBtn = document.getElementById("goBtn");
+const statusEl = document.getElementById("status");
+const errorEl = document.getElementById("error");
+const resultEl = document.getElementById("result");
+
+function show(el){ el.style.display = ""; }
+function hide(el){ el.style.display = "none"; }
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const domain = input.value.trim();
+  if (!domain) return;
+
+  hide(errorEl); hide(resultEl);
+  show(statusEl); statusEl.textContent = "Looking up " + domain + " ...";
+  goBtn.disabled = true;
+
+  try {
+    const url = workerBase() + "/grade?domain=" + encodeURIComponent(domain);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!resp.ok || data.error) throw new Error(data.error || ("Request failed (" + resp.status + ")"));
+    render(data);
+    hide(statusEl);
+    show(resultEl);
+  } catch (err) {
+    hide(statusEl);
+    errorEl.textContent = "Could not check that domain. " + (err.message || "");
+    show(errorEl);
+  } finally {
+    goBtn.disabled = false;
+  }
+});
+
+function render(d){
+  document.getElementById("rDomain").textContent = d.domain;
+  document.getElementById("rDid").textContent = d.did;
+
+  const gradeEl = document.getElementById("rGrade");
+  gradeEl.textContent = d.grade;
+  gradeEl.style.color = GRADE_COLORS[d.grade] || "#7c2d3a";
+
+  document.getElementById("rScore").textContent = d.score;
+  const methodEl = document.getElementById("rMethod");
+  methodEl.textContent = d.method ? ("Using " + d.method) : "";
+
+  // Breakdown rows.
+  const tb = document.getElementById("rBreakdown");
+  tb.innerHTML = "";
+  for (const item of d.breakdown){
+    const tr = document.createElement("tr");
+
+    const c1 = document.createElement("td");
+    c1.textContent = item.label;
+
+    const c2 = document.createElement("td");
+    const mark = document.createElement("span");
+    mark.className = "mark " + (item.passed ? (item.scored ? "pass" : "bonus") : "miss");
+    mark.textContent = item.passed ? (item.scored ? "PASS" : "BONUS") : "MISS";
+    c2.appendChild(mark);
+
+    const c3 = document.createElement("td");
+    c3.className = "pts";
+    if (item.scored){
+      c3.textContent = item.points + " / " + item.max_points;
+    } else {
+      c3.textContent = item.passed ? "bonus" : "n/a";
+    }
+
+    tr.appendChild(c1); tr.appendChild(c2); tr.appendChild(c3);
+    tb.appendChild(tr);
+  }
+
+  // Fixes.
+  const ol = document.getElementById("rFixes");
+  const allGood = document.getElementById("rAllGood");
+  ol.innerHTML = "";
+  if (d.fixes && d.fixes.length){
+    hide(allGood); show(ol);
+    for (const fix of d.fixes){
+      const li = document.createElement("li");
+      const ft = document.createElement("div");
+      ft.className = "ft";
+      ft.textContent = fix.title;
+      if (fix.points){
+        const worth = document.createElement("span");
+        worth.className = "worth";
+        worth.textContent = "+" + fix.points + " pts";
+        ft.appendChild(worth);
+      }
+      const fd = document.createElement("p");
+      fd.className = "fd";
+      fd.textContent = fix.detail;
+      li.appendChild(ft); li.appendChild(fd);
+      ol.appendChild(li);
+    }
+  } else {
+    hide(ol); show(allGood);
+  }
+
+  // Badge.
+  const badgeUrl = d.badge_url || (BADGE_BASE + "/" + d.grade + ".svg");
+  document.getElementById("rBadge").src = badgeUrl;
+  document.getElementById("rBadgeMd").value =
+    "![Agent Trust: " + d.grade + "](" + badgeUrl + ")";
+  document.getElementById("rBadgeHtml").value =
+    '<img src="' + badgeUrl + '" alt="Agent Trust: ' + d.grade + '" height="20">';
+}
+</script>
+</body>
+</html>

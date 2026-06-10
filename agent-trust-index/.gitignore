@@ -1,0 +1,6 @@
+data/
+__pycache__/
+*.pyc
+node_modules/
+.wrangler/
+site/badges/*.png

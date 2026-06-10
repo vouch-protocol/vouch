@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Trust Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --parchment:#FAF7EE; --parchment-warm:#F2EBD9; --parchment-deep:#EFE9D5;
+ --ink:#0F172A; --ink-soft:#334155; --ink-faint:#64748b;
+ --burgundy:#7C2D3A; --burgundy-dark:#5C1F2C; --rule:#D9CFB6; --rule-light:#E7DEC8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--parchment);color:var(--ink);font-family:"Source Serif 4",Georgia,serif;line-height:1.6;font-feature-settings:"kern","liga","onum"}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.eyebrow{font-family:"JetBrains Mono",monospace;text-transform:uppercase;color:var(--burgundy);font-size:0.7rem;letter-spacing:0.16em}
+header.top{padding:44px 0 0;text-align:center}
+header.top h1{font-weight:700;font-size:2.4rem;line-height:1.12;letter-spacing:-0.01em;margin:10px 0 0}
+header.top .lede{font-style:italic;color:var(--ink-soft);font-size:1.15rem;max-width:58ch;margin:12px auto 0}
+.hero{text-align:center;padding:44px 0 8px}
+.hero .big{font-weight:700;font-size:6rem;line-height:1;color:var(--burgundy)}
+.hero .sub{font-size:1.25rem;margin-top:8px}
+.hero .src{color:var(--ink-faint);font-size:0.9rem;margin-top:10px}
+.cta{background:var(--parchment-warm);border:1px solid var(--rule);padding:30px 28px;margin:28px 0;text-align:center}
+.cta h2{font-weight:600;font-size:1.5rem;margin:0 0 8px}
+.cta p{margin:0 auto 12px;max-width:60ch}
+.cta code{font-family:"JetBrains Mono",monospace;font-size:0.9rem;background:var(--ink);color:var(--parchment);padding:6px 12px;display:inline-block}
+.cta a{color:var(--burgundy);text-decoration:underline;text-underline-offset:2px}
+.section{padding:30px 0;border-top:1px solid var(--rule)}
+.section h2{font-weight:600;font-size:1.5rem;margin:0 0 10px}
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:14px}
+.col h3{font-family:"JetBrains Mono",monospace;text-transform:uppercase;font-size:0.7rem;letter-spacing:0.14em;color:var(--burgundy);margin:0 0 6px}
+.col p{margin:0;color:var(--ink-soft);font-size:0.98rem}
+.stats{display:flex;gap:16px;flex-wrap:wrap;padding:8px 0 0}
+.card{flex:1;min-width:200px;background:var(--parchment-warm);border:1px solid var(--rule);padding:18px}
+.card .n{font-size:2rem;font-weight:700}
+.card .l{color:var(--ink-faint);font-size:0.9rem;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:0.92rem;margin-top:8px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule-light);vertical-align:top}
+th{font-family:"JetBrains Mono",monospace;text-transform:uppercase;font-size:0.62rem;letter-spacing:0.12em;color:var(--ink-faint);font-weight:600}
+td.num{font-variant-numeric:tabular-nums}
+.dim{color:var(--ink-soft);word-break:break-all}
+.g{display:inline-block;min-width:22px;text-align:center;border-radius:4px;color:#fff;font-weight:700;padding:1px 7px;font-family:"JetBrains Mono",monospace;font-size:0.78rem}
+.note{color:var(--ink-soft);font-size:0.95rem}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 4px;font-size:0.85rem;color:var(--ink-soft);align-items:center}
+.legend span span.g{margin-right:6px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 10px}
+.filters button{font-family:"JetBrains Mono",monospace;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;border:1px solid var(--rule);background:var(--parchment-warm);color:var(--ink);padding:5px 13px;cursor:pointer}
+.filters button.active{background:var(--ink);color:var(--parchment);border-color:var(--ink)}
+.tablebox{max-height:520px;overflow:auto;border:1px solid var(--rule)}
+.tablebox table{margin:0}
+.tablebox td,.tablebox th{white-space:nowrap}
+.tablebox thead th{position:sticky;top:0;background:var(--parchment-deep)}
+footer{color:var(--ink-faint);font-size:0.85rem;padding:36px 0;border-top:1px solid var(--rule);margin-top:36px}
+footer a{color:var(--burgundy)}
+@media(max-width:760px){.cols{grid-template-columns:1fr}.hero .big{font-size:4rem}header.top h1{font-size:1.8rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+<p class="eyebrow">An open benchmark, built on the Vouch Protocol</p>
+<h1>Agent Trust Index</h1>
+<p class="lede">The AI agents running in the world today take real actions. The Index measures a simple thing for each one: can it prove who it is, and can anyone be held accountable for what it does?</p>
+</header>
+
+<section class="hero">
+<div class="big">98.7%</div>
+<div class="sub">of AI agents we checked do not publish an identity anyone can verify</div>
+<div class="src">11,680 unique agents from the public Model Context Protocol registry, checked 10 June 2026.</div>
+</section>
+
+<div class="cta">
+<h2>Most agents are anonymous. Yours does not have to be.</h2>
+<p>Give your agent a verifiable identity in one command. It is free and open source, and you keep control of your own keys.</p>
+<p><code>pip install vouch-protocol</code></p>
+<p><a href="https://github.com/vouch-protocol/vouch">github.com/vouch-protocol/vouch</a></p>
+</div>
+
+<section class="section">
+<h2>Identity is the floor. Accountability is the point.</h2>
+<p class="note">Knowing which agent acted is only the start. The harder questions are who authorized it, whether it is still behaving, and whether it can be stopped. A bare identity does not answer those. The Vouch Protocol does, and this Index will grow to measure all of it.</p>
+<div class="cols">
+<div class="col"><h3>Who authorized it</h3><p>A delegation chain shows who gave the agent its authority, on whose behalf, and within what limits, all verifiable.</p></div>
+<div class="col"><h3>Is it still trustworthy</h3><p>Continuous trust means an agent has to keep proving itself, not get trusted once and forever.</p></div>
+<div class="col"><h3>Can it be stopped</h3><p>Revocation lets you pull an agent's authority the moment it goes wrong, and anyone can check the status.</p></div>
+</div>
+</section>
+
+<section class="section">
+<div class="stats">
+<div class="card"><div class="n">11,680</div><div class="l">unique agents checked</div></div>
+<div class="card"><div class="n">157</div><div class="l">can prove who they are (1.34%)</div></div>
+<div class="card"><div class="n">69</div><div class="l">fully verifiable (grade A)</div></div>
+</div>
+</section>
+
+<section class="section">
+<h2>Where the ecosystem stands, property by property</h2>
+<p class="note">Some trust properties an agent can publish, so we can measure them. Others, like who authorized an agent and whether its trust is continuously renewed, only show up when the agent presents a credential while it works, so a static scan cannot count them. We report only what we measured, and we do not put a number on what we cannot see.</p>
+<table>
+<thead><tr><th>Trust property</th><th>Agents with it</th><th>Share</th></tr></thead>
+<tbody>
+<tr><td>Can prove who they are (resolvable did:web identity)</td><td class="num">157</td><td class="num">1.34%</td></tr>
+<tr><td>Agent card references a key or signature</td><td class="num">101</td><td class="num">0.86%</td></tr>
+<tr><td>Post-quantum ready (an ML-DSA key)</td><td class="num">0</td><td class="num">0.00%</td></tr>
+<tr><td>Publishes a service endpoint (revocation, MCP, A2A)</td><td class="num">72</td><td class="num">0.62%</td></tr>
+<tr><td>Delegation provenance (who authorized it)</td><td class="dim">not measured</td><td class="dim">a runtime property a static scan cannot see</td></tr>
+<tr><td>Continuous trust (renewed, not trusted once)</td><td class="dim">not measured</td><td class="dim">a runtime property a static scan cannot see</td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="section">
+<h2>Agents that can prove who they are</h2>
+<p class="note">Everyone else scores F: no resolvable identity at all. A verifiable agent stands out because almost none have one. The grade is the Trust Score band.</p>
+<div class="legend">
+<span><span class="g" style="background:#2f7d4f">A</span>90 to 100, full verifiable identity</span>
+<span><span class="g" style="background:#3fa05f">B</span>75 to 89</span>
+<span><span class="g" style="background:#9a7d1f">C</span>60 to 74, an identity but no usable key</span>
+<span><span class="g" style="background:#b56b28">D</span>40 to 59</span>
+<span><span class="g" style="background:#9b3b44">F</span>below 40, cannot prove who it is</span>
+</div>
+<div class="filters">
+<button class="active" data-f="all">All</button>
+<button data-f="A">A only</button>
+<button data-f="C">C only</button>
+</div>
+<div class="tablebox">
+<table>
+<thead><tr><th>Grade</th><th>Score</th><th>Agent</th><th>Domain</th><th>What they use</th></tr></thead>
+<tbody>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>de.carbon-cashmere.api/crypto-intelligence</td><td class="dim">api.carbon-cashmere.de</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.feedoracle/compliance</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.github.AgentNOMOS/nomos-crossborder-broker</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.github.craigmbrown/blindoracle</td><td class="dim">craigmbrown.com</td><td class="dim">did:web, Ed25519 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.github.feedoracle/feedoracle-macro-mcp</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.github.feedoracle/stablecoin-risk</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.github.rnwy/mcp</td><td class="dim">rnwy.com</td><td class="dim">did:web, P-256 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.github.vdineshk/dominion-observatory</td><td class="dim">dominion-observatory.sgdata.workers.dev</td><td class="dim">did:web, Ed25519 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/accessoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/agentguard</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/aml</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/ampel</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/arbitrumoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/baseoracle</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/bnboracle</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/changeoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/cloudoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/conductor</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/contractoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/cybershield</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/dealoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/dependencyoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/dora</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/doraeventfabric</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/driftoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/ecommerceoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/flareoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/flightoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/governanceoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/healthguard</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/hederaoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/hoteloracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/incidentoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/insuranceoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/invoiceoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/iso20022oracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/joboracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/law</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/leadoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/macroooracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/memeoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/memoryoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/mica</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/newsoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/paymentoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/policyoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/predictionguard</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/predictoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/priceoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/quantum</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/rankoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/registeroracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/reporting</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/researchoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/reserveoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/resilienceoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/revieworacle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/riskoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/seooraclev2</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/shoporacle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/smartmoneyoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/solanaoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/suioracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/tlpt</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/tonoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/trustlayer</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/xrploracle</td><td class="dim">feedoracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/yieldoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="A"><td><span class="g" style="background:#2f7d4f">A</span></td><td class="num">100</td><td>io.tooloracle/zkevidenceoracle</td><td class="dim">tooloracle.io</td><td class="dim">did:web, secp256k1 (JWK)</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>ai.law.mcp/lawyer-search</td><td class="dim">mcp.law.ai</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>ai.law/lawyer-search</td><td class="dim">mcp.law.ai</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>ai.rallyprop/gov-funding</td><td class="dim">mcp.rallyprop.ai</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>ai.websitepublisher/mcp</td><td class="dim">mcp.websitepublisher.ai</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>cc.thecolony/mcp-server</td><td class="dim">thecolony.cc</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>com.bushdrum/events</td><td class="dim">bushdrum.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>com.eventescapes/event-escapes</td><td class="dim">mcp.eventescapes.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>com.tkawen/intelligence-gateway</td><td class="dim">mcp.tkawen.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.ahel/ahel</td><td class="dim">mcp.ahel.io</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.eventify/mcp-server</td><td class="dim">amcp.eventify.io</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.0580iris-lang/x711-gas-station</td><td class="dim">x711.io</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.BricePourLe13/merx</td><td class="dim">mcp.merxprotocol.eu</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.Waysway-app/waysway</td><td class="dim">api.waysway.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.jaymiller-cmg/dealsync-mcp-server</td><td class="dim">dealsync-mcp-server.jaymiller.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.kimny1143/hoo-mcp</td><td class="dim">hoo-mcp.glasswerkskimny.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/a11y-scorer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/agent-loop-detector</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/agent-memory</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/agent-trace-auditor</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/agent-workflow-engine</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-agent-scratchpad</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-budget-planner</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-changelog-writer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-cost-optimizer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-crawler-policy</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-eval</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-gateway</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-guardrails</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-model-router</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-prompt-optimizer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-provider-status</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-rate-limit-tracker</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/ai-token-counter</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-changelog-tracker</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-composition-gateway</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-contract-validator</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-diff-monitor</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-flow-analyzer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-landing</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-mock-server</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-payload-auditor</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-perf-analyzer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-request-deduplicator</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-response-cost-analyzer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/api-schema-drift-detector</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/blog</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/citation-verifier</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/claude-skill-validator</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/code-explainer</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/code-pattern-risk-scanner</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/color-palette</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/cron-collision-detector</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/cron-monitor</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/cron-parser</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/crypto-signal</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/data-transform</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/diff-patch-tools</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/domain-intel</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/email-validator</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/embedding-search</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/env-blueprint-validator</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/font-metadata</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/form-backend</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/govdata-korea</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/graphql-dos-shield</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/graphql-rest-bridge</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/interactive-api-playground</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/llm-output-quality-monitor</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.lazymac2x/smart-data-extractor</td><td class="dim">api.lazy-mac.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.majorelalexis-stack/maxia</td><td class="dim">maxiaworld.app</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.mirabello-consultancy/mcp-server</td><td class="dim">mcp.mirabelloconsultancy.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.nexus-api-lab/chrono-mcp</td><td class="dim">chrono-mcp.dokasukadon.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.nexus-api-lab/codebook-mcp</td><td class="dim">codebook-mcp.dokasukadon.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.nexus-api-lab/digest-mcp</td><td class="dim">digest-mcp.dokasukadon.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.nexus-api-lab/ident-mcp</td><td class="dim">ident-mcp.dokasukadon.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.nexus-api-lab/textops-mcp</td><td class="dim">textops-mcp.dokasukadon.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.nexusforge-tools/mcp-eu-finance</td><td class="dim">api.nexusforge.tools</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.nikhilgogulwar/universalbench</td><td class="dim">universalbench-mcp.penantiaglobal.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.ogasurfproject-jpg/horizon-shield</td><td class="dim">hs-mcp.oga-surf-project.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.rootsbymenda/pharma-regulatory</td><td class="dim">pharma-mcp-server.rootsbybenda.workers.dev</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.srotzin/hive-gate</td><td class="dim">hivegate.onrender.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.srotzin/hive-mcp-connector</td><td class="dim">hive-mcp-connector.onrender.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.srotzin/hive-mcp-swap</td><td class="dim">hive-mcp-swap.onrender.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.srotzin/hive-mcp-vault</td><td class="dim">hive-mcp-vault.onrender.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.srotzin/hivebank</td><td class="dim">hivebank.onrender.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.srotzin/hivegate</td><td class="dim">hivegate.onrender.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>io.github.srotzin/hivetrust</td><td class="dim">hivetrust.onrender.com</td><td class="dim">did:web</td></tr>
+<tr data-grade="C"><td><span class="g" style="background:#9a7d1f">C</span></td><td class="num">60</td><td>space.0/space0</td><td class="dim">mcp.0.space</td><td class="dim">did:web</td></tr>
+</tbody>
+</table>
+</div>
+<script>
+(function(){
+ var btns=document.querySelectorAll('.filters button');
+ var rows=document.querySelectorAll('.tablebox tbody tr');
+ btns.forEach(function(b){b.addEventListener('click',function(){
+   btns.forEach(function(x){x.classList.remove('active')});
+   b.classList.add('active');
+   var f=b.getAttribute('data-f');
+   rows.forEach(function(r){r.style.display=(f==='all'||r.getAttribute('data-grade')===f)?'':'none';});
+ });});
+})();
+</script>
+</section>
+
+<section class="section">
+<h2>How this was measured</h2>
+<p class="note">We scan the public Model Context Protocol registry, take each agent's own domain, and check whether it publishes a resolvable identity with a usable key. Today we check one signal, a resolvable did:web identity, so this number is a floor on the gap and real adoption may be slightly higher. The full method is open. A high score means an agent can prove who it is, not that it is good or safe.</p>
+</section>
+
+<footer>
+Data from the public Model Context Protocol registry, dedicated to the public domain under CC0. The Agent Trust Index is an open project built on the Vouch Protocol. The number moves as agents adopt verifiable identity.
+</footer>
+
+</div>
+</body>
+</html>
