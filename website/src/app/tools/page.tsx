@@ -51,6 +51,11 @@ const GROUPS: Group[] = [
                 start: 'vouch media sign photo.jpg',
             },
             {
+                name: 'vouch attribute',
+                blurb: 'Separate who wrote which line. When an AI assistant and a human both edit a file, it records the lines the AI wrote under the AI key and the lines you wrote under yours, so when a line causes an incident you can prove which of you wrote it.',
+                start: 'vouch attribute blame app.py',
+            },
+            {
                 name: 'The Rogue Agent demo',
                 blurb: 'A sixty-second demo: a real agent is accepted, an impersonator is rejected, a tampered credential is rejected. All local, no setup.',
                 start: 'python examples/00_the_rogue_agent.py',
@@ -66,6 +71,11 @@ const GROUPS: Group[] = [
                 name: 'MCP server',
                 blurb: 'A standalone Model Context Protocol server. Any MCP client (Claude Desktop, Cursor, any agent) can create an identity, sign and verify credentials, scan for leaked keys, and decode DIDs, with no extra setup.',
                 start: 'vouch-mcp',
+            },
+            {
+                name: 'Bridge server',
+                blurb: 'A standalone HTTP service (vouch-bridge) for media: C2PA image signing, QR badge overlay, and audio watermarking, behind a simple sign and verify API.',
+                start: 'vouch-bridge',
             },
             {
                 name: 'Identity Sidecar',
@@ -88,9 +98,9 @@ const GROUPS: Group[] = [
         tools: [
             { name: 'Python', blurb: 'The full reference implementation.', start: 'pip install vouch-protocol' },
             { name: 'TypeScript', blurb: 'For the browser and Node.', start: 'npm i @vouch-protocol-official/sdk' },
-            { name: 'Go', blurb: 'A high-throughput signing sidecar.', start: 'go-sidecar' },
+            { name: 'Go', blurb: 'A high-throughput signing sidecar.', start: 'go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest' },
             { name: 'Rust', blurb: 'The shared core that every wrapper is built on.', start: 'cargo add vouch-core' },
-            { name: 'Java and Kotlin', blurb: 'On the JVM.', start: 'com.vouchprotocol:vouch-core-jvm' },
+            { name: 'Java and Kotlin', blurb: 'On the JVM.', start: 'com.vouchprotocol:vouch-core' },
             { name: '.NET', blurb: 'For C#.', start: 'VouchProtocol.Core', tag: 'Preview' },
             { name: 'Swift', blurb: 'For iOS and macOS.', start: 'VouchCore', tag: 'Preview' },
             { name: 'C and WebAssembly', blurb: 'For native, embedded, browser, and edge.', tag: 'Preview' },
@@ -120,6 +130,12 @@ const GROUPS: Group[] = [
                 href: '/help/#gemini-gem-create',
                 hrefLabel: 'How to use →',
             },
+            {
+                name: 'VS Code extension',
+                blurb: 'Sign and verify from inside the editor, scaffold an agent identity, and open the Vouch Assistant without leaving VS Code.',
+                href: 'https://github.com/vouch-protocol/vouch/tree/main/vscode-vouch',
+                hrefLabel: 'On GitHub →',
+            },
         ],
     },
     {
@@ -130,6 +146,7 @@ const GROUPS: Group[] = [
             { name: 'C2PA Content Credentials', blurb: 'Sign images so their origin and edits can be verified.' },
             { name: 'Vouch Sonic', blurb: 'An audio watermark that carries provenance through sound itself.' },
             { name: 'Browser extension', blurb: 'Sign and verify content on the page, for Chrome and Edge.' },
+            { name: 'Mobile capture app', blurb: 'Capture-time signing on a phone, with device-level attestation from the secure enclave, plus Vouch Sonic.' },
         ],
     },
     {
@@ -152,7 +169,7 @@ const GROUPS: Group[] = [
         tools: [
             {
                 name: 'Agent Trust Index',
-                blurb: 'Scans agents in the wild and measures how many can actually prove who they are. In the first sweep of 11,168 public agents, just 1.3% could.',
+                blurb: 'Scans agents in the wild and measures how many can actually prove who they are. In the first sweep of 11,680 public agents, just 1.3% could.',
                 href: '/agent-trust-index/',
                 hrefLabel: 'View the Index →',
             },

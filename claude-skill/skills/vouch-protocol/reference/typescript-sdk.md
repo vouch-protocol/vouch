@@ -1,12 +1,12 @@
 # TypeScript SDK Reference
 
-`@vouch-protocol/core` on npm. Works in Node and browser. Produces
+`@vouch-protocol-official/sdk` on npm. Works in Node and browser. Produces
 byte-identical credentials with the Python and Go SDKs.
 
 ## Install
 
 ```bash
-npm install @vouch-protocol/core
+npm install @vouch-protocol-official/sdk
 # Optional post-quantum:
 npm install @noble/post-quantum
 ```
@@ -14,7 +14,7 @@ npm install @noble/post-quantum
 ## Identity
 
 ```ts
-import { Signer, generateIdentity } from '@vouch-protocol/core';
+import { Signer, generateIdentity } from '@vouch-protocol-official/sdk';
 
 // Generate
 const keys = await generateIdentity('agent.example.com');
@@ -67,7 +67,7 @@ const signedHybrid = await signer.signCredentialHybrid({
 ## Verification
 
 ```ts
-import { Verifier } from '@vouch-protocol/core';
+import { Verifier } from '@vouch-protocol-official/sdk';
 
 // verifyCredential returns { isValid, passport, error }
 const result = await Verifier.verifyCredential(signed);
@@ -87,7 +87,7 @@ import {
     buildStatusListCredential,
     buildStatusListEntry,
     verifyStatus,
-} from '@vouch-protocol/core';
+} from '@vouch-protocol-official/sdk';
 
 const list = new StatusList({
     statusListId: 'https://issuer.example/status/1',
@@ -125,7 +125,7 @@ const restored = StatusList.fromStateDict(JSON.parse(await redis.get(...)));
 If you run the Go sidecar, the TS SDK has a client:
 
 ```ts
-import { VouchClient } from '@vouch-protocol/core';
+import { VouchClient } from '@vouch-protocol-official/sdk';
 
 const client = new VouchClient({ endpoint: 'http://localhost:8877' });
 const signed = await client.sign({

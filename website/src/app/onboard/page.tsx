@@ -36,7 +36,7 @@ export default function OnboardPage() {
             each step is unchanged.
           </p>
           <div className="max-w-prose">
-            <CodeBlock code="pip install vouch-protocol && vouch onboard" language="bash" />
+            <CodeBlock code="pip install vouch-protocol && vouch init" language="bash" />
           </div>
         </div>
       </section>
