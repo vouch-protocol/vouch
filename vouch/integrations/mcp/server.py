@@ -1,264 +1,93 @@
 """
-Vouch Protocol MCP Server - Model Context Protocol integration.
+Vouch Protocol MCP Server.
 
-Provides a Standard-IO based MCP server for Claude Desktop, Cursor, and other
-MCP-compatible clients.
+A Model Context Protocol server, built on the official MCP Python SDK
+(FastMCP), that lets MCP-compatible clients (Claude Desktop, Cursor, ...)
+issue v1.0 Vouch Credentials to authorize sensitive actions.
+
+Replaces the earlier hand-rolled JSON-RPC loop and the legacy JWS signing
+path. Credentials now carry an eddsa-jcs-2022 Data Integrity proof.
+
+Run:
+    VOUCH_PRIVATE_KEY=... VOUCH_DID=... vouch-mcp
 """
 
-import sys
-import json
-import logging
+from __future__ import annotations
+
 import os
-from typing import Optional, Dict, Any
+from typing import Optional
 
-from vouch import Signer
+try:
+    from mcp.server.fastmcp import FastMCP
+except ImportError as exc:  # pragma: no cover
+    raise SystemExit(
+        "The Vouch MCP server requires the MCP SDK. Install it with:\n"
+        "    pip install 'vouch-protocol[mcp]'\n"
+        "or\n"
+        "    pip install mcp\n"
+        f"(import error: {exc})"
+    )
+
+from vouch.integrations._common import load_signer, sign_tool_call_json
 
 
-logging.basicConfig(level=logging.INFO, stream=sys.stderr)
-logger = logging.getLogger(__name__)
+mcp = FastMCP("vouch")
 
 
-class VouchMCPServer:
+def _did() -> str:
+    return os.getenv("VOUCH_DID", "(not configured)")
+
+
+@mcp.tool()
+def sign_action(action: str, target: str, resource: Optional[str] = None) -> str:
+    """Issue a Vouch Credential authorizing a single sensitive action.
+
+    Call this before any authenticated request to an external service.
+
+    Args:
+        action: The verb, e.g. 'read', 'write', 'execute', 'send'.
+        target: The service or URL being called.
+        resource: The specific object, e.g. 'customer:123'. Defaults to target.
+
+    Returns:
+        A compact JSON Vouch Credential to attach as a 'Vouch-Credential' header.
     """
-    MCP Server providing Vouch identity signing capabilities.
+    try:
+        signer = load_signer()
+        return sign_tool_call_json(signer, action, target, resource)
+    except Exception as e:
+        return f"Error issuing Vouch Credential: {e}"
 
-    Exposes tools for AI agents to generate cryptographic Vouch-Tokens
-    for authentication with external services.
+
+@mcp.tool()
+def create_session(purpose: str, valid_seconds: int = 3600) -> str:
+    """Issue a longer-lived session credential covering multiple actions.
+
+    Args:
+        purpose: What the session is for, e.g. 'calendar_access'.
+        valid_seconds: Session lifetime in seconds (default 3600).
+
+    Returns:
+        A compact JSON session credential.
     """
-
-    def __init__(self):
-        self._signer: Optional[Signer] = None
-        self._did: Optional[str] = None
-        self._auto_sign = os.getenv("VOUCH_AUTO_SIGN", "").lower() in ("true", "1", "yes")
-        self._session_token: Optional[str] = None
-        self._load_credentials()
-
-    def _load_credentials(self) -> None:
-        """Load signing credentials from environment."""
-        private_key = os.getenv("VOUCH_PRIVATE_KEY")
-        did = os.getenv("VOUCH_DID")
-
-        if private_key and did:
-            try:
-                self._signer = Signer(private_key=private_key, did=did)
-                self._did = did
-                mode = "(Auto-Sign ON)" if self._auto_sign else ""
-                logger.info(f"Vouch MCP Server initialized with DID: {did} {mode}")
-            except Exception as e:
-                logger.error(f"Failed to initialize signer: {e}")
-        else:
-            logger.warning("VOUCH_PRIVATE_KEY or VOUCH_DID not set")
-
-    def _get_tools_list(self) -> list:
-        """Return the list of available tools."""
-        tools = [
-            {
-                "name": "sign_action",
-                "description": "Generate a cryptographic Vouch-Token to sign a sensitive action. Use this before making authenticated API calls.",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "intent": {
-                            "type": "string",
-                            "description": "What action are you taking? (e.g., 'read_email', 'send_payment', 'access_database')",
-                        },
-                        "target": {
-                            "type": "string",
-                            "description": "Optional: The target service or resource",
-                        },
-                    },
-                    "required": ["intent"],
-                },
-            },
-            {
-                "name": "get_identity",
-                "description": "Get the current agent's DID (Decentralized Identifier)",
-                "inputSchema": {"type": "object", "properties": {}},
-            },
-            {
-                "name": "create_session",
-                "description": "Create a session token valid for multiple actions. Reduces need to sign each action individually.",
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "purpose": {
-                            "type": "string",
-                            "description": "What is this session for? (e.g., 'calendar_access', 'email_management')",
-                        },
-                    },
-                    "required": ["purpose"],
-                },
-            },
-        ]
-        return tools
-
-    def process_request(self, line: str) -> Optional[Dict[str, Any]]:
-        """Process an incoming MCP request."""
-        try:
-            request = json.loads(line.strip())
-            request_id = request.get("id")
-            method = request.get("method")
-
-            # Handle initialize
-            if method == "initialize":
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "result": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {"tools": {}},
-                        "serverInfo": {"name": "vouch-mcp-server", "version": "1.1.3"},
-                    },
-                }
-
-            # Handle tools/list
-            if method == "tools/list":
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "result": {"tools": self._get_tools_list()},
-                }
-
-            # Handle tools/call
-            if method == "tools/call":
-                params = request.get("params", {})
-                tool_name = params.get("name")
-                arguments = params.get("arguments", {})
-
-                return self._handle_tool_call(request_id, tool_name, arguments)
-
-            # Unknown method
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "error": {"code": -32601, "message": f"Method not found: {method}"},
-            }
-
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Request processing error: {e}")
-            return {"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": str(e)}}
-
-    def _handle_tool_call(
-        self, request_id: Any, tool_name: str, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Handle a tool call request."""
-
-        if tool_name == "sign_action":
-            if not self._signer:
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "error": {
-                        "code": -32603,
-                        "message": "VOUCH_PRIVATE_KEY and VOUCH_DID must be set in environment",
-                    },
-                }
-
-            intent = arguments.get("intent", "")
-            target = arguments.get("target", "")
-
-            try:
-                payload = {"intent": intent}
-                if target:
-                    payload["target"] = target
-
-                token = self._signer.sign(payload)
-
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "result": {
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": f"Vouch-Token: {token}\n\nAdd this as a header: 'Vouch-Token: {token}'",
-                            }
-                        ]
-                    },
-                }
-            except Exception as e:
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "error": {"code": -32603, "message": f"Signing failed: {e}"},
-                }
-
-        elif tool_name == "get_identity":
-            did = self._did or "Not configured"
-            auto_sign_status = "ON" if self._auto_sign else "OFF"
-            session_status = "Active" if self._session_token else "None"
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": f"Agent DID: {did}\nAuto-Sign: {auto_sign_status}\nSession: {session_status}",
-                        }
-                    ]
-                },
-            }
-
-        elif tool_name == "create_session":
-            if not self._signer:
-                return {
-                    "jsonrpc": "2.0",
-                    "id": request_id,
-                    "error": {"code": -32603, "message": "Vouch identity not configured"},
-                }
-
-            purpose = arguments.get("purpose", "general")
-            import time
-
-            session_payload = {
-                "type": "session",
-                "purpose": purpose,
-                "created_at": int(time.time()),
-                "valid_for": "1 hour",
-            }
-            self._session_token = self._signer.sign(session_payload)
-
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "result": {
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": f"✅ Session created for: {purpose}\n\nSession-Token: {self._session_token}\n\nUse this token for subsequent actions. No need to sign each one individually.",
-                        }
-                    ]
-                },
-            }
-
-        else:
-            return {
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "error": {"code": -32602, "message": f"Unknown tool: {tool_name}"},
-            }
-
-    def run(self) -> None:
-        """Run the MCP server loop."""
-        logger.info("Vouch MCP Server starting...")
-
-        for line in sys.stdin:
-            if not line.strip():
-                continue
-
-            response = self.process_request(line)
-            if response:
-                print(json.dumps(response), flush=True)
+    try:
+        signer = load_signer()
+        return sign_tool_call_json(
+            signer, "session", purpose, f"session:{purpose}", valid_seconds=valid_seconds
+        )
+    except Exception as e:
+        return f"Error creating session: {e}"
 
 
-def main():
-    """Entry point for the MCP server."""
-    server = VouchMCPServer()
-    server.run()
+@mcp.tool()
+def get_identity() -> str:
+    """Return the agent's DID (Decentralized Identifier)."""
+    return f"Agent DID: {_did()}"
+
+
+def main() -> None:
+    """Entry point: run the MCP server over stdio."""
+    mcp.run()
 
 
 if __name__ == "__main__":

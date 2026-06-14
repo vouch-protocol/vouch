@@ -1,61 +1,46 @@
 """
 Vouch Protocol CrewAI Integration.
 
-Provides CrewAI-compatible tools for generating Vouch-Tokens.
+Provides CrewAI-compatible tools that issue v1.0 Vouch Credentials
+(eddsa-jcs-2022 Data Integrity proofs) to authorize agent tool calls.
 """
 
-import os
 from typing import Optional
 
 try:
     from crewai.tools import tool
 except ImportError:
-    # Fallback if crewai not installed
-    def tool(name):
+    # Fallback so this module imports without CrewAI installed.
+    def tool(name):  # type: ignore
         def decorator(func):
             return func
 
         return decorator
 
 
-from vouch import Signer
+from vouch.integrations._common import load_signer, sign_tool_call_json
 
 
 @tool("Sign Request with Vouch")
-def sign_request(intent: str, target: Optional[str] = None) -> str:
-    """
-    Generates a cryptographic Vouch-Token to prove identity.
+def sign_request(action: str, target: str, resource: Optional[str] = None) -> str:
+    """Issue a cryptographic Vouch Credential authorizing one tool call.
 
-    Use this tool before making authenticated API calls to external services.
-    The generated token should be included as a 'Vouch-Token' header.
+    Call this before any authenticated request to an external service. Attach
+    the returned JSON as a 'Vouch-Credential' header or send it in the body.
 
     Args:
-        intent: What action you are taking (e.g., 'read_database', 'send_email')
-        target: Optional target service or domain
+        action: The verb, e.g. 'read', 'write', 'execute', 'send'.
+        target: The service or URL being called.
+        resource: The specific object, e.g. 'customer:123'. Defaults to target.
 
     Returns:
-        A Vouch-Token string to use in your request headers.
+        A compact JSON Vouch Credential, or an error string.
     """
-    private_key = os.getenv("VOUCH_PRIVATE_KEY")
-    did = os.getenv("VOUCH_DID")
-
-    if not private_key:
-        return "Error: VOUCH_PRIVATE_KEY environment variable not set"
-    if not did:
-        return "Error: VOUCH_DID environment variable not set"
-
     try:
-        signer = Signer(private_key=private_key, did=did)
-
-        payload = {"intent": intent}
-        if target:
-            payload["target"] = target
-
-        token = signer.sign(payload)
-        return f"Vouch-Token: {token}"
-
+        signer = load_signer()
+        return sign_tool_call_json(signer, action, target, resource)
     except Exception as e:
-        return f"Error generating token: {e}"
+        return f"Error issuing Vouch Credential: {e}"
 
 
 class VouchCrewTools:
@@ -64,5 +49,5 @@ class VouchCrewTools:
     sign_request = sign_request
 
 
-# For backward compatibility
+# Backward-compatible alias.
 VouchSignerTool = sign_request

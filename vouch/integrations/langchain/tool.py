@@ -1,19 +1,19 @@
 """
 Vouch Protocol LangChain Integration.
 
-Provides a LangChain-compatible tool for generating Vouch-Tokens.
+Provides a LangChain-compatible tool that issues v1.0 Vouch Credentials
+(eddsa-jcs-2022 Data Integrity proofs) to authorize agent tool calls.
 """
 
-from typing import Type, Optional
-import os
+from typing import Optional, Type
 
 from pydantic import BaseModel, Field
 
 try:
     from langchain.tools import BaseTool
 except ImportError:
-    # Fallback for users without LangChain
-    class BaseTool:
+    # Fallback so this module imports without LangChain installed.
+    class BaseTool:  # type: ignore
         """Fallback BaseTool class."""
 
         name: str = ""
@@ -24,99 +24,81 @@ except ImportError:
 
 
 from vouch import Signer
+from vouch.integrations._common import load_signer, sign_tool_call_json
 
 
 class VouchSignerInput(BaseModel):
-    """Input schema for the Vouch Signer tool."""
+    """Input schema for the Vouch signer tool."""
 
-    intent: str = Field(
-        description="A description of the action being signed (e.g., 'search_database', 'send_email')"
+    action: str = Field(
+        description="The verb for the call, e.g. 'read', 'write', 'execute', 'send'."
     )
-    target: Optional[str] = Field(default=None, description="Optional target service or resource")
+    target: str = Field(
+        description="The service or URL being called, e.g. 'https://api.example.com'."
+    )
+    resource: Optional[str] = Field(
+        default=None,
+        description=(
+            "The specific object being acted on, e.g. 'customer:123'. "
+            "Defaults to the target when omitted."
+        ),
+    )
 
 
 class VouchSignerTool(BaseTool):
-    """
-    LangChain tool for generating Vouch-Tokens.
+    """LangChain tool that issues a Vouch Credential for a single tool call.
 
-    Use this tool to generate cryptographic identity proofs before making
-    authenticated API calls to external services.
+    Use it before an authenticated call to an external service. Attach the
+    returned JSON as a 'Vouch-Credential' header or send it in the request body.
 
     Example:
         >>> from vouch.integrations.langchain.tool import VouchSignerTool
-        >>> tool = VouchSignerTool()  # Uses env vars
-        >>> token = tool._run("read_customer_data")
+        >>> tool = VouchSignerTool()  # reads VOUCH_PRIVATE_KEY / VOUCH_DID
+        >>> cred = tool._run("read", "https://api.example.com", "customer:123")
     """
 
     name: str = "vouch_signer"
     description: str = (
-        "Generates a cryptographic Vouch-Token to prove your identity. "
-        "Use this before making authenticated API calls to external services. "
-        "The token should be included as a 'Vouch-Token' header in your request."
+        "Issue a cryptographic Vouch Credential authorizing one tool call. "
+        "Call this before any authenticated request to an external service. "
+        "Attach the returned JSON as a 'Vouch-Credential' header."
     )
     args_schema: Type[BaseModel] = VouchSignerInput
 
-    # Instance configuration
     _signer: Optional[Signer] = None
 
     def __init__(
-        self, private_key_json: Optional[str] = None, agent_did: Optional[str] = None, **kwargs
+        self,
+        private_key_json: Optional[str] = None,
+        agent_did: Optional[str] = None,
+        **kwargs,
     ):
-        """
-        Initialize the Vouch Signer tool.
+        """Initialize the tool.
 
         Args:
-            private_key_json: JWK JSON string. Falls back to VOUCH_PRIVATE_KEY env var.
-            agent_did: The agent's DID. Falls back to VOUCH_DID env var.
+            private_key_json: JWK JSON string. Falls back to VOUCH_PRIVATE_KEY.
+            agent_did: The agent DID. Falls back to VOUCH_DID.
         """
         super().__init__(**kwargs)
-
-        private_key = private_key_json or os.getenv("VOUCH_PRIVATE_KEY")
-        did = agent_did or os.getenv("VOUCH_DID")
-
-        if private_key and did:
+        if private_key_json and agent_did:
             try:
-                self._signer = Signer(private_key=private_key, did=did)
+                self._signer = Signer(private_key=private_key_json, did=agent_did)
             except Exception:
-                # Log but don't fail initialization
-                pass
+                self._signer = None
 
-    def _run(self, intent: str, target: Optional[str] = None) -> str:
-        """
-        Generate a Vouch-Token for the given intent.
+    def _get_signer(self) -> Signer:
+        if self._signer is None:
+            self._signer = load_signer()
+        return self._signer
 
-        Args:
-            intent: Description of the action being taken.
-            target: Optional target service.
-
-        Returns:
-            The Vouch-Token string or an error message.
-        """
-        if not self._signer:
-            private_key = os.getenv("VOUCH_PRIVATE_KEY")
-            did = os.getenv("VOUCH_DID")
-
-            if not private_key:
-                return "Error: VOUCH_PRIVATE_KEY not set in environment"
-            if not did:
-                return "Error: VOUCH_DID not set in environment"
-
-            try:
-                self._signer = Signer(private_key=private_key, did=did)
-            except Exception as e:
-                return f"Error initializing signer: {e}"
-
+    def _run(self, action: str, target: str, resource: Optional[str] = None) -> str:
+        """Issue a credential and return it as compact JSON, or an error string."""
         try:
-            payload = {"intent": intent}
-            if target:
-                payload["target"] = target
-
-            token = self._signer.sign(payload)
-            return f"Vouch-Token: {token}"
-
+            signer = self._get_signer()
+            return sign_tool_call_json(signer, action, target, resource)
         except Exception as e:
-            return f"Error signing: {e}"
+            return f"Error issuing Vouch Credential: {e}"
 
-    async def _arun(self, intent: str, target: Optional[str] = None) -> str:
-        """Async version of _run."""
-        return self._run(intent, target)
+    async def _arun(self, action: str, target: str, resource: Optional[str] = None) -> str:
+        """Async variant of _run."""
+        return self._run(action, target, resource)

@@ -1,59 +1,44 @@
 """
 Vouch Protocol AutoGen Integration.
 
-Provides AutoGen-compatible tools for generating Vouch-Tokens.
+Provides AutoGen-compatible functions that issue v1.0 Vouch Credentials
+(eddsa-jcs-2022 Data Integrity proofs) to authorize agent tool calls.
+
+Note: AutoGen is in maintenance mode as of 2026, folded into the Microsoft
+Agent Framework. This wrapper is kept working for existing AutoGen users; new
+deployments should prefer the Microsoft Agent Framework wrapper once available.
 """
 
-import os
 from typing import Annotated, Optional
 
-from vouch import Signer
+from vouch.integrations._common import load_signer, sign_tool_call_json
 
 
 def sign_action(
-    intent: Annotated[str, "The action you are about to take"],
-    target: Annotated[Optional[str], "Optional target service"] = None,
+    action: Annotated[str, "The verb: read, write, execute, send, ..."],
+    target: Annotated[str, "The service or URL being called"],
+    resource: Annotated[Optional[str], "The specific object, e.g. customer:123"] = None,
 ) -> str:
-    """
-    Generates a Vouch-Token to sign a sensitive action for AutoGen agents.
+    """Issue a Vouch Credential authorizing a single tool call for AutoGen agents.
 
-    Use this function before making authenticated API calls to external services.
-    The generated token should be included as a 'Vouch-Token' header.
-
-    Args:
-        intent: Description of the action being taken.
-        target: Optional target service or domain.
+    Call this before any authenticated request to an external service. Attach
+    the returned JSON as a 'Vouch-Credential' header or send it in the body.
 
     Returns:
-        A Vouch-Token string or an error message.
+        A compact JSON Vouch Credential, or an error string.
     """
-    private_key = os.getenv("VOUCH_PRIVATE_KEY")
-    did = os.getenv("VOUCH_DID")
-
-    if not private_key:
-        return "Error: VOUCH_PRIVATE_KEY environment variable not set"
-    if not did:
-        return "Error: VOUCH_DID environment variable not set"
-
     try:
-        signer = Signer(private_key=private_key, did=did)
-
-        payload = {"intent": intent}
-        if target:
-            payload["target"] = target
-
-        token = signer.sign(payload)
-        return f"Vouch-Token: {token}"
-
+        signer = load_signer()
+        return sign_tool_call_json(signer, action, target, resource)
     except Exception as e:
-        return f"Error generating token: {e}"
+        return f"Error issuing Vouch Credential: {e}"
 
 
-# Function registry for AutoGen
+# Function registry for AutoGen.
 VOUCH_FUNCTIONS = [
     {
         "name": "sign_action",
-        "description": "Generate a cryptographic Vouch-Token for authenticated API calls",
+        "description": "Issue a Vouch Credential authorizing an authenticated tool call.",
         "function": sign_action,
     }
 ]
