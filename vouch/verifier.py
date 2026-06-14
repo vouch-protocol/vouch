@@ -159,6 +159,9 @@ class Verifier:
     # Cache for resolved DID public keys
     _key_cache: Dict[str, Tuple[jwk.JWK, float]] = {}
     _cache_ttl: int = 300  # 5 minutes
+    # Bound the cache so distinct attacker-supplied DIDs cannot grow it without
+    # limit (memory DoS).
+    _key_cache_max: int = 1024
 
     def __init__(
         self,
@@ -345,6 +348,10 @@ class Verifier:
         if self._allow_resolution and did.startswith("did:web:"):
             resolved_key = self._resolve_did_web(did)
             if resolved_key:
+                if len(self._key_cache) >= self._key_cache_max and did not in self._key_cache:
+                    # Evict the oldest entry to keep the cache bounded.
+                    oldest = min(self._key_cache, key=lambda d: self._key_cache[d][1])
+                    del self._key_cache[oldest]
                 self._key_cache[did] = (resolved_key, time.time())
                 return resolved_key
 
@@ -472,6 +479,27 @@ class Verifier:
                 return False, None
             except InvalidSignature:
                 return False, None
+
+        # Bind the proof to the issuer and enforce its purpose. A signature is
+        # only meaningful if the key that made it is the issuer's key, used for
+        # the right purpose. Without this, a key trusted for issuer A could sign
+        # a credential claiming issuer B (cross-issuer reuse), and a proof made
+        # for an unrelated purpose could be replayed as an assertion.
+        proof = cred.get("proof")
+        if isinstance(proof, dict):
+            if proof.get("proofPurpose") != "assertionMethod":
+                logger.debug("Proof proofPurpose is not assertionMethod")
+                return False, None
+            issuer = cred.get("issuer")
+            issuer_did = issuer[0] if isinstance(issuer, list) and issuer else issuer
+            vm = proof.get("verificationMethod")
+            if isinstance(issuer_did, str) and issuer_did:
+                if not isinstance(vm, str) or not vm:
+                    logger.debug("Proof missing verificationMethod")
+                    return False, None
+                if vm.split("#", 1)[0] != issuer_did:
+                    logger.debug("verificationMethod does not belong to issuer")
+                    return False, None
 
         # Validate temporal claims
         now = datetime.now(timezone.utc)
