@@ -50,10 +50,11 @@ if [ -n "$VOUCH_DID" ]; then
     # Generate short hash of DID for identification
     DID_HASH=$(echo -n "$VOUCH_DID" | sha256sum | cut -c1-12)
     
-    # Append trailers if not already present
+    # Append the Vouch identity trailer if not already present. Do not write a
+    # Signed-off-by line here: a sign-off must match the commit author for DCO,
+    # and the author signs off themselves (git commit -s).
     if ! grep -q "Vouch-DID:" "$COMMIT_MSG_FILE"; then
         echo "" >> "$COMMIT_MSG_FILE"
-        echo "Signed-off-by: Vouch Protocol <Identity-Sidecar>" >> "$COMMIT_MSG_FILE"
         echo "Vouch-DID: $VOUCH_DID" >> "$COMMIT_MSG_FILE"
     fi
 fi
@@ -1346,6 +1347,42 @@ def main() -> int:
 
     p_attr = attribution_cli.register(subparsers)
 
+    p_onboard = subparsers.add_parser(
+        "onboard",
+        help="Guided six-step wizard to adopt Vouch (identity, allow-list, verifier, heartbeat)",
+    )
+    p_onboard.add_argument("--domain", help="Issuer domain to preset, skips that prompt")
+    p_onboard.add_argument("--tier", help="Sidecar tier to preset")
+    p_onboard.add_argument(
+        "--lang",
+        choices=["python", "typescript", "go"],
+        help="Language preset for the generated tool-wire and verifier",
+    )
+    p_onboard.add_argument(
+        "--out-dir",
+        dest="out_dir",
+        default=".",
+        help="Directory to write generated artifacts into (default: current directory)",
+    )
+    p_onboard.add_argument(
+        "--resume", action="store_true", help="Resume a previously interrupted run"
+    )
+    p_onboard.add_argument(
+        "--reset", action="store_true", help="Discard saved state and start over"
+    )
+    p_onboard.add_argument(
+        "--non-interactive",
+        dest="non_interactive",
+        action="store_true",
+        help="Do not prompt, use presets and defaults only",
+    )
+    p_onboard.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Show what would be written without creating files",
+    )
+
     args = parser.parse_args()
 
     setup_logging(args.verbose if hasattr(args, "verbose") else False)
@@ -1380,6 +1417,10 @@ def main() -> int:
         from . import attribution_cli
 
         return attribution_cli.dispatch(args, p_attr.print_help)
+    elif args.command == "onboard":
+        from . import onboard as onboard_mod
+
+        return onboard_mod.cmd_onboard(args)
     else:
         parser.print_help()
         return 0
