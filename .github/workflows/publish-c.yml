@@ -1,0 +1,66 @@
+# Build the C/C++ native library for each platform and attach it, with the
+# cbindgen header, to a GitHub Release. There is no universal C package
+# registry, so prebuilt release artifacts are the distribution channel.
+#
+# Trigger: push a tag like `c-v0.1.0`, or run manually (workflow_dispatch).
+# Uses the built-in GITHUB_TOKEN, no extra secret needed.
+name: Publish C/C++ artifacts
+
+on:
+  push:
+    tags: ["c-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: libvouch_core_uniffi-linux-x86_64.so
+            built: libvouch_core_uniffi.so
+          - os: macos-14
+            artifact: libvouch_core_uniffi-macos-arm64.dylib
+            built: libvouch_core_uniffi.dylib
+          - os: macos-13
+            artifact: libvouch_core_uniffi-macos-x86_64.dylib
+            built: libvouch_core_uniffi.dylib
+          - os: windows-latest
+            artifact: vouch_core_uniffi-windows-x86_64.dll
+            built: vouch_core_uniffi.dll
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release cdylib
+        working-directory: core/uniffi
+        run: cargo build --release
+      - name: Stage artifact
+        shell: bash
+        run: |
+          mkdir -p out
+          cp "core/uniffi/target/release/${{ matrix.built }}" "out/${{ matrix.artifact }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: out/${{ matrix.artifact }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Add the cbindgen header
+        run: cp sdks/cpp/include/vouch_core.h artifacts/vouch_core.h
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          fail_on_unmatched_files: true

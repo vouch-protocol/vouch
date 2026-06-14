@@ -1,0 +1,44 @@
+# Publish the JVM SDK (com.vouchprotocol:vouch-core) to Maven Central.
+#
+# Trigger: push a tag like `jvm-v0.1.0`, or run manually (workflow_dispatch).
+# Required repo secrets:
+#   CENTRAL_USERNAME, CENTRAL_PASSWORD  - Sonatype Central Portal token
+#   GPG_PRIVATE_KEY                     - ASCII-armored private key (gpg --armor --export-secret-keys)
+#   GPG_PASSPHRASE                      - passphrase for that key
+#   GPG_KEY_ID                          - last 8 hex chars of the key id
+# Maven Central requires the com.vouchprotocol namespace to be verified once
+# in the Central Portal before the first publish.
+name: Publish Maven Central
+
+on:
+  push:
+    tags: ["jvm-v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build native library
+        working-directory: sdks/jvm
+        run: bash build-native.sh
+      - name: Import GPG signing key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          gpg --batch --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+            --export-secret-keys > "$HOME/.gnupg/secring.gpg"
+      - name: Publish
+        working-directory: sdks/jvm
+        run: |
+          ./gradlew publishMavenPublicationToCentralRepository \
+            -PcentralUsername="${{ secrets.CENTRAL_USERNAME }}" \
+            -PcentralPassword="${{ secrets.CENTRAL_PASSWORD }}" \
+            -Psigning.keyId="${{ secrets.GPG_KEY_ID }}" \
+            -Psigning.password="${{ secrets.GPG_PASSPHRASE }}" \
+            -Psigning.secretKeyRingFile="$HOME/.gnupg/secring.gpg"
