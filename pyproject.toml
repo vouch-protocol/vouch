@@ -44,7 +44,7 @@ dependencies = [
 langchain = ["langchain>=0.1.0"]
 crewai = ["crewai>=0.1.0"]
 autogen = ["pyautogen>=0.2.0"]
-mcp = ["mcp>=0.1.0"]
+mcp = ["mcp>=1.2.0"]
 vertex = ["google-cloud-aiplatform>=1.0.0"]
 streamlit = ["streamlit>=1.0.0"]
 
