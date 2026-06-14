@@ -63,6 +63,18 @@ across Python, TypeScript, and Go SDKs:
 ### Tests
 - 48 Python tests, 32 TypeScript tests, and 39 Go tests covering construction validation, bit operations, encoding round-trip, structural validation, end-to-end revocation flow, state dict persistence, filesystem store atomicity, HTTP fetcher caching and conditional GETs, package exports, and cross-language interop.
 
+## [1.6.2] - 2026-06-14
+
+### Added
+- Standalone framework integration packages: `vouch-mcp`, `vouch-langchain`, `vouch-crewai`, `vouch-a2a`, `vouch-mlflow`, and `vouch-safetensors`, each issuing a verifiable credential per tool call with optional delegation back to a human principal.
+- `vouch.integrations.a2a`: bind an A2A (Agent2Agent) Agent Card to a Vouch identity.
+- `vouch.integrations.mlflow`: sign an MLflow model artifact at registration time, bound to its content digest so weight tampering breaks the signature.
+- `vouch.integrations.safetensors`: embed a credential in a `.safetensors` header, complementary to OpenSSF Model Signing.
+
+### Changed
+- Modernized the LangChain, CrewAI, AutoGen, and MCP integrations to issue v1.0 Verifiable Credentials (`eddsa-jcs-2022` Data Integrity) instead of the legacy JWS path. The legacy `Signer.sign()` path remains available.
+- Rebuilt the MCP server on the official MCP SDK (FastMCP).
+
 ## [1.6.0] - 2026-04-29
 
 ### Added

@@ -17,7 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Security :: Cryptography",
 ]
-dependencies = ["vouch-protocol[mcp]>=1.6.0"]
+dependencies = ["vouch-protocol[mcp]>=1.6.2"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
