@@ -1342,6 +1342,9 @@ def main() -> int:
         help="Exit with non-zero status when any finding is at or above this severity (default: critical)",
     )
 
+    from . import attribution_cli
+    p_attr = attribution_cli.register(subparsers)
+
     args = parser.parse_args()
 
     setup_logging(args.verbose if hasattr(args, "verbose") else False)
@@ -1372,6 +1375,9 @@ def main() -> int:
             return 0
     elif args.command == "scan":
         return cmd_scan(args)
+    elif args.command == "attribute":
+        from . import attribution_cli
+        return attribution_cli.dispatch(args, p_attr.print_help)
     else:
         parser.print_help()
         return 0

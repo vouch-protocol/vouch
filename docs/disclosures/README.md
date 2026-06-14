@@ -70,6 +70,26 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-058](./PAD-058-automated-key-rotation-on-leak-detection.md) | Automated DID Rotation and Verifier Broadcast Pipeline on Static Leak Detection (Classical + Hybrid PQ) | 2026-05-14 | Published |
 | [PAD-059](./PAD-059-vouch-amnesia-attestation-bridge.md) | Method for Cryptographically Anchoring Deterministic Pre-Push Policy Decisions of an AI Coding Assistant Workspace to W3C Verifiable Credentials with Optional Hybrid Post-Quantum Signatures | 2026-05-14 | Published |
 | [PAD-060](./PAD-060-single-use-audited-override-of-egress-block.md) | Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use | 2026-05-14 | Published |
+| [PAD-061](./PAD-061-per-region-human-ai-code-attribution.md) | Per-Region Authorship Attribution for Mixed Human and AI Source Code via Edit-Channel Capture and Independently-Keyed Signatures | 2026-06-10 | Published |
+
+
+## June 10, 2026: Per-Region Human and AI Code Attribution (PAD-061)
+
+One disclosure published June 10, 2026 covers attributing individual regions of
+a source file to a human author or to an AI coding assistant, with each party's
+regions signed by a key that party holds independently.
+
+- **PAD-061** records authorship at the assistant's actual edit channel (its
+  Edit / Write / MultiEdit operations) rather than reconstructing it later, and
+  treats the human's lines as the residual changes that did not pass through
+  that channel. AI regions are attested with an AI-session key (local, Sidecar-
+  held, or vendor-delegated) distinct from the human's signing key, so neither
+  party can mint the other's attribution. The signed Attribution Manifest binds
+  line ranges to author DIDs over the exact bytes and enforces region
+  completeness and AI-region backing at verification, so a defective line
+  cannot hide as unattributed and an AI region cannot exist without the AI
+  signature. The reference implementation ships in the Python SDK
+  (`vouch attribute`, `vouch/integrations/claude-code/`).
 
 
 ## May 14, 2026: Vouch-Amnesia Bridge and Override Pattern (PAD-059, PAD-060)
