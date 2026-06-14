@@ -1160,6 +1160,7 @@ All under \`vouch/integrations/\`:
 | n8n | \`n8n.py\` | n8n workflow automation node |
 | Hasura | \`hasura/webhook.py\` | GraphQL webhook handler |
 | MCP | \`mcp/server.py\` | Reference Model Context Protocol server |
+| Amnesia | \`amnesia.py\` | Wraps an Amnesia egress decision in a Verifiable Credential for a replayable audit trail |
 
 End-to-end examples are at [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
 
@@ -1170,6 +1171,18 @@ Currently one: \`packages/sdk-ts/src/integrations/amnesia.ts\` for the Amnesia e
 ## Vouch Shield (sibling repo)
 
 [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield) is a TypeScript runtime middleware that intercepts tool calls and enforces signature verification, allowlist, capability permissions, and audit logging. Treat it as the enforcement layer that consumes Vouch credentials at execution time.
+
+## No framework? Use the standalone packages
+
+The framework adapters above are conveniences, not requirements. If you are not on one of these frameworks, integrate Vouch directly.
+
+The signing and verification core ships as an installable package in every major language: \`pip install vouch-protocol\`, \`npm i @vouch-protocol-official/sdk\`, plus Rust (\`vouch-core\`), JVM (\`com.vouchprotocol:vouch-core\`), .NET (\`VouchProtocol.Core\`), Swift (\`VouchCore\`), C, and WebAssembly. See the [Tools page](/tools/) for the full list and install commands.
+
+For a language-agnostic drop-in, three standalone services need no framework and no SDK:
+
+- **\`vouch-mcp\`** a Model Context Protocol server any MCP client (Claude Desktop, Cursor, any agent) can call to create identities, sign, verify, and scan.
+- **\`vouch-bridge\`** an HTTP server for media provenance: C2PA image signing, QR badge overlay, and audio watermarking.
+- **\`vouch-sidecar\`** the Go signing daemon that mints credentials over localhost for any language, keeping the key out of the model's process.
 `,
       },
       {
