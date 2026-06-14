@@ -551,7 +551,7 @@ For containerized deployment, the [Dockerfile](https://github.com/vouch-protocol
       },
       {
         q: 'What about media provenance?',
-        a: `Vouch leaves media provenance to [C2PA](https://c2pa.org) and works alongside it rather than reimplementing it. The \`c2pa-ca/\` directory contains an active Certificate Authority that issues Ed25519-signed C2PA certificates and embeds CBOR manifests in image metadata. The audio path (\`vouch/audio.py\`, 38 KB) implements multi-layer Hamming(7,4) watermarks with psychoacoustic masking for audio signing.`,
+        a: `Vouch leaves media provenance to [C2PA](https://c2pa.org) and works alongside it rather than reimplementing it. \`vouch media sign\` signs an image with native Vouch signing by default, or with C2PA Content Credentials when you pass \`--c2pa\`, and the \`vouch-bridge\` server exposes C2PA image signing over a simple HTTP API. The audio path (\`vouch/audio.py\`) implements multi-layer Hamming(7,4) watermarks with psychoacoustic masking for audio signing.`,
         meta: 'Shipped v1.5.0',
       },
       {
@@ -930,14 +930,24 @@ All four route to the same documentation, so the answers are consistent. Pick th
       },
       {
         q: 'How do I install the Claude Skill?',
-        a: `Two steps inside WSL bash, macOS, or Linux:
+        a: `Two ways, both inside Claude Code (the CLI).
+
+**Marketplace (recommended).** Add the Vouch marketplace, then install the plugin:
 
 \`\`\`bash
-mkdir -p ~/.claude/skills
-cp -r ~/vouch-protocol/claude-skill ~/.claude/skills/vouch-protocol
+/plugin marketplace add vouch-protocol/vouch
+/plugin install vouch-protocol@vouch
 \`\`\`
 
-Restart Claude Code and run \`/skills\` to confirm. You should see \`vouch-protocol\` in the list. Read the Guides section "Installing the Vouch Claude Skill" for screen-by-screen steps and triggers.`,
+Run \`/plugin\` to confirm it is enabled. The skill loads automatically when you mention Vouch.
+
+**Manual.** Copy just the skill folder into your skills directory and restart Claude Code:
+
+\`\`\`bash
+cp -r ~/vouch-protocol/claude-skill/skills/vouch-protocol ~/.claude/skills/vouch-protocol
+\`\`\`
+
+Run \`/skills\` to confirm \`vouch-protocol\` is listed. Read the Guides section "Installing the Vouch Claude Skill" for screen-by-screen steps and triggers.`,
         helpLinks: [{ label: 'Installing the Claude Skill', href: '/help/#claude-skill-install' }],
       },
       {
@@ -977,13 +987,21 @@ The Claude Skill, OpenAI GPT, and Gemini Gem are the **Bring-Your-Own-LLM** rout
       },
       {
         q: 'How do I keep the Claude Skill, GPT, and Gem up to date?',
-        a: `**Claude Skill**: \`git pull\` inside \`~/.claude/skills/vouch-protocol/\` whenever the protocol ships a new cryptosuite or SDK shape. Restart Claude Code; no further action.
+        a: `**Claude Skill**: if you installed from the marketplace, run \`/plugin\` and update the Vouch plugin. If you copied it manually, \`git pull\` inside your clone and re-copy the skill folder. Restart Claude Code; no further action.
 
 **OpenAI Custom GPT**: in the GPT editor, replace the knowledge files (the builder deduplicates by filename). Bump the version note in the Instructions if you forked them.
 
-**Gemini Gem**: same pattern — re-upload the knowledge files in the Gem editor.
+**Gemini Gem**: same pattern, re-upload the knowledge files in the Gem editor.
 
 All three follow the protocol's release cadence. Subscribe to releases on https://github.com/vouch-protocol/vouch.`,
+      },
+      {
+        q: 'Is there an llms.txt for AI coding assistants?',
+        a: `Yes. [vouch-protocol.com/llms.txt](https://vouch-protocol.com/llms.txt) is a plain-text map of the protocol written for AI coding assistants. Point Cursor, Claude, Copilot, or any tool that reads \`llms.txt\` at it and the assistant gets the package names, the core APIs, and the canonical conventions without crawling the whole site. The Claude Skill, OpenAI Custom GPT, and Gemini Gem are the deeper, packaged version of the same knowledge.`,
+      },
+      {
+        q: 'What is the Agent Trust Index?',
+        a: `An open benchmark that scans public AI agents and scores one question for each: can this agent prove who it is? Not whether it is good or safe, just whether it has a cryptographic identity (a \`did:web\`) that resolves to a real public key. The first sweep, drawn from the public Model Context Protocol registry on 10 June 2026, scanned 11,680 agents. Only 157, about 1.3 percent, publish a resolvable identity, and 98.7 percent cannot prove who they are at all. See [the Index](/agent-trust-index/) and its [methodology](/agent-trust-index/methodology/).`,
       },
     ],
   },

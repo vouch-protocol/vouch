@@ -377,7 +377,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 - [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
 - [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
 - [Threat Model and Security Considerations](https://github.com/vouch-protocol/vouch/blob/main/docs/THREAT_MODEL.md)
-- [Defensive Prior Art Disclosures (55 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
+- [Defensive Prior Art Disclosures (61 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
 - [FAQ and Discussions](https://github.com/vouch-protocol/vouch/discussions)
 
 ---
@@ -435,7 +435,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 
 You can use this freely in commercial and open-source projects.
 
-The 55 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
+The 61 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
 
 *The Vouch Protocol specification is being developed as a open standard submission via the open standards group. The implementation is also being proposed to the Linux Foundation's AI & Data Foundation.*
 
