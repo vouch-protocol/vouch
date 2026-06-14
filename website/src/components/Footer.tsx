@@ -17,6 +17,7 @@ const FOOTER_GROUPS = [
     links: [
       { label: 'GitHub', href: 'https://github.com/vouch-protocol/vouch', external: true },
       { label: 'Specification', href: 'https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md', external: true },
+      { label: 'Prior Art Disclosures', href: '/disclosures/' },
       { label: 'Conformance Levels', href: '/conformance/' },
       { label: 'Regulatory Mapping', href: '/compliance/' },
       { label: 'Test Vectors', href: 'https://github.com/vouch-protocol/vouch/tree/main/test-vectors', external: true },

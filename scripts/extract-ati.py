@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-SRC = Path("/home/rampy/agent-trust-index/data/results.json")
+SRC = Path("/home/rampy/vouch-protocol/agent-trust-index/data/results.json")
 OUT = Path("/home/rampy/vouch-protocol/website/src/app/agent-trust-index/ati-data.ts")
 
 data = json.loads(SRC.read_text())

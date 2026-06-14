@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 11168,
-  "verifiable": 150,
-  "cannot": 11018,
+  "total": 11680,
+  "verifiable": 157,
+  "cannot": 11523,
   "gradeA": 69,
   "pctVerifiable": 1.3,
   "pctCannot": 98.7,
   "pctCard": 0.9,
   "pctRev": 0.6,
   "pctPq": 0.0,
-  "cardCount": 98,
+  "cardCount": 101,
   "revCount": 72,
   "pqCount": 0,
-  "generated": "7 June 2026"
+  "generated": "10 June 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -639,6 +639,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.ahel/ahel",
+    "domains": "mcp.ahel.io",
+    "method": "did:web",
+    "did": "did:web:mcp.ahel.io"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.eventify/mcp-server",
     "domains": "amcp.eventify.io",
     "method": "did:web",
@@ -1135,6 +1143,46 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.nexus-api-lab/chrono-mcp",
+    "domains": "chrono-mcp.dokasukadon.workers.dev",
+    "method": "did:web",
+    "did": "did:web:chrono-mcp.dokasukadon.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.nexus-api-lab/codebook-mcp",
+    "domains": "codebook-mcp.dokasukadon.workers.dev",
+    "method": "did:web",
+    "did": "did:web:codebook-mcp.dokasukadon.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.nexus-api-lab/digest-mcp",
+    "domains": "digest-mcp.dokasukadon.workers.dev",
+    "method": "did:web",
+    "did": "did:web:digest-mcp.dokasukadon.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.nexus-api-lab/ident-mcp",
+    "domains": "ident-mcp.dokasukadon.workers.dev",
+    "method": "did:web",
+    "did": "did:web:ident-mcp.dokasukadon.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.nexus-api-lab/textops-mcp",
+    "domains": "textops-mcp.dokasukadon.workers.dev",
+    "method": "did:web",
+    "did": "did:web:textops-mcp.dokasukadon.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.nexusforge-tools/mcp-eu-finance",
     "domains": "api.nexusforge.tools",
     "method": "did:web",
@@ -1147,6 +1195,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "universalbench-mcp.penantiaglobal.workers.dev",
     "method": "did:web",
     "did": "did:web:universalbench-mcp.penantiaglobal.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.ogasurfproject-jpg/horizon-shield",
+    "domains": "hs-mcp.oga-surf-project.workers.dev",
+    "method": "did:web",
+    "did": "did:web:hs-mcp.oga-surf-project.workers.dev"
   },
   {
     "grade": "C",

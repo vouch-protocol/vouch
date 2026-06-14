@@ -211,7 +211,7 @@ For human-driven actions in a browser (e.g., signing a contract from
 a web app):
 
 ```ts
-import { VouchClient } from '@vouch-protocol/core';
+import { VouchClient } from '@vouch-protocol-official/sdk';
 
 // In a Chrome extension content script
 const credential = await VouchClient.signFromExtension({

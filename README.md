@@ -64,6 +64,42 @@ The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work
 > 
 > **Vouch Protocol is the SSL certificate for AI agents.**
 
+Vouch is not one tool, it is a set of them. Here is the whole map.
+
+### On the command line
+- **`vouch init`** generate an agent identity (a DID and keypair).
+- **`vouch sign` / `vouch verify`** sign a payload and verify it.
+- **`vouch git`** sign every git commit cryptographically, set up in one command, with a verified badge for your README.
+- **`vouch scan`** find leaked Vouch key material in your code before it ships (a private key in a file, a seed in an env var, a DID document that accidentally carries a private key).
+- **`vouch attribute`** separate who wrote which line. When an AI assistant and a human both edit a file, this records the AI's lines under the AI's own key and your lines under yours, so when a line causes an incident you can prove which of you wrote it. See [the Claude Code integration](vouch/integrations/claude-code/README.md).
+- **`vouch media`** sign images, with C2PA support.
+
+### For your agents
+- **MCP server (`vouch-mcp`)** a standalone Model Context Protocol server so any MCP client (Claude Desktop, Cursor, any agent) can create an identity, sign and verify credentials, scan for leaked keys, and decode DIDs, out of the box.
+- **Identity Sidecar** keeps signing keys out of the model's context, so a prompt injection cannot read them.
+- **Vouch Shield** a runtime check that inspects every tool call against your rules, like a customs officer at the door.
+- **Continuous trust** heartbeats and session vouchers, so trust is a live signal that has to be renewed, not a badge that is issued once and trusted forever.
+
+### SDKs, in the language you use
+Python, TypeScript, and Go are the full reference implementations. A Rust core with idiomatic Swift, JVM (Java and Kotlin), .NET, and C wrappers shares one codebase, so every language produces byte-identical output, verified against shared test vectors. A WebAssembly build is included for the browser and the edge. See the table further down for status per language.
+
+### Robots and embodied agents
+A robot is an agent with a body, so the same primitives apply: a `did:vouch:agent` identity, delegation chains for who authorized it, and continuous trust for whether it is still behaving. Vouch adds a hardware-root-of-trust profile, so a robot's secure element (a TPM or a secure enclave) anchors its DID and signs its heartbeats, binding identity to the physical device rather than a config file. This is the open identity layer; richer robot-lifecycle tooling builds on top of it. See the open `did:vouch:agent` profile in [docs/specs/](docs/specs/).
+
+### Inside your AI tools
+- **Claude Skill**, **OpenAI Custom GPT**, and **Gemini Gem** packages that teach your AI assistant how to add Vouch to your code, running on your own AI subscription.
+
+### Media and the web
+- **C2PA Content Credentials** for images.
+- **Vouch Sonic** an audio watermark that carries provenance through sound.
+- **Browser extension** for Chrome and Edge that signs and verifies content on the page.
+
+### For your repositories
+- **Gatekeeper GitHub App** verifies commit signatures on every pull request and blocks leaked Vouch keys before they merge.
+
+### For the ecosystem
+- **Agent Trust Index** an open benchmark that scans agents in the wild and measures how many can actually prove who they are. (Spoiler: today, almost none.)
+
 [Read the spec →](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md) | [Join Discord →](https://discord.gg/mMqx5cG9Y)
 
 ---
@@ -318,6 +354,17 @@ agent.sign({'action': 'read_customer_data', 'customer_id': 'cust_abc'})
 agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 ```
 
+To keep this space free from patent capture, the project publishes **61 defensive prior-art disclosures** under CC0, covering cryptographic identity, media provenance, voice biometrics, AI safety, post-quantum cryptography, AI coding governance, and per-region human-or-AI code authorship. See [docs/disclosures](docs/disclosures/README.md).
+
+---
+
+## Use cases
+
+- **Financial services.** A signed, accountable record of every trade or transfer an agent makes.
+- **Healthcare.** An auditable trail for every access to patient data.
+- **Customer service.** Proof of which agent touched which customer record, and on whose authority.
+- **Agent to agent.** When one organization's agent calls another's, each can verify the other before acting.
+
 [See full examples →](https://github.com/vouch-protocol/vouch/tree/main/examples)
 
 ---
@@ -330,7 +377,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 - [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
 - [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
 - [Threat Model and Security Considerations](https://github.com/vouch-protocol/vouch/blob/main/docs/THREAT_MODEL.md)
-- [Defensive Prior Art Disclosures (55 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
+- [Defensive Prior Art Disclosures (61 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
 - [FAQ and Discussions](https://github.com/vouch-protocol/vouch/discussions)
 
 ---
@@ -388,7 +435,7 @@ agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 
 You can use this freely in commercial and open-source projects.
 
-The 55 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
+The 61 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
 
 *The Vouch Protocol specification is being developed as a open standard submission via the open standards group. The implementation is also being proposed to the Linux Foundation's AI & Data Foundation.*
 

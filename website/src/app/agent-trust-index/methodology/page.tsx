@@ -56,7 +56,7 @@ export default function MethodologyPage() {
                         <li>We picked one large, public, current source to start: the Model Context Protocol registry, the closest thing the agent world has to a phone book.</li>
                         <li>We learned its shape by reading its API directly. Each entry gives an agent a name, a title, a description, and the network addresses it serves from.</li>
                         <li>For every agent we pulled out the domains it actually serves from, because a did:web identity has to live at the agent&apos;s own domain. The serving domain is where a real identity would be published, so that is where we look.</li>
-                        <li>For each domain we tried to resolve a did:web identity, meaning we fetched the standard identity document the domain would publish if it had one. We did this with the Vouch Protocol&apos;s own resolver, so the Index is also a live test that Vouch verification works at internet scale.</li>
+                        <li>For each domain we tried to resolve a did:web identity, meaning we fetched the standard identity document the domain would publish if it had one, using the Vouch Protocol&apos;s own resolver. We do not only check the standard location. If it is empty, we read the agent&apos;s published card and resolve any identity it declares there, including a did:web served from a path rather than the root, or a self-contained did:key, so an agent that publishes identity in a less common but still valid place is counted rather than missed. The Index is therefore also a live test that Vouch verification works at internet scale.</li>
                         <li>We scored each agent out of 100. Sixty points for publishing a resolvable identity at all. Forty more for that identity document carrying a usable public key (in either common key format). Ninety or above is an A, then B, C, D, and F below forty. An agent with nothing scores zero, an F.</li>
                         <li>We checked our own work before trusting any number. We confirmed the scorer gives a perfect A to a domain that genuinely publishes an identity (we tested it against real ones in the wild), so the board is not just stuck on F because of a bug. That check caught a real mistake: our first version only recognised one of the two common key formats and would have under-scored a genuine agent. We fixed it and re-checked.</li>
                         <li>We then scanned the whole registry, not a sample. To make that feasible we resolved each unique domain once rather than once per agent, and ran the checks in parallel.</li>
@@ -65,17 +65,19 @@ export default function MethodologyPage() {
 
                     <h2 className="font-serif font-semibold text-[1.4rem] text-ink tracking-tight pt-4">What we found</h2>
                     <p>
-                        Of the unique agents in the registry, about 1.3 percent publish any resolvable
-                        identity, and under 1 percent (69 agents, grade A) are fully verifiable with a
-                        usable key. Roughly 98.7 percent cannot prove who they are at all. The small group
-                        that can are mostly finance and oracle agents, which fits: the agents that handle
-                        money are the first to bother proving identity.
+                        Of the 11,680 unique agents in the registry, 157 (about 1.34 percent) publish a
+                        resolvable identity, which means 98.66 percent cannot prove who they are at all. Of
+                        the 157, only 69 also carry a usable public key (a full A grade); the other 88
+                        publish an identity that resolves but has no key anyone can verify against (a C
+                        grade). The small group that can prove themselves are mostly finance and oracle
+                        agents, which fits: the agents that handle money are the first to bother proving
+                        identity.
                     </p>
 
                     <h2 className="font-serif font-semibold text-[1.4rem] text-ink tracking-tight pt-4">What this measures, and what it does not</h2>
                     <p>We are honest about the edges:</p>
                     <ul className="list-disc pl-6 space-y-3">
-                        <li>This is one source and one signal. An agent could in theory publish identity somewhere we did not look, in which case we undercount. In practice, today, almost none do, so the picture is accurate. As we add sources (agent cards, agent-to-agent directories, on-chain identity) and stronger signals (signed agent cards, verifiable credentials, a named human or organization behind the agent, a revocation method, post-quantum keys), the score gets richer.</li>
+                        <li>This is one source and one main signal. We check the standard did:web location, path-based did:web, and DIDs declared in agent cards, so the undercount is small, but an agent could still publish identity somewhere we did not look (a different DID method, an on-chain identity, a directory we have not added yet), in which case we undercount. So treat the number as a floor, not a ceiling. As we add sources (agent-to-agent directories, on-chain identity) and stronger signals (verifiable credentials, a named human or organization behind the agent, a revocation method, post-quantum keys), the score gets richer.</li>
                         <li>A high score means an agent can prove who it is, not that it is good or safe. Identity is the floor, not the ceiling. You cannot hold an agent accountable for anything if you cannot first tell which agent it was.</li>
                     </ul>
 

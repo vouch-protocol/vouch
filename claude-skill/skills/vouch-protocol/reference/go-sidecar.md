@@ -117,7 +117,7 @@ const resp = await fetch('http://localhost:8877/sign', {
 const signed = await resp.json();
 ```
 
-Or use the `VouchClient` from `@vouch-protocol/core`.
+Or use the `VouchClient` from `@vouch-protocol-official/sdk`.
 
 ## Why a sidecar?
 

@@ -34,11 +34,11 @@ assert is_valid
 ## TypeScript
 
 ```bash
-npm install @vouch-protocol/core
+npm install @vouch-protocol-official/sdk
 ```
 
 ```ts
-import { Signer, Verifier, generateIdentity } from '@vouch-protocol/core';
+import { Signer, Verifier, generateIdentity } from '@vouch-protocol-official/sdk';
 
 const keys = await generateIdentity('agent.example.com');
 const signer = new Signer({ privateKey: keys.privateKeyJwk, did: keys.did });
