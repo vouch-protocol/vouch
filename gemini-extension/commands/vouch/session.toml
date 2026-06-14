@@ -1,0 +1,16 @@
+description = "Create a Vouch session token for a multi-action task"
+
+prompt = """
+The user wants a session token covering multiple actions in one task.
+
+Purpose provided by the user: {{args}}
+
+Steps:
+1. If no purpose was given, ask for one (e.g. `calendar_access`,
+   `email_management`) and stop.
+2. Call the `create_session` tool with `purpose`.
+3. Show the returned session token and explain that subsequent actions in
+   this task can reuse it instead of signing each one individually.
+4. If the tool reports the identity is not configured, tell the user to
+   run `vouch init --env`, export the values, and restart Gemini CLI.
+"""
