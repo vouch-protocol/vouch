@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vouch-safetensors"
+version = "0.1.0"
+description = "Embed Vouch Credentials in .safetensors model headers for verifiable agent/principal provenance."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Ramprasad Gaddam" }]
+keywords = ["safetensors", "vouch", "model-provenance", "model-signing", "verifiable-credentials", "huggingface"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security :: Cryptography",
+]
+dependencies = ["vouch-protocol>=1.6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://vouch-protocol.com"
+Source = "https://github.com/vouch-protocol/vouch"
+
+[tool.setuptools.packages.find]
+where = ["src"]
