@@ -262,6 +262,10 @@ Run it locally with a placeholder DID. The sidecar binds to localhost only by de
 ./vouch-sidecar --did did:web:localhost --port 8877
 \`\`\`
 
+\`\`\`powershell
+.\\vouch-sidecar.exe --did did:web:localhost --port 8877
+\`\`\`
+
 Optional flags:
 
 - \`--sensitive\` or \`-s\` - wrap the response in a JWE so the credential is encrypted in flight
@@ -284,6 +288,19 @@ curl -X POST http://localhost:8877/sign \\
     },
     "validSeconds": 300
   }'
+\`\`\`
+
+\`\`\`powershell
+$body = @{
+  subjectDid = "did:web:localhost"
+  intent = @{
+    action   = "submit_claim"
+    target   = "claim:HC-001"
+    resource = "https://insurance.example.com/claims/HC-001"
+  }
+  validSeconds = 300
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:8877/sign -ContentType 'application/json' -Body $body
 \`\`\`
 
 The response is the full signed Verifiable Credential. Pipe it into your Python or TypeScript verifier (configured with \`trusted_roots\` / \`trustedRoots\` pointing at the sidecar's public key, fetched from \`GET http://localhost:8877/.well-known/did.json\`) to close the loop.
@@ -1598,14 +1615,10 @@ Run \`/plugin\` to confirm it is enabled. The skill loads automatically when you
 
 Prefer to drop it in by hand? Copy the skill folder into your skills directory.
 
-Linux / macOS / WSL:
-
 \`\`\`bash
 git clone https://github.com/vouch-protocol/vouch
 cp -r vouch/claude-skill/skills/vouch-protocol ~/.claude/skills/vouch-protocol
 \`\`\`
-
-Windows PowerShell:
 
 \`\`\`powershell
 git clone https://github.com/vouch-protocol/vouch
@@ -1755,6 +1768,20 @@ export OPENAI_API_KEY=sk-...
 # Google Gemini
 export VOUCH_LLM_PROVIDER=gemini
 export GEMINI_API_KEY=...
+\`\`\`
+
+\`\`\`powershell
+# Anthropic (default)
+$env:VOUCH_LLM_PROVIDER = "anthropic"
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+
+# OpenAI
+$env:VOUCH_LLM_PROVIDER = "openai"
+$env:OPENAI_API_KEY = "sk-..."
+
+# Google Gemini
+$env:VOUCH_LLM_PROVIDER = "gemini"
+$env:GEMINI_API_KEY = "..."
 \`\`\`
 
 Or set them in \`website-agent/.env\` (auto-loaded on backend start).

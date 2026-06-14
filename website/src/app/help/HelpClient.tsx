@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { HelpSection } from './help-data';
 import CodeBlock from '@/components/CodeBlock';
+import OSCodeBlock from '@/components/OSCodeBlock';
 
 /**
  * Render markdown-lite content: paragraphs, **bold**, `code`, code fences,
@@ -36,19 +37,46 @@ function renderBody(body: string): React.ReactNode {
         segments.push({ kind: 'text', content: trimmed });
     }
 
+    const isUnix = (l?: string) =>
+        ['bash', 'sh', 'shell', 'console', 'zsh'].includes((l || '').toLowerCase());
+    const isWin = (l?: string) =>
+        ['powershell', 'pwsh', 'ps1', 'ps'].includes((l || '').toLowerCase());
+
     const out: React.ReactNode[] = [];
-    segments.forEach((seg, si) => {
+    for (let si = 0; si < segments.length; si++) {
+        const seg = segments[si];
         if (seg.kind === 'code') {
+            // OS-paired block: a macOS/Linux fence immediately followed by a
+            // Windows (PowerShell) fence (ignoring a whitespace-only gap)
+            // renders as one tabbed block.
+            if (isUnix(seg.lang)) {
+                let j = si + 1;
+                if (
+                    j < segments.length &&
+                    segments[j].kind === 'text' &&
+                    segments[j].content.trim() === ''
+                ) {
+                    j++;
+                }
+                const next = segments[j];
+                if (next && next.kind === 'code' && isWin(next.lang)) {
+                    out.push(
+                        <OSCodeBlock key={`s${si}`} unix={seg.content} windows={next.content} />
+                    );
+                    si = j;
+                    continue;
+                }
+            }
             out.push(
                 <CodeBlock key={`s${si}`} code={seg.content} language={seg.lang} />
             );
-            return;
+            continue;
         }
         const blocks = seg.content.split(/\n\n+/).map((b) => b.trim()).filter(Boolean);
         blocks.forEach((block, bi) => {
             out.push(renderTextBlock(block, `s${si}-b${bi}`));
         });
-    });
+    }
     return out;
 }
 
