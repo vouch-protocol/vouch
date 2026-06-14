@@ -1,0 +1,36 @@
+# Publish the Rust core crates to crates.io.
+#
+# Trigger: push a tag like `rust-v0.1.0`, or run manually (workflow_dispatch).
+# Required repo secret: CARGO_REGISTRY_TOKEN (crates.io API token).
+name: Publish crates.io
+
+on:
+  push:
+    tags: ["rust-v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Validate with cargo publish --dry-run only"
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Publish vouch-core
+        working-directory: core/vouch-core
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            cargo publish --dry-run
+          else
+            cargo publish --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+          fi
+      - name: Publish vouch-core-uniffi
+        if: ${{ inputs.dry_run != true }}
+        working-directory: core/uniffi
+        # vouch-core-uniffi depends on vouch-core, so it publishes second.
+        # cargo waits for the just-published vouch-core to appear in the index.
+        run: cargo publish --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"

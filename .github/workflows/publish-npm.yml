@@ -1,0 +1,45 @@
+# Publish the JavaScript/TypeScript packages to npm:
+#   @vouch-protocol-official/core-wasm   (core/wasm, built with wasm-pack)
+#   @vouch-protocol-official/sdk         (packages/sdk-ts)
+#   @vouch-protocol-official/api-client  (sdks/clients/typescript)
+#
+# Trigger: push a tag like `npm-v0.1.0`, or run manually (workflow_dispatch).
+# Required repo secret: NPM_TOKEN (npm automation token).
+name: Publish npm
+
+on:
+  push:
+    tags: ["npm-v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build the WASM core
+        working-directory: core/wasm
+        run: bash build-npm.sh
+      - name: Publish core-wasm
+        working-directory: core/wasm/pkg
+        run: |
+          npm publish --access public || echo "core-wasm already published, continuing"
+      - name: Publish sdk
+        working-directory: packages/sdk-ts
+        run: |
+          npm ci
+          npm publish --access public || echo "sdk: version may already be published, continuing"
+      - name: Publish api-client
+        working-directory: sdks/clients/typescript
+        run: |
+          npm ci
+          npm publish --access public || echo "api-client: version may already be published, continuing"

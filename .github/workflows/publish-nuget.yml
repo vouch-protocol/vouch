@@ -1,0 +1,38 @@
+# Publish the .NET SDK (VouchProtocol.Core) to NuGet.org.
+#
+# Trigger: push a tag like `dotnet-v0.1.0`, or run manually (workflow_dispatch).
+# Required repo secret: NUGET_API_KEY (nuget.org API key).
+name: Publish NuGet
+
+on:
+  push:
+    tags: ["dotnet-v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Pack only, do not push"
+        type: boolean
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build native libraries
+        working-directory: sdks/dotnet/VouchCore
+        run: bash build-native.sh
+      - name: Pack
+        working-directory: sdks/dotnet/VouchCore
+        run: dotnet pack -c Release -o ../../../dist-nuget
+      - name: Push to NuGet
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          dotnet nuget push "dist-nuget/*.nupkg" \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
