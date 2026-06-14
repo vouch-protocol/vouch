@@ -83,6 +83,9 @@ Vouch is not one tool, it is a set of them. Here is the whole map.
 ### SDKs, in the language you use
 Python, TypeScript, and Go are the full reference implementations. A Rust core with idiomatic Swift, JVM (Java and Kotlin), .NET, and C wrappers shares one codebase, so every language produces byte-identical output, verified against shared test vectors. A WebAssembly build is included for the browser and the edge. See the table further down for status per language.
 
+### Robots and embodied agents
+A robot is an agent with a body, so the same primitives apply: a `did:vouch:agent` identity, delegation chains for who authorized it, and continuous trust for whether it is still behaving. Vouch adds a hardware-root-of-trust profile, so a robot's secure element (a TPM or a secure enclave) anchors its DID and signs its heartbeats, binding identity to the physical device rather than a config file. This is the open identity layer; richer robot-lifecycle tooling builds on top of it. See the open `did:vouch:agent` profile in [docs/specs/](docs/specs/).
+
 ### Inside your AI tools
 - **Claude Skill**, **OpenAI Custom GPT**, and **Gemini Gem** packages that teach your AI assistant how to add Vouch to your code, running on your own AI subscription.
 

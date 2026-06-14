@@ -305,6 +305,205 @@ The Identity Sidecar pattern keeps the private signing key out of the LLM's proc
 This makes prompt-injection key-exfiltration impossible: even if the LLM is jailbroken to leak its context, the key is not in that context. The local-dev sidecar gives you the exact same isolation boundary on your laptop that you will have in production.
 `,
       },
+      {
+        id: 'quickstart-swift',
+        title: 'Swift Quickstart',
+        summary: 'Add the VouchCore Swift package and run a canonicalize-and-verify loop on iOS or macOS. A thin wrapper over the one Rust core.',
+        body: `
+## Install
+
+VouchCore ships through Swift Package Manager. The native code is a prebuilt XCFramework hosted on the \`swift-v0.1.0\` release, so you do not need a Mac toolchain to build the Rust core yourself.
+
+In Xcode use File then Add Package Dependencies and paste the repo URL, or add it to your \`Package.swift\`:
+
+\`\`\`swift
+.package(url: "https://github.com/vouch-protocol/vouch", from: "swift-v0.1.0"),
+// then depend on the product:
+.product(name: "VouchCore", package: "vouch"),
+\`\`\`
+
+Supports iOS 13+ and macOS 12+.
+
+## Canonicalize and verify
+
+Everything runs on device. The \`Vouch\` facade gathers the lower-level UniFFI functions behind a discoverable surface:
+
+\`\`\`swift
+import VouchCore
+
+// RFC 8785 (JCS) canonicalization. Byte-identical to every other Vouch SDK.
+let canon = try Vouch.canonicalize(#"{"b":1,"a":2}"#)   // {"a":2,"b":1}
+
+// Verify a Data Integrity proof (eddsa-jcs-2022) on a signed credential.
+let ok = try Vouch.verifyProof(signedCredentialJson, publicKey: publicKey)
+
+// Proof plus validity window in one call.
+let result = try Vouch.verifyCredential(signedCredentialJson, publicKey: publicKey, now: "2026-04-26T10:02:00Z")
+\`\`\`
+
+\`Vouch.generateEd25519()\` returns a key pair and \`Vouch.signCredential(...)\` attaches the proof. VouchCore is a thin layer over the canonical Rust core via UniFFI, so a credential verified on iOS matches the exact bytes from every other SDK.
+`,
+      },
+      {
+        id: 'quickstart-jvm',
+        title: 'JVM (Java and Kotlin) Quickstart',
+        summary: 'One Gradle coordinate, then canonicalize and verify from Java or Kotlin over the shared Rust core.',
+        body: `
+## Install
+
+\`\`\`kotlin
+// build.gradle.kts
+dependencies { implementation("com.vouchprotocol:vouch-core:0.1.0") }
+\`\`\`
+
+The host native library is bundled inside the jar, so it loads with no extra setup.
+
+## Java
+
+The \`Vouch\` class is a thin JNA layer over the core's C ABI. Binary values are base64 strings; credentials and proofs are JSON strings:
+
+\`\`\`java
+import com.vouchprotocol.core.Vouch;
+
+String canon = Vouch.canonicalize("{\\"b\\":1,\\"a\\":2}");   // {"a":2,"b":1}
+String kp = Vouch.generateEd25519();                       // {seed_b64, public_b64, multikey, did_key}
+String signed = Vouch.signCredential(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+boolean ok = Vouch.verifyProof(signed, publicB64);
+\`\`\`
+
+## Kotlin
+
+Kotlin can call the same Java class, or use the generated UniFFI binding bundled in the module, which takes native \`ByteArray\` keys instead of base64. Both delegate to the canonical Rust core, so the JVM verifies with the exact same bytes as every other SDK.
+`,
+      },
+      {
+        id: 'quickstart-dotnet',
+        title: '.NET Quickstart',
+        summary: 'dotnet add package, then canonicalize and verify from C# over the shared Rust core.',
+        body: `
+## Install
+
+\`\`\`bash
+dotnet add package VouchProtocol.Core
+\`\`\`
+
+## Canonicalize, sign, verify
+
+The static \`Vouch\` class is a P/Invoke wrapper over the canonical Rust core. Binary values are base64 strings; credentials and proofs are JSON strings:
+
+\`\`\`csharp
+using VouchProtocol.Core;
+
+string canon = Vouch.Canonicalize("{\\"b\\":1,\\"a\\":2}");   // {"a":2,"b":1}
+string kp = Vouch.GenerateEd25519();
+string signed = Vouch.SignCredential(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+bool ok = Vouch.VerifyProof(signed, publicB64);
+\`\`\`
+
+On error the core returns null and the wrapper throws a \`VouchException\`; the native string is freed for you. .NET verifies with the exact same bytes as every other SDK.
+`,
+      },
+      {
+        id: 'quickstart-c',
+        title: 'C and C++ Quickstart',
+        summary: 'Link the C bindings shipped with the core. Every returned string is freed with vouch_string_free.',
+        body: `
+## What you get
+
+These are the C bindings shipped with the core, not a reimplementation. The canonical Rust core exposes a plain C ABI through a cbindgen header. The package gives you \`include/vouch_core.h\`, a prebuilt \`lib/libvouch_core_uniffi.so\`, an \`examples/example.c\` with a \`Makefile\`, and a \`CMakeLists.txt\`. Anything that can call C links against it, including C++ and .NET P/Invoke.
+
+## Build
+
+\`\`\`bash
+make run     # compiles example.c against ../lib and runs it
+# flags: -I../include  -L../lib -lvouch_core_uniffi
+\`\`\`
+
+## Canonicalize and verify in C
+
+Every value crossing the ABI is a NUL-terminated UTF-8 string: JSON for credentials and proofs, base64 for binary. Returned strings are heap allocated and must be freed with \`vouch_string_free\`. On error a function returns NULL and writes a message into \`err_out\`:
+
+\`\`\`c
+#include "vouch_core.h"
+
+char *err = NULL;
+char *canon = vouch_canonicalize("{\\"b\\":1,\\"a\\":2}", &err);   // {"a":2,"b":1}
+vouch_string_free(canon);
+
+char *res = vouch_verify_proof(signed_credential_json, public_key_b64, &err);  // "true"/"false"
+if (res) vouch_string_free(res); else vouch_string_free(err);
+\`\`\`
+
+The header also exposes \`vouch_sign_credential\`, \`vouch_verify_credential\`, delegation, dual-proof ML-DSA-44 verify, and BitstringStatusList revocation. A credential verified from C matches the exact bytes of every other SDK.
+`,
+      },
+      {
+        id: 'quickstart-wasm',
+        title: 'Browser and Node Quickstart (WebAssembly)',
+        summary: 'npm install the WASM core, initialize it once, then canonicalize and verify in the browser or Node.',
+        body: `
+## Install
+
+\`\`\`bash
+npm install @vouch-protocol-official/core-wasm
+\`\`\`
+
+This is the canonical Rust core compiled to WebAssembly. Binary values are base64 strings; credentials and proofs are JSON strings.
+
+## Browser
+
+\`\`\`js
+import init, * as core from '@vouch-protocol-official/core-wasm';
+await init(); // fetches the .wasm next to the module
+
+core.canonicalize('{"b":1,"a":2}');   // {"a":2,"b":1}
+const kp = JSON.parse(core.generateEd25519());
+const signed = core.signCredential(JSON.stringify(myCredential), kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
+const ok = core.verifyProof(signed, kp.public_b64);   // true
+\`\`\`
+
+## Node.js (ESM)
+
+There is no fetch in Node, so pass the wasm bytes to \`init\`. Key generation and ML-DSA signing also need a CSPRNG; under Node ESM make Web Crypto global first (verification does not need it):
+
+\`\`\`js
+import init, * as core from '@vouch-protocol-official/core-wasm';
+import { readFileSync } from 'fs';
+import { webcrypto } from 'node:crypto';
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
+await init({ module_or_path: readFileSync(new URL('@vouch-protocol-official/core-wasm/vouch_core_wasm_bg.wasm', import.meta.url)) });
+\`\`\`
+
+With Next.js App Router, call \`init()\` in a client component before using the API. The WASM build verifies with the exact same bytes as every other SDK.
+`,
+      },
+      {
+        id: 'agent-trust-index',
+        title: 'The Agent Trust Index',
+        summary: 'An open benchmark that scans public AI agents and scores whether each one can prove its identity. The first sweep found 98.7 percent cannot.',
+        body: `
+## What it is
+
+The Agent Trust Index is an open benchmark. It scans public AI agents and scores a single question for each: can this agent prove who it is? Not whether it is good, safe, or useful, just whether it has a cryptographic identity (a \`did:web\`) that resolves to a document carrying a real public key. It measures adoption of provable identity in the wild, not a self-declared registry field.
+
+## The first sweep
+
+The first sweep drew its agents from the public Model Context Protocol registry on 10 June 2026:
+
+- **11,680** unique agents scanned
+- **157** publish a resolvable \`did:web\` identity, about **1.3 percent**
+- **98.7 percent** cannot prove who they are at all
+- **69** of those 157 also carry a usable public key, a full **grade A**
+
+The handful that can prove themselves are mostly finance and oracle agents, which fits: the agents that handle money are the first to bother with identity.
+
+## How scoring works
+
+Each agent is scored out of 100: **60 points** for a resolvable identity, **40 points** for that identity carrying a usable public key. A is 90 or above, then B, C, D, and F below 40. An agent with nothing scores zero. The 88 agents that resolve a DID but carry no usable key land around a C.
+
+The full method is published at [/agent-trust-index/methodology](/agent-trust-index/methodology/). The data is real and the scan is reproducible.
+`,
+      },
     ],
   },
 
@@ -1084,71 +1283,98 @@ The \`FlightRecorder\` logs every allowed and blocked call. Pipe it to your SIEM
         title: 'The vouch Command Reference',
         summary: 'Every subcommand of the vouch CLI, what it does, and a copy-pasteable example.',
         body: `
-## init
+The \`vouch\` command ships with the \`vouch-protocol\` Python package. It groups into five areas: identity, git, media, scan, and attribution. A global \`-v\` / \`--verbose\` flag works on any command.
 
-Generate a new Ed25519 keypair, derive a DID, and store the key securely.
+## Identity and tokens
 
-\`\`\`bash
-vouch init [--domain DOMAIN] [--env]
-\`\`\`
+### vouch init
 
-- \`--domain DOMAIN\` - generates a did:web DID for the given domain
-- Without \`--domain\` - generates a did:key DID
-- \`--env\` - exports the DID and key path as shell env vars
+Generate a new agent identity (a did:vouch DID plus an Ed25519 keypair). By default it prompts for a passphrase, saves the encrypted identity to your local keystore, and prints the public key to put in your vouch.json.
 
-## credential sign
+- \`--domain <D>\` domain to base the DID on (defaults to example.com)
+- \`--env\` print the identity as export VOUCH_DID / VOUCH_PRIVATE_KEY instead of saving to the keystore
 
-Sign a Verifiable Credential.
+### vouch sign "<message>"
 
-\`\`\`bash
-vouch credential sign credential.json
-vouch credential sign credential.json --hybrid  # use hybrid PQ profile
-\`\`\`
+Sign a message and print a Vouch-Token. With no key flags it loads your stored identity (prompting for the passphrase if encrypted); otherwise it reads VOUCH_PRIVATE_KEY / VOUCH_DID from the environment.
 
-## credential verify
+- \`<message>\` the message to sign (positional)
+- \`--json\` parse the message as a JSON payload instead of wrapping it as a string
+- \`--key <JWK>\` private key as JWK JSON
+- \`--did <DID>\` agent DID
+- \`--header\` prefix the output with \`Vouch-Token: \`
 
-Verify a Verifiable Credential file.
+### vouch verify <token>
 
-\`\`\`bash
-vouch credential verify signed.json
-\`\`\`
+Verify a Vouch-Token. With a public key it checks the signature; without one it validates structure only and warns the signature was not verified.
 
-## git init
+- \`<token>\` the token to verify (positional)
+- \`--key <JWK>\` public key as JWK JSON
+- \`--json\` output as JSON
 
-One-command setup of the Vouch git workflow: configures SSH signing, installs commit hooks, and (optionally) injects a CI badge into the README.
+## Git
 
-\`\`\`bash
-cd my-repo
-vouch git init
-\`\`\`
+### vouch git init
 
-## git status
+Export your Vouch identity to an SSH signing key, configure git to sign commits (commit.gpgsign=true, gpg.format=ssh), upload the key to GitHub, and optionally install a commit-trailer hook and README badge.
 
-Show the current Vouch git configuration for this repo.
+- \`--no-trailer\` skip the prepare-commit-msg trailer hook
+- \`--no-badge\` skip the README badge prompt
 
-\`\`\`bash
-vouch git status
-\`\`\`
+### vouch git status
 
-## reputation get
+Show the current Vouch git signing setup: SSH key and fingerprint, the relevant git config, and whether the commit hook is installed.
 
-Fetch a DID's reputation score from the configured backend.
+### vouch git verify [commit]
 
-\`\`\`bash
-vouch reputation get --did did:web:agent.example.com
-\`\`\`
+Verify commit signatures match their Vouch-DID trailers. With no argument it checks recent commits; commits without a trailer are skipped.
 
-## revocation check
+- \`[commit]\` a specific commit hash (optional positional)
+- \`-n\`, \`--count <N>\` number of recent commits to verify (default: 10)
+- \`--strict\` exit non-zero if any commit fails
 
-Check whether a DID is in the revocation registry.
+## Media
 
-\`\`\`bash
-vouch revocation check --did did:web:agent.example.com
-\`\`\`
+### vouch media sign <image>
 
-## Output formats
+Sign an image. Native Vouch signing by default (no certificates), writing a _signed copy plus a sidecar.
 
-All subcommands support \`--json\` for machine-readable output. The default is human-readable. Use \`--env\` to format output as shell exports for scripting.
+- \`<image>\` path to the image (positional)
+- \`-o, --output <path>\`, \`-n, --name <name>\`, \`-e, --email <email>\`, \`--did <DID>\`, \`--key <JWK>\`, \`--title <title>\`
+- \`--pro\` mark the credential PRO (otherwise FREE)
+- \`--c2pa\` use the C2PA industry standard instead of native signing
+
+### vouch media verify <image>
+
+Verify an image's signature. \`--json\` for JSON, \`--c2pa\` to verify a C2PA manifest instead.
+
+## Scan
+
+### vouch scan [path]
+
+Scan a file or directory for Vouch-shaped private key material (the OSS detection stage of PAD-058). A missing path exits with status 2.
+
+- \`[path]\` file or directory (default: current directory)
+- \`--json\` findings as JSON
+- \`--exit-nonzero-on <critical|high|medium|low>\` exit non-zero at or above this severity (default: critical)
+
+## Attribution
+
+\`vouch attribute\` records per-region human/AI code authorship and produces a signed manifest (PAD-061). Subcommands: \`record\`, \`hook\`, \`finalize\`, \`blame\`, \`verify\`; most accept \`--session <id>\`.
+
+- \`vouch attribute record <path>\` record a single AI edit
+- \`vouch attribute hook\` read a Claude Code PostToolUse event from stdin and record the edit
+- \`vouch attribute finalize\` sign the manifest for the session
+- \`vouch attribute blame <path>\` show per-line authorship (AI / human / prior)
+- \`vouch attribute verify\` verify a manifest's signatures and region completeness
+
+## Helper binaries
+
+Separate executables, run directly (not as vouch subcommands):
+
+- \`vouch-mcp\` Model Context Protocol server, exposes Vouch signing and verification to MCP-aware agents
+- \`vouch-bridge\` local media HTTP server for the media flow
+- \`vouch-sidecar\` Go Identity Sidecar. Install with \`go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest\`
 `,
       },
     ],

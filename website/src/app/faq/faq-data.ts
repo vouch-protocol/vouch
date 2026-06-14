@@ -155,6 +155,12 @@ The credential format for these renewals ships today (it is called SessionVouche
 
 A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.`,
       },
+      {
+        q: 'Does Vouch work for robots and embodied agents?',
+        a: `Yes. A robot is an agent with a body, and identity, accountability, and continuous trust matter more, not less, when an agent can cause physical harm. The same Vouch primitives apply: a \`did:vouch:agent\` identity for the robot, delegation chains that record who authorized it and within what limits, and the heartbeat runtime for whether it is still behaving.
+
+The robot-specific open piece is a hardware-root-of-trust profile. The robot's secure element (a TPM, a secure enclave, or an on-board AI module's enclave) anchors its DID and signs its heartbeats, so identity is bound to the physical device rather than a config file. The open \`did:vouch:agent\` profile in [docs/specs/](https://github.com/vouch-protocol/vouch/tree/main/docs/specs) defines the agent identity scheme; the embodied profile extends it for hardware attestation. Richer robot-lifecycle tooling builds on this open layer.`,
+      },
     ],
   },
 
@@ -381,19 +387,39 @@ TypeScript currently has the Amnesia bridge in \`packages/sdk-ts/src/integration
       },
       {
         q: 'Is there a CLI?',
-        a: `Yes. \`pip install vouch-protocol\` installs the \`vouch\` command:
+        a: `Yes. Installing \`vouch-protocol\` (\`pip install vouch-protocol\`) puts a \`vouch\` command on your PATH. It covers agent identity, message signing, signed git commits, media signing, a leaked-key scanner, and human/AI code attribution.
 
-\`\`\`
-vouch init [--domain DOMAIN] [--env]  Generate keypair + DID, store securely
-vouch credential sign [--hybrid]    Sign a Verifiable Credential
-vouch credential verify         Verify a Verifiable Credential
-vouch git init             One-command Git workflow setup
-vouch git status            Show current Git config
-vouch reputation get [--did DID]    Fetch reputation score
-vouch revocation check [--did DID]   Check revocation status
+**Identity and tokens**
+
+- \`vouch init\` generate an agent identity (DID + Ed25519 keypair)
+- \`vouch sign "<message>"\` sign a message or JSON payload, prints a Vouch-Token
+- \`vouch verify <token>\` verify a Vouch-Token
+
+**Git**
+
+- \`vouch git init\` set up SSH commit signing and Vouch trailers
+- \`vouch git status\` show your current git signing config
+- \`vouch git verify\` verify commit signatures against their Vouch-DID trailers
+
+**Media**
+
+- \`vouch media sign <image>\` sign an image (native Vouch by default, or \`--c2pa\`)
+- \`vouch media verify <image>\` verify an image's signature
+
+**Other**
+
+- \`vouch scan [path]\` scan for leaked Vouch private keys (PAD-058)
+- \`vouch attribute ...\` per-region human/AI code authorship attribution
+
+\`\`\`bash
+vouch init
+vouch sign "hello"
+vouch scan .
+vouch git init
+vouch media sign photo.jpg
 \`\`\`
 
-The CLI source is at \`vouch/cli.py\`.`,
+There are also separate helper binaries: \`vouch-mcp\` (MCP server) and \`vouch-bridge\` (media HTTP server), plus a Go \`vouch-sidecar\` for non-Python stacks.`,
         helpLinks: [{ label: 'CLI reference', href: '/help/#cli-reference' }],
       },
       {
