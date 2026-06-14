@@ -60,6 +60,7 @@ SOURCE_PREEXISTING = "preexisting"
 # Key helpers (Ed25519 <-> JWK), matching the convention used by Signer.
 # ----------------------------------------------------------------------------
 
+
 def _priv_from_jwk(jwk_json: str) -> Ed25519PrivateKey:
     from jwcrypto.common import base64url_decode
 
@@ -114,6 +115,7 @@ def _now_iso() -> str:
 # Per-file authorship tracking.
 # ----------------------------------------------------------------------------
 
+
 @dataclass
 class _FileState:
     """Authorship aligned to the current snapshot of one file."""
@@ -143,7 +145,7 @@ def _retag(
 
     result: List[Dict[str, Optional[str]]] = []
     sm = difflib.SequenceMatcher(a=before_lines, b=after_lines, autojunk=False)
-    for op, i1, i2, j1, j2 in sm.get_opcodes():
+    for op, i1, _i2, j1, j2 in sm.get_opcodes():
         if op == "equal":
             for k in range(j2 - j1):
                 result.append(dict(prior[i1 + k]))
@@ -210,12 +212,16 @@ class AttributionSession:
         self.ai_did = ident.did or _did_key_from_pub_jwk(ident.public_key_jwk)
         self.ai_private_key_jwk = ident.private_key_jwk
         self.ai_public_key_jwk = ident.public_key_jwk
-        path.write_text(json.dumps({
-            "did": self.ai_did,
-            "privateKeyJwk": self.ai_private_key_jwk,
-            "publicKeyJwk": self.ai_public_key_jwk,
-            "model": self.model,
-        }))
+        path.write_text(
+            json.dumps(
+                {
+                    "did": self.ai_did,
+                    "privateKeyJwk": self.ai_private_key_jwk,
+                    "publicKeyJwk": self.ai_public_key_jwk,
+                    "model": self.model,
+                }
+            )
+        )
         try:
             path.chmod(stat.S_IRUSR | stat.S_IWUSR)  # 0600
         except OSError:  # pragma: no cover - non-POSIX
@@ -235,10 +241,12 @@ class AttributionSession:
             self._files[rel] = _FileState(snapshot=st["snapshot"], authorship=st["authorship"])
 
     def _save_state(self) -> None:
-        data = {"files": {
-            rel: {"snapshot": fs.snapshot, "authorship": fs.authorship}
-            for rel, fs in self._files.items()
-        }}
+        data = {
+            "files": {
+                rel: {"snapshot": fs.snapshot, "authorship": fs.authorship}
+                for rel, fs in self._files.items()
+            }
+        }
         self._state_path().write_text(json.dumps(data))
 
     # -- recording AI edits -------------------------------------------------
@@ -272,8 +280,9 @@ class AttributionSession:
         elif snapshot is not None:
             interim = snapshot_tags
         else:
-            interim = [{"source": SOURCE_PREEXISTING, "model": None}
-                       for _ in _split_lines(before_content)]
+            interim = [
+                {"source": SOURCE_PREEXISTING, "model": None} for _ in _split_lines(before_content)
+            ]
 
         # Step 2: tag the assistant's own change as AI.
         authorship = _retag(
@@ -295,9 +304,7 @@ class AttributionSession:
             "aiLines": _ranges_for_source(authorship, SOURCE_AI),
             "recordedAt": _now_iso(),
         }
-        proof = data_integrity.build_proof(
-            attestation, self._priv, f"{self.ai_did}#attribution"
-        )
+        proof = data_integrity.build_proof(attestation, self._priv, f"{self.ai_did}#attribution")
         attestation["proof"] = proof
         self._append_ledger(attestation)
         return attestation
@@ -328,8 +335,9 @@ class AttributionSession:
             if st is None:
                 # File the AI never touched: entirely the human's, or
                 # preexisting if it equals nothing we tracked. Mark as human.
-                authorship = [{"source": SOURCE_HUMAN, "model": None}
-                              for _ in _split_lines(final_content)]
+                authorship = [
+                    {"source": SOURCE_HUMAN, "model": None} for _ in _split_lines(final_content)
+                ]
             else:
                 # Residual diff: snapshot -> final. Changed lines = human.
                 authorship = _retag(st.snapshot, final_content, st.authorship, None)
@@ -351,12 +359,14 @@ class AttributionSession:
                     ai_attestations.append(att)
 
             regions = _collapse_regions(authorship, human_signer.get_did(), self.ai_did)
-            manifest_files.append({
-                "path": path,
-                "sha256": _sha256_text(final_content),
-                "lineCount": len(_split_lines(final_content)),
-                "regions": regions,
-            })
+            manifest_files.append(
+                {
+                    "path": path,
+                    "sha256": _sha256_text(final_content),
+                    "lineCount": len(_split_lines(final_content)),
+                    "regions": regions,
+                }
+            )
 
         manifest = {
             "@context": CONTEXT,
@@ -390,6 +400,7 @@ def _signer_private_jwk(human_signer) -> str:
 # ----------------------------------------------------------------------------
 # Region helpers.
 # ----------------------------------------------------------------------------
+
 
 def _ranges_for_source(authorship: List[Dict[str, Optional[str]]], source: str) -> List[List[int]]:
     """1-based inclusive [start, end] line ranges matching `source`."""
@@ -448,6 +459,7 @@ def _collapse_regions(
 # ----------------------------------------------------------------------------
 # Verification and blame.
 # ----------------------------------------------------------------------------
+
 
 @dataclass
 class VerificationResult:
@@ -557,12 +569,14 @@ def blame(manifest: Dict[str, Any], path: str) -> List[Dict[str, Any]]:
             continue
         for r in f.get("regions", []):
             for line in range(r["startLine"], r["endLine"] + 1):
-                out.append({
-                    "line": line,
-                    "source": r["source"],
-                    "author": r.get("author"),
-                    "model": r.get("model"),
-                })
+                out.append(
+                    {
+                        "line": line,
+                        "source": r["source"],
+                        "author": r.get("author"),
+                        "model": r.get("model"),
+                    }
+                )
     return out
 
 

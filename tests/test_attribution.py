@@ -65,7 +65,9 @@ def test_tampered_bytes_rejected(session, human):
 
     # The committed file on disk no longer matches the signed hash.
     res = attr.verify_manifest(
-        manifest, ident.public_key_jwk, session.ai_public_key_jwk,
+        manifest,
+        ident.public_key_jwk,
+        session.ai_public_key_jwk,
         files_on_disk={"t.py": "x = 99\ny = 2\n"},
     )
     assert not res.ok
@@ -87,7 +89,9 @@ def test_forged_ai_region_rejected(session, human):
                 r["author"] = session.ai_did
     # Human proof now broken AND the AI region is unbacked. Either is enough.
     res = attr.verify_manifest(
-        tampered, ident.public_key_jwk, session.ai_public_key_jwk,
+        tampered,
+        ident.public_key_jwk,
+        session.ai_public_key_jwk,
     )
     assert not res.ok
 
@@ -121,7 +125,7 @@ def test_untouched_file_is_human(session, human):
     # AI never touched this file; committer owns it.
     manifest = session.finalize({"only_human.py": "hand = 1\n"}, signer)
     lines = attr.blame(manifest, "only_human.py")
-    assert all(l["source"] == attr.SOURCE_HUMAN for l in lines)
+    assert all(ln["source"] == attr.SOURCE_HUMAN for ln in lines)
 
 
 def test_persistence_across_session_reload(tmp_path, human):

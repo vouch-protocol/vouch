@@ -13,9 +13,9 @@ from . import attribution as attr
 
 
 # ANSI styling, matched to the rest of the CLI's tone.
-_AI = "\033[95m"      # magenta for machine
-_HU = "\033[96m"      # cyan for human
-_PRE = "\033[2m"      # dim for preexisting
+_AI = "\033[95m"  # magenta for machine
+_HU = "\033[96m"  # cyan for human
+_PRE = "\033[2m"  # dim for preexisting
 _OK = "\033[92m"
 _BAD = "\033[91m"
 _END = "\033[0m"
@@ -25,7 +25,9 @@ def _repo_root() -> Path:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         return Path(out.stdout.strip())
     except Exception:
@@ -37,7 +39,9 @@ def _session_dir(session: Optional[str] = None) -> Path:
     return _repo_root() / ".vouch" / "attribution" / sid
 
 
-def _open_session(session: Optional[str] = None, model: Optional[str] = None) -> attr.AttributionSession:
+def _open_session(
+    session: Optional[str] = None, model: Optional[str] = None
+) -> attr.AttributionSession:
     return attr.AttributionSession(_session_dir(session), model=model)
 
 
@@ -56,6 +60,7 @@ def _rel(path: str) -> str:
 # ---------------------------------------------------------------------------
 # record / hook
 # ---------------------------------------------------------------------------
+
 
 def cmd_attr_record(args) -> int:
     """Record one AI edit (scripting / testing entry point)."""
@@ -111,6 +116,7 @@ def cmd_attr_hook(args) -> int:
 # finalize
 # ---------------------------------------------------------------------------
 
+
 def _load_human_signer():
     from .signer import Signer
     from .keys import KeyManager
@@ -118,7 +124,9 @@ def _load_human_signer():
     try:
         did = subprocess.run(
             ["git", "config", "--get", "vouch.did"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         ).stdout.strip()
     except Exception:
         did = ""
@@ -157,12 +165,17 @@ def cmd_attr_finalize(args) -> int:
 # blame / verify
 # ---------------------------------------------------------------------------
 
+
 def _load_manifest(args) -> dict:
-    path = Path(args.manifest) if args.manifest else _session_dir(
-        getattr(args, "session", None)
-    ) / "manifest.json"
+    path = (
+        Path(args.manifest)
+        if args.manifest
+        else _session_dir(getattr(args, "session", None)) / "manifest.json"
+    )
     if not path.exists():
-        raise SystemExit(f"{_BAD}No manifest at {path}.{_END} Run `vouch attribute finalize` first.")
+        raise SystemExit(
+            f"{_BAD}No manifest at {path}.{_END} Run `vouch attribute finalize` first."
+        )
     return json.loads(path.read_text())
 
 
@@ -197,13 +210,13 @@ def cmd_attr_verify(args) -> int:
         human_pub = _read(args.human_key)
     else:
         from .keys import KeyManager
+
         try:
             ident = KeyManager().load_identity(manifest["createdBy"])
             human_pub = ident.public_key_jwk
         except Exception:
             raise SystemExit(
-                f"{_BAD}Need the human public key to verify.{_END} "
-                "Pass --human-key <file.jwk>."
+                f"{_BAD}Need the human public key to verify.{_END} Pass --human-key <file.jwk>."
             )
     files = None
     if args.check_files:
@@ -223,6 +236,7 @@ def cmd_attr_verify(args) -> int:
 # ---------------------------------------------------------------------------
 # argparse wiring (called from cli.py)
 # ---------------------------------------------------------------------------
+
 
 def register(subparsers) -> None:
     p = subparsers.add_parser(

@@ -1343,6 +1343,7 @@ def main() -> int:
     )
 
     from . import attribution_cli
+
     p_attr = attribution_cli.register(subparsers)
 
     args = parser.parse_args()
@@ -1377,6 +1378,7 @@ def main() -> int:
         return cmd_scan(args)
     elif args.command == "attribute":
         from . import attribution_cli
+
         return attribution_cli.dispatch(args, p_attr.print_help)
     else:
         parser.print_help()
