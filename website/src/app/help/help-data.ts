@@ -1164,6 +1164,20 @@ All under \`vouch/integrations/\`:
 
 End-to-end examples are at [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
 
+## Standalone framework packages (coming soon, v1.6.2)
+
+Installable on their own, so the framework adapters no longer need the full SDK import path:
+
+| Package | Install | What it does |
+|---|---|---|
+| \`vouch-langchain\` | \`pip install vouch-langchain\` | A LangChain tool that signs each tool call before it leaves the agent |
+| \`vouch-crewai\` | \`pip install vouch-crewai\` | A CrewAI tool with supervisor-to-worker delegation that can only narrow authority |
+| \`vouch-a2a\` | \`pip install vouch-a2a\` | Binds an A2A (Agent2Agent) Agent Card to a Vouch identity so two agents can verify each other |
+| \`vouch-mlflow\` | \`pip install vouch-mlflow\` | Signs an MLflow model artifact at registration time, bound to its content digest |
+| \`vouch-safetensors\` | \`pip install vouch-safetensors\` | Embeds a credential in a .safetensors header, complementary to OpenSSF Model Signing |
+
+Each issues a verifiable credential per call, with optional delegation back to a human principal. The \`vouch-mcp\` server ships alongside them (see below).
+
 ## TypeScript integrations
 
 Currently one: \`packages/sdk-ts/src/integrations/amnesia.ts\` for the Amnesia egress-decision bridge.

@@ -260,3 +260,20 @@ A pragmatic checklist:
 
 The integration tax is small (single-digit milliseconds for signing,
 ~3 ms for hybrid). The audit-trail value is large.
+
+## Standalone packages (coming soon, v1.6.2)
+
+These ship the integrations as their own installable packages, so you can add
+Vouch to a specific framework without the full SDK import path. Each issues a
+verifiable credential per tool call, with optional delegation back to a human
+principal.
+
+- vouch-langchain: a LangChain tool that signs each tool call. `pip install vouch-langchain`
+- vouch-crewai: a CrewAI tool with supervisor-to-worker delegation that can only narrow authority. `pip install vouch-crewai`
+- vouch-mcp: the Model Context Protocol server on the official MCP SDK. `pip install vouch-mcp`
+- vouch-a2a: binds an A2A (Agent2Agent) Agent Card to a Vouch identity. `pip install vouch-a2a`
+- vouch-mlflow: signs an MLflow model artifact at registration time, bound to its content digest. `pip install vouch-mlflow`
+- vouch-safetensors: embeds a credential in a .safetensors header, complementary to OpenSSF Model Signing. `pip install vouch-safetensors`
+
+Until v1.6.2 publishes to PyPI, use the integrations from the main package, for
+example `from vouch.integrations.langchain.tool import VouchSignerTool`.

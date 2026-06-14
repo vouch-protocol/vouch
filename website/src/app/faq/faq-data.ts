@@ -380,6 +380,8 @@ status_list = store.load()
 - **Hasura** - GraphQL webhook
 - **MCP** - Model Context Protocol server
 
+**Coming soon as standalone packages (v1.6.2):** \`vouch-langchain\`, \`vouch-crewai\`, \`vouch-a2a\` (binds an A2A Agent Card to a Vouch identity), \`vouch-mlflow\` (signs a model artifact at registration time, bound to its content digest), and \`vouch-safetensors\` (embeds a credential in the model header, complementary to OpenSSF Model Signing). Each issues a verifiable credential per tool call, with optional delegation back to a human principal.
+
 Examples for each are in [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
 
 TypeScript currently has the Amnesia bridge in \`packages/sdk-ts/src/integrations/\`.`,
