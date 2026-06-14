@@ -15,6 +15,7 @@ const TOTAL = ATI_SUMMARY.total.toLocaleString('en-US');
 export const metadata: Metadata = {
     title: 'Agent Trust Index - Vouch Protocol',
     description: `An open benchmark of how many autonomous agents can prove who they are. The first sweep checked ${TOTAL} public agents from the Model Context Protocol registry. ${ATI_SUMMARY.pctCannot}% cannot present a verifiable identity.`,
+    alternates: { canonical: 'https://index.vouch-protocol.com/' },
 };
 
 const HEADLINE = [
