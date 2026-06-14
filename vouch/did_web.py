@@ -18,6 +18,8 @@ from dataclasses import dataclass
 
 import httpx
 
+from . import ssrf
+
 
 @dataclass
 class VerificationMethod:
@@ -209,8 +211,11 @@ async def resolve_did_web(
       httpx.HTTPError: If the request fails
     """
     url = did_web_to_url(did)
+    ssrf.validate_url(url)  # https-only, public IPs only (blocks SSRF)
 
-    async with httpx.AsyncClient(timeout=timeout, verify=verify_ssl) as client:
+    async with httpx.AsyncClient(
+        timeout=timeout, verify=verify_ssl, follow_redirects=False
+    ) as client:
         response = await client.get(
             url,
             headers={
@@ -234,8 +239,9 @@ def resolve_did_web_sync(
     For use in non-async contexts.
     """
     url = did_web_to_url(did)
+    ssrf.validate_url(url)  # https-only, public IPs only (blocks SSRF)
 
-    with httpx.Client(timeout=timeout, verify=verify_ssl) as client:
+    with httpx.Client(timeout=timeout, verify=verify_ssl, follow_redirects=False) as client:
         response = client.get(
             url,
             headers={
