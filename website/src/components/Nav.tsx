@@ -41,6 +41,15 @@ export default function Nav() {
                         );
                     })}
                     <Link
+                        href="/robotics/"
+                        className={`font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b pb-0.5 transition-colors inline-flex items-center gap-1.5 ${
+                            pathname?.startsWith('/robotics') ? 'text-burgundy border-burgundy' : 'border-transparent text-ink-soft hover:text-burgundy hover:border-burgundy'
+                        }`}
+                    >
+                        Robotics
+                        <span className="bg-burgundy text-parchment text-[0.55rem] leading-none px-1 py-0.5 tracking-normal">NEW</span>
+                    </Link>
+                    <Link
                         href="/agent-trust-index/"
                         className={`font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b pb-0.5 transition-colors ${
                             pathname?.startsWith('/agent-trust-index') ? 'text-burgundy border-burgundy' : 'border-transparent text-ink-soft hover:text-burgundy hover:border-burgundy'
@@ -87,6 +96,14 @@ export default function Nav() {
                                 {link.label}
                             </Link>
                         ))}
+                        <Link
+                            href="/robotics/"
+                            onClick={() => setOpen(false)}
+                            className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy no-underline py-1 inline-flex items-center gap-1.5"
+                        >
+                            Robotics
+                            <span className="bg-burgundy text-parchment text-[0.55rem] leading-none px-1 py-0.5 tracking-normal">NEW</span>
+                        </Link>
                         <Link
                             href="/agent-trust-index/"
                             onClick={() => setOpen(false)}
