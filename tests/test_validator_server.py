@@ -1,6 +1,8 @@
 """Tests for the reference validator HTTP transport (vouch/validator_server.py)."""
 
 import pytest
+
+pytest.importorskip("fastapi", reason="fastapi not installed")
 from fastapi.testclient import TestClient
 
 from vouch import Signer, generate_identity

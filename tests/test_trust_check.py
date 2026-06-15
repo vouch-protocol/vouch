@@ -59,8 +59,10 @@ def test_fresh_voucher_meets_threshold(agent):
         valid_seconds=120,
     )
     v = verify_agent_call(
-        cred, public_key=signer.get_public_key_multikey(),
-        session_voucher=voucher, trust_threshold=0.5,
+        cred,
+        public_key=signer.get_public_key_multikey(),
+        session_voucher=voucher,
+        trust_threshold=0.5,
     )
     assert v.ok is True
     assert v.trust_ok is True
@@ -81,8 +83,11 @@ def test_decayed_voucher_below_threshold_fails(agent):
     # Evaluate far in the future: trust has decayed well below the threshold.
     future = datetime.now(timezone.utc) + timedelta(hours=10)
     v = verify_agent_call(
-        cred, public_key=signer.get_public_key_multikey(),
-        session_voucher=voucher, trust_threshold=0.5, at_time=future,
+        cred,
+        public_key=signer.get_public_key_multikey(),
+        session_voucher=voucher,
+        trust_threshold=0.5,
+        at_time=future,
     )
     assert v.ok is False
     assert v.trust_ok is False
