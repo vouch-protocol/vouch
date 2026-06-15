@@ -22,8 +22,13 @@ import tempfile
 from vouch import Signer, generate_identity
 from vouch import attribution as attr
 
-G = "\033[92m"; R = "\033[91m"; AI = "\033[95m"; HU = "\033[96m"
-DIM = "\033[2m"; BOLD = "\033[1m"; END = "\033[0m"
+G = "\033[92m"
+R = "\033[91m"
+AI = "\033[95m"
+HU = "\033[96m"
+DIM = "\033[2m"
+BOLD = "\033[1m"
+END = "\033[0m"
 
 
 def line(char="-", n=64):
@@ -48,11 +53,7 @@ def main() -> None:
     # Act 1: the AI writes the first version.
     print(f"{BOLD}Act 1.{END} The AI assistant writes a handler.")
     line()
-    v1 = (
-        "import os\n"
-        "def handler(event):\n"
-        "    return event[\"id\"]\n"
-    )
+    v1 = 'import os\ndef handler(event):\n    return event["id"]\n'
     session.record_edit("app.py", v1)
     print(f"{AI}AI wrote 3 lines.{END}")
     print()
@@ -63,9 +64,9 @@ def main() -> None:
     v2 = (
         "import os\n"
         "def handler(event):\n"
-        "    return event[\"order_id\"]\n"   # human fixes the key
-        "def audit(event):\n"               # human adds
-        "    log(event)\n"                   # human adds
+        '    return event["order_id"]\n'  # human fixes the key
+        "def audit(event):\n"  # human adds
+        "    log(event)\n"  # human adds
     )
     # The human's edit did not come through the assistant. It is the residual.
 
@@ -100,7 +101,9 @@ def main() -> None:
 
     # Verify the honest manifest.
     ok = attr.verify_manifest(
-        manifest, human.public_key_jwk, session.ai_public_key_jwk,
+        manifest,
+        human.public_key_jwk,
+        session.ai_public_key_jwk,
         files_on_disk={"app.py": v3},
     )
     print(f"{BOLD}Verify the real manifest:{END} ", end="")
@@ -120,7 +123,9 @@ def main() -> None:
     # Attack 2: change one byte of the committed file.
     tampered_bytes = v3.replace("order_id", "evil_id")
     tampered_ok = attr.verify_manifest(
-        manifest, human.public_key_jwk, session.ai_public_key_jwk,
+        manifest,
+        human.public_key_jwk,
+        session.ai_public_key_jwk,
         files_on_disk={"app.py": tampered_bytes},
     )
     print(f"{BOLD}Alter one byte after signing:{END} ", end="")
@@ -130,7 +135,9 @@ def main() -> None:
     line("=")
     invariant = ok.ok and (not forged_ok.ok) and (not tampered_ok.ok)
     if invariant:
-        print(f"{G}{BOLD}Every line has an author you can prove. Nobody can wear the other's name.{END}")
+        print(
+            f"{G}{BOLD}Every line has an author you can prove. Nobody can wear the other's name.{END}"
+        )
     else:
         print(f"{R}Demo invariant failed.{END}")
     print(f"{DIM}This is Vouch Protocol attribution. See vouch/integrations/claude-code/.{END}")
