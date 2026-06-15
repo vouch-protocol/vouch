@@ -5,20 +5,17 @@ All notable changes to Vouch Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.6.1] - 2026-06-14
+## [1.6.3] - 2026-06-15
 
 ### Added
 
-#### Per-region human and AI code attribution (PAD-061)
+#### Claude Code integration for per-region attribution (PAD-061)
 
-`vouch attribute` records which lines an AI coding assistant wrote and which a
-human wrote, signing each party's regions with that party's own key. Authorship
-is captured from the assistant's actual edit channel (a Claude Code hook on
-Edit / Write / MultiEdit); the human's lines are the residual. The signed
-Attribution Manifest binds line ranges to author DIDs over the exact bytes, and
-verification enforces region completeness and AI-region backing. Includes the
-`vouch/integrations/claude-code/` hook, the `who_wrote_this` example, and the
-PAD-061 defensive disclosure.
+The editor wiring and demo for `vouch attribute`: a PostToolUse hook
+(`vouch/integrations/claude-code/`) that records the assistant's Edit, Write,
+and MultiEdit operations automatically, plus the `who_wrote_this` runnable
+example. The attribution engine itself shipped earlier; this release adds the
+Claude Code integration and the example on top of it.
 
 ## [Unreleased]
 
