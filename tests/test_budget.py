@@ -30,6 +30,7 @@ def credential(principal):
 def test_credential_is_signed_and_verifies(principal, credential):
     ident, _ = principal
     from vouch import data_integrity
+
     assert credential["type"][-1] == bud.BUDGET_CREDENTIAL_TYPE
     assert data_integrity.verify_proof(credential, _pub_from_jwk(ident.public_key_jwk))
 

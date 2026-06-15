@@ -166,7 +166,9 @@ class BudgetVerifier:
         """Record a completed payment in the running tally."""
         now = now or datetime.now(timezone.utc)
         self._by_day[self._day_key(now)] = self._by_day.get(self._day_key(now), 0.0) + amount
-        self._by_month[self._month_key(now)] = self._by_month.get(self._month_key(now), 0.0) + amount
+        self._by_month[self._month_key(now)] = (
+            self._by_month.get(self._month_key(now), 0.0) + amount
+        )
         if counterparty is not None:
             self._by_counterparty[counterparty] = (
                 self._by_counterparty.get(counterparty, 0.0) + amount

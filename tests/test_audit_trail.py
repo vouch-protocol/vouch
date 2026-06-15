@@ -17,12 +17,25 @@ def signer_identity():
 
 def _trail():
     t = at.AuditTrail()
-    t.append(action="ALLOWED", actor="did:web:agent.example.com", resource="read_file",
-             timestamp="2026-06-14T00:00:00Z")
-    t.append(action="BLOCKED", actor="did:web:agent.example.com", resource="run_command",
-             decision="not_trusted", timestamp="2026-06-14T00:00:01Z")
-    t.append(action="ALLOWED", actor="did:web:agent.example.com", resource="write_file",
-             timestamp="2026-06-14T00:00:02Z")
+    t.append(
+        action="ALLOWED",
+        actor="did:web:agent.example.com",
+        resource="read_file",
+        timestamp="2026-06-14T00:00:00Z",
+    )
+    t.append(
+        action="BLOCKED",
+        actor="did:web:agent.example.com",
+        resource="run_command",
+        decision="not_trusted",
+        timestamp="2026-06-14T00:00:01Z",
+    )
+    t.append(
+        action="ALLOWED",
+        actor="did:web:agent.example.com",
+        resource="write_file",
+        timestamp="2026-06-14T00:00:02Z",
+    )
     return t
 
 
@@ -81,11 +94,21 @@ def test_signed_export_tamper_rejected(signer_identity):
 
 def test_from_flight_recorder():
     from vouch.shield.flight_recorder import LogEntry
+
     logs = [
-        LogEntry(timestamp="2026-06-14T00:00:00Z", event="ALLOWED",
-                 did="did:web:a.example.com", tool="read"),
-        LogEntry(timestamp="2026-06-14T00:00:01Z", event="BLOCKED",
-                 did="did:web:a.example.com", tool="rm", reason="blocked"),
+        LogEntry(
+            timestamp="2026-06-14T00:00:00Z",
+            event="ALLOWED",
+            did="did:web:a.example.com",
+            tool="read",
+        ),
+        LogEntry(
+            timestamp="2026-06-14T00:00:01Z",
+            event="BLOCKED",
+            did="did:web:a.example.com",
+            tool="rm",
+            reason="blocked",
+        ),
     ]
     t = at.AuditTrail.from_flight_recorder(logs)
     ok, _ = t.verify()
@@ -127,6 +150,9 @@ def test_human_oversight_wrong_key_fails(signer_identity):
     _, signer = signer_identity
     other = generate_identity(domain="attacker.example.com")
     cred = at.build_human_oversight_attestation(
-        signer, reviewer="did:web:lead.example.com", action_ref="x", decision="approved",
+        signer,
+        reviewer="did:web:lead.example.com",
+        action_ref="x",
+        decision="approved",
     )
     assert not at.verify_human_oversight_attestation(cred, _pub_from_jwk(other.public_key_jwk))

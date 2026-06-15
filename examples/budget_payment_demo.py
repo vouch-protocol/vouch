@@ -19,7 +19,12 @@ Everything runs locally. No servers, no setup.
 from vouch import Signer, generate_identity
 from vouch import budget as bud
 
-G = "\033[92m"; R = "\033[91m"; B = "\033[94m"; DIM = "\033[2m"; BOLD = "\033[1m"; END = "\033[0m"
+G = "\033[92m"
+R = "\033[91m"
+B = "\033[94m"
+DIM = "\033[2m"
+BOLD = "\033[1m"
+END = "\033[0m"
 
 
 def verdict(v) -> str:
@@ -56,7 +61,7 @@ def main() -> None:
         {"amount": 80.0, "currency": "USD", "payee": vendor},
         {"amount": 80.0, "currency": "USD", "payee": vendor},
         {"amount": 120.0, "currency": "USD", "payee": vendor},  # over per-transaction
-        {"amount": 90.0, "currency": "USD", "payee": vendor},   # over daily after 160 spent
+        {"amount": 90.0, "currency": "USD", "payee": vendor},  # over daily after 160 spent
     ]
 
     for i, m in enumerate(mandates, 1):

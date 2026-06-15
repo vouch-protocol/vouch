@@ -196,6 +196,7 @@ def load_trail(path: str) -> AuditTrail:
 # Signed export
 # ---------------------------------------------------------------------------
 
+
 def _raw_priv(signer: Any):
     raw = getattr(signer, "_raw_priv", None)
     if raw is None:
@@ -256,6 +257,7 @@ def verify_export(manifest: Dict[str, Any], public_key) -> Tuple[bool, List[str]
 # ---------------------------------------------------------------------------
 # Human-oversight attestation credential
 # ---------------------------------------------------------------------------
+
 
 def build_human_oversight_attestation(
     signer: Any,
