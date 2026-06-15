@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { FAQSection } from './faq-data';
 import CodeBlock from '@/components/CodeBlock';
+import OSCodeBlock from '@/components/OSCodeBlock';
 
 /**
  * Render a FAQ answer. Supports code fences (extracted first so internal
@@ -34,10 +35,33 @@ function renderAnswer(text: string): React.ReactNode {
     }
 
     const out: React.ReactNode[] = [];
-    segments.forEach((seg, si) => {
+    const isUnix = (l?: string) =>
+        ['bash', 'sh', 'shell', 'console', 'zsh'].includes((l || '').toLowerCase());
+    const isWin = (l?: string) =>
+        ['powershell', 'pwsh', 'ps1', 'ps'].includes((l || '').toLowerCase());
+    for (let si = 0; si < segments.length; si++) {
+        const seg = segments[si];
         if (seg.kind === 'code') {
+            if (isUnix(seg.lang)) {
+                let j = si + 1;
+                if (
+                    j < segments.length &&
+                    segments[j].kind === 'text' &&
+                    segments[j].content.trim() === ''
+                ) {
+                    j++;
+                }
+                const next = segments[j];
+                if (next && next.kind === 'code' && isWin(next.lang)) {
+                    out.push(
+                        <OSCodeBlock key={`s${si}`} unix={seg.content} windows={next.content} />
+                    );
+                    si = j;
+                    continue;
+                }
+            }
             out.push(<CodeBlock key={`s${si}`} code={seg.content} language={seg.lang} />);
-            return;
+            continue;
         }
         const paragraphs = seg.content.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
         paragraphs.forEach((paragraph, pi) => {
@@ -67,7 +91,7 @@ function renderAnswer(text: string): React.ReactNode {
                 </p>
             );
         });
-    });
+    }
     return out;
 }
 

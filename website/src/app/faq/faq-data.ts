@@ -947,6 +947,10 @@ Run \`/plugin\` to confirm it is enabled. The skill loads automatically when you
 cp -r ~/vouch-protocol/claude-skill/skills/vouch-protocol ~/.claude/skills/vouch-protocol
 \`\`\`
 
+\`\`\`powershell
+Copy-Item -Recurse "$env:USERPROFILE\\vouch-protocol\\claude-skill\\skills\\vouch-protocol" "$env:USERPROFILE\\.claude\\skills\\vouch-protocol"
+\`\`\`
+
 Run \`/skills\` to confirm \`vouch-protocol\` is listed. Read the Guides section "Installing the Vouch Claude Skill" for screen-by-screen steps and triggers.`,
         helpLinks: [{ label: 'Installing the Claude Skill', href: '/help/#claude-skill-install' }],
       },
