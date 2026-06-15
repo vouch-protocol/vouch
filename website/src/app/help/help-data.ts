@@ -1164,7 +1164,7 @@ All under \`vouch/integrations/\`:
 
 End-to-end examples are at [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
 
-## Standalone framework packages (coming soon, v1.6.2)
+## Standalone framework packages (new in v1.6.2)
 
 Installable on their own, so the framework adapters no longer need the full SDK import path:
 

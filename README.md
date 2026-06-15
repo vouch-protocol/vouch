@@ -80,8 +80,8 @@ Vouch is not one tool, it is a set of them. Here is the whole map.
 - **Vouch Shield** a runtime check that inspects every tool call against your rules, like a customs officer at the door.
 - **Continuous trust** heartbeats and session vouchers, so trust is a live signal that has to be renewed, not a badge that is issued once and trusted forever.
 
-### Framework integrations (coming soon)
-Standalone packages that drop Vouch into the agent framework you already use. Each one issues a verifiable credential for a tool call, with optional delegation back to a human principal. Landing on PyPI with v1.6.2.
+### Framework integrations (new in v1.6.2)
+Standalone packages that drop Vouch into the agent framework you already use. Each one issues a verifiable credential for a tool call, with optional delegation back to a human principal.
 - **`vouch-langchain`** a LangChain tool that signs each tool call before it leaves the agent.
 - **`vouch-crewai`** a CrewAI tool, with supervisor-to-worker delegation that can only narrow authority, never widen it.
 - **`vouch-a2a`** binds an A2A (Agent2Agent) Agent Card to a Vouch identity, so two agents can verify each other before they collaborate.

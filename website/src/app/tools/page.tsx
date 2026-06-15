@@ -94,13 +94,13 @@ const GROUPS: Group[] = [
     {
         eyebrow: 'Framework integrations',
         title: 'Drop Vouch into the framework you already use',
-        intro: 'Standalone packages that issue a verifiable credential for each tool call, with optional delegation back to a human principal. Landing on PyPI with v1.6.2.',
+        intro: 'Standalone packages that issue a verifiable credential for each tool call, with optional delegation back to a human principal. New in v1.6.2.',
         tools: [
-            { name: 'vouch-langchain', blurb: 'A LangChain tool that signs each tool call before it leaves the agent.', start: 'pip install vouch-langchain', tag: 'Coming soon' },
-            { name: 'vouch-crewai', blurb: 'A CrewAI tool, with supervisor-to-worker delegation that can only narrow authority, never widen it.', start: 'pip install vouch-crewai', tag: 'Coming soon' },
-            { name: 'vouch-a2a', blurb: 'Binds an A2A (Agent2Agent) Agent Card to a Vouch identity, so two agents can verify each other before they collaborate.', start: 'pip install vouch-a2a', tag: 'Coming soon' },
-            { name: 'vouch-mlflow', blurb: 'Signs an MLflow model artifact at registration time, bound to a content digest so any change to the weights breaks the signature.', start: 'pip install vouch-mlflow', tag: 'Coming soon' },
-            { name: 'vouch-safetensors', blurb: 'Embeds a credential in a .safetensors header, complementary to OpenSSF Model Signing, so a model carries who produced it.', start: 'pip install vouch-safetensors', tag: 'Coming soon' },
+            { name: 'vouch-langchain', blurb: 'A LangChain tool that signs each tool call before it leaves the agent.', start: 'pip install vouch-langchain', tag: 'New' },
+            { name: 'vouch-crewai', blurb: 'A CrewAI tool, with supervisor-to-worker delegation that can only narrow authority, never widen it.', start: 'pip install vouch-crewai', tag: 'New' },
+            { name: 'vouch-a2a', blurb: 'Binds an A2A (Agent2Agent) Agent Card to a Vouch identity, so two agents can verify each other before they collaborate.', start: 'pip install vouch-a2a', tag: 'New' },
+            { name: 'vouch-mlflow', blurb: 'Signs an MLflow model artifact at registration time, bound to a content digest so any change to the weights breaks the signature.', start: 'pip install vouch-mlflow', tag: 'New' },
+            { name: 'vouch-safetensors', blurb: 'Embeds a credential in a .safetensors header, complementary to OpenSSF Model Signing, so a model carries who produced it.', start: 'pip install vouch-safetensors', tag: 'New' },
         ],
     },
     {
