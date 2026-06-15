@@ -64,6 +64,8 @@ go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
 vouch-sidecar --did did:web:agent.example.com --port 8877
 ```
 
+**macOS / Linux**
+
 ```bash
 curl -X POST http://localhost:8877/sign \
     -H 'content-type: application/json' \
@@ -74,6 +76,20 @@ curl -X POST http://localhost:8877/sign \
             "resource": "https://insurance.example.com/claims/HC-001"
         }
     }'
+```
+
+**Windows (PowerShell)**
+
+```powershell
+$body = @{
+    intent = @{
+        action   = "submit_claim"
+        target   = "claim:HC-001"
+        resource = "https://insurance.example.com/claims/HC-001"
+    }
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri "http://localhost:8877/sign" -ContentType "application/json" -Body $body
 ```
 
 ## Hosting a did:web DID Document

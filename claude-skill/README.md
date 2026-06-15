@@ -80,8 +80,18 @@ better at the protocol.
 
 ## Updating
 
+**macOS / Linux**
+
 ```bash
 cd ~/.claude/skills/vouch-protocol
+git pull   # if you cloned the vouch-protocol repo
+# or re-copy from a fresh clone
+```
+
+**Windows (PowerShell)**
+
+```powershell
+cd $env:USERPROFILE\.claude\skills\vouch-protocol
 git pull   # if you cloned the vouch-protocol repo
 # or re-copy from a fresh clone
 ```

@@ -19,8 +19,16 @@ go build ./cmd/vouch-sidecar
 
 ## Run
 
+**macOS / Linux**
+
 ```bash
 ./vouch-sidecar --did did:web:agent.example.com --port 8877
+```
+
+**Windows (PowerShell)**
+
+```powershell
+.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877
 ```
 
 Flags:

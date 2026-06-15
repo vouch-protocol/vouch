@@ -48,9 +48,18 @@ Even if the LLM is fully compromised, it cannot leak a key it never had.
 `go-sidecar/cmd/vouch-sidecar` is the reference implementation. Small
 binary, low memory, fast startup, no GIL.
 
+**macOS / Linux**
+
 ```bash
 go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
 ./vouch-sidecar --did did:web:agent.example.com --port 8877
+```
+
+**Windows (PowerShell)**
+
+```powershell
+go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
+.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877
 ```
 
 See `reference/go-sidecar.md` for the full HTTP API and deployment patterns.
@@ -123,10 +132,20 @@ spec:
 For production, the sidecar shouldn't even hold a raw key file. Point
 it at AWS KMS / GCP KMS / Azure Key Vault:
 
+**macOS / Linux**
+
 ```bash
 ./vouch-sidecar --did did:web:agent.example.com \
                 --kms-provider aws \
                 --kms-key-id alias/vouch-agent
+```
+
+**Windows (PowerShell)**
+
+```powershell
+.\vouch-sidecar.exe --did did:web:agent.example.com `
+                    --kms-provider aws `
+                    --kms-key-id alias/vouch-agent
 ```
 
 The sidecar holds a session token, not the underlying private key.
@@ -144,8 +163,16 @@ If the path from sidecar to caller is over a network (e.g., calling
 from a separate service), enable `--sensitive` to wrap responses in
 JWE so the credential is encrypted in flight:
 
+**macOS / Linux**
+
 ```bash
 ./vouch-sidecar --did ... --sensitive
+```
+
+**Windows (PowerShell)**
+
+```powershell
+.\vouch-sidecar.exe --did ... --sensitive
 ```
 
 Caller decrypts with its pre-shared key. Typically used in
