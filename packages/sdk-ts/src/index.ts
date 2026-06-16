@@ -83,6 +83,21 @@ export {
 } from './data-integrity-hybrid';
 export type { HybridKeyPair, BuildHybridProofOptions } from './data-integrity-hybrid';
 
+// Robotics (Phase 5): hardware-rooted robot identity and embodied-agent
+// credentials, byte-identical with the Python `vouch.robotics` package.
+export {
+  ROBOT_IDENTITY_TYPE,
+  RoboticsError,
+  SoftwareRootOfTrust,
+  mintRobotIdentity,
+  verifyRobotIdentity,
+  lifecycleEvent,
+} from './robotics/identity';
+export type {
+  HardwareRootOfTrust,
+  MintRobotIdentityOptions,
+} from './robotics/identity';
+
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
   StatusList,

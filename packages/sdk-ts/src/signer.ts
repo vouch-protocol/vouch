@@ -144,6 +144,24 @@ export class Signer {
     return encodeEd25519Public(raw);
   }
 
+  /**
+   * Attach an eddsa-jcs-2022 Data Integrity proof to a pre-built credential.
+   *
+   * For custom credential types (for example robotics credentials) that the
+   * caller assembles by hand rather than from an intent. Mirrors the signing
+   * step of `signCredential`. Returns the credential with its `proof` set.
+   */
+  async attachProof(
+    credential: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const privateKey = await this.rawPrivateKeyPromise;
+    const proof = buildProof(credential, {
+      privateKey,
+      verificationMethod: this.verificationMethodId(),
+    });
+    return { ...credential, proof };
+  }
+
   // ------------------------------------------------------------------
   // Legacy JWS path. Behavior preserved verbatim.
   // ------------------------------------------------------------------
