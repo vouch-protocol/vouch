@@ -1204,6 +1204,46 @@ def _cmd_media_verify_c2pa(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_trifecta(args) -> int:
+    """Check an agent's capability set for the lethal trifecta.
+
+    Flags a set that combines private-data access, untrusted-input exposure,
+    and an exfiltration vector. Exits non-zero when the trifecta is present.
+    """
+    import json as _json
+    from vouch import trifecta
+
+    if args.scopes:
+        caps = [s.strip() for s in args.scopes.split(",") if s.strip()]
+        result = trifecta.analyze(caps)
+    elif args.path:
+        try:
+            credential = _json.loads(Path(args.path).read_text(encoding="utf-8"))
+        except Exception as exc:
+            print(f"Could not read credential: {exc}")
+            return 2
+        result = trifecta.analyze_credential(credential)
+    else:
+        print("Provide a credential file path or --scopes a,b,c")
+        return 2
+
+    if args.json:
+        print(_json.dumps(result.to_dict(), indent=2))
+    elif result.lethal:
+        print("LETHAL TRIFECTA present. This capability set is dangerous:")
+        for category in trifecta.CATEGORIES:
+            caps = result.contributing.get(category, [])
+            print(f"  {category}: {', '.join(caps)}")
+        print("Remove one leg (private data, untrusted input, or exfiltration) to break it.")
+    else:
+        present = ", ".join(sorted(result.present)) or "none"
+        print(
+            f"No lethal trifecta. Present: {present}. Missing: {', '.join(sorted(result.missing))}."
+        )
+
+    return 1 if result.lethal else 0
+
+
 def cmd_scan(args) -> int:
     """Scan a path for Vouch-shaped private key material.
 
@@ -1347,6 +1387,21 @@ def main() -> int:
 
     p_attr = attribution_cli.register(subparsers)
 
+    p_trifecta = subparsers.add_parser(
+        "trifecta",
+        help="Check an agent's capability set for the lethal trifecta (PAD Phase 3)",
+    )
+    p_trifecta.add_argument(
+        "path",
+        nargs="?",
+        help="Path to a Vouch credential JSON file to analyze",
+    )
+    p_trifecta.add_argument(
+        "--scopes",
+        help="Comma-separated capability/scope tokens to analyze instead of a file",
+    )
+    p_trifecta.add_argument("--json", action="store_true", help="Output the result as JSON")
+
     p_onboard = subparsers.add_parser(
         "onboard",
         help="Guided six-step wizard to adopt Vouch (identity, allow-list, verifier, heartbeat)",
@@ -1413,6 +1468,8 @@ def main() -> int:
             return 0
     elif args.command == "scan":
         return cmd_scan(args)
+    elif args.command == "trifecta":
+        return cmd_trifecta(args)
     elif args.command == "attribute":
         from . import attribution_cli
 
