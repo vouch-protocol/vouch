@@ -89,7 +89,26 @@ jobs:
           Triggered by commit ${GITHUB_SHA}.
 
           [skip ci]"
-          git push origin main
+          # Push with rebase-and-retry. A concurrent merge to main moves the
+          # branch between checkout and push and would otherwise reject this
+          # push as non-fast-forward, silently leaving the live site stale.
+          # The deploy commit only touches generated docs/ output, so replaying
+          # it onto the latest main is a clean, conflict-free rebase.
+          pushed=
+          for attempt in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "Pushed deploy commit on attempt ${attempt}."
+              pushed=1
+              break
+            fi
+            echo "Push rejected on attempt ${attempt}; rebasing onto latest main and retrying."
+            git pull --rebase origin main
+            sleep $((attempt * 3))
+          done
+          if [ -z "${pushed}" ]; then
+            echo "Failed to push the deploy commit after 5 attempts."
+            exit 1
+          fi
 
       - name: Summary
         run: |
