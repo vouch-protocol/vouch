@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import CodeBlock from '@/components/CodeBlock';
+import LangCodeBlock from '@/components/LangCodeBlock';
 
 const FEATURES = [
   {
@@ -244,11 +245,15 @@ export default function HomePage() {
             <h2>A quick taste</h2>
           </div>
           <p className="text-ink-soft max-w-prose mb-8 leading-relaxed">
-            Sign a Vouch Credential in Python. The same credential is verifiable in TypeScript and Go.
+            Sign a Vouch Credential and read back its proof. The same credential verifies
+            byte-identically across every SDK, so pick your language.
           </p>
-          <CodeBlock
-            language="python"
-            code={`from vouch import Signer, build_vouch_credential
+          <LangCodeBlock
+            variants={[
+              {
+                label: 'Python',
+                language: 'python',
+                code: `from vouch import Signer, build_vouch_credential
 
 signer = Signer.from_did("did:web:agent.example.com")
 
@@ -265,12 +270,154 @@ credential = build_vouch_credential(
 
 signed = signer.sign_credential(credential)
 print(signed["proof"]["proofValue"])  # z-base58-encoded Ed25519 signature
-`}
+`,
+              },
+              {
+                label: 'TypeScript',
+                language: 'typescript',
+                code: `import { Signer, generateIdentity, buildVouchCredential }
+  from '@vouch-protocol-official/sdk';
+
+const identity = await generateIdentity('agent.example.com');
+const signer = new Signer({
+  privateKey: identity.privateKeyJwk,
+  did: identity.did!,
+});
+
+const credential = buildVouchCredential({
+  subjectDid: identity.did!,
+  intent: {
+    action: 'submit_claim',
+    target: 'claim:HC-001',
+    resource: 'https://insurance.example.com/claims/HC-001',
+  },
+  validSeconds: 300,
+});
+
+const signed = await signer.signCredential(credential);
+console.log(signed.proof.proofValue); // z-base58-encoded Ed25519 signature
+`,
+              },
+              {
+                label: 'Go',
+                language: 'go',
+                code: `// The Go sidecar holds the key and signs over localhost HTTP,
+// so the signing key never enters your agent's process.
+// Start it with: vouch-sidecar --did did:web:agent.example.com --port 8877
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	body, _ := json.Marshal(map[string]any{
+		"subjectDid": "did:web:agent.example.com",
+		"intent": map[string]string{
+			"action":   "submit_claim",
+			"target":   "claim:HC-001",
+			"resource": "https://insurance.example.com/claims/HC-001",
+		},
+		"validSeconds": 300,
+	})
+
+	resp, _ := http.Post("http://localhost:8877/sign",
+		"application/json", bytes.NewReader(body))
+	defer resp.Body.Close()
+
+	var signed map[string]any
+	json.NewDecoder(resp.Body).Decode(&signed)
+	fmt.Println(signed["proof"].(map[string]any)["proofValue"])
+}
+`,
+              },
+              {
+                label: 'Swift',
+                language: 'swift',
+                code: `import VouchCore
+
+// VouchCore wraps the one Rust core via UniFFI, so a credential
+// verified on iOS matches the exact bytes from every other SDK.
+let keys = try Vouch.generateEd25519()
+let signed = try Vouch.signCredential(credentialJson, keys: keys)
+
+let result = try Vouch.verifyCredential(
+  signed, publicKey: keys.publicKey, now: "2026-04-26T10:02:00Z")
+print(result)
+`,
+              },
+              {
+                label: 'Java',
+                language: 'java',
+                code: `import com.vouchprotocol.core.Vouch;
+
+String kp = Vouch.generateEd25519();   // {seed_b64, public_b64, multikey, did_key}
+String signed = Vouch.signCredential(
+    credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+boolean ok = Vouch.verifyProof(signed, publicB64);
+`,
+              },
+              {
+                label: 'C#',
+                language: 'csharp',
+                code: `using VouchProtocol.Core;
+
+string kp = Vouch.GenerateEd25519();
+string signed = Vouch.SignCredential(
+    credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+bool ok = Vouch.VerifyProof(signed, publicB64);
+`,
+              },
+              {
+                label: 'C',
+                language: 'c',
+                code: `#include "vouch_core.h"
+
+// Returned strings are heap-allocated; free with vouch_string_free.
+char *err = NULL;
+char *res = vouch_verify_proof(signed_credential_json, public_key_b64, &err); // "true"/"false"
+if (res) vouch_string_free(res); else vouch_string_free(err);
+`,
+              },
+              {
+                label: 'WASM',
+                language: 'javascript',
+                code: `import init, * as core from '@vouch-protocol-official/core-wasm';
+await init(); // fetches the .wasm next to the module
+
+const kp = JSON.parse(core.generateEd25519());
+const signed = core.signCredential(JSON.stringify(credential),
+  kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
+const ok = core.verifyProof(signed, kp.public_b64);   // true
+`,
+              },
+            ]}
           />
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/help/#quickstart-python" className="btn-primary">Full Python quickstart</Link>
-            <Link href="/help/#quickstart-typescript" className="btn-secondary">TypeScript quickstart</Link>
-            <Link href="/help/#quickstart-go" className="btn-secondary">Go sidecar quickstart</Link>
+          <div className="mt-7 flex flex-col sm:flex-row sm:items-baseline gap-x-6 gap-y-3">
+            <span className="eyebrow text-burgundy shrink-0">Quickstarts</span>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {[
+                { href: '/help/#quickstart-python', label: 'Python' },
+                { href: '/help/#quickstart-typescript', label: 'TypeScript' },
+                { href: '/help/#quickstart-go', label: 'Go' },
+                { href: '/help/#quickstart-swift', label: 'Swift' },
+                { href: '/help/#quickstart-jvm', label: 'Java / Kotlin' },
+                { href: '/help/#quickstart-dotnet', label: '.NET' },
+                { href: '/help/#quickstart-c', label: 'C / C++' },
+                { href: '/help/#quickstart-wasm', label: 'WebAssembly' },
+              ].map((q) => (
+                <Link
+                  key={q.href}
+                  href={q.href}
+                  className="font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b border-transparent pb-0.5 text-ink-soft hover:text-burgundy hover:border-burgundy transition-colors"
+                >
+                  {q.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
