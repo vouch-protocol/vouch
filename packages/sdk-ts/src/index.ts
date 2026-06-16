@@ -133,6 +133,19 @@ export type {
   BuildHelloOptions,
   BuildAcceptOptions,
 } from './robotics/handshake';
+export {
+  KILLSWITCH_TYPE,
+  BLACKBOX_VERSION,
+  EMERGENCY_STOP,
+  GENESIS_PREV_HASH,
+  BlackBoxError,
+  BlackBoxLog,
+  openEntry,
+  verifyBlackboxChain,
+  buildKillswitchCredential,
+  verifyKillswitchCredential,
+} from './robotics/blackbox';
+export type { BuildKillswitchOptions } from './robotics/blackbox';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
