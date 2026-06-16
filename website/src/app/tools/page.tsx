@@ -190,11 +190,12 @@ const GROUPS: Group[] = [
 ];
 
 function Start({ cmd }: { cmd: string }) {
-    // Copyable command, same default code-block style as the Help guides. No margin
-    // class here: a top margin would push the <pre> down while the copy button stays
-    // pinned to the wrapper, leaving the icon floating above the box. Spacing comes
-    // from the CodeBlock wrapper's own my-4.
-    return <CodeBlock code={cmd} className="text-[0.8rem]" />;
+    // Copyable command. A fixed height makes every card's code block identical, so a
+    // row of cards lines up at the top. A long command scrolls horizontally within
+    // that height (scrollbar sits at the bottom) instead of growing the box upward.
+    // The copy button always carries the full command. Vertical padding is trimmed so
+    // the line plus the scrollbar fit inside the fixed height.
+    return <CodeBlock code={cmd} className="text-[0.8rem] !py-3 h-[4rem]" />;
 }
 
 export default function ToolsPage() {
@@ -236,15 +237,19 @@ export default function ToolsPage() {
                                             )}
                                         </div>
                                         <p className="text-ink leading-relaxed mt-2 text-[0.96rem]">{tool.blurb}</p>
-                                        {tool.start && <Start cmd={tool.start} />}
-                                        {tool.href && (
-                                            <Link
-                                                href={tool.href}
-                                                className="font-mono uppercase text-[0.65rem] tracking-[0.14em] text-ink border-b border-ink no-underline hover:text-burgundy hover:border-burgundy w-fit mt-3 transition-colors"
-                                            >
-                                                {tool.hrefLabel || 'Learn more →'}
-                                            </Link>
-                                        )}
+                                        {/* mt-auto pins the command (and link) to the bottom of the card
+                                            so every card's code block aligns on the same baseline. */}
+                                        <div className="mt-auto">
+                                            {tool.start && <Start cmd={tool.start} />}
+                                            {tool.href && (
+                                                <Link
+                                                    href={tool.href}
+                                                    className="font-mono uppercase text-[0.65rem] tracking-[0.14em] text-ink border-b border-ink no-underline hover:text-burgundy hover:border-burgundy w-fit mt-3 transition-colors block"
+                                                >
+                                                    {tool.hrefLabel || 'Learn more →'}
+                                                </Link>
+                                            )}
+                                        </div>
                                     </article>
                                 ))}
                             </div>
