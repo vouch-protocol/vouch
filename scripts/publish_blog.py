@@ -262,15 +262,15 @@ def main():
     tech_id = metadata.get("tech_id", pad_id.lower().replace("-", ""))
     og_description = metadata.get("og_desc", f"Technical Digest: {title}")
     arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.com/disclosures/{pad_id}.md")
-    reading_time = metadata.get(\"reading_time\", \"3 min read\")
+    reading_time = metadata.get("reading_time", "3 min read")
 
     # Generate shortlink URL from config
     from vouch.config import get_shortlink
     shortlink_url = get_shortlink(tech_id)
 
-    # Clean title (remove \"The Pain Point\" etc if needed, but here we just take the first line)
+    # Clean title (remove "The Pain Point" etc if needed, but here we just take the first line)
     body_html = clean_md(body_md)
-    filename = f\"{slug}.html\" # SEO-friendly slug filename
+    filename = f"{slug}.html"  # SEO-friendly slug filename
 
     # Generate HTML
     full_html = HTML_TEMPLATE.format(

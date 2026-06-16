@@ -1,262 +1,269 @@
 # Framework Integrations Reference
 
-Vouch is framework-agnostic. Each integration is a thin adapter that
-wraps your existing framework's tool-call or action invocation with a
-signing and verification step.
+Vouch is framework-agnostic. Each integration is a thin adapter that wraps
+your existing framework's tool-call or action invocation with a signing
+(or verification) step.
 
-Reference implementations under `vouch/integrations/` in the Python SDK.
+Every adapter resolves the agent identity from two environment variables:
+
+```
+VOUCH_PRIVATE_KEY   # the agent's private key, as a JWK JSON string
+VOUCH_DID           # the agent's DID (e.g. did:web:agent.example.com)
+```
+
+Reference implementations live under `vouch/integrations/` in the Python SDK.
+Install the SDK with `pip install vouch-protocol`.
+
+The adapters return a Vouch-Token string. The convention is to attach it to
+the outgoing request as a `Vouch-Token` header, then verify it on the
+receiving side with a `Verifier`.
 
 ## LangChain
 
+A LangChain `BaseTool` the agent can call to mint a Vouch-Token before an
+authenticated request.
+
 ```python
-from vouch.integrations.langchain import VouchTool
-from langchain.tools import Tool
+from vouch.integrations.langchain.tool import VouchSignerTool, VouchSignerInput
 
-# Wrap an existing tool
-original_tool = Tool(
-    name="submit_claim",
-    func=submit_claim_to_api,
-    description="Submit an insurance claim",
-)
+# Reads VOUCH_PRIVATE_KEY and VOUCH_DID from the environment by default,
+# or pass private_key_json= and agent_did= explicitly.
+tool = VouchSignerTool()
 
-vouched_tool = VouchTool(
-    tool=original_tool,
-    signer=signer,
-    intent_template={
-        "action": "submit_claim",
-        "target": "{claim_id}",
-        "resource": "https://insurance.example.com/claims/{claim_id}",
-    },
-)
+# Give it to your agent alongside your other tools.
+# agent = initialize_agent(tools=[tool, ...], llm=llm)
 
-# Use in your agent
-agent = initialize_agent(tools=[vouched_tool], ...)
+# Direct call (intent plus optional target):
+token = tool._run("submit_claim", target="https://insurance.example.com")
 ```
 
-The wrapper signs the tool's input before execution and emits a Vouch
-credential to the chain-of-thought trace. The downstream API verifies
-the credential before processing.
+`VouchSignerInput` is the tool's input schema (fields `intent` and optional
+`target`).
 
 ## CrewAI
 
-```python
-from vouch.integrations.crewai import VouchAgent
-from crewai import Agent, Task
+A CrewAI tool function, `sign_request`, plus a `VouchCrewTools` collection.
 
-# Wrap an agent so all its tasks are signed
-vouched_researcher = VouchAgent(
-    base_agent=Agent(
-        role='Researcher',
-        goal='Find market data',
-        tools=[market_search_tool],
-    ),
-    signer=signer,
-    default_intent={
-        "action": "market_research",
-        "resource": "https://market-data.example.com",
-    },
+```python
+from vouch.integrations.crewai.tool import sign_request, VouchCrewTools
+from crewai import Agent
+
+researcher = Agent(
+    role="Researcher",
+    goal="Find market data",
+    tools=[sign_request],  # or VouchCrewTools.sign_request
 )
 
-# Crew runs as normal; every action emits a Vouch credential
+# Direct call:
+token = sign_request("market_research", target="https://market-data.example.com")
 ```
 
 ## AutoGen
 
-```python
-from vouch.integrations.autogen import vouch_wrap_agent
+A plain function, `sign_action`, that AutoGen can register as a callable tool.
 
-assistant = AssistantAgent(
-    name="financial_assistant",
-    llm_config={...},
-)
-vouched_assistant = vouch_wrap_agent(assistant, signer=signer)
+```python
+from vouch.integrations.autogen.tool import sign_action
+
+# Register sign_action with your AutoGen agent's function map, then:
+token = sign_action("execute_trade", target="https://broker.example.com")
 ```
 
 ## AutoGPT
 
-```python
-from vouch.integrations.autogpt import vouch_command_wrapper
-
-# Decorate command handlers
-@vouch_command_wrapper(signer=signer, action="execute_trade")
-def execute_trade(symbol, quantity):
-    ...
-```
-
-## Model Context Protocol (MCP)
-
-MCP is framework-agnostic, so Vouch composes natively. Two patterns:
-
-### Server-side: verify incoming tool calls
+A command, `sign_with_vouch`, plus `register_commands()` to expose it.
 
 ```python
-from vouch.integrations.mcp.server import VouchMCPServer
+from vouch.integrations.autogpt.commands import sign_with_vouch, register_commands
 
-server = VouchMCPServer(
-    name="claims-server",
-    trusted_principals=["did:web:cfo.example.com"],
-)
+commands = register_commands()  # -> [sign_with_vouch]
 
-@server.tool(action="submit_claim", resource_template="https://insurance.example.com/claims/{id}")
-async def submit_claim(id: str, amount: float):
-    # Tool call must arrive with a valid Vouch credential
-    # The decorator verifies before this body runs
-    ...
-
-server.run()
+# Direct call (note: target_service, not target):
+result = sign_with_vouch("execute_trade", target_service="broker.example.com")
 ```
-
-The server checks every tool invocation for a Vouch credential matching
-the registered `action` and `resource_template`. Unsigned invocations
-are rejected.
-
-### Client-side: sign outgoing tool calls
-
-```python
-from vouch.integrations.mcp.client import VouchMCPClient
-
-client = VouchMCPClient(server_url="https://claims-server.example.com", signer=signer)
-result = await client.call_tool(
-    "submit_claim",
-    arguments={"id": "HC-001", "amount": 1500.00},
-    intent_overrides={"target": "claim:HC-001"},
-)
-```
-
-Reference MCP server lives at `vouch/integrations/mcp/server.py`.
 
 ## Google Vertex AI
 
-```python
-from vouch.integrations.vertex import VouchVertexTool
+A standalone signing function for Vertex AI function calling.
 
-# Tools you register with Vertex AI's tool-use API
-tool = VouchVertexTool(
-    name="submit_claim",
-    function=submit_claim_fn,
-    signer=signer,
-    intent_template={...},
-)
+```python
+from vouch.integrations.vertex_ai.tool import sign_request_with_vouch
+
+token = sign_request_with_vouch("submit_claim", target="https://insurance.example.com")
 ```
 
 ## Google Agent Development Kit (ADK)
 
-```python
-from vouch.integrations.google_adk import VouchAgentExecutor
+A security sidecar that wraps ADK tool functions to sign every call, apply a
+risk policy, and emit an audit log. Use `protect_tools(...)` for the quick
+path, or `VouchIntegrator` with a custom `RiskPolicy` and `RiskLevel` rules.
 
-executor = VouchAgentExecutor(
-    underlying_executor=adk_executor,
-    signer=signer,
+```python
+from vouch.integrations.adk import (
+    protect_tools,
+    VouchIntegrator,
+    RiskPolicy,
+    RiskLevel,
 )
+
+def transfer_funds(amount: int, to_account: str) -> str:
+    return f"Transferred {amount} to {to_account}"
+
+# Quick path: protect a list of tools with defaults.
+protected = protect_tools([transfer_funds], block_high_risk=True)
+
+# Custom path: explicit risk rules.
+policy = RiskPolicy(custom_rules={"transfer_funds": RiskLevel.HIGH})
+integrator = VouchIntegrator(risk_policy=policy, block_high_risk=True)
+protected = integrator.protect([transfer_funds])
+
+# Use the protected tools with your ADK agent.
 ```
 
-## Google APIs (Sheets, Docs, Drive)
+## Google APIs (Vertex AI Agent Builder)
+
+`VertexAISigner` signs a named tool call with its arguments; the module also
+exposes a standalone `sign_request_with_vouch` function.
 
 ```python
-from vouch.integrations.google_apis import VouchGoogleClient
+from vouch.integrations.google import VertexAISigner, sign_request_with_vouch
 
-# Wraps the Google API client so every API call is preceded by a Vouch credential
-client = VouchGoogleClient(google_credentials=google_creds, signer=signer)
-sheet = client.spreadsheets().get(spreadsheetId="...").execute()
+signer = VertexAISigner()  # reads env vars, or pass private_key= and did=
+token = signer.sign_tool_call("search_database", {"query": "claims"})
+
+# Standalone helper:
+token = sign_request_with_vouch("read_records", target="https://sheets.googleapis.com")
 ```
 
 ## n8n
 
-n8n has a Vouch node that signs outgoing webhooks and verifies incoming
-ones. Configure in `n8n` settings -> Vouch:
+`N8NHelper` returns a ready-to-paste Python Code Node snippet and can sign a
+single workflow item.
 
-```
-Signer DID:        did:web:your-n8n.example.com
-Signer Key Path:   /var/lib/n8n/vouch.jwk
+```python
+from vouch.integrations.n8n import N8NHelper
+
+# Paste this into an n8n Python Code Node:
+snippet = N8NHelper.get_code_node_snippet()
+
+# Or sign one item directly:
+token = N8NHelper.sign_workflow_item({"order_id": "A-1001"})
 ```
 
-Then the "Vouch Sign" and "Vouch Verify" nodes appear in the node
-palette.
+Set `EXTERNAL_PYTHON_PACKAGES=vouch-protocol` plus `VOUCH_PRIVATE_KEY` and
+`VOUCH_DID` in the n8n environment so the Code Node can import and sign.
 
 ## Hasura
 
-Hasura webhook authorizer that calls Vouch verification:
+A Hasura Auth Webhook that verifies an incoming Vouch-Token and returns Hasura
+session variables. `RoleMappingConfig` maps DIDs and reputation to roles.
 
-```yaml
-# config.yaml
-authorization_webhook:
-    url: https://your-vouch-verifier.example.com/verify
-    timeout: 5
-    cache_max_age: 60
+```python
+from vouch.integrations.hasura import HasuraAuthWebhook, create_webhook_handler
+from vouch.integrations.hasura.webhook import RoleMappingConfig
+
+config = RoleMappingConfig(
+    did_roles={"did:web:cfo.example.com": "agent_admin"},
+)
+
+webhook = HasuraAuthWebhook(role_config=config)
+ok, session_vars = webhook.authenticate({"Vouch-Token": "<token>"})
+
+# Or run a standalone Flask server (GET /auth, GET /health):
+app = create_webhook_handler(role_config=config)
+# app.run(host="0.0.0.0", port=3000)
 ```
 
-Custom verifier endpoint reads `Authorization: Vouch <credential-json>`
-header and returns Hasura's session-variables on success.
+Point Hasura's `authorization_webhook` at the `/auth` endpoint.
+
+## Streamlit
+
+UI components that render a verification seal or a detailed card.
+
+```python
+import streamlit as st
+from vouch.integrations.streamlit.seal import (
+    vouch_seal_component,
+    vouch_verification_card,
+)
+
+vouch_seal_component(is_verified=True, agent_name="Finance Bot")
+
+vouch_verification_card(
+    agent_name="Finance Bot",
+    agent_did="did:web:agent.example.com",
+    is_verified=True,
+    reputation_score=82,
+)
+```
+
+## Model Context Protocol (MCP)
+
+Vouch ships a standalone MCP server (stdio) for Claude Desktop, Cursor, and
+other MCP clients. It is not a client library; it is a server you run.
+
+Run it as the `vouch-mcp` console script (installed with the SDK), with the
+agent identity in the environment:
+
+```bash
+export VOUCH_PRIVATE_KEY='{"kty":"OKP", ...}'
+export VOUCH_DID='did:web:agent.example.com'
+vouch-mcp
+```
+
+The server exposes three tools to the connected model:
+
+- `sign_action` (args: `intent`, optional `target`) mints a Vouch-Token.
+- `get_identity` returns the configured agent DID.
+- `create_session` (arg: `purpose`) issues a short-lived session token so the
+  model does not have to sign every action individually.
+
+The server entry point is `vouch.integrations.mcp.server:main` (class
+`VouchMCPServer`).
 
 ## Generic pattern (build your own)
 
 Three steps for any framework:
 
-1. **At tool-call emit time**: build a Vouch credential whose `intent`
-   matches the tool call. Sign with the agent's `Signer`. Attach to
-   the outgoing call (as request body or `Authorization` header).
-2. **At tool-call receive time**: parse the Vouch credential, verify
-   with `Verifier`. Reject if invalid.
-3. **In the audit log**: record the credential's `id`, `validFrom`,
-   `intent`, and `proof.verificationMethod`. The signed credential
-   itself is the audit record.
+1. At emit time, mint a Vouch-Token whose `intent` matches the action you are
+   about to take, signing with the agent's `Signer`. Attach it to the
+   outgoing call as a `Vouch-Token` header (or request body).
+2. At receive time, read the token and verify it with a `Verifier`. Reject if
+   invalid, expired, or revoked.
+3. In the audit log, record the verified token. The signed token itself is the
+   audit record (who, what action, when).
 
-If your framework has middleware hooks (pre-tool, post-tool), implement
-this as middleware. If it has decorator-style tool registration,
-implement as a decorator. The Python SDK includes both patterns.
+If your framework has pre-tool/post-tool hooks, implement this as middleware.
+If it has decorator-style tool registration, implement it as a decorator. The
+ADK sidecar above is a worked example of the middleware pattern.
 
-## Browser extension flow
+```python
+from vouch import Signer, Verifier
 
-For human-driven actions in a browser (e.g., signing a contract from
-a web app):
+signer = Signer(private_key="<jwk-json>", did="did:web:agent.example.com")
+token = signer.sign({"intent": "submit_claim", "target": "claim:HC-001"})
 
-```ts
-import { VouchClient } from '@vouch-protocol-official/sdk';
-
-// In a Chrome extension content script
-const credential = await VouchClient.signFromExtension({
-    intent: { action: 'approve_contract', target: 'doc:42', resource: 'https://docs.example.com/42' },
-});
-
-// Send to the page
-window.postMessage({ type: 'vouch-credential', credential }, '*');
+verifier = Verifier()
+ok, passport = verifier.check_vouch(token)
 ```
 
-The extension's background script holds the user's key and prompts for
-approval before signing.
+## Browser and mobile
 
-## Mobile (iOS / Android)
-
-The mobile SDK uses platform Secure Enclave / Android Keystore:
-
-```kotlin
-val client = VouchClient(
-    did = "did:web:agent.example.com",
-    keyAlias = "vouch-agent-key",  // Android Keystore alias
-)
-
-val signed = client.signCredential(
-    intent = mapOf(
-        "action" to "capture_photo",
-        "target" to photo.id,
-        "resource" to "evidence://${photo.id}",
-    ),
-)
-```
-
-Keys never leave the secure hardware element. Useful for evidence
-capture, witness apps, courier signatures.
+For human-in-the-loop signing from a web app, use the TypeScript SDK
+(`npm install @vouch-protocol-official/sdk`) so the user's key stays on the
+device and the user approves each signature. The same `Vouch-Token` header
+convention applies once the token reaches your backend.
 
 ## When to integrate Vouch
 
 A pragmatic checklist:
 
-- The action has real-world consequences (money, health, legal, safety)? -> Integrate.
-- The action is irreversible or hard to reverse? -> Integrate.
-- Audit / compliance asks "who authorized this?" -> Integrate.
-- The action is in a regulated sector (healthcare, finance, gov)? -> Integrate.
-- The action is purely informational (search, summarize)? -> Optional, sometimes worth it for the audit-trail value alone.
-- The action is internal and trusted? -> Often skip Vouch, save the latency.
+- The action has real-world consequences (money, health, legal, safety)? Integrate.
+- The action is irreversible or hard to reverse? Integrate.
+- Audit or compliance asks "who authorized this?" Integrate.
+- The action is in a regulated sector (healthcare, finance, government)? Integrate.
+- The action is purely informational (search, summarize)? Optional, sometimes worth it for the audit-trail value alone.
+- The action is internal and trusted? Often skip Vouch and save the latency.
 
-The integration tax is small (single-digit milliseconds for signing,
-~3 ms for hybrid). The audit-trail value is large.
+The integration tax is small (single-digit milliseconds for signing, about
+3 ms for hybrid post-quantum). The audit-trail value is large.
