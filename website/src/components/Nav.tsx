@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import ThemeToggle from './ThemeToggle';
+import OSSwitcher from './OSSwitcher';
 
 const LINKS = [
     { href: '/tools/', label: 'Tools' },
@@ -49,6 +50,7 @@ export default function Nav() {
                     >
                         Index
                     </Link>
+                    <OSSwitcher />
                     <ThemeToggle />
                     <a
                         href="https://github.com/vouch-protocol/vouch"
@@ -103,6 +105,10 @@ export default function Nav() {
                         >
                             GitHub
                         </a>
+                        <div className="pt-3 flex flex-col gap-2">
+                            <span className="font-mono uppercase text-[0.6rem] tracking-[0.14em] text-ink-faint">Commands for</span>
+                            <OSSwitcher />
+                        </div>
                         <div className="pt-2"><ThemeToggle /></div>
                     </div>
                 </div>
