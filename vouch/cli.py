@@ -1244,6 +1244,36 @@ def cmd_trifecta(args) -> int:
     return 1 if result.lethal else 0
 
 
+def cmd_grade(args) -> int:
+    """Grade one agent's trust posture and optionally emit an embeddable badge."""
+    import json as _json
+    from vouch import grade as grading
+
+    report = grading.grade_domain(args.domain, timeout=args.timeout)
+
+    if args.badge:
+        Path(args.badge).write_text(grading.badge_svg(report), encoding="utf-8")
+
+    if args.json:
+        print(_json.dumps(report.to_dict(), indent=2))
+        return 0
+
+    print(f"Agent Trust grade for {report.domain}: {report.grade}  ({report.score}/100)")
+    if report.signals.get("did"):
+        print(f"  identity   : {report.signals['did']}")
+    if report.signals.get("method"):
+        print(f"  key        : {report.signals['method']}")
+    print(f"  post-quantum: {'yes' if report.signals.get('pq_ready') else 'no'}")
+    print(f"  revocation  : {'yes' if report.signals.get('has_revocation') else 'no'}")
+    if report.fixes:
+        print("\nTo raise your grade:")
+        for i, fix in enumerate(report.fixes, 1):
+            print(f"  {i}. {fix}")
+    if args.badge:
+        print(f"\nBadge written to {args.badge}")
+    return 0
+
+
 def cmd_scan(args) -> int:
     """Scan a path for Vouch-shaped private key material.
 
@@ -1402,6 +1432,15 @@ def main() -> int:
     )
     p_trifecta.add_argument("--json", action="store_true", help="Output the result as JSON")
 
+    p_grade = subparsers.add_parser(
+        "grade",
+        help="Grade one agent's trust posture (the Agent Trust Index self-check)",
+    )
+    p_grade.add_argument("domain", help="Domain to grade, e.g. agent.example.com")
+    p_grade.add_argument("--json", action="store_true", help="Output the report as JSON")
+    p_grade.add_argument("--badge", metavar="FILE", help="Write an embeddable SVG badge to FILE")
+    p_grade.add_argument("--timeout", type=int, default=5, help="Network timeout in seconds")
+
     p_onboard = subparsers.add_parser(
         "onboard",
         help="Guided six-step wizard to adopt Vouch (identity, allow-list, verifier, heartbeat)",
@@ -1474,6 +1513,8 @@ def main() -> int:
         from . import attribution_cli
 
         return attribution_cli.dispatch(args, p_attr.print_help)
+    elif args.command == "grade":
+        return cmd_grade(args)
     elif args.command == "onboard":
         from . import onboard as onboard_mod
 
