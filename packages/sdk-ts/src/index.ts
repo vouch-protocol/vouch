@@ -97,6 +97,13 @@ export type {
   HardwareRootOfTrust,
   MintRobotIdentityOptions,
 } from './robotics/identity';
+export {
+  MODEL_PROVENANCE_TYPE,
+  configHash,
+  buildProvenanceAttestation,
+  verifyProvenanceAttestation,
+} from './robotics/provenance';
+export type { BuildProvenanceOptions } from './robotics/provenance';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
