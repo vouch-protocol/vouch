@@ -883,7 +883,7 @@ Run with \`--verbose\` for detailed startup logs.`,
 5. **Revoked at the DID level** - the issuing DID is in the revocation registry.
 6. **Revoked at the credential level** - the credential's \`credentialStatus\` bit is set in the fetched BitstringStatusListCredential.
 
-The verifier returns structured reasons, not just "invalid"; check the error code.`,
+The verifier returns structured reasons with a specific error code for each failure; check the code to see what failed.`,
       },
       {
         q: 'My verifier sees a credential as valid after I revoked it. What is going on?',

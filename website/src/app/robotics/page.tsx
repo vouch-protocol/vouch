@@ -54,7 +54,7 @@ export default function RoboticsPage() {
                 <div className="container-wide py-16 md:py-24">
                     <div className="eyebrow mb-5">Robotics</div>
                     <h1 className="font-serif font-semibold text-ink leading-[1.08] tracking-tight mb-6 max-w-[860px] text-[clamp(2.2rem,4.6vw,3.4rem)]">
-                        Identity and accountability for robots, not just software agents.
+                        Identity and accountability for robots.
                     </h1>
                     <p className="text-ink-soft text-[1.15rem] leading-snug max-w-prose mb-4">
                         As robots and embodied agents act in the physical world, they raise the same
