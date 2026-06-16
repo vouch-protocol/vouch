@@ -1,0 +1,12 @@
+name = "vouch-grader"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# After `wrangler deploy` the worker is live at
+# https://vouch-grader.<your-subdomain>.workers.dev. To serve it on a clean
+# custom domain (recommended, and what the website form expects by default),
+# add a route in the Cloudflare dashboard or uncomment and edit below:
+#
+# routes = [
+#   { pattern = "grade.vouch-protocol.com", custom_domain = true }
+# ]

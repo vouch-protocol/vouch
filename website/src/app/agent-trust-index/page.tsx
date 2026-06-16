@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import CodeBlock from '@/components/CodeBlock';
 import { ATI_SUMMARY, ATI_AGENTS } from './ati-data';
 import AtiLeaderboard from './AtiLeaderboard';
+import GradeChecker from './GradeChecker';
 
 const ACCOUNTABILITY = [
     { h: 'Who authorized it', p: 'A delegation chain shows who gave the agent its authority, on whose behalf, and within what limits, all verifiable.' },
@@ -144,12 +145,16 @@ export default function AgentTrustIndexPage() {
                         Grade your agent before anyone else does
                     </h2>
                     <p className="text-ink-soft leading-relaxed max-w-prose mb-5">
-                        Run the same check the Index runs, on your own agent. You get a letter grade, the
-                        exact reasons, and numbered fixes to raise it. Add the badge to your README or
-                        agent page so a counterparty can see your trust grade at a glance.
+                        Type your agent&apos;s domain to run the same check the Index runs. You get a letter
+                        grade, the exact reasons, and numbered fixes to raise it.
+                    </p>
+                    <GradeChecker />
+                    <p className="text-ink-soft text-[0.9rem] leading-relaxed max-w-prose mt-5 mb-2">
+                        Prefer the command line, or want a badge for your README? Install once and run it
+                        locally:
                     </p>
                     <div className="max-w-md mb-4">
-                        <CodeBlock code={"vouch grade yourdomain.com\nvouch grade yourdomain.com --badge trust-badge.svg"} className="text-[0.85rem]" />
+                        <CodeBlock code={"pip install vouch-protocol\nvouch grade yourdomain.com --badge trust-badge.svg"} className="text-[0.85rem]" />
                     </div>
                     <p className="text-ink-soft text-[0.9rem] leading-relaxed max-w-prose">
                         Claiming and verified listings are coming. If you want your agent listed when
