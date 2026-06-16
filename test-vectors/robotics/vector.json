@@ -1,0 +1,55 @@
+{
+  "description": "Robotics interop vector (Phase 5.1-5.3). Pins the hardware-root binding inside a RobotIdentityCredential and the config hash used by ModelProvenanceAttestation. Both compose the shared JCS + SHA-256 + multibase primitives.",
+  "version": "1.0",
+  "robot_public_key_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+  },
+  "robot_identity_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "RobotIdentityCredential"
+    ],
+    "issuer": "did:web:robot.example.com",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:web:robot.example.com",
+      "make": "Acme Robotics",
+      "model": "AR-7",
+      "serial": "SN-000123",
+      "hardwareRoot": {
+        "kind": "TPM",
+        "publicKeyMultibase": "z6MkvDqGT54cXesYGvABpF1UapVNwjCqRcafi4Px6Thv5T3Z",
+        "attestation": "uCb669zDVKNUssuYMSMauxIWC7DQKCPFBU6K0o_XCEuInfJTDoC_tZuG0Ea4AGkQhk7TwNKMQmA7w4myFbbDLDg"
+      },
+      "lifecycle": [
+        {
+          "event": "manufactured",
+          "timestamp": "2026-01-01T00:00:00Z"
+        }
+      ],
+      "owner": "did:web:owner.example.com"
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-06-14T04:14:58Z",
+      "verificationMethod": "did:web:robot.example.com#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "zwrtDDka5WiQYyVRFX159554tDvSdeZ25qqinVzQ9PkByYfa5r1Q3fmN6bqYtY8hVGQ6RqmLmXQDKS2S8MBTfShg"
+    }
+  },
+  "config": {
+    "temperature": 0.0,
+    "max_torque": 12.5,
+    "guardrails": [
+      "no_humans_zone"
+    ]
+  },
+  "expected_config_hash": "uMh9_H2Lk51-m9SpBhiEa1oqIwwwA7yT27e2QFS0YKUs"
+}

@@ -71,6 +71,22 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-059](./PAD-059-vouch-amnesia-attestation-bridge.md) | Method for Cryptographically Anchoring Deterministic Pre-Push Policy Decisions of an AI Coding Assistant Workspace to W3C Verifiable Credentials with Optional Hybrid Post-Quantum Signatures | 2026-05-14 | Published |
 | [PAD-060](./PAD-060-single-use-audited-override-of-egress-block.md) | Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use | 2026-05-14 | Published |
 | [PAD-061](./PAD-061-per-region-human-ai-code-attribution.md) | Per-Region Authorship Attribution for Mixed Human and AI Source Code via Edit-Channel Capture and Independently-Keyed Signatures | 2026-06-10 | Published |
+| [PAD-064](./PAD-064-hardware-rooted-robot-identity.md) | Hardware-Rooted Verifiable Robot Identity and Lifecycle Credential | 2026-06-14 | Published |
+| [PAD-065](./PAD-065-model-config-provenance-attestation.md) | Re-Signable Model-and-Config Provenance Attestation for Embodied Agents | 2026-06-14 | Published |
+| [PAD-066](./PAD-066-physical-capability-scope-attenuation.md) | Physical Capability Scope as Cryptographically Enforceable Attenuation | 2026-06-14 | Published |
+| [PAD-067](./PAD-067-robot-to-robot-bounded-trust-handshake.md) | Robot-to-Robot Bounded-Trust Handshake Across Trust Domains | 2026-06-14 | Published |
+| [PAD-068](./PAD-068-kill-switch-credential.md) | Verifiable Kill-Switch Credential with Attested-Authority Enforcement | 2026-06-14 | Published |
+| [PAD-069](./PAD-069-confidential-tamper-evident-robot-blackbox.md) | Confidential, Tamper-Evident Robot Black-Box with Separable Confidentiality and Integrity | 2026-06-15 | Published |
+| [PAD-070](./PAD-070-scannable-offline-robot-passport.md) | Self-Contained, Offline-Verifiable Robot Passport for Physical-World Scanning | 2026-06-15 | Published |
+
+
+## June 15, 2026: Robotics and Embodied-Agent Primitives (PAD-064 through PAD-070)
+
+Seven disclosures covering the open robotics primitives in the `vouch.robotics`
+package: hardware-rooted identity, model and config provenance, physical capability
+scope, robot-to-robot handshake, kill-switch credential, confidential black box, and
+the scannable offline passport. Each is built on the same eddsa-jcs-2022 credentials
+as the rest of Vouch and verifies with every language SDK.
 
 
 ## June 10, 2026: Per-Region Human and AI Code Attribution (PAD-061)
