@@ -27,10 +27,16 @@ pip install vouch-protocol
 vouch init --env
 ```
 
-**Output:**
+**Output (macOS / Linux):**
 ```bash
 export VOUCH_DID='did:vouch:abc123...'
 export VOUCH_PRIVATE_KEY='{"kty":"OKP","crv":"Ed25519",...}'
+```
+
+**Output (Windows / PowerShell):**
+```powershell
+$env:VOUCH_DID = "did:vouch:abc123..."
+$env:VOUCH_PRIVATE_KEY = '{"kty":"OKP","crv":"Ed25519",...}'
 ```
 
 > 💡 Copy these values - you'll paste them in the next step!
@@ -90,11 +96,22 @@ Your keys aren't being passed to the server. Check:
 
 ### Test the server manually
 
+**macOS / Linux**
+
 ```bash
 export VOUCH_DID='did:vouch:test'
 export VOUCH_PRIVATE_KEY='{"kty":"OKP","crv":"Ed25519","x":"...","d":"..."}'
 
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | vouch-mcp
+```
+
+**Windows (PowerShell)**
+
+```powershell
+$env:VOUCH_DID = "did:vouch:test"
+$env:VOUCH_PRIVATE_KEY = '{"kty":"OKP","crv":"Ed25519","x":"...","d":"..."}'
+
+'{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | vouch-mcp
 ```
 
 ---

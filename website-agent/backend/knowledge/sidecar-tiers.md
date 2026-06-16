@@ -64,8 +64,16 @@ rejects the same inputs and emits semantically equivalent credentials.
 The HTTP API is identical. An agent that talks to the Python sidecar
 can talk to the Go sidecar with one env-var change:
 
+**macOS / Linux**
+
 ```bash
 export VOUCH_SIDECAR_URL=http://localhost:8877
+```
+
+**Windows (PowerShell)**
+
+```powershell
+$env:VOUCH_SIDECAR_URL = "http://localhost:8877"
 ```
 
 The agent code does not change. The DID changes (production agents

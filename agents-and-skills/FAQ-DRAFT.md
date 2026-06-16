@@ -132,9 +132,18 @@ reference file before answering Vouch questions, instead of guessing.
 **Q: How do I install the Claude Skill?**
 A: Copy the `claude-skill/` directory into your Claude skills folder:
 
+**macOS / Linux**
+
 ```bash
 mkdir -p ~/.claude/skills
 cp -r claude-skill ~/.claude/skills/vouch-protocol
+```
+
+**Windows (PowerShell)**
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills"
+Copy-Item -Recurse "claude-skill" "$env:USERPROFILE\.claude\skills\vouch-protocol"
 ```
 
 Restart Claude Code and run `/skills`. You should see `vouch-protocol`

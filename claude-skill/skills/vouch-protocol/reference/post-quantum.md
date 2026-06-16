@@ -141,8 +141,16 @@ const signed = await signer.signCredentialHybrid({
 
 Hybrid signing is built into the sidecar:
 
+**macOS / Linux**
+
 ```bash
 ./vouch-sidecar --did did:web:agent.example.com --hybrid --port 8877
+```
+
+**Windows (PowerShell)**
+
+```powershell
+.\vouch-sidecar.exe --did did:web:agent.example.com --hybrid --port 8877
 ```
 
 All `/sign` requests now produce hybrid credentials.

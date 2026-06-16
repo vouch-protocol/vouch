@@ -299,6 +299,8 @@ if __name__ == "__main__":
 
 ### Step 4: Test It
 
+**macOS / Linux**
+
 ```bash
 # Set your identity (from vouch init --env)
 export VOUCH_DID='did:vouch:abc123'
@@ -306,6 +308,17 @@ export VOUCH_PRIVATE_KEY='{"kty":"OKP","crv":"Ed25519",...}'
 
 # Test sending a signed email
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"send_email","arguments":{"to":"alice@example.com","subject":"Hello","body":"Test"}}}' | python my_vouch_mcp_server.py
+```
+
+**Windows (PowerShell)**
+
+```powershell
+# Set your identity (from vouch init --env)
+$env:VOUCH_DID = "did:vouch:abc123"
+$env:VOUCH_PRIVATE_KEY = '{"kty":"OKP","crv":"Ed25519",...}'
+
+# Test sending a signed email
+'{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"send_email","arguments":{"to":"alice@example.com","subject":"Hello","body":"Test"}}}' | python my_vouch_mcp_server.py
 ```
 
 **Output:**

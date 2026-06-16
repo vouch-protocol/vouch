@@ -9,9 +9,18 @@ assumes you are inside `~/vouch-protocol/` on Linux/WSL/macOS.
 
 ### Install locally
 
+**macOS / Linux**
+
 ```bash
 mkdir -p ~/.claude/skills
 cp -r claude-skill ~/.claude/skills/vouch-protocol
+```
+
+**Windows (PowerShell)**
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills"
+Copy-Item -Recurse "claude-skill" "$env:USERPROFILE\.claude\skills\vouch-protocol"
 ```
 
 ### Verify Claude Code picks it up
@@ -88,6 +97,8 @@ vouch-bridge --did did:web:agent.vouch-protocol.org --port 8877
 
 **Terminal 2: Agent backend**
 
+**macOS / Linux**
+
 ```bash
 cd website-agent/backend
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -95,7 +106,18 @@ export VOUCH_SIDECAR_URL=http://localhost:8877
 uvicorn vouch_agent.main:app --reload --port 8000
 ```
 
+**Windows (PowerShell)**
+
+```powershell
+cd website-agent/backend
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+$env:VOUCH_SIDECAR_URL = "http://localhost:8877"
+uvicorn vouch_agent.main:app --reload --port 8000
+```
+
 **Terminal 3: Smoke checks**
+
+**macOS / Linux**
 
 ```bash
 # Health check
@@ -133,12 +155,55 @@ curl -s http://localhost:8000/audit | jq
 # Expect: at least one entry from the previous sign request
 ```
 
+**Windows (PowerShell)**
+
+```powershell
+# Health check
+Invoke-RestMethod "http://localhost:8000/healthz"
+# Expect: ok=True, sidecar_ok=True, knowledge_chunks > 0
+
+# Chat (no signing)
+$chatBody = @{ message = "What is the Vouch protocol?" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/chat" -ContentType "application/json" -Body $chatBody
+# Expect: SSE stream with event: meta, event: token... , event: done
+
+# Sign an allow-listed intent
+$signBody = @{
+    intent = @{
+        action   = "answer_question"
+        target   = "session:abc"
+        resource = "https://vouch-protocol.org/help"
+    }
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/sign" -ContentType "application/json" -Body $signBody
+# Expect: a credential object plus an audit object
+
+# Reject a disallowed action
+$rejectBody = @{
+    intent = @{ action = "exfiltrate_keys"; target = "x"; resource = "x" }
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/sign" -ContentType "application/json" -Body $rejectBody
+# Expect: HTTP 400 with detail "action 'exfiltrate_keys' not in allow-list"
+
+# Audit log
+Invoke-RestMethod "http://localhost:8000/audit"
+# Expect: at least one entry from the previous sign request
+```
+
 ### Frontend widget test
 
 In the existing Next.js website:
 
+**macOS / Linux**
+
 ```bash
 cp -r website-agent/frontend/components website/components/vouch-chat
+```
+
+**Windows (PowerShell)**
+
+```powershell
+Copy-Item -Recurse "website-agent\frontend\components" "website\components\vouch-chat"
 ```
 
 Add a temporary test page:

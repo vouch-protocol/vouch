@@ -9,6 +9,8 @@ type Props = {
     language?: string;
     /** Override Tailwind classes on the <pre>. */
     className?: string;
+    /** Drop the default vertical margin (used when a parent owns the spacing, e.g. OSCodeBlock tabs). */
+    bare?: boolean;
 };
 
 /**
@@ -17,7 +19,7 @@ type Props = {
  * numbers cannot pollute the clipboard. Icon flips to a checkmark for
  * ~1.6 seconds after a successful copy.
  */
-export default function CodeBlock({ code, language, className = '' }: Props) {
+export default function CodeBlock({ code, language, className = '', bare = false }: Props) {
     const [copied, setCopied] = useState(false);
 
     async function copy() {
@@ -31,7 +33,7 @@ export default function CodeBlock({ code, language, className = '' }: Props) {
     }
 
     return (
-        <div className="relative group my-4">
+        <div className={`relative group ${bare ? '' : 'my-4'}`}>
             {language && (
                 <div className="absolute top-2 left-3 flex items-center gap-2 pointer-events-none">
                     <span className="font-mono uppercase text-[0.62rem] tracking-[0.18em] text-parchment/50">

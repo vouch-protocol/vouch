@@ -122,9 +122,18 @@ See `reference/post-quantum.md` for the migration narrative.
 Use the Identity Sidecar pattern: a separate process holds the key, the
 LLM never sees it.
 
+**macOS / Linux**
+
 ```bash
 cd go-sidecar && go build ./cmd/vouch-sidecar
 ./vouch-sidecar --did did:web:agent.example.com --port 8877
+```
+
+**Windows (PowerShell)**
+
+```powershell
+cd go-sidecar; go build ./cmd/vouch-sidecar
+.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877
 ```
 
 The agent's code calls `POST http://localhost:8877/sign` with the

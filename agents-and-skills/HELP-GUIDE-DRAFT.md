@@ -74,8 +74,16 @@ three on every commit.
 The HTTP API is identical, so an agent that talks to the Python sidecar
 can talk to the Go sidecar with one env-var change:
 
+**macOS / Linux**
+
 ```bash
 export VOUCH_SIDECAR_URL=http://localhost:8877  # same on all three
+```
+
+**Windows (PowerShell)**
+
+```powershell
+$env:VOUCH_SIDECAR_URL = "http://localhost:8877"  # same on all three
 ```
 
 The agent code does not change. The DID changes (production agents use
@@ -157,8 +165,17 @@ on your team's terminology.
 
 ### Updating
 
+**macOS / Linux**
+
 ```bash
 cd ~/.claude/skills/vouch-protocol
+git pull
+```
+
+**Windows (PowerShell)**
+
+```powershell
+cd $env:USERPROFILE\.claude\skills\vouch-protocol
 git pull
 ```
 
@@ -209,24 +226,56 @@ page and on the homepage. On the mobile app, it's the Help tab.
 
 ### Self-host the agent locally
 
-Three processes, three terminals:
+Three processes, three terminals.
+
+**Terminal 1: dev sidecar (ephemeral key, dev only)**
+
+macOS / Linux
 
 ```bash
-# Terminal 1: dev sidecar (ephemeral key — dev only)
 cd ~/vouch-protocol/website-agent/backend
 python -m vouch_agent.dev_sidecar --did did:web:agent.example.com --port 8877
 ```
 
+Windows (PowerShell)
+
+```powershell
+cd $env:USERPROFILE\vouch-protocol\website-agent\backend
+python -m vouch_agent.dev_sidecar --did did:web:agent.example.com --port 8877
+```
+
+**Terminal 2: agent backend**
+
+macOS / Linux
+
 ```bash
-# Terminal 2: agent backend
 cd ~/vouch-protocol/website-agent/backend
 cp ../.env.example ../.env   # then edit ../.env to add your LLM key
 uvicorn vouch_agent.main:app --host 127.0.0.1 --port 8000
 ```
 
+Windows (PowerShell)
+
+```powershell
+cd $env:USERPROFILE\vouch-protocol\website-agent\backend
+Copy-Item ..\.env.example ..\.env   # then edit ..\.env to add your LLM key
+uvicorn vouch_agent.main:app --host 127.0.0.1 --port 8000
+```
+
+**Terminal 3: chat widget (standalone harness)**
+
+macOS / Linux
+
 ```bash
-# Terminal 3: chat widget (standalone harness)
 cd ~/vouch-protocol/website-agent/standalone
+npm install
+npm run dev   # http://localhost:3200
+```
+
+Windows (PowerShell)
+
+```powershell
+cd $env:USERPROFILE\vouch-protocol\website-agent\standalone
 npm install
 npm run dev   # http://localhost:3200
 ```
@@ -244,6 +293,8 @@ reverse proxy with TLS.
 
 The agent backend supports three:
 
+**macOS / Linux**
+
 ```bash
 # Anthropic (default)
 export VOUCH_LLM_PROVIDER=anthropic
@@ -256,6 +307,22 @@ export OPENAI_API_KEY=sk-...
 # Google Gemini
 export VOUCH_LLM_PROVIDER=gemini
 export GEMINI_API_KEY=...
+```
+
+**Windows (PowerShell)**
+
+```powershell
+# Anthropic (default)
+$env:VOUCH_LLM_PROVIDER = "anthropic"
+$env:ANTHROPIC_API_KEY = "sk-ant-..."
+
+# OpenAI
+$env:VOUCH_LLM_PROVIDER = "openai"
+$env:OPENAI_API_KEY = "sk-..."
+
+# Google Gemini
+$env:VOUCH_LLM_PROVIDER = "gemini"
+$env:GEMINI_API_KEY = "..."
 ```
 
 Or set them in `website-agent/.env` (auto-loaded on backend start).

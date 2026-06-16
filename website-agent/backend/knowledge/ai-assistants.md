@@ -22,9 +22,18 @@ Claude reads the matching file before answering Vouch questions.
 
 ### Install
 
+**macOS / Linux**
+
 ```bash
 mkdir -p ~/.claude/skills
 cp -r ~/vouch-protocol/claude-skill ~/.claude/skills/vouch-protocol
+```
+
+**Windows (PowerShell)**
+
+```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills"
+Copy-Item -Recurse "$env:USERPROFILE\vouch-protocol\claude-skill" "$env:USERPROFILE\.claude\skills\vouch-protocol"
 ```
 
 Restart Claude Code and run `/skills` to confirm. You should see
@@ -47,8 +56,17 @@ Eleven reference files: `python-sdk.md`, `typescript-sdk.md`,
 
 ### Updating
 
+**macOS / Linux**
+
 ```bash
 cd ~/.claude/skills/vouch-protocol
+git pull
+```
+
+**Windows (PowerShell)**
+
+```powershell
+cd $env:USERPROFILE\.claude\skills\vouch-protocol
 git pull
 ```
 
