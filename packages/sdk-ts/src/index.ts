@@ -116,6 +116,23 @@ export type {
   ShiftWindow,
   BuildPhysicalScopeOptions,
 } from './robotics/capability';
+export {
+  HELLO,
+  ACCEPT,
+  CONFIRM,
+  HandshakeError,
+  TrustPolicy,
+  buildHello,
+  buildAccept,
+  verifyAccept,
+  buildConfirm,
+  verifyConfirm,
+} from './robotics/handshake';
+export type {
+  BoundedSession,
+  BuildHelloOptions,
+  BuildAcceptOptions,
+} from './robotics/handshake';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
