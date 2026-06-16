@@ -146,6 +146,19 @@ export {
   verifyKillswitchCredential,
 } from './robotics/blackbox';
 export type { BuildKillswitchOptions } from './robotics/blackbox';
+export {
+  ROBOT_PASSPORT_TYPE,
+  PASSPORT_URI_SCHEME,
+  STATUS_ACTIVE,
+  STATUS_SUSPENDED,
+  STATUS_DECOMMISSIONED,
+  PassportError,
+  buildPassport,
+  encodePassport,
+  decodePassport,
+  verifyPassport,
+} from './robotics/passport';
+export type { BuildPassportOptions, PassportSummary } from './robotics/passport';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
