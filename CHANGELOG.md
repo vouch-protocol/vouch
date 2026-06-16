@@ -5,6 +5,18 @@ All notable changes to Vouch Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-06-15
+
+### Added
+
+#### Claude Code integration for per-region attribution (PAD-061)
+
+The editor wiring and demo for `vouch attribute`: a PostToolUse hook
+(`vouch/integrations/claude-code/`) that records the assistant's Edit, Write,
+and MultiEdit operations automatically, plus the `who_wrote_this` runnable
+example. The attribution engine itself shipped earlier; this release adds the
+Claude Code integration and the example on top of it.
+
 ## [Unreleased]
 
 ### Added
