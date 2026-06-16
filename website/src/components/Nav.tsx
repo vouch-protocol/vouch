@@ -7,6 +7,7 @@ import ThemeToggle from './ThemeToggle';
 
 const LINKS = [
     { href: '/tools/', label: 'Tools' },
+    { href: '/robotics/', label: 'Robotics' },
     { href: '/onboard/', label: 'Onboard' },
     { href: '/blog/', label: 'Blog' },
     { href: '/help/', label: 'Guides' },

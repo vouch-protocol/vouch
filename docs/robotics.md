@@ -1,0 +1,125 @@
+# Vouch Robotics Primitives
+
+Open, vendor-neutral formats and reference implementations for accountable robots
+and embodied agents. All are eddsa-jcs-2022 credentials or hash-linked formats
+built on the existing Vouch primitives, so they verify with the cross-language
+SDKs. These are formats plus references; hosted storage and fleet-scale services
+are out of scope.
+
+## 5.1 Hardware-rooted robot identity (`vouch.robotics.identity`)
+
+A `RobotIdentityCredential` binds a robot's software identity key to a hardware
+root of trust (a TPM or a secure element). The hardware root signs a binding over
+the robot DID and key, embedded as `hardwareRoot.attestation`; a verifier checks
+both the credential proof and the hardware attestation.
+
+```python
+from vouch.robotics import SoftwareRootOfTrust, mint_robot_identity, verify_robot_identity
+
+root = SoftwareRootOfTrust(kind="TPM")          # reference; a TPM/secure-element backend subclasses HardwareRootOfTrust
+cred = mint_robot_identity(robot_signer, root, make="Acme", model="AR-7", serial="SN-123")
+ok, subject = verify_robot_identity(cred, robot_public_key)
+```
+
+`HardwareRootOfTrust` is the interface a TPM- or secure-element-backed
+implementation satisfies (it signs with a hardware-resident attestation key).
+`SoftwareRootOfTrust` is the development reference and is NOT a hardware root.
+`lifecycle` records the make/commission/transfer/decommission history.
+
+## 5.2 Model and config provenance (`vouch.robotics.provenance`)
+
+A `ModelProvenanceAttestation` records the VLA model name, weights hash, safety
+policy, and config hash running on a robot. It is re-signable on an OTA update,
+referencing the attestation it `supersedes`, forming a tamper-evident chain.
+
+```python
+from vouch.robotics import build_provenance_attestation, verify_provenance_attestation
+
+att = build_provenance_attestation(builder_signer, robot_did=robot,
+        model_name="OpenVLA-7B", weights_hash="u...", safety_policy="u...",
+        config=runtime_config, version="2.1.0", supersedes=prev_id)
+ok, subject = verify_provenance_attestation(att, builder_public_key, config=runtime_config)
+```
+
+`configHash` is the multibase SHA-256 of the JCS-canonical config, reproducible
+in any language.
+
+## 5.3 Physical capability scope (`vouch.robotics.capability`)
+
+Extends the capability/attenuation model to the physical world: max force, max
+speed, a slower speed cap near humans, allowed zones, and shift windows, carried
+in a `PhysicalCapabilityScope` credential and enforceable before actuation.
+
+```python
+from vouch.robotics import build_physical_scope_credential, check_physical_action, PhysicalAction, attenuates
+
+cred = build_physical_scope_credential(operator_signer, subject_did=robot,
+        max_force_n=100, max_speed_mps=2.0, max_speed_near_humans_mps=0.5,
+        allowed_zones=["zone-A"], shift_windows=[{"start": "08:00", "end": "18:00"}])
+scope = cred["credentialSubject"]["physicalScope"]
+decision = check_physical_action(scope, PhysicalAction(force_n=50, speed_mps=1.5,
+        near_humans=True, zone="zone-A", time_hm="10:00"))
+# A delegated scope must attenuate (never broaden):
+assert attenuates(parent_scope, child_scope)
+```
+
+## 5.4 Robot-to-robot trust handshake (`vouch.robotics.handshake`)
+
+Two robots in different trust domains authenticate and establish a bounded-trust
+session before cooperating, via three signed messages (HELLO, ACCEPT, CONFIRM).
+The responder checks the initiator's domain against its `TrustPolicy` and
+intersects the proposed scope with what it offers, so the session scope is never
+broader than what either side grants.
+
+```python
+from vouch.robotics import build_hello, build_accept, verify_accept, build_confirm, verify_confirm, TrustPolicy
+
+hello = build_hello(robot_a_signer, proposed_scope=["lift", "carry"])
+accept = build_accept(robot_b_signer, hello=hello, hello_public_key=a_pub,
+                      policy=TrustPolicy(trusted_domains={"robot-a.example.com"}),
+                      offered_scope=["carry", "weld"])
+ok, session = verify_accept(accept, b_pub, expected_nonce=hello["nonce"])   # session.scope == ["carry"]
+confirm = build_confirm(robot_a_signer, session=session)
+verify_confirm(confirm, a_pub, session_id=session.session_id, expected_nonce=session.nonce)
+```
+
+## 5.5 Black box and kill switch (`vouch.robotics.blackbox`)
+
+The black box is an append-only, AES-256-GCM-encrypted, hash-linked flight
+recorder: payloads are confidential, the chain is tamper-evident without the key,
+and the head can be signed to anchor the log. The kill-switch credential is a
+verifiable emergency-stop record; with an authority allowlist, only an attested
+authority can trigger it.
+
+```python
+from vouch.robotics import BlackBoxLog, open_entry, verify_blackbox_chain
+from vouch.robotics import build_killswitch_credential, verify_killswitch_credential
+
+log = BlackBoxLog(key=os.urandom(32))
+log.append("FAULT", {"code": "E12"})
+ok, _ = verify_blackbox_chain(log.entries())        # verifiable without the key
+payload = open_entry(log.entries()[0], key)          # only the key opens the payload
+
+stop = build_killswitch_credential(authority_signer, target=robot_did, reason="human in path")
+ok, subject = verify_killswitch_credential(stop, authority_pub, trusted_authorities={authority_did})
+```
+
+## 5.6 Scannable robot passport (`vouch.robotics.passport`)
+
+A compact, signed passport that anyone can scan (QR or NFC) to check a robot's
+owner, authorized actions, certification, and standing, offline. The QR/NFC
+payload is a `vouch-passport:` URI carrying the multibase JCS bytes of the
+credential, so the reader verifies the signature without a network call.
+
+```python
+from vouch.robotics import build_passport, encode_passport, verify_passport
+
+passport = build_passport(robot_signer, robot_did=robot, make="Acme", model="AR-7",
+                          owner=owner_did, authorized_actions=["carry", "scan"],
+                          certification="CE-2026-001", status="active")
+uri = encode_passport(passport)                      # put this in a QR or NFC tag
+ok, summary = verify_passport(uri, robot_public_key) # offline check of owner/actions/standing
+```
+
+Interop vector: `test-vectors/robotics/vector.json` pins the hardware-root binding
+and the config hash. See `examples/robotics_demo.py`.
