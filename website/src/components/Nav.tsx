@@ -2,17 +2,103 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ThemeToggle from './ThemeToggle';
 import OSSwitcher from './OSSwitcher';
 
+// Primary pillars, always visible.
 const LINKS = [
-    { href: '/tools/', label: 'Tools' },
     { href: '/robotics/', label: 'Robotics' },
     { href: '/onboard/', label: 'Onboard' },
-    { href: '/blog/', label: 'Blog' },
+    { href: '/tools/', label: 'Tools' },
     { href: '/support/', label: 'Support' },
 ];
+
+// Secondary destinations, folded into a "More" dropdown so the nav centre stays lean.
+const MORE = [
+    { href: '/blog/', label: 'Blog' },
+    { href: '/agent-trust-index/', label: 'Index' },
+];
+
+const navLinkClass = (active: boolean) =>
+    `font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b pb-0.5 transition-colors ${
+        active ? 'text-burgundy border-burgundy' : 'border-transparent text-ink-soft hover:text-burgundy hover:border-burgundy'
+    }`;
+
+function isActive(pathname: string | null, href: string) {
+    return pathname === href || (href !== '/' && (pathname?.startsWith(href) ?? false));
+}
+
+/** "More" dropdown for the secondary links, styled to match the OS switcher. */
+function MoreMenu() {
+    const pathname = usePathname();
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const active = MORE.some((link) => isActive(pathname, link.href));
+
+    useEffect(() => {
+        function onDocClick(e: MouseEvent) {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        }
+        function onKey(e: KeyboardEvent) {
+            if (e.key === 'Escape') setOpen(false);
+        }
+        document.addEventListener('mousedown', onDocClick);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('mousedown', onDocClick);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, []);
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className={`${navLinkClass(active)} inline-flex items-center gap-1`}
+            >
+                More
+                <svg
+                    width="9"
+                    height="9"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className={`transition-transform ${open ? 'rotate-180' : ''}`}
+                >
+                    <path d="m6 9 6 6 6-6" />
+                </svg>
+            </button>
+
+            {open && (
+                <div role="menu" className="absolute right-0 mt-2 min-w-[140px] bg-parchment border border-rule shadow-md z-50">
+                    {MORE.map((link) => (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            role="menuitem"
+                            onClick={() => setOpen(false)}
+                            className={`block w-full text-left font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline whitespace-nowrap px-3 py-2 transition-colors ${
+                                isActive(pathname, link.href)
+                                    ? 'text-burgundy bg-parchment-warm'
+                                    : 'text-ink-soft hover:text-burgundy hover:bg-parchment-warm'
+                            }`}
+                        >
+                            {link.label}
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function Nav() {
     const pathname = usePathname();
@@ -27,28 +113,12 @@ export default function Nav() {
                 </Link>
 
                 <div className="hidden md:flex items-center gap-7">
-                    {LINKS.map((link) => {
-                        const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
-                        return (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b border-transparent pb-0.5 transition-colors ${
-                                    isActive ? 'text-burgundy border-burgundy' : 'text-ink-soft hover:text-burgundy hover:border-burgundy'
-                                }`}
-                            >
-                                {link.label}
-                            </Link>
-                        );
-                    })}
-                    <Link
-                        href="/agent-trust-index/"
-                        className={`font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b pb-0.5 transition-colors ${
-                            pathname?.startsWith('/agent-trust-index') ? 'text-burgundy border-burgundy' : 'border-transparent text-ink-soft hover:text-burgundy hover:border-burgundy'
-                        }`}
-                    >
-                        Index
-                    </Link>
+                    {LINKS.map((link) => (
+                        <Link key={link.href} href={link.href} className={navLinkClass(isActive(pathname, link.href))}>
+                            {link.label}
+                        </Link>
+                    ))}
+                    <MoreMenu />
                     <OSSwitcher />
                     <ThemeToggle />
                     <a
@@ -79,7 +149,7 @@ export default function Nav() {
             {open && (
                 <div className="md:hidden border-t border-rule bg-parchment">
                     <div className="container-wide py-4 flex flex-col gap-3">
-                        {LINKS.map((link) => (
+                        {[...LINKS, ...MORE].map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
@@ -89,13 +159,6 @@ export default function Nav() {
                                 {link.label}
                             </Link>
                         ))}
-                        <Link
-                            href="/agent-trust-index/"
-                            onClick={() => setOpen(false)}
-                            className="font-mono uppercase text-[0.7rem] tracking-[0.14em] text-ink-soft hover:text-burgundy no-underline py-1"
-                        >
-                            Index
-                        </Link>
                         <a
                             href="https://github.com/vouch-protocol/vouch"
                             target="_blank"
