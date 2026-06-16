@@ -104,6 +104,18 @@ export {
   verifyProvenanceAttestation,
 } from './robotics/provenance';
 export type { BuildProvenanceOptions } from './robotics/provenance';
+export {
+  PHYSICAL_SCOPE_TYPE,
+  buildPhysicalScopeCredential,
+  checkPhysicalAction,
+  attenuates,
+} from './robotics/capability';
+export type {
+  PhysicalAction,
+  CheckResult,
+  ShiftWindow,
+  BuildPhysicalScopeOptions,
+} from './robotics/capability';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
