@@ -10,8 +10,7 @@ const LINKS = [
     { href: '/robotics/', label: 'Robotics' },
     { href: '/onboard/', label: 'Onboard' },
     { href: '/blog/', label: 'Blog' },
-    { href: '/help/', label: 'Guides' },
-    { href: '/faq/', label: 'FAQ' },
+    { href: '/support/', label: 'Support' },
 ];
 
 export default function Nav() {
