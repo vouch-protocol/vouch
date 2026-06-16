@@ -138,6 +138,36 @@ export default function AgentTrustIndexPage() {
                     <AtiLeaderboard agents={ATI_AGENTS} />
                 </div>
 
+                <div className="border border-burgundy bg-parchment-warm p-8 md:p-10 max-w-3xl mb-16">
+                    <p className="eyebrow text-burgundy mb-2">Check your own agent</p>
+                    <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-3">
+                        Grade your agent before anyone else does
+                    </h2>
+                    <p className="text-ink-soft leading-relaxed max-w-prose mb-5">
+                        Run the same check the Index runs, on your own agent. You get a letter grade, the
+                        exact reasons, and numbered fixes to raise it. Add the badge to your README or
+                        agent page so a counterparty can see your trust grade at a glance.
+                    </p>
+                    <div className="max-w-md mb-4">
+                        <CodeBlock code={"vouch grade yourdomain.com\nvouch grade yourdomain.com --badge trust-badge.svg"} className="text-[0.85rem]" />
+                    </div>
+                    <p className="text-ink-soft text-[0.9rem] leading-relaxed max-w-prose">
+                        Claiming and verified listings are coming. If you want your agent listed when
+                        they open, say so in the discussion and we will follow up.
+                    </p>
+                    <div className="flex flex-wrap gap-3 mt-5">
+                        <Link href="/onboard/" className="btn-primary">Raise your grade</Link>
+                        <a
+                            href="https://github.com/vouch-protocol/vouch/discussions"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-secondary"
+                        >
+                            Register interest
+                        </a>
+                    </div>
+                </div>
+
                 <div className="border border-rule bg-parchment-warm p-8 max-w-prose">
                     <p className="eyebrow text-burgundy mb-2">How the score works</p>
                     <h2 className="font-serif font-semibold text-[1.4rem] tracking-tight mb-3">Open methodology</h2>
