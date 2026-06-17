@@ -105,7 +105,7 @@
 
 @layer components {
   .container-wide {
-    @apply max-w-[1100px] mx-auto px-6 md:px-10;
+    @apply max-w-[1400px] mx-auto px-6 md:px-14;
   }
 
   .container-prose {
