@@ -21,6 +21,30 @@ Claude Code integration and the example on top of it.
 
 ### Added
 
+#### Robotics primitives across every language SDK (PAD-064 through PAD-070)
+
+Six capabilities for robots and embodied agents, implemented once in the Rust
+core (`core/vouch-core`, module `robotics`) and exposed through the UniFFI and
+WebAssembly wrappers (Swift, Kotlin/JVM, .NET, C/C++, and the browser), plus
+byte-identical reference implementations in Python (`vouch.robotics`), TypeScript
+(`packages/sdk-ts/src/robotics`), and Go (`go-sidecar/robotics`):
+
+- **Hardware-rooted identity**: a `RobotIdentityCredential` binding the robot key
+  to a TPM or secure element, so the identity cannot be cloned to other hardware.
+- **Model and config provenance**: a re-signable attestation of the model, weights
+  hash, safety policy, and config hash, surviving over-the-air updates.
+- **Physical capability scope**: force, speed, near-humans, zone, and shift-window
+  limits, checked before each actuation, with narrow-only delegation.
+- **Robot-to-robot handshake**: a three-message bounded-trust session gated by a
+  `did:web` domain trust policy.
+- **Black box and kill switch**: an AES-256-GCM encrypted, hash-linked, tamper-evident
+  log, plus a verifiable emergency stop constrained to an attested authority.
+- **Scannable passport**: a `vouch-passport:` URI for offline QR or NFC verification.
+
+A shared interop vector (`test-vectors/robotics/vector.json`) pins the hardware-root
+binding and the config hash, so a robotics credential signed in any language
+verifies in every other.
+
 #### State Verifiability runtime (Specification §11, §15)
 
 First-class implementation of the State Verifiability layer the spec
