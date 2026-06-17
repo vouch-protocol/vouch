@@ -1012,6 +1012,119 @@ pub fn verify_killswitch_credential(
     Ok(credential.get("credentialSubject").cloned())
 }
 
+// ---------------------------------------------------------------------------
+// Scannable robot passport (Phase 5.6)
+// ---------------------------------------------------------------------------
+
+pub const ROBOT_PASSPORT_TYPE: &str = "RobotPassport";
+pub const PASSPORT_URI_SCHEME: &str = "vouch-passport:";
+pub const STATUS_ACTIVE: &str = "active";
+pub const STATUS_SUSPENDED: &str = "suspended";
+pub const STATUS_DECOMMISSIONED: &str = "decommissioned";
+
+/// Parameters for [`build_passport`]. The issuer is the signer (the robot or an
+/// authority); `robot_did` is the robot the passport describes.
+#[derive(Debug, Clone, Default)]
+pub struct BuildPassport {
+    pub issuer_did: String,
+    pub robot_did: String,
+    pub make: String,
+    pub model: String,
+    pub owner: String,
+    pub authorized_actions: Vec<String>,
+    pub certification: Option<String>,
+    pub status: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `RobotPassport` credential.
+pub fn build_passport(signer_seed: &[u8], params: &BuildPassport) -> Result<Value> {
+    let status = params
+        .status
+        .clone()
+        .unwrap_or_else(|| STATUS_ACTIVE.to_string());
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("make".into(), json!(params.make));
+    subject.insert("model".into(), json!(params.model));
+    subject.insert("owner".into(), json!(params.owner));
+    subject.insert("authorizedActions".into(), json!(params.authorized_actions));
+    subject.insert("status".into(), json!(status));
+    if let Some(c) = &params.certification {
+        subject.insert("certification".into(), json!(c));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", ROBOT_PASSPORT_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.issuer_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+/// Encode a passport into a compact `vouch-passport:` URI for a QR or NFC tag.
+pub fn encode_passport(passport: &Value) -> String {
+    format!(
+        "{}{}",
+        PASSPORT_URI_SCHEME,
+        mb64(&jcs::canonicalize(passport))
+    )
+}
+
+/// Decode a `vouch-passport:` URI back into the passport credential.
+pub fn decode_passport(uri: &str) -> Result<Value> {
+    let body = uri
+        .strip_prefix(PASSPORT_URI_SCHEME)
+        .ok_or_else(|| CoreError::Json(format!("not a {PASSPORT_URI_SCHEME} URI")))?;
+    let raw = unmb64(body)?;
+    serde_json::from_slice(&raw).map_err(|e| CoreError::Json(format!("passport decode: {e}")))
+}
+
+/// Verify a passport credential. A suspended or decommissioned status still
+/// verifies but is surfaced in the subject so a scanner can refuse; an expired
+/// passport fails. `now_iso` is the verifier's clock. Returns the subject.
+pub fn verify_passport(
+    passport: &Value,
+    public_key: &[u8],
+    now_iso: &str,
+) -> Result<Option<Value>> {
+    if !has_type(passport.get("type"), ROBOT_PASSPORT_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(passport, public_key)? {
+        return Ok(None);
+    }
+    if let Some(vu) = passport.get("validUntil").and_then(|v| v.as_str()) {
+        if let (Ok(vu_e), Ok(now_e)) = (
+            crate::time::iso_to_epoch_seconds(vu),
+            crate::time::iso_to_epoch_seconds(now_iso),
+        ) {
+            if now_e > vu_e {
+                return Ok(None);
+            }
+        }
+    }
+    Ok(passport.get("credentialSubject").cloned())
+}
+
+/// Decode a `vouch-passport:` URI and verify it. Returns `None` on a malformed URI.
+pub fn verify_passport_uri(uri: &str, public_key: &[u8], now_iso: &str) -> Result<Option<Value>> {
+    match decode_passport(uri) {
+        Ok(p) => verify_passport(&p, public_key, now_iso),
+        Err(_) => Ok(None),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1488,5 +1601,119 @@ mod tests {
         assert!(verify_killswitch_credential(&wrong, &kp.public_key(), None)
             .unwrap()
             .is_none());
+    }
+
+    #[test]
+    fn passport_build_encode_verify() {
+        let seed = [14u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let did = "did:web:robot.example.com";
+        let pass = build_passport(
+            &seed,
+            &BuildPassport {
+                issuer_did: did.into(),
+                robot_did: did.into(),
+                make: "Acme Robotics".into(),
+                model: "AR-7".into(),
+                owner: "did:web:owner.example.com".into(),
+                authorized_actions: vec!["lift".into(), "carry".into()],
+                certification: Some("ISO-10218".into()),
+                status: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        // Direct verify.
+        let subject = verify_passport(&pass, &kp.public_key(), "2026-06-01T00:00:00Z")
+            .unwrap()
+            .expect("passport verifies");
+        assert_eq!(subject["owner"], json!("did:web:owner.example.com"));
+        assert_eq!(subject["status"], json!(STATUS_ACTIVE));
+
+        // Encode to a URI, decode, and verify the offline-scan path.
+        let uri = encode_passport(&pass);
+        assert!(uri.starts_with("vouch-passport:u"));
+        let decoded = decode_passport(&uri).unwrap();
+        assert!(
+            verify_passport(&decoded, &kp.public_key(), "2026-06-01T00:00:00Z")
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            verify_passport_uri(&uri, &kp.public_key(), "2026-06-01T00:00:00Z")
+                .unwrap()
+                .is_some()
+        );
+
+        // Tamper and wrong type rejected.
+        let mut tampered = pass.clone();
+        tampered["credentialSubject"]["owner"] = json!("did:web:attacker.example.com");
+        assert!(
+            verify_passport(&tampered, &kp.public_key(), "2026-06-01T00:00:00Z")
+                .unwrap()
+                .is_none()
+        );
+
+        // Malformed URI.
+        assert!(decode_passport("https://example.com/x").is_err());
+    }
+
+    #[test]
+    fn passport_expiry_and_suspended() {
+        let seed = [15u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let did = "did:web:robot.example.com";
+
+        // Expiry: valid inside the window, expired past validUntil.
+        let timed = build_passport(
+            &seed,
+            &BuildPassport {
+                issuer_did: did.into(),
+                robot_did: did.into(),
+                make: "Acme".into(),
+                model: "AR-7".into(),
+                owner: "did:web:owner.example.com".into(),
+                authorized_actions: vec!["lift".into()],
+                certification: None,
+                status: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: Some("2026-01-01T00:01:00Z".into()),
+            },
+        )
+        .unwrap();
+        assert!(
+            verify_passport(&timed, &kp.public_key(), "2026-01-01T00:00:30Z")
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            verify_passport(&timed, &kp.public_key(), "2026-01-01T00:02:00Z")
+                .unwrap()
+                .is_none()
+        );
+
+        // Suspended still verifies but the status is surfaced.
+        let suspended = build_passport(
+            &seed,
+            &BuildPassport {
+                issuer_did: did.into(),
+                robot_did: did.into(),
+                make: "Acme".into(),
+                model: "AR-7".into(),
+                owner: "did:web:owner.example.com".into(),
+                authorized_actions: vec!["lift".into()],
+                certification: None,
+                status: Some(STATUS_SUSPENDED.into()),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        let subject = verify_passport(&suspended, &kp.public_key(), "2026-06-01T00:00:00Z")
+            .unwrap()
+            .expect("a suspended passport still verifies");
+        assert_eq!(subject["status"], json!(STATUS_SUSPENDED));
     }
 }
