@@ -780,6 +780,47 @@ fn entry_hash(body: &Map<String, Value>) -> Result<String> {
     Ok(mb64(&Sha256::digest(canonical)))
 }
 
+/// Build one black-box entry statelessly: encrypt `payload` under `key`, link it
+/// to `prev_hash` at `seq`, and return the entry with its `entryHash`. The
+/// stateful [`BlackBoxLog`] and the FFI layer both build on this. The encrypted
+/// blob is nonce(12) || ciphertext || tag(16).
+pub fn blackbox_append_entry(
+    key: &[u8],
+    seq: u64,
+    event: &str,
+    payload: &Value,
+    timestamp: &str,
+    prev_hash: &str,
+) -> Result<Value> {
+    if key.len() != 32 {
+        return Err(CoreError::Crypto(
+            "black box key must be 32 bytes (AES-256)".into(),
+        ));
+    }
+    let mut nonce = [0u8; 12];
+    getrandom::getrandom(&mut nonce).map_err(|e| CoreError::Crypto(format!("rng: {e}")))?;
+    let plaintext = jcs::canonicalize(payload);
+    let cipher =
+        Aes256Gcm::new_from_slice(key).map_err(|e| CoreError::Crypto(format!("aes key: {e}")))?;
+    let ct = cipher
+        .encrypt(Nonce::from_slice(&nonce), plaintext.as_ref())
+        .map_err(|e| CoreError::Crypto(format!("encrypt: {e}")))?;
+    let mut blob = Vec::with_capacity(nonce.len() + ct.len());
+    blob.extend_from_slice(&nonce);
+    blob.extend_from_slice(&ct);
+
+    let mut body = Map::new();
+    body.insert("version".into(), json!(BLACKBOX_VERSION));
+    body.insert("seq".into(), json!(seq));
+    body.insert("timestamp".into(), json!(timestamp));
+    body.insert("event".into(), json!(event));
+    body.insert("ciphertext".into(), json!(mb64(&blob)));
+    body.insert("prevHash".into(), json!(prev_hash));
+    let h = entry_hash(&body)?;
+    body.insert("entryHash".into(), json!(h));
+    Ok(Value::Object(body))
+}
+
 /// An append-only, AES-256-GCM-encrypted, JCS hash-linked event log. The key is
 /// 32 bytes. The encrypted blob is nonce(12) || ciphertext || tag(16), matching
 /// Python, TypeScript, and Go.
@@ -811,31 +852,20 @@ impl BlackBoxLog {
 
     /// Encrypt `payload`, link it to the chain head, and return the new entry.
     pub fn append(&mut self, event: &str, payload: &Value, timestamp: &str) -> Result<Value> {
-        let mut nonce = [0u8; 12];
-        getrandom::getrandom(&mut nonce).map_err(|e| CoreError::Crypto(format!("rng: {e}")))?;
-        let plaintext = jcs::canonicalize(payload);
-        let cipher = Aes256Gcm::new_from_slice(&self.key)
-            .map_err(|e| CoreError::Crypto(format!("aes key: {e}")))?;
-        let ct = cipher
-            .encrypt(Nonce::from_slice(&nonce), plaintext.as_ref())
-            .map_err(|e| CoreError::Crypto(format!("encrypt: {e}")))?;
-        let mut blob = Vec::with_capacity(nonce.len() + ct.len());
-        blob.extend_from_slice(&nonce);
-        blob.extend_from_slice(&ct);
-
-        let mut body = Map::new();
-        body.insert("version".into(), json!(BLACKBOX_VERSION));
-        body.insert("seq".into(), json!(self.entries.len()));
-        body.insert("timestamp".into(), json!(timestamp));
-        body.insert("event".into(), json!(event));
-        body.insert("ciphertext".into(), json!(mb64(&blob)));
-        body.insert("prevHash".into(), json!(self.head));
-        let h = entry_hash(&body)?;
-        body.insert("entryHash".into(), json!(h.clone()));
-
-        let entry = Value::Object(body);
+        let entry = blackbox_append_entry(
+            &self.key,
+            self.entries.len() as u64,
+            event,
+            payload,
+            timestamp,
+            &self.head,
+        )?;
+        self.head = entry
+            .get("entryHash")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         self.entries.push(entry.clone());
-        self.head = h;
         Ok(entry)
     }
 

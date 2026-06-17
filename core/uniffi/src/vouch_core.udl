@@ -65,6 +65,56 @@ namespace vouch_core {
     // Revocation (BitstringStatusList).
     [Throws=CoreError]
     boolean verify_status(string credential_status_json, string status_list_credential_json);
+
+    // Robotics (Phase 5). JSON-in / JSON-out; keys are bytes, binary fields are
+    // multibase strings. A verifier returns the JSON literal null for "no result".
+    [Throws=CoreError]
+    string robotics_mint_identity(bytes robot_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_identity(string credential_json, bytes robot_public_key);
+    [Throws=CoreError]
+    string robotics_config_hash(string config_json);
+    [Throws=CoreError]
+    string robotics_build_provenance(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_provenance(string attestation_json, bytes public_key, string? config_json);
+    [Throws=CoreError]
+    string robotics_build_scope(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_check_action(string scope_json, string action_json);
+    [Throws=CoreError]
+    boolean robotics_attenuates(string parent_json, string child_json);
+    [Throws=CoreError]
+    string robotics_build_hello(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_build_accept(bytes signer_seed, string hello_json, bytes hello_public_key, string policy_json, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_accept(string accept_json, bytes accept_public_key, string expected_nonce, string? policy_json);
+    [Throws=CoreError]
+    string robotics_build_confirm(bytes signer_seed, string from_did, string session_json, string created);
+    [Throws=CoreError]
+    boolean robotics_verify_confirm(string confirm_json, bytes confirm_public_key, string session_id, string expected_nonce);
+    string robotics_genesis_prev_hash();
+    [Throws=CoreError]
+    string robotics_blackbox_append(bytes key, u64 seq, string event, string payload_json, string timestamp, string prev_hash);
+    [Throws=CoreError]
+    string robotics_blackbox_open(string entry_json, bytes key);
+    [Throws=CoreError]
+    string robotics_verify_chain(string entries_json, string? genesis_prev_hash);
+    [Throws=CoreError]
+    string robotics_build_killswitch(bytes authority_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_killswitch(string credential_json, bytes public_key, string? trusted_authorities_json);
+    [Throws=CoreError]
+    string robotics_build_passport(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_encode_passport(string passport_json);
+    [Throws=CoreError]
+    string robotics_decode_passport(string uri);
+    [Throws=CoreError]
+    string robotics_verify_passport(string passport_json, bytes public_key, string now_iso);
+    [Throws=CoreError]
+    string robotics_verify_passport_uri(string uri, bytes public_key, string now_iso);
 };
 
 dictionary Ed25519KeyPair {
