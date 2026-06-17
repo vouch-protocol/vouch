@@ -26,6 +26,7 @@ use crate::{jcs, multikey};
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
 use sha2::{Digest, Sha256};
+use std::collections::HashSet;
 
 pub const VC_CONTEXT_V2: &str = "https://www.w3.org/ns/credentials/v2";
 pub const VOUCH_CONTEXT_V1: &str = "https://vouch-protocol.com/contexts/v1";
@@ -514,6 +515,249 @@ pub fn attenuates(parent: &Value, child: &Value) -> bool {
     true
 }
 
+// ---------------------------------------------------------------------------
+// Robot-to-robot trust handshake (Phase 5.4)
+// ---------------------------------------------------------------------------
+
+pub const HELLO: &str = "handshake_hello";
+pub const ACCEPT: &str = "handshake_accept";
+pub const CONFIRM: &str = "handshake_confirm";
+
+/// Decides whether a peer DID is trusted: its did:web domain must be allowed, or
+/// `accept_unknown` is set.
+#[derive(Debug, Clone, Default)]
+pub struct TrustPolicy {
+    pub trusted_domains: HashSet<String>,
+    pub accept_unknown: bool,
+}
+
+impl TrustPolicy {
+    pub fn new(domains: impl IntoIterator<Item = String>, accept_unknown: bool) -> Self {
+        Self {
+            trusted_domains: domains.into_iter().collect(),
+            accept_unknown,
+        }
+    }
+
+    pub fn is_trusted(&self, did: &str) -> bool {
+        if self.accept_unknown {
+            return true;
+        }
+        match did_web_domain(did) {
+            Some(d) => self.trusted_domains.contains(d),
+            None => false,
+        }
+    }
+}
+
+/// The agreed cooperation session after a successful handshake.
+#[derive(Debug, Clone)]
+pub struct BoundedSession {
+    pub session_id: String,
+    pub initiator: String,
+    pub responder: String,
+    pub scope: Vec<String>,
+    pub nonce: String,
+    pub valid_until: Option<String>,
+}
+
+fn did_web_domain(did: &str) -> Option<&str> {
+    let rest = did.strip_prefix("did:web:")?;
+    let domain = rest.split(':').next().unwrap_or("");
+    if domain.is_empty() {
+        None
+    } else {
+        Some(domain)
+    }
+}
+
+/// Parameters for [`build_hello`]. `nonce` and `issued_at` are caller-supplied so
+/// the core stays deterministic; the wrapper SDKs generate them.
+#[derive(Debug, Clone, Default)]
+pub struct BuildHello {
+    pub from_did: String,
+    pub proposed_scope: Vec<String>,
+    pub nonce: String,
+    pub peer_did: Option<String>,
+    pub issued_at: String,
+}
+
+/// Open the handshake (initiator A): a proposed scope and a fresh nonce, signed.
+pub fn build_hello(signer_seed: &[u8], params: &BuildHello) -> Result<Value> {
+    let mut hello = Map::new();
+    hello.insert("type".into(), json!(HELLO));
+    hello.insert("from".into(), json!(params.from_did));
+    hello.insert(
+        "to".into(),
+        match &params.peer_did {
+            Some(p) => json!(p),
+            None => Value::Null,
+        },
+    );
+    hello.insert("nonce".into(), json!(params.nonce));
+    hello.insert("proposedScope".into(), json!(params.proposed_scope));
+    hello.insert("issuedAt".into(), json!(params.issued_at));
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.from_did), &params.issued_at);
+    data_integrity::sign(&Value::Object(hello), signer_seed, &opts)
+}
+
+/// Parameters for [`build_accept`].
+#[derive(Debug, Clone, Default)]
+pub struct BuildAccept {
+    pub from_did: String,
+    pub offered_scope: Vec<String>,
+    pub session_id: String,
+    pub valid_until: String,
+    pub created: String,
+}
+
+/// Verify A's HELLO and identity domain, intersect the scope, and sign an
+/// acceptance (responder B). Errors if A is untrusted or the HELLO is invalid.
+pub fn build_accept(
+    signer_seed: &[u8],
+    hello: &Value,
+    hello_public_key: &[u8],
+    policy: &TrustPolicy,
+    params: &BuildAccept,
+) -> Result<Value> {
+    if hello.get("type").and_then(|v| v.as_str()) != Some(HELLO) {
+        return Err(CoreError::Json("not a HELLO message".into()));
+    }
+    if !data_integrity::verify_proof(hello, hello_public_key)? {
+        return Err(CoreError::Json("HELLO signature invalid".into()));
+    }
+    let initiator = hello.get("from").and_then(|v| v.as_str()).unwrap_or("");
+    if !policy.is_trusted(initiator) {
+        return Err(CoreError::Json(format!(
+            "peer {initiator} is not in this trust domain's policy"
+        )));
+    }
+
+    let offered: HashSet<&str> = params.offered_scope.iter().map(|s| s.as_str()).collect();
+    let empty = Vec::new();
+    let proposed = hello
+        .get("proposedScope")
+        .and_then(|v| v.as_array())
+        .unwrap_or(&empty);
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut bounded: Vec<String> = Vec::new();
+    for item in proposed {
+        if let Some(s) = item.as_str() {
+            if offered.contains(s) && seen.insert(s.to_string()) {
+                bounded.push(s.to_string());
+            }
+        }
+    }
+    bounded.sort();
+
+    let mut accept = Map::new();
+    accept.insert("type".into(), json!(ACCEPT));
+    accept.insert("from".into(), json!(params.from_did));
+    accept.insert("to".into(), json!(initiator));
+    accept.insert("sessionId".into(), json!(params.session_id));
+    accept.insert(
+        "nonce".into(),
+        hello.get("nonce").cloned().unwrap_or(Value::Null),
+    );
+    accept.insert("boundedScope".into(), json!(bounded));
+    accept.insert("validUntil".into(), json!(params.valid_until));
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.from_did), &params.created);
+    data_integrity::sign(&Value::Object(accept), signer_seed, &opts)
+}
+
+/// Verify B's ACCEPT (initiator A): signature, nonce echo, and optional responder
+/// trust. Returns the bounded session on success.
+pub fn verify_accept(
+    accept: &Value,
+    accept_public_key: &[u8],
+    expected_nonce: &str,
+    policy: Option<&TrustPolicy>,
+) -> Result<Option<BoundedSession>> {
+    if accept.get("type").and_then(|v| v.as_str()) != Some(ACCEPT) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(accept, accept_public_key)? {
+        return Ok(None);
+    }
+    if accept.get("nonce").and_then(|v| v.as_str()) != Some(expected_nonce) {
+        return Ok(None);
+    }
+    let responder = accept.get("from").and_then(|v| v.as_str()).unwrap_or("");
+    if let Some(p) = policy {
+        if !p.is_trusted(responder) {
+            return Ok(None);
+        }
+    }
+    let scope = accept
+        .get("boundedScope")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|s| s.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    Ok(Some(BoundedSession {
+        session_id: accept
+            .get("sessionId")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        initiator: accept
+            .get("to")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        responder: responder.to_string(),
+        scope,
+        nonce: expected_nonce.to_string(),
+        valid_until: accept
+            .get("validUntil")
+            .and_then(|v| v.as_str())
+            .map(String::from),
+    }))
+}
+
+/// Sign A's confirmation of the bounded session to B.
+pub fn build_confirm(
+    signer_seed: &[u8],
+    from_did: &str,
+    session: &BoundedSession,
+    created: &str,
+) -> Result<Value> {
+    let mut confirm = Map::new();
+    confirm.insert("type".into(), json!(CONFIRM));
+    confirm.insert("from".into(), json!(from_did));
+    confirm.insert("to".into(), json!(session.responder));
+    confirm.insert("sessionId".into(), json!(session.session_id));
+    confirm.insert("nonce".into(), json!(session.nonce));
+    confirm.insert("acceptedScope".into(), json!(session.scope));
+    let opts = BuildProofOptions::new(format!("{from_did}#key-1"), created);
+    data_integrity::sign(&Value::Object(confirm), signer_seed, &opts)
+}
+
+/// Verify A's CONFIRM closes the agreed session (responder B): signature plus a
+/// matching session id and nonce.
+pub fn verify_confirm(
+    confirm: &Value,
+    confirm_public_key: &[u8],
+    session_id: &str,
+    expected_nonce: &str,
+) -> Result<bool> {
+    if confirm.get("type").and_then(|v| v.as_str()) != Some(CONFIRM) {
+        return Ok(false);
+    }
+    if !data_integrity::verify_proof(confirm, confirm_public_key)? {
+        return Ok(false);
+    }
+    let sid = confirm
+        .get("sessionId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let nonce = confirm.get("nonce").and_then(|v| v.as_str()).unwrap_or("");
+    Ok(sid == session_id && nonce == expected_nonce)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -775,5 +1019,140 @@ mod tests {
             &parent,
             &json!({"maxForceN": 50.0, "maxSpeedMps": 1.0, "maxSpeedNearHumansMps": 0.3, "allowedZones": ["warehouse-a"], "shiftWindows": [{"start": "06:00", "end": "20:00"}]})
         ));
+    }
+
+    #[test]
+    fn handshake_full_flow() {
+        let a_seed = [11u8; 32];
+        let b_seed = [12u8; 32];
+        let a = Ed25519KeyPair::from_seed(&a_seed);
+        let b = Ed25519KeyPair::from_seed(&b_seed);
+        let a_did = "did:web:robot-a.example.com";
+        let b_did = "did:web:robot-b.example.com";
+        let policy_b = TrustPolicy::new(["robot-a.example.com".to_string()], false);
+
+        let hello = build_hello(
+            &a_seed,
+            &BuildHello {
+                from_did: a_did.into(),
+                proposed_scope: vec!["lift".into(), "carry".into(), "scan".into()],
+                nonce: "abc123".into(),
+                peer_did: Some(b_did.into()),
+                issued_at: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        let accept = build_accept(
+            &b_seed,
+            &hello,
+            &a.public_key(),
+            &policy_b,
+            &BuildAccept {
+                from_did: b_did.into(),
+                offered_scope: vec!["carry".into(), "scan".into(), "weld".into()],
+                session_id: "urn:uuid:sess-1".into(),
+                valid_until: "2026-01-01T00:05:00Z".into(),
+                created: "2026-01-01T00:00:01Z".into(),
+            },
+        )
+        .unwrap();
+
+        let session = verify_accept(&accept, &b.public_key(), "abc123", None)
+            .unwrap()
+            .expect("accept verifies");
+        assert_eq!(session.scope, vec!["carry".to_string(), "scan".to_string()]);
+        assert_eq!(session.initiator, a_did);
+        assert_eq!(session.responder, b_did);
+
+        let confirm = build_confirm(&a_seed, a_did, &session, "2026-01-01T00:00:02Z").unwrap();
+        assert!(verify_confirm(&confirm, &a.public_key(), &session.session_id, "abc123").unwrap());
+    }
+
+    #[test]
+    fn handshake_untrusted_tamper_and_nonce() {
+        let a_seed = [11u8; 32];
+        let b_seed = [12u8; 32];
+        let a = Ed25519KeyPair::from_seed(&a_seed);
+        let b = Ed25519KeyPair::from_seed(&b_seed);
+        let a_did = "did:web:robot-a.example.com";
+        let b_did = "did:web:robot-b.example.com";
+
+        let hello = build_hello(
+            &a_seed,
+            &BuildHello {
+                from_did: a_did.into(),
+                proposed_scope: vec!["lift".into()],
+                nonce: "n1".into(),
+                peer_did: None,
+                issued_at: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        // Untrusted initiator.
+        let strict = TrustPolicy::new(["someone-else.example.com".to_string()], false);
+        assert!(build_accept(
+            &b_seed,
+            &hello,
+            &a.public_key(),
+            &strict,
+            &BuildAccept {
+                from_did: b_did.into(),
+                offered_scope: vec!["lift".into()],
+                session_id: "s".into(),
+                valid_until: "2026-01-01T00:05:00Z".into(),
+                created: "2026-01-01T00:00:01Z".into(),
+            },
+        )
+        .is_err());
+
+        // Tampered HELLO (scope broadened after signing) fails signature check.
+        let open = TrustPolicy::new(Vec::<String>::new(), true);
+        let mut tampered = hello.clone();
+        tampered["proposedScope"] = json!(["lift", "weld"]);
+        assert!(build_accept(
+            &b_seed,
+            &tampered,
+            &a.public_key(),
+            &open,
+            &BuildAccept {
+                from_did: b_did.into(),
+                offered_scope: vec!["lift".into(), "weld".into()],
+                session_id: "s".into(),
+                valid_until: "2026-01-01T00:05:00Z".into(),
+                created: "2026-01-01T00:00:01Z".into(),
+            },
+        )
+        .is_err());
+
+        // Nonce mismatch on a valid ACCEPT.
+        let accept = build_accept(
+            &b_seed,
+            &hello,
+            &a.public_key(),
+            &open,
+            &BuildAccept {
+                from_did: b_did.into(),
+                offered_scope: vec!["lift".into()],
+                session_id: "s".into(),
+                valid_until: "2026-01-01T00:05:00Z".into(),
+                created: "2026-01-01T00:00:01Z".into(),
+            },
+        )
+        .unwrap();
+        assert!(verify_accept(&accept, &b.public_key(), "wrong-nonce", None)
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn did_web_domain_parsing() {
+        assert_eq!(did_web_domain("did:web:example.com"), Some("example.com"));
+        assert_eq!(
+            did_web_domain("did:web:robot.example.com:agent"),
+            Some("robot.example.com")
+        );
+        assert_eq!(did_web_domain("did:key:z6Mk"), None);
     }
 }
