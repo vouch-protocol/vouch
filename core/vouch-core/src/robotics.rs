@@ -25,6 +25,7 @@ use crate::{jcs, multikey};
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
+use sha2::{Digest, Sha256};
 
 pub const VC_CONTEXT_V2: &str = "https://www.w3.org/ns/credentials/v2";
 pub const VOUCH_CONTEXT_V1: &str = "https://vouch-protocol.com/contexts/v1";
@@ -179,11 +180,124 @@ pub fn verify_robot_identity(credential: &Value, robot_public_key: &[u8]) -> Res
     Ok(Some(Value::Object(subject.clone())))
 }
 
+// ---------------------------------------------------------------------------
+// Model and config provenance (Phase 5.2)
+// ---------------------------------------------------------------------------
+
+pub const MODEL_PROVENANCE_TYPE: &str = "ModelProvenanceAttestation";
+
+/// Multibase SHA-256 of the JCS-canonical config object. Python, TypeScript, Go,
+/// and Rust all canonicalize identically, so the digest is the same byte string
+/// in every language.
+pub fn config_hash(config: &Value) -> String {
+    let digest = Sha256::digest(jcs::canonicalize(config));
+    mb64(&digest)
+}
+
+/// Parameters for [`build_provenance_attestation`]. The issuer is the signer (the
+/// robot itself or an authority); `robot_did` names the robot the attestation is
+/// about.
+#[derive(Debug, Clone)]
+pub struct BuildProvenance {
+    pub issuer_did: String,
+    pub robot_did: String,
+    pub model_name: String,
+    pub weights_hash: String,
+    pub safety_policy: String,
+    pub config: Option<Value>,
+    pub version: Option<String>,
+    pub supersedes: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `ModelProvenanceAttestation` for the software on a robot.
+pub fn build_provenance_attestation(signer_seed: &[u8], params: &BuildProvenance) -> Result<Value> {
+    let mut vla = Map::new();
+    vla.insert("modelName".into(), json!(params.model_name));
+    vla.insert("weightsHash".into(), json!(params.weights_hash));
+    vla.insert("safetyPolicy".into(), json!(params.safety_policy));
+    if let Some(v) = &params.version {
+        vla.insert("version".into(), json!(v));
+    }
+    if let Some(cfg) = &params.config {
+        vla.insert("configHash".into(), json!(config_hash(cfg)));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("vla".into(), Value::Object(vla));
+    if let Some(s) = &params.supersedes {
+        subject.insert("supersedes".into(), json!(s));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", MODEL_PROVENANCE_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(
+        format!("{}#key-1", params.issuer_did),
+        params.valid_from.clone(),
+    );
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+/// Verify a `ModelProvenanceAttestation`. When `config` is supplied, also check
+/// the recorded configHash reproduces. Returns the subject on success, `None`
+/// otherwise.
+pub fn verify_provenance_attestation(
+    attestation: &Value,
+    public_key: &[u8],
+    config: Option<&Value>,
+) -> Result<Option<Value>> {
+    let obj = attestation
+        .as_object()
+        .ok_or_else(|| CoreError::Json("attestation must be a JSON object".into()))?;
+    if !has_type(obj.get("type"), MODEL_PROVENANCE_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(attestation, public_key)? {
+        return Ok(None);
+    }
+    let subject = match obj.get("credentialSubject").and_then(|s| s.as_object()) {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    if let Some(cfg) = config {
+        let want = config_hash(cfg);
+        let got = subject
+            .get("vla")
+            .and_then(|v| v.as_object())
+            .and_then(|v| v.get("configHash"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if got != want {
+            return Ok(None);
+        }
+    }
+    Ok(Some(Value::Object(subject.clone())))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::keys::Ed25519KeyPair;
     use std::fs;
+
+    fn load_vector() -> Value {
+        let raw = fs::read_to_string("../../test-vectors/robotics/vector.json")
+            .expect("interop vector present");
+        serde_json::from_str(&raw).unwrap()
+    }
 
     fn software_root_attest(root_seed: &[u8], robot_did: &str, robot_key_mb: &str) -> Vec<u8> {
         let kp = Ed25519KeyPair::from_seed_slice(root_seed).unwrap();
@@ -273,5 +387,46 @@ mod tests {
         assert!(verify_robot_identity(&resigned, &robot_kp.public_key())
             .unwrap()
             .is_none());
+    }
+
+    // Cross-language interop: Rust reproduces the exact configHash Python pinned.
+    #[test]
+    fn config_hash_matches_interop_vector() {
+        let vector = load_vector();
+        let got = config_hash(&vector["config"]);
+        assert_eq!(got, vector["expected_config_hash"].as_str().unwrap());
+        assert_eq!(got, "uMh9_H2Lk51-m9SpBhiEa1oqIwwwA7yT27e2QFS0YKUs");
+    }
+
+    #[test]
+    fn provenance_roundtrip_and_config_tamper() {
+        let seed = [4u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let config = load_vector()["config"].clone();
+        let params = BuildProvenance {
+            issuer_did: "did:web:robot.example.com".into(),
+            robot_did: "did:web:robot.example.com".into(),
+            model_name: "openvla-7b".into(),
+            weights_hash: "uABCDEF".into(),
+            safety_policy: "did:web:authority.example.com#policy-v3".into(),
+            config: Some(config.clone()),
+            version: Some("2026.06".into()),
+            supersedes: None,
+            valid_from: "2026-01-01T00:00:00Z".into(),
+            valid_until: None,
+        };
+        let att = build_provenance_attestation(&seed, &params).unwrap();
+        assert!(
+            verify_provenance_attestation(&att, &kp.public_key(), Some(&config))
+                .unwrap()
+                .is_some()
+        );
+        // A different config than the one signed must be rejected.
+        let tampered = json!({"temperature": 1.0, "max_torque": 99.0});
+        assert!(
+            verify_provenance_attestation(&att, &kp.public_key(), Some(&tampered))
+                .unwrap()
+                .is_none()
+        );
     }
 }
