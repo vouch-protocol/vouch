@@ -74,13 +74,13 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
-		IssuerDID:    s.did,
-		Intent:      opts.Intent,
-		ValidSeconds:   validSeconds,
-		ReputationScore: opts.ReputationScore,
-		DelegationChain: chain,
-		CredentialID:   opts.CredentialID,
-		ValidFrom:    opts.ValidFrom,
+		IssuerDID:        s.did,
+		Intent:           opts.Intent,
+		ValidSeconds:     validSeconds,
+		ReputationScore:  opts.ReputationScore,
+		DelegationChain:  chain,
+		CredentialID:     opts.CredentialID,
+		ValidFrom:        opts.ValidFrom,
 		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 	}
 
 	proof, err := BuildDataIntegrityProof(cred, BuildProofOptions{
-		PrivateKey:     s.ed25519Private,
+		PrivateKey:         s.ed25519Private,
 		VerificationMethod: s.VerificationMethodID(),
 	})
 	if err != nil {
@@ -148,6 +148,23 @@ func (s *Signer) DID() string {
 	return s.did
 }
 
+// AttachProof attaches an eddsa-jcs-2022 Data Integrity proof to a pre-built
+// credential map, for custom credential types (for example robotics
+// credentials) the caller assembles directly rather than from an intent.
+// Mirrors the signing step of SignCredential; returns the credential with its
+// "proof" set.
+func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) {
+	proof, err := BuildDataIntegrityProof(credential, BuildProofOptions{
+		PrivateKey:         s.ed25519Private,
+		VerificationMethod: s.VerificationMethodID(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("attach proof: %w", err)
+	}
+	credential["proof"] = proofToMap(proof)
+	return credential, nil
+}
+
 // SignCredentialHybrid issues a Vouch Credential under the hybrid
 // post-quantum profile (Specification §13.2). The credential carries a
 // hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof containing both an
@@ -173,13 +190,13 @@ func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]an
 	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
-		IssuerDID:    s.did,
-		Intent:      opts.Intent,
-		ValidSeconds:   validSeconds,
-		ReputationScore: opts.ReputationScore,
-		DelegationChain: chain,
-		CredentialID:   opts.CredentialID,
-		ValidFrom:    opts.ValidFrom,
+		IssuerDID:        s.did,
+		Intent:           opts.Intent,
+		ValidSeconds:     validSeconds,
+		ReputationScore:  opts.ReputationScore,
+		DelegationChain:  chain,
+		CredentialID:     opts.CredentialID,
+		ValidFrom:        opts.ValidFrom,
 		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
@@ -187,8 +204,8 @@ func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]an
 	}
 
 	proof, err := BuildHybridDataIntegrityProof(cred, BuildHybridProofOptions{
-		Ed25519PrivateKey: s.ed25519Private,
-		MLDSA44PrivateKey: s.mldsa44Private,
+		Ed25519PrivateKey:  s.ed25519Private,
+		MLDSA44PrivateKey:  s.mldsa44Private,
 		VerificationMethod: s.VerificationMethodID(),
 	})
 	if err != nil {
@@ -252,11 +269,11 @@ func (s *Signer) extendDelegationChain(
 	parentValidUntil, _ := parentCredential["validUntil"].(string)
 
 	newLink := map[string]any{
-		"issuer":      parentIssuer,
-		"subject":     s.did,
-		"intent":      currentIntent,
-		"validFrom":    parentValidFrom,
-		"validUntil":    parentValidUntil,
+		"issuer":           parentIssuer,
+		"subject":          s.did,
+		"intent":           currentIntent,
+		"validFrom":        parentValidFrom,
+		"validUntil":       parentValidUntil,
 		"parentProofValue": parentProofValue,
 	}
 
