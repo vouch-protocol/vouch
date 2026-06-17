@@ -33,6 +33,8 @@ export interface FAQSection {
   audience: string;
   /** Serif section title, e.g., "Getting Vouch into your codebase" */
   title: string;
+  /** Top-level agent domain for the page toggle. Defaults to 'agents' (software agents). */
+  domain?: 'agents' | 'robotics';
   items: FAQItem[];
 }
 
@@ -156,6 +158,28 @@ The credential format for these renewals ships today (it is called SessionVouche
 A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.`,
       },
       {
+        q: 'Can Vouch prove an agent has a track record it cannot fake?',
+        a: `Yes, this ships as outcome evidence (the \`vouch.accountability\` module). It separates two questions that often get blurred: "is this really agent X?" and "does X have a record of being right?" Identity answers the first. Outcome evidence answers the second.
+
+It works in two steps. First the agent commits a verdict, prediction, or recommendation and signs it before the result is known. The commitment can carry only a salted fingerprint of the call, so the content stays private until later while still being locked in. Then, once the outcome is observable, a settlement record (which can be signed by a neutral third party) reveals the original call and binds the real result to it. Anyone can recompute the fingerprint and check it matches, and a settlement dated before its commitment is rejected. So a winning call cannot be invented after the fact, and a losing one cannot quietly disappear.
+
+This is the evidence layer underneath a reputation score. A score can be moved by whoever keeps it; outcome evidence is a per-call artifact the agent cannot rewrite.`,
+        helpLinks: [{ label: 'Outcome evidence how-to', href: '/help/#outcome-evidence' }],
+        meta: 'Shipped on main - vouch.accountability, PAD-071',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // EMBODIED AGENTS (ROBOTICS)
+  // =====================================================================
+  {
+    id: 'robotics',
+    audience: 'Embodied agents (robotics)',
+    title: 'Identity and accountability for robots',
+    domain: 'robotics',
+    items: [
+      {
         q: 'Does Vouch work for robots and embodied agents?',
         a: `Yes, and it ships today. A robot is an agent with a body, so identity, accountability, and continuous trust matter even more once an agent can cause physical harm. Everything Vouch does for software agents applies, and the \`vouch.robotics\` module adds six capabilities for the parts that only exist when an agent is embodied. They are open formats plus reference implementations, built on the same \`eddsa-jcs-2022\` Verifiable Credentials as the rest of Vouch, so a robotics credential signed in one language verifies in every other.
 
@@ -177,16 +201,6 @@ The headline piece is hardware-rooted identity: the robot's secure element (a TP
 All six are implemented and tested across Python, TypeScript, Go, and the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers.`,
         helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
         meta: 'Shipped - vouch.robotics, PAD-064/067/069/070',
-      },
-      {
-        q: 'Can Vouch prove an agent has a track record it cannot fake?',
-        a: `Yes, this ships as outcome evidence (the \`vouch.accountability\` module). It separates two questions that often get blurred: "is this really agent X?" and "does X have a record of being right?" Identity answers the first. Outcome evidence answers the second.
-
-It works in two steps. First the agent commits a verdict, prediction, or recommendation and signs it before the result is known. The commitment can carry only a salted fingerprint of the call, so the content stays private until later while still being locked in. Then, once the outcome is observable, a settlement record (which can be signed by a neutral third party) reveals the original call and binds the real result to it. Anyone can recompute the fingerprint and check it matches, and a settlement dated before its commitment is rejected. So a winning call cannot be invented after the fact, and a losing one cannot quietly disappear.
-
-This is the evidence layer underneath a reputation score. A score can be moved by whoever keeps it; outcome evidence is a per-call artifact the agent cannot rewrite.`,
-        helpLinks: [{ label: 'Outcome evidence how-to', href: '/help/#outcome-evidence' }],
-        meta: 'Shipped on main - vouch.accountability, PAD-071',
       },
     ],
   },

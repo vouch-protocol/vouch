@@ -95,11 +95,34 @@ export default function RoboticsPage() {
                 </div>
             </section>
 
-            {/* Standards + links */}
+            {/* Guides and FAQ */}
             <section className="border-b border-rule">
                 <div className="container-wide py-16">
                     <div className="section-heading mb-6">
                         <span className="num">§ II</span>
+                        <h2>Guides and questions</h2>
+                    </div>
+                    <p className="text-ink-soft leading-relaxed max-w-prose mb-6">
+                        Build and verify each capability with the robotics guide, or browse the
+                        robotics questions. Both live alongside the rest of Vouch&apos;s guides and
+                        FAQ, filtered to embodied agents.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                        <Link href="/help/#robotics" className="btn-primary">
+                            Robotics guide
+                        </Link>
+                        <Link href="/faq/#robotics" className="btn-secondary">
+                            Robotics FAQ
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Standards + links */}
+            <section className="border-b border-rule">
+                <div className="container-wide py-16">
+                    <div className="section-heading mb-6">
+                        <span className="num">§ III</span>
                         <h2>Open, and headed for the standards bodies</h2>
                     </div>
                     <p className="text-ink-soft leading-relaxed max-w-prose mb-6">

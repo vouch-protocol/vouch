@@ -23,6 +23,8 @@ export interface HelpSection {
   id: string;
   title: string;
   description: string;
+  /** Top-level agent domain for the page toggle. Defaults to 'agents' (software agents). */
+  domain?: 'agents' | 'robotics';
   articles: HelpArticle[];
 }
 
@@ -1927,6 +1929,7 @@ The agent code does not change. What changes is the DID (production agents use a
   {
     id: 'robotics',
     title: 'Robotics',
+    domain: 'robotics',
     description: 'The six robotics capabilities for embodied agents: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, an encrypted black box and kill switch, and a scannable passport. Open formats on the same Verifiable Credentials as the rest of Vouch, so a robotics credential signed in any language verifies in every other.',
     articles: [
       {
