@@ -38,6 +38,18 @@ const FEATURES = [
     body: 'Attach two Data Integrity proofs to a credential, one Ed25519, one ML-DSA-44, both signing the same JCS bytes. Graceful verifier downgrade with no bespoke composite cryptosuite required.',
     spec: '§13 Crypto-Agility',
   },
+  {
+    num: 'vii.',
+    title: 'Robots & Embodied Agents',
+    body: 'A robot identity rooted in a TPM or secure element, a signed record of the model and safety policy it runs (re-signed on every update), physical limits enforced as cryptographic capability (force, speed near humans, zones), a kill-switch credential only an attested authority can trigger, and a scannable QR/NFC passport.',
+    spec: 'Robotics profile',
+  },
+  {
+    num: 'viii.',
+    title: 'Agent Security & Accountability',
+    body: 'A lethal-trifecta linter that refuses a capability set holding private data, untrusted input, and an exfiltration vector at once; signed tool descriptors with rug-pull detection; a tamper-evident audit trail; and a budget credential that checks a payment against an AP2 mandate or x402 challenge.',
+    spec: 'Shield & Accountability',
+  },
 ];
 
 const LANGUAGE_TILES = [
@@ -151,8 +163,9 @@ export default function HomePage() {
             <h2>What the protocol provides</h2>
           </div>
           <p className="text-ink-soft max-w-prose mb-12 leading-relaxed">
-            Six properties that traditional API keys, OAuth tokens, and bearer credentials cannot provide
-            for autonomous AI agents operating in regulated environments.
+            Capabilities that traditional API keys, OAuth tokens, and bearer credentials cannot provide
+            for autonomous AI agents operating in regulated environments, now reaching from software
+            agents to robots.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
             {FEATURES.map((feature) => (
