@@ -287,6 +287,233 @@ pub fn verify_provenance_attestation(
     Ok(Some(Value::Object(subject.clone())))
 }
 
+// ---------------------------------------------------------------------------
+// Physical capability scope (Phase 5.3)
+// ---------------------------------------------------------------------------
+
+pub const PHYSICAL_SCOPE_TYPE: &str = "PhysicalCapabilityScope";
+
+/// An allowed time-of-day window, "HH:MM" start and end.
+#[derive(Debug, Clone)]
+pub struct ShiftWindow {
+    pub start: String,
+    pub end: String,
+}
+
+/// A proposed actuation to check against a scope. `None` numerics mean "not
+/// specified" (a meaningful zero is still `Some(0.0)`).
+#[derive(Debug, Clone, Default)]
+pub struct PhysicalAction {
+    pub force_n: Option<f64>,
+    pub speed_mps: Option<f64>,
+    pub near_humans: bool,
+    pub zone: Option<String>,
+    pub time_hm: Option<String>,
+}
+
+/// The outcome of [`check_physical_action`].
+#[derive(Debug, Clone)]
+pub struct CheckResult {
+    pub ok: bool,
+    pub reasons: Vec<String>,
+}
+
+/// Parameters for [`build_physical_scope_credential`]. The issuer is the signer
+/// (a fleet authority); `subject_did` is the robot the scope is granted to.
+#[derive(Debug, Clone, Default)]
+pub struct BuildPhysicalScope {
+    pub issuer_did: String,
+    pub subject_did: String,
+    pub max_force_n: Option<f64>,
+    pub max_speed_mps: Option<f64>,
+    pub max_speed_near_humans_mps: Option<f64>,
+    pub allowed_zones: Option<Vec<String>>,
+    pub shift_windows: Option<Vec<ShiftWindow>>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `PhysicalCapabilityScope` credential.
+pub fn build_physical_scope_credential(
+    signer_seed: &[u8],
+    params: &BuildPhysicalScope,
+) -> Result<Value> {
+    let mut scope = Map::new();
+    if let Some(v) = params.max_force_n {
+        scope.insert("maxForceN".into(), json!(v));
+    }
+    if let Some(v) = params.max_speed_mps {
+        scope.insert("maxSpeedMps".into(), json!(v));
+    }
+    if let Some(v) = params.max_speed_near_humans_mps {
+        scope.insert("maxSpeedNearHumansMps".into(), json!(v));
+    }
+    if let Some(zones) = &params.allowed_zones {
+        scope.insert("allowedZones".into(), json!(zones));
+    }
+    if let Some(ws) = &params.shift_windows {
+        let arr: Vec<Value> = ws
+            .iter()
+            .map(|w| json!({"start": w.start, "end": w.end}))
+            .collect();
+        scope.insert("shiftWindows".into(), Value::Array(arr));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.subject_did));
+    subject.insert("physicalScope".into(), Value::Object(scope));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", PHYSICAL_SCOPE_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(
+        format!("{}#key-1", params.issuer_did),
+        params.valid_from.clone(),
+    );
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+fn scope_num(scope: &Map<String, Value>, key: &str) -> Option<f64> {
+    scope.get(key).and_then(|v| v.as_f64())
+}
+
+fn window_bounds(w: &Value) -> (String, String) {
+    let start = w
+        .get("start")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("00:00")
+        .to_string();
+    let end = w
+        .get("end")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("23:59")
+        .to_string();
+    (start, end)
+}
+
+fn in_window(hm: &str, w: &Value) -> bool {
+    let (start, end) = window_bounds(w);
+    start.as_str() <= hm && hm <= end.as_str()
+}
+
+/// Check a proposed physical action against a physical scope object, returning ok
+/// plus a reason for each violated dimension. Accepts both native and
+/// JSON-decoded scope shapes.
+pub fn check_physical_action(scope: &Value, action: &PhysicalAction) -> CheckResult {
+    let empty = Map::new();
+    let scope = scope.as_object().unwrap_or(&empty);
+    let mut reasons = Vec::new();
+
+    if let Some(force) = action.force_n {
+        if let Some(cap) = scope_num(scope, "maxForceN") {
+            if force > cap {
+                reasons.push(format!("force_exceeded: {force}N > {cap}N"));
+            }
+        }
+    }
+
+    if let Some(speed) = action.speed_mps {
+        let mut cap = scope_num(scope, "maxSpeedMps");
+        if action.near_humans {
+            if let Some(nh) = scope_num(scope, "maxSpeedNearHumansMps") {
+                cap = Some(nh);
+            }
+        }
+        if let Some(c) = cap {
+            if speed > c {
+                let label = if action.near_humans {
+                    "near_humans "
+                } else {
+                    ""
+                };
+                reasons.push(format!("{label}speed_exceeded: {speed} m/s > {c} m/s"));
+            }
+        }
+    }
+
+    if let Some(zone) = &action.zone {
+        if let Some(zones) = scope.get("allowedZones").and_then(|v| v.as_array()) {
+            if !zones.iter().any(|z| z.as_str() == Some(zone.as_str())) {
+                reasons.push(format!("zone_not_allowed: {zone}"));
+            }
+        }
+    }
+
+    if let Some(time_hm) = &action.time_hm {
+        if let Some(windows) = scope.get("shiftWindows").and_then(|v| v.as_array()) {
+            if !windows.is_empty() && !windows.iter().any(|w| in_window(time_hm, w)) {
+                reasons.push(format!("outside_shift_window: {time_hm}"));
+            }
+        }
+    }
+
+    CheckResult {
+        ok: reasons.is_empty(),
+        reasons,
+    }
+}
+
+/// Report whether `child` is a valid attenuation of `parent`: never broader on
+/// any physical dimension. The privilege-escalation guard for delegated scopes.
+pub fn attenuates(parent: &Value, child: &Value) -> bool {
+    let empty = Map::new();
+    let p = parent.as_object().unwrap_or(&empty);
+    let c = child.as_object().unwrap_or(&empty);
+
+    for key in ["maxForceN", "maxSpeedMps", "maxSpeedNearHumansMps"] {
+        if let Some(pv) = scope_num(p, key) {
+            match scope_num(c, key) {
+                Some(cv) if cv <= pv => {}
+                _ => return false,
+            }
+        }
+    }
+
+    if let Some(pz) = p.get("allowedZones").and_then(|v| v.as_array()) {
+        let pset: Vec<&str> = pz.iter().filter_map(|z| z.as_str()).collect();
+        let cz: Vec<&str> = c
+            .get("allowedZones")
+            .and_then(|v| v.as_array())
+            .map(|a| a.iter().filter_map(|z| z.as_str()).collect())
+            .unwrap_or_default();
+        if cz.is_empty() || !cz.iter().all(|z| pset.contains(z)) {
+            return false;
+        }
+    }
+
+    if let Some(pw) = p.get("shiftWindows").and_then(|v| v.as_array()) {
+        let empty_arr = Vec::new();
+        let cw = c
+            .get("shiftWindows")
+            .and_then(|v| v.as_array())
+            .unwrap_or(&empty_arr);
+        for cwin in cw {
+            let (cs, ce) = window_bounds(cwin);
+            let fits = pw.iter().any(|pwin| {
+                let (ps, pe) = window_bounds(pwin);
+                ps.as_str() <= cs.as_str() && ce.as_str() <= pe.as_str()
+            });
+            if !fits {
+                return false;
+            }
+        }
+    }
+
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -428,5 +655,125 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
+    }
+
+    #[test]
+    fn capability_build_check_attenuate() {
+        let seed = [6u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let params = BuildPhysicalScope {
+            issuer_did: "did:web:fleet.example.com".into(),
+            subject_did: "did:web:robot.example.com".into(),
+            max_force_n: Some(80.0),
+            max_speed_mps: Some(2.0),
+            max_speed_near_humans_mps: Some(0.5),
+            allowed_zones: Some(vec!["warehouse-a".into(), "dock-3".into()]),
+            shift_windows: Some(vec![ShiftWindow {
+                start: "08:00".into(),
+                end: "18:00".into(),
+            }]),
+            valid_from: "2026-01-01T00:00:00Z".into(),
+            valid_until: None,
+        };
+        let cred = build_physical_scope_credential(&seed, &params).unwrap();
+        assert!(has_type(cred.get("type"), PHYSICAL_SCOPE_TYPE));
+        assert!(data_integrity::verify_proof(&cred, &kp.public_key()).unwrap());
+
+        let scope = cred["credentialSubject"]["physicalScope"].clone();
+        let within = check_physical_action(
+            &scope,
+            &PhysicalAction {
+                force_n: Some(50.0),
+                speed_mps: Some(1.5),
+                zone: Some("warehouse-a".into()),
+                time_hm: Some("09:30".into()),
+                ..Default::default()
+            },
+        );
+        assert!(within.ok, "within-scope action: {:?}", within.reasons);
+        assert!(
+            !check_physical_action(
+                &scope,
+                &PhysicalAction {
+                    force_n: Some(120.0),
+                    ..Default::default()
+                }
+            )
+            .ok
+        );
+        // Near humans the 0.5 m/s cap applies; 1.5 is fine away from them.
+        assert!(
+            !check_physical_action(
+                &scope,
+                &PhysicalAction {
+                    speed_mps: Some(1.5),
+                    near_humans: true,
+                    ..Default::default()
+                }
+            )
+            .ok
+        );
+        assert!(
+            check_physical_action(
+                &scope,
+                &PhysicalAction {
+                    speed_mps: Some(1.5),
+                    near_humans: false,
+                    ..Default::default()
+                }
+            )
+            .ok
+        );
+        assert!(
+            !check_physical_action(
+                &scope,
+                &PhysicalAction {
+                    zone: Some("loading-bay-9".into()),
+                    ..Default::default()
+                }
+            )
+            .ok
+        );
+        assert!(
+            !check_physical_action(
+                &scope,
+                &PhysicalAction {
+                    time_hm: Some("23:00".into()),
+                    ..Default::default()
+                }
+            )
+            .ok
+        );
+    }
+
+    #[test]
+    fn attenuation_rules() {
+        let parent = json!({
+            "maxForceN": 80.0, "maxSpeedMps": 2.0, "maxSpeedNearHumansMps": 0.5,
+            "allowedZones": ["warehouse-a", "dock-3"],
+            "shiftWindows": [{"start": "08:00", "end": "18:00"}]
+        });
+        let narrower = json!({
+            "maxForceN": 50.0, "maxSpeedMps": 1.0, "maxSpeedNearHumansMps": 0.3,
+            "allowedZones": ["warehouse-a"],
+            "shiftWindows": [{"start": "09:00", "end": "17:00"}]
+        });
+        assert!(attenuates(&parent, &narrower));
+        assert!(!attenuates(
+            &parent,
+            &json!({"maxForceN": 100.0, "maxSpeedMps": 1.0, "maxSpeedNearHumansMps": 0.3, "allowedZones": ["warehouse-a"]})
+        ));
+        assert!(!attenuates(
+            &parent,
+            &json!({"maxForceN": 50.0, "allowedZones": ["warehouse-a"]})
+        ));
+        assert!(!attenuates(
+            &parent,
+            &json!({"maxForceN": 50.0, "maxSpeedMps": 1.0, "maxSpeedNearHumansMps": 0.3, "allowedZones": ["loading-bay-9"]})
+        ));
+        assert!(!attenuates(
+            &parent,
+            &json!({"maxForceN": 50.0, "maxSpeedMps": 1.0, "maxSpeedNearHumansMps": 0.3, "allowedZones": ["warehouse-a"], "shiftWindows": [{"start": "06:00", "end": "20:00"}]})
+        ));
     }
 }
