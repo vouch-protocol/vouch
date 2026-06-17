@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import CodeBlock from '@/components/CodeBlock';
 
 export const metadata: Metadata = {
-    title: 'Conformance Levels — Vouch Protocol',
+    title: 'Conformance Levels - Vouch Protocol',
     description:
         'Three deployment tiers for Vouch Protocol: L1 (credential), L2 (sidecar + delegation + revocation), L3 (state verifiable + post-quantum).',
 };
@@ -159,6 +160,49 @@ export default function ConformancePage() {
                          "delegation-chain", "sidecar-contract"]
 }`}
                     </pre>
+                </section>
+
+                <section className="mt-12 border-t border-rule pt-12">
+                    <p className="eyebrow text-burgundy mb-2">Show the world</p>
+                    <h2 className="font-serif text-[1.5rem] font-semibold mb-3">Wear your conformance level</h2>
+                    <p className="text-ink leading-relaxed max-w-prose mb-6">
+                        Once a deployment meets a level, advertise it. Put the matching badge in your README
+                        and link it back here. Claim the level you actually meet and publish the declaration
+                        above: the badge is the claim, the declaration is the proof.
+                    </p>
+                    <p className="text-ink-soft text-[0.92rem] mb-4">Each level has its own badge. Copy the one you meet:</p>
+                    <div className="space-y-7 max-w-2xl mb-7">
+                        <div>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="https://img.shields.io/badge/Vouch_Protocol-L1_Conformant-9B4051?style=flat&labelColor=333" alt="Vouch Protocol L1 Conformant badge" className="h-5 w-auto mb-2" />
+                            <CodeBlock
+                                code={'[![Vouch Protocol L1 Conformant](https://img.shields.io/badge/Vouch_Protocol-L1_Conformant-9B4051?style=flat&labelColor=333)](https://vouch-protocol.com/conformance/)'}
+                                className="text-[0.78rem]"
+                            />
+                        </div>
+                        <div>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="https://img.shields.io/badge/Vouch_Protocol-L2_Conformant-7C2D3A?style=flat&labelColor=333" alt="Vouch Protocol L2 Conformant badge" className="h-5 w-auto mb-2" />
+                            <CodeBlock
+                                code={'[![Vouch Protocol L2 Conformant](https://img.shields.io/badge/Vouch_Protocol-L2_Conformant-7C2D3A?style=flat&labelColor=333)](https://vouch-protocol.com/conformance/)'}
+                                className="text-[0.78rem]"
+                            />
+                        </div>
+                        <div>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="https://img.shields.io/badge/Vouch_Protocol-L3_Conformant-5C1F2C?style=flat&labelColor=333" alt="Vouch Protocol L3 Conformant badge" className="h-5 w-auto mb-2" />
+                            <CodeBlock
+                                code={'[![Vouch Protocol L3 Conformant](https://img.shields.io/badge/Vouch_Protocol-L3_Conformant-5C1F2C?style=flat&labelColor=333)](https://vouch-protocol.com/conformance/)'}
+                                className="text-[0.78rem]"
+                            />
+                        </div>
+                    </div>
+                    <Link
+                        href="/agent-trust-index/#grade"
+                        className="font-mono uppercase tracking-[0.14em] text-[0.7rem] text-ink border-b border-ink no-underline hover:bg-ink hover:text-parchment px-1 py-0.5 transition-colors w-fit inline-block"
+                    >
+                        Grade your agent&apos;s identity too &rarr;
+                    </Link>
                 </section>
 
                 <footer className="mt-16 border-t border-rule pt-8 flex flex-col md:flex-row gap-4 md:justify-between text-[0.92rem]">
