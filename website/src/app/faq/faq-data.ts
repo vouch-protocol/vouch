@@ -184,7 +184,7 @@ This is the evidence layer underneath a reputation score. A score can be moved b
         a: `Yes, and it ships today. A robot is an agent with a body, so identity, accountability, and continuous trust matter even more once an agent can cause physical harm. Everything Vouch does for software agents applies, and the \`vouch.robotics\` module adds six capabilities for the parts that only exist when an agent is embodied. They are open formats plus reference implementations, built on the same \`eddsa-jcs-2022\` Verifiable Credentials as the rest of Vouch, so a robotics credential signed in one language verifies in every other.
 
 The headline piece is hardware-rooted identity: the robot's secure element (a TPM, an enclave, or an on-board AI module's secure element) signs a binding over the robot's DID and key, so its identity is provably tied to one piece of hardware rather than a config file that can be copied.`,
-        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }, { label: 'Robotics overview', href: '/robotics/' }],
+        helpLinks: [{ label: 'Robotics quickstart', href: '/help/#robotics' }, { label: 'Robotics overview', href: '/robotics/' }],
         meta: 'Shipped - vouch.robotics (Python, TypeScript, Go, Rust core), PAD-064/067/069/070',
       },
       {
@@ -195,11 +195,11 @@ The headline piece is hardware-rooted identity: the robot's secure element (a TP
 - **Model and config provenance**: a signed, re-signable record of the model, weights hash, safety policy, and config a robot is running, so you can prove what software it ran even after an over-the-air update.
 - **Physical capability scope**: max force, a slower speed near people, allowed zones, and shift windows, checked before each actuation; a delegated scope can only narrow, never widen.
 - **Robot-to-robot handshake**: two robots from different fleets authenticate and agree a cooperation session whose scope is the intersection of what each offers, gated by a domain trust policy.
-- **Black box and kill switch**: an encrypted, tamper-evident flight recorder (private without the key, tamper-evident without it) plus a verifiable emergency stop that proves who issued it and can require an attested authority.
+- **Black box and kill switch**: an encrypted, tamper-evident flight recorder plus a verifiable emergency stop that proves who issued it and can require an attested authority.
 - **Scannable passport**: a compact signed passport in a QR or NFC tag, so anyone can check a robot's owner, authorized actions, certification, and standing offline.
 
-All six are implemented and tested across Python, TypeScript, Go, and the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers.`,
-        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
+Each has its own question below.`,
+        helpLinks: [{ label: 'Robotics capabilities', href: '/help/#robotics-capabilities' }],
         meta: 'Shipped - vouch.robotics, PAD-064/067/069/070',
       },
       {
@@ -207,7 +207,7 @@ All six are implemented and tested across Python, TypeScript, Go, and the Rust c
         a: `All of them. The six capabilities are implemented once in the Rust core and exposed through the same UniFFI and WebAssembly wrappers as the rest of Vouch, plus byte-identical reference implementations in Python, TypeScript, and Go.
 
 So you can build and verify robot identity, provenance, physical scope, handshakes, the black box and kill switch, and the passport from Python, TypeScript, Go, Swift, Kotlin/JVM, .NET, C/C++, or the browser, and a robotics credential signed in one verifies in all the others, byte for byte.`,
-        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
+        helpLinks: [{ label: 'Robotics quickstarts', href: '/help/#robotics' }],
         meta: 'Shipped - vouch.robotics across every SDK',
       },
       {
@@ -216,16 +216,69 @@ So you can build and verify robot identity, provenance, physical scope, handshak
 
 Everything else Vouch does for a software agent (delegation chains, revocation, the continuous-trust heartbeat) applies to the robot unchanged. The hardware-rooted identity is the one piece that only makes sense once the agent has a body.`,
       },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS, CAPABILITY BY CAPABILITY
+  // =====================================================================
+  {
+    id: 'robotics-capabilities',
+    audience: 'Robotics, capability by capability',
+    title: 'The six capabilities in detail',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does hardware-rooted identity stop a robot from being cloned?',
+        a: `A robot self-issues a \`RobotIdentityCredential\` with its own key, and its hardware root (a TPM or secure element) signs a binding over the robot's DID and key, embedded as \`hardwareRoot.attestation\`. Verification checks two independent signatures: the credential proof and that hardware attestation.
+
+Copy the software identity to a different machine and the hardware attestation no longer matches the binding, so verification fails. The identity is tied to one piece of silicon.`,
+        helpLinks: [{ label: 'Hardware-rooted identity guide', href: '/help/#robotics-identity' }],
+        meta: 'Shipped - vouch.robotics.identity, PAD-064',
+      },
+      {
+        q: 'Can I prove what model and safety policy a robot ran, even after an OTA update?',
+        a: `Yes, via a \`ModelProvenanceAttestation\`. It records the model name, weights hash, safety policy, and a hash of the running config (the multibase SHA-256 of the canonical config, reproducible by any verifier). On an over-the-air update the robot re-signs a new attestation with a \`supersedes\` link to the previous one, forming a chain you can walk to answer "what was running at time T."
+
+Supply the config to the verifier and it also checks that the recorded config hash reproduces, so a robot running a different config than the one attested is detectable.`,
+        helpLinks: [{ label: 'Provenance guide', href: '/help/#robotics-provenance' }],
+        meta: 'Shipped - vouch.robotics.provenance, PAD-065',
+      },
+      {
+        q: 'How are a robot’s physical limits enforced, and can a sub-task escalate them?',
+        a: `A \`PhysicalCapabilityScope\` credential carries the limits: max force, max speed, a tighter speed cap near humans, allowed zones, and shift windows. A controller checks each proposed action against the scope before the actuator moves, and gets back a reason for any violated dimension.
+
+A sub-task cannot escalate. Delegation is narrow-only: a child scope may shrink numeric caps, subset the zones, and fit each window inside a parent window, but a child that raises a cap, drops a cap, adds a new zone, or widens a window is rejected.`,
+        helpLinks: [{ label: 'Capability scope guide', href: '/help/#robotics-capability' }],
+        meta: 'Shipped - vouch.robotics.capability, PAD-066',
+      },
+      {
+        q: 'How do two robots from different fleets cooperate safely?',
+        a: `Through a three-message handshake (HELLO, ACCEPT, CONFIRM). The initiator proposes a scope and a fresh nonce; the responder verifies the HELLO signature, checks the initiator's \`did:web\` domain against its trust policy, and replies with a session whose scope is the intersection of what each side offers, never the union.
+
+So neither side can widen the other's grant, the responder only cooperates with domains it trusts, and the nonce binds the acceptance to that specific HELLO. A tampered message fails verification.`,
+        helpLinks: [{ label: 'Handshake guide', href: '/help/#robotics-handshake' }],
+        meta: 'Shipped - vouch.robotics.handshake, PAD-067',
+      },
       {
         q: 'Can I stop a robot remotely and prove who issued the stop?',
-        a: `Yes. The kill switch is a signed KillSwitchCredential that names the target robot, the reason, and the issuer. Verification can require the issuer to be on an attested-authority allowlist, so a rogue actor cannot forge a legitimate-looking emergency stop, and the credential itself is a permanent, verifiable record of who triggered it.`,
+        a: `Yes. The kill switch is a signed \`KillSwitchCredential\` that names the target robot, the reason, and the issuer. Verification can require the issuer to be on an attested-authority allowlist, so a rogue actor cannot forge a legitimate-looking emergency stop, and the credential itself is a permanent, verifiable record of who triggered it.`,
+        helpLinks: [{ label: 'Black box and kill switch guide', href: '/help/#robotics-blackbox' }],
+        meta: 'Shipped - vouch.robotics.blackbox, PAD-068',
+      },
+      {
+        q: 'Can a robot’s black box be audited for tampering without reading the logs?',
+        a: `Yes, that separation is the whole point. The black box is an append-only, AES-256-GCM-encrypted, hash-linked chain. Anyone can verify the chain is intact (no entry was altered, and nothing was reordered) without holding the key, while only the key holder can decrypt the payloads. Tamper-evidence and confidentiality are independent.`,
+        helpLinks: [{ label: 'Black box and kill switch guide', href: '/help/#robotics-blackbox' }],
         meta: 'Shipped - vouch.robotics.blackbox, PAD-069',
       },
       {
-        q: 'Can an auditor check a robot’s black box for tampering without reading the logs?',
-        a: `Yes, that separation is the whole point. The black box is an append-only, AES-256-GCM-encrypted, hash-linked chain. Anyone can verify the chain is intact (no entry was altered, and nothing was reordered) without holding the key, while only the key holder can decrypt the payloads. Tamper-evidence and confidentiality are independent.`,
-        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
-        meta: 'Shipped - vouch.robotics.blackbox, PAD-069',
+        q: 'Can someone scan a robot to check it is legitimate, offline?',
+        a: `Yes. The passport is a signed \`RobotPassport\` encoded into a \`vouch-passport:\` URI for a QR code or NFC tag, so a scanner verifies the signature locally with no network call. It surfaces the robot's owner, authorized actions, certification, and current standing.
+
+An expired passport fails. A suspended or decommissioned one still verifies but its status is surfaced, so the scanner can refuse cooperation rather than treating it as silently inactive.`,
+        helpLinks: [{ label: 'Passport guide', href: '/help/#robotics-passport' }],
+        meta: 'Shipped - vouch.robotics.passport, PAD-070',
       },
     ],
   },
