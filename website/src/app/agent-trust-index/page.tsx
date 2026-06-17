@@ -69,6 +69,15 @@ export default function AgentTrustIndexPage() {
                     ))}
                 </div>
 
+                <div className="max-w-3xl mb-16 border-l-2 border-burgundy pl-5">
+                    <p className="font-serif font-semibold text-[1.35rem] tracking-tight mb-2">Is your agent one of them?</p>
+                    <p className="text-ink-soft leading-relaxed max-w-prose mb-4">
+                        Run the same check the Index runs, on your own domain. You get a letter grade, the
+                        exact reasons, and the fixes to raise it, in about ten seconds.
+                    </p>
+                    <a href="#grade" className="btn-primary">Grade your agent &rarr;</a>
+                </div>
+
                 <div className="border border-burgundy bg-parchment-warm p-8 md:p-10 max-w-3xl mb-16 text-center">
                     <h2 className="font-serif font-semibold text-[1.7rem] tracking-tight mb-3">Most agents are anonymous. Yours does not have to be.</h2>
                     <p className="text-ink-soft leading-relaxed max-w-prose mx-auto mb-5">
@@ -139,7 +148,7 @@ export default function AgentTrustIndexPage() {
                     <AtiLeaderboard agents={ATI_AGENTS} />
                 </div>
 
-                <div className="border border-burgundy bg-parchment-warm p-8 md:p-10 max-w-3xl mb-16">
+                <div id="grade" className="border border-burgundy bg-parchment-warm p-8 md:p-10 max-w-3xl mb-16 scroll-mt-24">
                     <p className="eyebrow text-burgundy mb-2">Check your own agent</p>
                     <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-3">
                         Grade your agent before anyone else does
