@@ -93,7 +93,7 @@ It is not affiliated with or endorsed by any employer.`,
       },
       {
         q: 'Where can I read the formal specification?',
-        a: `Most people never need to. The FAQ and [Guides](/help/) cover everything you'll use day to day. But if you want the formal version, an executive summary is available [here](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md).`,
+        a: `Most people never need to. The FAQ and [Guides](/help/) cover everything you'll use day to day. But if you want the formal version, an executive summary is available [here](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/cg-report-executive-summary.md).`,
       },
     ],
   },

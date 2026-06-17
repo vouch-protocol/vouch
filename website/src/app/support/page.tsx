@@ -62,7 +62,7 @@ const CHANNELS: Channel[] = [
 ];
 
 const QUICK_LINKS = [
-  { label: 'Specification', href: 'https://github.com/vouch-protocol/vouch/blob/main/docs/specs/specification-executive-summary.md', external: true, body: 'Executive summary of the specification.' },
+  { label: 'Specification', href: 'https://github.com/vouch-protocol/vouch/blob/main/docs/specs/cg-report-executive-summary.md', external: true, body: 'Executive summary of the specification.' },
   { label: 'CHANGELOG', href: 'https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md', external: true, body: 'Every version, every shipped feature.' },
   { label: 'Test vectors', href: 'https://github.com/vouch-protocol/vouch/tree/main/test-vectors', external: true, body: 'Cross-language vectors to check your implementation against.' },
   { label: 'GitHub repository', href: 'https://github.com/vouch-protocol/vouch', external: true, body: 'Source, SDKs, and reference implementations.' },
