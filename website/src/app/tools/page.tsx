@@ -5,7 +5,7 @@ import CodeBlock from '@/components/CodeBlock';
 export const metadata: Metadata = {
     title: 'Tools - Vouch Protocol',
     description:
-        'Everything Vouch gives you: a command line, a standalone MCP server, SDKs in every major language, packages for your AI tools, media provenance, a GitHub gatekeeper, and the Agent Trust Index.',
+        'Everything Vouch gives you: a command line, a standalone MCP server, SDKs in every major language, packages for your AI tools, trust primitives for robots and embodied agents, media provenance, a GitHub gatekeeper, and the Agent Trust Index.',
 };
 
 type Tool = {
@@ -88,6 +88,40 @@ const GROUPS: Group[] = [
             {
                 name: 'Continuous trust',
                 blurb: 'Heartbeats and session vouchers, so trust is a live signal that has to be renewed, not a badge issued once and trusted forever.',
+            },
+        ],
+    },
+    {
+        eyebrow: 'Robots and embodied agents',
+        title: 'Trust that reaches into the physical world',
+        intro: 'The same Verifiable Credentials, extended to robots: a hardware-rooted identity, signed model and safety provenance, and physical limits enforced as capability. Built, tested, and shipped in vouch.robotics.',
+        tools: [
+            {
+                name: 'Hardware-rooted identity',
+                blurb: "A robot's signing key bound to a TPM or secure element, in a credential carrying make, model, and serial, so an identity cannot be cloned onto other hardware.",
+                href: '/robotics/',
+                hrefLabel: 'The robotics page →',
+            },
+            {
+                name: 'Model and safety provenance',
+                blurb: 'A signed record of the model, weights hash, and safety policy a robot runs, re-signed on every over-the-air update, so you can prove what was running at any past moment.',
+            },
+            {
+                name: 'Physical capability scope',
+                blurb: 'Limits enforced as cryptographic capability: max force, max speed, a lower speed near people, and allowed zones, checked before each actuation. A delegated scope can only narrow its parent.',
+            },
+            {
+                name: 'Robot-to-robot handshake',
+                blurb: 'Two robots from different fleets authenticate and agree a bounded-trust session over three signed messages, cooperating only within the intersection of what each offers.',
+            },
+            {
+                name: 'Black box and kill switch',
+                blurb: 'An encrypted, tamper-evident flight recorder, plus a kill-switch credential that proves who issued the emergency stop and lets only an attested authority trigger it.',
+            },
+            {
+                name: 'Scannable robot passport',
+                blurb: "A signed passport in a QR or NFC tag, so anyone can check a robot's owner, authorized actions, and standing offline, with no network call.",
+                start: 'python examples/robotics_demo.py',
             },
         ],
     },
@@ -210,9 +244,9 @@ export default function ToolsPage() {
                     </h1>
                     <p className="font-serif italic text-ink-soft text-[1.1rem] max-w-prose leading-relaxed">
                         A command line, a standalone server your agents can call, SDKs in every major
-                        language, packages for your AI tools, media provenance, a guard for your
-                        repositories, and an open benchmark of the whole agent ecosystem. Everything here
-                        is open source and free.
+                        language, packages for your AI tools, trust primitives for robots, media
+                        provenance, a guard for your repositories, and an open benchmark of the whole
+                        agent ecosystem. Everything here is open source and free.
                     </p>
                 </header>
 
