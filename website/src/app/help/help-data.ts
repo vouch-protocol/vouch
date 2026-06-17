@@ -1928,108 +1928,282 @@ The agent code does not change. What changes is the DID (production agents use a
   },
   {
     id: 'robotics',
-    title: 'Robotics',
+    title: 'Robotics: getting started',
     domain: 'robotics',
-    description: 'The six robotics capabilities for embodied agents: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, an encrypted black box and kill switch, and a scannable passport. Open formats on the same Verifiable Credentials as the rest of Vouch, so a robotics credential signed in any language verifies in every other.',
+    description: 'Pick a language and run the robot identity sign-and-verify loop in your dev env. The six capabilities are byte-identical across every SDK, so a robot credential signed in one verifies in all the others.',
     articles: [
       {
-        id: 'robotics',
-        title: 'Robotics: identity and accountability for robots',
-        summary: 'Build and verify all six robotics credentials, with the mechanism, API, and exactly what each verification checks.',
+        id: 'robotics-quickstart-python',
+        title: 'Robotics Quickstart (Python)',
+        summary: 'Mint a hardware-attested robot identity and verify it, entirely in your dev env.',
         body: `
-Vouch gives robots the same identity, accountability, and continuous trust it gives software agents, and adds the pieces that only matter once an agent has a body. The robotics primitives live in vouch.robotics (Python), packages/sdk-ts/src/robotics (TypeScript), go-sidecar/robotics (Go), and the Rust core, which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers. Every credential is an eddsa-jcs-2022 Verifiable Credential, so a credential signed in one language verifies in all the others (proven by test-vectors/robotics/vector.json).
+## Install
 
-A design rule runs through the module: the core is hardware-agnostic and deterministic. It never reaches for a clock, a random number, or a TPM itself. Timestamps, nonces, and hardware attestations are passed in, so output is reproducible and a real deployment can route signing to a secure element.
+\`\`\`bash
+pip install vouch-protocol
+\`\`\`
 
-## Available in every language
+## Mint and verify a robot identity
 
-The examples below are in Python, but the same six capabilities exist in every Vouch SDK and produce byte-identical credentials, so pick whichever fits your stack:
+A robot self-issues its identity with its own key; a hardware root (a TPM or secure element) signs a binding tying that key to the device. In development, \`SoftwareRootOfTrust\` stands in for the TPM.
 
-- Python: \`pip install vouch-protocol\`, then \`from vouch.robotics import identity\` (and \`provenance\`, \`capability\`, \`handshake\`, \`blackbox\`, \`passport\`). Functions are snake_case: \`mint_robot_identity\`, \`verify_robot_identity\`, and so on.
-- TypeScript (browser and Node): \`import { mintRobotIdentity, verifyRobotIdentity, buildProvenanceAttestation, checkPhysicalAction } from '@vouch-protocol-official/sdk'\`, camelCase throughout.
-- Go: import \`go-sidecar/robotics\`; \`MintRobotIdentity\`, \`VerifyRobotIdentity\`, \`CheckPhysicalAction\`, and the rest in Go's PascalCase.
-- Swift, Kotlin and Java, .NET, C and C++: the same surface over the core's UniFFI and C bindings, as \`roboticsMintIdentity\`, \`roboticsVerifyIdentity\`, \`roboticsCheckAction\`, and so on, JSON in and JSON out with keys passed as bytes.
+\`\`\`python
+from vouch.keys import generate_identity
+from vouch.signer import Signer
+from vouch.robotics import identity
 
-A robotics credential signed in any one of these verifies in all the others, pinned by the shared interop vector. The walkthrough below stays in Python for brevity.
+robot = Signer.from_identity(generate_identity(domain="robot.example.com"))
+root = identity.SoftwareRootOfTrust(kind="TPM")        # production uses the real TPM
 
-## 1. Hardware-rooted identity
+cred = identity.mint_robot_identity(robot, root,
+    make="Acme Robotics", model="AR-7", serial="SN-000123",
+    owner="did:web:owner.example.com")
 
-Binds the robot's software key to a hardware root (a TPM or secure element), so the identity cannot be cloned to other hardware. The hardware root signs a binding over (key, robotDid), embedded as hardwareRoot.attestation. Verification checks both the credential proof and that attestation.
+ok, subject = identity.verify_robot_identity(cred, robot.public_key())
+assert ok and subject["make"] == "Acme Robotics"
+\`\`\`
 
-    from vouch.robotics import identity
+Verification checks both the credential proof and the hardware attestation, so an identity copied to different hardware fails. From here, the other five capabilities (\`provenance\`, \`capability\`, \`handshake\`, \`blackbox\`, \`passport\`) follow the same import-and-call shape; see the Robotics: capabilities guides.
+`,
+      },
+      {
+        id: 'robotics-quickstart-typescript',
+        title: 'Robotics Quickstart (TypeScript)',
+        summary: 'The same robot identity loop in TypeScript, for Node or the browser.',
+        body: `
+## Install
 
-    root = identity.SoftwareRootOfTrust(kind="TPM")     # production uses the real TPM
-    cred = identity.mint_robot_identity(robot_signer, root,
-        make="Acme Robotics", model="AR-7", serial="SN-000123",
-        owner="did:web:owner.example.com")
-    ok, subject = identity.verify_robot_identity(cred, robot_signer.public_key())
+\`\`\`bash
+npm install @vouch-protocol-official/sdk
+\`\`\`
 
-Verification fails closed on a wrong type, an invalid proof, a missing or non-Ed25519 hardware key, or an attestation that does not match the binding. Swapping in an attacker's hardware key and re-signing still fails, because the attestation no longer matches the binding.
+## Mint and verify a robot identity
 
-## 2. Model and config provenance
+\`\`\`ts
+import { Signer, generateIdentity } from '@vouch-protocol-official/sdk';
+import { SoftwareRootOfTrust, mintRobotIdentity, verifyRobotIdentity } from '@vouch-protocol-official/sdk';
 
-A signed record of the model, weights hash, safety policy, and a hash of the config a robot runs, re-signable on every over-the-air update via a supersedes link. The config hash is the multibase SHA-256 of the JCS-canonical config, reproducible by any verifier.
+const robot = await Signer.fromIdentity(generateIdentity('robot.example.com'));
+const root = new SoftwareRootOfTrust('TPM');
 
-    from vouch.robotics import provenance
+const cred = await mintRobotIdentity(robot, root, {
+  make: 'Acme Robotics', model: 'AR-7', serial: 'SN-000123',
+  owner: 'did:web:owner.example.com',
+});
 
-    att = provenance.build_provenance_attestation(signer, robot_did=robot_did,
-        model_name="openvla-7b", weights_hash="u...",
-        safety_policy="did:web:authority#policy-v3",
-        config={"temperature": 0.0, "max_torque": 12.5, "guardrails": ["no_humans_zone"]})
-    ok, subject = provenance.verify_provenance_attestation(att, signer.public_key(), config)
+const { ok, subject } = verifyRobotIdentity(cred, robot.publicKey());
+\`\`\`
 
-Supplying the config to the verifier additionally checks the recorded configHash reproduces, so a robot running a different config than the one attested is detectable.
+Function names are camelCase; everything else matches the Python and Go SDKs byte for byte.
+`,
+      },
+      {
+        id: 'robotics-quickstart-go',
+        title: 'Robotics Quickstart (Go)',
+        summary: 'The robot identity loop in Go, the language of the Identity Sidecar.',
+        body: `
+## Get the module
 
-## 3. Physical capability scope
+\`\`\`bash
+go get github.com/vouch-protocol/vouch/go-sidecar
+\`\`\`
 
-Max force, max speed, a tighter cap near humans, allowed zones, and shift windows, checked before each actuation. A delegated scope must narrow, never broaden.
+## Mint and verify a robot identity
 
-    from vouch.robotics import capability
+\`\`\`go
+root, _ := robotics.NewSoftwareRoot(seed, "TPM")
+cred, _ := robotics.MintRobotIdentity(robotSigner, root, robotics.MintOptions{
+    Make: "Acme Robotics", Model: "AR-7", Serial: "SN-000123",
+    Owner: "did:web:owner.example.com",
+})
+ok, subject := robotics.VerifyRobotIdentity(cred, robotSigner.PublicKeyEd25519())
+\`\`\`
 
-    cred = capability.build_physical_scope_credential(fleet_signer, subject_did=robot_did,
-        max_force_n=80, max_speed_mps=2.0, max_speed_near_humans_mps=0.5,
-        allowed_zones=["warehouse-a"], shift_windows=[{"start": "08:00", "end": "18:00"}])
-    scope = cred["credentialSubject"]["physicalScope"]
-    res = capability.check_physical_action(scope,
-        capability.PhysicalAction(speed_mps=1.5, near_humans=True))
-    # res.ok is False: the near-humans speed cap is 0.5 m/s
+Go uses PascalCase and an options struct; the credential bytes are identical to Python and TypeScript.
+`,
+      },
+      {
+        id: 'robotics-quickstart-languages',
+        title: 'Robotics Quickstart (Swift, Kotlin, JVM, .NET, C, WebAssembly)',
+        summary: 'The robotics surface over the shared core, JSON in and JSON out, for the wrapper languages.',
+        body: `
+The robotics capabilities are implemented once in the Rust core and exposed through the same UniFFI and WebAssembly wrappers as the rest of Vouch. The wrapper functions are JSON-in / JSON-out: keys cross as bytes, everything else as a JSON string, and binary fields (the hardware attestation, the config hash) cross as multibase strings.
 
-attenuates(parent, child) is the escalation guard: a child that raises a cap, drops a cap the parent set, adds a zone outside the parent set, or widens a window is rejected.
+## Browser and Node (WebAssembly)
 
-## 4. Robot-to-robot handshake
+\`\`\`js
+import init, { roboticsMintIdentity, roboticsVerifyIdentity } from '@vouch-protocol-official/core-wasm';
+await init();
 
-Two robots from different domains authenticate over three signed messages (HELLO, ACCEPT, CONFIRM) and agree a session whose scope is the intersection of both offers, gated by a TrustPolicy on the did:web domain. The responder signs an acceptance only if the HELLO verifies and the initiator's domain is trusted. The nonce binds the acceptance to its HELLO; a tampered message fails verification.
+const params = JSON.stringify({
+  robotDid: 'did:web:robot.example.com', make: 'Acme Robotics', model: 'AR-7',
+  serial: 'SN-000123', rootKind: 'TPM', rootPublicMultibase: rootMultibase,
+  attestation: attestationMultibase, validFrom: new Date().toISOString(),
+});
+const credJson = roboticsMintIdentity(seedBytesB64, params);
+const subjectJson = roboticsVerifyIdentity(credJson, robotPublicKeyB64);  // "null" if invalid
+\`\`\`
 
-## 5. Black box and kill switch
+## Swift, Kotlin/Java, .NET, C and C++
 
-The black box is an append-only, AES-256-GCM-encrypted, hash-linked log. The encrypted blob is nonce, then ciphertext, then tag. The chain is tamper-evident without the key (any altered field breaks its entryHash, any reorder breaks prevHash); payloads open only with the key.
+The same functions are generated for each platform from the core's UniFFI interface and C header. The names match the WebAssembly build (\`roboticsMintIdentity\`, \`roboticsVerifyIdentity\`, \`roboticsBuildScope\`, \`roboticsCheckAction\`, \`roboticsBuildHello\`, and so on), and every capability is present. Pass the same JSON params and key bytes; a credential built here verifies in Python, TypeScript, and Go.
+`,
+      },
+    ],
+  },
+  {
+    id: 'robotics-capabilities',
+    title: 'Robotics: capabilities',
+    domain: 'robotics',
+    description: 'One guide per robotics capability: what it is, the problem it closes, how it works, the API, a worked example, and exactly what verification checks.',
+    articles: [
+      {
+        id: 'robotics-identity',
+        title: 'Hardware-rooted identity',
+        summary: 'Bind a robot identity to a TPM or secure element so it cannot be cloned to other hardware.',
+        body: `
+A \`RobotIdentityCredential\` binds a robot's software identity key to a physical hardware root of trust, alongside its make, model, serial, owner, and lifecycle history.
 
-    from vouch.robotics import blackbox
+The problem it closes: a software-only identity in a config file can be copied to a cloned robot. Hardware rooting makes the identity non-transferable: it is provably tied to one piece of silicon.
 
-    log = blackbox.BlackBoxLog(key)                       # 32-byte AES key
-    entry = log.append("motion", {"speed": 1.5, "joint": "elbow"})
-    assert blackbox.verify_blackbox_chain(log.entries()).ok
-    payload = log.open_entry(entry)                       # only the key holder can read this
+How it works: the robot self-issues the credential with its own Ed25519 key. The hardware root signs a binding, the JCS canonical bytes of \`{key, robotDid}\`, embedded as \`hardwareRoot.attestation\`. Verification checks two independent signatures: the credential proof and the hardware attestation.
 
-The kill switch (build_killswitch_credential and verify_killswitch_credential) is a verifiable emergency stop that proves who issued it and, with an attested-authority allowlist, rejects any issuer not on the list.
+\`\`\`python
+from vouch.robotics import identity
 
-## 6. Scannable passport
+root = identity.SoftwareRootOfTrust(kind="TPM")        # production uses the real TPM
+cred = identity.mint_robot_identity(robot_signer, root,
+    make="Acme Robotics", model="AR-7", serial="SN-000123",
+    owner="did:web:owner.example.com")
+ok, subject = identity.verify_robot_identity(cred, robot_signer.public_key())
+\`\`\`
 
-A compact signed RobotPassport encoded into a vouch-passport: URI for a QR or NFC tag, so anyone can check the robot's owner, authorized actions, certification, and standing offline.
+Security boundary: verification fails closed on a wrong type, an invalid proof, a missing or non-Ed25519 hardware key, or an attestation that does not match the binding. An attacker who swaps in their own hardware key and re-signs the credential still fails, because the attestation no longer matches \`{key, robotDid}\`.
+`,
+      },
+      {
+        id: 'robotics-provenance',
+        title: 'Model and config provenance',
+        summary: 'Prove which model, weights, safety policy, and config a robot ran, even after an OTA update.',
+        body: `
+A \`ModelProvenanceAttestation\` records the vision-language-action model name, weights hash, safety policy, and a hash of the running configuration.
 
-    from vouch.robotics import passport
+The problem it closes: after an incident, logs alone cannot prove what software and safety policy were running. Provenance makes it cryptographic, and it survives over-the-air updates.
 
-    p = passport.build_passport(signer, robot_did=robot_did, make="Acme Robotics",
-        model="AR-7", owner="did:web:owner.example.com",
-        authorized_actions=["lift", "carry"], certification="ISO-10218")
-    uri = passport.encode_passport(p)                     # "vouch-passport:u..."
-    ok, summary = passport.verify_passport(passport.decode_passport(uri), signer.public_key())
+How it works: the \`vla\` block carries \`modelName\`, \`weightsHash\`, \`safetyPolicy\`, and a \`configHash\` (the multibase SHA-256 of the JCS-canonical config, reproducible by any verifier). On an OTA update the robot re-signs a new attestation with a \`supersedes\` link to the previous one, forming a chain.
 
-Verification is offline. An expired passport fails; a suspended or decommissioned one still verifies but surfaces its status so a scanner can refuse cooperation.
+\`\`\`python
+from vouch.robotics import provenance
 
-## Where to go next
+att = provenance.build_provenance_attestation(signer, robot_did=robot_did,
+    model_name="openvla-7b", weights_hash="u...",
+    safety_policy="did:web:authority#policy-v3",
+    config={"temperature": 0.0, "max_torque": 12.5, "guardrails": ["no_humans_zone"]})
+ok, subject = provenance.verify_provenance_attestation(att, signer.public_key(), config)
+\`\`\`
 
-The defensive disclosures PAD-064 (identity), PAD-067 (handshake), PAD-069 (black box), and PAD-070 (passport) document the novel methods. A runnable demo is in examples/robotics_demo.py, and the canonical write-up is docs/robotics.md.
+Security boundary: verification fails on a wrong type, an invalid proof, or, when a config is supplied, a \`configHash\` that does not reproduce. A robot running a different config than the one attested is detectable by anyone holding the expected config.
+`,
+      },
+      {
+        id: 'robotics-capability',
+        title: 'Physical capability scope',
+        summary: 'Force, speed, near-humans, zone, and shift-window limits, checked before each actuation.',
+        body: `
+A \`PhysicalCapabilityScope\` credential carries physical limits, max force, max speed, a tighter cap near humans, allowed zones, and shift windows, that a controller checks before every actuation.
+
+The problem it closes: a permission like "operate the arm" says nothing about how hard or how fast. Physical scope makes the bound enforceable and makes delegated authority shrink-only.
+
+How it works: a controller calls the check function with a proposed action and gets back whether it is allowed plus a reason for each violated dimension. Delegation is governed by an attenuation rule: a child scope is valid only if every numeric cap is less than or equal to the parent, every zone is a subset, and every window fits inside a parent window.
+
+\`\`\`python
+from vouch.robotics import capability
+
+scope = cred["credentialSubject"]["physicalScope"]
+res = capability.check_physical_action(scope,
+    capability.PhysicalAction(speed_mps=1.5, near_humans=True))
+# res.ok is False: the near-humans speed cap is 0.5 m/s
+\`\`\`
+
+Security boundary: the runtime check rejects an action exceeding any granted dimension (an absent dimension is unconstrained by design). \`attenuates(parent, child)\` is the escalation guard: a child that raises a cap, drops a cap, adds a zone outside the parent set, or widens a window is rejected.
+`,
+      },
+      {
+        id: 'robotics-handshake',
+        title: 'Robot-to-robot handshake',
+        summary: 'Two robots from different fleets authenticate and agree a bounded cooperation session.',
+        body: `
+A three-message exchange (HELLO, ACCEPT, CONFIRM) by which two robots in different trust domains authenticate each other and agree a bounded cooperation session.
+
+The problem it closes: when robots from different fleets meet and must cooperate, each needs to know the other is who it claims and agree on a safe, limited set of shared actions, with no central broker.
+
+How it works: the initiator signs a HELLO proposing a scope and a fresh nonce. The responder verifies the HELLO signature, checks the initiator's \`did:web\` domain against its trust policy, and signs an ACCEPT whose \`boundedScope\` is the intersection of the proposed scope and what the responder offers, never the union. The initiator verifies the ACCEPT, confirms the nonce echoes its HELLO, and signs a CONFIRM.
+
+\`\`\`python
+from vouch.robotics import handshake
+
+policy = handshake.TrustPolicy(trusted_domains={"robot-a.example.com"})
+hello = handshake.build_hello(a_signer, proposed_scope=["lift", "carry", "scan"])
+accept = handshake.build_accept(b_signer, hello, a_signer.public_key(), policy,
+    offered_scope=["carry", "scan", "weld"])
+ok, session = handshake.verify_accept(accept, b_signer.public_key(),
+    expected_nonce=hello["nonce"])
+# session.scope == ["carry", "scan"]  (the intersection)
+\`\`\`
+
+Security boundary: the responder signs an acceptance only if the HELLO signature verifies and the initiator's domain passes the policy. The session scope is the intersection of both offers, so neither side can widen the other's grant. The nonce binds the acceptance to its HELLO, and a tampered message fails verification.
+`,
+      },
+      {
+        id: 'robotics-blackbox',
+        title: 'Black box and kill switch',
+        summary: 'An encrypted, tamper-evident flight recorder, and a verifiable emergency stop.',
+        body: `
+Two related capabilities ship together.
+
+The black box is an append-only, AES-256-GCM-encrypted, hash-linked flight recorder. Each entry encrypts its payload under a 32-byte key; the chain is tamper-evident without the key (any altered field breaks its \`entryHash\`, any reorder breaks \`prevHash\`), and the payloads open only with the key. An auditor can prove nothing was changed without being able to read the contents.
+
+The kill switch is a verifiable emergency stop. A \`KillSwitchCredential\` proves who issued the stop, over what scope, and why. With an attested-authority allowlist, verification rejects any issuer not on the list.
+
+\`\`\`python
+from vouch.robotics import blackbox
+
+log = blackbox.BlackBoxLog(key)                       # 32-byte AES key
+entry = log.append("motion", {"speed": 1.5, "joint": "elbow"})
+assert blackbox.verify_blackbox_chain(log.entries()).ok
+payload = log.open_entry(entry)                       # only the key holder can read this
+
+stop = blackbox.build_killswitch_credential(authority, target=robot_did,
+    reason="human in path", scope=["arm", "drive"])
+ok, subject = blackbox.verify_killswitch_credential(stop, authority.public_key(),
+    trusted_authorities={authority.did})
+\`\`\`
+
+Security boundary: chain verification fails on a seq gap, a broken \`prevHash\` link, or a recomputed \`entryHash\` that does not match. Decryption fails under the wrong key. The kill switch fails on a wrong type, an invalid proof, or an issuer that is not an attested authority.
+`,
+      },
+      {
+        id: 'robotics-passport',
+        title: 'Scannable passport',
+        summary: 'A signed passport in a QR or NFC tag that anyone can verify offline.',
+        body: `
+A compact, signed \`RobotPassport\` encoded into a \`vouch-passport:\` URI for a QR code or NFC tag, so anyone can check a robot's owner, authorized actions, certification, and current standing offline, with no network call.
+
+The problem it closes: a person standing in front of a robot needs to know it is legitimate and what it is allowed to do, often with no connectivity.
+
+How it works: the passport credential carries the robot's identity summary and a \`status\` (active, suspended, or decommissioned). \`encode_passport\` serializes the JCS-canonical credential into a deterministic multibase payload behind the \`vouch-passport:\` scheme, so a scanner verifies the signature locally.
+
+\`\`\`python
+from vouch.robotics import passport
+
+p = passport.build_passport(signer, robot_did=robot_did, make="Acme Robotics",
+    model="AR-7", owner="did:web:owner.example.com",
+    authorized_actions=["lift", "carry"], certification="ISO-10218")
+uri = passport.encode_passport(p)                     # "vouch-passport:u..."
+ok, summary = passport.verify_passport(passport.decode_passport(uri), signer.public_key())
+\`\`\`
+
+Security boundary: verification is fully offline (the verifier supplies the issuer key). An expired passport fails. A suspended or decommissioned passport still verifies but the status is surfaced, so a scanner refuses cooperation rather than treating it as silently inactive. A tampered passport or a wrong type is rejected.
 `,
       },
     ],
