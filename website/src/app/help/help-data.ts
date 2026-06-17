@@ -906,6 +906,71 @@ The Specification says specific reputation scoring **algorithms** are non-normat
 `,
       },
       {
+        id: 'outcome-evidence',
+        title: 'Proving an Agent Track Record',
+        summary: 'Commit a verdict before its outcome, settle it later, and get a record that cannot be backdated or cherry-picked.',
+        body: `
+## What it is
+
+Identity proves who acted. Outcome evidence proves that an agent's verdict, prediction, or recommendation was fixed before its result was known, so a track record cannot be backdated or cherry-picked. It ships as \`vouch.accountability\`.
+
+Two credential types:
+
+- \`OutcomeCommitmentCredential\`: the call, committed and signed before the outcome. It carries a salted SHA-256 digest of the claim, so the call can stay private until settlement yet is provably fixed.
+- \`OutcomeAttestationCredential\`: the settlement, signed by whoever observed the result, which can be a neutral third party. It reveals the call and binds the real outcome back to the commitment.
+
+## Commit the verdict before the outcome
+
+\`\`\`python
+from vouch import Signer, generate_identity
+from vouch.accountability import commit_outcome, verify_commitment
+
+keys = generate_identity("agent.example.com")
+agent = Signer(private_key=keys.private_key_jwk, did=keys.did)
+
+commitment, secret = commit_outcome(
+    agent,
+    claim={"asset": "XYZ", "direction": "up", "horizon": "2026-07-01"},
+    settlement={
+        "method": "market-settlement",
+        "locator": "https://example.com/markets/42",
+        "resolutionCriteria": "settled price at expiry versus strike",
+    },
+    private=True,  # publish only the digest; keep secret to settle later
+)
+\`\`\`
+
+Keep \`secret\` (the call and its salt). You need it to settle a private commitment.
+
+## Settle it once the result is known
+
+\`\`\`python
+from vouch.accountability import attest_outcome, verify_attestation
+
+attestation = attest_outcome(
+    settler,  # a Signer; can be a neutral third party
+    commitment=commitment,
+    outcome={"result": "up", "evidence": "https://example.com/markets/42/settle"},
+    secret=secret,
+    matches=True,
+)
+
+ok, subject = verify_attestation(
+    attestation,
+    settler_keys.public_key_jwk,
+    commitment=commitment,
+    committer_public_key=agent_keys.public_key_jwk,
+)
+\`\`\`
+
+Verification recomputes the fingerprint from the revealed call, confirms it matches the commitment, and rejects any settlement timestamped before the commitment. A winning call cannot be minted with hindsight, and a losing one is a visible gap rather than a silent absence.
+
+## Where it sits
+
+This is the per-verdict evidence layer underneath the reputation engine. Feed settled attestations into \`vouch.reputation\` rather than trusting a self-reported score. Full demo: \`python examples/accountability_demo.py\`. Defensive disclosure: PAD-071.
+`,
+      },
+      {
         id: 'revocation',
         title: 'Revoking an Entire Agent',
         summary: 'When a key is compromised or an agent is decommissioned: invalidate every credential it ever signed in one operation.',

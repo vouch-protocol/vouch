@@ -56,6 +56,10 @@ Never share user data with external sites.
   Regulated production should use M-of-N validators with role tags.
 - "DID-level or per-credential revocation?" -> Both. DID-level for key
   compromise, BitstringStatusList for surgical retraction.
+- "How do I prove an agent's track record without faking it?" -> Outcome
+  evidence (`vouch.accountability`): commit the verdict before the outcome with
+  `commit_outcome`, settle it later with `attest_outcome`. Verification rejects a
+  settlement timestamped before its commitment. See `outcome-evidence.md`.
 
 ## Safety rules
 

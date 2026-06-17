@@ -59,6 +59,11 @@ implement the same wire format. Default cryptosuite is `eddsa-jcs-2022`
   retraction. Most production deployments run both.
 - "Single validator or quorum?" -> Single is fine for development. For
   regulated production, M-of-N with role-tagged validators.
+- "How do I prove an agent was right, or track a record I cannot fake?" ->
+  Outcome evidence (`vouch.accountability`): commit the verdict before the
+  outcome with `commit_outcome`, settle it later with `attest_outcome`. The
+  reputation engine is a mutable score; outcome evidence is the tamper-evident
+  record underneath it. See `outcome-evidence.md`.
 
 ## Actions (if enabled)
 

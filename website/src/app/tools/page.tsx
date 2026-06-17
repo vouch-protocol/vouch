@@ -89,6 +89,11 @@ const GROUPS: Group[] = [
                 name: 'Continuous trust',
                 blurb: 'Heartbeats and session vouchers, so trust is a live signal that has to be renewed, not a badge issued once and trusted forever.',
             },
+            {
+                name: 'Outcome evidence',
+                blurb: "Commit an agent's verdict or prediction before the result is known, then settle it later against what actually happened. A salted commitment keeps the call private until settlement, and a backdated settlement is rejected, so a track record cannot be cherry-picked. The settler can be a neutral third party.",
+                start: 'python examples/accountability_demo.py',
+            },
         ],
     },
     {
