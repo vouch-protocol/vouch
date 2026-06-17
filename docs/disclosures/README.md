@@ -78,6 +78,20 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-068](./PAD-068-kill-switch-credential.md) | Verifiable Kill-Switch Credential with Attested-Authority Enforcement | 2026-06-14 | Published |
 | [PAD-069](./PAD-069-confidential-tamper-evident-robot-blackbox.md) | Confidential, Tamper-Evident Robot Black-Box with Separable Confidentiality and Integrity | 2026-06-15 | Published |
 | [PAD-070](./PAD-070-scannable-offline-robot-passport.md) | Self-Contained, Offline-Verifiable Robot Passport for Physical-World Scanning | 2026-06-15 | Published |
+| [PAD-071](./PAD-071-outcome-evidence-commit-before-outcome-credential.md) | Commit-Before-Outcome Verdict Credential with Neutral-Settler Outcome Attestation | 2026-06-17 | Published |
+
+
+## June 17, 2026: Commit-Before-Outcome Verdict Evidence (PAD-071)
+
+One disclosure covering the `vouch.accountability` outcome-evidence primitive: a
+verdict, prediction, or recommendation committed and signed before its outcome is
+known, settled later by a separately-signed attestation that binds the observed
+outcome to the prior commitment. A salted commitment keeps the verdict private
+until settlement, and verification rejects any settlement timestamped before the
+commitment, so an agent's track record cannot be backdated, cherry-picked, or
+unilaterally edited. It is the per-verdict evidence layer beneath aggregated and
+portable reputation (PAD-036, PAD-030), built on the same eddsa-jcs-2022
+credentials as the rest of Vouch.
 
 
 ## June 15, 2026: Robotics and Embodied-Agent Primitives (PAD-064 through PAD-070)

@@ -176,6 +176,21 @@ def __getattr__(name):
         from . import reputation
 
         return getattr(reputation, name)
+    # Outcome-evidence credentials (commit-before-outcome verdicts + settlement)
+    elif name in (
+        "AccountabilityError",
+        "commit_outcome",
+        "verify_commitment",
+        "attest_outcome",
+        "verify_attestation",
+        "accountability_pointer",
+        "commitment_digest",
+        "OUTCOME_COMMITMENT_TYPE",
+        "OUTCOME_ATTESTATION_TYPE",
+    ):
+        from . import accountability
+
+        return getattr(accountability, name)
     # Cloud KMS
     elif name in ("CloudKMSProvider", "AWSKMSProvider", "GCPKMSProvider", "AzureKeyVaultProvider"):
         from . import kms
@@ -247,6 +262,16 @@ __all__ = [
     "RedisReputationStore",
     "KafkaReputationStore",
     "KafkaReputationConsumer",
+    # Outcome-evidence credentials
+    "AccountabilityError",
+    "commit_outcome",
+    "verify_commitment",
+    "attest_outcome",
+    "verify_attestation",
+    "accountability_pointer",
+    "commitment_digest",
+    "OUTCOME_COMMITMENT_TYPE",
+    "OUTCOME_ATTESTATION_TYPE",
     # Cloud KMS
     "CloudKMSProvider",
     "AWSKMSProvider",
