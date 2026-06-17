@@ -51,6 +51,12 @@ const FEATURES = [
     body: 'A lethal-trifecta linter that refuses a capability set holding private data, untrusted input, and an exfiltration vector at once; signed tool descriptors with rug-pull detection; a tamper-evident audit trail; and a budget credential that checks a payment against an AP2 mandate or x402 challenge.',
     spec: 'Shield & Accountability',
   },
+  {
+    num: 'ix.',
+    title: 'Outcome Evidence',
+    body: 'A verdict, prediction, or recommendation committed and signed before its outcome is known, then settled by a separate attestation that binds the real result back to it. A salted commitment keeps the call private until settlement, and verification rejects a backdated settlement, so an agent track record cannot be cherry-picked or rewritten after the fact.',
+    spec: 'Outcome Evidence',
+  },
 ];
 
 const LANGUAGE_TILES = [

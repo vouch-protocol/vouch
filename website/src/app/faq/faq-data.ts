@@ -161,6 +161,16 @@ A Vouch delegation chain captures all three steps cryptographically. Each step n
 
 The robot-specific open piece is a hardware-root-of-trust profile. The robot's secure element (a TPM, a secure enclave, or an on-board AI module's enclave) anchors its DID and signs its heartbeats, so identity is bound to the physical device rather than a config file. The open \`did:vouch:agent\` profile in [docs/specs/](https://github.com/vouch-protocol/vouch/tree/main/docs/specs) defines the agent identity scheme; the embodied profile extends it for hardware attestation. Richer robot-lifecycle tooling builds on this open layer.`,
       },
+      {
+        q: 'Can Vouch prove an agent has a track record it cannot fake?',
+        a: `Yes, this ships as outcome evidence (the \`vouch.accountability\` module). It separates two questions that often get blurred: "is this really agent X?" and "does X have a record of being right?" Identity answers the first. Outcome evidence answers the second.
+
+It works in two steps. First the agent commits a verdict, prediction, or recommendation and signs it before the result is known. The commitment can carry only a salted fingerprint of the call, so the content stays private until later while still being locked in. Then, once the outcome is observable, a settlement record (which can be signed by a neutral third party) reveals the original call and binds the real result to it. Anyone can recompute the fingerprint and check it matches, and a settlement dated before its commitment is rejected. So a winning call cannot be invented after the fact, and a losing one cannot quietly disappear.
+
+This is the evidence layer underneath a reputation score. A score can be moved by whoever keeps it; outcome evidence is a per-call artifact the agent cannot rewrite.`,
+        helpLinks: [{ label: 'Outcome evidence how-to', href: '/help/#outcome-evidence' }],
+        meta: 'Shipped on main - vouch.accountability, PAD-071',
+      },
     ],
   },
 

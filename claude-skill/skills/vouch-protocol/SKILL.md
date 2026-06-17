@@ -1,6 +1,6 @@
 ---
 name: vouch-protocol
-description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, Go, and more, all over one shared Rust core. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol-official/core-wasm`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions.
+description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, Go, and more, all over one shared Rust core. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol-official/core-wasm`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions. Also covers outcome evidence: commit-before-outcome verdicts (OutcomeCommitmentCredential) and settlement attestations (OutcomeAttestationCredential) that prove an agent's track record cannot be backdated or cherry-picked.
 ---
 
 # Vouch Protocol
@@ -25,6 +25,7 @@ Invoke when the user:
 - Is building a multi-agent system and needs delegation chains
 - Asks how to revoke compromised agent credentials
 - Is debugging cross-language credential verification
+- Wants to prove an agent's track record, commit a verdict before its outcome, or settle a prediction against what actually happened
 
 ## Quick orientation
 
@@ -177,6 +178,33 @@ credential = build_vouch_credential(
 To revoke later: `status_list.revoke(index)` and republish. See
 `reference/revocation.md`.
 
+### "How do I prove an agent's track record?"
+
+Commit a verdict before its outcome is known, then settle it later. The
+commitment carries a salted digest of the claim, so the verdict can stay private
+yet is provably fixed; the settlement reveals the claim and binds the observed
+outcome back to it. Verification rejects a settlement timestamped before its
+commitment, so a winning verdict cannot be minted with hindsight.
+
+```python
+from vouch.accountability import commit_outcome, attest_outcome, verify_attestation
+
+commitment, secret = commit_outcome(
+    agent_signer,
+    claim={"asset": "XYZ", "direction": "up", "horizon": "2026-07-01"},
+    settlement={"method": "market-settlement", "resolutionCriteria": "price at expiry"},
+    private=True,
+)
+# ...after the outcome is observable, a settler (who may be a third party):
+attestation = attest_outcome(
+    settler_signer, commitment=commitment,
+    outcome={"result": "up"}, secret=secret, matches=True,
+)
+```
+
+See `reference/outcome-evidence.md`. This is the per-verdict evidence layer
+underneath the reputation engine.
+
 ### "How do I integrate Vouch with LangChain / CrewAI / MCP?"
 
 Reference implementations under `vouch/integrations/`. See
@@ -191,6 +219,7 @@ Reference implementations under `vouch/integrations/`. See
 - **User needs to revoke a compromised key** -> DID-level revocation registry (`vouch.revocation`).
 - **User wants continuous trust** -> Heartbeat Protocol with validator quorum (Python only today).
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
+- **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
 
 ## Reference files
 
@@ -204,6 +233,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/post-quantum.md` - Hybrid cryptosuite, migration guidance
 - `reference/revocation.md` - DID-level and credential-level revocation
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
+- `reference/outcome-evidence.md` - Commit-before-outcome verdicts, settlement, track record
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
 - `reference/troubleshooting.md` - Common errors and fixes

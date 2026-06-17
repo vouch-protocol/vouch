@@ -146,6 +146,25 @@ Verifiers consume `decayLambda` to compute trust over time:
 trust(t) = initialTrust * exp(-decayLambda * (now - issuedAt_seconds))
 ```
 
+## Outcome-evidence credential types
+
+Two further types record an agent's track record as evidence rather than a
+mutable score. They ship in the Python SDK as `vouch.accountability`.
+
+- `type: ["VerifiableCredential", "OutcomeCommitmentCredential"]` carries a
+  verdict committed before its outcome is known. The subject holds a `commitment`
+  block (`algorithm: sha-256-jcs`, a multibase `digest`, and a `salted` flag) and
+  a vendor-neutral `settlement` descriptor (`method`, `locator`,
+  `resolutionCriteria`). In private mode the cleartext claim is withheld and only
+  the digest is published.
+- `type: ["VerifiableCredential", "OutcomeAttestationCredential"]` settles a
+  commitment. Signed by the settler (who may differ from the committer), it
+  reveals the claim and salt, reproduces the committed digest, and records the
+  observed `outcome`. Verification rejects a settlement timestamped before its
+  commitment, so a verdict cannot be backdated.
+
+See `outcome-evidence.md` for the full flow and code.
+
 ## DID Document layout
 
 Companion to the credential. Resolves via `did:web` or `did:key`.
