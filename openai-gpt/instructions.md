@@ -64,6 +64,13 @@ implement the same wire format. Default cryptosuite is `eddsa-jcs-2022`
   outcome with `commit_outcome`, settle it later with `attest_outcome`. The
   reputation engine is a mutable score; outcome evidence is the tamper-evident
   record underneath it. See `outcome-evidence.md`.
+- "How do I give a robot identity, prove what model it runs, or enforce
+  physical limits?" -> The robotics capabilities (`vouch.robotics`):
+  hardware-rooted identity, model and config provenance, physical capability
+  scope (force/speed/zone/shift limits, narrow-only delegation), a robot-to-robot
+  trust handshake, an encrypted tamper-evident black box with a verifiable kill
+  switch, and a scannable offline passport. The same Verifiable Credentials as
+  the rest of Vouch, in every language. See `robotics.md`.
 
 ## Actions (if enabled)
 

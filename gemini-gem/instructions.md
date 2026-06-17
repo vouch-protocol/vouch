@@ -60,6 +60,13 @@ Never share user data with external sites.
   evidence (`vouch.accountability`): commit the verdict before the outcome with
   `commit_outcome`, settle it later with `attest_outcome`. Verification rejects a
   settlement timestamped before its commitment. See `outcome-evidence.md`.
+- "How do I give a robot identity, prove what model it runs, or enforce physical
+  limits?" -> The robotics capabilities (`vouch.robotics`): hardware-rooted
+  identity, model and config provenance, physical capability scope (force/speed/
+  zone/shift limits, narrow-only delegation), a robot-to-robot trust handshake, an
+  encrypted tamper-evident black box with a verifiable kill switch, and a scannable
+  offline passport. The same Verifiable Credentials as the rest of Vouch, in every
+  language. See `robotics.md`.
 
 ## Safety rules
 

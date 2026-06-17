@@ -210,6 +210,23 @@ underneath the reputation engine.
 Reference implementations under `vouch/integrations/`. See
 `reference/integrations.md` for the common pattern.
 
+### "How do I give a robot a verifiable identity, or enforce physical limits?"
+
+Vouch ships six robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
+and the Rust core that flows to Swift, Kotlin/JVM, .NET, C/C++, and WASM):
+hardware-rooted identity (`mint_robot_identity` / `verify_robot_identity`, bound
+to a TPM or secure element), model and config provenance
+(`build_provenance_attestation`, re-signable on OTA updates), physical capability
+scope (`build_physical_scope_credential`, `check_physical_action`, `attenuates`
+for narrow-only delegation of force/speed/zone/shift limits), a robot-to-robot
+trust handshake (`build_hello` / `build_accept` / `build_confirm` with a
+`TrustPolicy`), an encrypted tamper-evident black box (`BlackBoxLog`,
+`verify_blackbox_chain`) plus a verifiable kill switch
+(`build_killswitch_credential`), and a scannable offline passport
+(`build_passport` / `encode_passport` into a `vouch-passport:` URI). Same
+Verifiable Credentials as the rest of Vouch, so they verify in every language.
+See `reference/robotics.md`.
+
 ## Decision rules
 
 - **User is just signing one credential** -> Python signer, three lines.
@@ -220,6 +237,7 @@ Reference implementations under `vouch/integrations/`. See
 - **User wants continuous trust** -> Heartbeat Protocol with validator quorum (Python only today).
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
 - **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
+- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, and a scannable passport.
 
 ## Reference files
 
@@ -234,6 +252,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/revocation.md` - DID-level and credential-level revocation
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
 - `reference/outcome-evidence.md` - Commit-before-outcome verdicts, settlement, track record
+- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
 - `reference/troubleshooting.md` - Common errors and fixes
