@@ -23,6 +23,8 @@ use crate::error::{CoreError, Result};
 use crate::keys;
 use crate::{jcs, multikey};
 
+use aes_gcm::aead::Aead;
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
 use sha2::{Digest, Sha256};
@@ -758,6 +760,258 @@ pub fn verify_confirm(
     Ok(sid == session_id && nonce == expected_nonce)
 }
 
+// ---------------------------------------------------------------------------
+// Black box and kill switch (Phase 5.5)
+// ---------------------------------------------------------------------------
+
+pub const BLACKBOX_VERSION: &str = "1.0";
+pub const KILLSWITCH_TYPE: &str = "KillSwitchCredential";
+pub const EMERGENCY_STOP: &str = "emergency_stop";
+
+/// The prevHash of the first entry: multibase of 32 zero bytes.
+pub fn genesis_prev_hash() -> String {
+    mb64(&[0u8; 32])
+}
+
+fn entry_hash(body: &Map<String, Value>) -> Result<String> {
+    let mut clean = body.clone();
+    clean.remove("entryHash");
+    let canonical = jcs::canonicalize(&Value::Object(clean));
+    Ok(mb64(&Sha256::digest(canonical)))
+}
+
+/// An append-only, AES-256-GCM-encrypted, JCS hash-linked event log. The key is
+/// 32 bytes. The encrypted blob is nonce(12) || ciphertext || tag(16), matching
+/// Python, TypeScript, and Go.
+pub struct BlackBoxLog {
+    key: Vec<u8>,
+    genesis: String,
+    entries: Vec<Value>,
+    head: String,
+}
+
+impl BlackBoxLog {
+    /// Build a log. A `None` genesis uses [`genesis_prev_hash`].
+    pub fn new(key: &[u8], genesis_prev_hash_override: Option<&str>) -> Result<Self> {
+        if key.len() != 32 {
+            return Err(CoreError::Crypto(
+                "black box key must be 32 bytes (AES-256)".into(),
+            ));
+        }
+        let genesis = genesis_prev_hash_override
+            .map(String::from)
+            .unwrap_or_else(genesis_prev_hash);
+        Ok(Self {
+            key: key.to_vec(),
+            head: genesis.clone(),
+            genesis,
+            entries: Vec::new(),
+        })
+    }
+
+    /// Encrypt `payload`, link it to the chain head, and return the new entry.
+    pub fn append(&mut self, event: &str, payload: &Value, timestamp: &str) -> Result<Value> {
+        let mut nonce = [0u8; 12];
+        getrandom::getrandom(&mut nonce).map_err(|e| CoreError::Crypto(format!("rng: {e}")))?;
+        let plaintext = jcs::canonicalize(payload);
+        let cipher = Aes256Gcm::new_from_slice(&self.key)
+            .map_err(|e| CoreError::Crypto(format!("aes key: {e}")))?;
+        let ct = cipher
+            .encrypt(Nonce::from_slice(&nonce), plaintext.as_ref())
+            .map_err(|e| CoreError::Crypto(format!("encrypt: {e}")))?;
+        let mut blob = Vec::with_capacity(nonce.len() + ct.len());
+        blob.extend_from_slice(&nonce);
+        blob.extend_from_slice(&ct);
+
+        let mut body = Map::new();
+        body.insert("version".into(), json!(BLACKBOX_VERSION));
+        body.insert("seq".into(), json!(self.entries.len()));
+        body.insert("timestamp".into(), json!(timestamp));
+        body.insert("event".into(), json!(event));
+        body.insert("ciphertext".into(), json!(mb64(&blob)));
+        body.insert("prevHash".into(), json!(self.head));
+        let h = entry_hash(&body)?;
+        body.insert("entryHash".into(), json!(h.clone()));
+
+        let entry = Value::Object(body);
+        self.entries.push(entry.clone());
+        self.head = h;
+        Ok(entry)
+    }
+
+    pub fn head(&self) -> &str {
+        &self.head
+    }
+
+    pub fn genesis(&self) -> &str {
+        &self.genesis
+    }
+
+    pub fn entries(&self) -> &[Value] {
+        &self.entries
+    }
+
+    pub fn open(&self, entry: &Value) -> Result<Value> {
+        open_entry(entry, &self.key)
+    }
+}
+
+/// Decrypt a black-box entry payload with the log key.
+pub fn open_entry(entry: &Value, key: &[u8]) -> Result<Value> {
+    let ct_mb = entry
+        .get("ciphertext")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| CoreError::Json("entry has no ciphertext".into()))?;
+    let blob = unmb64(ct_mb)?;
+    if blob.len() < 12 + 16 {
+        return Err(CoreError::Crypto("ciphertext too short".into()));
+    }
+    let cipher =
+        Aes256Gcm::new_from_slice(key).map_err(|e| CoreError::Crypto(format!("aes key: {e}")))?;
+    let (nonce, rest) = blob.split_at(12);
+    let pt = cipher
+        .decrypt(Nonce::from_slice(nonce), rest)
+        .map_err(|_| CoreError::Crypto("decryption failed".into()))?;
+    serde_json::from_slice(&pt).map_err(|e| CoreError::Json(format!("payload decode: {e}")))
+}
+
+/// The outcome of [`verify_blackbox_chain`].
+#[derive(Debug, Clone)]
+pub struct ChainResult {
+    pub ok: bool,
+    pub reason: Option<String>,
+}
+
+/// Verify the hash chain over the (still-encrypted) entries. Tamper-evident
+/// without the key. A `None` genesis uses [`genesis_prev_hash`].
+pub fn verify_blackbox_chain(
+    entries: &[Value],
+    genesis_prev_hash_override: Option<&str>,
+) -> ChainResult {
+    let mut prev = genesis_prev_hash_override
+        .map(String::from)
+        .unwrap_or_else(genesis_prev_hash);
+    for (i, entry) in entries.iter().enumerate() {
+        if entry.get("seq").and_then(|v| v.as_u64()) != Some(i as u64) {
+            return ChainResult {
+                ok: false,
+                reason: Some(format!("entry {i} seq mismatch")),
+            };
+        }
+        if entry.get("prevHash").and_then(|v| v.as_str()).unwrap_or("") != prev {
+            return ChainResult {
+                ok: false,
+                reason: Some(format!("entry {i} prevHash does not link")),
+            };
+        }
+        let obj = match entry.as_object() {
+            Some(o) => o,
+            None => {
+                return ChainResult {
+                    ok: false,
+                    reason: Some(format!("entry {i} is not an object")),
+                }
+            }
+        };
+        let want = match entry_hash(obj) {
+            Ok(w) => w,
+            Err(_) => {
+                return ChainResult {
+                    ok: false,
+                    reason: Some(format!("entry {i} hash error")),
+                }
+            }
+        };
+        let eh = entry
+            .get("entryHash")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if eh != want {
+            return ChainResult {
+                ok: false,
+                reason: Some(format!("entry {i} entryHash mismatch (tampered)")),
+            };
+        }
+        prev = eh.to_string();
+    }
+    ChainResult {
+        ok: true,
+        reason: None,
+    }
+}
+
+/// Parameters for [`build_killswitch_credential`].
+#[derive(Debug, Clone, Default)]
+pub struct BuildKillswitch {
+    pub issuer_did: String,
+    pub target: String,
+    pub reason: String,
+    pub command: Option<String>,
+    pub scope: Option<Vec<String>>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `KillSwitchCredential` proving who issued an emergency stop.
+pub fn build_killswitch_credential(
+    authority_seed: &[u8],
+    params: &BuildKillswitch,
+) -> Result<Value> {
+    let command = params
+        .command
+        .clone()
+        .unwrap_or_else(|| EMERGENCY_STOP.to_string());
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.target));
+    subject.insert("command".into(), json!(command));
+    subject.insert("reason".into(), json!(params.reason));
+    subject.insert("issuedBy".into(), json!(params.issuer_did));
+    if let Some(scope) = &params.scope {
+        subject.insert("scope".into(), json!(scope));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", KILLSWITCH_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.issuer_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), authority_seed, &opts)
+}
+
+/// Verify a `KillSwitchCredential`. When `trusted_authorities` is supplied, the
+/// issuer DID MUST be in it. Returns the subject on success.
+pub fn verify_killswitch_credential(
+    credential: &Value,
+    public_key: &[u8],
+    trusted_authorities: Option<&HashSet<String>>,
+) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), KILLSWITCH_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, public_key)? {
+        return Ok(None);
+    }
+    if let Some(trusted) = trusted_authorities {
+        let issuer = credential
+            .get("issuer")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if !trusted.contains(issuer) {
+            return Ok(None);
+        }
+    }
+    Ok(credential.get("credentialSubject").cloned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1154,5 +1408,85 @@ mod tests {
             Some("robot.example.com")
         );
         assert_eq!(did_web_domain("did:key:z6Mk"), None);
+    }
+
+    #[test]
+    fn blackbox_append_open_and_chain() {
+        let key = [0x11u8; 32];
+        let mut log = BlackBoxLog::new(&key, None).unwrap();
+        let e0 = log
+            .append(
+                "motion",
+                &json!({"speed": 1.5, "joint": "elbow"}),
+                "2026-01-01T00:00:00Z",
+            )
+            .unwrap();
+        log.append("stop", &json!({"reason": "human"}), "2026-01-01T00:00:01Z")
+            .unwrap();
+
+        // Round-trip decrypt.
+        let opened = log.open(&e0).unwrap();
+        assert_eq!(opened["joint"], json!("elbow"));
+
+        // Chain verifies, in memory and after a JSON round trip.
+        assert!(verify_blackbox_chain(log.entries(), None).ok);
+        let wire: Vec<Value> =
+            serde_json::from_str(&serde_json::to_string(log.entries()).unwrap()).unwrap();
+        assert!(verify_blackbox_chain(&wire, None).ok);
+        assert_eq!(open_entry(&wire[0], &key).unwrap()["joint"], json!("elbow"));
+
+        // Tamper detection.
+        let mut tampered = wire.clone();
+        tampered[1]["event"] = json!("tampered");
+        assert!(!verify_blackbox_chain(&tampered, None).ok);
+
+        // Wrong key fails decryption; bad key length rejected.
+        assert!(open_entry(&e0, &[0x22u8; 32]).is_err());
+        assert!(BlackBoxLog::new(&[0u8; 16], None).is_err());
+
+        // Genesis constant matches the multibase of 32 zero bytes.
+        assert_eq!(genesis_prev_hash(), format!("u{}", "A".repeat(43)));
+    }
+
+    #[test]
+    fn killswitch_build_verify_and_trust() {
+        let seed = [13u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let cred = build_killswitch_credential(
+            &seed,
+            &BuildKillswitch {
+                issuer_did: "did:web:safety.example.com".into(),
+                target: "did:web:robot.example.com".into(),
+                reason: "human in path".into(),
+                command: None,
+                scope: Some(vec!["arm".into(), "drive".into()]),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let mut trusted = HashSet::new();
+        trusted.insert("did:web:safety.example.com".to_string());
+        let subject = verify_killswitch_credential(&cred, &kp.public_key(), Some(&trusted))
+            .unwrap()
+            .expect("trusted authority verifies");
+        assert_eq!(subject["command"], json!(EMERGENCY_STOP));
+
+        // Untrusted issuer rejected though the signature is valid.
+        let mut other = HashSet::new();
+        other.insert("did:web:someone-else.example.com".to_string());
+        assert!(
+            verify_killswitch_credential(&cred, &kp.public_key(), Some(&other))
+                .unwrap()
+                .is_none()
+        );
+
+        // Wrong type rejected.
+        let mut wrong = cred.clone();
+        wrong["type"] = json!(["VerifiableCredential"]);
+        assert!(verify_killswitch_credential(&wrong, &kp.public_key(), None)
+            .unwrap()
+            .is_none());
     }
 }
