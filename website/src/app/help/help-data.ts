@@ -1941,6 +1941,17 @@ Vouch gives robots the same identity, accountability, and continuous trust it gi
 
 A design rule runs through the module: the core is hardware-agnostic and deterministic. It never reaches for a clock, a random number, or a TPM itself. Timestamps, nonces, and hardware attestations are passed in, so output is reproducible and a real deployment can route signing to a secure element.
 
+## Available in every language
+
+The examples below are in Python, but the same six capabilities exist in every Vouch SDK and produce byte-identical credentials, so pick whichever fits your stack:
+
+- Python: \`pip install vouch-protocol\`, then \`from vouch.robotics import identity\` (and \`provenance\`, \`capability\`, \`handshake\`, \`blackbox\`, \`passport\`). Functions are snake_case: \`mint_robot_identity\`, \`verify_robot_identity\`, and so on.
+- TypeScript (browser and Node): \`import { mintRobotIdentity, verifyRobotIdentity, buildProvenanceAttestation, checkPhysicalAction } from '@vouch-protocol-official/sdk'\`, camelCase throughout.
+- Go: import \`go-sidecar/robotics\`; \`MintRobotIdentity\`, \`VerifyRobotIdentity\`, \`CheckPhysicalAction\`, and the rest in Go's PascalCase.
+- Swift, Kotlin and Java, .NET, C and C++: the same surface over the core's UniFFI and C bindings, as \`roboticsMintIdentity\`, \`roboticsVerifyIdentity\`, \`roboticsCheckAction\`, and so on, JSON in and JSON out with keys passed as bytes.
+
+A robotics credential signed in any one of these verifies in all the others, pinned by the shared interop vector. The walkthrough below stays in Python for brevity.
+
 ## 1. Hardware-rooted identity
 
 Binds the robot's software key to a hardware root (a TPM or secure element), so the identity cannot be cloned to other hardware. The hardware root signs a binding over (key, robotDid), embedded as hardwareRoot.attestation. Verification checks both the credential proof and that attestation.

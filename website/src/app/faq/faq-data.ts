@@ -81,7 +81,7 @@ Vouch fixes this by turning every agent action into a signed receipt. Identity, 
       },
       {
         q: 'Who is behind Vouch?',
-        a: `Vouch is a personal open-source project from [Ramprasad Gaddam](https://github.com/vouch-protocol), an AI engineering director with 20+ years in regulated industries (healthcare, banking, manufacturing), 20 patents in cryptography and AI, and active membership in The Linux Foundation, C2PA, the Content Authenticity Initiative, DIF, and IEEE.
+        a: `Vouch is a personal open-source project from [Ramprasad Gaddam](https://github.com/vouch-protocol), an AI engineering director with 20+ years in regulated industries (healthcare and manufacturing), 20 patents in cryptography and AI, and active membership in The Linux Foundation, C2PA, the Content Authenticity Initiative, DIF, and IEEE.
 
 It is not affiliated with or endorsed by any employer.`,
       },
@@ -201,6 +201,31 @@ The headline piece is hardware-rooted identity: the robot's secure element (a TP
 All six are implemented and tested across Python, TypeScript, Go, and the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers.`,
         helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
         meta: 'Shipped - vouch.robotics, PAD-064/067/069/070',
+      },
+      {
+        q: 'Which languages can I use the robotics capabilities from?',
+        a: `All of them. The six capabilities are implemented once in the Rust core and exposed through the same UniFFI and WebAssembly wrappers as the rest of Vouch, plus byte-identical reference implementations in Python, TypeScript, and Go.
+
+So you can build and verify robot identity, provenance, physical scope, handshakes, the black box and kill switch, and the passport from Python, TypeScript, Go, Swift, Kotlin/JVM, .NET, C/C++, or the browser, and a robotics credential signed in one verifies in all the others, byte for byte.`,
+        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
+        meta: 'Shipped - vouch.robotics across every SDK',
+      },
+      {
+        q: 'How is a robot’s identity different from a software agent’s?',
+        a: `It adds a hardware root. A software agent has a DID and a signing key; a robot has those plus a binding signed by a TPM or secure element, so its identity is provably tied to one physical device and cannot be cloned to another machine.
+
+Everything else Vouch does for a software agent (delegation chains, revocation, the continuous-trust heartbeat) applies to the robot unchanged. The hardware-rooted identity is the one piece that only makes sense once the agent has a body.`,
+      },
+      {
+        q: 'Can I stop a robot remotely and prove who issued the stop?',
+        a: `Yes. The kill switch is a signed KillSwitchCredential that names the target robot, the reason, and the issuer. Verification can require the issuer to be on an attested-authority allowlist, so a rogue actor cannot forge a legitimate-looking emergency stop, and the credential itself is a permanent, verifiable record of who triggered it.`,
+        meta: 'Shipped - vouch.robotics.blackbox, PAD-069',
+      },
+      {
+        q: 'Can an auditor check a robot’s black box for tampering without reading the logs?',
+        a: `Yes, that separation is the whole point. The black box is an append-only, AES-256-GCM-encrypted, hash-linked chain. Anyone can verify the chain is intact (no entry was altered, and nothing was reordered) without holding the key, while only the key holder can decrypt the payloads. Tamper-evidence and confidentiality are independent.`,
+        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
+        meta: 'Shipped - vouch.robotics.blackbox, PAD-069',
       },
     ],
   },

@@ -225,15 +225,15 @@ export default function HelpClient({ sections }: { sections: HelpSection[] }) {
     return (
         <div>
             {hasRobotics && (
-                <div className="mb-10 flex flex-wrap gap-1.5 border-b border-rule pb-5">
+                <div className="mb-10 flex flex-wrap gap-1 border-b border-rule">
                     {DOMAINS.map((d) => (
                         <button
                             key={d.key}
                             onClick={() => setDomain(d.key)}
-                            className={`px-4 py-2 text-[0.9rem] rounded-md transition-colors ${
+                            className={`px-4 py-2.5 -mb-px text-[0.92rem] border-b-2 transition-colors ${
                                 domain === d.key
-                                    ? 'bg-ink text-parchment font-medium'
-                                    : 'text-ink-soft hover:text-ink'
+                                    ? 'border-burgundy text-ink font-medium'
+                                    : 'border-transparent text-ink-soft hover:text-ink'
                             }`}
                         >
                             {d.label}
