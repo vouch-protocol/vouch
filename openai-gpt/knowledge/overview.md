@@ -69,6 +69,19 @@ process has no access to the private key; prompt injection cannot
 exfiltrate what isn't there. Reference implementations exist in Go
 (production) and Python (development).
 
+## Robotics
+
+Vouch covers robots and embodied agents with six open capabilities, built on the
+same Verifiable Credentials as everything above: hardware-rooted identity (bound
+to a TPM or secure element), model and config provenance, physical capability
+scope (force, speed, a tighter cap near humans, zones, and shift windows, with
+narrow-only delegation), a robot-to-robot trust handshake, an encrypted
+tamper-evident black box with a verifiable kill switch, and a scannable offline
+passport. They are implemented in Python, TypeScript, Go, and the Rust core (which
+flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), so a
+robotics credential signed in any language verifies in every other. See
+robotics.md.
+
 ## Repository
 
 https://github.com/vouch-protocol/vouch

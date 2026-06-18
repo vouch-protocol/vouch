@@ -157,9 +157,26 @@ A Vouch delegation chain captures all three steps cryptographically. Each step n
       },
       {
         q: 'Does Vouch work for robots and embodied agents?',
-        a: `Yes. A robot is an agent with a body, and identity, accountability, and continuous trust matter more, not less, when an agent can cause physical harm. The same Vouch primitives apply: a \`did:vouch:agent\` identity for the robot, delegation chains that record who authorized it and within what limits, and the heartbeat runtime for whether it is still behaving.
+        a: `Yes, and it ships today. A robot is an agent with a body, so identity, accountability, and continuous trust matter even more once an agent can cause physical harm. Everything Vouch does for software agents applies, and the \`vouch.robotics\` module adds six capabilities for the parts that only exist when an agent is embodied. They are open formats plus reference implementations, built on the same \`eddsa-jcs-2022\` Verifiable Credentials as the rest of Vouch, so a robotics credential signed in one language verifies in every other.
 
-The robot-specific open piece is a hardware-root-of-trust profile. The robot's secure element (a TPM, a secure enclave, or an on-board AI module's enclave) anchors its DID and signs its heartbeats, so identity is bound to the physical device rather than a config file. The open \`did:vouch:agent\` profile in [docs/specs/](https://github.com/vouch-protocol/vouch/tree/main/docs/specs) defines the agent identity scheme; the embodied profile extends it for hardware attestation. Richer robot-lifecycle tooling builds on this open layer.`,
+The headline piece is hardware-rooted identity: the robot's secure element (a TPM, an enclave, or an on-board AI module's secure element) signs a binding over the robot's DID and key, so its identity is provably tied to one piece of hardware rather than a config file that can be copied.`,
+        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }, { label: 'Robotics overview', href: '/robotics/' }],
+        meta: 'Shipped - vouch.robotics (Python, TypeScript, Go, Rust core), PAD-064/067/069/070',
+      },
+      {
+        q: 'What exactly can Vouch do for a robot?',
+        a: `Six capabilities, each a signed credential anyone can verify:
+
+- **Hardware-rooted identity**: binds the robot's key to a TPM or secure element, so the identity cannot be cloned to other hardware.
+- **Model and config provenance**: a signed, re-signable record of the model, weights hash, safety policy, and config a robot is running, so you can prove what software it ran even after an over-the-air update.
+- **Physical capability scope**: max force, a slower speed near people, allowed zones, and shift windows, checked before each actuation; a delegated scope can only narrow, never widen.
+- **Robot-to-robot handshake**: two robots from different fleets authenticate and agree a cooperation session whose scope is the intersection of what each offers, gated by a domain trust policy.
+- **Black box and kill switch**: an encrypted, tamper-evident flight recorder (private without the key, tamper-evident without it) plus a verifiable emergency stop that proves who issued it and can require an attested authority.
+- **Scannable passport**: a compact signed passport in a QR or NFC tag, so anyone can check a robot's owner, authorized actions, certification, and standing offline.
+
+All six are implemented and tested across Python, TypeScript, Go, and the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers.`,
+        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
+        meta: 'Shipped - vouch.robotics, PAD-064/067/069/070',
       },
       {
         q: 'Can Vouch prove an agent has a track record it cannot fake?',
