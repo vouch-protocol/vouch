@@ -182,6 +182,10 @@ git commit --amend -s
 git push --force-with-lease
 ```
 
+## Recognition
+
+All contributors are credited. Merged contributions are recognized in the project's all-contributors list, in release notes, and with a signed Vouch Verified Contributor credential. Authorship of your commits remains yours.
+
 ## Questions?
 
 - Open a [Discussion](https://github.com/vouch-protocol/vouch/discussions)
