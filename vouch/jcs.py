@@ -16,7 +16,6 @@ import math
 import re
 from typing import Any, Mapping, Sequence
 
-
 _ESCAPE_MAP = {
     0x08: "\\b",
     0x09: "\\t",
@@ -73,7 +72,7 @@ def _emit_number(value: float | int) -> str:
             # is close but emits `1e+20` where ECMAScript emits `100000000000000000000`.
             # Use a shortest-round-trip serialization.
             s = repr(value)
-            # Normalize exponent capitalization and sign formatting per ES.
+            # Normalize exponent capitalization per ES.
             return _normalize_float_repr(s)
     if isinstance(value, bool):  # bool is a subclass of int in Python; guard above.
         raise TypeError("JCS: booleans handled by separate branch")
@@ -82,11 +81,11 @@ def _emit_number(value: float | int) -> str:
 
 def _normalize_float_repr(s: str) -> str:
     # Python repr for floats may produce forms like '1e+20' or '0.5'.
-    # ECMAScript toString uses lowercase 'e', no '+' after 'e' for positive,
+    # ECMAScript toString uses lowercase 'e',
     # and uses positional form for magnitudes between 1e-6 and 1e21 (exclusive).
     # This is a best-effort minimal normalizer; full ES coverage requires a
     # dedicated library if exotic floats are encountered.
-    s = s.lower().replace("e+", "e")
+    s = s.lower()
     return s
 
 
