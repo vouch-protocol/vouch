@@ -57,9 +57,41 @@ def test_object_keys_unicode_sort():
     assert canonical.startswith('{"a":3,"z":2,')
 
 
+def test_object_keys_rfc8785_unicode_sort_order():
+    obj = {
+        "\u20ac": "Euro Sign",
+        "\r": "Carriage Return",
+        "\ufb33": "Hebrew Letter Dalet With Dagesh",
+        "1": "One",
+        "\U0001f600": "Emoji: Grinning Face",
+        "\u0080": "Control",
+        "\u00f6": "Latin Small Letter O With Diaeresis",
+    }
+
+    expected = (
+        '{"\\r":"Carriage Return","1":"One","\u0080":"Control",'
+        '"\u00f6":"Latin Small Letter O With Diaeresis","\u20ac":"Euro Sign",'
+        '"\U0001f600":"Emoji: Grinning Face","\ufb33":"Hebrew Letter Dalet With Dagesh"}'
+    )
+
+    assert jcs.canonicalize(obj) == expected.encode("utf-8")
+
+
 def test_nested_object():
     obj = {"outer": {"y": 2, "x": 1}}
     assert jcs.canonicalize(obj) == b'{"outer":{"x":1,"y":2}}'
+
+
+def test_nested_objects_sort_recursively_inside_arrays():
+    obj = {
+        "z": [{"b": 1, "a": {"d": 4, "c": 3}}],
+        "a": {"y": [{"beta": 2, "alpha": 1}], "x": 0},
+    }
+
+    assert (
+        jcs.canonicalize(obj)
+        == b'{"a":{"x":0,"y":[{"alpha":1,"beta":2}]},"z":[{"a":{"c":3,"d":4},"b":1}]}'
+    )
 
 
 def test_no_whitespace():
@@ -81,6 +113,20 @@ def test_mixed_object_keys_and_values():
     assert '"literals":[null,true,false]' in out
     assert '"string":"hello"' in out
     assert out.index('"literals"') < out.index('"numbers"') < out.index('"string"')
+
+
+def test_rfc8785_number_formatting_edges():
+    obj = {
+        "numbers": [
+            333333333.33333329,
+            1e30,
+            4.50,
+            2e-3,
+            0.000000000000000000000000001,
+        ]
+    }
+
+    assert jcs.canonicalize(obj) == b'{"numbers":[333333333.3333333,1e+30,4.5,0.002,1e-27]}'
 
 
 def test_nan_and_inf_rejected():
