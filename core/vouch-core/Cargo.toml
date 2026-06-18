@@ -22,6 +22,8 @@ fips204 = "0.4"
 sha2 = "0.10"
 bs58 = "0.5"
 base64 = "0.22"
+# AES-256-GCM for the robot black-box encrypted, tamper-evident event log.
+aes-gcm = "0.10"
 flate2 = "1"
 getrandom = "0.2"
 zeroize = "1"
