@@ -6,6 +6,13 @@ built on the existing Vouch primitives, so they verify with the cross-language
 SDKs. These are formats plus references; hosted storage and fleet-scale services
 are out of scope.
 
+The examples below are in Python, but all six capabilities are implemented in
+Python (`vouch.robotics`), TypeScript (`packages/sdk-ts/src/robotics`), Go
+(`go-sidecar/robotics`), and the Rust core (`core/vouch-core`, module `robotics`),
+which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers. A
+robotics credential signed in any language verifies in every other, pinned by
+`test-vectors/robotics/vector.json`.
+
 ## 5.1 Hardware-rooted robot identity (`vouch.robotics.identity`)
 
 A `RobotIdentityCredential` binds a robot's software identity key to a hardware
