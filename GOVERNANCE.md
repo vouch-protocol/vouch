@@ -26,6 +26,29 @@ This project operates under a **Lazy Consensus** model. This means that consensu
 - Report bugs and suggest features
 - Participate in discussions
 
+## Contributor Ladder
+
+Contributors grow into greater ownership as they earn trust. The rungs are
+visible on purpose: people climb ladders they can see. Each rung adds
+recognition and responsibility.
+
+| Rung | How you get here | What you can do | Recognition |
+|------|------------------|-----------------|-------------|
+| **Newcomer** | Open your first issue or PR | Pick up a `good first issue`; ask questions in Discord | Welcomed by the bot |
+| **Contributor** | One merged PR | Keep contributing; claim issues | Listed via all-contributors; receive a signed **Vouch Verified Contributor** credential |
+| **Area Owner / Committer** | 2-3 solid PRs in one area, consistent participation | Added to `CODEOWNERS` for that area; auto-requested for review; can approve PRs (merge by a Maintainer) | Named in `MAINTAINERS.md` as a Committer |
+| **Maintainer** | Sustained expertise over 3+ months; nominated by a Maintainer; approved by the Lead | Write access to specific modules; merge PRs in their area; mentor newcomers; join the release process | Listed as a Maintainer |
+| **Project Lead** | Founding / appointed | Sets direction; final arbiter; manages signing keys and infrastructure | Listed as Project Lead |
+
+How to climb:
+1. **Ship**: multiple accepted PRs in an area (quality over quantity).
+2. **Stay**: consistent participation in issues, reviews, and Discord.
+3. **Be invited**: an existing Maintainer nominates you; the Lead approves.
+
+Maintainers should actively point strong contributors at the next rung: when
+someone lands a clean PR, reply with one specific `good second issue` or
+`help wanted` task that builds on what they just did.
+
 ## Access Continuity (Bus Factor)
 To ensure the project can continue if the project lead is incapacitated:
 

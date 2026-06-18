@@ -1,0 +1,36 @@
+# CODEOWNERS: GitHub auto-requests these owners for review when matching files change.
+# Order matters: the LAST matching pattern wins. Docs: https://docs.github.com/articles/about-code-owners
+#
+# How to use this as a contributor-growth tool:
+#   When a contributor lands 2-3 solid PRs in an area, add their @handle next to
+#   that path. Being auto-requested for review on "their" area is what turns a
+#   one-off contributor into a regular. Keep core/crypto under lead review.
+
+# Default owner for anything not matched below.
+*                         @rampyg
+
+# ----------------------------------------------------------------------------
+# Newcomer-friendly areas (good candidates to delegate to active contributors)
+# ----------------------------------------------------------------------------
+/examples/                @rampyg
+/docs/                    @rampyg
+/vouch/integrations/      @rampyg
+
+# Language SDKs
+/packages/sdk-py/         @rampyg
+/packages/sdk-ts/         @rampyg
+
+# ----------------------------------------------------------------------------
+# Core protocol and cryptography: lead review required (do not delegate yet)
+# ----------------------------------------------------------------------------
+/vouch/verifier.py        @rampyg
+/vouch/signer.py          @rampyg
+/vouch/data_integrity.py  @rampyg
+/vouch/vc.py              @rampyg
+/vouch/jcs.py             @rampyg
+
+# CI, community automation, and governance
+/.github/                 @rampyg
+/GOVERNANCE.md            @rampyg
+/MAINTAINERS.md           @rampyg
+/CODEOWNERS               @rampyg

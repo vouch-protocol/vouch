@@ -1,0 +1,39 @@
+name: Announce good first issues
+
+# When an issue is labeled "good first issue", post it to the community
+# Discord so newcomers see starter work as soon as it is curated.
+#
+# Setup: add a repository secret named DISCORD_WEBHOOK_URL holding a
+# Discord channel webhook (Channel settings -> Integrations -> Webhooks).
+# The job is a safe no-op if the secret is not set.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    if: github.event.label.name == 'good first issue'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "DISCORD_WEBHOOK_URL not set; skipping announcement."
+            exit 0
+          fi
+          # Build the JSON with jq so issue text cannot break out of the payload.
+          payload=$(jq -n \
+            --arg title "$ISSUE_TITLE" \
+            --arg url "$ISSUE_URL" \
+            --arg num "$ISSUE_NUMBER" \
+            '{content: ("**New good first issue** #\($num): \($title)\n\($url)\n\nNew here? Read CONTRIBUTING.md, comment to claim it, and say hi.")}')
+          curl -sf -H "Content-Type: application/json" -X POST "$DISCORD_WEBHOOK_URL" -d "$payload"
