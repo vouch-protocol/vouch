@@ -1,0 +1,81 @@
+name: Verified Contributor credential
+
+# When a pull request is merged, mint a signed "Vouch Verified Contributor"
+# credential for its author using our own protocol, and post it as a thank-you
+# comment. This dogfoods Vouch and gives contributors an ownable, verifiable
+# badge of their contribution.
+#
+# Setup: add repository secrets VOUCH_PRIVATE_KEY (issuer Ed25519 JWK) and
+# VOUCH_DID (issuer DID). The job is a safe no-op if they are not set.
+#
+# Security note: uses pull_request_target with the default (base) checkout, so
+# only trusted repository code runs. The contributor's PR code is never executed.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  mint:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install vouch
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Mint credential
+        env:
+          VOUCH_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
+          VOUCH_DID: ${{ secrets.VOUCH_DID }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$VOUCH_PRIVATE_KEY" ] || [ -z "$VOUCH_DID" ]; then
+            echo "Issuer key not configured; skipping credential minting."
+            exit 0
+          fi
+          python scripts/mint_contributor_credential.py \
+            --subject "$PR_AUTHOR" \
+            --pr-url "$PR_URL" \
+            --pr-number "$PR_NUMBER" \
+            --repo "$REPO" \
+            --out credential.json
+
+      - name: Thank the contributor
+        if: hashFiles('credential.json') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          {
+            echo "### Vouch Verified Contributor :sparkles:"
+            echo ""
+            echo "Thank you @${PR_AUTHOR}. Your merged pull request earns a signed"
+            echo "**Vouch Verified Contributor** credential, minted with our own protocol."
+            echo "Keep it, verify it, and show it off."
+            echo ""
+            echo "<details><summary>Your Verifiable Credential (eddsa-jcs-2022)</summary>"
+            echo ""
+            echo '```json'
+            cat credential.json
+            echo '```'
+            echo ""
+            echo "</details>"
+          } > comment.md
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file comment.md

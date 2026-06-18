@@ -24,6 +24,10 @@
 </p>
 
 <p align="center">
+ <a href="https://codespaces.new/vouch-protocol/vouch"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="28"></a>
+</p>
+
+<p align="center">
  <a href="https://github.com/vouch-protocol/vouch/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="Apache 2.0 License"></a>
 </p>
 
@@ -464,7 +468,7 @@ Built by [Ramprasad Gaddam](https://www.linkedin.com/in/rampy) ([Twitter/X](http
 
 ## Contributing
 
-Contributions welcome. See [CONTRIBUTING.md](https://github.com/vouch-protocol/vouch/blob/main/CONTRIBUTING.md).
+Contributions welcome. See [CONTRIBUTING.md](https://github.com/vouch-protocol/vouch/blob/main/CONTRIBUTING.md). Looking for a place to start? Browse our [good first issues](https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22), and open a ready-made dev environment with one click using the [Open in GitHub Codespaces](https://codespaces.new/vouch-protocol/vouch) badge above.
 
 **Areas where help is most useful:**
 - [ ] Additional framework integrations (Haystack, Semantic Kernel, LlamaIndex, others)
@@ -472,6 +476,20 @@ Contributions welcome. See [CONTRIBUTING.md](https://github.com/vouch-protocol/v
 - [ ] Tutorials and worked examples for regulated-sector deployments
 - [ ] Independent security review and audit
 - [ ] Reference implementations in additional languages (Rust, Java, .NET)
+
+## Contributors
+
+Thanks goes to these wonderful people. This section is maintained automatically by the [all-contributors](https://allcontributors.org/) bot.
+
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ---
 

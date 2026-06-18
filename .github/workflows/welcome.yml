@@ -1,0 +1,45 @@
+name: Welcome
+
+# Greets first-time issue and pull request authors with a warm, practical
+# pointer to CONTRIBUTING, the dev setup, the DCO sign-off, and Discord.
+# Uses pull_request_target so the greeting can be posted on PRs from forks.
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            Thanks for opening your first issue here, and welcome to Vouch Protocol. :wave:
+
+            A maintainer will take a look shortly. A few things that help us move fast:
+
+            - If you would like to work on this, just say so and we will assign it to you.
+            - New to the codebase? Our [CONTRIBUTING guide](https://github.com/vouch-protocol/vouch/blob/main/CONTRIBUTING.md) gets you from clone to green tests, and you can spin up a ready-made environment with the "Open in GitHub Codespaces" badge in the README.
+            - Want an AI co-pilot for Vouch? We ship a [Claude Code skill](https://github.com/vouch-protocol/vouch/tree/main/claude-skill), a [ChatGPT Custom GPT](https://github.com/vouch-protocol/vouch/tree/main/openai-gpt), and a [Gemini Gem](https://github.com/vouch-protocol/vouch/tree/main/gemini-gem) that know the SDK shapes, cryptosuite ids, and conventions, so future contributions go even faster.
+            - Questions are always welcome in our [Discord](https://discord.gg/mMqx5cG9Y).
+
+            Glad to have you here.
+          pr-message: |
+            Thanks for your first pull request, and welcome to Vouch Protocol. :tada:
+
+            Here is what happens next and how to keep things smooth:
+
+            - A maintainer will review shortly. CI runs automatically once a maintainer approves it for first-time contributors.
+            - Please make sure every commit carries a DCO sign-off (`git commit -s`). If CI flags it, run `git commit --amend -s` then `git push --force-with-lease`. Details are in [CONTRIBUTING](https://github.com/vouch-protocol/vouch/blob/main/CONTRIBUTING.md#dco-sign-off).
+            - New features should include tests. You can run the suite locally with `pytest tests/ -v`, or use the "Open in GitHub Codespaces" badge for a zero-setup environment.
+            - For future work, our [Claude skill](https://github.com/vouch-protocol/vouch/tree/main/claude-skill), [Custom GPT](https://github.com/vouch-protocol/vouch/tree/main/openai-gpt), and [Gemini Gem](https://github.com/vouch-protocol/vouch/tree/main/gemini-gem) can act as a Vouch-aware co-pilot.
+
+            Thank you for helping build the open standard for AI agent identity.
