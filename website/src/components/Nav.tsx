@@ -21,7 +21,7 @@ const MORE = [
 ];
 
 const navLinkClass = (active: boolean) =>
-    `font-mono uppercase text-[0.7rem] tracking-[0.14em] no-underline border-b pb-0.5 transition-colors ${
+    `font-mono uppercase text-[0.7rem] leading-none tracking-[0.14em] no-underline border-b pb-0.5 transition-colors ${
         active ? 'text-burgundy border-burgundy' : 'border-transparent text-ink-soft hover:text-burgundy hover:border-burgundy'
     }`;
 
