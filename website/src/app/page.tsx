@@ -2,7 +2,7 @@ import Link from 'next/link';
 import CodeBlock from '@/components/CodeBlock';
 import LangCodeBlock from '@/components/LangCodeBlock';
 
-const FEATURES = [
+const FEATURES: Array<{ num: string; title: string; body: string; spec: string; href?: string }> = [
   {
     num: 'i.',
     title: 'Cryptographic Agent Identity',
@@ -44,6 +44,7 @@ const FEATURES = [
     title: 'Robots & Embodied Agents',
     body: 'A robot identity rooted in a TPM or secure element, a signed record of the model and safety policy it runs (re-signed on every update), physical limits enforced as cryptographic capability (force, speed near humans, zones), a kill-switch credential only an attested authority can trigger, and a scannable QR/NFC passport.',
     spec: 'Robotics profile',
+    href: '/robotics/',
   },
   {
     num: 'viii.',
@@ -180,7 +181,13 @@ export default function HomePage() {
                 <div className="eyebrow-faint mb-2">{feature.num}</div>
                 <h3 className="font-serif font-semibold text-[1.25rem] mb-3 tracking-tight">{feature.title}</h3>
                 <p className="text-ink-soft text-[0.95rem] leading-relaxed mb-3">{feature.body}</p>
-                <span className="font-mono text-burgundy text-[0.7rem] tracking-wider">{feature.spec}</span>
+                {feature.href ? (
+                  <Link href={feature.href} className="font-mono text-burgundy text-[0.7rem] tracking-wider no-underline hover:underline">
+                    {feature.spec} &rarr;
+                  </Link>
+                ) : (
+                  <span className="font-mono text-burgundy text-[0.7rem] tracking-wider">{feature.spec}</span>
+                )}
               </div>
             ))}
           </div>
