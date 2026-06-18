@@ -29,6 +29,12 @@ import sys
 from vouch import Signer
 
 
+# A contributor badge attests a past fact, so it does not meaningfully expire.
+# The verifier requires a validUntil, so we set it far out (100 years) and rely
+# on a revocation status list, not expiry, if a badge ever needs to be pulled.
+DEFAULT_VALID_DAYS = 365 * 100
+
+
 def mint_credential(
     subject: str,
     pr_url: str,
@@ -36,9 +42,14 @@ def mint_credential(
     repo: str,
     private_key: str,
     did: str,
-    valid_days: int = 3650,
+    valid_days: int = DEFAULT_VALID_DAYS,
+    parent_credential: dict | None = None,
 ) -> dict:
-    """Return a signed Vouch Credential attesting a merged contribution."""
+    """Return a signed Vouch Credential attesting a merged contribution.
+
+    If `parent_credential` (the root -> contributor delegation) is provided, it
+    is attached so the badge traces back to the root authority.
+    """
     signer = Signer(private_key=private_key, did=did)
     intent = {
         "action": "attest",
@@ -49,7 +60,11 @@ def mint_credential(
         "repository": repo,
         "pullRequest": int(pr_number) if pr_number.isdigit() else pr_number,
     }
-    return signer.sign_credential(intent=intent, valid_seconds=valid_days * 86400)
+    return signer.sign_credential(
+        intent=intent,
+        valid_seconds=valid_days * 86400,
+        parent_credential=parent_credential,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -61,6 +76,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pr-number", default="", help="Pull request number")
     parser.add_argument("--repo", default=os.getenv("GITHUB_REPOSITORY", ""), help="owner/repo")
     parser.add_argument("--out", default="-", help="Output file, or - for stdout")
+    parser.add_argument(
+        "--parent",
+        default="",
+        help="Path to the root delegation credential (delegation.json). Optional.",
+    )
     args = parser.parse_args(argv)
 
     private_key = os.getenv("VOUCH_PRIVATE_KEY")
@@ -72,6 +92,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
+    parent_credential = None
+    if args.parent and os.path.exists(args.parent):
+        with open(args.parent, encoding="utf-8") as handle:
+            parent_credential = json.load(handle)
+
     credential = mint_credential(
         subject=args.subject,
         pr_url=args.pr_url,
@@ -79,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
         repo=args.repo,
         private_key=private_key,
         did=did,
+        parent_credential=parent_credential,
     )
 
     text = json.dumps(credential, indent=2)
