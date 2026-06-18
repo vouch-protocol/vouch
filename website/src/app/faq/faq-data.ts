@@ -33,6 +33,8 @@ export interface FAQSection {
   audience: string;
   /** Serif section title, e.g., "Getting Vouch into your codebase" */
   title: string;
+  /** Top-level agent domain for the page toggle. Defaults to 'agents' (software agents). */
+  domain?: 'agents' | 'robotics';
   items: FAQItem[];
 }
 
@@ -79,7 +81,7 @@ Vouch fixes this by turning every agent action into a signed receipt. Identity, 
       },
       {
         q: 'Who is behind Vouch?',
-        a: `Vouch is a personal open-source project from [Ramprasad Gaddam](https://github.com/vouch-protocol), an AI engineering director with 20+ years in regulated industries (healthcare, banking, manufacturing), 20 patents in cryptography and AI, and active membership in The Linux Foundation, C2PA, the Content Authenticity Initiative, DIF, and IEEE.
+        a: `Vouch is a personal open-source project from [Ramprasad Gaddam](https://github.com/vouch-protocol), an AI engineering director with 20+ years in regulated industries (healthcare and manufacturing), 20 patents in cryptography and AI, and active membership in The Linux Foundation, C2PA, the Content Authenticity Initiative, DIF, and IEEE.
 
 It is not affiliated with or endorsed by any employer.`,
       },
@@ -156,29 +158,6 @@ The credential format for these renewals ships today (it is called SessionVouche
 A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.`,
       },
       {
-        q: 'Does Vouch work for robots and embodied agents?',
-        a: `Yes, and it ships today. A robot is an agent with a body, so identity, accountability, and continuous trust matter even more once an agent can cause physical harm. Everything Vouch does for software agents applies, and the \`vouch.robotics\` module adds six capabilities for the parts that only exist when an agent is embodied. They are open formats plus reference implementations, built on the same \`eddsa-jcs-2022\` Verifiable Credentials as the rest of Vouch, so a robotics credential signed in one language verifies in every other.
-
-The headline piece is hardware-rooted identity: the robot's secure element (a TPM, an enclave, or an on-board AI module's secure element) signs a binding over the robot's DID and key, so its identity is provably tied to one piece of hardware rather than a config file that can be copied.`,
-        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }, { label: 'Robotics overview', href: '/robotics/' }],
-        meta: 'Shipped - vouch.robotics (Python, TypeScript, Go, Rust core), PAD-064/067/069/070',
-      },
-      {
-        q: 'What exactly can Vouch do for a robot?',
-        a: `Six capabilities, each a signed credential anyone can verify:
-
-- **Hardware-rooted identity**: binds the robot's key to a TPM or secure element, so the identity cannot be cloned to other hardware.
-- **Model and config provenance**: a signed, re-signable record of the model, weights hash, safety policy, and config a robot is running, so you can prove what software it ran even after an over-the-air update.
-- **Physical capability scope**: max force, a slower speed near people, allowed zones, and shift windows, checked before each actuation; a delegated scope can only narrow, never widen.
-- **Robot-to-robot handshake**: two robots from different fleets authenticate and agree a cooperation session whose scope is the intersection of what each offers, gated by a domain trust policy.
-- **Black box and kill switch**: an encrypted, tamper-evident flight recorder (private without the key, tamper-evident without it) plus a verifiable emergency stop that proves who issued it and can require an attested authority.
-- **Scannable passport**: a compact signed passport in a QR or NFC tag, so anyone can check a robot's owner, authorized actions, certification, and standing offline.
-
-All six are implemented and tested across Python, TypeScript, Go, and the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers.`,
-        helpLinks: [{ label: 'Robotics guide', href: '/help/#robotics' }],
-        meta: 'Shipped - vouch.robotics, PAD-064/067/069/070',
-      },
-      {
         q: 'Can Vouch prove an agent has a track record it cannot fake?',
         a: `Yes, this ships as outcome evidence (the \`vouch.accountability\` module). It separates two questions that often get blurred: "is this really agent X?" and "does X have a record of being right?" Identity answers the first. Outcome evidence answers the second.
 
@@ -187,6 +166,227 @@ It works in two steps. First the agent commits a verdict, prediction, or recomme
 This is the evidence layer underneath a reputation score. A score can be moved by whoever keeps it; outcome evidence is a per-call artifact the agent cannot rewrite.`,
         helpLinks: [{ label: 'Outcome evidence how-to', href: '/help/#outcome-evidence' }],
         meta: 'Shipped on main - vouch.accountability, PAD-071',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // EMBODIED AGENTS (ROBOTICS)
+  // =====================================================================
+  {
+    id: 'robotics',
+    audience: 'Embodied agents (robotics)',
+    title: 'Identity and accountability for robots',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Does Vouch work for robots and embodied agents?',
+        a: `Yes, and it ships today. A robot is an agent with a body, so identity, accountability, and continuous trust matter even more once an agent can cause physical harm. Everything Vouch does for software agents applies, and the \`vouch.robotics\` module adds six capabilities for the parts that only exist when an agent is embodied. They are open formats plus reference implementations, built on the same \`eddsa-jcs-2022\` Verifiable Credentials as the rest of Vouch, so a robotics credential signed in one language verifies in every other.`,
+        helpLinks: [{ label: 'Robotics quickstart', href: '/help/#robotics' }, { label: 'Robotics overview', href: '/robotics/' }],
+        meta: 'Shipped - vouch.robotics (Python, TypeScript, Go, Rust core), PAD-064/067/069/070',
+      },
+      {
+        q: 'What exactly can Vouch do for a robot?',
+        a: `Six capabilities, each a signed credential anyone can verify: hardware-rooted identity, model and config provenance, physical capability scope, a robot-to-robot handshake, a black box with a kill switch, and a scannable passport. Each capability has its own questions in the sections below, and its own guide under Help.`,
+        helpLinks: [{ label: 'Robotics capabilities', href: '/help/#robotics-capabilities' }],
+        meta: 'Shipped - vouch.robotics, PAD-064/067/069/070',
+      },
+      {
+        q: 'Which languages can I use the robotics capabilities from?',
+        a: `All of them. The six capabilities are implemented once in the Rust core and exposed through the same UniFFI and WebAssembly wrappers as the rest of Vouch, plus byte-identical reference implementations in Python, TypeScript, and Go. So you can build and verify them from Python, TypeScript, Go, Swift, Kotlin/JVM, .NET, C/C++, or the browser, and a credential signed in one verifies in all the others.`,
+        helpLinks: [{ label: 'Robotics quickstarts', href: '/help/#robotics' }],
+        meta: 'Shipped - vouch.robotics across every SDK',
+      },
+      {
+        q: 'How is a robot’s identity different from a software agent’s?',
+        a: `It adds a hardware root. A software agent has a DID and a signing key; a robot has those plus a binding signed by a TPM or secure element, so its identity is tied to one physical device. Everything else (delegation chains, revocation, the continuous-trust heartbeat) applies to the robot unchanged.`,
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: HARDWARE-ROOTED IDENTITY
+  // =====================================================================
+  {
+    id: 'robotics-identity',
+    audience: 'Robotics: hardware identity',
+    title: 'Hardware-rooted identity',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does hardware-rooted identity stop a robot from being cloned?',
+        a: `A robot self-issues a \`RobotIdentityCredential\` with its own key, and its hardware root (a TPM or secure element) signs a binding over the robot's DID and key, embedded as \`hardwareRoot.attestation\`. Copy the software identity to a different machine and the hardware attestation no longer matches the binding, so verification fails. The identity is tied to one piece of silicon.`,
+        helpLinks: [{ label: 'Hardware-rooted identity guide', href: '/help/#robotics-identity' }],
+        meta: 'Shipped - vouch.robotics.identity, PAD-064',
+      },
+      {
+        q: 'What does verifying a robot identity actually check?',
+        a: `Two independent signatures. First the credential proof, that the robot's own key signed the document. Second the hardware attestation, that the hardware root signed the canonical binding of the robot DID and key. Verification fails closed on a wrong type, an invalid proof, a missing or non-Ed25519 hardware key, or an attestation that does not match the binding.`,
+        helpLinks: [{ label: 'Hardware-rooted identity guide', href: '/help/#robotics-identity' }],
+        meta: 'Shipped - vouch.robotics.identity, PAD-064',
+      },
+      {
+        q: 'Do I need a real TPM to develop with robot identity?',
+        a: `No. The reference SDKs include a \`SoftwareRootOfTrust\` that stands in for the TPM during development and tests, and a \`HardwareRootOfTrust\` interface a real TPM or secure-element backend implements for production. The credential format is identical either way; only where the attestation is signed changes.`,
+        helpLinks: [{ label: 'Robotics quickstart', href: '/help/#robotics-quickstart-python' }],
+        meta: 'Shipped - vouch.robotics.identity',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: MODEL AND CONFIG PROVENANCE
+  // =====================================================================
+  {
+    id: 'robotics-provenance',
+    audience: 'Robotics: provenance',
+    title: 'Model and config provenance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can I prove what model and safety policy a robot ran, even after an OTA update?',
+        a: `Yes, via a \`ModelProvenanceAttestation\` recording the model name, weights hash, safety policy, and config hash. On an over-the-air update the robot re-signs a new attestation with a \`supersedes\` link to the previous one, forming a tamper-evident chain you can walk to answer "what was running at any past time."`,
+        helpLinks: [{ label: 'Provenance guide', href: '/help/#robotics-provenance' }],
+        meta: 'Shipped - vouch.robotics.provenance, PAD-065',
+      },
+      {
+        q: 'What is the config hash, and why can any verifier reproduce it?',
+        a: `The config hash is the multibase SHA-256 of the JCS-canonical config object. Because JCS canonicalization is byte-identical across languages, any verifier holding the expected config recomputes the same hash. Supply the config to the verifier and it checks the recorded hash reproduces, so a robot running a different config than the one attested is detectable.`,
+        helpLinks: [{ label: 'Provenance guide', href: '/help/#robotics-provenance' }],
+        meta: 'Shipped - vouch.robotics.provenance, PAD-065',
+      },
+      {
+        q: 'How does the supersedes chain answer "what was running at time T"?',
+        a: `Each attestation carries the id of the one it replaces. Following the \`supersedes\` links backward gives an ordered, signed history of every model and config the robot ran, each with its own validity window. To answer a question about a past moment, you find the attestation whose window covers it.`,
+        meta: 'Shipped - vouch.robotics.provenance, PAD-065',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: PHYSICAL CAPABILITY SCOPE
+  // =====================================================================
+  {
+    id: 'robotics-capability',
+    audience: 'Robotics: physical scope',
+    title: 'Physical capability scope',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How are a robot’s physical limits enforced?',
+        a: `A \`PhysicalCapabilityScope\` credential carries the limits, max force, max speed, a tighter cap near humans, allowed zones, and shift windows. A controller calls \`check_physical_action\` with a proposed action before the actuator moves, and gets back whether it is allowed plus a reason for each violated dimension.`,
+        helpLinks: [{ label: 'Capability scope guide', href: '/help/#robotics-capability' }],
+        meta: 'Shipped - vouch.robotics.capability, PAD-066',
+      },
+      {
+        q: 'What happens if an action exceeds the scope, or if a dimension is not set?',
+        a: `An action that exceeds any granted dimension is rejected, with a reason naming the dimension (for example "near_humans speed_exceeded"). A dimension that is not present in the scope is unconstrained by design: if a scope sets no \`maxForceN\`, force is not bounded by that credential.`,
+        helpLinks: [{ label: 'Capability scope guide', href: '/help/#robotics-capability' }],
+        meta: 'Shipped - vouch.robotics.capability, PAD-066',
+      },
+      {
+        q: 'Can a sub-task escalate the physical limits it was delegated?',
+        a: `No. Delegation is narrow-only, enforced by \`attenuates(parent, child)\`. A child scope may shrink numeric caps, subset the allowed zones, and fit each window inside a parent window, but a child that raises a cap, drops a cap the parent set, adds a zone outside the parent set, or widens a window is rejected. This is the privilege-escalation guard.`,
+        helpLinks: [{ label: 'Capability scope guide', href: '/help/#robotics-capability' }],
+        meta: 'Shipped - vouch.robotics.capability, PAD-066',
+      },
+      {
+        q: 'How does the slower speed near people work?',
+        a: `The scope can carry both a general \`maxSpeedMps\` and a tighter \`maxSpeedNearHumansMps\`. When an action is flagged as near humans, the near-humans cap applies instead of the general one, so the same robot is allowed to move faster in a clear aisle than next to a person.`,
+        meta: 'Shipped - vouch.robotics.capability, PAD-066',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: ROBOT-TO-ROBOT HANDSHAKE
+  // =====================================================================
+  {
+    id: 'robotics-handshake',
+    audience: 'Robotics: handshake',
+    title: 'Robot-to-robot handshake',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How do two robots from different fleets cooperate safely?',
+        a: `Through a three-message handshake (HELLO, ACCEPT, CONFIRM). The initiator proposes a scope and a fresh nonce; the responder verifies the HELLO signature, checks the initiator's \`did:web\` domain against its \`TrustPolicy\`, and replies with a session scope. No central broker is needed.`,
+        helpLinks: [{ label: 'Handshake guide', href: '/help/#robotics-handshake' }],
+        meta: 'Shipped - vouch.robotics.handshake, PAD-067',
+      },
+      {
+        q: 'Why is the session scope the intersection and not the union of what each robot offers?',
+        a: `Because cooperation should never grant more than both sides already allow. The bounded session scope is the intersection of the initiator's proposed scope and the responder's offered scope, so neither robot can widen the other's authority by asking. A robot that proposes more than its peer offers simply gets the overlap.`,
+        helpLinks: [{ label: 'Handshake guide', href: '/help/#robotics-handshake' }],
+        meta: 'Shipped - vouch.robotics.handshake, PAD-067',
+      },
+      {
+        q: 'What stops a replayed or tampered handshake message?',
+        a: `Each message is an \`eddsa-jcs-2022\` signed object, so altering any field breaks its signature. The initiator's nonce is echoed in the ACCEPT and checked, binding the acceptance to that specific HELLO, and the CONFIRM is checked against the agreed session id and nonce. A replayed or edited message fails verification.`,
+        meta: 'Shipped - vouch.robotics.handshake, PAD-067',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: BLACK BOX AND KILL SWITCH
+  // =====================================================================
+  {
+    id: 'robotics-blackbox',
+    audience: 'Robotics: black box and kill switch',
+    title: 'Black box and kill switch',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can a robot’s black box be audited for tampering without reading the logs?',
+        a: `Yes, that separation is the whole point. The black box is an append-only, AES-256-GCM-encrypted, hash-linked chain. Anyone can verify the chain is intact (no entry was altered, nothing was reordered) without holding the key, while only the key holder can decrypt the payloads. Tamper-evidence and confidentiality are independent.`,
+        helpLinks: [{ label: 'Black box and kill switch guide', href: '/help/#robotics-blackbox' }],
+        meta: 'Shipped - vouch.robotics.blackbox, PAD-069',
+      },
+      {
+        q: 'What is in a black-box entry, and how is it linked?',
+        a: `Each entry carries a sequence number, a timestamp, the event name, the encrypted payload (the blob is nonce, then ciphertext, then authentication tag), a \`prevHash\` linking it to the previous entry, and an \`entryHash\` over its own canonical body. Altering any recorded field breaks \`entryHash\`; reordering breaks \`prevHash\`.`,
+        helpLinks: [{ label: 'Black box and kill switch guide', href: '/help/#robotics-blackbox' }],
+        meta: 'Shipped - vouch.robotics.blackbox, PAD-069',
+      },
+      {
+        q: 'Can I stop a robot remotely and prove who issued the stop?',
+        a: `Yes. The kill switch is a signed \`KillSwitchCredential\` that names the target robot, the reason, and the issuer. The credential is a permanent, verifiable record of who triggered the stop and over what scope.`,
+        helpLinks: [{ label: 'Black box and kill switch guide', href: '/help/#robotics-blackbox' }],
+        meta: 'Shipped - vouch.robotics.blackbox, PAD-068',
+      },
+      {
+        q: 'Can I stop a rogue actor from forging an emergency stop?',
+        a: `Yes. Verification of a kill switch can require the issuer DID to be on an attested-authority allowlist. A credential signed by anyone not on the list is rejected, so only an attested authority can trigger a stop that controllers will honor.`,
+        meta: 'Shipped - vouch.robotics.blackbox, PAD-068',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: SCANNABLE PASSPORT
+  // =====================================================================
+  {
+    id: 'robotics-passport',
+    audience: 'Robotics: passport',
+    title: 'Scannable passport',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can someone scan a robot to check it is legitimate, offline?',
+        a: `Yes. The passport is a signed \`RobotPassport\` encoded into a \`vouch-passport:\` URI for a QR code or NFC tag, so a scanner verifies the signature locally with no network call. It surfaces the robot's owner, authorized actions, certification, and current standing.`,
+        helpLinks: [{ label: 'Passport guide', href: '/help/#robotics-passport' }],
+        meta: 'Shipped - vouch.robotics.passport, PAD-070',
+      },
+      {
+        q: 'What happens if a passport is expired, suspended, or decommissioned?',
+        a: `An expired passport fails verification outright. A suspended or decommissioned passport still verifies cryptographically, but its status is surfaced in the result, so the scanner can refuse cooperation rather than treating a withdrawn robot as silently inactive.`,
+        helpLinks: [{ label: 'Passport guide', href: '/help/#robotics-passport' }],
+        meta: 'Shipped - vouch.robotics.passport, PAD-070',
+      },
+      {
+        q: 'What is inside the vouch-passport URI?',
+        a: `The multibase bytes of the JCS-canonical passport credential, behind the \`vouch-passport:\` scheme. The encoding is deterministic, so a passport encoded in one language decodes and verifies in another, and a reader needs only the issuer's public key to check it, no network and no lookup.`,
+        meta: 'Shipped - vouch.robotics.passport, PAD-070',
       },
     ],
   },

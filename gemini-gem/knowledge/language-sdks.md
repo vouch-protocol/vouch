@@ -43,8 +43,28 @@ All of the local SDKs cover the same surface:
   older composite profile
 - Delegation: build a link and validate a chain's time-bound rule
 - Revocation: check a credential's BitstringStatusList status
+- Robotics: the six embodied-agent capabilities (see the Robotics section below)
 
 Binary values cross the boundary as base64; credentials and proofs cross as JSON.
+
+## Robotics in every language
+
+The robotics primitives (hardware-rooted identity, model and config provenance,
+physical capability scope, robot-to-robot handshake, an encrypted black box with
+a kill switch, and a scannable passport) are implemented once in the Rust core and
+exposed through the same UniFFI and WASM wrappers as the rest of the surface, so
+Swift, Kotlin/JVM, .NET, C/C++, and the browser get them too. Python
+(`vouch.robotics`), TypeScript (`packages/sdk-ts/src/robotics`), and Go
+(`go-sidecar/robotics`) each carry a byte-identical reference implementation.
+
+The FFI surface is JSON-in / JSON-out, with keys passed as bytes and binary fields
+as multibase strings, so every wrapper calls the same shared facade. Function names
+follow each language's convention: for example `mint_robot_identity` /
+`verify_robot_identity` in Python and Go, `mintRobotIdentity` / `verifyRobotIdentity`
+in TypeScript, and `roboticsMintIdentity` / `roboticsVerifyIdentity` over the WASM
+and UniFFI boundary. A robotics credential signed in any language verifies in every
+other, pinned by `test-vectors/robotics/vector.json`. See robotics.md for the
+per-capability API and worked examples.
 
 ## Mobile and native builds
 

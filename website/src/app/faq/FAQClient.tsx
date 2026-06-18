@@ -97,12 +97,20 @@ function renderAnswer(text: string): React.ReactNode {
 
 export default function FAQClient({ sections }: { sections: FAQSection[] }) {
     const [search, setSearch] = useState('');
+    const [domain, setDomain] = useState<'all' | 'agents' | 'robotics'>('all');
 
     const query = search.toLowerCase().trim();
 
+    const hasRobotics = useMemo(() => sections.some((s) => s.domain === 'robotics'), [sections]);
+
+    const domainSections = useMemo(
+        () => sections.filter((s) => domain === 'all' || (s.domain ?? 'agents') === domain),
+        [sections, domain]
+    );
+
     const filteredSections = useMemo(() => {
-        if (!query) return sections;
-        return sections
+        if (!query) return domainSections;
+        return domainSections
             .map((section) => ({
                 ...section,
                 items: section.items.filter(
@@ -114,17 +122,41 @@ export default function FAQClient({ sections }: { sections: FAQSection[] }) {
                 ),
             }))
             .filter((section) => section.items.length > 0);
-    }, [sections, query]);
+    }, [domainSections, query]);
+
+    const DOMAINS: { key: 'all' | 'agents' | 'robotics'; label: string }[] = [
+        { key: 'all', label: 'All' },
+        { key: 'agents', label: 'AI agents' },
+        { key: 'robotics', label: 'Embodied agents (robotics)' },
+    ];
 
     const totalResults = filteredSections.reduce((sum, s) => sum + s.items.length, 0);
 
     return (
-        <div className="grid lg:grid-cols-[220px_1fr] gap-12 lg:gap-16">
+        <div>
+            {hasRobotics && (
+                <div className="mb-10 flex flex-wrap gap-1 border-b border-rule">
+                    {DOMAINS.map((d) => (
+                        <button
+                            key={d.key}
+                            onClick={() => setDomain(d.key)}
+                            className={`px-4 py-2.5 -mb-px text-[0.92rem] border-b-2 transition-colors ${
+                                domain === d.key
+                                    ? 'border-burgundy text-ink font-medium'
+                                    : 'border-transparent text-ink-soft hover:text-ink'
+                            }`}
+                        >
+                            {d.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+            <div className="grid lg:grid-cols-[220px_1fr] gap-12 lg:gap-16">
             {/* Marginalia / table of contents */}
             <aside className="lg:sticky lg:top-8 lg:self-start lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto">
                 <div className="eyebrow mb-3 border-b border-rule pb-2">In this section</div>
                 <nav>
-                    {sections.map((section) => (
+                    {domainSections.map((section) => (
                         <a key={section.id} href={`#${section.id}`} className="marginalia-link">
                             {section.audience}
                         </a>
@@ -216,6 +248,7 @@ export default function FAQClient({ sections }: { sections: FAQSection[] }) {
                     ))
                 )}
             </div>
+        </div>
         </div>
     );
 }
