@@ -163,6 +163,34 @@ export default function ConformancePage() {
                 </section>
 
                 <section className="mt-12 border-t border-rule pt-12">
+                    <p className="eyebrow text-burgundy mb-2">Machine-verified</p>
+                    <h2 className="font-serif text-[1.5rem] font-semibold mb-3">Conformance you can run yourself</h2>
+                    <p className="text-ink leading-relaxed max-w-prose mb-4">
+                        A conformance level rests on machine-checked evidence. A shared, language-neutral
+                        set of test vectors pins the exact bytes a conforming implementation must produce,
+                        for JCS canonicalization, the eddsa-jcs-2022 proof, BitstringStatusList revocation,
+                        the hybrid post-quantum profile, audit trails, and robotics. Every SDK runs the same
+                        vectors in CI, so a credential signed in one language verifies byte-for-byte in every
+                        other. The <code>testVectorsPassing</code> field in the declaration above names which
+                        sets an implementation has cleared.
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                        <Link
+                            href="https://github.com/vouch-protocol/vouch/tree/main/test-vectors"
+                            className="font-mono uppercase tracking-[0.14em] text-[0.7rem] text-ink border-b border-ink no-underline hover:bg-ink hover:text-parchment px-1 py-0.5 transition-colors w-fit"
+                        >
+                            The test vectors &rarr;
+                        </Link>
+                        <Link
+                            href="https://github.com/vouch-protocol/vouch/tree/main/tests"
+                            className="font-mono uppercase tracking-[0.14em] text-[0.7rem] text-ink-soft border-b border-rule no-underline hover:text-ink px-1 py-0.5 transition-colors w-fit"
+                        >
+                            The interop tests &rarr;
+                        </Link>
+                    </div>
+                </section>
+
+                <section className="mt-12 border-t border-rule pt-12">
                     <p className="eyebrow text-burgundy mb-2">Show the world</p>
                     <h2 className="font-serif text-[1.5rem] font-semibold mb-3">Wear your conformance level</h2>
                     <p className="text-ink leading-relaxed max-w-prose mb-6">
