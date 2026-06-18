@@ -71,7 +71,15 @@ def cmd_init(args: argparse.Namespace) -> int:
     """Generate a new Ed25519 keypair for agent identity."""
     try:
         # Build DID
-        domain = args.domain if args.domain else "example.com"
+        if args.domain:
+            domain = args.domain
+        else:
+            domain = "example.com"
+            print(
+                "No domain specified, using 'example.com'."
+                " Pass --domain your.domain to set a real domain.",
+                file=sys.stderr,
+            )
 
         # Generate keys
         keys = generate_identity(domain)
