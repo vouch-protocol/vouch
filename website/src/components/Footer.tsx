@@ -6,6 +6,7 @@ const FOOTER_GROUPS = [
     title: 'Product',
     links: [
       { label: 'Tools', href: '/tools/' },
+      { label: 'Robotics', href: '/robotics/' },
       { label: 'FAQ', href: '/faq/' },
       { label: 'Help & Guides', href: '/help/' },
       { label: 'Agent Trust Index', href: '/agent-trust-index/' },
