@@ -1,0 +1,27 @@
+name: Vouch Signature Verification
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify-vouch:
+    name: Verify Vouch Trailers
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 20  # Fetch enough history for verification
+      
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      
+      - name: Verify Vouch trailers
+        run: |
+          python scripts/verify_git_history.py --count 10 --report
+        # Note: --strict flag omitted to start as advisory-only
+        # Add --strict when ready to enforce Vouch signing

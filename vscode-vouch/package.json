@@ -1,0 +1,112 @@
+{
+  "name": "vouch-vscode",
+  "displayName": "Vouch Protocol",
+  "description": "Sign AI agent actions with verifiable credentials. Local-first quickstarts, identity scaffolding, and a one-click link to the Vouch Assistant — without leaving VS Code.",
+  "version": "0.1.0",
+  "publisher": "vouch-protocol",
+  "license": "Apache-2.0",
+  "homepage": "https://vouch-protocol.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vouch-protocol/vouch.git",
+    "directory": "vscode-vouch"
+  },
+  "bugs": {
+    "url": "https://github.com/vouch-protocol/vouch/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "vouch",
+    "ai-agents",
+    "verifiable-credentials",
+    "did",
+    "post-quantum",
+    "ed25519",
+    "ml-dsa",
+    "signing",
+    "identity"
+  ],
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#F5EDDD",
+    "theme": "light"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onLanguage:go"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "vouch.insertLocalQuickstart",
+        "title": "Vouch: Insert local-first quickstart at cursor",
+        "category": "Vouch"
+      },
+      {
+        "command": "vouch.runInit",
+        "title": "Vouch: Generate a did:web identity (run vouch init)",
+        "category": "Vouch"
+      },
+      {
+        "command": "vouch.openAskAssistant",
+        "title": "Vouch: Ask the assistant",
+        "category": "Vouch"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "python",
+        "path": "./snippets/python.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./snippets/typescript.json"
+      },
+      {
+        "language": "javascript",
+        "path": "./snippets/typescript.json"
+      },
+      {
+        "language": "go",
+        "path": "./snippets/go.json"
+      }
+    ],
+    "configuration": {
+      "title": "Vouch Protocol",
+      "properties": {
+        "vouch.statusBar.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Vouch status-bar shortcut in the bottom-right."
+        },
+        "vouch.assistant.url": {
+          "type": "string",
+          "default": "https://vouch-protocol.com/ask",
+          "description": "URL the 'Ask the assistant' command opens."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "typescript": "^5.3.0"
+  }
+}

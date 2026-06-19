@@ -1,0 +1,36 @@
+# Publish the Python packages to PyPI:
+#   vouch-protocol     (root pyproject.toml)
+#   vouch-api-client   (sdks/clients/python)
+#   vouch-sdk          (packages/sdk-py)
+#
+# Trigger: push a tag like `py-v0.1.0`, or run manually (workflow_dispatch).
+# Required repo secret: PYPI_API_TOKEN (PyPI API token, scoped or account-wide).
+name: Publish PyPI
+
+on:
+  push:
+    tags: ["py-v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build tooling
+        run: python -m pip install --upgrade build twine
+      - name: Build and upload each package
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          set -e
+          for dir in . sdks/clients/python packages/sdk-py; do
+            echo "==> building $dir"
+            rm -rf "$dir/dist"
+            python -m build "$dir"
+            twine upload --skip-existing "$dir/dist/"*
+          done

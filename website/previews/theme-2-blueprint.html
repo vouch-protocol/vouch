@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vouch Protocol - Theme 2: Engineering Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+ --navy: #0B1220;
+ --navy-light: #131C2E;
+ --navy-deeper: #060A14;
+ --paper: #F5F2E8;
+ --paper-soft: rgba(245, 242, 232, 0.7);
+ --paper-faint: rgba(245, 242, 232, 0.45);
+ --paper-ghost: rgba(245, 242, 232, 0.12);
+ --cyan: #5BC0EB;
+ --cyan-dim: rgba(91, 192, 235, 0.5);
+ --orange: #E86E2A;
+ --orange-dim: rgba(232, 110, 42, 0.6);
+ --grid: rgba(91, 192, 235, 0.07);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+ background-color: var(--navy);
+ background-image:
+  linear-gradient(var(--grid) 1px, transparent 1px),
+  linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+ background-size: 32px 32px;
+ background-position: 0 0;
+ color: var(--paper);
+ font-family: 'Space Grotesk', sans-serif;
+ line-height: 1.6;
+ min-height: 100vh;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+/* Drafting marks helper */
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* === NAV === */
+nav.site-nav {
+ border-bottom: 1px solid var(--paper-ghost);
+ background: var(--navy);
+ position: sticky;
+ top: 0;
+ z-index: 50;
+ backdrop-filter: blur(8px);
+}
+nav.site-nav .inner {
+ display: flex; align-items: center; justify-content: space-between;
+ padding: 1.1rem 0;
+}
+nav.site-nav .brand { display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--paper); }
+nav.site-nav .brand .logo-frame {
+ width: 36px; height: 36px;
+ border: 1px solid var(--cyan);
+ position: relative;
+ display: flex; align-items: center; justify-content: center;
+}
+nav.site-nav .brand .logo-frame::before, nav.site-nav .brand .logo-frame::after {
+ content: ''; position: absolute; width: 6px; height: 6px;
+ border: 1px solid var(--cyan);
+}
+nav.site-nav .brand .logo-frame::before { top: -3px; left: -3px; border-right: none; border-bottom: none; }
+nav.site-nav .brand .logo-frame::after { bottom: -3px; right: -3px; border-left: none; border-top: none; }
+nav.site-nav .brand .logo-frame svg { width: 16px; height: 16px; color: var(--cyan); }
+nav.site-nav .brand .brand-text {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.95rem;
+ font-weight: 600;
+ letter-spacing: 0.02em;
+}
+nav.site-nav .brand .version {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.65rem;
+ color: var(--cyan);
+ letter-spacing: 0.1em;
+ display: block;
+ margin-top: 2px;
+}
+nav.site-nav ul { list-style: none; display: flex; gap: 1.75rem; align-items: center; }
+nav.site-nav ul a {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.78rem;
+ color: var(--paper-soft);
+ text-decoration: none;
+ letter-spacing: 0.04em;
+ position: relative;
+ transition: color 0.2s;
+}
+nav.site-nav ul a:hover { color: var(--cyan); }
+nav.site-nav ul a.github {
+ border: 1px solid var(--cyan-dim);
+ padding: 0.4rem 0.85rem;
+ color: var(--cyan);
+}
+nav.site-nav ul a.github:hover { background: var(--cyan); color: var(--navy); }
+
+/* === HERO === */
+section.hero {
+ padding: 5rem 0 4rem;
+ border-bottom: 1px solid var(--paper-ghost);
+ position: relative;
+}
+section.hero .schema-corner-tl, section.hero .schema-corner-br {
+ position: absolute; width: 80px; height: 80px;
+ border-color: var(--cyan-dim);
+}
+section.hero .schema-corner-tl { top: 2rem; left: 2rem; border-top: 1px solid var(--cyan-dim); border-left: 1px solid var(--cyan-dim); }
+section.hero .schema-corner-br { bottom: 2rem; right: 2rem; border-bottom: 1px solid var(--cyan-dim); border-right: 1px solid var(--cyan-dim); }
+section.hero .eyebrow-row {
+ display: flex; align-items: center; gap: 0.85rem;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.72rem;
+ color: var(--cyan);
+ letter-spacing: 0.16em;
+ text-transform: uppercase;
+ margin-bottom: 2rem;
+}
+section.hero .eyebrow-row .dot {
+ width: 8px; height: 8px; background: var(--cyan); border-radius: 50%;
+ box-shadow: 0 0 12px var(--cyan);
+}
+section.hero h1 {
+ font-family: 'Space Grotesk', sans-serif;
+ font-size: clamp(2.25rem, 4.5vw, 3.4rem);
+ font-weight: 600;
+ line-height: 1.08;
+ letter-spacing: -0.022em;
+ max-width: 920px;
+ margin-bottom: 1.5rem;
+}
+section.hero h1 strong { color: var(--cyan); font-weight: 600; }
+section.hero p.lede {
+ font-size: 1.05rem;
+ color: var(--paper-soft);
+ max-width: 700px;
+ line-height: 1.65;
+ margin-bottom: 2rem;
+}
+section.hero .ctas { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+section.hero .btn {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.78rem;
+ letter-spacing: 0.1em;
+ text-decoration: none;
+ padding: 0.75rem 1.4rem;
+ border: 1px solid;
+ transition: all 0.2s;
+ display: inline-flex; align-items: center; gap: 0.6rem;
+}
+section.hero .btn .arrow { font-family: 'IBM Plex Mono', monospace; }
+section.hero .btn.primary { background: var(--cyan); color: var(--navy); border-color: var(--cyan); }
+section.hero .btn.primary:hover { background: transparent; color: var(--cyan); }
+section.hero .btn.secondary { background: transparent; color: var(--paper); border-color: var(--paper-ghost); }
+section.hero .btn.secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+section.hero .btn.tertiary { background: transparent; color: var(--orange); border-color: var(--orange-dim); }
+section.hero .btn.tertiary:hover { background: var(--orange); color: var(--navy); }
+
+/* === SCHEMATIC === */
+.schematic-strip {
+ margin-top: 3rem;
+ padding: 2rem 0;
+ border-top: 1px dashed var(--paper-ghost);
+ border-bottom: 1px dashed var(--paper-ghost);
+ display: grid;
+ grid-template-columns: repeat(4, 1fr);
+ gap: 1.5rem;
+ position: relative;
+}
+.schematic-strip .layer {
+ border: 1px solid var(--paper-ghost);
+ padding: 1rem 1.1rem;
+ position: relative;
+}
+.schematic-strip .layer .layer-num {
+ position: absolute;
+ top: -8px; left: 0.85rem;
+ background: var(--navy);
+ padding: 0 0.4rem;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--orange);
+ letter-spacing: 0.1em;
+}
+.schematic-strip .layer .layer-title {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.8rem;
+ color: var(--paper);
+ letter-spacing: 0.04em;
+ margin-bottom: 0.35rem;
+ font-weight: 500;
+}
+.schematic-strip .layer .layer-desc {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--paper-faint);
+ letter-spacing: 0.02em;
+ line-height: 1.5;
+}
+.schematic-strip .layer.highlight { border-color: var(--cyan); }
+.schematic-strip .layer.highlight .layer-title { color: var(--cyan); }
+
+/* === FEATURES === */
+section.features { padding: 5rem 0; border-bottom: 1px solid var(--paper-ghost); }
+.section-marker {
+ display: flex; align-items: center; gap: 1rem;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.75rem;
+ letter-spacing: 0.18em;
+ text-transform: uppercase;
+ color: var(--cyan);
+ margin-bottom: 1rem;
+}
+.section-marker .bar { width: 32px; height: 1px; background: var(--cyan); }
+section.features h2 {
+ font-family: 'Space Grotesk', sans-serif;
+ font-size: 1.85rem;
+ font-weight: 600;
+ letter-spacing: -0.02em;
+ margin-bottom: 0.6rem;
+}
+section.features .section-sub {
+ color: var(--paper-soft);
+ font-size: 0.95rem;
+ max-width: 640px;
+ margin-bottom: 2.5rem;
+}
+.feature-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+ gap: 1px;
+ background: var(--paper-ghost);
+ border: 1px solid var(--paper-ghost);
+}
+.feature {
+ background: var(--navy);
+ padding: 1.6rem 1.5rem;
+ position: relative;
+}
+.feature .callout {
+ position: absolute;
+ top: 0.85rem; right: 0.85rem;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--orange);
+ letter-spacing: 0.05em;
+}
+.feature h3 {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.95rem;
+ font-weight: 600;
+ color: var(--paper);
+ margin-bottom: 0.8rem;
+ letter-spacing: 0;
+}
+.feature p {
+ color: var(--paper-soft);
+ font-size: 0.88rem;
+ line-height: 1.65;
+ margin-bottom: 1rem;
+}
+.feature .ref {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--cyan);
+ letter-spacing: 0.05em;
+}
+
+/* === FAQ === */
+section.faq { padding: 5rem 0; border-bottom: 1px solid var(--paper-ghost); }
+.faq-meta-table {
+ margin-bottom: 3rem;
+ border: 1px solid var(--paper-ghost);
+ display: grid;
+ grid-template-columns: 160px 1fr;
+}
+.faq-meta-table > div {
+ padding: 0.5rem 1rem;
+ border-bottom: 1px solid var(--paper-ghost);
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.78rem;
+}
+.faq-meta-table > div:nth-child(odd) {
+ color: var(--cyan);
+ letter-spacing: 0.06em;
+ background: var(--navy-light);
+}
+.faq-meta-table > div:nth-child(even) {
+ color: var(--paper-soft);
+}
+.faq-meta-table > div:nth-last-child(-n+2) { border-bottom: none; }
+
+.faq-section { margin-bottom: 3.5rem; position: relative; }
+.faq-section .audience-tag {
+ display: inline-block;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--orange);
+ border: 1px solid var(--orange-dim);
+ padding: 0.2rem 0.6rem;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ margin-bottom: 0.85rem;
+}
+.faq-section h3.faq-section-title {
+ font-family: 'Space Grotesk', sans-serif;
+ font-size: 1.5rem;
+ font-weight: 600;
+ color: var(--paper);
+ margin-bottom: 1.5rem;
+}
+.qa-card {
+ border-left: 2px solid var(--paper-ghost);
+ padding: 1rem 0 1rem 1.5rem;
+ margin-bottom: 1.2rem;
+ position: relative;
+ transition: all 0.2s;
+}
+.qa-card:hover { border-left-color: var(--cyan); }
+.qa-card.expanded { border-left-color: var(--cyan); }
+.qa-card .callout-num {
+ position: absolute;
+ top: 1rem; left: -22px;
+ background: var(--navy);
+ padding: 2px 4px;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--cyan);
+}
+.qa-card .q {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.92rem;
+ color: var(--paper);
+ font-weight: 500;
+ cursor: pointer;
+ display: flex;
+ align-items: flex-start;
+ justify-content: space-between;
+ gap: 1rem;
+ letter-spacing: 0.005em;
+}
+.qa-card .q .indicator {
+ color: var(--cyan-dim);
+ flex-shrink: 0;
+ font-size: 0.85rem;
+ margin-top: 2px;
+}
+.qa-card .a {
+ margin-top: 0.85rem;
+ color: var(--paper-soft);
+ font-size: 0.9rem;
+ line-height: 1.65;
+}
+.qa-card .a code {
+ font-family: 'IBM Plex Mono', monospace;
+ background: var(--navy-light);
+ padding: 0.1rem 0.4rem;
+ font-size: 0.85em;
+ color: var(--cyan);
+}
+.qa-card .a a {
+ color: var(--cyan);
+ text-decoration: none;
+ border-bottom: 1px dashed var(--cyan-dim);
+}
+.qa-card .a p { margin-bottom: 0.7rem; }
+.qa-card .a p:last-child { margin-bottom: 0; }
+.qa-card .a .annotation {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.72rem;
+ color: var(--orange);
+ letter-spacing: 0.04em;
+ margin-top: 0.75rem;
+ border-top: 1px dashed var(--paper-ghost);
+ padding-top: 0.6rem;
+}
+
+/* === FOOTER === */
+footer.site-footer {
+ padding: 4rem 0 2rem;
+ border-top: 1px solid var(--paper-ghost);
+}
+footer.site-footer .columns {
+ display: grid;
+ grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+ gap: 2.5rem;
+ margin-bottom: 3rem;
+}
+footer.site-footer .brand-block .mark {
+ font-family: 'IBM Plex Mono', monospace;
+ font-weight: 600;
+ font-size: 1rem;
+ color: var(--paper);
+ margin-bottom: 0.5rem;
+ display: block;
+}
+footer.site-footer .brand-block p {
+ color: var(--paper-faint);
+ font-size: 0.82rem;
+ line-height: 1.6;
+ max-width: 280px;
+}
+footer.site-footer h4 {
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.72rem;
+ color: var(--cyan);
+ letter-spacing: 0.18em;
+ text-transform: uppercase;
+ margin-bottom: 1rem;
+}
+footer.site-footer ul { list-style: none; }
+footer.site-footer ul li { margin-bottom: 0.6rem; }
+footer.site-footer ul a {
+ color: var(--paper-soft);
+ text-decoration: none;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.8rem;
+ transition: color 0.2s;
+}
+footer.site-footer ul a:hover { color: var(--cyan); }
+footer.site-footer .imprint {
+ border-top: 1px solid var(--paper-ghost);
+ padding-top: 1.5rem;
+ display: flex; justify-content: space-between;
+ font-family: 'IBM Plex Mono', monospace;
+ font-size: 0.7rem;
+ color: var(--paper-faint);
+ letter-spacing: 0.06em;
+}
+
+@media (max-width: 900px) {
+ .schematic-strip { grid-template-columns: 1fr 1fr; }
+ footer.site-footer .columns { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+ <div class="container inner">
+  <a href="#" class="brand">
+   <div class="logo-frame">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+   </div>
+   <div>
+    <span class="brand-text">vouch-protocol</span>
+    <span class="version">v1.6.0 / spec-0.1-draft</span>
+   </div>
+  </a>
+  <ul>
+   <li><a href="#">Home</a></li>
+   <li><a href="#">FAQ</a></li>
+   <li><a href="#">Help</a></li>
+   <li><a href="#">Support</a></li>
+   <li><a href="#" class="github">[ GitHub ]</a></li>
+  </ul>
+ </div>
+</nav>
+
+<section class="hero">
+ <div class="schema-corner-tl"></div>
+ <div class="schema-corner-br"></div>
+ <div class="container">
+  <div class="eyebrow-row">
+   <span class="dot"></span>
+   <span>Spec v0.1-draft / Shipping v1.6.0 / Specification</span>
+  </div>
+  <h1>Cryptographic identity &amp; accountability layer for the <strong>agentic web</strong>.</h1>
+  <p class="lede">
+   Three reference SDKs producing byte-identical Verifiable Credentials with Data Integrity proofs.
+   Sidecar isolates private keys from the LLM context window. Optional hybrid post-quantum profile combining
+   Ed25519 with ML-DSA-44, ready today.
+  </p>
+  <div class="ctas">
+   <a href="#" class="btn primary">Read FAQ <span class="arrow">&rarr;</span></a>
+   <a href="#" class="btn secondary">Browse guides</a>
+   <a href="#" class="btn tertiary">View GitHub</a>
+  </div>
+
+  <div class="schematic-strip">
+   <div class="layer">
+    <span class="layer-num">[ LAYER 01 ]</span>
+    <div class="layer-title">Identity</div>
+    <div class="layer-desc">DID + Multikey<br>Ed25519 + ML-DSA-44</div>
+   </div>
+   <div class="layer">
+    <span class="layer-num">[ LAYER 02 ]</span>
+    <div class="layer-title">Authorization</div>
+    <div class="layer-desc">VC Data Model 2.0<br>Delegation chains</div>
+   </div>
+   <div class="layer highlight">
+    <span class="layer-num">[ LAYER 03 ]</span>
+    <div class="layer-title">State Verifiability</div>
+    <div class="layer-desc">Heartbeat Protocol<br>Validator quorum (informative)</div>
+   </div>
+   <div class="layer">
+    <span class="layer-num">[ LAYER 04 ]</span>
+    <div class="layer-title">Transport</div>
+    <div class="layer-desc">HTTP / IPC / framework SDKs<br>LangChain, MCP, CrewAI...</div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="features">
+ <div class="container">
+  <div class="section-marker"><span class="bar"></span><span>SUBSYSTEM SUMMARY / S.01</span></div>
+  <h2>What the protocol provides</h2>
+  <p class="section-sub">
+   Six properties that traditional API keys, OAuth tokens, and bearer credentials cannot provide for autonomous AI
+   agents operating in regulated environments.
+  </p>
+  <div class="feature-grid">
+   <div class="feature">
+    <span class="callout">[01]</span>
+    <h3>Cryptographic Identity</h3>
+    <p>Every agent holds a Decentralized Identifier (did:web, did:key) backed by an Ed25519 keypair. No shared secrets.</p>
+    <span class="ref">REF §6 / IDENTITY MODEL</span>
+   </div>
+   <div class="feature">
+    <span class="callout">[02]</span>
+    <h3>Intent Attestation</h3>
+    <p>Every action is signed as a VC with Data Integrity proofs binding identity, action, target, and resource.</p>
+    <span class="ref">REF §5 / CREDENTIAL FORMAT</span>
+   </div>
+   <div class="feature">
+    <span class="callout">[03]</span>
+    <h3>Resource Delegation</h3>
+    <p>Multi-agent systems gain verifiable principal-to-sub-agent chains. Each link narrows the resource scope.</p>
+    <span class="ref">REF §9 / DELEGATION CHAINS</span>
+   </div>
+   <div class="feature">
+    <span class="callout">[04]</span>
+    <h3>Identity Sidecar</h3>
+    <p>Private keys never enter the LLM context window. A separate Go binary signs over a local IPC channel.</p>
+    <span class="ref">REF §10 / IDENTITY SIDECAR</span>
+   </div>
+   <div class="feature">
+    <span class="callout">[05]</span>
+    <h3>Heartbeat Renewal</h3>
+    <p>Long-running agents renew SessionVoucher credentials on a periodic schedule. "Untrusted until renewed."</p>
+    <span class="ref">REF §11 / HEARTBEAT PROTOCOL</span>
+   </div>
+   <div class="feature">
+    <span class="callout">[06]</span>
+    <h3>Hybrid Post-Quantum</h3>
+    <p>Cryptosuite hybrid-eddsa-mldsa44-jcs-2026. Ed25519 + ML-DSA-44 sign the same JCS bytes.</p>
+    <span class="ref">REF §13 / CRYPTO-AGILITY</span>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="faq">
+ <div class="container">
+  <div class="section-marker"><span class="bar"></span><span>REFERENCE Q&amp;A / S.02</span></div>
+  <h2 style="font-family:'Space Grotesk',sans-serif;font-size:1.85rem;font-weight:600;margin-bottom:0.6rem;letter-spacing:-0.02em;">Frequently asked questions</h2>
+  <p style="color:var(--paper-soft);font-size:0.95rem;max-width:640px;margin-bottom:2rem;">
+   Answers organized by audience. Search and direct anchors per entry.
+  </p>
+
+  <div class="faq-meta-table">
+   <div>SECTIONS</div><div>5</div>
+   <div>ENTRIES</div><div>~120 (full FAQ)</div>
+   <div>LAST UPDATED</div><div>2026-05-11</div>
+   <div>SPEC REVISION</div><div>v0.1-draft</div>
+  </div>
+
+  <div class="faq-section">
+   <span class="audience-tag">[ For Developers ]</span>
+   <h3 class="faq-section-title">Getting Vouch into your codebase</h3>
+
+   <div class="qa-card">
+    <div class="callout-num">[04.01]</div>
+    <div class="q">
+     <span>Which languages have Vouch SDKs?</span>
+     <span class="indicator">[+]</span>
+    </div>
+   </div>
+
+   <div class="qa-card expanded">
+    <div class="callout-num">[04.02]</div>
+    <div class="q">
+     <span>Do I need to run the Go sidecar?</span>
+     <span class="indicator">[-]</span>
+    </div>
+    <div class="a">
+     <p>
+      Only if you want the Identity Sidecar pattern, which is the recommended deployment for LLM-driven agents
+      because it keeps the private key out of the LLM context window. The sidecar is a long-running Go daemon
+      that exposes <code>POST /sign</code> on a configurable port.
+     </p>
+     <p>
+      If your code never exposes the key to the model, you can sign directly from the Python or TypeScript SDK
+      using <code>Signer.sign_credential()</code> or <code>signer.signCredential()</code>.
+     </p>
+     <div class="annotation">REF: §10 IDENTITY SIDECAR PATTERN / PAD-003</div>
+    </div>
+   </div>
+
+   <div class="qa-card">
+    <div class="callout-num">[04.03]</div>
+    <div class="q">
+     <span>How do I verify a credential signed in a different language?</span>
+     <span class="indicator">[+]</span>
+    </div>
+   </div>
+  </div>
+
+  <div class="faq-section">
+   <span class="audience-tag">[ For Operators ]</span>
+   <h3 class="faq-section-title">Production deployment</h3>
+
+   <div class="qa-card">
+    <div class="callout-num">[05.01]</div>
+    <div class="q">
+     <span>Which KMS backends are supported?</span>
+     <span class="indicator">[+]</span>
+    </div>
+   </div>
+
+   <div class="qa-card">
+    <div class="callout-num">[05.02]</div>
+    <div class="q">
+     <span>What storage backends does the revocation registry support?</span>
+     <span class="indicator">[+]</span>
+    </div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<footer class="site-footer">
+ <div class="container">
+  <div class="columns">
+   <div class="brand-block">
+    <span class="mark">vouch-protocol</span>
+    <p>Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.</p>
+   </div>
+   <div>
+    <h4>// Product</h4>
+    <ul>
+     <li><a href="#">FAQ</a></li>
+     <li><a href="#">Help &amp; Guides</a></li>
+     <li><a href="#">Support</a></li>
+    </ul>
+   </div>
+   <div>
+    <h4>// Resources</h4>
+    <ul>
+     <li><a href="#">GitHub</a></li>
+     <li><a href="#">Specification</a></li>
+     <li><a href="#">Test Vectors</a></li>
+    </ul>
+   </div>
+   <div>
+    <h4>// SDKs</h4>
+    <ul>
+     <li><a href="#">Python</a></li>
+     <li><a href="#">TypeScript</a></li>
+     <li><a href="#">Go sidecar</a></li>
+    </ul>
+   </div>
+   <div>
+    <h4>// Community</h4>
+    <ul>
+     <li><a href="#">Discord</a></li>
+     <li><a href="#">Issues</a></li>
+    </ul>
+   </div>
+  </div>
+  <div class="imprint">
+   <span>// © 2025-2026 RAMPRASAD GADDAM / APACHE 2.0</span>
+   <span>// SPEC v0.1-DRAFT / IMPL v1.6.0</span>
+  </div>
+ </div>
+</footer>
+
+</body>
+</html>

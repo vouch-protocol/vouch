@@ -1,0 +1,19 @@
+# Published set is controlled by package.json "files" (build, android, ios,
+# rust, plugin/build, app.plugin.js, expo-module.config.json, README, LICENSE).
+#
+# This .npmignore exists specifically so npm does NOT fall back to .gitignore
+# (which ignores the vendored rust/ + uniffi bindings — those MUST ship so the
+# consumer's EAS build can compile the Rust core). Only dev-only files are
+# excluded here; the vendored rust/, android/, ios/ are intentionally kept.
+
+src/
+scripts/
+tsconfig.json
+node_modules/
+*.tgz
+.gitignore
+.npmignore
+
+# Rust build artifacts (the consumer's EAS build regenerates these)
+**/target/
+rust/target/

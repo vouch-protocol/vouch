@@ -1,0 +1,62 @@
+{
+  "name": "@vouch-protocol-official/expo-sonic",
+  "version": "1.0.0",
+  "description": "Expo native module wrapping the Vouch Sonic Core (Rust/UniFFI) for real on-device audio watermark detection and Ed25519 signature verification on iOS + Android.",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build",
+    "android",
+    "ios",
+    "rust",
+    "plugin/build",
+    "app.plugin.js",
+    "expo-module.config.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean",
+    "lint": "expo-module lint",
+    "prepare": "expo-module prepare",
+    "prepublishOnly": "expo-module prepublishOnly",
+    "expo-module": "expo-module"
+  },
+  "keywords": [
+    "expo",
+    "expo-module",
+    "react-native",
+    "vouch",
+    "sonic",
+    "audio-watermark",
+    "watermark-detection",
+    "uniffi",
+    "rust",
+    "did",
+    "ed25519"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vouch-protocol/vouch",
+    "directory": "mobile/expo-sonic"
+  },
+  "bugs": {
+    "url": "https://github.com/vouch-protocol/vouch/issues"
+  },
+  "author": "Ramprasad Anandam Gaddam",
+  "license": "Apache-2.0",
+  "homepage": "https://vouch-protocol.com",
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "expo": ">=54.0.0",
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "expo-module-scripts": "^5.0.0",
+    "expo-modules-core": "^3.0.0"
+  }
+}

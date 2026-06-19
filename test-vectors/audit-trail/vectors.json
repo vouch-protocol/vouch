@@ -1,0 +1,26 @@
+{
+  "description": "Vouch audit trail hash chain. entry_hash = sha256(JCS(content)) where content excludes entry_hash. prev_hash links to the previous entry_hash; genesis is 64 zeros.",
+  "genesis_prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "entries": [
+    {
+      "seq": 0,
+      "timestamp": "2026-06-14T00:00:00Z",
+      "action": "ALLOWED",
+      "actor": "did:web:agent.example.com",
+      "resource": "read_file",
+      "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "entry_hash": "9469586cff2015643fe187b26a6cb3b362d1ab1a97472b013e7ab0b08021fd26"
+    },
+    {
+      "seq": 1,
+      "timestamp": "2026-06-14T00:00:01Z",
+      "action": "BLOCKED",
+      "actor": "did:web:agent.example.com",
+      "resource": "run_command",
+      "decision": "not_trusted",
+      "prev_hash": "9469586cff2015643fe187b26a6cb3b362d1ab1a97472b013e7ab0b08021fd26",
+      "entry_hash": "693faecfc32038de0760024f21c4dd24ac3f6bbd2ca886f930a2b7a1c7ca55bb"
+    }
+  ],
+  "head": "693faecfc32038de0760024f21c4dd24ac3f6bbd2ca886f930a2b7a1c7ca55bb"
+}

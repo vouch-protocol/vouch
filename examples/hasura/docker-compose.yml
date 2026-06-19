@@ -1,0 +1,73 @@
+version: "3.8"
+
+# Vouch + Hasura Integration Demo
+# Run: docker-compose up
+# Access Hasura Console: http://localhost:8080
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: demo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for nonce tracking and revocation
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Vouch Auth Webhook
+  vouch-webhook:
+    build:
+      context: ../..
+      dockerfile: examples/hasura/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: INFO
+      # Add trusted DIDs here (JSON format)
+      # VOUCH_TRUSTED_DIDS: '{"did:web:agent.example.com": "{...jwk...}"}'
+    ports:
+      - "3000:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Hasura GraphQL Engine
+  hasura:
+    image: hasura/graphql-engine:v2.36.0
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgres@postgres:5432/demo
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ADMIN_SECRET: vouch-demo-secret
+      # Point to Vouch webhook for authentication
+      HASURA_GRAPHQL_AUTH_HOOK: http://vouch-webhook:3000/auth
+      HASURA_GRAPHQL_AUTH_HOOK_MODE: GET
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vouch-webhook:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,0 +1,275 @@
+3:I[4707,[],""]
+5:I[6423,[],""]
+6:I[6938,["972","static/chunks/972-cd98585eebb47bc2.js","234","static/chunks/234-11b3a8b641b76c13.js","151","static/chunks/151-134c4796673c0ca5.js","185","static/chunks/app/layout-e5069808ef16144e.js"],"default"]
+7:I[2972,["972","static/chunks/972-cd98585eebb47bc2.js","308","static/chunks/app/blog/%5Bslug%5D/page-93d46140da82ebe5.js"],""]
+8:I[5878,["972","static/chunks/972-cd98585eebb47bc2.js","234","static/chunks/234-11b3a8b641b76c13.js","151","static/chunks/151-134c4796673c0ca5.js","185","static/chunks/app/layout-e5069808ef16144e.js"],"Image"]
+9:I[9177,["972","static/chunks/972-cd98585eebb47bc2.js","234","static/chunks/234-11b3a8b641b76c13.js","151","static/chunks/151-134c4796673c0ca5.js","185","static/chunks/app/layout-e5069808ef16144e.js"],"default"]
+a:I[7167,["972","static/chunks/972-cd98585eebb47bc2.js","234","static/chunks/234-11b3a8b641b76c13.js","151","static/chunks/151-134c4796673c0ca5.js","185","static/chunks/app/layout-e5069808ef16144e.js"],"default"]
+b:I[8003,["972","static/chunks/972-cd98585eebb47bc2.js","234","static/chunks/234-11b3a8b641b76c13.js","151","static/chunks/151-134c4796673c0ca5.js","185","static/chunks/app/layout-e5069808ef16144e.js"],""]
+4:["slug","vouch-git-workflow","d"]
+0:["LLmcnewFFbUmHYpn_HU4z",[[["",{"children":["blog",{"children":[["slug","vouch-git-workflow","d"],{"children":["__PAGE__?{\"slug\":\"vouch-git-workflow\"}",{}]}]}]},"$undefined","$undefined",true],["",{"children":["blog",{"children":[["slug","vouch-git-workflow","d"],{"children":["__PAGE__",{},[["$L1","$L2",null],null],null]},[null,["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children","blog","children","$4","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[null,["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children","blog","children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","notFoundStyles":"$undefined"}]],null]},[[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/57ecd977ff2370e2.css","precedence":"next","crossOrigin":"$undefined"}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap","rel":"stylesheet"}],["$","script",null,{"dangerouslySetInnerHTML":{"__html":"(function(){try{var s=localStorage.getItem('vouch-theme');var d=s==='dark'?'dark':'light';document.documentElement.setAttribute('data-theme',d);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();"}}]]}],["$","body",null,{"children":[["$","$L6",null,{}],["$","main",null,{"children":["$","$L3",null,{"parallelRouterKey":"children","segmentPath":["children"],"error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":"404"}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],"notFoundStyles":[]}]}],["$","footer",null,{"className":"mt-24 pb-12","children":["$","div",null,{"className":"container-wide","children":["$","div",null,{"className":"double-rule pt-12","children":[["$","div",null,{"className":"grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-12","children":[["$","div",null,{"className":"col-span-2 md:col-span-1","children":[["$","$L7",null,{"href":"/","aria-label":"Vouch Protocol home","className":"block mb-4 no-underline","children":["$","$L8",null,{"src":"/assets/vouch-wordmark.png","alt":"Vouch Protocol","width":1600,"height":629,"priority":false,"className":"h-12 md:h-14 w-auto max-w-full vouch-footer-wordmark"}]}],["$","p",null,{"className":"font-serif italic text-ink-faint text-[0.9rem] max-w-[280px]","children":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","p",null,{"className":"font-mono text-[0.62rem] tracking-[0.14em] uppercase text-ink-faint mt-3 max-w-[280px]","children":"Vouch Protocol™ — common-law trademark"}]]}],[["$","div","Product",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Product"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Tools",{"children":["$","$L7",null,{"href":"/tools/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Tools"}]}],["$","li","Robotics",{"children":["$","$L7",null,{"href":"/robotics/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Robotics"}]}],["$","li","FAQ",{"children":["$","$L7",null,{"href":"/faq/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"FAQ"}]}],["$","li","Help & Guides",{"children":["$","$L7",null,{"href":"/help/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Help & Guides"}]}],["$","li","Agent Trust Index",{"children":["$","$L7",null,{"href":"/agent-trust-index/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Agent Trust Index"}]}],["$","li","Support",{"children":["$","$L7",null,{"href":"/support/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Support"}]}]]}]]}],["$","div","Resources",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Resources"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","GitHub",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub"}]}],["$","li","Specification",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/docs/specs/cg-report-executive-summary.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Specification"}]}],["$","li","Prior Art Disclosures",{"children":["$","$L7",null,{"href":"/disclosures/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Prior Art Disclosures"}]}],["$","li","Conformance Levels",{"children":["$","$L7",null,{"href":"/conformance/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Conformance Levels"}]}],["$","li","Regulatory Mapping",{"children":["$","$L7",null,{"href":"/compliance/","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Regulatory Mapping"}]}],["$","li","Test Vectors",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/test-vectors","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Test Vectors"}]}],["$","li","CHANGELOG",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/blob/main/CHANGELOG.md","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"CHANGELOG"}]}]]}]]}],["$","div","SDKs",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"SDKs"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Python (PyPI)",{"children":["$","a",null,{"href":"https://pypi.org/project/vouch-protocol/","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Python (PyPI)"}]}],["$","li","WASM core (npm)",{"children":["$","a",null,{"href":"https://www.npmjs.com/package/@vouch-protocol-official/core-wasm","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"WASM core (npm)"}]}],["$","li","API client (PyPI)",{"children":["$","a",null,{"href":"https://pypi.org/project/vouch-api-client/","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"API client (PyPI)"}]}],["$","li","Go sidecar",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/go-sidecar","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Go sidecar"}]}],["$","li","Swift, JVM, .NET, C",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/sdks","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Swift, JVM, .NET, C"}]}],["$","li","Browser extension",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/tree/main/browser-extension","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Browser extension"}]}]]}]]}],["$","div","Community",{"children":[["$","h4",null,{"className":"eyebrow mb-4","children":"Community"}],["$","ul",null,{"className":"space-y-2.5 list-none","children":[["$","li","Discord",{"children":["$","a",null,{"href":"https://discord.gg/mMqx5cG9Y","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"Discord"}]}],["$","li","GitHub issues",{"children":["$","a",null,{"href":"https://github.com/vouch-protocol/vouch/issues","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"GitHub issues"}]}],["$","li","X / Twitter",{"children":["$","a",null,{"href":"https://x.com/Vouch_Protocol","target":"_blank","rel":"noopener noreferrer","className":"text-ink-soft hover:text-burgundy text-[0.95rem] no-underline border-b border-transparent hover:border-burgundy transition-colors","children":"X / Twitter"}]}]]}]]}]]]}],["$","div",null,{"className":"mt-12 pt-6 border-t border-rule flex flex-col md:flex-row gap-3 items-start md:items-center justify-between font-mono text-[0.7rem] tracking-[0.1em] text-ink-faint","children":[["$","span",null,{"children":"© 2025-2026 Ramprasad Gaddam. Licensed under Apache 2.0."}],["$","span",null,{"children":"An open standard specification."}]]}]]}]}]}],["$","$L9",null,{}],["$","$La",null,{}],["$","$Lb",null,{"src":"https://www.googletagmanager.com/gtag/js?id=G-JHPT5HRW2F","strategy":"afterInteractive"}],["$","$Lb",null,{"id":"gtag-init","strategy":"afterInteractive","children":"\n            window.dataLayer = window.dataLayer || [];\n            function gtag(){dataLayer.push(arguments);}\n            gtag('js', new Date());\n            gtag('config', 'G-JHPT5HRW2F');\n          "}]]}]]}]],null],null],["$Lc",null]]]]
+d:T281c,<p>Supply chain attacks are on the rise. In 2024 alone, we saw major incidents affecting millions of developers
+      through compromised dependencies and malicious commits. The solution? <strong>Cryptographically sign every
+        commit</strong> to prove it came from you.</p>
+
+    <p>With Vouch Protocol, you can set this up in <strong>under 60 seconds</strong>.</p>
+
+    <h2>What You'll Achieve</h2>
+    <ul>
+      <li>Every git commit signed with your cryptographic identity</li>
+      <li>GitHub shows the "Verified" badge on your commits</li>
+      <li>Zero manual signing—it just works automatically</li>
+      <li>Use your existing SSH key (no new keys to manage)</li>
+    </ul>
+
+    <h2>Prerequisites</h2>
+    <ul>
+      <li>Python 3.8+ installed</li>
+      <li>Git configured with your name and email</li>
+      <li>An SSH key added to your GitHub account <em>(optional - Vouch will generate one if you don't have
+          it)</em></li>
+    </ul>
+
+    <div class="vouch-blog-callout"><strong>No SSH Key?</strong> No problem! <code>vouch git init</code> will automatically generate a new
+      Ed25519 key and upload it to GitHub for you. Zero manual steps required.
+    </div>
+
+    <h2>Quick Start (30 seconds)</h2>
+
+    <div class="step"><h3><span class="step-number">1</span> Install Vouch Protocol</h3>
+      <pre><code>pip install vouch-protocol</code></pre>
+    </div>
+
+    <div class="step"><h3><span class="step-number">2</span> Run One Command</h3>
+      <pre><code>vouch git init</code></pre>
+      <p>That's it! This single command:</p>
+      <ul>
+        <li>Generates a new Ed25519 signing key (if you don't have one)</li>
+        <li>Uploads it to GitHub automatically</li>
+        <li>Configures git to sign all commits</li>
+        <li>Sets up verification</li>
+      </ul>
+    </div>
+
+    <div class="success-badge">Done! All future commits will be automatically signed and show Verified on
+      GitHub.</div>
+
+    <div class="vouch-blog-callout"><strong>Zero Extra Work!</strong> From now on, just use <code>git commit</code> as you normally would.
+      Every commit is automatically signed—no flags, no extra commands, no passphrase prompts. It just works.
+    </div>
+
+    <h3>Verify It Works</h3>
+    <pre><code># Make a test commit
+git commit --allow-empty -m "test: verify vouch signing"
+
+# Check on GitHub - you'll see the Verified badge!</code></pre>
+
+    <h2>Why Vouch vs. Other Signing Methods</h2>
+
+    <p>There are several ways to sign Git commits. Here's how they compare:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>GPG</th>
+          <th>SSH (manual)</th>
+          <th>Vouch</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Setup time</td>
+          <td>15-30 min</td>
+          <td>5-10 min</td>
+          <td><strong>30 seconds</strong></td>
+        </tr>
+        <tr>
+          <td>Commands needed</td>
+          <td>5-8</td>
+          <td>3-4</td>
+          <td><strong>2</strong>
+          </td>
+        </tr>
+        <tr>
+          <td>GitHub upload</td>
+          <td>Manual</td>
+          <td>Manual</td>
+          <td><strong>Automatic</strong></td>
+        </tr>
+        <tr>
+          <td>Key management</td>
+          <td>Complex (keyrings)</td>
+          <td>Manual</td>
+          <td><strong>Handled
+              for you</strong></td>
+        </tr>
+        <tr>
+          <td>Passphrase prompts</td>
+          <td>Every commit</td>
+          <td>With ssh-agent</td>
+          <td><strong>Never</strong></td>
+        </tr>
+        <tr>
+          <td>GitHub Verified badge</td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Bottom line:</strong> GPG requires managing keyrings, expiration dates, and subkeys. Manual SSH setup
+      requires multiple git config commands and a trip to GitHub settings. Vouch handles everything in one
+      command.</p>
+
+    <h2>How It Works</h2>
+
+    <p>Vouch leverages <strong>SSH signing</strong> (introduced in Git 2.34+). When you run
+      <code>vouch git init</code>, it:
+    </p>
+
+    <ol>
+      <li>Generates a new Ed25519 signing key (or uses your existing one at <code>~/.ssh/id_ed25519</code>)
+      </li>
+      <li>Uploads the key to GitHub as a signing key (via <code>gh</code> CLI)
+      </li>
+      <li>Configures Git to sign all commits:
+        <pre><code>git config --global gpg.format ssh
+git config --global user.signingkey ~/.vouch/keys/vouch_signing_key
+git config --global commit.gpgsign true</code></pre>
+      </li>
+      <li>Sets up local verification with an allowed signers file</li>
+    </ol>
+
+    <h2>GitHub Integration (Automatic!)</h2>
+
+    <p><code>vouch git init</code> <strong>automatically uploads your signing key to GitHub</strong> using the
+      GitHub CLI. You don't need to do anything manually!</p>
+
+    <p>After running the command, you'll see:</p>
+    <pre><code> Uploading signing key to GitHub...
+   SSH key uploaded to GitHub!</code></pre>
+
+    <p>That's it! Push a commit and you'll see the Verified badge immediately.</p>
+
+    <div class="vouch-blog-callout"><strong>Don't have GitHub CLI?</strong> If <code>gh</code> isn't installed, Vouch will open your browser
+      to the GitHub SSH settings page and show you the key to paste. But we recommend installing
+      <a href="https://cli.github.com/">GitHub CLI</a> for a fully automated
+      experience.
+    </div>
+
+    <h2>Manual Configuration (Alternative)</h2>
+
+    <p>If you prefer to configure git manually without the CLI:</p>
+
+    <pre><code># Use SSH for signing
+git config --global gpg.format ssh
+
+# Set your signing key
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+
+# Auto-sign all commits
+git config --global commit.gpgsign true
+
+# Auto-sign all tags
+git config --global tag.gpgsign true</code></pre>
+
+    <h2>Troubleshooting</h2>
+
+    <h3>Commit fails with "error: Load key failed"</h3>
+    <p>Your SSH key might require a passphrase. Add it to your SSH agent:</p>
+    <pre><code>eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519</code></pre>
+
+    <h3>GitHub doesn't show "Verified"</h3>
+    <p>This usually means the <code>gh</code> CLI upload failed silently. Check if your key is on GitHub:</p>
+    <pre><code>gh ssh-key list</code></pre>
+    <p>If not listed, re-run <code>vouch git init</code> or manually add the key at GitHub Settings → SSH Keys.</p>
+
+    <h3>Check your current git signing config</h3>
+    <pre><code>git config --global --list | grep -E "(gpg|sign)"</code></pre>
+
+    <h2>How Others Verify Your Commits</h2>
+
+    <p>When you sign commits, here's how collaborators and reviewers can verify they're genuinely from you:</p>
+
+    <h3>1. GitHub's Verified Badge (Automatic)</h3>
+    <p>When you push signed commits to GitHub:</p>
+    <ul>
+      <li>GitHub checks if the signing key matches a key registered to your account</li>
+      <li>If it matches → <strong>Verified</strong> badge appears on the commit</li>
+      <li>Click the badge to see: <em>"This commit was signed with the committer's verified signature"</em></li>
+    </ul>
+
+    <h3>2. Verify Anyone's Public Key</h3>
+    <p>Anyone can check a GitHub user's public SSH keys at:</p>
+    <pre><code>https://github.com/&lt;username&gt;.keys</code></pre>
+    <p>Compare this with the key fingerprint shown in the commit signature to confirm authenticity.</p>
+
+    <h3>3. Local Verification</h3>
+    <p>To verify signatures locally:</p>
+    <pre><code># View signature details
+git log --show-signature -1 &lt;commit-hash&gt;
+
+# Verify a specific commit
+git verify-commit &lt;commit-hash&gt;</code></pre>
+
+    <div class="vouch-blog-callout"><strong>Key Point:</strong> The SSH key fingerprint in the signature can be matched against the author's
+      publicly listed keys on GitHub, providing cryptographic proof of authorship.
+    </div>
+
+    <h2>For Teams & Organizations</h2>
+
+    <p>Adopting signed commits across your team provides:</p>
+
+    <ul>
+      <li><strong>Supply Chain Security:</strong> Every commit is cryptographically tied to a verified developer
+      </li>
+      <li><strong>Audit Trail:</strong> Immutable proof of who authored each change</li>
+      <li><strong>Compliance:</strong> Meet SOC2, ISO 27001, and other security standards requiring code
+        provenance</li>
+      <li><strong>Trust:</strong> Reviewers can verify PRs come from legitimate team members</li>
+    </ul>
+
+    <h3>Enforce Signed Commits (GitHub)</h3>
+    <ol>
+      <li>Go to <strong>Repository Settings → Branches</strong></li>
+      <li>Add a branch protection rule for <code>main</code></li>
+      <li>Enable <strong>"Require signed commits"</strong></li>
+    </ol>
+
+    <p>Now all commits to protected branches must be signed!</p>
+
+    <h2>Why This Matters</h2>
+
+    <p>Recent supply chain attacks highlight why commit signing is critical:</p>
+
+    <ul>
+      <li><strong>SolarWinds (2020):</strong> Attackers injected malicious code into build pipelines</li>
+      <li><strong>Codecov (2021):</strong> Compromised CI scripts exfiltrated credentials</li>
+      <li><strong>XZ Utils (2024):</strong> Maintainer impersonation led to backdoored releases</li>
+    </ul>
+
+    <p>Signed commits create a <strong>chain of custody</strong>. If every commit is signed, attackers can't inject
+      code without either stealing a developer's private key or creating obviously unsigned commits.</p>
+
+    <div class="vouch-blog-callout"><strong>By the Numbers:</strong> GitHub reports that repositories with signed commits enabled see
+      significantly fewer successful supply chain attacks. The Verified badge is becoming a trust signal
+      that security-conscious organizations look for.
+    </div>
+
+    <h2>What's Next?</h2>
+
+    <ul>
+      <li><a href="https://vouch-protocol.com/demo.html">Try the Demo</a> - See
+        signature verification in action</li>
+      <li><a href="https://github.com/vouch-protocol/vouch">Star us on GitHub</a> -
+        Help spread the word</li>
+      <li><a href="https://vouch-protocol.com/blog">Read the Technical Digest</a> -
+        Deep dive into the protocol</li>
+      <li><a href="https://discord.gg/mMqx5cG9Y">Join our Discord</a> -
+        Get help and share feedback</li>
+    </ul>2:["$","article",null,{"children":[["$","section",null,{"className":"border-b border-rule","children":["$","div",null,{"className":"container-wide py-20 md:py-24","children":[["$","$L7",null,{"href":"/blog/","className":"font-mono text-burgundy text-[0.7rem] uppercase tracking-wider no-underline hover:underline","children":"← Back to blog"}],["$","div",null,{"className":"eyebrow-faint mt-6 mb-5","children":["January 5, 2026"," · 5 min read"]}],["$","h1",null,{"className":"font-serif font-semibold text-ink leading-[1.05] tracking-tight mb-6 max-w-[820px] text-[clamp(2rem,4vw,2.8rem)]","children":"Introducing Vouch Git Workflow"}],["$","p",null,{"className":"text-[1.1rem] leading-snug text-ink-soft max-w-prose","children":"One command to cryptographically sign all your git commits. Supply chain security made simple with Vouch Protocol."}]]}]}],["$","section",null,{"children":["$","div",null,{"className":"container-wide py-16","children":["$","div",null,{"className":"vouch-blog-body max-w-prose-wide mx-auto","dangerouslySetInnerHTML":{"__html":"$d"}}]}]}],["$","section",null,{"className":"border-t border-rule","children":["$","div",null,{"className":"container-wide py-12 grid sm:grid-cols-2 gap-6","children":[["$","span",null,{}],["$","$L7",null,{"href":"/blog/zero-friction-ssh-identity/","className":"block no-underline text-ink hover:text-burgundy sm:text-right","children":[["$","div",null,{"className":"eyebrow-faint mb-2","children":"Next →"}],["$","div",null,{"className":"font-serif text-[1.05rem]","children":"Zero-Friction Identity: Use What You Have"}]]}]]}]}]]}]
+c:[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}],["$","meta","1",{"charSet":"utf-8"}],["$","title","2",{"children":"Introducing Vouch Git Workflow - Vouch Protocol"}],["$","meta","3",{"name":"description","content":"One command to cryptographically sign all your git commits. Supply chain security made simple with Vouch Protocol."}],["$","meta","4",{"property":"og:title","content":"Vouch Protocol"}],["$","meta","5",{"property":"og:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","6",{"property":"og:url","content":"https://vouch-protocol.com/"}],["$","meta","7",{"property":"og:image","content":"https://vouch-protocol.com/assets/og-image.png"}],["$","meta","8",{"property":"og:image:width","content":"1200"}],["$","meta","9",{"property":"og:image:height","content":"630"}],["$","meta","10",{"property":"og:image:alt","content":"Vouch Protocol"}],["$","meta","11",{"property":"og:type","content":"website"}],["$","meta","12",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","13",{"name":"twitter:site","content":"@Vouch_Protocol"}],["$","meta","14",{"name":"twitter:title","content":"Vouch Protocol"}],["$","meta","15",{"name":"twitter:description","content":"Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents."}],["$","meta","16",{"name":"twitter:image","content":"https://vouch-protocol.com/assets/og-image.png"}],["$","link","17",{"rel":"icon","href":"/favicon.ico","sizes":"any"}],["$","link","18",{"rel":"icon","href":"/favicon-32x32.png","sizes":"32x32","type":"image/png"}],["$","link","19",{"rel":"icon","href":"/favicon-16x16.png","sizes":"16x16","type":"image/png"}],["$","link","20",{"rel":"apple-touch-icon","href":"/apple-touch-icon.png"}],["$","link","21",{"rel":"icon","href":"/android-chrome-192x192.png","sizes":"192x192"}],["$","link","22",{"rel":"icon","href":"/android-chrome-512x512.png","sizes":"512x512"}]]
+1:null

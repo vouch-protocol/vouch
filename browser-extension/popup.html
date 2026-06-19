@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vouch Protocol</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      width: 350px;
+      min-height: 400px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .header {
+      padding: 16px;
+      color: white;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 1.4em;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .header p {
+      font-size: 0.85em;
+      opacity: 0.9;
+    }
+
+    .tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 0.9em;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .tab.active {
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .content {
+      background: white;
+      min-height: 280px;
+      padding: 16px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* Me Tab */
+    .identity-card {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .identity-label {
+      font-size: 0.75em;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .identity-value {
+      font-size: 1em;
+      color: #1e293b;
+      word-break: break-all;
+    }
+
+    .identity-value.email {
+      font-weight: 600;
+      color: #7c3aed;
+    }
+
+    .identity-value.fingerprint {
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.9em;
+      background: #e2e8f0;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+
+    .identity-row {
+      margin-bottom: 12px;
+    }
+
+    .copy-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 10px;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #6d28d9;
+    }
+
+    /* Contacts Tab */
+    .contacts-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: #f8fafc;
+      margin-bottom: 8px;
+      border-radius: 8px;
+    }
+
+    .contact-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .contact-email {
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 0.9em;
+    }
+
+    .contact-key {
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.75em;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-delete {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 1.2em;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    .contact-delete:hover {
+      opacity: 1;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #64748b;
+    }
+
+    .empty-state-icon {
+      font-size: 2.5em;
+      margin-bottom: 12px;
+    }
+
+    .empty-state-text {
+      font-size: 0.9em;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 500;
+    }
+
+    .status-badge.verified {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>✨ Vouch Protocol</h1>
+    <p>Trust-On-First-Use Identity</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="me">🔑 Me</button>
+    <button class="tab" data-tab="contacts">👥 Contacts</button>
+  </div>
+
+  <div class="content">
+    <!-- Me Tab -->
+    <div id="me" class="tab-panel active">
+      <div class="loading" id="loading">Loading identity...</div>
+
+      <div id="identity-content" style="display: none;">
+        <div class="identity-card">
+          <div class="identity-row">
+            <div class="identity-label">Your Email</div>
+            <div class="identity-value email" id="my-email">-</div>
+          </div>
+
+          <div class="identity-row">
+            <div class="identity-label">Display Name</div>
+            <input type="text" id="display-name" placeholder="Your name (e.g., Ramprasad G)"
+              style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9em;">
+            <div style="font-size: 0.75em; color: #64748b; margin-top: 4px;">Optional: Shows in signatures instead of
+              email</div>
+          </div>
+
+          <div class="identity-row">
+            <div class="identity-label">Public Key Fingerprint</div>
+            <div class="identity-value fingerprint" id="my-fingerprint">-</div>
+          </div>
+
+          <div class="identity-row">
+            <div class="identity-label">Full Public Key</div>
+            <div class="identity-value fingerprint" id="my-pubkey" style="font-size: 0.7em; word-break: break-all;">-
+            </div>
+          </div>
+        </div>
+
+        <button class="copy-btn" id="save-settings" style="background: #10b981; margin-bottom: 8px;">💾 Save
+          Settings</button>
+        <button class="copy-btn" id="copy-key">📋 Copy Public Key</button>
+      </div>
+    </div>
+
+    <!-- Contacts Tab -->
+    <div id="contacts" class="tab-panel">
+      <div id="contacts-list" class="contacts-list">
+        <!-- Contacts will be rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

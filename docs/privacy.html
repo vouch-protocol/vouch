@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Vouch Protocol</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #e0e0e0;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(30, 35, 45, 0.8);
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #22c55e, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .last-updated {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        h2 {
+            color: #22c55e;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        p,
+        ul,
+        ol {
+            margin-bottom: 15px;
+        }
+
+        ul,
+        ol {
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        a {
+            color: #22c55e;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .highlight {
+            background: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #22c55e;
+            color: #000;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            background: #16a34a;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last updated: January 9, 2026</p>
+
+        <div class="highlight">
+            <strong>TL;DR:</strong> We collect minimal data, don't sell your information, and prioritize your privacy.
+            Cryptographic keys are stored locally on your device.
+        </div>
+
+        <h2>1. Information We Collect</h2>
+
+        <h3 style="color: #10b981; margin-top: 20px;">Browser Extension</h3>
+        <ul>
+            <li><strong>Cryptographic Keys:</strong> Generated and stored locally in your browser. Never sent to our
+                servers.</li>
+            <li><strong>Email (optional):</strong> Only if you choose to associate an identity with your key.</li>
+            <li><strong>Signatures:</strong> When you create a shortlink, the signed content is stored on our servers.
+            </li>
+        </ul>
+
+        <h3 style="color: #10b981; margin-top: 20px;">Vouch Gatekeeper (GitHub App)</h3>
+        <ul>
+            <li><strong>Repository Access:</strong> Read access to repository contents and pull requests.</li>
+            <li><strong>Commit Data:</strong> We read commit signatures to verify identity.</li>
+            <li><strong>No Storage:</strong> We do not permanently store repository content or commit data.</li>
+        </ul>
+
+        <h2>2. How We Use Information</h2>
+        <p>We use collected information to:</p>
+        <ul>
+            <li>Verify cryptographic signatures on commits</li>
+            <li>Store and retrieve signed content for shortlinks</li>
+            <li>Improve our Services</li>
+        </ul>
+
+        <h2>3. Data Sharing</h2>
+        <p>We do not sell, trade, or rent your personal information. We may share data only:</p>
+        <ul>
+            <li>When required by law</li>
+            <li>To protect our rights or property</li>
+            <li>With your explicit consent</li>
+        </ul>
+
+        <h2>4. Data Security</h2>
+        <p>We implement industry-standard security measures including:</p>
+        <ul>
+            <li>TLS encryption for all data in transit</li>
+            <li>Secure cloud infrastructure (Cloudflare Workers)</li>
+            <li>No storage of private keys on our servers</li>
+        </ul>
+
+        <h2>5. Data Retention</h2>
+        <ul>
+            <li><strong>Shortlink signatures:</strong> Stored for 1 year (free tier) or indefinitely (pro tier)</li>
+            <li><strong>GitHub webhook data:</strong> Processed in real-time, not stored</li>
+            <li><strong>Local keys:</strong> Stored until you delete them from your browser</li>
+        </ul>
+
+        <h2>6. Your Rights</h2>
+        <p>You have the right to:</p>
+        <ul>
+            <li>Access your data</li>
+            <li>Request deletion of your data</li>
+            <li>Export your data</li>
+            <li>Opt out of optional data collection</li>
+        </ul>
+
+        <h2>7. Third-Party Services</h2>
+        <p>We use the following third-party services:</p>
+        <ul>
+            <li><strong>Cloudflare:</strong> Hosting and CDN</li>
+            <li><strong>GitHub:</strong> Repository hosting and OAuth</li>
+        </ul>
+
+        <h2>8. Cookies</h2>
+        <p>We use minimal cookies for essential functionality only. No tracking or advertising cookies are used.</p>
+
+        <h2>9. Children's Privacy</h2>
+        <p>Our Services are not directed to children under 13. We do not knowingly collect information from children.
+        </p>
+
+        <h2>10. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy periodically. Changes will be posted on this page with an updated revision
+            date.</p>
+
+        <h2>11. Contact</h2>
+        <p>For privacy-related questions, please open an issue at <a
+                href="https://github.com/vouch-protocol/vouch-protocol/issues">our GitHub repository</a>.</p>
+
+        <a href="/" class="back-link">← Back to Home</a>
+    </div>
+</body>
+
+</html>

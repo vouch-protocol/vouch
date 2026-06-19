@@ -1,0 +1,65 @@
+{
+    "expo": {
+        "name": "Vouch Verifier",
+        "slug": "vouch-verifier",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "automatic",
+        "scheme": "vouch-verifier",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#0a0a0f"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.vouch.verifier",
+            "infoPlist": {
+                "NSMicrophoneUsageDescription": "Vouch Verifier needs microphone access to detect audio watermarks in real-time.",
+                "NSCameraUsageDescription": "Vouch Verifier needs camera access to scan QR codes for desktop pairing.",
+                "NSFaceIDUsageDescription": "Vouch Verifier uses Face ID to securely sign content with your identity."
+            }
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#0a0a0f"
+            },
+            "package": "com.vouch.verifier",
+            "permissions": [
+                "android.permission.RECORD_AUDIO",
+                "android.permission.CAMERA",
+                "android.permission.USE_BIOMETRIC",
+                "android.permission.USE_FINGERPRINT"
+            ]
+        },
+        "plugins": [
+            "expo-router",
+            [
+                "expo-secure-store",
+                {
+                    "faceIDPermission": "Allow Vouch Verifier to use Face ID for secure signing."
+                }
+            ],
+            [
+                "expo-local-authentication",
+                {
+                    "faceIDPermission": "Allow Vouch Verifier to use Face ID for signing."
+                }
+            ],
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Allow Vouch Verifier to access your camera for QR code scanning."
+                }
+            ]
+        ],
+        "experiments": {
+            "typedRoutes": true
+        }
+    }
+}

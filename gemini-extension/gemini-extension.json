@@ -1,0 +1,16 @@
+{
+  "name": "vouch",
+  "version": "1.0.0",
+  "description": "Cryptographic identity for AI agents. Sign agent actions as Verifiable Credentials and inspect your did:web/did:key identity, directly from Gemini CLI.",
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "vouch": {
+      "command": "vouch-mcp",
+      "env": {
+        "VOUCH_PRIVATE_KEY": "${VOUCH_PRIVATE_KEY}",
+        "VOUCH_DID": "${VOUCH_DID}",
+        "VOUCH_AUTO_SIGN": "${VOUCH_AUTO_SIGN}"
+      }
+    }
+  }
+}

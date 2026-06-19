@@ -1,0 +1,9 @@
+name = "vouch-grader"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Served on the custom domain the website form points at by default
+# (grade.vouch-protocol.com). The workers.dev URL stays available too.
+routes = [
+  { pattern = "grade.vouch-protocol.com", custom_domain = true }
+]

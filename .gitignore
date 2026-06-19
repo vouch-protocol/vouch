@@ -1,0 +1,138 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv*/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+*.whl
+target/
+pkg/
+
+# Local config (don't commit secrets)
+vouch.json
+.env
+.env.local
+
+# Extension builds (use GitHub Releases instead)
+*.zip
+
+# Misc
+.DS_Store
+website/DEPLOY.md
+.ruff_cache/
+
+# Pro module (private)
+vouch/pro/
+tests/test_pro.py
+
+# Private keys and certificates
+*.key
+*.pem
+vouch/media/certs/
+
+# Node modules
+node_modules/
+package-lock.json
+
+# arXiv submission packages
+arxiv/submissions/
+arxiv/
+scripts/package_arxiv.py
+
+# Personal notes / checklists (local-only, not for publication)
+notes/
+
+# LaTeX paper build artifacts (the PDF is rebuilt by `make`)
+papers/**/*.aux
+papers/**/*.log
+papers/**/*.out
+papers/**/*.bbl
+papers/**/*.blg
+papers/**/*.toc
+papers/**/*.fls
+papers/**/*.fdb_latexmk
+papers/**/*.synctex.gz
+papers/**/*-arxiv.tar.gz
+papers/**/*.pdf
+
+# Website-agent local runtime (logs, ephemeral keys, indexes)
+website-agent/.run/
+website-agent/.env
+website-agent/backend/.index/
+website-agent/backend/.audit.jsonl
+website-agent/backend/.venv/
+website-agent/standalone/node_modules/
+website-agent/standalone/.next/
+website-agent/standalone/out/
+website-agent/backend/check_imports.py
+website-agent/backend/check_sidecar.py
+
+# C2PA CA private keys (NEVER commit!)
+c2pa-ca/
+
+# Browser extension build artifacts
+browser-extension/dist/
+# Scribe Context Manager (Private)
+.scribe/
+DEVELOPER_CONTEXT.md
+
+# Specs & strategy (confidential - do not publish)
+docs/specs/strategy-lfai-and-w3c.md
+docs/specs/ietf-internet-draft.md
+docs/specs/ccg-submission-emails.md
+docs/specs/vouch-sponsor-brief.md
+
+# Editor working artifacts (kept local, never published)
+# - Reviewer correspondence and per-comment reconciliation belongs in the
+#   GitHub Issue thread of the work item, not as a tracked file in the repo.
+# - DOCX builds of the spec and exec summary are convenience artifacts for
+#   Google Drive / email distribution, the canonical source is the .md.
+docs/specs/manu-reply-*.md
+docs/specs/github-issue-manu-review-reconciliation.md
+docs/specs/w3c-cg-report.docx
+docs/specs/cg-report-executive-summary.docx
+
+# Local-only spec build infrastructure and landing page (rebuild locally)
+docs/specs/index.html
+docs/specs/Makefile
+docs/specs/build.sh
+
+# Patent briefs (confidential - do not publish)
+docs/patents/
+
+# AI assistant config
+claude.md
+
+# Claude Code local-only state (permission allowlist, agent settings, etc.)
+.claude/
+
+# Discarded icon set (kept locally for reference, not shipped)
+docs/assets/icons-green/
+
+# Local-only preview / comparison pages (not part of the published site)
+docs/icon-preview.html
+docs/icon-preview-v2.html
+docs/icon-set-preview.html
+docs/preview-blue.html
+docs/preview-green.html
+
+# Wave 1 diagrams (work in progress, kept local until ready)
+docs/diagrams/

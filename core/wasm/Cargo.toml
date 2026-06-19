@@ -1,0 +1,31 @@
+[package]
+name = "vouch-core-wasm"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ramprasad Anandam Gaddam"]
+description = "Vouch Protocol core, WASM build (browser + Node): JCS canonicalization, Ed25519, did:key/multikey, Data Integrity (eddsa-jcs-2022), credentials, delegation, dual-proof ML-DSA-44, and BitstringStatusList revocation. Thin wasm-bindgen wrapper over the canonical vouch-core crate."
+license = "Apache-2.0"
+repository = "https://github.com/vouch-protocol/vouch"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# The single byte-exact protocol core (shared with the UniFFI/C-FFI build).
+vouch-core = { path = "../vouch-core" }
+
+wasm-bindgen = "0.2"
+serde_json = { version = "1", features = ["preserve_order"] }
+base64 = "0.22"
+
+# WASM-compatible RNG: routes getrandom (used by Ed25519 and ML-DSA keygen) to
+# the JS crypto API.
+getrandom = { version = "0.2", features = ["js"] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[profile.release]
+lto = true
+opt-level = "z"
+strip = true

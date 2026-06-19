@@ -1,0 +1,45 @@
+# =============================================================================
+# VOUCH GATEKEEPER - GITHUB APP MANIFEST
+# =============================================================================
+# This file defines the GitHub App configuration.
+# Use this when creating a new GitHub App at: https://github.com/settings/apps/new
+# 
+# You can also use the "manifest flow" to auto-create:
+# POST https://github.com/settings/apps/new?manifest=<base64-encoded-manifest>
+# =============================================================================
+
+name: Vouch Gatekeeper
+description: Enforce cryptographic identity and organizational policy on every Pull Request
+url: https://vouch-protocol.com
+hook_attributes:
+  url: https://your-deployment.example.com/webhook
+  active: true
+
+# =============================================================================
+# Permissions
+# =============================================================================
+default_permissions:
+  # Read repository contents (to fetch .github/vouch-policy.yml)
+  contents: read
+  
+  # Read & Write checks (to post pass/fail status)
+  checks: write
+  
+  # Read pull requests (to get commit list)
+  pull_requests: read
+  
+  # Read metadata (basic app data)
+  metadata: read
+
+# =============================================================================
+# Event Subscriptions
+# =============================================================================
+default_events:
+  - pull_request
+  - check_suite
+
+# =============================================================================
+# App Settings
+# =============================================================================
+public: true
+single_file_name: .github/vouch-policy.yml

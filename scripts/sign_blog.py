@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""
+Sign Blog Posts and Register in Cloudflare KV
+
+Signs each blog post using Vouch Protocol and registers the signature
+in Cloudflare KV for verification via vch.sh/{tech_id}
+"""
+
+import os
+import glob
+import re
+import base64
+import json
+import subprocess
+import hashlib
+from datetime import datetime
+
+# Import centralized config
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from vouch.config import SHORTLINK_DOMAIN, get_shortlink
+
+# Config
+BLOG_DIR = "/home/rampy/vouch-protocol/docs/blog"
+WORKER_DIR = "/home/rampy/vouch-protocol/cloudflare-worker"
+KV_NAMESPACE_ID = "08413c23ad6147b78d406ba31f52ba1e"
+AUTHOR = "Ramprasad Anandam Gaddam"
+SIGNER = "github:rampyg"
+
+# Mapping: SEO slug filename -> tech ID
+POST_MAPPING = {
+    "who-authorized-this-problem": "tech001",
+    "ai-agent-delegation-chains": "tech002",
+    "identity-sidecar-architecture": "tech003",
+    "ambient-verification-browser": "tech004",
+    "orphaned-content-signatures": "tech005",
+    "web-of-trust-urls": "tech006",
+    "ai-coding-assistant-signatures": "tech007",
+    "zero-friction-ssh-identity": "tech008",
+}
+
+def extract_text_content(html):
+    """Extract text content from article tag."""
+    match = re.search(r'<article>(.*?)</article>', html, re.DOTALL)
+    if not match:
+        return None
+    
+    content = match.group(1)
+    
+    # Strip HTML tags
+    text = re.sub(r'<[^>]+>', '', content)
+    # Normalize whitespace
+    text = ' '.join(text.split())
+    return text.strip()
+
+def compute_sha256(text):
+    """Compute SHA-256 hash of text."""
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+def upload_to_kv(key, value):
+    """Upload to Cloudflare KV using wrangler."""
+    print(f"  📤 Uploading {key} to KV...")
+    
+    value_str = json.dumps(value)
+    cmd = [
+        "npx", "wrangler", "kv:key", "put",
+        key, value_str,
+        "--namespace-id", KV_NAMESPACE_ID
+    ]
+    
+    result = subprocess.run(
+        cmd,
+        cwd=WORKER_DIR,
+        capture_output=True,
+        text=True
+    )
+    
+    if result.returncode == 0:
+        print(f"  ✅ Uploaded {key}")
+        return True
+    else:
+        print(f"  ❌ Failed: {result.stderr.strip()}")
+        return False
+
+def add_verify_badge_to_html(filepath, tech_id):
+    """Add verify badge to the HTML file."""
+    with open(filepath, 'r') as f:
+        html = f.read()
+    
+    verify_url = get_shortlink(tech_id)
+    
+    # Check if badge already exists
+    if "verify-badge" in html and tech_id in html:
+        print("  ⏭️  Badge already exists")
+        return
+    
+    # Add badge after the paper-link in post-meta
+    badge_html = f'<a href="{verify_url}" class="verify-badge" target="_blank">✓ Verified {tech_id}</a>'
+    
+    # Insert after "Read Full Paper" link
+    pattern = r'(class="paper-link"[^>]*>[^<]*</a>)'
+    replacement = rf'\1\n            {badge_html}'
+    
+    new_html = re.sub(pattern, replacement, html)
+    
+    with open(filepath, 'w') as f:
+        f.write(new_html)
+    
+    print("  🏷️  Added verify badge")
+
+def process_file(filepath):
+    """Process a single blog post file."""
+    filename = os.path.basename(filepath)
+    pad_id = filename.replace(".html", "")  # e.g., "pad-001"
+    tech_id = POST_MAPPING.get(pad_id)
+    
+    if not tech_id:
+        print(f"⚠️  No mapping for {pad_id}")
+        return
+    
+    print(f"\n📝 Processing {filename} -> {tech_id}")
+    
+    # Read and extract content
+    with open(filepath, 'r') as f:
+        html = f.read()
+    
+    text_content = extract_text_content(html)
+    if not text_content:
+        print("  ❌ Could not extract article content")
+        return
+    
+    # Compute hash
+    sha256_hash = compute_sha256(text_content)
+    
+    # Prepare KV data (compatible with worker.js handlePaperPage)
+    kv_data = {
+        "id": tech_id,
+        "sha256": sha256_hash,
+        "author": AUTHOR,
+        "signer": SIGNER,
+        "title": extract_title(html),
+        "registered": datetime.utcnow().isoformat() + "Z",
+        "type": "article",
+        "tier": "pro"
+    }
+    
+    # Upload to KV with paper: prefix (for handlePaperPage compatibility)
+    upload_to_kv(f"paper:{tech_id}", kv_data)
+    
+    # Add badge to HTML
+    add_verify_badge_to_html(filepath, tech_id)
+
+def extract_title(html):
+    """Extract title from HTML."""
+    match = re.search(r'<h1>(.*?)</h1>', html)
+    return match.group(1) if match else "Unknown"
+
+def main():
+    print("🔐 Vouch Protocol - Blog Post Signing")
+    print("=" * 50)
+    
+    # Iterate over configured SEO slugs
+    for slug, _tech_id in POST_MAPPING.items():
+        filepath = os.path.join(BLOG_DIR, f"{slug}.html")
+        if os.path.exists(filepath):
+            process_file(filepath)
+        else:
+            print(f"\n⚠️  File not found: {slug}.html")
+    
+    print("\n" + "=" * 50)
+    print("✅ Done! All posts signed and registered.")
+    print("\nVerification URLs:")
+    for slug, tech_id in POST_MAPPING.items():
+        print(f"  {slug}.html -> {get_shortlink(tech_id)}")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,57 @@
+# Label taxonomy for vouch-protocol/vouch.
+# Contribution is NOT limited to beginners: there are lanes for every level,
+# from a first patch to protocol-level design work.
+#
+# Apply with a label-sync action (e.g. EndBug/label-sync) or by hand in the
+# repo's Labels page. Colors are hex without the leading '#'.
+
+# --- Contribution difficulty lanes ---
+- name: "good first issue"
+  color: "7057ff"
+  description: "Fully specified, under ~30 minutes. Great for a first contribution."
+
+- name: "good second issue"
+  color: "5319e7"
+  description: "A step up: involves a small design choice. For your second or third PR."
+
+- name: "help wanted"
+  color: "008672"
+  description: "Bounded work open to any contributor."
+
+- name: "complex"
+  color: "b60205"
+  description: "Substantial work that touches core logic. For experienced contributors."
+
+- name: "design"
+  color: "d93f0b"
+  description: "Requires an architecture or API design decision."
+
+- name: "rfc"
+  color: "0e8a16"
+  description: "Protocol-level proposal discussed via an RFC before implementation."
+
+- name: "security"
+  color: "ee0701"
+  description: "Security-sensitive work; reviewed by a maintainer."
+
+- name: "performance"
+  color: "fbca04"
+  description: "Profiling, benchmarking, or optimization work."
+
+# --- Effort sizing (combine with a difficulty lane) ---
+- name: "size: S"
+  color: "c2e0c6"
+  description: "Small: a few lines to a single file."
+
+- name: "size: M"
+  color: "bfd4f2"
+  description: "Medium: multiple files or a focused feature."
+
+- name: "size: L"
+  color: "f9d0c4"
+  description: "Large: spans modules or needs a design discussion first."
+
+# --- Type ---
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation."

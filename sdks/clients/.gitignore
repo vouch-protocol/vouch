@@ -1,0 +1,4 @@
+openapi-generator-cli.jar
+**/node_modules/
+**/__pycache__/
+**/.openapi-generator/

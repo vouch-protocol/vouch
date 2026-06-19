@@ -1,0 +1,16 @@
+{
+  "//": "Vouch attribution hook for Claude Code. Merge the `hooks` block into your project's .claude/settings.json (or ~/.claude/settings.json). It records every Edit/Write the assistant makes so the AI's lines can be attributed to the AI's own key. Requires `pip install vouch-protocol`.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "vouch attribute hook"
+          }
+        ]
+      }
+    ]
+  }
+}

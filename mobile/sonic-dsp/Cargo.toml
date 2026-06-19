@@ -1,0 +1,18 @@
+[package]
+name = "vouch-sonic-dsp"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ramprasad Anandam Gaddam"]
+description = "Vouch Sonic DSP - pure-Rust hardened v3 audio watermark embed/detect core (shared by the wasm and UniFFI crates)"
+license = "Apache-2.0"
+repository = "https://github.com/vouch-protocol/vouch"
+
+[lib]
+crate-type = ["lib"]
+
+[dependencies]
+# DSP
+rustfft = "6.2"
+
+# Crypto
+sha2 = "0.10"

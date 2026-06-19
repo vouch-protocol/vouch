@@ -1,0 +1,104 @@
+{
+ "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+ "version": "v1.1.0",
+ "entity": {
+  "type": "individual",
+  "role": "owner",
+  "name": "Ramprasad Gaddam",
+  "email": "ram@vouch-protocol.com",
+  "description": "Creator and lead maintainer of Vouch Protocol, the open standard for cryptographic identity and provenance of AI agents. Active contributor to open standards bodies, Decentralized Identity Foundation, C2PA, and the Linux Foundation AI ecosystem. Editor of the Vouch Protocol Specification.",
+  "webpageUrl": {
+   "url": "https://vouch-protocol.com"
+  }
+ },
+ "projects": [
+  {
+   "guid": "vouch-protocol",
+   "name": "Vouch Protocol",
+   "description": "The open standard for AI agent identity, accountability, and content provenance. Vouch v1.6 ships an end-to-end implementation: Verifiable Credentials secured by Data Integrity proofs (eddsa-jcs-2022 cryptosuite), Decentralized Identifiers, and Multikey verification methods. An optional hybrid post-quantum profile (hybrid-eddsa-mldsa44-jcs-2026) carries Ed25519 + ML-DSA-44 composite signatures aligning with NIST CNSA 2.0 / NSM-10 timelines. Three-language reference implementation (Python, TypeScript, Go) with byte-identical canonical form verified against shared RFC 8785 JCS test vectors.\n\nVouch is uniquely positioned at the intersection of several adjacent FLOSS efforts in the AI identity, provenance, and safety space. Where comparable projects address single layers (media-only content provenance, agent execution runtimes without identity, runtime hallucination guards without cryptographic accountability, or rule-driven compliance scanners that need an underlying trust substrate to cite), Vouch provides the foundational identity-and-liability layer those projects either build on or complement.\n\nWhat Vouch covers, end-to-end (in a single coherent codebase): agent identity (DIDs + Multikey), intent attestation (resource-bound credentials), delegation chains, identity sidecar pattern (LLM-isolated keys), heartbeat protocol (continuous trust renewal with adaptive trust entropy), validator quorum (federated trust without trusted central serializer), behavioral attestation, content provenance with C2PA and CAI integration, audio provenance via sub-band watermarking, voiceprint enrollment, model lineage (birth certificate protocol), cryptographic weight binding (model-intrinsic identity), retrieval-anchored proof of non-hallucination, ZK-state channels for high-frequency agent-to-agent negotiation, verifiable delay function rate-limiting for runaway-loop prevention, M-of-N algorithm quorum for defense against algorithm-specific compromise, and 47 defensive prior-art disclosures (CC0) preventing patent capture of the core mechanisms.\n\nDistribution: Python SDK on PyPI (vouch-protocol), TypeScript SDK on npm (@vouch-protocol/sdk), Go sidecar for high-throughput edge deployments, Rust mobile core for on-device verification, browser extension for content signing, GitHub App for commit and supply-chain verification, Cloudflare Workers verification gateway, native Model Context Protocol integration, framework adapters for LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI, Google ADK, n8n.\n\nVouch is the only FLOSS project that combines all of the following in a single coherent system: open-standard specification with active editorship, a hybrid post-quantum signature profile aligned with NIST mandates, three-language byte-identical interop verified against published test vectors, agent-identity-bound content provenance via C2PA, and a comprehensive 47-PAD CC0 prior-art portfolio that ensures the agent-identity ecosystem cannot be patent-captured by any single vendor.",
+   "webpageUrl": {
+    "url": "https://vouch-protocol.com"
+   },
+   "repositoryUrl": {
+    "url": "https://github.com/vouch-protocol/vouch"
+   },
+   "licenses": [
+    "spdx:Apache-2.0"
+   ],
+   "tags": [
+    "ai-safety",
+    "ai-agents",
+    "cryptography",
+    "identity",
+    "verifiable-credentials",
+    "w3c",
+    "data-integrity",
+    "post-quantum",
+    "ml-dsa",
+    "decentralized-identifiers",
+    "did",
+    "multikey",
+    "ed25519",
+    "provenance",
+    "c2pa",
+    "content-authenticity",
+    "agent-security",
+    "agent-accountability",
+    "deepfake-detection",
+    "hallucination-mitigation",
+    "model-context-protocol",
+    "mcp",
+    "langchain",
+    "crewai",
+    "autogpt",
+    "supply-chain-security",
+    "openssf",
+    "open-standards",
+    "ietf",
+    "dif"
+   ]
+  }
+ ],
+ "funding": {
+  "channels": [
+   {
+    "guid": "bank-transfer",
+    "type": "bank",
+    "description": "Wire transfer (details provided upon request)"
+   },
+   {
+    "guid": "github-sponsors",
+    "type": "other",
+    "description": "GitHub Sponsors (when activated). Recurring monthly support for ecosystem maintenance."
+   }
+  ],
+  "plans": [
+   {
+    "guid": "core-maintenance",
+    "status": "active",
+    "name": "Core Maintenance Sustainability",
+    "description": "Covers maintainer time across the Python SDK, TypeScript SDK, Go sidecar, browser extension, and Cloudflare Workers verification gateway. Includes CI/CD infrastructure, dependency security review, and the cross-implementation interop test vector suite that keeps Python, TypeScript, and Go aligned at byte level. This is the foundational ask that keeps releases shipping on a regular cadence.",
+    "amount": 12000,
+    "currency": "USD",
+    "frequency": "yearly",
+    "channels": [
+     "bank-transfer",
+     "github-sponsors"
+    ]
+   },
+   {
+    "guid": "security-audit",
+    "status": "active",
+    "name": "Independent Cryptographic Security Audit",
+    "description": "Funds an independent cryptographic and protocol-level security audit of the v1.6 codebase. Audit covers the Data Integrity proof construction and verification, Multikey verification method resolution, the hybrid Ed25519 + ML-DSA-44 cryptosuite, JCS canonicalization implementations across Python, TypeScript, and Go, the Identity Sidecar pattern's LLM isolation guarantees, and the cross-implementation interop test vector suite. Audit results published openly under the OpenSSF Best Practices framework. This is a one-time ask that materially raises the trust profile of the protocol for regulated-sector adoption.",
+    "amount": 25000,
+    "currency": "USD",
+    "frequency": "one-time",
+    "channels": [
+     "bank-transfer"
+    ]
+   }
+  ],
+  "history": []
+ }
+}

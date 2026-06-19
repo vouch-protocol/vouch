@@ -1,0 +1,113 @@
+name: Mirror Swift SDK
+
+# Publishes the Swift SDK (sdks/swift) to the standalone repository
+# github.com/vouch-protocol/vouch-swift. That repo exists because Swift Package
+# Manager requires Package.swift at the repository root and cannot import a
+# package from a subdirectory of a monorepo, so consumers resolve VouchCore from
+# vouch-swift while this monorepo stays the source of truth.
+#
+# Trigger: any change to sdks/swift on main. When a new XCFramework release is
+# cut, the human updates the binaryTarget url + checksum in sdks/swift/Package.swift
+# and commits to main; that commit fires this mirror. The semver tag created on
+# vouch-swift is derived from the release version embedded in that binaryTarget
+# url (swift-vX.Y.Z -> X.Y.Z), so the tag always matches the released framework
+# and code-only changes update main without creating a new tag.
+#
+# Auth: pushes to vouch-swift over SSH using a deploy key. Store the private key
+# as the actions secret VOUCH_SWIFT_DEPLOY_KEY in this repo; add the matching
+# public key as a write-enabled deploy key on vouch-protocol/vouch-swift.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sdks/swift/**"
+      - ".github/workflows/mirror-swift-sdk.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mirror-swift-sdk
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v4
+        with:
+          path: monorepo
+
+      - name: Checkout vouch-swift (target)
+        uses: actions/checkout@v4
+        with:
+          repository: vouch-protocol/vouch-swift
+          path: vouch-swift
+          ssh-key: ${{ secrets.VOUCH_SWIFT_DEPLOY_KEY }}
+          fetch-depth: 0
+
+      - name: Sync files
+        run: |
+          set -euo pipefail
+          SRC="monorepo/sdks/swift"
+          DST="vouch-swift"
+          # Mirror the package code; leave the standalone repo's own files
+          # (README.md, LICENSE, .gitignore, .gitattributes, .github/, scripts/)
+          # untouched. README is intentionally NOT copied: vouch-swift ships its
+          # own consumer-facing README with install-from-URL instructions.
+          cp "$SRC/Package.swift"        "$DST/Package.swift"
+          cp "$SRC/build-xcframework.sh" "$DST/build-xcframework.sh"
+          chmod +x "$DST/build-xcframework.sh"
+          for d in Sources Tests ffi; do
+            rm -rf "${DST:?}/$d"
+            mkdir -p "$DST/$d"
+            cp -R "$SRC/$d/." "$DST/$d/"
+          done
+
+      - name: Derive release version from Package.swift
+        id: ver
+        run: |
+          set -euo pipefail
+          V=$(grep -oE 'releases/download/swift-v[0-9]+\.[0-9]+\.[0-9]+' \
+                monorepo/sdks/swift/Package.swift \
+              | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Derived version: ${V:-<none found>}"
+
+      - name: Commit and push to vouch-swift main
+        working-directory: vouch-swift
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to mirror."
+          else
+            git commit -m "Mirror Swift SDK from monorepo (${GITHUB_SHA:0:7})"
+            git push origin HEAD:main
+            echo "Pushed mirror commit to vouch-swift main."
+          fi
+
+      - name: Tag release if the version is new
+        if: steps.ver.outputs.version != ''
+        working-directory: vouch-swift
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$V" >/dev/null 2>&1; then
+            echo "Tag $V already exists on vouch-swift; nothing to tag."
+          else
+            git tag -a "$V" -m "VouchCore Swift SDK $V"
+            git push origin "refs/tags/$V"
+            echo "Tagged and pushed vouch-swift $V."
+          fi
+
+      - name: Summary
+        run: |
+          {
+            echo "## Mirror Swift SDK"
+            echo ""
+            echo "- target: https://github.com/vouch-protocol/vouch-swift"
+            echo "- derived version: \`${{ steps.ver.outputs.version || 'none' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

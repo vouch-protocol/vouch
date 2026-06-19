@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vouch SDK - Browser Example</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+    body {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #444;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .status.online {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status.offline {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    button {
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #4f46e5;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    .result code {
+      background: #e0f2fe;
+      padding: 2px 6px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      color: #b91c1c;
+    }
+    #fileInput {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 Vouch SDK - Browser Example</h1>
+  <p>This example demonstrates using the Vouch TypeScript SDK directly in the browser.</p>
+
+  <!-- Status Card -->
+  <div class="card">
+    <h2>📊 Daemon Status</h2>
+    <div id="statusBox" class="status">Checking...</div>
+    <p id="identityInfo"></p>
+    <button onclick="checkStatus()">↻ Refresh Status</button>
+  </div>
+
+  <!-- Sign Text Card -->
+  <div class="card">
+    <h2>📝 Sign Text</h2>
+    <textarea id="contentInput" placeholder="Enter content to sign...">Hello, World! This is a test message.</textarea>
+    <br><br>
+    <button id="signBtn" onclick="signText()">🔐 Sign Content</button>
+    <div id="signResult"></div>
+  </div>
+
+  <!-- Sign File Card -->
+  <div class="card">
+    <h2>📁 Sign File</h2>
+    <input type="file" id="fileInput">
+    <p id="fileInfo"></p>
+    <button id="signFileBtn" onclick="signFile()" disabled>🔐 Sign File</button>
+    <div id="fileResult"></div>
+  </div>
+
+  <!-- Script -->
+  <script type="module">
+    // In a real app, you'd import from the npm package:
+    // import { VouchClient } from '@vouch-protocol/sdk';
+    
+    // For this demo, we'll create a simple client inline
+    class VouchClient {
+      constructor(options = {}) {
+        this.daemonUrl = options.daemonUrl || 'http://127.0.0.1:21000';
+        this.timeout = options.timeout || 30000;
+      }
+
+      async connect() {
+        const response = await fetch(`${this.daemonUrl}/status`, {
+          signal: AbortSignal.timeout(this.timeout),
+        });
+        if (!response.ok) throw new Error('Connection failed');
+        return await response.json();
+      }
+
+      async getPublicKey() {
+        const response = await fetch(`${this.daemonUrl}/keys/public`);
+        if (!response.ok) {
+          if (response.status === 404) throw new Error('NO_KEYS');
+          throw new Error('Failed to get public key');
+        }
+        return await response.json();
+      }
+
+      async sign(content, origin, metadata = {}) {
+        const response = await fetch(`${this.daemonUrl}/sign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content, origin, ...metadata }),
+        });
+        if (!response.ok) {
+          if (response.status === 403) throw new Error('USER_DENIED');
+          if (response.status === 404) throw new Error('NO_KEYS');
+          throw new Error('Signing failed');
+        }
+        return await response.json();
+      }
+
+      async signBlob(blob, filename, origin) {
+        const formData = new FormData();
+        formData.append('file', blob, filename);
+        formData.append('origin', origin);
+
+        const response = await fetch(`${this.daemonUrl}/sign-media`, {
+          method: 'POST',
+          body: formData,
+        });
+        if (!response.ok) {
+          if (response.status === 403) throw new Error('USER_DENIED');
+          throw new Error('File signing failed');
+        }
+        return await response.blob();
+      }
+    }
+
+    // Make client available globally
+    window.VouchClient = VouchClient;
+    window.client = new VouchClient();
+
+    // Check status on load
+    checkStatus();
+
+    // Status check function
+    window.checkStatus = async function() {
+      const statusBox = document.getElementById('statusBox');
+      const identityInfo = document.getElementById('identityInfo');
+      
+      try {
+        const status = await window.client.connect();
+        statusBox.className = 'status online';
+        statusBox.textContent = `🟢 Online - Version ${status.version || 'unknown'}`;
+
+        try {
+          const keyInfo = await window.client.getPublicKey();
+          identityInfo.innerHTML = `
+            <strong>DID:</strong> ${keyInfo.did || 'N/A'}<br>
+            <strong>Fingerprint:</strong> ${keyInfo.fingerprint || 'N/A'}
+          `;
+        } catch {
+          identityInfo.textContent = '⚠️ No identity configured';
+        }
+      } catch (error) {
+        statusBox.className = 'status offline';
+        statusBox.textContent = '🔴 Offline - Run vouch-bridge to start the daemon';
+        identityInfo.textContent = '';
+      }
+    };
+
+    // Sign text function
+    window.signText = async function() {
+      const content = document.getElementById('contentInput').value;
+      const resultDiv = document.getElementById('signResult');
+      const btn = document.getElementById('signBtn');
+
+      if (!content.trim()) {
+        resultDiv.innerHTML = '<div class="error">Please enter some content to sign.</div>';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Signing...';
+      resultDiv.innerHTML = '';
+
+      try {
+        const result = await window.client.sign(content, 'browser-demo');
+        resultDiv.innerHTML = `
+          <div class="result">
+            <p>✅ <strong>Signed successfully!</strong></p>
+            <p><strong>Signature:</strong> <code>${result.signature.slice(0, 40)}...</code></p>
+            <p><strong>Timestamp:</strong> ${result.timestamp}</p>
+            ${result.did ? `<p><strong>DID:</strong> <code>${result.did}</code></p>` : ''}
+          </div>
+        `;
+      } catch (error) {
+        let message = error.message;
+        if (message === 'USER_DENIED') message = 'You declined to sign this content.';
+        if (message === 'NO_KEYS') message = 'No identity configured. Generate keys first.';
+        resultDiv.innerHTML = `<div class="error">❌ ${message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔐 Sign Content';
+      }
+    };
+
+    // File input handler
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const fileInfo = document.getElementById('fileInfo');
+      const btn = document.getElementById('signFileBtn');
+      
+      if (file) {
+        fileInfo.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        btn.disabled = false;
+      } else {
+        fileInfo.textContent = '';
+        btn.disabled = true;
+      }
+    });
+
+    // Sign file function
+    window.signFile = async function() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      const resultDiv = document.getElementById('fileResult');
+      const btn = document.getElementById('signFileBtn');
+
+      if (!file) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Signing...';
+      resultDiv.innerHTML = '';
+
+      try {
+        const signedBlob = await window.client.signBlob(file, file.name, 'browser-file-demo');
+        
+        // Create download link
+        const url = URL.createObjectURL(signedBlob);
+        resultDiv.innerHTML = `
+          <div class="result">
+            <p>✅ <strong>File signed successfully!</strong></p>
+            <p>Original: ${file.size} bytes → Signed: ${signedBlob.size} bytes</p>
+            <p><a href="${url}" download="signed_${file.name}">📥 Download Signed File</a></p>
+          </div>
+        `;
+      } catch (error) {
+        let message = error.message;
+        if (message === 'USER_DENIED') message = 'You declined to sign this file.';
+        resultDiv.innerHTML = `<div class="error">❌ ${message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔐 Sign File';
+      }
+    };
+  </script>
+</body>
+</html>

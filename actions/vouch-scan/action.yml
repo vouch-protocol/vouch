@@ -1,0 +1,39 @@
+name: Vouch Gatekeeper leak check
+description: Scan a repository for leaked Vouch key material and fail the check when any is found.
+author: Vouch Protocol
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  path:
+    description: Path to scan.
+    required: false
+    default: "."
+  severity:
+    description: Fail when a finding is at or above this severity (critical, high, medium, low).
+    required: false
+    default: critical
+  version:
+    description: Version of vouch-protocol to install (default latest).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - name: Install Vouch
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          pip install "vouch-protocol==${{ inputs.version }}"
+        else
+          pip install vouch-protocol
+        fi
+    - name: Scan for leaked key material
+      shell: bash
+      run: vouch scan "${{ inputs.path }}" --exit-nonzero-on "${{ inputs.severity }}"

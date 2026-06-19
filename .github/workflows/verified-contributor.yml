@@ -1,0 +1,108 @@
+name: Verified Contributor credential
+
+# When a contributor's FIRST pull request is merged, mint a signed "Vouch
+# Verified Contributor" credential for them using our own protocol, and post it
+# as a thank-you comment. One badge per contributor: later merges are skipped.
+#
+# Setup: add repository secrets VOUCH_PRIVATE_KEY (the contributor-issuer
+# Ed25519 JWK) and VOUCH_DID (did:web:vouch-protocol.com:contributors). The job
+# is a safe no-op if they are not set. If contributors/delegation.json is
+# present, the badge is chained back to the root authority automatically.
+#
+# Security note: uses pull_request_target with the default (base) checkout, so
+# only trusted repository code runs. The contributor's PR code is never executed,
+# and the issuer key is never exposed to it.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  mint:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: One badge per contributor (skip unless this is their first merge)
+        id: firstmerge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          count=$(gh pr list --repo "$REPO" --author "$PR_AUTHOR" --state merged \
+            --json number --limit 200 | jq 'length')
+          echo "Merged PRs by @$PR_AUTHOR: $count"
+          if [ "$count" -le 1 ]; then
+            echo "first=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "first=false" >> "$GITHUB_OUTPUT"
+            echo "Already issued a badge to @$PR_AUTHOR; skipping."
+          fi
+
+      - uses: actions/setup-python@v6
+        if: steps.firstmerge.outputs.first == 'true'
+        with:
+          python-version: "3.11"
+
+      - name: Install vouch
+        if: steps.firstmerge.outputs.first == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Mint credential
+        if: steps.firstmerge.outputs.first == 'true'
+        env:
+          VOUCH_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
+          VOUCH_DID: ${{ secrets.VOUCH_DID }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$VOUCH_PRIVATE_KEY" ] || [ -z "$VOUCH_DID" ]; then
+            echo "Issuer key not configured; skipping credential minting."
+            exit 0
+          fi
+          PARENT=""
+          if [ -f contributors/delegation.json ]; then
+            PARENT="--parent contributors/delegation.json"
+          fi
+          python scripts/mint_contributor_credential.py \
+            --subject "$PR_AUTHOR" \
+            --pr-url "$PR_URL" \
+            --pr-number "$PR_NUMBER" \
+            --repo "$REPO" \
+            $PARENT \
+            --out credential.json
+
+      - name: Thank the contributor
+        if: steps.firstmerge.outputs.first == 'true' && hashFiles('credential.json') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          {
+            echo "### Vouch Verified Contributor :sparkles:"
+            echo ""
+            echo "Thank you @${PR_AUTHOR}. Your first merged pull request earns a signed"
+            echo "**Vouch Verified Contributor** credential, minted with our own protocol."
+            echo "Keep it, verify it, and show it off. This is a one-time badge."
+            echo ""
+            echo "<details><summary>Your Verifiable Credential (eddsa-jcs-2022)</summary>"
+            echo ""
+            echo '```json'
+            cat credential.json
+            echo '```'
+            echo ""
+            echo "</details>"
+          } > comment.md
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file comment.md

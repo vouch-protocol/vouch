@@ -1,0 +1,61 @@
+{
+  "description": "Canonical cross-implementation test vector for W3C BitstringStatusList as implemented by Vouch Protocol. Encodes a 131,072-bit list with specific indices revoked. Python, TypeScript, and Go implementations must produce byte-identical encodedList output and report the same bits when decoded.",
+  "spec_reference": "https://www.w3.org/TR/vc-bitstring-status-list/",
+  "status_list_id": "https://issuer.example/status/1",
+  "issuer_did": "did:web:issuer.example",
+  "bitstring_length_bits": 131072,
+  "status_purpose": "revocation",
+  "revoked_indices": [
+    0,
+    1,
+    7,
+    8,
+    15,
+    100,
+    1023,
+    65535,
+    131070,
+    131071
+  ],
+  "active_indices_sample": [
+    42,
+    99,
+    1024,
+    65534,
+    131069
+  ],
+  "expected_encoded_list": "uH4sIAAAAAAAC_-3ZwQkAIAwEsBM_XdvR3MyfCwgFIVkje-WqtBsBAAAAAAAAAF75dwAAAAAAAAD43zx4vP0dAEAAAA",
+  "status_list_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2"
+    ],
+    "id": "https://issuer.example/status/1",
+    "type": [
+      "VerifiableCredential",
+      "BitstringStatusListCredential"
+    ],
+    "issuer": "did:web:issuer.example",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "validUntil": "2026-01-31T00:00:00Z",
+    "credentialSubject": {
+      "id": "https://issuer.example/status/1#list",
+      "type": "BitstringStatusList",
+      "statusPurpose": "revocation",
+      "encodedList": "uH4sIAAAAAAAC_-3ZwQkAIAwEsBM_XdvR3MyfCwgFIVkje-WqtBsBAAAAAAAAAF75dwAAAAAAAAD43zx4vP0dAEAAAA"
+    }
+  },
+  "sample_credential_status_revoked": {
+    "id": "https://issuer.example/status/1#0",
+    "type": "BitstringStatusListEntry",
+    "statusPurpose": "revocation",
+    "statusListIndex": "0",
+    "statusListCredential": "https://issuer.example/status/1"
+  },
+  "sample_credential_status_active": {
+    "id": "https://issuer.example/status/1#42",
+    "type": "BitstringStatusListEntry",
+    "statusPurpose": "revocation",
+    "statusListIndex": "42",
+    "statusListCredential": "https://issuer.example/status/1"
+  }
+}

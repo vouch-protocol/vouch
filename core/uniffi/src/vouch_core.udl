@@ -1,0 +1,146 @@
+// Vouch Protocol core, UniFFI interface.
+//
+// Defines the API exposed to Swift (iOS), Kotlin/Java (Android/JVM), and, via
+// the generated C header, to .NET and C/C++. Binary values cross as
+// sequence<u8> (bytes); credentials and proofs cross as JSON strings. Every
+// function delegates to the canonical vouch-core crate.
+
+namespace vouch_core {
+    string version();
+
+    // JCS canonicalization (RFC 8785).
+    [Throws=CoreError]
+    string canonicalize(string json);
+
+    // Ed25519.
+    [Throws=CoreError]
+    Ed25519KeyPair generate_ed25519();
+    [Throws=CoreError]
+    bytes ed25519_sign(bytes seed, bytes message);
+    [Throws=CoreError]
+    boolean ed25519_verify(bytes public_key, bytes message, bytes signature);
+
+    // Multikey and did:key.
+    [Throws=CoreError]
+    string encode_ed25519_multikey(bytes public_key);
+    [Throws=CoreError]
+    DecodedKey decode_multikey(string multikey);
+    [Throws=CoreError]
+    string did_key_from_ed25519(bytes public_key);
+    [Throws=CoreError]
+    bytes ed25519_from_did_key(string did);
+
+    // Data Integrity (eddsa-jcs-2022).
+    [Throws=CoreError]
+    string build_proof(string credential_json, bytes seed, string verification_method, string created);
+    [Throws=CoreError]
+    string sign_credential(string credential_json, bytes seed, string verification_method, string created);
+    [Throws=CoreError]
+    boolean verify_proof(string credential_json, bytes public_key);
+
+    // Credential verification with validity window.
+    [Throws=CoreError]
+    VerifyResult verify_credential(string credential_json, bytes public_key, string now_iso, i64 clock_skew_seconds);
+
+    // Delegation: build a link and validate a chain's time-bound rule.
+    [Throws=CoreError]
+    string build_delegation_link(string issuer, string subject, string intent_json, string? valid_from, string? valid_until, string? parent_proof_value);
+    [Throws=CoreError]
+    boolean verify_chain_time_bound(string chain_json, string now_iso, i64 clock_skew_seconds);
+
+    // Post-quantum ML-DSA-44 and dual proofs.
+    [Throws=CoreError]
+    MlDsaKeyPair generate_mldsa44();
+    [Throws=CoreError]
+    bytes mldsa44_sign(bytes secret, bytes public_key, bytes message);
+    [Throws=CoreError]
+    boolean mldsa44_verify(bytes public_key, bytes message, bytes signature);
+    [Throws=CoreError]
+    string sign_dual(string credential_json, bytes ed25519_seed, bytes mldsa_secret, bytes mldsa_public, string ed25519_vm, string mldsa_vm, string created);
+    [Throws=CoreError]
+    boolean verify_dual(string credential_json, bytes ed25519_public, bytes mldsa_public);
+    [Throws=CoreError]
+    boolean verify_composite(string credential_json, bytes ed25519_public, bytes mldsa_public);
+
+    // Revocation (BitstringStatusList).
+    [Throws=CoreError]
+    boolean verify_status(string credential_status_json, string status_list_credential_json);
+
+    // Robotics (Phase 5). JSON-in / JSON-out; keys are bytes, binary fields are
+    // multibase strings. A verifier returns the JSON literal null for "no result".
+    [Throws=CoreError]
+    string robotics_mint_identity(bytes robot_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_identity(string credential_json, bytes robot_public_key);
+    [Throws=CoreError]
+    string robotics_config_hash(string config_json);
+    [Throws=CoreError]
+    string robotics_build_provenance(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_provenance(string attestation_json, bytes public_key, string? config_json);
+    [Throws=CoreError]
+    string robotics_build_scope(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_check_action(string scope_json, string action_json);
+    [Throws=CoreError]
+    boolean robotics_attenuates(string parent_json, string child_json);
+    [Throws=CoreError]
+    string robotics_build_hello(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_build_accept(bytes signer_seed, string hello_json, bytes hello_public_key, string policy_json, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_accept(string accept_json, bytes accept_public_key, string expected_nonce, string? policy_json);
+    [Throws=CoreError]
+    string robotics_build_confirm(bytes signer_seed, string from_did, string session_json, string created);
+    [Throws=CoreError]
+    boolean robotics_verify_confirm(string confirm_json, bytes confirm_public_key, string session_id, string expected_nonce);
+    string robotics_genesis_prev_hash();
+    [Throws=CoreError]
+    string robotics_blackbox_append(bytes key, u64 seq, string event, string payload_json, string timestamp, string prev_hash);
+    [Throws=CoreError]
+    string robotics_blackbox_open(string entry_json, bytes key);
+    [Throws=CoreError]
+    string robotics_verify_chain(string entries_json, string? genesis_prev_hash);
+    [Throws=CoreError]
+    string robotics_build_killswitch(bytes authority_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_killswitch(string credential_json, bytes public_key, string? trusted_authorities_json);
+    [Throws=CoreError]
+    string robotics_build_passport(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_encode_passport(string passport_json);
+    [Throws=CoreError]
+    string robotics_decode_passport(string uri);
+    [Throws=CoreError]
+    string robotics_verify_passport(string passport_json, bytes public_key, string now_iso);
+    [Throws=CoreError]
+    string robotics_verify_passport_uri(string uri, bytes public_key, string now_iso);
+};
+
+dictionary Ed25519KeyPair {
+    bytes seed;
+    bytes public_key;
+    string multikey;
+    string did_key;
+};
+
+dictionary MlDsaKeyPair {
+    bytes secret_key;
+    bytes public_key;
+};
+
+dictionary DecodedKey {
+    string algorithm;
+    bytes raw_key;
+};
+
+dictionary VerifyResult {
+    boolean proof_valid;
+    boolean time_valid;
+    boolean valid;
+};
+
+[Error]
+enum CoreError {
+    "Core",
+};

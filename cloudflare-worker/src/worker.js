@@ -1,0 +1,1089 @@
+/**
+ * Vouch Verify API - Cloudflare Worker
+ * 
+ * Stores and retrieves Vouch signatures with short IDs.
+ * Supports free tier (1 year expiry) and pro tier (no expiry).
+ * 
+ * Shortlink: vch.sh/{id} -> 301 redirect -> vouch-protocol.com/v/{id}
+ */
+
+// =============================================================================
+// Configuration
+// =============================================================================
+
+// Shortlink domain for sharing (301 redirects to VERIFY_DOMAIN)
+const SHORTLINK_DOMAIN = 'vch.sh';
+
+// Main domain where verification pages are served (for SEO)
+const VERIFY_DOMAIN = 'vouch-protocol.com';
+const VERIFY_PATH = '/v';
+
+// Legacy domains that should 301 redirect to new shortlink
+const LEGACY_SHORTLINK_DOMAINS = ['v.vouch-protocol.com', 'vouch.me'];
+
+// Helper: Generate canonical verification URL
+function getVerifyUrl(id) {
+    return `https://${VERIFY_DOMAIN}${VERIFY_PATH}/${id}`;
+}
+
+// Helper: Generate shortlink for display
+function getShortlink(id) {
+    return `https://${SHORTLINK_DOMAIN}/${id}`;
+}
+
+// CORS headers for browser requests
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Generate a random 6-character short ID
+function generateShortId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let id = '';
+    for (let i = 0; i < 6; i++) {
+        id += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return id;
+}
+
+// Check if short ID already exists
+async function idExists(env, id) {
+    const existing = await env.SIGNATURES.get(id);
+    return existing !== null;
+}
+
+// Generate unique short ID (retry if collision)
+async function generateUniqueId(env, maxRetries = 5) {
+    for (let i = 0; i < maxRetries; i++) {
+        const id = generateShortId();
+        if (!await idExists(env, id)) {
+            return id;
+        }
+    }
+    // Fallback to longer ID if too many collisions
+    return generateShortId() + generateShortId();
+}
+
+// Handle OPTIONS (CORS preflight)
+function handleOptions() {
+    return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+    });
+}
+
+// POST /api/sign - Store a new signature
+async function handleSignature(request, env) {
+    try {
+        const body = await request.json();
+
+        // Validate required fields
+        const { text, email, key, sig } = body;
+        if (!text || !email || !key || !sig) {
+            return new Response(JSON.stringify({
+                error: 'Missing required fields: text, email, key, sig',
+            }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        // Check for pro tier (via API key header)
+        const apiKey = request.headers.get('X-Vouch-API-Key');
+        const isPro = apiKey && await validateProKey(env, apiKey);
+
+        // Calculate expiration
+        const expiryDays = isPro ? null : parseInt(env.FREE_TIER_EXPIRY_DAYS || '365');
+        const expiresAt = expiryDays
+            ? Date.now() + (expiryDays * 24 * 60 * 60 * 1000)
+            : null;
+
+        // Generate unique short ID
+        const shortId = await generateUniqueId(env);
+
+        // Prepare data to store
+        const signatureData = {
+            text,
+            email,
+            key,
+            sig,
+            created: new Date().toISOString(),
+            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+            tier: isPro ? 'pro' : 'free',
+        };
+
+        // Store in KV with optional expiration (in seconds)
+        const kvOptions = expiryDays
+            ? { expirationTtl: expiryDays * 24 * 60 * 60 }
+            : {};
+
+        await env.SIGNATURES.put(shortId, JSON.stringify(signatureData), kvOptions);
+
+        // Return success with short ID
+        // Use shortlink for sharing, canonical verify URL for SEO
+        return new Response(JSON.stringify({
+            success: true,
+            id: shortId,
+            shortlink: getShortlink(shortId),
+            url: getVerifyUrl(shortId),
+            expiresAt: signatureData.expiresAt,
+        }), {
+            status: 201,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+    } catch (error) {
+        return new Response(JSON.stringify({
+            error: 'Failed to store signature',
+            details: error.message,
+        }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+// GET /api/verify/:id - Retrieve a signature
+async function handleVerify(id, env) {
+    try {
+        const data = await env.SIGNATURES.get(id);
+
+        if (!data) {
+            return new Response(JSON.stringify({
+                error: 'Signature not found or expired',
+            }), {
+                status: 404,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        const signatureData = JSON.parse(data);
+
+        return new Response(JSON.stringify({
+            success: true,
+            ...signatureData,
+        }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+    } catch (error) {
+        return new Response(JSON.stringify({
+            error: 'Failed to retrieve signature',
+            details: error.message,
+        }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+// Text signature verification HTML page (for shortlinks)
+async function handleSignaturePage(id, env) {
+    try {
+        const data = await env.SIGNATURES.get(id);
+
+        // Format date as "10 Jan 2026 10:30:45"
+        const formatDate = (isoString) => {
+            const date = new Date(isoString);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const mins = date.getMinutes().toString().padStart(2, '0');
+            const secs = date.getSeconds().toString().padStart(2, '0');
+            return `${day} ${month} ${year} ${hours}:${mins}:${secs}`;
+        };
+
+        // Escape HTML to prevent XSS
+        const escapeHtml = (str) => {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+
+        if (!data) {
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vouch Verification - Not Found</title>
+    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .not-found { color: #ef4444; }
+        h1 { margin-top: 0; }
+        .footer { margin-top: 24px; text-align: center; color: #666; font-size: 14px; }
+        a { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 class="not-found">✗ Signature Not Found</h1>
+        <p>No signature found with ID: <strong>${escapeHtml(id)}</strong></p>
+        <p>The signature may have expired or the link may be incorrect.</p>
+        <div class="footer">
+            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+        </div>
+    </div>
+</body>
+</html>`;
+            return new Response(html, {
+                status: 404,
+                headers: { 'Content-Type': 'text/html' },
+            });
+        }
+
+        const signatureData = JSON.parse(data);
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vouch Signature Verification - ${id}</title>
+    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .logo { width: 40px; height: 40px; border-radius: 8px; }
+        .verified { color: #22c55e; margin: 0; }
+        h1 { margin-top: 0; }
+        .field { margin: 16px 0; }
+        .label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .value { font-size: 16px; margin-top: 4px; word-break: break-all; }
+        .text-content { background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #22c55e; white-space: pre-wrap; font-family: inherit; }
+        .hash { font-family: monospace; font-size: 12px; background: #f0f0f0; padding: 8px; border-radius: 4px; overflow-wrap: break-word; }
+        .footer { margin-top: 24px; text-align: center; color: #666; font-size: 14px; }
+        .cta-banner { margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; text-align: center; }
+        .cta-banner a { color: white; text-decoration: none; font-weight: 600; }
+        .cta-banner a:hover { text-decoration: underline; }
+        a { color: #3b82f6; }
+        .tier-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-left: 8px; }
+        .tier-free { background: #e5e7eb; color: #374151; }
+        .tier-pro { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <img class="logo" src="https://vouch-protocol.com/vouch-logo-icon.jpg" alt="Vouch Protocol">
+            <h1 class="verified">✓ Verified Signature</h1>
+        </div>
+        <div class="field">
+            <div class="label">Signed Text</div>
+            <div class="text-content">${escapeHtml(signatureData.text)}</div>
+        </div>
+        <div class="field">
+            <div class="label">Signed By</div>
+            <div class="value">${escapeHtml(signatureData.email)} <span class="tier-badge tier-${signatureData.tier || 'free'}">${signatureData.tier || 'free'}</span></div>
+        </div>
+        <div class="field">
+            <div class="label">Signed On</div>
+            <div class="value">${formatDate(signatureData.created)}</div>
+        </div>
+        <div class="field">
+            <div class="label">Public Key</div>
+            <div class="value hash">${escapeHtml(signatureData.key)}</div>
+        </div>
+        <div class="field">
+            <div class="label">Signature</div>
+            <div class="value hash">${escapeHtml(signatureData.sig)}</div>
+        </div>
+        ${signatureData.expiresAt ? `
+        <div class="field">
+            <div class="label">Expires</div>
+            <div class="value">${formatDate(signatureData.expiresAt)}</div>
+        </div>` : ''}
+        <div class="footer">
+            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+        </div>
+        <div class="cta-banner" id="cta-banner">
+            <a id="cta-link" href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your own text with Vouch Protocol → Get the Extension</a>
+        </div>
+    </div>
+    <script>
+        (function() {
+            var ua = navigator.userAgent;
+            var isEdge = ua.indexOf('Edg/') > -1;
+            var link = document.getElementById('cta-link');
+            if (isEdge) {
+                link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/pmplohfpimnakaokhonojcgbdppbnjak';
+                link.textContent = '✍️ Sign your own text → Get Edge Extension';
+            }
+        })();
+    </script>
+</body>
+</html>`;
+
+        return new Response(html, {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+        });
+
+    } catch (error) {
+        return new Response(`< h1 > Error</h1> <p>${error.message}</p>`, {
+            status: 500,
+            headers: { 'Content-Type': 'text/html' },
+        });
+    }
+}
+
+// Pro signers list - GitHub usernames who get custom ID access
+// In production, this could be stored in KV or fetched from a database
+const PRO_SIGNERS = ['rampyg']; // Add more as needed
+
+// Verify Vouch token using GitHub SSH keys (PAD-008 approach)
+async function verifyVouchAuth(request, env, payload) {
+    const vouchToken = request.headers.get('Vouch-Token');
+
+    if (!vouchToken) {
+        // Also support API key as fallback
+        const apiKey = request.headers.get('X-Vouch-API-Key');
+        if (apiKey) {
+            const validKeys = (env.PRO_API_KEYS || '').split(',').filter(k => k);
+            return { isPro: validKeys.includes(apiKey), signer: null };
+        }
+        return { isPro: false, signer: null };
+    }
+
+    try {
+        // Parse the Vouch token (JWS format: header.payload.signature)
+        const parts = vouchToken.split('.');
+        if (parts.length !== 3) {
+            return { isPro: false, signer: null, error: 'Invalid token format' };
+        }
+
+        const [headerB64, payloadB64, signatureB64] = parts;
+        const tokenPayload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+
+        // Extract signer identity
+        const issuer = tokenPayload.iss || tokenPayload.signer;
+        if (!issuer) {
+            return { isPro: false, signer: null, error: 'No issuer in token' };
+        }
+
+        // Parse issuer format: "github:username" or "did:web:..."
+        let githubUsername = null;
+        if (issuer.startsWith('github:')) {
+            githubUsername = issuer.replace('github:', '');
+        } else if (issuer.startsWith('did:github:')) {
+            githubUsername = issuer.replace('did:github:', '');
+        }
+
+        if (!githubUsername) {
+            return { isPro: false, signer: issuer, error: 'Only GitHub-based identities supported' };
+        }
+
+        // Check if signer is in Pro list
+        // Note: We trust the issuer claim from the signed Vouch token
+        // Full signature verification could be added via WebCrypto when Ed25519 support improves
+        const isPro = PRO_SIGNERS.includes(githubUsername);
+
+        return {
+            isPro,
+            signer: issuer,
+            githubUsername,
+            verified: true,
+            note: 'Issuer from signed Vouch token, on Pro signers list'
+        };
+
+    } catch (error) {
+        return { isPro: false, signer: null, error: error.message };
+    }
+}
+
+// Legacy: Validate Pro API key 
+async function validateProKey(env, apiKey) {
+    const validKeys = (env.PRO_API_KEYS || '').split(',').filter(k => k);
+    return validKeys.includes(apiKey);
+}
+
+// =============================================================================
+// C2PA Certificate Authority Endpoints
+// =============================================================================
+
+// GET /.well-known/c2pa-trust-list
+function handleC2PATrustList() {
+    const trustList = {
+        version: '2.0',
+        name: 'Vouch Protocol C2PA Trust List',
+        description: 'Trust list for the Vouch Protocol C2PA Certificate Authority. Vouch Protocol operates a three-tier PKI with ECDSA P-384 CA certificates and Ed25519 leaf signing certificates.',
+        website: 'https://vouch-protocol.com',
+        cps: 'https://vouch-protocol.com/cps.html',
+        updated: new Date().toISOString(),
+        certificatePolicy: {
+            oid: '1.3.6.1.4.1.62558.1.1',
+            name: 'C2PA Certificate Policy',
+        },
+        trustAnchors: [{
+            name: 'Vouch Protocol Root CA',
+            organization: 'Vouch Protocol',
+            subject: 'CN=Vouch Protocol Root CA,O=Vouch Protocol,C=IN',
+            algorithm: 'ECDSA P-384',
+            keyStorage: 'Google Cloud KMS HSM (FIPS 140-2 Level 3)',
+            validity: '20 years',
+            usage: ['c2pa.signing'],
+            crl: 'https://vouch-protocol.com/api/v1/c2pa/crl',
+            ocsp: 'https://vouch-protocol.com/api/v1/c2pa/ocsp',
+        }],
+        issuingCAs: [{
+            name: 'Vouch Protocol Intermediate CA',
+            organization: 'Vouch Protocol',
+            subject: 'CN=Vouch Protocol Intermediate CA,O=Vouch Protocol,C=IN',
+            algorithm: 'ECDSA P-384',
+            keyStorage: 'Google Cloud KMS HSM (FIPS 140-2 Level 3)',
+            validity: '5 years (1,827 days)',
+            issuer: 'CN=Vouch Protocol Root CA,O=Vouch Protocol,C=IN',
+            extendedKeyUsage: [
+                'c2pa-kp-claimSigning (1.3.6.1.4.1.62558.2.1)',
+                'emailProtection',
+            ],
+        }],
+        signingCertificates: [{
+            name: 'Vouch Protocol C2PA Signer',
+            organization: 'Vouch Protocol',
+            subject: 'CN=Vouch Protocol C2PA Signer,O=Vouch Protocol,C=IN',
+            issuer: 'CN=Vouch Protocol Intermediate CA,O=Vouch Protocol,C=IN',
+            algorithm: 'Ed25519',
+            assuranceLevel: 'AL1 (1.3.6.1.4.1.62558.3.1)',
+            validity: '366 days (AL1) / 90 days (AL2)',
+            usage: ['c2pa.signing', 'c2pa.timestamping'],
+            status: 'active',
+        }],
+        policies: {
+            signatureAlgorithm: 'ECDSA P-384 (CA) + Ed25519 (leaf)',
+            timestampServer: 'http://timestamp.digicert.com',
+            revocationCheck: 'crl+ocsp',
+            certificateLifetime: {
+                rootCA: '20 years',
+                intermediateCA: '1,827 days',
+                leafAL1: '366 days',
+                leafAL2: '90 days',
+            },
+            keyStorage: 'Google Cloud KMS HSM (FIPS 140-2 Level 3)',
+        },
+        conformance: {
+            c2paCertificatePolicy: '1.3.6.1.4.1.62558.1.1',
+            fips: ['FIPS 140-2 Level 3 (KMS HSM)', 'FIPS 186-4 (ECDSA)'],
+            rfc: ['RFC 5280', 'RFC 6960', 'RFC 3161'],
+        },
+    };
+
+    return new Response(JSON.stringify(trustList, null, 2), {
+        status: 200,
+        headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=86400',
+        },
+    });
+}
+
+// GET /api/v1/c2pa/crl
+async function handleC2PACRL(env) {
+    const c2paCrlHeaders = {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'X-CRL-Version': '1',
+        'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Expose-Headers': 'X-CRL-Version',
+    };
+
+    try {
+        const now = new Date();
+        const nextUpdate = new Date(now.getTime() + 86400000);
+
+        // Fetch revoked certs from KV (stored as JSON array)
+        const revokedData = await env.SIGNATURES.get('c2pa:revoked-certs');
+        const revokedCertificates = [];
+
+        if (revokedData) {
+            try {
+                const entries = JSON.parse(revokedData);
+                for (const entry of entries) {
+                    if (entry.serialNumber) {
+                        revokedCertificates.push({
+                            serialNumber: entry.serialNumber,
+                            revocationDate: entry.revokedAt || new Date(0).toISOString(),
+                            reason: entry.reason || 'unspecified',
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('CRL: Failed to parse revoked certs:', e);
+            }
+        }
+
+        const crl = {
+            version: 1,
+            issuer: 'CN=Vouch Protocol Intermediate CA,O=Vouch Protocol,C=IN',
+            thisUpdate: now.toISOString(),
+            nextUpdate: nextUpdate.toISOString(),
+            revokedCertificates,
+        };
+
+        return new Response(JSON.stringify(crl, null, 2), {
+            status: 200,
+            headers: c2paCrlHeaders,
+        });
+    } catch (e) {
+        console.error('CRL endpoint error:', e);
+        return new Response(JSON.stringify({ error: 'Failed to generate CRL' }), {
+            status: 500,
+            headers: c2paCrlHeaders,
+        });
+    }
+}
+
+// Helper: validate hex serial number
+function isValidSerial(serial) {
+    return /^[0-9a-fA-F]+$/.test(serial) && serial.length > 0 && serial.length <= 128;
+}
+
+// Helper: lookup cert revocation status
+async function lookupCertStatus(env, serialNumber) {
+    const now = new Date();
+    const nextUpdate = new Date(now.getTime() + 86400000);
+    const base = {
+        serialNumber,
+        thisUpdate: now.toISOString(),
+        nextUpdate: nextUpdate.toISOString(),
+    };
+
+    const revokedData = await env.SIGNATURES.get('c2pa:revoked-certs');
+    if (!revokedData) {
+        return { ...base, status: 'good' };
+    }
+
+    try {
+        const entries = JSON.parse(revokedData);
+        const normalizedSerial = serialNumber.toLowerCase();
+        for (const entry of entries) {
+            if (entry.serialNumber && entry.serialNumber.toLowerCase() === normalizedSerial) {
+                return {
+                    ...base,
+                    status: 'revoked',
+                    revocationReason: entry.reason || 'unspecified',
+                };
+            }
+        }
+    } catch (e) {
+        console.error('OCSP: Failed to parse revoked certs:', e);
+    }
+
+    return { ...base, status: 'good' };
+}
+
+// POST /api/v1/c2pa/ocsp
+async function handleC2PAOCSPPost(request, env) {
+    const ocspHeaders = {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=60',
+    };
+
+    try {
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+                status: 400,
+                headers: ocspHeaders,
+            });
+        }
+
+        const serial = body.serialNumber;
+        if (!serial || typeof serial !== 'string') {
+            return new Response(JSON.stringify({
+                error: 'serialNumber (hex string) is required in request body',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        if (!isValidSerial(serial)) {
+            return new Response(JSON.stringify({
+                error: 'serialNumber must be a valid hex string (1-128 characters)',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        const response = await lookupCertStatus(env, serial);
+        return new Response(JSON.stringify(response, null, 2), {
+            status: 200,
+            headers: ocspHeaders,
+        });
+    } catch (e) {
+        console.error('OCSP POST error:', e);
+        return new Response(JSON.stringify({ error: 'OCSP lookup failed' }), {
+            status: 500,
+            headers: ocspHeaders,
+        });
+    }
+}
+
+// GET /api/v1/c2pa/ocsp?serial=...
+async function handleC2PAOCSPGet(request, env) {
+    const ocspHeaders = {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=60',
+    };
+
+    try {
+        const url = new URL(request.url);
+        const serial = url.searchParams.get('serial');
+
+        if (!serial) {
+            return new Response(JSON.stringify({
+                error: 'serial query parameter (hex string) is required',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        if (!isValidSerial(serial)) {
+            return new Response(JSON.stringify({
+                error: 'serial must be a valid hex string (1-128 characters)',
+            }), { status: 400, headers: ocspHeaders });
+        }
+
+        const response = await lookupCertStatus(env, serial);
+        return new Response(JSON.stringify(response, null, 2), {
+            status: 200,
+            headers: ocspHeaders,
+        });
+    } catch (e) {
+        console.error('OCSP GET error:', e);
+        return new Response(JSON.stringify({ error: 'OCSP lookup failed' }), {
+            status: 500,
+            headers: ocspHeaders,
+        });
+    }
+}
+
+// Health check endpoint
+function handleHealth() {
+    return new Response(JSON.stringify({
+        status: 'healthy',
+        service: 'vouch-verify-api',
+        timestamp: new Date().toISOString(),
+    }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+}
+
+// Main request handler
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        const path = url.pathname;
+        const method = request.method;
+
+        // Handle CORS preflight
+        if (method === 'OPTIONS') {
+            return handleOptions();
+        }
+
+        // Route requests
+        const hostname = url.hostname;
+
+        // =================================================================
+        // Handle vch.sh shortlink domain (301 redirect to main domain for SEO)
+        // =================================================================
+        if (hostname === SHORTLINK_DOMAIN) {
+            const id = path.replace('/', '');
+            if (id && id.match(/^[a-zA-Z0-9_-]+$/)) {
+                // 301 Permanent Redirect to canonical URL (SEO benefit)
+                return Response.redirect(getVerifyUrl(id), 301);
+            }
+            // Root redirects to main site
+            return Response.redirect(`https://${VERIFY_DOMAIN}`, 302);
+        }
+
+        // =================================================================
+        // Handle legacy shortlink domains (301 redirect to vch.sh for migration)
+        // =================================================================
+        if (LEGACY_SHORTLINK_DOMAINS.includes(hostname)) {
+            const id = path.replace(/^\/p\//, '').replace('/', '');
+            if (id && id.match(/^[a-zA-Z0-9_-]+$/)) {
+                // 301 Permanent Redirect to new shortlink
+                return Response.redirect(getShortlink(id), 301);
+            }
+            // Root redirects to main site
+            return Response.redirect(`https://${VERIFY_DOMAIN}`, 302);
+        }
+
+        // =================================================================
+        // Handle main domain (vouch-protocol.com) - serve verification pages
+        // =================================================================
+        if (hostname === VERIFY_DOMAIN || hostname === `api.${VERIFY_DOMAIN}`) {
+            // Handle verification pages at /v/{id}
+            if (path.startsWith(VERIFY_PATH + '/')) {
+                const id = path.replace(VERIFY_PATH + '/', '').split('/')[0];
+                if (id && id.match(/^[a-zA-Z0-9_-]+$/)) {
+                    // Check if it's a paper or regular signature
+                    const paperData = await env.SIGNATURES.get(`paper:${id}`);
+                    if (paperData) {
+                        return handlePaperPage(id, env);
+                    }
+                    return handleSignaturePage(id, env);
+                }
+            }
+        }
+
+        // =============================================================
+        // C2PA CA endpoints (served on vouch-protocol.com)
+        // =============================================================
+        if (path === '/.well-known/c2pa-trust-list' && method === 'GET') {
+            return handleC2PATrustList();
+        }
+
+        if (path === '/.well-known/c2pa-crl' && method === 'GET') {
+            return Response.redirect('https://vouch-protocol.com/api/v1/c2pa/crl', 302);
+        }
+
+        if (path === '/api/v1/c2pa/crl' && method === 'GET') {
+            return handleC2PACRL(env);
+        }
+
+        if (path === '/api/v1/c2pa/ocsp') {
+            if (method === 'POST') return handleC2PAOCSPPost(request, env);
+            if (method === 'GET') return handleC2PAOCSPGet(request, env);
+        }
+
+        // Support both /api/* (old) and /* (new api subdomain)
+        const apiPath = path.startsWith('/api') ? path : '/api' + path;
+
+        if (apiPath === '/api/health' && method === 'GET') {
+            return handleHealth();
+        }
+
+        if (apiPath === '/api/sign' && method === 'POST') {
+            return handleSignature(request, env);
+        }
+
+        // Match /api/verify/:id or /verify/:id
+        const verifyMatch = apiPath.match(/^\/api\/verify\/([a-zA-Z0-9]+)$/);
+        if (verifyMatch && method === 'GET') {
+            return handleVerify(verifyMatch[1], env);
+        }
+
+        // Paper registration endpoint - POST /api/paper/register
+        if (apiPath === '/api/paper/register' && method === 'POST') {
+            return handlePaperRegister(request, env);
+        }
+
+        // Paper verification endpoint - GET /api/paper/verify/:id
+        const paperVerifyMatch = apiPath.match(/^\/api\/paper\/verify\/([a-zA-Z0-9_-]+)$/);
+        if (paperVerifyMatch && method === 'GET') {
+            return handlePaperVerify(paperVerifyMatch[1], env);
+        }
+
+        // 404 for unmatched routes
+        return new Response(JSON.stringify({
+            error: 'Not found',
+            endpoints: {
+                'POST /api/sign': 'Store a new signature',
+                'GET /api/verify/:id': 'Retrieve a signature',
+                'POST /api/paper/register': 'Register a paper signature',
+                'GET /api/paper/verify/:id': 'Verify a paper signature',
+                'GET /api/health': 'Health check',
+                'GET /.well-known/c2pa-trust-list': 'C2PA CA trust list',
+                'GET /api/v1/c2pa/crl': 'Certificate Revocation List',
+                'GET /api/v1/c2pa/ocsp?serial=...': 'OCSP status check (GET)',
+                'POST /api/v1/c2pa/ocsp': 'OCSP status check (POST)',
+            },
+        }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+    },
+};
+
+// POST /api/paper/register - Register a paper signature
+// Free tier: generates random short ID
+// Pro tier (with Vouch token or API key): allows custom ID
+async function handlePaperRegister(request, env) {
+    try {
+        const body = await request.json();
+
+        // Validate required fields
+        const { sha256, author, signer, signature, title } = body;
+        let { id } = body; // Optional for free tier, required for pro tier custom IDs
+
+        if (!sha256 || !author || !signer) {
+            return new Response(JSON.stringify({
+                error: 'Missing required fields: sha256, author, signer',
+            }), {
+                status: 400,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        // Check for pro tier via Vouch token or API key
+        const authResult = await verifyVouchAuth(request, env, body);
+        const isPro = authResult.isPro;
+
+        // Handle ID assignment
+        if (id) {
+            // Custom ID requested - Pro tier only
+            if (!isPro) {
+                return new Response(JSON.stringify({
+                    error: 'Custom paper IDs are a Pro feature. Sign your request with a Vouch token.',
+                    hint: 'Use: vouch sign --json "<payload>" --header, then pass Vouch-Token header',
+                    authResult,
+                }), {
+                    status: 402,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+
+            // Validate custom ID format
+            if (!id.match(/^[a-zA-Z0-9_-]+$/)) {
+                return new Response(JSON.stringify({
+                    error: 'Invalid ID format. Use alphanumeric characters, dashes, and underscores.',
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+        } else {
+            // Free tier: generate random ID
+            id = await generateUniqueId(env);
+        }
+
+        // Check if ID already exists
+        const existing = await env.SIGNATURES.get(`paper:${id} `);
+        if (existing) {
+            return new Response(JSON.stringify({
+                error: 'Paper ID already registered. Choose a different ID.',
+            }), {
+                status: 409,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        // Prepare paper data
+        const paperData = {
+            id,
+            sha256,
+            author,
+            signer, // e.g., "github:rampyg"
+            signature: signature || null,
+            title: title || null,
+            registered: new Date().toISOString(),
+            type: 'paper',
+            tier: isPro ? 'pro' : 'free',
+        };
+
+        // Store with paper: prefix
+        await env.SIGNATURES.put(`paper:${id} `, JSON.stringify(paperData));
+
+        // Return success with both shortlink and canonical URL
+        return new Response(JSON.stringify({
+            success: true,
+            id,
+            shortlink: getShortlink(id),
+            verifyUrl: getVerifyUrl(id),
+            message: 'Paper signature registered successfully',
+        }), {
+            status: 201,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+    } catch (error) {
+        return new Response(JSON.stringify({
+            error: 'Failed to register paper',
+            details: error.message,
+        }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+// GET /api/paper/verify/:id - Get paper signature data
+async function handlePaperVerify(id, env) {
+    try {
+        const data = await env.SIGNATURES.get(`paper:${id}`);
+
+        if (!data) {
+            return new Response(JSON.stringify({
+                error: 'Paper not found',
+                id,
+            }), {
+                status: 404,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        const paperData = JSON.parse(data);
+
+        return new Response(JSON.stringify({
+            success: true,
+            verified: true,
+            ...paperData,
+        }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+    } catch (error) {
+        return new Response(JSON.stringify({
+            error: 'Failed to verify paper',
+            details: error.message,
+        }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+// Paper verification HTML page
+function handlePaperPage(id, env) {
+    return handlePaperVerify(id, env).then(async (response) => {
+        const data = await response.json();
+
+        // Format date as "10 Jan 2026 10:30:45"
+        const formatDate = (isoString) => {
+            const date = new Date(isoString);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const mins = date.getMinutes().toString().padStart(2, '0');
+            const secs = date.getSeconds().toString().padStart(2, '0');
+            return `${day} ${month} ${year} ${hours}:${mins}:${secs}`;
+        };
+
+        // Sanitize title - remove LaTeX commands like \title{...}
+        const sanitizeTitle = (title) => {
+            if (!title) return null;
+            let clean = title;
+            // Handle: \title{ (literal backslash stored in JSON)
+            if (clean.startsWith('\\title{')) {
+                clean = clean.slice(7); // \title{ = 7 chars
+            }
+            // Handle: TAB + itle{ (when \t was interpreted as tab)
+            // Tab is 1 char, so total = 1 + 5 = 6 chars: \t + i + t + l + e + {
+            else if (clean.startsWith('\title{')) {
+                clean = clean.slice(6);
+            }
+            // Remove trailing }
+            if (clean.endsWith('}')) {
+                clean = clean.slice(0, -1);
+            }
+            return clean.trim() || null;
+        };
+
+        const displayTitle = sanitizeTitle(data.title);
+
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vouch Paper Verification - ${id}</title>
+    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .logo { width: 40px; height: 40px; border-radius: 8px; }
+        .verified { color: #22c55e; margin: 0; }
+        .not-found { color: #ef4444; }
+        h1 { margin-top: 0; }
+        .field { margin: 16px 0; }
+        .label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .value { font-size: 16px; margin-top: 4px; word-break: break-all; }
+        .hash { font-family: monospace; font-size: 14px; background: #f0f0f0; padding: 8px; border-radius: 4px; }
+        .footer { margin-top: 24px; text-align: center; color: #666; font-size: 14px; }
+        .verify-note { font-style: italic; color: #888; font-size: 13px; margin-top: 16px; text-align: center; }
+        .cta-banner { margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; text-align: center; }
+        .cta-banner a { color: white; text-decoration: none; font-weight: 600; }
+        .cta-banner a:hover { text-decoration: underline; }
+        a { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        ${data.success ? `
+        <div class="header">
+            <img class="logo" src="https://vouch-protocol.com/vouch-logo-icon.jpg" alt="Vouch Protocol">
+            <h1 class="verified">✓ Verified Paper</h1>
+        </div>
+        <div class="field">
+            <div class="label">Paper ID</div>
+            <div class="value">${data.id}</div>
+        </div>
+        ${displayTitle ? `
+        <div class="field">
+            <div class="label">Title</div>
+            <div class="value">${displayTitle}</div>
+        </div>` : ''}
+        <div class="field">
+            <div class="label">Author</div>
+            <div class="value">${data.author}</div>
+        </div>
+        <div class="field">
+            <div class="label">Signer</div>
+            <div class="value">${data.signer}</div>
+        </div>
+        <div class="field">
+            <div class="label">SHA-256 Hash</div>
+            <div class="value hash">${data.sha256}</div>
+        </div>
+        <div class="field">
+            <div class="label">Registered</div>
+            <div class="value">${formatDate(data.registered)}</div>
+        </div>
+        <div class="verify-note">
+            To verify yourself: compute SHA-256 of the PDF and compare with the hash above.
+        </div>
+        <div class="footer">
+            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+        </div>
+        <div class="cta-banner">
+            <a href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>
+        </div>
+        ` : `
+        <h1 class="not-found">✗ Paper Not Found</h1>
+        <p>No paper registered with ID: <strong>${id}</strong></p>
+        <div class="footer">
+            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+        </div>
+        <div class="cta-banner">
+            <a id="cta-link2" href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>
+        </div>
+        `}
+    </div>
+    <script>
+        (function() {
+            var ua = navigator.userAgent;
+            var isEdge = ua.indexOf('Edg/') > -1;
+            var links = document.querySelectorAll('.cta-banner a');
+            links.forEach(function(link) {
+                if (isEdge) {
+                    link.href = 'https://microsoftedge.microsoft.com/addons/detail/vouch-protocol/pmplohfpimnakaokhonojcgbdppbnjak';
+                } else {
+                    link.href = 'https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>`;
+
+        return new Response(html, {
+            status: data.success ? 200 : 404,
+            headers: { 'Content-Type': 'text/html' },
+        });
+    });
+}
+
+
+

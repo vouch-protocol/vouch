@@ -1,0 +1,139 @@
+name: Swift XCFramework
+
+# Builds the VouchCore XCFramework on a real macOS runner, verifies it by running
+# the Swift test suite against it, then publishes the zipped framework to a
+# GitHub Release and prints the SwiftPM checksum. This removes the need for a
+# physical Mac: tag a release (or run it by hand) and the artifact + checksum
+# come out the other side.
+#
+# This is the second attempt. The first failed on the usual macOS-CI footguns, so
+# each one is guarded explicitly and called out inline:
+#   1. wrong runner          -> macos-14 (Apple Silicon, modern Xcode)
+#   2. unselected Xcode      -> setup-xcode pins a known-good version
+#   3. missing iOS-sim arch  -> build-xcframework.sh adds aarch64-apple-ios-sim
+#   4. slow 5-target rebuild -> rust-cache persists the target dirs
+#   5. build-only, unverified-> we run `swift test` against the built framework
+#   6. corrupt zip           -> `ditto`, not `zip`, to package the .xcframework
+#   7. checksum/zip mismatch -> checksum is computed on the exact uploaded file
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to publish (e.g. swift-v0.1.0)"
+        required: true
+        default: "swift-v0.1.0"
+  push:
+    tags:
+      - "swift-v*"
+
+concurrency:
+  group: swift-xcframework-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # create the release and upload the asset
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # Guard 2: pin Xcode instead of trusting the runner default.
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "15.4"
+
+      # Guard 1+3: Rust with every Apple target the framework needs.
+      - name: Install Rust + Apple targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: >-
+            aarch64-apple-ios,
+            aarch64-apple-ios-sim,
+            x86_64-apple-ios,
+            aarch64-apple-darwin,
+            x86_64-apple-darwin
+
+      # Guard 4: cache the five per-target build dirs so reruns are minutes, not
+      # tens of minutes.
+      - name: Cache cargo + target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core/uniffi -> target
+
+      # Builds all five static libs, regenerates the UniFFI Swift binding, lipos
+      # the simulator and macOS slices, and assembles the XCFramework at
+      # sdks/swift/Frameworks/vouch_coreFFI.xcframework.
+      - name: Build XCFramework
+        run: bash sdks/swift/build-xcframework.sh
+
+      # Guard 5: prove the framework actually links and runs, do not just build
+      # it. The Package.swift binaryTarget points at the path we just produced.
+      - name: Verify with swift test
+        working-directory: sdks/swift
+        run: swift test
+
+      # Guard 6: `ditto` is the only correct way to zip an .xcframework on macOS.
+      # A plain `zip` reorders the bundle and SwiftPM then rejects the checksum.
+      - name: Package the framework
+        working-directory: sdks/swift
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            Frameworks/vouch_coreFFI.xcframework \
+            vouch_coreFFI.xcframework.zip
+          ls -lh vouch_coreFFI.xcframework.zip
+
+      # Guard 7: the checksum is taken from the exact file we are about to upload.
+      - name: Compute SwiftPM checksum
+        id: checksum
+        working-directory: sdks/swift
+        run: |
+          SUM=$(swift package compute-checksum vouch_coreFFI.xcframework.zip)
+          echo "checksum=$SUM" >> "$GITHUB_OUTPUT"
+          echo "checksum: $SUM"
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish release with the framework
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: VouchCore ${{ steps.tag.outputs.tag }}
+          files: sdks/swift/vouch_coreFFI.xcframework.zip
+          body: |
+            VouchCore XCFramework (iOS device + iOS simulator + macOS), built and
+            tested on macOS CI.
+
+            To consume it, point `Package.swift` at this asset:
+
+            ```swift
+            .binaryTarget(
+                name: "vouch_coreFFI",
+                url: "https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.tag }}/vouch_coreFFI.xcframework.zip",
+                checksum: "${{ steps.checksum.outputs.checksum }}"
+            )
+            ```
+
+      # Make the url + checksum impossible to miss in the run summary.
+      - name: Job summary
+        run: |
+          {
+            echo "## VouchCore XCFramework published"
+            echo ""
+            echo "- tag: \`${{ steps.tag.outputs.tag }}\`"
+            echo "- checksum: \`${{ steps.checksum.outputs.checksum }}\`"
+            echo "- url: https://github.com/${{ github.repository }}/releases/download/${{ steps.tag.outputs.tag }}/vouch_coreFFI.xcframework.zip"
+            echo ""
+            echo "Paste the binaryTarget block from the release notes into Package.swift."
+          } >> "$GITHUB_STEP_SUMMARY"

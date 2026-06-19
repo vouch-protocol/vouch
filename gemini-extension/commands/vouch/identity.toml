@@ -1,0 +1,11 @@
+description = "Show the current Vouch agent identity (DID) and status"
+
+prompt = """
+Call the `get_identity` tool and report the agent's DID, auto-sign
+status, and whether a session is active.
+
+If the DID is not configured, explain that the extension needs
+VOUCH_PRIVATE_KEY and VOUCH_DID in the environment: run `vouch init --env`,
+export the two values, and restart Gemini CLI. Never request the private
+key in the chat.
+"""

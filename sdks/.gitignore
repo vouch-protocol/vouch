@@ -1,0 +1,25 @@
+# Build outputs
+**/bin/
+**/obj/
+**/build/
+**/.gradle/
+**/dist/
+**/node_modules/
+**/__pycache__/
+**/.openapi-generator/
+
+# Native libraries: rebuilt by each package's build-native.sh and bundled into
+# the published package at pack time. Not committed (binary, platform-specific).
+**/*.so
+**/*.dylib
+**/*.dll
+
+# Downloaded dependencies (resolved by the build tools)
+jvm/lib/jna-*.jar
+clients/openapi-generator-cli.jar
+
+# Packaged artifacts
+**/*.nupkg
+**/*.snupkg
+cpp/lib/*.a
+cpp/examples/example
