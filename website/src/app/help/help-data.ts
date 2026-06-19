@@ -331,14 +331,14 @@ This makes prompt-injection key-exfiltration impossible: even if the LLM is jail
         body: `
 ## Install
 
-VouchCore ships through Swift Package Manager. The native code is a prebuilt XCFramework hosted on the \`swift-v0.1.0\` release, so you do not need a Mac toolchain to build the Rust core yourself.
+VouchCore ships through Swift Package Manager from its own repository, \`vouch-protocol/vouch-swift\` (SwiftPM resolves a package from the repository root). The native code is a prebuilt XCFramework hosted on the \`swift-v0.1.0\` release, so you do not need a Mac toolchain to build the Rust core yourself.
 
-In Xcode use File then Add Package Dependencies and paste the repo URL, or add it to your \`Package.swift\`:
+In Xcode use File then Add Package Dependencies and paste \`https://github.com/vouch-protocol/vouch-swift.git\`, or add it to your \`Package.swift\`:
 
 \`\`\`swift
-.package(url: "https://github.com/vouch-protocol/vouch", from: "swift-v0.1.0"),
+.package(url: "https://github.com/vouch-protocol/vouch-swift", from: "0.1.0"),
 // then depend on the product:
-.product(name: "VouchCore", package: "vouch"),
+.product(name: "VouchCore", package: "vouch-swift"),
 \`\`\`
 
 Supports iOS 13+ and macOS 12+.
