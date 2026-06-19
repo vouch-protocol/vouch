@@ -28,6 +28,21 @@ Usage from CLI:
 
 from .detector import scan_path, scan_text, scan_file, Finding, Severity, Kind
 from .patterns import VOUCH_PATTERNS, VouchPattern
+from .secret_patterns import GENERIC_SECRET_PATTERNS
+
+
+def patterns_for(include_secrets: bool = False) -> list[VouchPattern]:
+    """Return the pattern set to scan with.
+
+    Default is Vouch-shaped key material only. With `include_secrets`,
+    the common provider-secret patterns (AWS, GitHub, Stripe, PEM keys,
+    and more) are appended, turning the scanner into a general-purpose
+    secret scanner with Vouch detection still included.
+    """
+    if include_secrets:
+        return [*VOUCH_PATTERNS, *GENERIC_SECRET_PATTERNS]
+    return list(VOUCH_PATTERNS)
+
 
 __all__ = [
     "scan_path",
@@ -37,5 +52,7 @@ __all__ = [
     "Severity",
     "Kind",
     "VOUCH_PATTERNS",
+    "GENERIC_SECRET_PATTERNS",
     "VouchPattern",
+    "patterns_for",
 ]

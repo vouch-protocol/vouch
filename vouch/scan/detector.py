@@ -203,10 +203,21 @@ def _offset_to_line_col(text: str, offset: int) -> tuple[int, int]:
     return line, column
 
 
-def scan_text(text: str, file_label: str = "<inline>") -> list[Finding]:
-    """Run all VOUCH_PATTERNS against a single string."""
+def scan_text(
+    text: str,
+    file_label: str = "<inline>",
+    patterns: list[VouchPattern] | None = None,
+) -> list[Finding]:
+    """Run a pattern set against a single string.
+
+    `patterns` defaults to VOUCH_PATTERNS (Vouch-shaped key material only).
+    Pass a wider list (e.g. VOUCH_PATTERNS + GENERIC_SECRET_PATTERNS) to
+    also catch common provider secrets.
+    """
+    if patterns is None:
+        patterns = VOUCH_PATTERNS
     findings: list[Finding] = []
-    for pattern in VOUCH_PATTERNS:
+    for pattern in patterns:
         # The filename-pattern kind is applied to file paths, not contents.
         if pattern.kind == Kind.VOUCH_CONFIG_FILENAME:
             continue
@@ -229,7 +240,11 @@ def scan_text(text: str, file_label: str = "<inline>") -> list[Finding]:
     return findings
 
 
-def scan_file(path: Path, root: Path | None = None) -> list[Finding]:
+def scan_file(
+    path: Path,
+    root: Path | None = None,
+    patterns: list[VouchPattern] | None = None,
+) -> list[Finding]:
     """Scan one file. Returns findings with paths relative to `root`."""
     if root is None:
         root = path.parent
@@ -276,7 +291,7 @@ def scan_file(path: Path, root: Path | None = None) -> list[Finding]:
         return findings
 
     rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
-    for f in scan_text(text, file_label=rel):
+    for f in scan_text(text, file_label=rel, patterns=patterns):
         findings.append(f)
     return findings
 
@@ -290,7 +305,10 @@ def _iter_files(root: Path) -> Iterable[Path]:
             yield Path(dirpath) / name
 
 
-def scan_path(path: str | Path) -> list[Finding]:
+def scan_path(
+    path: str | Path,
+    patterns: list[VouchPattern] | None = None,
+) -> list[Finding]:
     """Scan a file or directory. Returns the accumulated findings list."""
     root = Path(path).resolve()
     if not root.exists():
@@ -298,10 +316,10 @@ def scan_path(path: str | Path) -> list[Finding]:
 
     findings: list[Finding] = []
     if root.is_file():
-        findings.extend(scan_file(root, root=root.parent))
+        findings.extend(scan_file(root, root=root.parent, patterns=patterns))
     else:
         for file_path in _iter_files(root):
-            findings.extend(scan_file(file_path, root=root))
+            findings.extend(scan_file(file_path, root=root, patterns=patterns))
     return findings
 
 

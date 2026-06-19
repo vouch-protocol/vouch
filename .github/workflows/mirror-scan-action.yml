@@ -1,0 +1,110 @@
+name: Mirror vouch-scan Action
+
+# Publishes the leak/secret scan Action (actions/vouch-scan) to the standalone
+# repository github.com/vouch-protocol/vouch-scan-action. That repo exists
+# because the GitHub Marketplace requires an action.yml at the repository ROOT
+# and will not list an action that lives in a subdirectory of a monorepo, so
+# consumers reference vouch-protocol/vouch-scan-action@v1 while this monorepo
+# stays the source of truth.
+#
+# Trigger: any change to actions/vouch-scan on main. The semver tag is derived
+# from the `version:` line of actions/vouch-scan/VERSION (vX.Y.Z). When that
+# file bumps, a new tag is cut on the standalone repo and the matching major
+# tag (v1) is moved to it, which is what Marketplace consumers pin to.
+#
+# Auth: pushes to vouch-scan-action over SSH using a deploy key. Store the
+# private key as the actions secret VOUCH_SCAN_ACTION_DEPLOY_KEY in this repo;
+# add the matching public key as a write-enabled deploy key on
+# vouch-protocol/vouch-scan-action.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "actions/vouch-scan/**"
+      - ".github/workflows/mirror-scan-action.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mirror-scan-action
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v4
+        with:
+          path: monorepo
+
+      - name: Checkout vouch-scan-action (target)
+        uses: actions/checkout@v4
+        with:
+          repository: vouch-protocol/vouch-scan-action
+          path: target
+          ssh-key: ${{ secrets.VOUCH_SCAN_ACTION_DEPLOY_KEY }}
+          fetch-depth: 0
+
+      - name: Sync files
+        run: |
+          set -euo pipefail
+          SRC="monorepo/actions/vouch-scan"
+          DST="target"
+          # The standalone repo IS the action: action.yml + README live at root.
+          cp "$SRC/action.yml" "$DST/action.yml"
+          cp "$SRC/README.md"  "$DST/README.md"
+          cp "$SRC/VERSION"    "$DST/VERSION"
+
+      - name: Derive release version
+        id: ver
+        run: |
+          set -euo pipefail
+          V=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' monorepo/actions/vouch-scan/VERSION | head -1 || true)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "major=${V%%.*}" >> "$GITHUB_OUTPUT"
+          echo "Derived version: ${V:-<none found>}"
+
+      - name: Commit and push to target main
+        working-directory: target
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to mirror."
+          else
+            git commit -m "Mirror vouch-scan Action from monorepo (${GITHUB_SHA:0:7})"
+            git push origin HEAD:main
+            echo "Pushed mirror commit."
+          fi
+
+      - name: Tag release and move major tag
+        if: steps.ver.outputs.version != ''
+        working-directory: target
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          MAJOR="${{ steps.ver.outputs.major }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$V" >/dev/null 2>&1; then
+            echo "Tag $V already exists; only refreshing the $MAJOR major tag."
+          else
+            git tag -a "$V" -m "vouch-scan Action $V"
+            git push origin "refs/tags/$V"
+            echo "Tagged $V."
+          fi
+          # Move the floating major tag (e.g. v1) to the current HEAD so that
+          # consumers pinning @v1 always get the latest compatible release.
+          git tag -f "$MAJOR"
+          git push -f origin "refs/tags/$MAJOR"
+          echo "Moved $MAJOR to HEAD."
+
+      - name: Summary
+        run: |
+          {
+            echo "## Mirror vouch-scan Action"
+            echo ""
+            echo "- target: https://github.com/vouch-protocol/vouch-scan-action"
+            echo "- derived version: \`${{ steps.ver.outputs.version || 'none' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

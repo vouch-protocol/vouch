@@ -1280,7 +1280,7 @@ def cmd_scan(args) -> int:
     Implements the OSS detection stage of PAD-058. Use in pre-commit
     hooks, CI gates, or one-off audits.
     """
-    from vouch.scan import scan_path, Severity
+    from vouch.scan import scan_path, patterns_for, Severity
     from vouch.scan.detector import (
         findings_to_json,
         findings_to_text,
@@ -1288,7 +1288,7 @@ def cmd_scan(args) -> int:
     )
 
     try:
-        findings = scan_path(args.path)
+        findings = scan_path(args.path, patterns=patterns_for(include_secrets=args.secrets))
     except FileNotFoundError as e:
         print(f"vouch scan: {e}", file=sys.stderr)
         return 2
@@ -1406,6 +1406,15 @@ def main() -> int:
         help="File or directory to scan (default: current directory)",
     )
     p_scan.add_argument("--json", action="store_true", help="Output findings as JSON")
+    p_scan.add_argument(
+        "--secrets",
+        action="store_true",
+        help=(
+            "Also scan for common provider secrets (AWS, GitHub, GitLab, Slack, "
+            "Google, Stripe, SendGrid, npm, OpenAI, Anthropic keys and PEM private "
+            "keys), not just Vouch-shaped key material"
+        ),
+    )
     p_scan.add_argument(
         "--exit-nonzero-on",
         choices=["critical", "high", "medium", "low"],

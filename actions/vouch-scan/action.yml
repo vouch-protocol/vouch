@@ -1,5 +1,5 @@
-name: Vouch Gatekeeper leak check
-description: Scan a repository for leaked Vouch key material and fail the check when any is found.
+name: Vouch leak & secret scan
+description: Scan a repository for leaked private key material and common provider secrets, and fail the check when any is found.
 author: Vouch Protocol
 branding:
   icon: shield
@@ -14,6 +14,13 @@ inputs:
     description: Fail when a finding is at or above this severity (critical, high, medium, low).
     required: false
     default: critical
+  secrets:
+    description: >-
+      Also scan for common provider secrets (AWS, GitHub, GitLab, Slack, Google,
+      Stripe, SendGrid, npm, OpenAI, Anthropic keys and PEM private keys), not
+      just Vouch-shaped key material. Set to "true" to enable.
+    required: false
+    default: "false"
   version:
     description: Version of vouch-protocol to install (default latest).
     required: false
@@ -34,6 +41,11 @@ runs:
         else
           pip install vouch-protocol
         fi
-    - name: Scan for leaked key material
+    - name: Scan for leaked key material and secrets
       shell: bash
-      run: vouch scan "${{ inputs.path }}" --exit-nonzero-on "${{ inputs.severity }}"
+      run: |
+        SECRETS_FLAG=""
+        if [ "${{ inputs.secrets }}" = "true" ]; then
+          SECRETS_FLAG="--secrets"
+        fi
+        vouch scan "${{ inputs.path }}" $SECRETS_FLAG --exit-nonzero-on "${{ inputs.severity }}"

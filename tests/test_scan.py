@@ -7,7 +7,16 @@ from pathlib import Path
 
 import pytest
 
-from vouch.scan import scan_path, scan_text, Finding, Severity, Kind
+from vouch.scan import (
+    scan_path,
+    scan_text,
+    patterns_for,
+    Finding,
+    Severity,
+    Kind,
+    GENERIC_SECRET_PATTERNS,
+    VOUCH_PATTERNS,
+)
 from vouch.scan.detector import (
     findings_to_json,
     findings_to_text,
@@ -262,3 +271,86 @@ def test_snippet_redacts_long_matches():
 def test_scan_missing_path_raises():
     with pytest.raises(FileNotFoundError):
         scan_path("/nonexistent/path/should/not/exist/anywhere")
+
+
+# --------------------------------------------------------------------
+# Generic provider-secret patterns (opt-in via --secrets / patterns_for)
+# --------------------------------------------------------------------
+
+
+SECRETS = patterns_for(include_secrets=True)
+
+
+def test_secrets_off_by_default():
+    """A clear AWS key must NOT be flagged with the default pattern set."""
+    text = "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"
+    assert scan_text(text, file_label="a.env") == []
+
+
+def test_patterns_for_composition():
+    assert patterns_for(include_secrets=False) == list(VOUCH_PATTERNS)
+    combined = patterns_for(include_secrets=True)
+    assert len(combined) == len(VOUCH_PATTERNS) + len(GENERIC_SECRET_PATTERNS)
+
+
+@pytest.mark.parametrize(
+    "text,expected_kind",
+    [
+        ("AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE", Kind.AWS_ACCESS_KEY_ID),
+        (
+            'aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"',
+            Kind.AWS_SECRET_ACCESS_KEY,
+        ),
+        ("token: ghp_" + "a" * 36, Kind.GITHUB_TOKEN),
+        ("PAT=github_pat_" + "a" * 22 + "_" + "b" * 59, Kind.GITHUB_FINE_GRAINED_PAT),
+        ("glpat-" + "a" * 20, Kind.GITLAB_PAT),
+        ("xoxb-" + "exampleFAKEtoken00", Kind.SLACK_TOKEN),
+        (
+            "https://hooks.slack.com/services/T0000000/B0000000/" + "X" * 24,
+            Kind.SLACK_WEBHOOK,
+        ),
+        ("key=AIza" + "a" * 35, Kind.GOOGLE_API_KEY),
+        ("sk_live_" + "a" * 24, Kind.STRIPE_SECRET_KEY),
+        ("SG." + "a" * 22 + "." + "b" * 43, Kind.SENDGRID_API_KEY),
+        ("npm_" + "a" * 36, Kind.NPM_TOKEN),
+        ("sk-ant-api03-" + "a" * 40, Kind.ANTHROPIC_API_KEY),
+        ("sk-" + "a" * 40, Kind.OPENAI_API_KEY),
+        ("-----BEGIN RSA PRIVATE KEY-----", Kind.PRIVATE_KEY_PEM),
+        ("-----BEGIN OPENSSH PRIVATE KEY-----", Kind.PRIVATE_KEY_PEM),
+    ],
+)
+def test_detects_provider_secret(text, expected_kind):
+    findings = scan_text(text, file_label="f.txt", patterns=SECRETS)
+    assert any(f.kind == expected_kind for f in findings), (
+        f"expected {expected_kind} in {[f.kind for f in findings]}"
+    )
+
+
+def test_anthropic_key_not_double_counted_as_openai():
+    """sk-ant- keys are Anthropic only, not also OpenAI."""
+    findings = scan_text("sk-ant-api03-" + "a" * 40, file_label="f.txt", patterns=SECRETS)
+    kinds = {f.kind for f in findings}
+    assert Kind.ANTHROPIC_API_KEY in kinds
+    assert Kind.OPENAI_API_KEY not in kinds
+
+
+def test_stripe_test_key_not_flagged():
+    """Test-mode Stripe keys are intentionally not flagged (often public fixtures)."""
+    findings = scan_text("sk_test_" + "a" * 24, file_label="f.txt", patterns=SECRETS)
+    assert not any(f.kind == Kind.STRIPE_SECRET_KEY for f in findings)
+
+
+def test_secrets_scan_still_finds_vouch_material():
+    """Enabling secrets must not drop the Vouch-shaped detections."""
+    text = '{"kty":"OKP","crv":"Ed25519","d":"' + "k" * 43 + '"}'
+    findings = scan_text(text, file_label="f.json", patterns=SECRETS)
+    assert any(f.kind == Kind.ED25519_PRIVATE_JWK for f in findings)
+
+
+def test_scan_path_accepts_patterns(tmp_path: Path):
+    (tmp_path / "deploy.sh").write_text("export GH=ghp_" + "z" * 36 + "\n", encoding="utf-8")
+    # Default: nothing.
+    assert scan_path(tmp_path) == []
+    # With secrets: the GitHub token is caught.
+    findings = scan_path(tmp_path, patterns=SECRETS)
+    assert any(f.kind == Kind.GITHUB_TOKEN for f in findings)

@@ -39,6 +39,25 @@ class Kind(str, Enum):
     VOUCH_CONFIG_FILENAME = "vouch_config_filename"
     MNEMONIC_NEAR_VOUCH_CONFIG = "vouch_mnemonic_near_config"
 
+    # Generic provider-secret kinds (opt-in via `vouch scan --secrets`).
+    # These let the same engine that catches Vouch-shaped key material also
+    # catch the common cloud/SaaS credentials any repository can leak, so
+    # the scanner is useful even to a project that has never heard of Vouch.
+    AWS_ACCESS_KEY_ID = "aws_access_key_id"
+    AWS_SECRET_ACCESS_KEY = "aws_secret_access_key"
+    GITHUB_TOKEN = "github_token"
+    GITHUB_FINE_GRAINED_PAT = "github_fine_grained_pat"
+    GITLAB_PAT = "gitlab_pat"
+    SLACK_TOKEN = "slack_token"
+    SLACK_WEBHOOK = "slack_webhook"
+    GOOGLE_API_KEY = "google_api_key"
+    STRIPE_SECRET_KEY = "stripe_secret_key"
+    SENDGRID_API_KEY = "sendgrid_api_key"
+    NPM_TOKEN = "npm_token"
+    OPENAI_API_KEY = "openai_api_key"
+    ANTHROPIC_API_KEY = "anthropic_api_key"
+    PRIVATE_KEY_PEM = "private_key_pem"
+
 
 @dataclass(frozen=True)
 class VouchPattern:
