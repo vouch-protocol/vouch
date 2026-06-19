@@ -17,7 +17,7 @@ type Contributor = {
 const CONTRIBUTORS: Contributor[] = [];
 
 const BADGE_URL =
-    'https://img.shields.io/badge/Vouch-Verified_Contributor-00C853?style=for-the-badge&labelColor=2d2d2d';
+    'https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d';
 
 const BADGE_SNIPPET = `[![Vouch Verified Contributor](${BADGE_URL})](https://vouch-protocol.com/contributors)`;
 

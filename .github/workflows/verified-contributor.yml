@@ -106,7 +106,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
-          BADGE: "https://img.shields.io/badge/Vouch-Verified_Contributor-00C853?style=for-the-badge&labelColor=2d2d2d"
+          BADGE: "https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
         run: |
           {
             echo "### Vouch Verified Contributor :sparkles:"
