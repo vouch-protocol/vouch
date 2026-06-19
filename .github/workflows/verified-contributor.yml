@@ -1,17 +1,19 @@
 name: Verified Contributor credential
 
-# When a contributor's FIRST pull request is merged, mint a signed "Vouch
-# Verified Contributor" credential for them using our own protocol, and post it
-# as a thank-you comment. One badge per contributor: later merges are skipped.
+# When a contributor's pull request is merged, mint a signed Vouch Verified
+# Contributor credential for that contribution, publish a certificate page at
+# /c/<login>/<pr>/, list them on /contributors, and post a congratulatory
+# comment linking to the certificate. One certificate per merged PR.
 #
-# Setup: add repository secrets VOUCH_PRIVATE_KEY (the contributor-issuer
-# Ed25519 JWK) and VOUCH_DID (did:web:vouch-protocol.com:contributors). The job
-# is a safe no-op if they are not set. If contributors/delegation.json is
-# present, the badge is chained back to the root authority automatically.
+# Skips merges authored by the maintainer (rampyg) and by bots.
+#
+# Setup: repository secrets VOUCH_PRIVATE_KEY (the contributor-issuer Ed25519
+# JWK) and VOUCH_DID (did:web:vouch-protocol.com:contributors). The job is a
+# safe no-op if they are not set. If contributors/delegation.json is present,
+# the badge is chained back to the root authority automatically.
 #
 # Security note: uses pull_request_target with the default (base) checkout, so
-# only trusted repository code runs. The contributor's PR code is never executed,
-# and the issuer key is never exposed to it.
+# only trusted repository code runs. The contributor's PR code is never executed.
 
 on:
   pull_request_target:
@@ -19,45 +21,28 @@ on:
 
 permissions:
   pull-requests: write
-  contents: read
+  contents: write
 
 jobs:
   mint:
-    if: github.event.pull_request.merged == true
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.login != 'rampyg' &&
+      !endsWith(github.event.pull_request.user.login, '[bot]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: One badge per contributor (skip unless this is their first merge)
-        id: firstmerge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          REPO: ${{ github.repository }}
-        run: |
-          count=$(gh pr list --repo "$REPO" --author "$PR_AUTHOR" --state merged \
-            --json number --limit 200 | jq 'length')
-          echo "Merged PRs by @$PR_AUTHOR: $count"
-          if [ "$count" -le 1 ]; then
-            echo "first=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "first=false" >> "$GITHUB_OUTPUT"
-            echo "Already issued a badge to @$PR_AUTHOR; skipping."
-          fi
-
       - uses: actions/setup-python@v6
-        if: steps.firstmerge.outputs.first == 'true'
         with:
           python-version: "3.11"
 
       - name: Install vouch
-        if: steps.firstmerge.outputs.first == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -e .
 
       - name: Mint credential
-        if: steps.firstmerge.outputs.first == 'true'
         env:
           VOUCH_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
           VOUCH_DID: ${{ secrets.VOUCH_DID }}
@@ -83,7 +68,7 @@ jobs:
             --out credential.json
 
       - name: Verify the badge against the published DID document
-        if: steps.firstmerge.outputs.first == 'true' && hashFiles('credential.json') != ''
+        if: hashFiles('credential.json') != ''
         run: |
           python - <<'PY'
           import json, sys
@@ -99,31 +84,71 @@ jobs:
               sys.exit(1)
           PY
 
-      - name: Thank the contributor
-        if: steps.firstmerge.outputs.first == 'true' && hashFiles('credential.json') != ''
+      - name: Publish the certificate and list the contributor
+        if: hashFiles('credential.json') != ''
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Render the certificate page, served at /c/<login>/<pr>/.
+          python scripts/render_contributor_cert.py \
+            --credential credential.json \
+            --login "$PR_AUTHOR" \
+            --pr "$PR_NUMBER" \
+            --title "$PR_TITLE" \
+            --out "website/public/c/${PR_AUTHOR}/${PR_NUMBER}/index.html"
+          # Add this contribution to the index list (idempotent per login+pr).
+          python - <<'PY'
+          import json, os
+          path = "website/src/data/contributors.json"
+          login = os.environ["PR_AUTHOR"]
+          pr = int(os.environ["PR_NUMBER"])
+          title = os.environ.get("PR_TITLE", "")
+          data = json.load(open(path)) if os.path.exists(path) else []
+          if not any(c.get("login") == login and c.get("pr") == pr for c in data):
+              data.append({"login": login, "pr": pr, "title": title})
+              with open(path, "w") as f:
+                  json.dump(data, f, indent=2)
+                  f.write("\n")
+          PY
+          # Commit to main so the website redeploys with the new certificate.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "website/public/c/${PR_AUTHOR}/${PR_NUMBER}/index.html" website/src/data/contributors.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(contributors): certificate for @${PR_AUTHOR} (#${PR_NUMBER})"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push origin HEAD:main && break
+              sleep $((2 ** i))
+            done
+          fi
+
+      - name: Congratulate the contributor
+        if: hashFiles('credential.json') != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           BADGE: "https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
+          CERT_URL: "https://vouch-protocol.com/c/${{ github.event.pull_request.user.login }}/${{ github.event.pull_request.number }}"
         run: |
           {
             echo "### Vouch Verified Contributor :sparkles:"
             echo ""
-            echo "Thank you @${PR_AUTHOR}. Your first merged pull request earns a signed"
-            echo "**Vouch Verified Contributor** credential, chained to the project root authority."
-            echo "This is a one-time badge."
+            echo "Thank you @${PR_AUTHOR}. This merged pull request earns a signed"
+            echo "**Vouch Verified Contributor** certificate, chained to the project root authority."
             echo ""
-            echo "[![Vouch Verified Contributor](${BADGE})](https://vouch-protocol.com/contributors)"
+            echo "[![Vouch Verified Contributor](${BADGE})](${CERT_URL})"
             echo ""
-            echo "**Add it to your profile or site (optional):**"
+            echo "**Your certificate (download and share it):** ${CERT_URL}"
+            echo ""
+            echo "**Add the badge to your profile or site (optional):**"
             echo ""
             echo '```markdown'
-            echo "[![Vouch Verified Contributor](${BADGE})](https://vouch-protocol.com/contributors)"
+            echo "[![Vouch Verified Contributor](${BADGE})](${CERT_URL})"
             echo '```'
-            echo ""
-            echo "Verify it any time at https://vouch-protocol.com/contributors"
             echo ""
             echo "<details><summary>Your Verifiable Credential (eddsa-jcs-2022)</summary>"
             echo ""
