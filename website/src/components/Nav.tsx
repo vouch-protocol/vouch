@@ -19,6 +19,7 @@ const MORE = [
     { href: '/blog/', label: 'Blog' },
     { href: '/agent-trust-index/', label: 'Index' },
     { href: '/conformance/', label: 'Conformance' },
+    { href: '/contributors/', label: 'Contributors' },
 ];
 
 const navLinkClass = (active: boolean) =>
