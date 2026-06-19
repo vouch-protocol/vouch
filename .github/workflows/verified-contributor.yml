@@ -82,6 +82,23 @@ jobs:
             $PARENT \
             --out credential.json
 
+      - name: Verify the badge against the published DID document
+        if: steps.firstmerge.outputs.first == 'true' && hashFiles('credential.json') != ''
+        run: |
+          python - <<'PY'
+          import json, sys
+          from vouch import Verifier
+          cred = open("credential.json").read()
+          doc = json.load(open("website/public/contributors/did.json"))
+          pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
+          ok, _ = Verifier.verify_credential(cred, public_key=pub)
+          print("Badge self-verify against published DID:", ok)
+          if not ok:
+              print("::error::Minted badge does not verify against the published contributor DID."
+                    " Check that VOUCH_PRIVATE_KEY and VOUCH_DID hold the contributor issuer key.")
+              sys.exit(1)
+          PY
+
       - name: Thank the contributor
         if: steps.firstmerge.outputs.first == 'true' && hashFiles('credential.json') != ''
         env:
@@ -89,13 +106,24 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
+          BADGE: "https://img.shields.io/badge/Vouch-Verified_Contributor-00C853?style=for-the-badge&labelColor=2d2d2d"
         run: |
           {
             echo "### Vouch Verified Contributor :sparkles:"
             echo ""
             echo "Thank you @${PR_AUTHOR}. Your first merged pull request earns a signed"
-            echo "**Vouch Verified Contributor** credential, minted with our own protocol."
-            echo "Keep it, verify it, and show it off. This is a one-time badge."
+            echo "**Vouch Verified Contributor** credential, chained to the project root authority."
+            echo "This is a one-time badge."
+            echo ""
+            echo "[![Vouch Verified Contributor](${BADGE})](https://vouch-protocol.com/contributors)"
+            echo ""
+            echo "**Add it to your profile or site (optional):**"
+            echo ""
+            echo '```markdown'
+            echo "[![Vouch Verified Contributor](${BADGE})](https://vouch-protocol.com/contributors)"
+            echo '```'
+            echo ""
+            echo "Verify it any time at https://vouch-protocol.com/contributors"
             echo ""
             echo "<details><summary>Your Verifiable Credential (eddsa-jcs-2022)</summary>"
             echo ""
