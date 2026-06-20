@@ -191,6 +191,31 @@ def __getattr__(name):
         from . import accountability
 
         return getattr(accountability, name)
+    # Reputation receipts and aggregation (evidence-backed reputation)
+    elif name in (
+        "ReceiptError",
+        "Signal",
+        "build_state_receipt",
+        "verify_state_receipt",
+        "build_penalty_receipt",
+        "verify_penalty_receipt",
+        "normalize_receipt",
+        "receipt_subject",
+        "STATE_RECEIPT_TYPE",
+        "PENALTY_RECEIPT_TYPE",
+    ):
+        from . import receipts
+
+        return getattr(receipts, name)
+    elif name in (
+        "ReputationScore",
+        "aggregate",
+        "aggregate_receipts",
+        "AGGREGATION_VERSION",
+    ):
+        from . import reputation_aggregate
+
+        return getattr(reputation_aggregate, name)
     # Cloud KMS
     elif name in ("CloudKMSProvider", "AWSKMSProvider", "GCPKMSProvider", "AzureKeyVaultProvider"):
         from . import kms
@@ -272,6 +297,19 @@ __all__ = [
     "commitment_digest",
     "OUTCOME_COMMITMENT_TYPE",
     "OUTCOME_ATTESTATION_TYPE",
+    # Reputation receipts and aggregation
+    "ReceiptError",
+    "Signal",
+    "build_state_receipt",
+    "verify_state_receipt",
+    "build_penalty_receipt",
+    "verify_penalty_receipt",
+    "normalize_receipt",
+    "receipt_subject",
+    "ReputationScore",
+    "aggregate",
+    "aggregate_receipts",
+    "AGGREGATION_VERSION",
     # Cloud KMS
     "CloudKMSProvider",
     "AWSKMSProvider",
