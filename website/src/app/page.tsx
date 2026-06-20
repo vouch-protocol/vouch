@@ -58,6 +58,12 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
     body: 'A verdict, prediction, or recommendation committed and signed before its outcome is known, then settled by a separate attestation that binds the real result back to it. A salted commitment keeps the call private until settlement, and verification rejects a backdated settlement, so an agent track record cannot be cherry-picked or rewritten after the fact.',
     spec: 'Outcome Evidence',
   },
+  {
+    num: 'x.',
+    title: 'Evidence-Backed Reputation',
+    body: 'Reputation as a verifiable aggregate of signed receipts, the relying party attesting an action, a settled outcome, an authority recording a penalty, computed by a public deterministic function and keyed to the agent DID. A consumer recomputes the score from the receipts rather than trusting a server, with multi-dimensional scores, decay, threshold proofs that reveal nothing but the threshold, and disputes that exclude bad receipts.',
+    spec: 'Reputation',
+  },
 ];
 
 const LANGUAGE_TILES = [
