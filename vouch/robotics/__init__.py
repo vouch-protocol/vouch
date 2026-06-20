@@ -12,6 +12,7 @@ robots and embodied agents:
   - passport: scannable (QR/NFC) robot passport and verifier.
   - liveness: robot heartbeat with safety-envelope conformance and trust decay.
   - revocation: whole-DID kill and surgical per-credential revocation.
+  - safety_record: incident/near-miss ledger + portable safety-record credential.
 """
 
 from .capability import (
@@ -69,6 +70,16 @@ from .revocation import (
     build_status_list_entry,
     check_credential_status,
 )
+from .safety_record import (
+    EVENT_TYPES,
+    SEVERITIES,
+    SafetyEventLog,
+    build_safety_record,
+    summarize_entries,
+    validate_safety_summary,
+    verify_safety_log,
+    verify_safety_record,
+)
 
 __all__ = [
     # identity
@@ -118,4 +129,13 @@ __all__ = [
     "check_credential_status",
     "build_status_list_credential",
     "build_status_list_entry",
+    # safety record (incident/near-miss ledger + portable record)
+    "SafetyEventLog",
+    "verify_safety_log",
+    "summarize_entries",
+    "build_safety_record",
+    "verify_safety_record",
+    "validate_safety_summary",
+    "EVENT_TYPES",
+    "SEVERITIES",
 ]

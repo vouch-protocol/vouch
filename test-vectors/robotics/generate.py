@@ -19,7 +19,10 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 from vouch import Signer
 from vouch.robotics import (
+    MotionCollector,
+    SafetyEventLog,
     SoftwareRootOfTrust,
+    build_status_list_entry,
     config_hash,
     mint_robot_identity,
 )
@@ -50,18 +53,53 @@ def main():
 
     config = {"temperature": 0.0, "max_torque": 12.5, "guardrails": ["no_humans_zone"]}
 
+    # Liveness: a deterministic motion digest from fixed samples against a scope.
+    physical_scope = {
+        "maxForceN": 80.0,
+        "maxSpeedMps": 1.5,
+        "maxSpeedNearHumansMps": 0.25,
+        "allowedZones": ["cell-3"],
+    }
+    collector = MotionCollector(scope=physical_scope)
+    collector.record(force_n=12.0, speed_mps=0.4, near_humans=False, zone="cell-3")
+    collector.record(force_n=20.0, speed_mps=0.2, near_humans=True, zone="cell-3")
+    motion_digest = collector.digest()
+
+    # Safety record: a deterministic hash-linked ledger (fixed timestamps).
+    log = SafetyEventLog()
+    log.append("near_miss", severity="low", details={"zone": "cell-3"},
+               timestamp="2026-01-01T00:00:00Z")
+    log.append("envelope_breach", severity="high", timestamp="2026-01-01T00:01:00Z")
+    safety_entries = log.entries()
+    safety_summary = log.summarize()
+
+    # Revocation: a deterministic BitstringStatusList credentialStatus entry.
+    status_entry = build_status_list_entry(
+        status_list_credential="https://fleet.example.com/status/1",
+        status_list_index=42,
+    )
+
     doc = {
         "description": (
-            "Robotics interop vector (Phase 5.1-5.3). Pins the hardware-root "
-            "binding inside a RobotIdentityCredential and the config hash used by "
-            "ModelProvenanceAttestation. Both compose the shared JCS + SHA-256 + "
-            "multibase primitives."
+            "Robotics interop vector. Pins the deterministic byte-level "
+            "computations so other languages reproduce them: the hardware-root "
+            "binding (RobotIdentityCredential), the config hash "
+            "(ModelProvenanceAttestation), the motion digest (liveness), the "
+            "hash-linked safety ledger and its summary (safety_record), and the "
+            "credentialStatus entry (revocation). Credential proof values are not "
+            "pinned because the proof carries a wall-clock created timestamp."
         ),
-        "version": "1.0",
+        "version": "1.1",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
         "expected_config_hash": config_hash(config),
+        "physical_scope": physical_scope,
+        "expected_motion_digest": motion_digest,
+        "safety_log_entries": safety_entries,
+        "expected_safety_log_head": log.head(),
+        "expected_safety_summary": safety_summary,
+        "expected_credential_status_entry": status_entry,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:

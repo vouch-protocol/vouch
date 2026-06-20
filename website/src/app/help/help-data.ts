@@ -2230,6 +2230,81 @@ ok, summary = passport.verify_passport(passport.decode_passport(uri), signer.pub
 Security boundary: verification is fully offline (the verifier supplies the issuer key). An expired passport fails. A suspended or decommissioned passport still verifies but the status is surfaced, so a scanner refuses cooperation rather than treating it as silently inactive. A tampered passport or a wrong type is rejected.
 `,
       },
+      {
+        id: 'robotics-liveness',
+        title: 'Living trust heartbeat',
+        summary: 'A robot heartbeats with a signed motion summary; trust holds only while it stays fresh and in-envelope.',
+        body: `
+A \`RobotHeartbeatCredential\` makes robot trust living: the robot periodically self-signs a summary of what it physically did, and a verifier trusts it only while a fresh, in-envelope heartbeat keeps arriving.
+
+The problem it closes: an identity or capability credential, minted once, stays valid until something revokes it. A robot that drifted, was tampered with, or went dark should lose trust on its own.
+
+How it works: a \`MotionCollector\` records each commanded motion (force, speed, near-humans, zone) and produces a motion digest of the interval (peak force, peak speed, peak speed near humans, zone breaches, breach count, and a \`withinEnvelope\` flag) by checking each sample against the signed \`PhysicalCapabilityScope\`. \`is_live\` returns true only when the heartbeat is recent (within a grace window of the declared interval) and the digest reports \`withinEnvelope\`.
+
+\`\`\`python
+from vouch.robotics import liveness
+
+col = liveness.MotionCollector(scope=scope["physicalScope"])
+col.record(force_n=12.0, speed_mps=0.4, near_humans=True, zone="cell-3")
+hb = liveness.build_robot_heartbeat(robot_signer, session_id="sess-1",
+    interval_index=0, motion_digest=col.digest(), interval_seconds=30)
+ok, subject = liveness.verify_robot_heartbeat(hb, robot_signer.public_key())
+live = liveness.is_live(hb)                            # fresh AND in-envelope
+\`\`\`
+
+Security boundary: \`verify_robot_heartbeat\` fails closed on a wrong type, an invalid proof, or a malformed digest. \`is_live\` returns false on a stale heartbeat, an envelope breach, or a future-dated heartbeat beyond one interval of clock skew, so neither going dark nor exceeding the envelope leaves a robot trusted.
+`,
+      },
+      {
+        id: 'robotics-revocation',
+        title: 'Credential revocation',
+        summary: 'Surgically revoke one robot credential via a status list, or kill a whole robot identity at the DID level.',
+        body: `
+Robot credentials get the same two-level revocation as the rest of Vouch: a surgical per-credential status, and a whole-DID kill.
+
+The problem it closes: the kill switch stops one running robot locally, but a compromised capability grant or a leaked identity key needs to be invalidated for every verifier, not just stopped once.
+
+How it works: \`attach_credential_status\` adds a BitstringStatusList \`credentialStatus\` entry to a robot credential and re-signs it; flipping the bit in the published status list revokes it, and \`check_credential_status\` reports the result. For key compromise or a captured robot, the existing \`RevocationRegistry\` (re-exported from \`vouch.robotics\`) revokes the robot DID wholesale.
+
+\`\`\`python
+from vouch.robotics import revocation
+
+cred = revocation.attach_credential_status(scope_cred, robot_signer,
+    status_list_credential="https://fleet.example/status/1", status_list_index=42)
+revoked = revocation.check_credential_status(cred, status_list_cred)   # bit lookup
+
+reg = revocation.RevocationRegistry(check_remote=False)
+await reg.revoke(robot_did, reason="hardware captured")               # whole-DID kill
+\`\`\`
+
+Security boundary: \`check_credential_status\` returns true only when the credential's status entry matches the fetched list (id and purpose) and the bit is set; the caller verifies the status list credential's own proof first. A robot DID is an ordinary DID, so the registry and the \`.well-known\` distribution path apply unchanged.
+`,
+      },
+      {
+        id: 'robotics-safety-record',
+        title: 'Accountable safety record',
+        summary: 'A tamper-evident incident ledger plus a portable signed record of a robot safety standing.',
+        body: `
+A \`SafetyEventLog\` is an append-only, hash-linked ledger of a robot's safety events, and a \`RobotSafetyRecordCredential\` is the portable signed summary that travels with the robot.
+
+The problem it closes: a robot's safety history lives in scattered, mutable logs that an owner can quietly edit. Insurers, regulators, and new owners need a record they can trust without trusting the operator's word.
+
+How it works: each safety event (incident, near-miss, manual override, kill-switch trigger, envelope breach) is appended with a severity and hash-linked to the previous entry, so the chain is tamper-evident (\`verify_safety_log\`). \`build_safety_record\` summarizes a stretch of the ledger into counts by event type and by severity, the period, and the ledger head hash that anchors it.
+
+\`\`\`python
+from vouch.robotics import safety_record
+
+log = safety_record.SafetyEventLog()
+log.append("near_miss", severity="low", details={"zone": "cell-3"})
+log.append("envelope_breach", severity="high")
+rec = safety_record.build_safety_record(authority_signer, robot_did=robot_did,
+    summary=log.summarize())
+ok, subject = safety_record.verify_safety_record(rec, authority_signer.public_key())
+\`\`\`
+
+Security boundary: \`verify_safety_log\` detects any altered or removed entry (the hash chain breaks). The record summary is anchored to the ledger head, so a summary that understates the log no longer matches its chain. \`verify_safety_record\` fails closed on a wrong type, an invalid proof, or a malformed summary.
+`,
+      },
     ],
   },
 ];

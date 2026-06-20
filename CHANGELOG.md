@@ -5,6 +5,27 @@ All notable changes to Vouch Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+#### Robotics: living trust, revocation, and accountable safety record
+
+The Python reference adds three robotics capabilities on the same
+`eddsa-jcs-2022` credentials:
+
+- `vouch.robotics.liveness`: a robot heartbeat carrying a per-interval motion
+  digest (peak force, speed, speed near humans, zone breaches) with trust that
+  decays unless a fresh, in-envelope heartbeat keeps arriving.
+- `vouch.robotics.revocation`: surgical per-credential revocation via
+  BitstringStatusList plus whole-DID kill via the existing registry.
+- `vouch.robotics.safety_record`: a tamper-evident incident and near-miss ledger
+  summarized into a portable, signed safety-record credential.
+
+Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
+Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by
+the robotics interop vector.
+
 ## [1.6.3] - 2026-06-15
 
 ### Added

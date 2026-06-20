@@ -76,6 +76,14 @@ implement the same wire format. Default cryptosuite is `eddsa-jcs-2022`
   trust handshake, an encrypted tamper-evident black box with a verifiable kill
   switch, and a scannable offline passport. The same Verifiable Credentials as
   the rest of Vouch, in every language. See `robotics.md`.
+- "How do I keep a robot trustworthy while it runs, revoke a robot credential,
+  or carry its safety history?" -> Three more robotics capabilities: a liveness
+  heartbeat (`build_robot_heartbeat`, `is_live`) that renews trust only while a
+  fresh and in-envelope motion digest exists, robot credential revocation
+  (`attach_credential_status` per credential, plus the whole-DID
+  `RevocationRegistry` for a compromised key or captured robot), and an accountable
+  safety record (`SafetyEventLog`, `build_safety_record`), a portable tamper-evident
+  incident ledger summarized into one signed credential. See `robotics.md`.
 
 ## Actions (if enabled)
 

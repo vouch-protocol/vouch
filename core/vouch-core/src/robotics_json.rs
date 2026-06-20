@@ -391,3 +391,175 @@ pub fn verify_passport(passport_json: &str, public_key: &[u8], now_iso: &str) ->
 pub fn verify_passport_uri(uri: &str, public_key: &[u8], now_iso: &str) -> Result<String> {
     Ok(subj(r::verify_passport_uri(uri, public_key, now_iso)?))
 }
+
+// ---- liveness -------------------------------------------------------------
+
+fn gi(v: &Value, k: &str) -> i64 {
+    v.get(k).and_then(|x| x.as_i64()).unwrap_or(0)
+}
+
+/// Build a motionDigest from a JSON array of samples against an optional scope.
+/// `params_json` is `{"scope": {...}|null, "samples": [{forceN, speedMps,
+/// nearHumans, zone, timeHm}, ...]}`.
+pub fn motion_digest(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let scope = p.get("scope").filter(|v| !v.is_null()).cloned();
+    let mut collector = r::MotionCollector::new(scope);
+    if let Some(samples) = p.get("samples").and_then(|v| v.as_array()) {
+        for s in samples {
+            collector.record(&r::MotionSample {
+                force_n: gof(s, "forceN"),
+                speed_mps: gof(s, "speedMps"),
+                near_humans: s
+                    .get("nearHumans")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
+                zone: gos(s, "zone"),
+                time_hm: gos(s, "timeHm"),
+            })?;
+        }
+    }
+    Ok(collector.digest().to_string())
+}
+
+pub fn validate_motion_digest(digest_json: &str) -> Result<bool> {
+    Ok(r::validate_motion_digest(&parse(digest_json)?).is_ok())
+}
+
+pub fn build_robot_heartbeat(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildRobotHeartbeat {
+        robot_did: gs(&p, "robotDid"),
+        session_id: gs(&p, "sessionId"),
+        interval_index: gi(&p, "intervalIndex"),
+        interval_seconds: gi(&p, "intervalSeconds"),
+        motion_digest: p.get("motionDigest").cloned().unwrap_or(Value::Null),
+        valid_from: gs(&p, "validFrom"),
+    };
+    Ok(r::build_robot_heartbeat(robot_seed, &params)?.to_string())
+}
+
+pub fn verify_robot_heartbeat(credential_json: &str, robot_public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_robot_heartbeat(
+        &parse(credential_json)?,
+        robot_public_key,
+    )?))
+}
+
+pub fn is_live(
+    credential_json: &str,
+    now_iso: &str,
+    interval_seconds: Option<i64>,
+    grace_intervals: i64,
+) -> Result<bool> {
+    r::is_live(
+        &parse(credential_json)?,
+        now_iso,
+        interval_seconds,
+        grace_intervals,
+    )
+}
+
+// ---- revocation -----------------------------------------------------------
+
+pub fn build_status_list_entry(
+    status_list_credential: &str,
+    status_list_index: i64,
+    status_purpose: &str,
+    entry_id: Option<&str>,
+) -> Result<String> {
+    Ok(r::build_status_list_entry(
+        status_list_credential,
+        status_list_index,
+        status_purpose,
+        entry_id,
+    )?
+    .to_string())
+}
+
+pub fn attach_credential_status(
+    credential_json: &str,
+    signer_seed: &[u8],
+    params_json: &str,
+) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::AttachCredentialStatus {
+        status_list_credential: gs(&p, "statusListCredential"),
+        status_list_index: gi(&p, "statusListIndex"),
+        status_purpose: gos(&p, "statusPurpose")
+            .unwrap_or_else(|| r::STATUS_PURPOSE_REVOCATION.to_string()),
+        entry_id: gos(&p, "entryId"),
+        created: gs(&p, "created"),
+    };
+    Ok(r::attach_credential_status(&parse(credential_json)?, signer_seed, &params)?.to_string())
+}
+
+pub fn check_credential_status(
+    credential_json: &str,
+    status_list_credential_json: &str,
+    status_purpose: &str,
+) -> Result<bool> {
+    r::check_credential_status(
+        &parse(credential_json)?,
+        &parse(status_list_credential_json)?,
+        status_purpose,
+    )
+}
+
+// ---- safety record --------------------------------------------------------
+
+/// Append one event to a ledger and return `{entry, head}`. The chain is
+/// stateless across calls: pass the previous head as `prevHash` (or the genesis).
+/// `params_json` is `{eventType, severity, details?, actor?, timestamp,
+/// prevHash, seq}`.
+pub fn safety_append_entry(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let prev = gs(&p, "prevHash");
+    let mut log = r::SafetyEventLog::new(Some(&prev));
+    let entry = log.append(
+        &gs(&p, "eventType"),
+        &gs(&p, "severity"),
+        p.get("details").filter(|v| !v.is_null()),
+        p.get("actor").and_then(|v| v.as_str()),
+        &gs(&p, "timestamp"),
+    )?;
+    Ok(json!({"entry": entry, "head": log.head()}).to_string())
+}
+
+pub fn verify_safety_log(entries_json: &str, genesis_prev_hash: Option<&str>) -> Result<String> {
+    let entries = parse(entries_json)?;
+    let arr = entries
+        .as_array()
+        .ok_or_else(|| CoreError::Json("entries must be a JSON array".into()))?;
+    let res = r::verify_safety_log(arr, genesis_prev_hash);
+    Ok(json!({"ok": res.ok, "reason": res.reason}).to_string())
+}
+
+pub fn summarize_entries(entries_json: &str, head: Option<&str>) -> Result<String> {
+    let entries = parse(entries_json)?;
+    let arr = entries
+        .as_array()
+        .ok_or_else(|| CoreError::Json("entries must be a JSON array".into()))?;
+    Ok(r::summarize_entries(arr, head).to_string())
+}
+
+pub fn build_safety_record(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildSafetyRecord {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        summary: p.get("summary").cloned().unwrap_or(Value::Null),
+        period_start: gos(&p, "periodStart"),
+        period_end: gos(&p, "periodEnd"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_safety_record(signer_seed, &params)?.to_string())
+}
+
+pub fn verify_safety_record(credential_json: &str, public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_safety_record(
+        &parse(credential_json)?,
+        public_key,
+    )?))
+}
