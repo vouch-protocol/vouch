@@ -236,6 +236,27 @@ def __getattr__(name):
         from . import reputation_policy
 
         return getattr(reputation_policy, name)
+    elif name in (
+        "PortabilityError",
+        "build_reputation_proof",
+        "verify_reputation_proof",
+        "REPUTATION_PROOF_TYPE",
+    ):
+        from . import reputation_portability
+
+        return getattr(reputation_portability, name)
+    elif name in (
+        "DisputeError",
+        "build_dispute",
+        "build_dispute_resolution",
+        "verify_dispute",
+        "verify_dispute_resolution",
+        "DISPUTE_TYPE",
+        "DISPUTE_RESOLUTION_TYPE",
+    ):
+        from . import reputation_disputes
+
+        return getattr(reputation_disputes, name)
     # Cloud KMS
     elif name in ("CloudKMSProvider", "AWSKMSProvider", "GCPKMSProvider", "AzureKeyVaultProvider"):
         from . import kms
@@ -340,6 +361,15 @@ __all__ = [
     "evaluate_reputation",
     "policy_for_stakes",
     "reputation_pointer",
+    "build_reputation_proof",
+    "verify_reputation_proof",
+    "REPUTATION_PROOF_TYPE",
+    "build_dispute",
+    "build_dispute_resolution",
+    "verify_dispute",
+    "verify_dispute_resolution",
+    "DISPUTE_TYPE",
+    "DISPUTE_RESOLUTION_TYPE",
     # Cloud KMS
     "CloudKMSProvider",
     "AWSKMSProvider",

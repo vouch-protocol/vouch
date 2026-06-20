@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from . import data_integrity
 from .jcs import canonicalize
@@ -70,6 +70,7 @@ class ReputationLedger:
         self._resolver = resolver
         self._agg = agg_kwargs
         self._receipts: Dict[str, List[Dict[str, Any]]] = {}
+        self._excluded: Set[str] = set()
 
     def append(self, receipt: Dict[str, Any]) -> bool:
         """Verify and admit a receipt. Raises LedgerError if it cannot be admitted."""
@@ -87,14 +88,17 @@ class ReputationLedger:
         self._receipts.setdefault(agent, []).append(receipt)
         return True
 
+    def _active(self, agent: str) -> List[Dict[str, Any]]:
+        return [r for r in self._receipts.get(agent, []) if r.get("id") not in self._excluded]
+
     def receipts(self, agent: str) -> List[Dict[str, Any]]:
-        return list(self._receipts.get(agent, []))
+        return list(self._active(agent))
 
     def count(self, agent: str) -> int:
-        return len(self._receipts.get(agent, []))
+        return len(self._active(agent))
 
     def merkle(self, agent: str) -> Optional[MerkleTree]:
-        leaves = [canonicalize(r) for r in self._receipts.get(agent, [])]
+        leaves = [canonicalize(r) for r in self._active(agent)]
         return MerkleTree(leaves) if leaves else None
 
     def root(self, agent: str) -> Optional[str]:
@@ -103,7 +107,27 @@ class ReputationLedger:
 
     def score(self, agent: str, *, at: Optional[datetime] = None, **kw: Any) -> ReputationScore:
         merged = {**self._agg, **kw}
-        return aggregate_receipts(self._receipts.get(agent, []), agent=agent, at=at, **merged)
+        return aggregate_receipts(self._active(agent), agent=agent, at=at, **merged)
+
+    def exclude(self, receipt_id: str) -> None:
+        """Drop a receipt from scoring and the evidence root by its id."""
+        self._excluded.add(receipt_id)
+
+    def apply_resolution(self, resolution: Dict[str, Any], arbiter_public_key: Any) -> bool:
+        """
+        Verify an arbiter's DisputeResolution; if it is upheld, exclude the disputed
+        receipt. Returns True when a receipt was excluded.
+        """
+        if not _verify(resolution, arbiter_public_key):
+            raise LedgerError("dispute resolution did not verify")
+        subject = resolution.get("credentialSubject") or {}
+        if not subject.get("upheld"):
+            return False
+        receipt_id = (subject.get("receipt") or {}).get("id")
+        if not receipt_id:
+            raise LedgerError("resolution names no receipt")
+        self.exclude(receipt_id)
+        return True
 
     def snapshot(
         self,
