@@ -471,4 +471,109 @@ pub fn robotics_verify_passport_uri(
     Ok(rjson::verify_passport_uri(&uri, &public_key, &now_iso)?)
 }
 
+// Liveness heartbeat (Phase 5.7).
+pub fn robotics_motion_digest(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::motion_digest(&params_json)?)
+}
+pub fn robotics_validate_motion_digest(digest_json: String) -> Result<bool, CoreError> {
+    Ok(rjson::validate_motion_digest(&digest_json)?)
+}
+pub fn robotics_build_heartbeat(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_robot_heartbeat(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_heartbeat(
+    credential_json: String,
+    robot_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_robot_heartbeat(
+        &credential_json,
+        &robot_public_key,
+    )?)
+}
+pub fn robotics_is_live(
+    credential_json: String,
+    now_iso: String,
+    interval_seconds: Option<i64>,
+    grace_intervals: i64,
+) -> Result<bool, CoreError> {
+    Ok(rjson::is_live(
+        &credential_json,
+        &now_iso,
+        interval_seconds,
+        grace_intervals,
+    )?)
+}
+
+// Per-credential revocation (Phase 5.8).
+pub fn robotics_build_status_entry(
+    status_list_credential: String,
+    status_list_index: i64,
+    status_purpose: String,
+    entry_id: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_status_list_entry(
+        &status_list_credential,
+        status_list_index,
+        &status_purpose,
+        entry_id.as_deref(),
+    )?)
+}
+pub fn robotics_attach_status(
+    credential_json: String,
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::attach_credential_status(
+        &credential_json,
+        &signer_seed,
+        &params_json,
+    )?)
+}
+pub fn robotics_check_status(
+    credential_json: String,
+    status_list_credential_json: String,
+    status_purpose: String,
+) -> Result<bool, CoreError> {
+    Ok(rjson::check_credential_status(
+        &credential_json,
+        &status_list_credential_json,
+        &status_purpose,
+    )?)
+}
+
+// Accountable safety record (Phase 5.9).
+pub fn robotics_safety_append(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::safety_append_entry(&params_json)?)
+}
+pub fn robotics_verify_safety_log(
+    entries_json: String,
+    genesis_prev_hash: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_safety_log(
+        &entries_json,
+        genesis_prev_hash.as_deref(),
+    )?)
+}
+pub fn robotics_summarize_safety(
+    entries_json: String,
+    head: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::summarize_entries(&entries_json, head.as_deref())?)
+}
+pub fn robotics_build_safety_record(
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_safety_record(&signer_seed, &params_json)?)
+}
+pub fn robotics_verify_safety_record(
+    credential_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_safety_record(&credential_json, &public_key)?)
+}
+
 uniffi::include_scaffolding!("vouch_core");

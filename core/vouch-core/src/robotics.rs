@@ -1155,6 +1155,694 @@ pub fn verify_passport_uri(uri: &str, public_key: &[u8], now_iso: &str) -> Resul
     }
 }
 
+// ---------------------------------------------------------------------------
+// Liveness heartbeat with safety-envelope conformance (Phase 5.7)
+// ---------------------------------------------------------------------------
+
+pub const ROBOT_HEARTBEAT_TYPE: &str = "RobotHeartbeatCredential";
+
+/// Default number of missed intervals tolerated before trust is considered stale.
+pub const DEFAULT_GRACE_INTERVALS: i64 = 2;
+
+/// One observed motion sample. `None` numerics mean "not specified" (a meaningful
+/// zero is still `Some(0.0)`), matching [`PhysicalAction`].
+#[derive(Debug, Clone, Default)]
+pub struct MotionSample {
+    pub force_n: Option<f64>,
+    pub speed_mps: Option<f64>,
+    pub near_humans: bool,
+    pub zone: Option<String>,
+    pub time_hm: Option<String>,
+}
+
+/// Collector for per-interval motion telemetry. It accumulates aggregates of what
+/// the robot physically did over a heartbeat interval and, when given a physical
+/// scope, counts how many samples fell outside the declared envelope. The
+/// physical analogue of the agent behavioral digest.
+///
+/// With `scope` set to `None` the digest still reports observed maxima but cannot
+/// judge conformance, so it reports `withinEnvelope` true with a zero breach
+/// count, mirroring the Python `MotionCollector`.
+#[derive(Debug, Clone, Default)]
+pub struct MotionCollector {
+    scope: Option<Value>,
+    samples: u64,
+    max_force: f64,
+    max_speed: f64,
+    max_speed_near: f64,
+    zone_breaches: u64,
+    breaches: u64,
+}
+
+impl MotionCollector {
+    /// A collector that judges samples against `scope` (the
+    /// `credentialSubject.physicalScope` object). Pass `None` to only aggregate.
+    pub fn new(scope: Option<Value>) -> Self {
+        Self {
+            scope,
+            ..Default::default()
+        }
+    }
+
+    /// Record a single observed motion sample, updating the running aggregates and
+    /// (when a scope is set) the breach counts.
+    pub fn record(&mut self, sample: &MotionSample) -> Result<()> {
+        if let Some(f) = sample.force_n {
+            if f < 0.0 {
+                return Err(CoreError::Json(format!(
+                    "force_n must be non-negative, got {f}"
+                )));
+            }
+        }
+        if let Some(s) = sample.speed_mps {
+            if s < 0.0 {
+                return Err(CoreError::Json(format!(
+                    "speed_mps must be non-negative, got {s}"
+                )));
+            }
+        }
+
+        self.samples += 1;
+        if let Some(f) = sample.force_n {
+            self.max_force = self.max_force.max(f);
+        }
+        if let Some(s) = sample.speed_mps {
+            self.max_speed = self.max_speed.max(s);
+            if sample.near_humans {
+                self.max_speed_near = self.max_speed_near.max(s);
+            }
+        }
+
+        if let Some(scope) = &self.scope {
+            let action = PhysicalAction {
+                force_n: sample.force_n,
+                speed_mps: sample.speed_mps,
+                near_humans: sample.near_humans,
+                zone: sample.zone.clone(),
+                time_hm: sample.time_hm.clone(),
+            };
+            let result = check_physical_action(scope, &action);
+            if !result.ok {
+                self.breaches += 1;
+                if result
+                    .reasons
+                    .iter()
+                    .any(|r| r.starts_with("zone_not_allowed"))
+                {
+                    self.zone_breaches += 1;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Return the `motionDigest` object for embedding in a heartbeat credential.
+    pub fn digest(&self) -> Value {
+        json!({
+            "samples": self.samples,
+            "maxForceN": self.max_force,
+            "maxSpeedMps": self.max_speed,
+            "maxSpeedNearHumansMps": self.max_speed_near,
+            "zoneBreaches": self.zone_breaches,
+            "breachCount": self.breaches,
+            "withinEnvelope": self.breaches == 0,
+        })
+    }
+
+    /// Clear all state. Call after submitting a heartbeat to start fresh.
+    pub fn reset(&mut self) {
+        self.samples = 0;
+        self.max_force = 0.0;
+        self.max_speed = 0.0;
+        self.max_speed_near = 0.0;
+        self.zone_breaches = 0;
+        self.breaches = 0;
+    }
+}
+
+fn digest_non_negative_int(digest: &Map<String, Value>, name: &str) -> Result<()> {
+    match digest.get(name) {
+        Some(v) if v.is_u64() => Ok(()),
+        Some(Value::Number(n)) if n.as_i64().map(|i| i >= 0).unwrap_or(false) => Ok(()),
+        Some(_) => Err(CoreError::Json(format!(
+            "motionDigest.{name} must be a non-negative integer"
+        ))),
+        None => Err(CoreError::Json(format!("motionDigest.{name} is required"))),
+    }
+}
+
+/// Structural validation of a `motionDigest` object. Does not judge whether the
+/// values are acceptable; that is policy, expressed through [`is_live`].
+pub fn validate_motion_digest(digest: &Value) -> Result<()> {
+    let obj = digest
+        .as_object()
+        .ok_or_else(|| CoreError::Json("motionDigest must be an object".into()))?;
+
+    for name in ["samples", "zoneBreaches", "breachCount"] {
+        digest_non_negative_int(obj, name)?;
+    }
+    for name in ["maxForceN", "maxSpeedMps", "maxSpeedNearHumansMps"] {
+        match obj.get(name) {
+            Some(Value::Bool(_)) | None => {
+                return Err(CoreError::Json(format!("motionDigest.{name} is required")))
+            }
+            Some(v) => {
+                let n = v.as_f64().ok_or_else(|| {
+                    CoreError::Json(format!("motionDigest.{name} must be a number"))
+                })?;
+                if n < 0.0 {
+                    return Err(CoreError::Json(format!(
+                        "motionDigest.{name} must be non-negative"
+                    )));
+                }
+            }
+        }
+    }
+    match obj.get("withinEnvelope") {
+        Some(Value::Bool(_)) => Ok(()),
+        Some(_) => Err(CoreError::Json(
+            "motionDigest.withinEnvelope must be a boolean".into(),
+        )),
+        None => Err(CoreError::Json(
+            "motionDigest.withinEnvelope is required".into(),
+        )),
+    }
+}
+
+/// Parameters for [`build_robot_heartbeat`]. The robot self-issues the credential
+/// with its own Ed25519 seed; `motion_digest` is produced by a [`MotionCollector`]
+/// over the interval and `interval_seconds` is the declared heartbeat cadence.
+#[derive(Debug, Clone)]
+pub struct BuildRobotHeartbeat {
+    pub robot_did: String,
+    pub session_id: String,
+    pub interval_index: i64,
+    pub interval_seconds: i64,
+    pub motion_digest: Value,
+    pub valid_from: String,
+}
+
+/// Build a signed `RobotHeartbeatCredential`.
+pub fn build_robot_heartbeat(robot_seed: &[u8], params: &BuildRobotHeartbeat) -> Result<Value> {
+    if params.interval_index < 0 {
+        return Err(CoreError::Json(
+            "interval_index must be non-negative".into(),
+        ));
+    }
+    if params.interval_seconds <= 0 {
+        return Err(CoreError::Json("interval_seconds must be positive".into()));
+    }
+    validate_motion_digest(&params.motion_digest)?;
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("sessionId".into(), json!(params.session_id));
+    subject.insert("intervalIndex".into(), json!(params.interval_index));
+    subject.insert("intervalSeconds".into(), json!(params.interval_seconds));
+    subject.insert("motionDigest".into(), params.motion_digest.clone());
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", ROBOT_HEARTBEAT_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.robot_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.robot_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), robot_seed, &opts)
+}
+
+/// Verify a `RobotHeartbeatCredential`: the credential proof (robot key) and the
+/// structural validity of the embedded motion digest. Returns the subject on
+/// success. Whether the robot is currently trusted is a separate, time-dependent
+/// question answered by [`is_live`].
+pub fn verify_robot_heartbeat(
+    credential: &Value,
+    robot_public_key: &[u8],
+) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), ROBOT_HEARTBEAT_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, robot_public_key)? {
+        return Ok(None);
+    }
+    let subject = match credential.get("credentialSubject") {
+        Some(s) if s.is_object() => s,
+        _ => return Ok(None),
+    };
+    let digest = subject.get("motionDigest").cloned().unwrap_or(Value::Null);
+    if validate_motion_digest(&digest).is_err() {
+        return Ok(None);
+    }
+    Ok(Some(subject.clone()))
+}
+
+/// Decide whether a robot is currently trusted, given its most recent heartbeat.
+/// A robot is live only if BOTH hold: the digest reports `withinEnvelope` true,
+/// and the heartbeat was issued within `grace_intervals` cadence periods of
+/// `now_iso`. `interval_seconds` (when `Some`) overrides the heartbeat's
+/// self-declared cadence.
+pub fn is_live(
+    credential: &Value,
+    now_iso: &str,
+    interval_seconds: Option<i64>,
+    grace_intervals: i64,
+) -> Result<bool> {
+    let subject = credential
+        .get("credentialSubject")
+        .and_then(|s| s.as_object());
+    let digest = subject
+        .and_then(|s| s.get("motionDigest"))
+        .and_then(|d| d.as_object());
+    let within = digest
+        .and_then(|d| d.get("withinEnvelope"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !within {
+        return Ok(false);
+    }
+
+    let cadence = match interval_seconds {
+        Some(c) => c,
+        None => subject
+            .and_then(|s| s.get("intervalSeconds"))
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0),
+    };
+    if cadence <= 0 {
+        return Ok(false);
+    }
+    if grace_intervals < 1 {
+        return Err(CoreError::Json("grace_intervals must be at least 1".into()));
+    }
+
+    let raw = match credential.get("validFrom").and_then(|v| v.as_str()) {
+        Some(s) if !s.is_empty() => s,
+        _ => return Ok(false),
+    };
+    let issued = match crate::time::iso_to_epoch_seconds(raw) {
+        Ok(t) => t,
+        Err(_) => return Ok(false),
+    };
+    let moment = match crate::time::iso_to_epoch_seconds(now_iso) {
+        Ok(t) => t,
+        Err(_) => return Ok(false),
+    };
+    let deadline = issued + cadence * grace_intervals;
+    // A heartbeat from the future (clock skew beyond one cadence) is not trusted.
+    if moment + cadence < issued {
+        return Ok(false);
+    }
+    Ok(moment <= deadline)
+}
+
+// ---------------------------------------------------------------------------
+// Per-credential revocation (Phase 5.8)
+// ---------------------------------------------------------------------------
+
+pub use crate::status_list::{BITSTRING_STATUS_LIST_ENTRY_TYPE, STATUS_PURPOSE_REVOCATION};
+
+/// Build a BitstringStatusList `credentialStatus` entry referencing a bit index in
+/// a published status list credential. Mirrors the agent-side
+/// `status_list.build_status_list_entry`. `entry_id`, when `None`, defaults to
+/// `{status_list_credential}#{status_list_index}`.
+pub fn build_status_list_entry(
+    status_list_credential: &str,
+    status_list_index: i64,
+    status_purpose: &str,
+    entry_id: Option<&str>,
+) -> Result<Value> {
+    if !matches!(status_purpose, "revocation" | "suspension" | "message") {
+        return Err(CoreError::Json(format!(
+            "status_purpose must be one of revocation, suspension, message, got {status_purpose:?}"
+        )));
+    }
+    if status_list_index < 0 {
+        return Err(CoreError::Json(
+            "status_list_index must be non-negative".into(),
+        ));
+    }
+    if status_list_credential.is_empty() {
+        return Err(CoreError::Json(
+            "status_list_credential URL is required".into(),
+        ));
+    }
+    let id = entry_id
+        .map(String::from)
+        .unwrap_or_else(|| format!("{status_list_credential}#{status_list_index}"));
+    Ok(json!({
+        "id": id,
+        "type": BITSTRING_STATUS_LIST_ENTRY_TYPE,
+        "statusPurpose": status_purpose,
+        "statusListIndex": status_list_index.to_string(),
+        "statusListCredential": status_list_credential,
+    }))
+}
+
+/// Parameters for [`attach_credential_status`].
+#[derive(Debug, Clone)]
+pub struct AttachCredentialStatus {
+    pub status_list_credential: String,
+    pub status_list_index: i64,
+    pub status_purpose: String,
+    pub entry_id: Option<String>,
+    /// `validFrom`-style timestamp used as the proof `created` when re-signing.
+    pub created: String,
+}
+
+/// Add a BitstringStatusList `credentialStatus` entry to a robot credential and
+/// re-sign it under `signer_seed`, so the proof covers the status binding. If the
+/// credential already carries a `credentialStatus`, the new entry is appended (the
+/// field becomes a list), matching the Verifiable Credentials data model. Any
+/// pre-existing proof is replaced.
+pub fn attach_credential_status(
+    credential: &Value,
+    signer_seed: &[u8],
+    params: &AttachCredentialStatus,
+) -> Result<Value> {
+    let entry = build_status_list_entry(
+        &params.status_list_credential,
+        params.status_list_index,
+        &params.status_purpose,
+        params.entry_id.as_deref(),
+    )?;
+
+    let mut obj = credential
+        .as_object()
+        .ok_or_else(|| CoreError::Json("credential must be a JSON object".into()))?
+        .clone();
+
+    match obj.get("credentialStatus").cloned() {
+        None => {
+            obj.insert("credentialStatus".into(), entry);
+        }
+        Some(Value::Array(mut existing)) => {
+            existing.push(entry);
+            obj.insert("credentialStatus".into(), Value::Array(existing));
+        }
+        Some(existing) => {
+            obj.insert("credentialStatus".into(), json!([existing, entry]));
+        }
+    }
+
+    // Re-sign: the proof must cover the credentialStatus we just added.
+    obj.remove("proof");
+    let issuer = obj.get("issuer").and_then(|v| v.as_str()).unwrap_or("");
+    let opts = BuildProofOptions::new(format!("{issuer}#key-1"), &params.created);
+    data_integrity::sign(&Value::Object(obj), signer_seed, &opts)
+}
+
+fn status_entries(credential: &Value) -> Result<Vec<Value>> {
+    match credential.get("credentialStatus") {
+        None => Ok(Vec::new()),
+        Some(Value::Array(a)) => Ok(a.iter().filter(|e| e.is_object()).cloned().collect()),
+        Some(v) if v.is_object() => Ok(vec![v.clone()]),
+        Some(_) => Err(CoreError::Json(
+            "credentialStatus must be an object or a list of objects".into(),
+        )),
+    }
+}
+
+/// Return true if the robot credential's status bit for `status_purpose` is set
+/// (for example, the credential has been revoked) in the supplied status list. The
+/// caller MUST verify the Data Integrity proof on `status_list_credential` first.
+/// Returns false when the credential carries no matching status entry.
+pub fn check_credential_status(
+    credential: &Value,
+    status_list_credential: &Value,
+    status_purpose: &str,
+) -> Result<bool> {
+    let referenced_id = status_list_credential.get("id").and_then(|v| v.as_str());
+    for entry in status_entries(credential)? {
+        if entry.get("statusPurpose").and_then(|v| v.as_str()) != Some(status_purpose) {
+            continue;
+        }
+        if entry.get("statusListCredential").and_then(|v| v.as_str()) != referenced_id {
+            continue;
+        }
+        return crate::status_list::verify_status(&entry, status_list_credential);
+    }
+    Ok(false)
+}
+
+// ---------------------------------------------------------------------------
+// Accountable safety record (Phase 5.9)
+// ---------------------------------------------------------------------------
+
+pub const SAFETY_RECORD_TYPE: &str = "RobotSafetyRecordCredential";
+pub const SAFETY_LOG_VERSION: &str = "1.0";
+
+/// Standard safety event types: the interoperable set a verifier and an insurer
+/// can rely on. Implementers MAY use additional types.
+pub const EVENT_TYPES: [&str; 6] = [
+    "incident",
+    "near_miss",
+    "manual_override",
+    "kill_switch",
+    "envelope_breach",
+    "maintenance",
+];
+
+/// Severity bands, ordered from least to most serious.
+pub const SEVERITIES: [&str; 5] = ["info", "low", "medium", "high", "critical"];
+
+/// Append-only, plaintext, hash-linked safety event ledger. Reuses the black-box
+/// chain semantics ([`entry_hash`], [`genesis_prev_hash`]) so the two logs verify
+/// the same way, but entries are plaintext: a safety record is meant to be read
+/// and trusted by third parties.
+pub struct SafetyEventLog {
+    genesis: String,
+    entries: Vec<Value>,
+    head: String,
+}
+
+impl SafetyEventLog {
+    /// Build a log. A `None` genesis uses [`genesis_prev_hash`].
+    pub fn new(genesis_prev_hash_override: Option<&str>) -> Self {
+        let genesis = genesis_prev_hash_override
+            .map(String::from)
+            .unwrap_or_else(genesis_prev_hash);
+        Self {
+            head: genesis.clone(),
+            genesis,
+            entries: Vec::new(),
+        }
+    }
+
+    /// Append one safety event, link it to the chain head, and return the entry.
+    pub fn append(
+        &mut self,
+        event_type: &str,
+        severity: &str,
+        details: Option<&Value>,
+        actor: Option<&str>,
+        timestamp: &str,
+    ) -> Result<Value> {
+        if !EVENT_TYPES.contains(&event_type) {
+            return Err(CoreError::Json(format!(
+                "event_type must be one of {EVENT_TYPES:?}, got {event_type:?}"
+            )));
+        }
+        if !SEVERITIES.contains(&severity) {
+            return Err(CoreError::Json(format!(
+                "severity must be one of {SEVERITIES:?}, got {severity:?}"
+            )));
+        }
+
+        let mut body = Map::new();
+        body.insert("version".into(), json!(SAFETY_LOG_VERSION));
+        body.insert("seq".into(), json!(self.entries.len() as u64));
+        body.insert("timestamp".into(), json!(timestamp));
+        body.insert("eventType".into(), json!(event_type));
+        body.insert("severity".into(), json!(severity));
+        body.insert("prevHash".into(), json!(self.head));
+        if let Some(d) = details {
+            body.insert("details".into(), d.clone());
+        }
+        if let Some(a) = actor {
+            body.insert("actor".into(), json!(a));
+        }
+        let h = entry_hash(&body)?;
+        body.insert("entryHash".into(), json!(h));
+        self.head = h;
+        let entry = Value::Object(body);
+        self.entries.push(entry.clone());
+        Ok(entry)
+    }
+
+    pub fn head(&self) -> &str {
+        &self.head
+    }
+
+    pub fn genesis(&self) -> &str {
+        &self.genesis
+    }
+
+    pub fn entries(&self) -> &[Value] {
+        &self.entries
+    }
+
+    /// Produce a summary object for embedding in a safety-record credential.
+    pub fn summarize(&self) -> Value {
+        summarize_entries(&self.entries, Some(&self.head))
+    }
+}
+
+/// Verify the hash chain over the ledger entries. Tamper-evident. Shares the
+/// black-box chain verifier so the two logs verify identically.
+pub fn verify_safety_log(
+    entries: &[Value],
+    genesis_prev_hash_override: Option<&str>,
+) -> ChainResult {
+    verify_blackbox_chain(entries, genesis_prev_hash_override)
+}
+
+/// Summarize ledger entries into counts by event type (sorted) and by severity
+/// (info..critical), the total event count, and (when supplied) the ledger head
+/// hash that anchors the summary to a specific chain state.
+pub fn summarize_entries(entries: &[Value], head: Option<&str>) -> Value {
+    let mut sorted_types: Vec<&str> = EVENT_TYPES.to_vec();
+    sorted_types.sort_unstable();
+
+    let mut event_counts = Map::new();
+    for t in &sorted_types {
+        event_counts.insert((*t).to_string(), json!(0));
+    }
+    let mut severity_counts = Map::new();
+    for s in SEVERITIES {
+        severity_counts.insert(s.to_string(), json!(0));
+    }
+
+    for e in entries {
+        if let Some(et) = e.get("eventType").and_then(|v| v.as_str()) {
+            if let Some(c) = event_counts.get_mut(et).and_then(|v| v.as_u64()) {
+                event_counts.insert(et.to_string(), json!(c + 1));
+            }
+        }
+        if let Some(sv) = e.get("severity").and_then(|v| v.as_str()) {
+            if let Some(c) = severity_counts.get_mut(sv).and_then(|v| v.as_u64()) {
+                severity_counts.insert(sv.to_string(), json!(c + 1));
+            }
+        }
+    }
+
+    let mut summary = Map::new();
+    summary.insert("eventCounts".into(), Value::Object(event_counts));
+    summary.insert("severityCounts".into(), Value::Object(severity_counts));
+    summary.insert("totalEvents".into(), json!(entries.len() as u64));
+    if let Some(h) = head {
+        summary.insert("logHead".into(), json!(h));
+    }
+    Value::Object(summary)
+}
+
+/// Structural validation of a safety summary.
+pub fn validate_safety_summary(summary: &Value) -> Result<()> {
+    let obj = summary
+        .as_object()
+        .ok_or_else(|| CoreError::Json("summary must be an object".into()))?;
+    for name in ["eventCounts", "severityCounts"] {
+        let block = obj
+            .get(name)
+            .and_then(|v| v.as_object())
+            .ok_or_else(|| CoreError::Json(format!("summary.{name} must be an object")))?;
+        for (k, v) in block {
+            let ok = v.is_u64() || v.as_i64().map(|i| i >= 0).unwrap_or(false);
+            if v.is_boolean() || !ok {
+                return Err(CoreError::Json(format!(
+                    "summary.{name}[{k:?}] must be a non-negative integer"
+                )));
+            }
+        }
+    }
+    let total_ok = obj
+        .get("totalEvents")
+        .map(|v| (v.is_u64() || v.as_i64().map(|i| i >= 0).unwrap_or(false)) && !v.is_boolean())
+        .unwrap_or(false);
+    if !total_ok {
+        return Err(CoreError::Json(
+            "summary.totalEvents must be a non-negative integer".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Parameters for [`build_safety_record`]. The issuer (an owner, an auditor, or
+/// the robot itself) attests `summary`, produced by [`SafetyEventLog::summarize`]
+/// or [`summarize_entries`].
+#[derive(Debug, Clone)]
+pub struct BuildSafetyRecord {
+    pub issuer_did: String,
+    pub robot_did: String,
+    pub summary: Value,
+    pub period_start: Option<String>,
+    pub period_end: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `RobotSafetyRecordCredential` summarizing a robot's safety
+/// ledger.
+pub fn build_safety_record(signer_seed: &[u8], params: &BuildSafetyRecord) -> Result<Value> {
+    validate_safety_summary(&params.summary)?;
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    if let Some(s) = params.summary.as_object() {
+        for (k, v) in s {
+            subject.insert(k.clone(), v.clone());
+        }
+    }
+    if params.period_start.is_some() || params.period_end.is_some() {
+        let mut period = Map::new();
+        if let Some(start) = &params.period_start {
+            period.insert("start".into(), json!(start));
+        }
+        if let Some(end) = &params.period_end {
+            period.insert("end".into(), json!(end));
+        }
+        subject.insert("period".into(), Value::Object(period));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", SAFETY_RECORD_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.issuer_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+/// Verify a `RobotSafetyRecordCredential`: the issuer's proof and the structural
+/// validity of the embedded summary. Returns the credentialSubject on success.
+pub fn verify_safety_record(credential: &Value, public_key: &[u8]) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), SAFETY_RECORD_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, public_key)? {
+        return Ok(None);
+    }
+    let subject = match credential.get("credentialSubject") {
+        Some(s) if s.is_object() => s,
+        _ => return Ok(None),
+    };
+    if validate_safety_summary(subject).is_err() {
+        return Ok(None);
+    }
+    Ok(Some(subject.clone()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1745,5 +2433,257 @@ mod tests {
             .unwrap()
             .expect("a suspended passport still verifies");
         assert_eq!(subject["status"], json!(STATUS_SUSPENDED));
+    }
+
+    // Cross-language interop: Rust reproduces the exact motion digest Python
+    // pinned from the same fixed samples against the same physical scope.
+    #[test]
+    fn motion_digest_matches_interop_vector() {
+        let vector = load_vector();
+        let scope = vector["physical_scope"].clone();
+        let mut collector = MotionCollector::new(Some(scope));
+        collector
+            .record(&MotionSample {
+                force_n: Some(12.0),
+                speed_mps: Some(0.4),
+                near_humans: false,
+                zone: Some("cell-3".into()),
+                time_hm: None,
+            })
+            .unwrap();
+        collector
+            .record(&MotionSample {
+                force_n: Some(20.0),
+                speed_mps: Some(0.2),
+                near_humans: true,
+                zone: Some("cell-3".into()),
+                time_hm: None,
+            })
+            .unwrap();
+        assert_eq!(collector.digest(), vector["expected_motion_digest"]);
+    }
+
+    #[test]
+    fn heartbeat_build_verify_and_liveness() {
+        let seed = [21u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let did = "did:web:robot.example.com";
+        let digest = json!({
+            "samples": 2, "maxForceN": 20.0, "maxSpeedMps": 0.4,
+            "maxSpeedNearHumansMps": 0.2, "zoneBreaches": 0, "breachCount": 0,
+            "withinEnvelope": true
+        });
+        let hb = build_robot_heartbeat(
+            &seed,
+            &BuildRobotHeartbeat {
+                robot_did: did.into(),
+                session_id: "urn:uuid:sess-1".into(),
+                interval_index: 0,
+                interval_seconds: 60,
+                motion_digest: digest,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        let subject = verify_robot_heartbeat(&hb, &kp.public_key())
+            .unwrap()
+            .expect("heartbeat verifies");
+        assert_eq!(subject["sessionId"], json!("urn:uuid:sess-1"));
+
+        // Fresh and in-envelope: live. Stale: not live.
+        assert!(is_live(&hb, "2026-01-01T00:01:00Z", None, DEFAULT_GRACE_INTERVALS).unwrap());
+        assert!(!is_live(&hb, "2026-01-01T01:00:00Z", None, DEFAULT_GRACE_INTERVALS).unwrap());
+
+        // Out-of-envelope heartbeat is never live, even when fresh.
+        let breached = json!({
+            "samples": 1, "maxForceN": 99.0, "maxSpeedMps": 0.4,
+            "maxSpeedNearHumansMps": 0.2, "zoneBreaches": 0, "breachCount": 1,
+            "withinEnvelope": false
+        });
+        let hb2 = build_robot_heartbeat(
+            &seed,
+            &BuildRobotHeartbeat {
+                robot_did: did.into(),
+                session_id: "s".into(),
+                interval_index: 1,
+                interval_seconds: 60,
+                motion_digest: breached,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+        assert!(!is_live(&hb2, "2026-01-01T00:00:30Z", None, DEFAULT_GRACE_INTERVALS).unwrap());
+
+        // Tamper and wrong type rejected.
+        let mut tampered = hb.clone();
+        tampered["credentialSubject"]["sessionId"] = json!("urn:uuid:other");
+        assert!(verify_robot_heartbeat(&tampered, &kp.public_key())
+            .unwrap()
+            .is_none());
+    }
+
+    // Cross-language interop: Rust reproduces the exact hash-linked ledger and
+    // the summary Python pinned from the same fixed events and timestamps.
+    #[test]
+    fn safety_log_matches_interop_vector() {
+        let vector = load_vector();
+        let mut log = SafetyEventLog::new(None);
+        log.append(
+            "near_miss",
+            "low",
+            Some(&json!({"zone": "cell-3"})),
+            None,
+            "2026-01-01T00:00:00Z",
+        )
+        .unwrap();
+        log.append(
+            "envelope_breach",
+            "high",
+            None,
+            None,
+            "2026-01-01T00:01:00Z",
+        )
+        .unwrap();
+
+        assert_eq!(
+            Value::Array(log.entries().to_vec()),
+            vector["safety_log_entries"]
+        );
+        assert_eq!(
+            log.head(),
+            vector["expected_safety_log_head"].as_str().unwrap()
+        );
+        assert_eq!(log.summarize(), vector["expected_safety_summary"]);
+        assert!(verify_safety_log(log.entries(), None).ok);
+    }
+
+    #[test]
+    fn safety_record_build_verify_and_tamper() {
+        let seed = [22u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let mut log = SafetyEventLog::new(None);
+        log.append("near_miss", "low", None, None, "2026-01-01T00:00:00Z")
+            .unwrap();
+        let summary = log.summarize();
+
+        let record = build_safety_record(
+            &seed,
+            &BuildSafetyRecord {
+                issuer_did: "did:web:owner.example.com".into(),
+                robot_did: "did:web:robot.example.com".into(),
+                summary,
+                period_start: Some("2026-01-01T00:00:00Z".into()),
+                period_end: Some("2026-01-31T00:00:00Z".into()),
+                valid_from: "2026-02-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let subject = verify_safety_record(&record, &kp.public_key())
+            .unwrap()
+            .expect("safety record verifies");
+        assert_eq!(subject["totalEvents"], json!(1));
+        assert_eq!(subject["period"]["start"], json!("2026-01-01T00:00:00Z"));
+
+        let mut tampered = record.clone();
+        tampered["credentialSubject"]["totalEvents"] = json!(99);
+        assert!(verify_safety_record(&tampered, &kp.public_key())
+            .unwrap()
+            .is_none());
+
+        // Tamper detection in the ledger itself.
+        let mut entries = log.entries().to_vec();
+        entries[0]["severity"] = json!("critical");
+        assert!(!verify_safety_log(&entries, None).ok);
+    }
+
+    // Cross-language interop: Rust reproduces the exact credentialStatus entry.
+    #[test]
+    fn status_entry_matches_interop_vector() {
+        let vector = load_vector();
+        let entry = build_status_list_entry(
+            "https://fleet.example.com/status/1",
+            42,
+            STATUS_PURPOSE_REVOCATION,
+            None,
+        )
+        .unwrap();
+        assert_eq!(entry, vector["expected_credential_status_entry"]);
+    }
+
+    #[test]
+    fn attach_and_check_credential_status() {
+        let seed = [23u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let did = "did:web:robot.example.com";
+
+        // Mint a passport, then attach a revocation status and re-sign.
+        let pass = build_passport(
+            &seed,
+            &BuildPassport {
+                issuer_did: did.into(),
+                robot_did: did.into(),
+                make: "Acme".into(),
+                model: "AR-7".into(),
+                owner: "did:web:owner.example.com".into(),
+                authorized_actions: vec!["lift".into()],
+                certification: None,
+                status: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let with_status = attach_credential_status(
+            &pass,
+            &seed,
+            &AttachCredentialStatus {
+                status_list_credential: "https://fleet.example.com/status/1".into(),
+                status_list_index: 42,
+                status_purpose: STATUS_PURPOSE_REVOCATION.into(),
+                entry_id: None,
+                created: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        // The re-signed credential still verifies and now carries the entry.
+        assert!(data_integrity::verify_proof(&with_status, &kp.public_key()).unwrap());
+        assert_eq!(
+            with_status["credentialStatus"]["statusListIndex"],
+            json!("42")
+        );
+
+        // Build a status list with bit 42 set, then check the entry resolves.
+        let mut bits = vec![0u8; crate::status_list::DEFAULT_BITSTRING_LENGTH / 8];
+        crate::status_list::set_status(&mut bits, 42, true).unwrap();
+        let encoded = crate::status_list::encode_bitstring(&bits).unwrap();
+        let status_list = json!({
+            "id": "https://fleet.example.com/status/1",
+            "type": ["VerifiableCredential", "BitstringStatusListCredential"],
+            "credentialSubject": {
+                "type": "BitstringStatusList",
+                "statusPurpose": "revocation",
+                "encodedList": encoded,
+            }
+        });
+        assert!(
+            check_credential_status(&with_status, &status_list, STATUS_PURPOSE_REVOCATION).unwrap()
+        );
+
+        // A credential with no status entry is not revoked.
+        assert!(!check_credential_status(&pass, &status_list, STATUS_PURPOSE_REVOCATION).unwrap());
+
+        // A list with the bit clear reports not-revoked.
+        let clear_bits = vec![0u8; crate::status_list::DEFAULT_BITSTRING_LENGTH / 8];
+        let clear_encoded = crate::status_list::encode_bitstring(&clear_bits).unwrap();
+        let mut clear_list = status_list.clone();
+        clear_list["credentialSubject"]["encodedList"] = json!(clear_encoded);
+        assert!(
+            !check_credential_status(&with_status, &clear_list, STATUS_PURPOSE_REVOCATION).unwrap()
+        );
     }
 }
