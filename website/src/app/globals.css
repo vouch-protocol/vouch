@@ -105,7 +105,8 @@
 
 @layer components {
   .container-wide {
-    @apply max-w-[1400px] mx-auto px-6 md:px-14;
+    /* Asymmetric: left gutter is doubled, right gutter unchanged (pr matches the old px). */
+    @apply max-w-[1400px] mx-auto pl-12 pr-6 md:pl-28 md:pr-14;
   }
 
   .container-prose {
