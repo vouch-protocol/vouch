@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Privacy — Vouch Protocol',
+    title: 'Privacy - Vouch Protocol',
     description:
         'What Vouch Protocol logs, what it does not, and what you can do about it. Plain English. No dark patterns.',
 };
@@ -56,7 +56,7 @@ export default function PrivacyPage() {
 
                 <Section title="Why we log it">
                     <p>
-                        The single purpose is <strong>quality improvement</strong> — finding questions we answer
+                        The single purpose is <strong>quality improvement</strong>: finding questions we answer
                         poorly, mis-cited sources, prompts that confuse the assistant. The IP-truncation + country
                         code lets us tell <em>roughly</em> where confusion originates (a regulated industry in
                         country X, a developer community in country Y) without identifying individuals. We do not
@@ -74,17 +74,17 @@ export default function PrivacyPage() {
                     </p>
                     <p>
                         A copy of every inbound email is forwarded to <code>ram@vouch-protocol.com</code> for the
-                        maintainer&apos;s visibility — this is so we can spot misclassified questions and improve.
+                        maintainer&apos;s visibility, so we can spot misclassified questions and improve.
                     </p>
                 </Section>
 
                 <Section title="Third parties that touch your data">
                     <ul>
-                        <li><strong>Google (Gemini API)</strong> — processes your question to generate a reply. Subject to <a className="text-burgundy" href="https://ai.google.dev/gemini-api/terms">Gemini API terms</a>. We use the free tier; queries may be used by Google to improve their models per Google&apos;s policy.</li>
-                        <li><strong>Cloudflare</strong> — routes traffic, runs the email worker, terminates TLS. Standard Cloudflare data-handling.</li>
-                        <li><strong>Fly.io</strong> — hosts the chat assistant backend in Mumbai. Standard Fly data-handling.</li>
-                        <li><strong>Resend</strong> — sends email replies. Subject to <a className="text-burgundy" href="https://resend.com/legal/privacy-policy">Resend privacy policy</a>.</li>
-                        <li><strong>GitHub Pages</strong> — serves the static parts of this website.</li>
+                        <li><strong>Google (Gemini API)</strong>: processes your question to generate a reply. Subject to <a className="text-burgundy" href="https://ai.google.dev/gemini-api/terms">Gemini API terms</a>. We use the free tier; queries may be used by Google to improve their models per Google&apos;s policy.</li>
+                        <li><strong>Cloudflare</strong>: routes traffic, runs the email worker, terminates TLS. Standard Cloudflare data-handling.</li>
+                        <li><strong>Fly.io</strong>: hosts the chat assistant backend in Mumbai. Standard Fly data-handling.</li>
+                        <li><strong>Resend</strong>: sends email replies. Subject to <a className="text-burgundy" href="https://resend.com/legal/privacy-policy">Resend privacy policy</a>.</li>
+                        <li><strong>GitHub Pages</strong>: serves the static parts of this website.</li>
                     </ul>
                 </Section>
 

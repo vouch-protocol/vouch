@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Regulatory Compliance — Vouch Protocol',
+    title: 'Regulatory Compliance - Vouch Protocol',
     description:
         'Vouch Protocol mappings against GDPR, EU AI Act, NIST SP 800-63, and HIPAA. How the protocol maps to specific regulatory requirements.',
 };

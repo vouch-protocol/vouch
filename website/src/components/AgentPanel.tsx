@@ -56,7 +56,7 @@ export default function AgentPanel() {
 
     return (
         <>
-            {/* Floating "open" affordance — a discreet bordered tab, classicism, not a SaaS bubble. */}
+            {/* Floating "open" affordance: a discreet bordered tab, classicism, not a SaaS bubble. */}
             {!open && (
                 <button
                     type="button"
@@ -90,7 +90,7 @@ export default function AgentPanel() {
                             : 'inset-0 md:inset-y-4 md:right-4 md:left-auto md:w-[480px]'
                         }`}
                 >
-                    {/* Header: mirrors the site wordmark — serif name + mono small-caps tagline. */}
+                    {/* Header: mirrors the site wordmark, serif name + mono small-caps tagline. */}
                     <div className="flex items-center justify-between px-5 py-4 border-b border-rule bg-parchment-warm">
                         <div className="flex items-baseline gap-3">
                             <span className="font-serif font-semibold text-[1.05rem] tracking-tight text-ink">Vouch Assistant</span>

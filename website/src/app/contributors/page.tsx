@@ -33,8 +33,8 @@ export default function ContributorsPage() {
                     <p className="font-serif italic text-ink-soft text-[1.1rem] max-w-prose leading-relaxed">
                         Everyone who contributes to Vouch Protocol&trade; earns a signed Verified
                         Contributor credential, issued with our own protocol and chained back to the
-                        project root authority. The badge is a real Verifiable Credential, not just a
-                        picture: anyone can verify it.
+                        project root authority. The badge is a real Verifiable Credential, not a
+                        decorative image: anyone can verify it.
                     </p>
                 </header>
 
