@@ -344,4 +344,13 @@ class TestDidLevelRevocation:
             await registry.revoke(ROBOT, reason="hardware captured", revoked_by="did:web:fleet.op")
             assert await registry.is_revoked(ROBOT) is True
 
-        asyncio.run(run())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(run())
+        finally:
+            loop.close()
+            # Leave a usable current event loop behind. On Python 3.9, asyncio.run
+            # (and a bare close) would set the current loop to None, after which a
+            # later test calling the deprecated asyncio.get_event_loop() raises.
+            asyncio.set_event_loop(asyncio.new_event_loop())
