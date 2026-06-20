@@ -34,7 +34,7 @@ jobs:
       - name: Install vouch
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e . pqcrypto
 
       - name: Run the conformance test
         id: test
@@ -53,6 +53,8 @@ jobs:
         env:
           VOUCH_CONFORMANCE_PRIVATE_KEY: ${{ secrets.VOUCH_CONFORMANCE_PRIVATE_KEY }}
           VOUCH_CONFORMANCE_DID: ${{ secrets.VOUCH_CONFORMANCE_DID }}
+          VOUCH_CONFORMANCE_MLDSA_SECRET: ${{ secrets.VOUCH_CONFORMANCE_MLDSA_SECRET }}
+          MLDSA_PUBLIC_MULTIKEY: ${{ secrets.MLDSA_PUBLIC_MULTIKEY }}
           LEVEL: ${{ steps.test.outputs.level }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
@@ -77,16 +79,25 @@ jobs:
           import json
           import sys
 
-          from vouch import Verifier
+          from vouch import Verifier, data_integrity_hybrid, multikey
+          from vouch.verifier import _coerce_ed25519_public_key
 
-          cred = open("credential.json").read()
+          cred = json.load(open("credential.json"))
           doc = json.load(open("website/public/conformance/did.json"))
-          pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
-          ok, _ = Verifier.verify_credential(cred, public_key=pub)
-          print("Badge self-verify against published DID:", ok)
+          ed_jwk = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
+          suite = cred.get("proof", {}).get("cryptosuite", "")
+          if suite.startswith("hybrid"):
+              ed_pub = _coerce_ed25519_public_key(ed_jwk)
+              _, ml_pub = multikey.decode(doc["verificationMethod"][1]["publicKeyMultibase"])
+              ok = data_integrity_hybrid.verify_hybrid_proof(
+                  cred, ed25519_public_key=ed_pub, mldsa44_public_key=ml_pub
+              )
+          else:
+              ok, _ = Verifier.verify_credential(json.dumps(cred), public_key=ed_jwk)
+          print(f"Badge self-verify ({suite}) against published DID:", ok)
           if not ok:
               print("::error::Minted conformance badge does not verify against the published DID."
-                    " Check that VOUCH_CONFORMANCE_PRIVATE_KEY and the DID document hold the same key.")
+                    " Check the issuer keys and the DID document match.")
               sys.exit(1)
           PY
 

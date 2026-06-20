@@ -33,6 +33,22 @@ authority. It mirrors the verified-contributor badge exactly:
    same step you ran for `contributors/delegation.json`. With it present, every
    minted badge chains back to root.
 
+5. **Post-quantum (recommended): make the badge hybrid.** Generate a persistent
+   ML-DSA-44 issuer keypair, keeping the secret AND public from the SAME run
+   (they are a matched pair):
+   ```
+   python -c "import base64; from vouch import data_integrity_hybrid, multikey; pub, sec = data_integrity_hybrid.generate_mldsa44_keypair(); print('SECRET_B64:', base64.b64encode(sec).decode()); print('PUBLIC_MULTIKEY:', multikey.encode_mldsa44_public(pub))"
+   ```
+   Then:
+   - add `VOUCH_CONFORMANCE_MLDSA_SECRET` = the `SECRET_B64` value (GitHub secret),
+   - add `MLDSA_PUBLIC_MULTIKEY` = the `PUBLIC_MULTIKEY` value (GitHub secret),
+   - put the same `PUBLIC_MULTIKEY` into `website/public/conformance/did.json` at
+     `#key-2` (replace `REPLACE_WITH_THE_MLDSA_PUBLIC_MULTIKEY`).
+
+   With both secrets set the badge carries the `hybrid-eddsa-mldsa44-jcs-2026`
+   dual proof (L3-grade); without them it falls back to the classical Ed25519
+   proof. The workflow installs `pqcrypto` for you.
+
 The `verified-conformance.yml` workflow is a safe no-op until the secrets are
 set, so committing the placeholders is harmless.
 

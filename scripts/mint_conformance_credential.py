@@ -11,24 +11,30 @@ The conformance issuer key is read from the environment:
   VOUCH_CONFORMANCE_PRIVATE_KEY  Ed25519 private key JWK (JSON string)
   VOUCH_CONFORMANCE_DID          Issuer DID, e.g. did:web:vouch-protocol.com:conformance
 
+For a post-quantum (L3-grade) badge, also set the persistent ML-DSA-44 issuer
+key. When both are present the badge carries the hybrid-eddsa-mldsa44-jcs-2026
+dual proof; otherwise it falls back to the classical eddsa-jcs-2022 proof:
+  VOUCH_CONFORMANCE_MLDSA_SECRET  base64 of the ML-DSA-44 secret key
+  MLDSA_PUBLIC_MULTIKEY           the ML-DSA-44 public key as a z-multikey
+
 Example:
   export VOUCH_CONFORMANCE_DID='did:web:vouch-protocol.com:conformance'
   export VOUCH_CONFORMANCE_PRIVATE_KEY='{"kty":"OKP","crv":"Ed25519",...}'
   python scripts/mint_conformance_credential.py \\
       --subject vouch-protocol/vouch --commit abc1234 \\
       --profile core --level L2 \\
-      --transcript-hash sha256:... \\
       --parent conformance/delegation.json --out credential.json
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import sys
 
-from vouch import Signer
+from vouch import Signer, multikey
 
 # A conformance pass is for a specific version, re-test on new releases. One year
 # keeps a stale pass from lingering; the verifier requires a validUntil.
@@ -45,11 +51,15 @@ def mint_credential(
     did: str,
     valid_days: int = DEFAULT_VALID_DAYS,
     parent_credential: dict | None = None,
+    mldsa_secret: bytes | None = None,
+    mldsa_public: bytes | None = None,
 ) -> dict:
     """Return a signed Vouch Credential attesting a conformance pass.
 
     If `parent_credential` (the root -> conformance delegation) is provided, it
-    is attached so the badge traces back to the project root authority.
+    is attached so the badge traces back to the project root authority. If the
+    ML-DSA-44 issuer keypair is provided, the badge is signed under the hybrid
+    post-quantum profile; otherwise it uses the classical Ed25519 proof.
     """
     signer = Signer(private_key=private_key, did=did)
     role = "robotics-conformant" if profile == "robotics" else f"conformant-{level}"
@@ -66,6 +76,16 @@ def mint_credential(
         "commit": commit,
         "transcriptHash": transcript_hash,
     }
+    if mldsa_secret is not None and mldsa_public is not None:
+        # Post-quantum hybrid badge: inject the persistent issuer ML-DSA-44 key
+        # so the signer does not generate a fresh random one per run.
+        signer._mldsa44_secret = mldsa_secret
+        signer._mldsa44_public = mldsa_public
+        return signer.sign_credential_hybrid(
+            intent=intent,
+            valid_seconds=valid_days * 86400,
+            parent_credential=parent_credential,
+        )
     return signer.sign_credential(
         intent=intent,
         valid_seconds=valid_days * 86400,
@@ -107,6 +127,16 @@ def main(argv: list[str] | None = None) -> int:
         print("The core profile requires --level L1, L2, or L3.", file=sys.stderr)
         return 1
 
+    # Optional post-quantum hybrid signing: both the secret and the published
+    # public multikey must be present.
+    mldsa_secret = None
+    mldsa_public = None
+    sec_b64 = os.getenv("VOUCH_CONFORMANCE_MLDSA_SECRET")
+    pub_multikey = os.getenv("MLDSA_PUBLIC_MULTIKEY")
+    if sec_b64 and pub_multikey:
+        mldsa_secret = base64.b64decode(sec_b64)
+        _, mldsa_public = multikey.decode(pub_multikey)
+
     parent_credential = None
     if args.parent and os.path.exists(args.parent):
         with open(args.parent, encoding="utf-8") as handle:
@@ -121,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
         private_key=private_key,
         did=did,
         parent_credential=parent_credential,
+        mldsa_secret=mldsa_secret,
+        mldsa_public=mldsa_public,
     )
 
     text = json.dumps(credential, indent=2)
@@ -130,8 +162,9 @@ def main(argv: list[str] | None = None) -> int:
         with open(args.out, "w", encoding="utf-8") as handle:
             handle.write(text)
         label = "robotics" if args.profile == "robotics" else args.level
+        suite = credential.get("proof", {}).get("cryptosuite", "")
         print(
-            f"Wrote {label} conformance credential for {args.subject} to {args.out}",
+            f"Wrote {label} conformance credential ({suite}) for {args.subject} to {args.out}",
             file=sys.stderr,
         )
     return 0
