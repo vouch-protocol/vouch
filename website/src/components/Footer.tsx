@@ -71,7 +71,7 @@ export default function Footer() {
                 Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.
               </p>
               <p className="font-mono text-[0.62rem] tracking-[0.14em] uppercase text-ink-faint mt-3 max-w-[280px]">
-                Vouch Protocol&trade; — common-law trademark
+                Vouch Protocol&trade; &middot; common-law trademark
               </p>
             </div>
 

@@ -1150,10 +1150,10 @@ For coordinated revocations across a verifier fleet, share the cache (Redis) so 
         q: 'What are the four AI assistants?',
         a: `Four surfaces, one canonical knowledge base, pick whichever fits the tool you already use:
 
-- **Claude Skill** — a drop-in skill for Claude Code (the CLI). Reads your local repo, edits files, runs commands. Best for hands-on integration work.
-- **Vouch Assistant** — the chat helper on this website and the mobile app. Streams answers in your browser. Signs real Vouch credentials live so you can see the protocol in action.
-- **OpenAI Custom GPT** — a configuration you paste into ChatGPT's GPT builder. Optional Actions integration lets the GPT call the hosted assistant to sign for you.
-- **Gemini Gem** — a configuration for Google Gemini. Pairs naturally with Google Workspace (Docs, Sheets, Gmail, Search).
+- **Claude Skill**: a drop-in skill for Claude Code (the CLI). Reads your local repo, edits files, runs commands. Best for hands-on integration work.
+- **Vouch Assistant**: the chat helper on this website and the mobile app. Streams answers in your browser. Signs real Vouch credentials live so you can see the protocol in action.
+- **OpenAI Custom GPT**: a configuration you paste into ChatGPT's GPT builder. Optional Actions integration lets the GPT call the hosted assistant to sign for you.
+- **Gemini Gem**: a configuration for Google Gemini. Pairs naturally with Google Workspace (Docs, Sheets, Gmail, Search).
 
 All four route to the same documentation, so the answers are consistent. Pick the one that fits your daily tool.`,
       },
@@ -1279,7 +1279,7 @@ Rule of thumb: if your auditor will ask about the sidecar, run the Go one. For e
       },
       {
         q: 'Can the sidecar run as a serverless function (Lambda, Cloud Run, Fly Machines)?',
-        a: `Yes for the Go sidecar — it is a static binary and starts in milliseconds. The Python and TS sidecars work as serverless too but their cold-start latency makes them less suited to high-frequency signing. For typical agent workloads (one credential per minute), any of them is fine.`,
+        a: `Yes for the Go sidecar, which is a static binary and starts in milliseconds. The Python and TS sidecars work as serverless too but their cold-start latency makes them less suited to high-frequency signing. For typical agent workloads (one credential per minute), any of them is fine.`,
       },
     ],
   },
@@ -1322,7 +1322,7 @@ All three open the same slide-in panel. Inside the panel, use the diagonal-arrow
         q: 'The assistant gave me an answer that is wrong. What do I do?',
         a: `Three things help:
 
-1. **Verify the answer against the canonical docs** — every answer carries a disclaimer with links to the guides, FAQ, and the source on GitHub.
+1. **Verify the answer against the canonical docs**: every answer carries a disclaimer with links to the guides, FAQ, and the source on GitHub.
 2. **Report the bad answer** at [https://github.com/vouch-protocol/vouch/issues](https://github.com/vouch-protocol/vouch/issues). Paste the question and the response. We update the knowledge base.
 3. **For protocol questions**, the source on GitHub is the ground truth. The assistant is grounded in the docs but is still an AI and can be wrong.`,
       },
