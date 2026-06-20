@@ -39,9 +39,13 @@ const FOOTER_GROUPS = [
   {
     title: 'Community',
     links: [
+      { label: 'Contributors', href: '/contributors/' },
       { label: 'Discord', href: 'https://discord.gg/mMqx5cG9Y', external: true },
       { label: 'GitHub issues', href: 'https://github.com/vouch-protocol/vouch/issues', external: true },
       { label: 'X / Twitter', href: 'https://x.com/Vouch_Protocol', external: true },
+      { label: 'Bluesky', href: 'https://bsky.app/profile/vouch-protocol.com', external: true },
+      { label: 'LinkedIn', href: 'https://www.linkedin.com/company/vouch-protocol-ai/', external: true },
+      { label: 'Instagram', href: 'https://www.instagram.com/vouch.protocol/', external: true },
     ],
   },
 ];
