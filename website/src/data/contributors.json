@@ -3,5 +3,10 @@
     "login": "Franflorio",
     "pr": 110,
     "title": "Feature/reject unsigned agent requests fast api"
+  },
+  {
+    "login": "WilliamK112",
+    "pr": 131,
+    "title": "chore: add self-documenting Makefile help"
   }
 ]
