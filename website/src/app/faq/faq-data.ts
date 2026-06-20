@@ -400,6 +400,93 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: LIVING TRUST HEARTBEAT
+  // =====================================================================
+  {
+    id: 'robotics-liveness',
+    audience: 'Robotics: living trust',
+    title: 'Living trust heartbeat',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does a robot keep its trust alive over time?',
+        a: `It periodically self-signs a \`RobotHeartbeatCredential\` carrying a motion digest of what it physically did over the interval, plus whether it stayed inside its \`PhysicalCapabilityScope\`. \`is_live\` treats the robot as trusted only while a fresh and in-envelope heartbeat exists, so a robot that goes dark or steps outside its limits loses trust automatically. This inverts "trusted until revoked" to "untrusted until renewed" for a physical machine.`,
+        helpLinks: [{ label: 'Living trust guide', href: '/help/#robotics-liveness' }],
+        meta: 'Shipped - vouch.robotics.liveness',
+      },
+      {
+        q: 'What is in the motion digest?',
+        a: `Plain aggregates over the interval: the sample count, peak force in newtons, peak speed in m/s, peak speed while a human was near, a count of zone breaches, the total breach count, and a \`withinEnvelope\` flag. A \`MotionCollector\` records each commanded motion and checks it against the signed scope to count breaches.`,
+        helpLinks: [{ label: 'Living trust guide', href: '/help/#robotics-liveness' }],
+        meta: 'Shipped - vouch.robotics.liveness',
+      },
+      {
+        q: 'Why is a breach treated as loss of trust even when the heartbeat is fresh?',
+        a: `\`is_live\` requires both freshness and conformance. A recent heartbeat whose digest reports a breach returns not-live, so a robot that exceeded its force, speed, near-human, or zone limits is untrusted until it is brought back inside its envelope, regardless of how recently it checked in.`,
+        meta: 'Shipped - vouch.robotics.liveness',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: CREDENTIAL REVOCATION
+  // =====================================================================
+  {
+    id: 'robotics-revocation',
+    audience: 'Robotics: revocation',
+    title: 'Credential revocation',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How do I revoke one robot credential without killing the whole robot?',
+        a: `Attach a BitstringStatusList \`credentialStatus\` entry with \`attach_credential_status\`, publish the status list, and flip the bit to revoke. \`check_credential_status\` then reports whether that specific capability, provenance, or identity credential is revoked, leaving the robot's other credentials valid.`,
+        helpLinks: [{ label: 'Revocation guide', href: '/help/#robotics-revocation' }],
+        meta: 'Shipped - vouch.robotics.revocation',
+      },
+      {
+        q: 'How do I kill a compromised or captured robot entirely?',
+        a: `A robot DID is an ordinary DID, so the existing \`RevocationRegistry\` revokes it at the DID level and the \`.well-known\` distribution path carries the kill to verifiers. Vouch re-exports the registry from \`vouch.robotics\` so the robot and agent revocation paths are the same.`,
+        helpLinks: [{ label: 'Revocation guide', href: '/help/#robotics-revocation' }],
+        meta: 'Shipped - vouch.robotics.revocation',
+      },
+      {
+        q: 'How is revocation different from the kill switch?',
+        a: `The kill switch is an immediate emergency stop for a running robot. Revocation invalidates credentials so future verification fails. They are complementary: stop the robot now with the kill switch, and revoke its credentials so it cannot be trusted again later.`,
+        meta: 'Shipped - vouch.robotics.revocation',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: ACCOUNTABLE SAFETY RECORD
+  // =====================================================================
+  {
+    id: 'robotics-safety-record',
+    audience: 'Robotics: safety record',
+    title: 'Accountable safety record',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does a robot carry a trustworthy safety history?',
+        a: `Every safety-relevant event (incident, near-miss, manual override, kill-switch trigger, envelope breach) is appended to a hash-linked \`SafetyEventLog\` with a severity band. The chain is tamper-evident, so no event can be altered or removed without detection, and \`verify_safety_log\` confirms the chain is intact.`,
+        helpLinks: [{ label: 'Safety record guide', href: '/help/#robotics-safety-record' }],
+        meta: 'Shipped - vouch.robotics.safety_record',
+      },
+      {
+        q: 'What is the portable safety record?',
+        a: `A signed \`RobotSafetyRecordCredential\` that summarizes a stretch of the ledger into counts by event type and by severity, the period covered, and the ledger head hash that anchors the summary. It travels with the robot across owners, insurers, and regulators as one verifiable artifact.`,
+        helpLinks: [{ label: 'Safety record guide', href: '/help/#robotics-safety-record' }],
+        meta: 'Shipped - vouch.robotics.safety_record',
+      },
+      {
+        q: 'Can a robot hide an incident from its safety record?',
+        a: `Not without detection. The summary is anchored to the ledger head hash, and the ledger is an append-only hash chain, so altering or dropping an event breaks the chain and changes the head, which no longer matches the signed summary.`,
+        meta: 'Shipped - vouch.robotics.safety_record',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, and a scannable passport.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, and an accountable safety record.',
 };
 
 const CAPABILITIES = [
@@ -43,6 +43,24 @@ const CAPABILITIES = [
         title: 'Scannable passport',
         body: 'A compact passport in a QR or NFC tag, so anyone can check a robot\'s owner, authorized actions, certification, and standing offline, with no network call.',
         module: 'vouch.robotics.passport',
+    },
+    {
+        num: 'vii.',
+        title: 'Living trust heartbeat',
+        body: 'A robot heartbeats with a signed summary of what it physically did each interval (peak force, peak speed, speed near people, zone breaches) and whether it stayed inside its envelope. It is trusted only while a fresh, in-envelope heartbeat keeps arriving, so trust is earned continuously rather than granted once at the factory.',
+        module: 'vouch.robotics.liveness',
+    },
+    {
+        num: 'viii.',
+        title: 'Credential revocation',
+        body: 'Retire a single capability, provenance, or identity credential through a status list, or kill a whole robot identity at the DID level when a key is compromised or a robot is captured. The same two-level revocation the rest of Vouch uses, applied to robots.',
+        module: 'vouch.robotics.revocation',
+    },
+    {
+        num: 'ix.',
+        title: 'Accountable safety record',
+        body: 'A tamper-evident, append-only ledger of incidents, near-misses, overrides, and kill-switch events, summarized into a portable signed record of a robot\'s safety standing that travels with it across owners, insurers, and regulators.',
+        module: 'vouch.robotics.safety_record',
     },
 ];
 

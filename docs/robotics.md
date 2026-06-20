@@ -130,3 +130,61 @@ ok, summary = verify_passport(uri, robot_public_key) # offline check of owner/ac
 
 Interop vector: `test-vectors/robotics/vector.json` pins the hardware-root binding
 and the config hash. See `examples/robotics_demo.py`.
+
+## 5.7 Living trust heartbeat (`vouch.robotics.liveness`)
+
+Robot trust is otherwise minted once and valid until revoked. The heartbeat makes
+it living: the robot periodically self-signs a `RobotHeartbeatCredential` carrying
+a motion digest (peak force, peak speed, peak speed near humans, and a count of
+zone breaches over the interval) plus whether it stayed inside its
+`PhysicalCapabilityScope`. A verifier treats the robot as trusted only while a
+fresh and in-envelope heartbeat exists, inverting "trusted until revoked" to
+"untrusted until renewed".
+
+```python
+from vouch.robotics import MotionCollector, build_robot_heartbeat, is_live
+
+col = MotionCollector(scope=scope["physicalScope"])
+col.record(force_n=12.0, speed_mps=0.4, near_humans=True, zone="cell-3")
+hb = build_robot_heartbeat(robot_signer, session_id="sess-1", interval_index=0,
+                           motion_digest=col.digest(), interval_seconds=30)
+live = is_live(hb)                                    # fresh AND in-envelope
+```
+
+## 5.8 Credential revocation (`vouch.robotics.revocation`)
+
+Two-level revocation for robot credentials. Surgical per-credential revocation
+attaches a BitstringStatusList entry to an identity, provenance, or capability
+credential (`attach_credential_status` / `check_credential_status`). Whole-DID
+kill, for a leaked key or a captured robot, uses the existing `RevocationRegistry`
+(a robot DID is an ordinary DID, so the `.well-known` distribution path is
+unchanged).
+
+```python
+from vouch.robotics import attach_credential_status, check_credential_status
+
+cred = attach_credential_status(scope_cred, robot_signer,
+    status_list_credential="https://fleet.example/status/1", status_list_index=42)
+revoked = check_credential_status(cred, status_list_cred)
+```
+
+## 5.9 Accountable safety record (`vouch.robotics.safety_record`)
+
+An append-only, hash-linked, plaintext ledger of safety events (incident,
+near-miss, manual override, kill-switch trigger, envelope breach) with a severity,
+plus a portable `RobotSafetyRecordCredential` that summarizes the ledger into
+counts by event type and severity, the period, and the ledger head hash that
+anchors it. The summary cannot understate the log without breaking the chain.
+
+```python
+from vouch.robotics import SafetyEventLog, build_safety_record, verify_safety_log
+
+log = SafetyEventLog()
+log.append("near_miss", severity="low")
+log.append("envelope_breach", severity="high")
+ok, _ = verify_safety_log(log.entries())             # tamper-evident
+record = build_safety_record(authority_signer, robot_did=robot, summary=log.summarize())
+```
+
+Sections 5.7 to 5.9 ship in the Python reference; ports to the other languages are
+in progress.
