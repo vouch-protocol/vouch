@@ -162,13 +162,13 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     # Share text, tailored per platform, with a CTA into the issues.
     x_text = (
         f'Just earned my Vouch Verified Contributor certificate for "{work}". '
-        f"Vouch {X_HANDLE} is the open standard for AI agent identity and accountability, and open source. "
+        f"Vouch {X_HANDLE} is the open standard for AI agent identity and accountability, and open source.\n\n"
         "Pick up a good first issue and build with us: " + ISSUES_URL
     )
     wa_text = (
         f'I just earned a Vouch Verified Contributor certificate for "{work}". '
-        "Vouch is the open standard for AI agent identity and accountability, and open source. "
-        "Build with us: " + ISSUES_URL + " " + cert_url
+        "Vouch is the open standard for AI agent identity and accountability, and open source.\n\n"
+        "Build with us: " + ISSUES_URL + "\n\n" + cert_url
     )
     linkedin_text = (
         "I am now a Vouch Verified Contributor.\n\n"
@@ -185,8 +185,8 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     )
     bsky_text = (
         f'Just earned my Vouch Verified Contributor certificate for "{work}". '
-        f"Vouch {BLUESKY_HANDLE} is the open standard for AI agent identity and accountability, and open source. "
-        "Pick up a good first issue and build with us: " + ISSUES_URL + " " + cert_url
+        f"Vouch {BLUESKY_HANDLE} is the open standard for AI agent identity and accountability, and open source.\n\n"
+        "Pick up a good first issue and build with us: " + ISSUES_URL + "\n\n" + cert_url
     )
     x_intent = f"https://twitter.com/intent/tweet?text={quote(x_text)}&url={quote(cert_url)}"
     wa_intent = f"https://wa.me/?text={quote(wa_text)}"
@@ -196,8 +196,8 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     linkedin_url_js = json.dumps(linkedin_share)
     share_text_js = json.dumps(
         f'I earned a Vouch Verified Contributor certificate for "{work}". '
-        "Vouch is the open standard for AI agent identity and accountability. Build with us: "
-        + ISSUES_URL
+        "Vouch is the open standard for AI agent identity and accountability.\n\n"
+        "Build with us: " + ISSUES_URL + "\n\n" + cert_url
     )
     cert_url_js = json.dumps(cert_url)
 
@@ -301,7 +301,7 @@ h1.title a {{ color: inherit; text-decoration: none; }}
 <section>
   <div class="cert-head">
   <div class="seal-wrap"><div class="seal">
-    <img src="https://vouch-protocol.com/apple-touch-icon.png" alt="Vouch">
+    <a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer" aria-label="Vouch Protocol home"><img src="https://vouch-protocol.com/apple-touch-icon.png" alt="Vouch"></a>
     <div class="check">✓</div>
     <div class="seal-line">Verified Contributor</div>
     <div class="seal-line muted">{esc(issued)}</div>
@@ -339,13 +339,13 @@ const CERT_URL = {cert_url_js};
 function openLinkedIn() {{ window.open(LINKEDIN_URL, "_blank", "noopener"); }}
 function nativeShare() {{
   if (navigator.share) {{
-    navigator.share({{ title: document.title, text: SHARE_TEXT, url: CERT_URL }}).catch(function () {{}});
+    navigator.share({{ title: document.title, text: SHARE_TEXT }}).catch(function () {{}});
   }} else if (navigator.clipboard) {{
-    navigator.clipboard.writeText(SHARE_TEXT + " " + CERT_URL).then(function () {{
+    navigator.clipboard.writeText(SHARE_TEXT).then(function () {{
       alert("Copied. Paste it anywhere.");
     }});
   }} else {{
-    window.prompt("Copy this to share:", SHARE_TEXT + " " + CERT_URL);
+    window.prompt("Copy this to share:", SHARE_TEXT);
   }}
 }}
 function shareLinkedIn() {{
