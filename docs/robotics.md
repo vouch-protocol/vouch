@@ -186,5 +186,6 @@ ok, _ = verify_safety_log(log.entries())             # tamper-evident
 record = build_safety_record(authority_signer, robot_did=robot, summary=log.summarize())
 ```
 
-Sections 5.7 to 5.9 ship in the Python reference; ports to the other languages are
-in progress.
+Sections 5.7 to 5.9 are implemented in Python, TypeScript, Go, and the Rust core
+(which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
+byte-identical and pinned by `test-vectors/robotics/vector.json`.

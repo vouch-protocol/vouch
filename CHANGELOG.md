@@ -22,7 +22,9 @@ The Python reference adds three robotics capabilities on the same
 - `vouch.robotics.safety_record`: a tamper-evident incident and near-miss ledger
   summarized into a portable, signed safety-record credential.
 
-Ports to the other languages are in progress.
+Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
+Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by
+the robotics interop vector.
 
 ## [1.6.3] - 2026-06-15
 
