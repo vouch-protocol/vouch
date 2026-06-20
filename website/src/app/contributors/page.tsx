@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import contributors from '@/data/contributors.json';
 
 export const metadata: Metadata = {
     title: 'Verified Contributors - Vouch Protocol',
@@ -10,11 +11,13 @@ export const metadata: Metadata = {
 type Contributor = {
     login: string;
     pr: number;
+    title?: string;
 };
 
-// Verified contributors opt in to appear here. Add an entry when a contributor
-// asks to be listed. The credential itself is issued automatically on first merge.
-const CONTRIBUTORS: Contributor[] = [];
+// The list is populated automatically when a contributor's first PR merges
+// (see .github/workflows/verified-contributor.yml). Each entry links to that
+// contributor's certificate page at /c/<login>.
+const CONTRIBUTORS: Contributor[] = contributors as Contributor[];
 
 const BADGE_URL =
     'https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d';
@@ -79,20 +82,15 @@ export default function ContributorsPage() {
                     ) : (
                         <ul className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {CONTRIBUTORS.map((c) => (
-                                <li key={c.login} className="bg-parchment-warm border border-rule p-4">
+                                <li key={`${c.login}-${c.pr}`} className="bg-parchment-warm border border-rule p-4">
                                     <Link
-                                        href={`https://github.com/${c.login}`}
+                                        href={`/c/${c.login}/${c.pr}/`}
                                         className="font-mono text-burgundy no-underline"
                                     >
                                         @{c.login}
                                     </Link>
-                                    <p className="text-ink-faint text-[0.85rem] mt-1">
-                                        <Link
-                                            href={`https://github.com/vouch-protocol/vouch/pull/${c.pr}`}
-                                            className="no-underline text-ink-faint"
-                                        >
-                                            PR #{c.pr}
-                                        </Link>
+                                    <p className="text-ink-faint text-[0.85rem] mt-1 leading-snug">
+                                        {c.title ? c.title : `PR #${c.pr}`}
                                     </p>
                                 </li>
                             ))}
