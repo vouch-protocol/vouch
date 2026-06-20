@@ -10,6 +10,8 @@ robots and embodied agents:
   - handshake: robot-to-robot bounded-trust handshake across domains.
   - blackbox: encrypted append-only flight recorder + kill-switch credential.
   - passport: scannable (QR/NFC) robot passport and verifier.
+  - liveness: robot heartbeat with safety-envelope conformance and trust decay.
+  - revocation: whole-DID kill and surgical per-credential revocation.
 """
 
 from .capability import (
@@ -52,6 +54,21 @@ from .passport import (
     encode_passport,
     verify_passport,
 )
+from .liveness import (
+    MotionCollector,
+    MotionSample,
+    build_robot_heartbeat,
+    is_live,
+    validate_motion_digest,
+    verify_robot_heartbeat,
+)
+from .revocation import (
+    RevocationRegistry,
+    attach_credential_status,
+    build_status_list_credential,
+    build_status_list_entry,
+    check_credential_status,
+)
 
 __all__ = [
     # identity
@@ -88,4 +105,17 @@ __all__ = [
     "encode_passport",
     "decode_passport",
     "verify_passport",
+    # liveness (robot heartbeat + conformance + trust decay)
+    "MotionCollector",
+    "MotionSample",
+    "build_robot_heartbeat",
+    "verify_robot_heartbeat",
+    "validate_motion_digest",
+    "is_live",
+    # revocation
+    "RevocationRegistry",
+    "attach_credential_status",
+    "check_credential_status",
+    "build_status_list_credential",
+    "build_status_list_entry",
 ]
