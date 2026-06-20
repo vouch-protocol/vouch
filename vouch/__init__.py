@@ -226,6 +226,16 @@ def __getattr__(name):
         from . import reputation_ledger
 
         return getattr(reputation_ledger, name)
+    elif name in (
+        "ReputationPolicy",
+        "ReputationDecision",
+        "evaluate_reputation",
+        "policy_for_stakes",
+        "reputation_pointer",
+    ):
+        from . import reputation_policy
+
+        return getattr(reputation_policy, name)
     # Cloud KMS
     elif name in ("CloudKMSProvider", "AWSKMSProvider", "GCPKMSProvider", "AzureKeyVaultProvider"):
         from . import kms
@@ -325,6 +335,11 @@ __all__ = [
     "build_reputation_credential",
     "verify_reputation_credential",
     "REPUTATION_CREDENTIAL_TYPE",
+    "ReputationPolicy",
+    "ReputationDecision",
+    "evaluate_reputation",
+    "policy_for_stakes",
+    "reputation_pointer",
     # Cloud KMS
     "CloudKMSProvider",
     "AWSKMSProvider",
