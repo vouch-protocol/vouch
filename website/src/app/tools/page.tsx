@@ -153,7 +153,7 @@ const GROUPS: Group[] = [
             { name: 'Rust', blurb: 'The shared core that every wrapper is built on.', start: 'cargo add vouch-core' },
             { name: 'Java and Kotlin', blurb: 'On the JVM.', start: 'com.vouchprotocol:vouch-core' },
             { name: '.NET', blurb: 'For C#.', start: 'VouchProtocol.Core', tag: 'Preview' },
-            { name: 'Swift', blurb: 'For iOS and macOS.', start: 'VouchCore', tag: 'Preview' },
+            { name: 'Swift', blurb: 'For iOS and macOS.', start: 'github.com/vouch-protocol/vouch-swift', tag: 'Preview' },
             { name: 'C and WebAssembly', blurb: 'For native, embedded, browser, and edge.', tag: 'Preview' },
         ],
     },

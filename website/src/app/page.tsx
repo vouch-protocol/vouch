@@ -81,9 +81,9 @@ const LANGUAGE_TILES = [
   },
   {
     name: 'Swift (iOS / macOS)',
-    install: 'add VouchCore via Swift Package Manager',
+    install: 'https://github.com/vouch-protocol/vouch-swift',
     repoPath: 'sdks/swift/',
-    note: 'Over the core via UniFFI, packaged as an XCFramework.',
+    note: 'Add via Swift Package Manager. Over the core via UniFFI, packaged as an XCFramework.',
   },
   {
     name: 'JVM (Java / Kotlin)',
