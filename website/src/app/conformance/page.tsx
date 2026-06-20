@@ -233,6 +233,65 @@ export default function ConformancePage() {
                     </Link>
                 </section>
 
+                <section className="mt-12 border-t border-rule pt-12">
+                    <p className="eyebrow text-burgundy mb-2">Coming soon</p>
+                    <h2 className="font-serif text-[1.5rem] font-semibold mb-3">What a verified pass earns you</h2>
+                    <p className="text-ink leading-relaxed max-w-prose mb-6">
+                        Automated conformance testing is on the way. When it lands, a passing run earns a
+                        Vouch-verified badge: a signed credential, unique to your implementation, hosted by
+                        Vouch and re-checkable by anyone. The badge is the proof, no self-declaration needed.
+                    </p>
+                    <div className="bg-parchment-warm border border-rule p-6 md:p-8 max-w-xl">
+                        <svg
+                            role="img"
+                            aria-label="Vouch Verified, L2 Conformant badge"
+                            viewBox="0 0 252 22"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="block h-7 w-auto"
+                        >
+                            <clipPath id="cf-clip">
+                                <rect width="252" height="22" rx="3" fill="#fff" />
+                            </clipPath>
+                            <linearGradient id="cf-gloss" x2="0" y2="100%">
+                                <stop offset="0" stopColor="#fff" stopOpacity=".12" />
+                                <stop offset="1" stopOpacity=".12" />
+                            </linearGradient>
+                            <g clipPath="url(#cf-clip)">
+                                <rect width="132" height="22" fill="#333333" />
+                                <rect x="132" width="120" height="22" fill="#7C2D3A" />
+                                <rect width="252" height="22" fill="url(#cf-gloss)" />
+                            </g>
+                            <path
+                                d="M9 11 l2.7 2.7 L17.8 7.4"
+                                fill="none"
+                                stroke="#34D399"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                            <g fontFamily="Verdana,DejaVu Sans,sans-serif" fontSize="11.5">
+                                <text x="79" y="16" fill="#010101" fillOpacity="0.3" textAnchor="middle">Vouch Verified</text>
+                                <text x="79" y="15" fill="#ffffff" textAnchor="middle">Vouch Verified</text>
+                                <text x="192" y="16" fill="#010101" fillOpacity="0.3" textAnchor="middle">L2 Conformant</text>
+                                <text x="192" y="15" fill="#ffffff" textAnchor="middle">L2 Conformant</text>
+                            </g>
+                        </svg>
+                        <p className="font-mono text-[0.78rem] text-ink-faint mt-4 break-all">
+                            grade.vouch-protocol.com/conformance/<span className="text-ink-soft">a3f9c1&hellip;</span>/badge.svg
+                        </p>
+                        <p className="text-ink-soft text-[0.9rem] leading-relaxed mt-2">
+                            Backed by a signed VouchConformanceCredential. Anyone can fetch it, re-verify the
+                            signature, and re-run the test.
+                        </p>
+                    </div>
+                    <p className="text-ink-soft leading-relaxed max-w-prose mt-6">
+                        The plan: a one-click GitHub App sets up the test in your own CI, so the result is
+                        bound to your exact repo and commit. You get your level, the badge arrives as a pull
+                        request you can merge or skip, and the report tells you precisely what to fix to reach
+                        the next level.
+                    </p>
+                </section>
+
                 <footer className="mt-16 border-t border-rule pt-8 flex flex-col md:flex-row gap-4 md:justify-between text-[0.92rem]">
                     <Link
                         href="https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md#17-conformance-levels"
