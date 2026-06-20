@@ -28,27 +28,27 @@ ICON_WHATSAPP = (
 )
 ICON_X = (
     '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 '
-    '8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 '
+    "8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 "
     '17.52h1.833L7.084 4.126H5.117z"/></svg>'
 )
 ICON_LINKEDIN = (
     '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0'
-    '-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37'
-    '-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 '
-    '20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 '
+    "-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37"
+    "-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 "
+    "20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 "
     '1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>'
 )
 ICON_INSTAGRAM = (
     '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 '
-    '1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.3 1 .4 2.2.1 1.3.1 1.6.1 4.8s0 3.5-.1 4.8c-.1 '
-    '1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .3-2.2.4-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1'
-    'c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.3-1-.4-2.2C2.2 15.5 2.2 15.2 2.2 '
-    '12s0-3.5.1-4.8c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.3 2.2-.4C8.4 2.2 8.8 2.2 '
-    '12 2.2zm0 1.8c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.4-1.3.8-.4.4-.6.8-.8 1.3-.2.4-.3 1-.4 '
-    '2.1C2.6 10 2.6 10.3 2.6 12s0 2 .1 3.2c.1 1.1.2 1.7.4 2.1.2.5.4.9.8 1.3.4.4.8.6 1.3.8.4.2 1 .3 2.1.4 '
-    '1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.4 1.3-.8.4-.4.6-.8.8-1.3.2-.4.3-1 .4-2.1'
-    '.1-1.2.1-1.6.1-3.2s0-2-.1-3.2c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.4-.9-.8-1.3-.4-.4-.8-.6-1.3-.8-.4-.2-1-.3'
-    '-2.1-.4-1.2-.1-1.6-.1-4.7-.1zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 8.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 '
+    "1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.3 1 .4 2.2.1 1.3.1 1.6.1 4.8s0 3.5-.1 4.8c-.1 "
+    "1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .3-2.2.4-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1"
+    "c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.3-1-.4-2.2C2.2 15.5 2.2 15.2 2.2 "
+    "12s0-3.5.1-4.8c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.3 2.2-.4C8.4 2.2 8.8 2.2 "
+    "12 2.2zm0 1.8c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.4-1.3.8-.4.4-.6.8-.8 1.3-.2.4-.3 1-.4 "
+    "2.1C2.6 10 2.6 10.3 2.6 12s0 2 .1 3.2c.1 1.1.2 1.7.4 2.1.2.5.4.9.8 1.3.4.4.8.6 1.3.8.4.2 1 .3 2.1.4 "
+    "1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.4 1.3-.8.4-.4.6-.8.8-1.3.2-.4.3-1 .4-2.1"
+    ".1-1.2.1-1.6.1-3.2s0-2-.1-3.2c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.4-.9-.8-1.3-.4-.4-.8-.6-1.3-.8-.4-.2-1-.3"
+    "-2.1-.4-1.2-.1-1.6-.1-4.7-.1zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 8.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 "
     '0 0 0 6.4zm6.4-8.4a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z"/></svg>'
 )
 ICON_DOWNLOAD = (
@@ -62,9 +62,9 @@ ICON_SHARE = (
 )
 ICON_BLUESKY = (
     '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.06 3.51C7.6 5.42 10.33 '
-    '9.28 11.33 11.36c.13.28.4.28.53 0C12.87 9.28 15.6 5.42 18.14 3.51c1.83-1.37 4.8-2.43 4.8.96 0 .68'
-    '-.39 5.7-.62 6.52-.79 2.83-3.67 3.55-6.24 3.11 4.49.77 5.63 3.3 3.16 5.83-4.69 4.8-6.74-1.2-7.27'
-    '-2.74-.1-.28-.14-.41-.14-.3 0-.11-.05.02-.14.3-.53 1.54-2.58 7.54-7.27 2.74-2.47-2.53-1.33-5.06 '
+    "9.28 11.33 11.36c.13.28.4.28.53 0C12.87 9.28 15.6 5.42 18.14 3.51c1.83-1.37 4.8-2.43 4.8.96 0 .68"
+    "-.39 5.7-.62 6.52-.79 2.83-3.67 3.55-6.24 3.11 4.49.77 5.63 3.3 3.16 5.83-4.69 4.8-6.74-1.2-7.27"
+    "-2.74-.1-.28-.14-.41-.14-.3 0-.11-.05.02-.14.3-.53 1.54-2.58 7.54-7.27 2.74-2.47-2.53-1.33-5.06 "
     '3.16-5.83-2.57.44-5.45-.28-6.24-3.11C.66 10.17.27 5.15.27 4.47.27 1.08 3.23 2.14 5.06 3.51z"/></svg>'
 )
 
@@ -110,6 +110,11 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     cert_url = f"https://vouch-protocol.com/c/{login}/{pr}".rstrip("/")
     work = title or "a contribution"
 
+    gh_url = f"https://github.com/{esc(login)}"
+    repo_url = f"https://github.com/{esc(repo)}"
+    handle_link = f'<a href="{gh_url}" target="_blank" rel="noopener noreferrer">@{esc(login)}</a>'
+    repo_link = f'<a href="{repo_url}" target="_blank" rel="noopener noreferrer">{esc(repo)}</a>'
+
     pr_html = (
         f'<a href="{esc(pr_url)}" target="_blank" rel="noopener noreferrer">Pull Request #{esc(pr)}</a>'
         if pr_url
@@ -119,7 +124,7 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
         section(
             "Contribution",
             f'      <div class="mono-text">{pr_html}</div>\n'
-            f'      <div class="signer-caption">Merged into {esc(repo)}</div>',
+            f'      <div class="signer-caption">Merged into {repo_link}</div>',
         ),
         section(
             "Issued by",
@@ -128,11 +133,18 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
         ),
     ]
     if root:
-        sections.append(section("Chained to root", f'      <div class="mono-text dim">{esc(root)}</div>'))
+        sections.append(
+            section("Chained to root", f'      <div class="mono-text dim">{esc(root)}</div>')
+        )
     sections.append(
-        section("Cryptosuite", '      <div class="mono-text dim">eddsa-jcs-2022 · Ed25519 over RFC 8785 JCS</div>')
+        section(
+            "Cryptosuite",
+            '      <div class="mono-text dim">eddsa-jcs-2022 · Ed25519 over RFC 8785 JCS</div>',
+        )
     )
-    sections.append(section("Signature", f'      <div class="mono-text dim">{esc(proof_value)}</div>'))
+    sections.append(
+        section("Signature", f'      <div class="mono-text dim">{esc(proof_value)}</div>')
+    )
     terminal = (
         '      <div class="terminal"><span class="comment"># Fetch the issuer DID document</span>\n'
         '<span class="prompt">$</span> curl https://vouch-protocol.com/contributors/did.json\n\n'
@@ -142,8 +154,10 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     sections.append(section("Verify locally", terminal, cls="no-print"))
     sections_html = "\n  \n".join(sections)
 
-    cert_title = esc(title) if title else "@" + esc(login)
-    byline = ("@" + esc(login) + " · " + esc(repo)) if title else "Vouch Verified Contributor · " + esc(repo)
+    cert_title = esc(title) if title else handle_link
+    byline = (
+        (handle_link + " · " + repo_link) if title else "Vouch Verified Contributor · " + repo_link
+    )
 
     # Share text, tailored per platform, with a CTA into the issues.
     x_text = (
@@ -182,7 +196,8 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     linkedin_url_js = json.dumps(linkedin_share)
     share_text_js = json.dumps(
         f'I earned a Vouch Verified Contributor certificate for "{work}". '
-        "Vouch is the open standard for AI agent identity and accountability. Build with us: " + ISSUES_URL
+        "Vouch is the open standard for AI agent identity and accountability. Build with us: "
+        + ISSUES_URL
     )
     cert_url_js = json.dumps(cert_url)
 
@@ -231,6 +246,9 @@ body {{ background: var(--parchment); color: var(--ink); font-family: "Source Se
 .seal .seal-line.muted {{ color: var(--ink-faint); letter-spacing: 0.1em; }}
 h1.title {{ text-align: center; font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 1.5rem; line-height: 1.3; margin: 0 0 12px; letter-spacing: -0.01em; }}
 .byline {{ text-align: center; color: var(--ink-soft); margin: 0 0 48px; font-style: italic; }}
+.byline a {{ color: var(--burgundy); text-decoration: none; }}
+.byline a:hover {{ color: var(--burgundy-dark); text-decoration: underline; }}
+h1.title a {{ color: inherit; text-decoration: none; }}
 .section {{ margin: 36px 0; }}
 .section-head {{ display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }}
 .section-head .rule-line {{ flex: 1; height: 1px; background: var(--rule); }}
