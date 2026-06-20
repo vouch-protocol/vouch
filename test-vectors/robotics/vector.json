@@ -1,6 +1,6 @@
 {
-  "description": "Robotics interop vector (Phase 5.1-5.3). Pins the hardware-root binding inside a RobotIdentityCredential and the config hash used by ModelProvenanceAttestation. Both compose the shared JCS + SHA-256 + multibase primitives.",
-  "version": "1.0",
+  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), and the credentialStatus entry (revocation). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
+  "version": "1.1",
   "robot_public_key_jwk": {
     "kty": "OKP",
     "crv": "Ed25519",
@@ -38,10 +38,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-14T04:14:58Z",
+      "created": "2026-06-20T09:08:46Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "zwrtDDka5WiQYyVRFX159554tDvSdeZ25qqinVzQ9PkByYfa5r1Q3fmN6bqYtY8hVGQ6RqmLmXQDKS2S8MBTfShg"
+      "proofValue": "zMdmocAVbkNKZDdnXiS5qcR6MsEuJP99wDNCPvKU2gHtFzaNgGBocPontceLv8Q2VDgcQm4rjfGQGZZ9PVMvCbtp"
     }
   },
   "config": {
@@ -51,5 +51,72 @@
       "no_humans_zone"
     ]
   },
-  "expected_config_hash": "uMh9_H2Lk51-m9SpBhiEa1oqIwwwA7yT27e2QFS0YKUs"
+  "expected_config_hash": "uMh9_H2Lk51-m9SpBhiEa1oqIwwwA7yT27e2QFS0YKUs",
+  "physical_scope": {
+    "maxForceN": 80.0,
+    "maxSpeedMps": 1.5,
+    "maxSpeedNearHumansMps": 0.25,
+    "allowedZones": [
+      "cell-3"
+    ]
+  },
+  "expected_motion_digest": {
+    "samples": 2,
+    "maxForceN": 20.0,
+    "maxSpeedMps": 0.4,
+    "maxSpeedNearHumansMps": 0.2,
+    "zoneBreaches": 0,
+    "breachCount": 0,
+    "withinEnvelope": true
+  },
+  "safety_log_entries": [
+    {
+      "version": "1.0",
+      "seq": 0,
+      "timestamp": "2026-01-01T00:00:00Z",
+      "eventType": "near_miss",
+      "severity": "low",
+      "prevHash": "uAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "details": {
+        "zone": "cell-3"
+      },
+      "entryHash": "uEQzMWBo2m5L-_SZtNPvt245uXaSqZ-0aa6mN7Es1p-o"
+    },
+    {
+      "version": "1.0",
+      "seq": 1,
+      "timestamp": "2026-01-01T00:01:00Z",
+      "eventType": "envelope_breach",
+      "severity": "high",
+      "prevHash": "uEQzMWBo2m5L-_SZtNPvt245uXaSqZ-0aa6mN7Es1p-o",
+      "entryHash": "u1PmyaPqaCURWBXrc-TRzfqKSr9K-6QXMe-0LKNdLj0Q"
+    }
+  ],
+  "expected_safety_log_head": "u1PmyaPqaCURWBXrc-TRzfqKSr9K-6QXMe-0LKNdLj0Q",
+  "expected_safety_summary": {
+    "eventCounts": {
+      "envelope_breach": 1,
+      "incident": 0,
+      "kill_switch": 0,
+      "maintenance": 0,
+      "manual_override": 0,
+      "near_miss": 1
+    },
+    "severityCounts": {
+      "info": 0,
+      "low": 1,
+      "medium": 0,
+      "high": 1,
+      "critical": 0
+    },
+    "totalEvents": 2,
+    "logHead": "u1PmyaPqaCURWBXrc-TRzfqKSr9K-6QXMe-0LKNdLj0Q"
+  },
+  "expected_credential_status_entry": {
+    "id": "https://fleet.example.com/status/1#42",
+    "type": "BitstringStatusListEntry",
+    "statusPurpose": "revocation",
+    "statusListIndex": "42",
+    "statusListCredential": "https://fleet.example.com/status/1"
+  }
 }
