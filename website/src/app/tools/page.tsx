@@ -94,6 +94,11 @@ const GROUPS: Group[] = [
                 blurb: "Commit an agent's verdict or prediction before the result is known, then settle it later against what actually happened. A salted commitment keeps the call private until settlement, and a backdated settlement is rejected, so a track record cannot be cherry-picked. The settler can be a neutral third party.",
                 start: 'python examples/accountability_demo.py',
             },
+            {
+                name: 'Evidence-backed reputation',
+                blurb: "Reputation built from signed receipts, a relying party attesting an action, a settled outcome, an authority recording a penalty, scored by a public deterministic function. A consumer recomputes the score from the receipts rather than trusting a server. Includes multi-dimensional scores, threshold proofs that reveal nothing but the threshold, and disputes that drop bad receipts.",
+                start: 'python examples/reputation_demo.py',
+            },
         ],
     },
     {

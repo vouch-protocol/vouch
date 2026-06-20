@@ -61,9 +61,14 @@ implement the same wire format. Default cryptosuite is `eddsa-jcs-2022`
   regulated production, M-of-N with role-tagged validators.
 - "How do I prove an agent was right, or track a record I cannot fake?" ->
   Outcome evidence (`vouch.accountability`): commit the verdict before the
-  outcome with `commit_outcome`, settle it later with `attest_outcome`. The
-  reputation engine is a mutable score; outcome evidence is the tamper-evident
-  record underneath it. See `outcome-evidence.md`.
+  outcome with `commit_outcome`, settle it later with `attest_outcome`. See
+  `outcome-evidence.md`.
+- "How does agent reputation work, or how do I score an agent?" ->
+  Evidence-backed reputation: signed receipts (`vouch.receipts`) aggregated by a
+  public deterministic function (`vouch.reputation_aggregate`) over a verified
+  ledger (`vouch.reputation_ledger`), with policy gates, threshold proofs, and
+  disputes. A consumer recomputes the score rather than trusting a server. See
+  `reputation-evidence.md`.
 - "How do I give a robot identity, prove what model it runs, or enforce
   physical limits?" -> The robotics capabilities (`vouch.robotics`):
   hardware-rooted identity, model and config provenance, physical capability

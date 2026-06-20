@@ -252,6 +252,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/revocation.md` - DID-level and credential-level revocation
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
 - `reference/outcome-evidence.md` - Commit-before-outcome verdicts, settlement, track record
+- `reference/reputation-evidence.md` - Evidence-backed reputation: receipts, aggregation, ledger, policy, threshold proofs, disputes
 - `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
