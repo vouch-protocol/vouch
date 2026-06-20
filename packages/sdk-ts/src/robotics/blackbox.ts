@@ -40,7 +40,12 @@ function iso(d: Date): string {
   return d.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-function entryHash(body: Record<string, unknown>): string {
+/**
+ * Hash of an entry body, excluding any existing `entryHash` field:
+ * "u" + base64url-nopad(sha256(JCS(body without entryHash))). Shared by the
+ * black-box chain and the safety-record ledger so both verify the same way.
+ */
+export function entryHash(body: Record<string, unknown>): string {
   const clean: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) if (k !== 'entryHash') clean[k] = v;
   return mb64(crypto.createHash('sha256').update(canonicalize(clean)).digest());

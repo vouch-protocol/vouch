@@ -159,6 +159,51 @@ export {
   verifyPassport,
 } from './robotics/passport';
 export type { BuildPassportOptions, PassportSummary } from './robotics/passport';
+export {
+  ROBOT_HEARTBEAT_TYPE,
+  DEFAULT_GRACE_INTERVALS,
+  MotionCollector,
+  validateMotionDigest,
+  buildRobotHeartbeat,
+  verifyRobotHeartbeat,
+  isLive,
+} from './robotics/liveness';
+export type {
+  MotionSample,
+  MotionDigest,
+  RecordMotionOptions,
+  BuildHeartbeatOptions,
+  IsLiveOptions,
+} from './robotics/liveness';
+export {
+  StatusListError as RoboticsStatusListError,
+  buildStatusListCredential as buildRoboticsStatusListCredential,
+  buildStatusListEntry as buildRoboticsStatusListEntry,
+  attachCredentialStatus,
+  checkCredentialStatus,
+} from './robotics/revocation';
+export type {
+  AttachCredentialStatusOptions,
+  CheckCredentialStatusOptions,
+} from './robotics/revocation';
+export {
+  SAFETY_RECORD_TYPE,
+  SAFETY_LOG_VERSION,
+  EVENT_TYPES,
+  SEVERITIES,
+  SafetyEventLog,
+  verifySafetyLog,
+  summarizeEntries,
+  buildSafetyRecord,
+  verifySafetyRecord,
+  validateSafetySummary,
+} from './robotics/safety_record';
+export type {
+  Severity,
+  SafetySummary,
+  AppendEventOptions,
+  BuildSafetyRecordOptions,
+} from './robotics/safety_record';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
