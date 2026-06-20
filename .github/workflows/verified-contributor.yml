@@ -161,6 +161,7 @@ jobs:
             echo ""
             echo '```json'
             cat credential.json
+            echo ""
             echo '```'
             echo ""
             echo "</details>"
