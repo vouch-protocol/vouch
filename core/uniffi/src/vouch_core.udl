@@ -115,6 +115,38 @@ namespace vouch_core {
     string robotics_verify_passport(string passport_json, bytes public_key, string now_iso);
     [Throws=CoreError]
     string robotics_verify_passport_uri(string uri, bytes public_key, string now_iso);
+
+    // Liveness heartbeat (Phase 5.7).
+    [Throws=CoreError]
+    string robotics_motion_digest(string params_json);
+    [Throws=CoreError]
+    boolean robotics_validate_motion_digest(string digest_json);
+    [Throws=CoreError]
+    string robotics_build_heartbeat(bytes robot_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_heartbeat(string credential_json, bytes robot_public_key);
+    [Throws=CoreError]
+    boolean robotics_is_live(string credential_json, string now_iso, i64? interval_seconds, i64 grace_intervals);
+
+    // Per-credential revocation (Phase 5.8).
+    [Throws=CoreError]
+    string robotics_build_status_entry(string status_list_credential, i64 status_list_index, string status_purpose, string? entry_id);
+    [Throws=CoreError]
+    string robotics_attach_status(string credential_json, bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    boolean robotics_check_status(string credential_json, string status_list_credential_json, string status_purpose);
+
+    // Accountable safety record (Phase 5.9).
+    [Throws=CoreError]
+    string robotics_safety_append(string params_json);
+    [Throws=CoreError]
+    string robotics_verify_safety_log(string entries_json, string? genesis_prev_hash);
+    [Throws=CoreError]
+    string robotics_summarize_safety(string entries_json, string? head);
+    [Throws=CoreError]
+    string robotics_build_safety_record(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_safety_record(string credential_json, bytes public_key);
 };
 
 dictionary Ed25519KeyPair {

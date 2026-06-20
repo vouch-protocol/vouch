@@ -212,7 +212,7 @@ Reference implementations under `vouch/integrations/`. See
 
 ### "How do I give a robot a verifiable identity, or enforce physical limits?"
 
-Vouch ships six robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
+Vouch ships nine robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
 and the Rust core that flows to Swift, Kotlin/JVM, .NET, C/C++, and WASM):
 hardware-rooted identity (`mint_robot_identity` / `verify_robot_identity`, bound
 to a TPM or secure element), model and config provenance
@@ -222,10 +222,15 @@ for narrow-only delegation of force/speed/zone/shift limits), a robot-to-robot
 trust handshake (`build_hello` / `build_accept` / `build_confirm` with a
 `TrustPolicy`), an encrypted tamper-evident black box (`BlackBoxLog`,
 `verify_blackbox_chain`) plus a verifiable kill switch
-(`build_killswitch_credential`), and a scannable offline passport
-(`build_passport` / `encode_passport` into a `vouch-passport:` URI). Same
-Verifiable Credentials as the rest of Vouch, so they verify in every language.
-See `reference/robotics.md`.
+(`build_killswitch_credential`), a scannable offline passport
+(`build_passport` / `encode_passport` into a `vouch-passport:` URI), a liveness
+heartbeat (`MotionCollector` / `build_robot_heartbeat` / `is_live`, fresh plus
+in-envelope so trust is renewed not assumed), robot credential revocation
+(`attach_credential_status` / `check_credential_status` per credential, plus the
+whole-DID `RevocationRegistry`), and an accountable safety record (`SafetyEventLog`,
+`build_safety_record` / `verify_safety_record`, a portable tamper-evident incident
+ledger). Same Verifiable Credentials as the rest of Vouch, so they verify in every
+language. See `reference/robotics.md`.
 
 ## Decision rules
 
@@ -237,7 +242,7 @@ See `reference/robotics.md`.
 - **User wants continuous trust** -> Heartbeat Protocol with validator quorum (Python only today).
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
 - **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
-- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, and a scannable passport.
+- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), and an accountable safety record (a portable tamper-evident incident ledger).
 
 ## Reference files
 
@@ -253,7 +258,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
 - `reference/outcome-evidence.md` - Commit-before-outcome verdicts, settlement, track record
 - `reference/reputation-evidence.md` - Evidence-backed reputation: receipts, aggregation, ledger, policy, threshold proofs, disputes
-- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport
+- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
 - `reference/troubleshooting.md` - Common errors and fixes

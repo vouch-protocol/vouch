@@ -273,15 +273,117 @@ rejected.
 
 ---
 
+## 7. Robot liveness heartbeat
+
+`vouch.robotics.liveness`
+
+What it is: a `RobotHeartbeatCredential` that a robot periodically self-signs,
+carrying a "motion digest", aggregates of what it physically did over the
+interval (peak force in newtons, peak speed in m/s, peak speed while a human was
+near, and a count of zone breaches), plus whether it stayed inside the physical
+envelope its `PhysicalCapabilityScope` permits.
+
+The problem it closes: a static credential says a robot was trusted at issue
+time, but a physical machine can drift, get damaged, or be tampered with between
+heartbeats. This inverts "trusted until revoked" to "untrusted until renewed": a
+verifier treats the robot as trusted only while a fresh AND in-envelope heartbeat
+exists. It is the physical analogue of the agent Heartbeat Protocol and
+behavioral attestation.
+
+How it works: a `MotionCollector` records force, speed, near-human state, and
+zone per sample over the interval and produces the digest, checked against the
+robot's scope. The robot signs the digest into a heartbeat credential. A verifier
+calls `is_live`, which combines freshness (the heartbeat is recent enough) with
+conformance (the digest stayed inside the envelope). A heartbeat that is fresh but
+out of envelope does not count as live.
+
+The API: `MotionCollector` (records per-sample force/speed/near_humans/zone and
+produces the digest), `build_robot_heartbeat`, `verify_robot_heartbeat`, `is_live`
+(freshness plus conformance), and `validate_motion_digest`.
+
+Security boundary: `is_live` fails if the heartbeat is stale or if the motion
+digest fell outside the permitted envelope, so a robot that exceeded its force,
+speed, near-human speed, or zone limits is not treated as live even with a
+freshly signed heartbeat. Verification fails on a wrong type or an invalid proof.
+
+---
+
+## 8. Robot credential revocation
+
+`vouch.robotics.revocation`
+
+What it is: two levels of revocation for robots. Surgical per-credential
+revocation attaches a `BitstringStatusList` `credentialStatus` entry to any robot
+identity, provenance, or capability credential. Whole-DID revocation kills a
+compromised key or a captured robot across all of its credentials at once.
+
+The problem it closes: a single robot credential may need to be pulled (a stale
+provenance attestation, a revoked capability) without touching the rest, while a
+compromised key or a physically captured robot needs every credential under that
+DID invalidated at once.
+
+How it works: per-credential revocation reuses `vouch.status_list`. Attach a
+status entry with `attach_credential_status` and check it with
+`check_credential_status`. Whole-DID revocation reuses the existing
+`vouch.revocation.RevocationRegistry`: a robot DID is an ordinary DID, so the
+`.well-known` distribution path works unchanged. The registry is re-exported from
+`vouch.robotics` for convenience.
+
+The API: `attach_credential_status` and `check_credential_status` (per-credential,
+over `vouch.status_list`), plus `RevocationRegistry` (whole-DID, re-exported from
+`vouch.revocation`).
+
+Security boundary: a verifier that checks `credentialStatus` rejects a credential
+whose bit is set. A verifier that checks the revocation registry rejects every
+credential under a revoked DID. The two levels are independent, so a deployment
+can run both.
+
+---
+
+## 9. Accountable safety record
+
+`vouch.robotics.safety_record`
+
+What it is: an append-only, hash-linked, plaintext incident and near-miss ledger
+(`SafetyEventLog`) of safety-relevant events (incident, near_miss,
+manual_override, kill_switch, envelope_breach, maintenance), each with a severity
+(info, low, medium, high, critical). A portable `RobotSafetyRecordCredential`
+summarizes a stretch of the ledger into one signed artifact.
+
+The problem it closes: a robot's safety history lives in scattered logs that do
+not travel and cannot be trusted by an outside party. This gives the robot a
+tamper-evident ledger plus a signed summary that travels with it across owners,
+insurers, and regulators.
+
+How it works: the ledger is plaintext (unlike the encrypted black box) but uses
+the same hash-linked chain semantics, so it is tamper-evident: `verify_safety_log`
+catches any altered or reordered entry. `summarize_entries` builds a summary over
+a stretch of the ledger, counts by event type and by severity, the period
+covered, and the ledger head hash that anchors the summary to the chain.
+`build_safety_record` signs that summary into a portable credential and
+`verify_safety_record` checks it. The summary reports plain counts.
+
+The API: `SafetyEventLog` (append, entries, head), `verify_safety_log`,
+`summarize_entries`, `build_safety_record`, and `verify_safety_record`.
+
+Security boundary: log verification fails on any altered or reordered entry. The
+safety-record credential fails on a wrong type or an invalid proof, and its head
+hash ties the signed counts to a specific ledger state, so a summary cannot quietly
+claim a cleaner history than the ledger it anchors to.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
 carries a signed record of the exact model and policy it runs (2), enforces
 physical limits before every move (3), negotiates bounded cooperation with robots
 it meets (4), records an encrypted tamper-evident log and honors a verifiable
-kill switch (5), and presents a scannable passport anyone can check offline (6).
-Every artifact is the same Verifiable Credential format, so one verifier and one
-trust model cover all six.
+kill switch (5), presents a scannable passport anyone can check offline (6), keeps
+proving it is live and in-envelope with self-signed heartbeats (7), can have any
+one credential or its whole DID revoked (8), and carries a tamper-evident safety
+record that travels with it (9). Every artifact is the same Verifiable Credential
+format, so one verifier and one trust model cover all nine.
 
 ## Quick answers
 
@@ -298,14 +400,22 @@ trust model cover all six.
   encrypted black box (5).
 - Can someone scan a robot to check it is legitimate, offline? Yes, the scannable
   passport (6).
+- Can a robot keep proving it is still trustworthy while running, beyond its
+  issue time? Yes, the liveness heartbeat, fresh plus in-envelope (7).
+- Can I revoke one robot credential, or kill a compromised or captured robot
+  outright? Yes, per-credential status plus whole-DID revocation (8).
+- Can a robot carry a tamper-evident safety record across owners, insurers, and
+  regulators? Yes, the accountable safety record (9).
 
 ## Status
 
-All six capabilities are implemented and tested in Python, TypeScript, Go, and
+All nine capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the
-hardware-root binding and the config hash. The novel methods are published as
-open defensive disclosures: PAD-064 (hardware-rooted identity), PAD-067
-(robot-to-robot handshake), PAD-069 (confidential tamper-evident black box), and
-PAD-070 (scannable offline passport).
+hardware-root binding and the config hash. The liveness heartbeat builds on the
+agent Heartbeat Protocol, the revocation paths reuse `vouch.status_list` and
+`vouch.revocation`, and the safety record reuses the black-box chain semantics.
+The novel methods are published as open defensive disclosures: PAD-064
+(hardware-rooted identity), PAD-067 (robot-to-robot handshake), PAD-069
+(confidential tamper-evident black box), and PAD-070 (scannable offline passport).

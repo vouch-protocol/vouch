@@ -42,8 +42,8 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
   {
     num: 'vii.',
     title: 'Robots & Embodied Agents',
-    body: 'A robot identity rooted in a TPM or secure element, a signed record of the model and safety policy it runs (re-signed on every update), physical limits enforced as cryptographic capability (force, speed near humans, zones), a kill-switch credential only an attested authority can trigger, and a scannable QR/NFC passport.',
-    spec: 'Robotics profile',
+    body: 'A robot identity rooted in a TPM or secure element, signed model and safety-policy provenance, physical limits enforced as cryptographic capability, a living-trust heartbeat that decays unless the robot keeps proving it stayed in-envelope, two-level credential revocation, a kill-switch only an attested authority can trigger, a tamper-evident safety record that travels with the robot, and a scannable QR/NFC passport.',
+    spec: 'Nine robotics capabilities',
     href: '/robotics/',
   },
   {
