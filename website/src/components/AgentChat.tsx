@@ -308,7 +308,7 @@ function FeedbackBar({
         );
     }
 
-    // Default — thumbs up / thumbs down buttons.
+    // Default: thumbs up / thumbs down buttons.
     return (
         <div className="mt-2 flex items-center gap-2 text-[0.78rem]">
             <span className="text-ink-faint italic">Helpful?</span>
@@ -476,7 +476,7 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     if (last && last.role === 'assistant') {
                         const piece = parsed.text ?? '';
                         if (last.inFollowupsMode) {
-                            // Already past the marker — buffer raw follow-up text.
+                            // Already past the marker, buffer raw follow-up text.
                             last.followupsRaw = (last.followupsRaw ?? '') + piece;
                         } else {
                             // Append to the visible answer, then check if the marker has appeared.

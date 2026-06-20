@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* -------------------------------------------------------------------------- */
-/* Theme palettes — driven by CSS variables, Tailwind reads them via         */
+/* Theme palettes, driven by CSS variables, Tailwind reads them via          */
 /* tailwind.config.ts's colors map. Switch by setting `data-theme` on <html>.*/
 /* -------------------------------------------------------------------------- */
 
@@ -200,7 +200,7 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Blog body — styles applied to HTML imported via dangerouslySetInnerHTML */
+/* Blog body: styles applied to HTML imported via dangerouslySetInnerHTML */
 /* ------------------------------------------------------------------ */
 
 .vouch-blog-body {

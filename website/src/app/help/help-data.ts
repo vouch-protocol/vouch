@@ -1492,7 +1492,7 @@ Separate executables, run directly (not as vouch subcommands):
   },
 
   // =====================================================================
-  // STATE VERIFIABILITY RUNTIME (concrete quickstart, not just concepts)
+  // STATE VERIFIABILITY RUNTIME (concrete, runnable quickstart)
   // =====================================================================
   {
     id: 'state-verifiability',
@@ -1575,7 +1575,7 @@ def handle_heartbeat(request_dict):
     return {"error": "rejected", "reasons": result.reasons}
 \`\`\`
 
-The validator checks schema, behavioral digest structure, canary chain integrity, and interval-index monotonicity. A broken canary chain or stale interval index returns a structured rejection — the agent does not get a new voucher and its existing one expires.
+The validator checks schema, behavioral digest structure, canary chain integrity, and interval-index monotonicity. A broken canary chain or stale interval index returns a structured rejection, so the agent does not get a new voucher and its existing one expires.
 
 ## Trust entropy: gate actions by current trust
 
@@ -1669,7 +1669,7 @@ See [PAD-016](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures
   },
 
   // =====================================================================
-  // AI ASSISTANTS — walkthroughs for each surface
+  // AI ASSISTANTS: walkthroughs for each surface
   // =====================================================================
   {
     id: 'ai-assistants',
@@ -1807,7 +1807,7 @@ The chat helper on vouch-protocol.com is open source under \`website-agent/\` in
 
 ## Three processes, three terminals
 
-### 1. Dev sidecar (ephemeral Ed25519 key — dev only)
+### 1. Dev sidecar (ephemeral Ed25519 key, dev only)
 
 \`\`\`bash
 cd ~/vouch-protocol/website-agent/backend
@@ -1906,10 +1906,10 @@ When you need any of those, switch to the Go sidecar. The wire format is identic
 
 All three sidecars expose the same HTTP API:
 
-- \`GET /health\` — liveness probe
-- \`GET /did\` — the sidecar's DID
-- \`GET /.well-known/did.json\` — DID Document (optional)
-- \`POST /sign\` — sign an intent, return a Vouch credential
+- \`GET /health\`: liveness probe
+- \`GET /did\`: the sidecar's DID
+- \`GET /.well-known/did.json\`: DID Document (optional)
+- \`POST /sign\`: sign an intent, return a Vouch credential
 
 A shared contract test suite at \`test-vectors/sidecar-contract/\` verifies that each implementation accepts and rejects the same inputs and emits semantically equivalent credentials.
 

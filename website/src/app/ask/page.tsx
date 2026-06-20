@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * /ask — direct-link entry point to the Vouch Assistant.
+ * /ask: direct-link entry point to the Vouch Assistant.
  *
  * Linkable from anywhere as `vouch-protocol.com/ask` (no need to tell readers
  * to "click the bottom-right tab"). Renders a full-screen chat experience
@@ -9,7 +9,7 @@
  *
  * If the backend has not been deployed for this build (no
  * NEXT_PUBLIC_VOUCH_AGENT_URL), the AgentChat surface degrades gracefully
- * via its existing API_NOT_CONFIGURED handling — no Chrome PNA prompt,
+ * via its existing API_NOT_CONFIGURED handling, no Chrome PNA prompt,
  * just a "coming soon" message.
  */
 
