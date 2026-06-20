@@ -18,8 +18,9 @@ ISSUES_URL = "https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Ao
 
 # Social handles. Fill INSTAGRAM_URL when the account exists.
 X_HANDLE = "@Vouch_Protocol"
+BLUESKY_HANDLE = "@vouch-protocol.com"
 LINKEDIN_URL = "https://www.linkedin.com/company/vouch-protocol-ai/"
-INSTAGRAM_URL = ""  # e.g. "https://instagram.com/vouch_protocol"
+INSTAGRAM_URL = "https://www.instagram.com/vouch.protocol/"
 
 ICON_WHATSAPP = (
     '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.9'
@@ -175,7 +176,7 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     )
     bsky_text = (
         f'Just earned my Vouch Verified Contributor certificate for "{work}". '
-        "Vouch is the open standard for AI agent identity and accountability, and open source. "
+        f"Vouch {BLUESKY_HANDLE} is the open standard for AI agent identity and accountability, and open source. "
         "Pick up a good first issue and build with us: " + ISSUES_URL + " " + cert_url
     )
     x_intent = f"https://twitter.com/intent/tweet?text={quote(x_text)}&url={quote(cert_url)}"
