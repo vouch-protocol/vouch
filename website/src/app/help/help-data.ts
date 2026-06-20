@@ -343,6 +343,8 @@ In Xcode use File then Add Package Dependencies and paste \`https://github.com/v
 
 Supports iOS 13+ and macOS 12+.
 
+VouchCore is listed on the [Swift Package Index](https://swiftpackageindex.com/vouch-protocol/vouch-swift), where you can browse the generated documentation and the platform compatibility matrix.
+
 ## Canonicalize and verify
 
 Everything runs on device. The \`Vouch\` facade gathers the lower-level UniFFI functions behind a discoverable surface:
