@@ -13,10 +13,8 @@ no entry can be altered or removed without detection.
 A RobotSafetyRecordCredential is an eddsa-jcs-2022 VC that summarizes a stretch
 of the ledger (counts by event type and by severity, the period covered, and the
 ledger head hash that anchors it) into one portable, signed artifact that travels
-with the robot across owners and across organizations. The summary reports plain
-counts: this is the open, generic record. A privacy-preserving safety-standing
-proof (asserting a tier or a bound without revealing the events) is out of scope
-here.
+with the robot across owners and across organizations. The summary reports the
+event and severity counts directly.
 
 The ledger reuses the black-box chain semantics so the two logs verify the same
 way. Hosted safety-record registries, cross-fleet aggregation, and insurer feeds
