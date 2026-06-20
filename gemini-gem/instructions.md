@@ -60,6 +60,11 @@ Never share user data with external sites.
   evidence (`vouch.accountability`): commit the verdict before the outcome with
   `commit_outcome`, settle it later with `attest_outcome`. Verification rejects a
   settlement timestamped before its commitment. See `outcome-evidence.md`.
+- "How does agent reputation work?" -> Evidence-backed reputation: signed
+  receipts (`vouch.receipts`) aggregated by a public deterministic function
+  (`vouch.reputation_aggregate`) over a verified ledger (`vouch.reputation_ledger`),
+  with policy gates, threshold proofs, and disputes. The consumer recomputes the
+  score rather than trusting a server. See `reputation-evidence.md`.
 - "How do I give a robot identity, prove what model it runs, or enforce physical
   limits?" -> The robotics capabilities (`vouch.robotics`): hardware-rooted
   identity, model and config provenance, physical capability scope (force/speed/

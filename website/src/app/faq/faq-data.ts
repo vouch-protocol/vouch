@@ -163,9 +163,17 @@ A Vouch delegation chain captures all three steps cryptographically. Each step n
 
 It works in two steps. First the agent commits a verdict, prediction, or recommendation and signs it before the result is known. The commitment can carry only a salted fingerprint of the call, so the content stays private until later while still being locked in. Then, once the outcome is observable, a settlement record (which can be signed by a neutral third party) reveals the original call and binds the real result to it. Anyone can recompute the fingerprint and check it matches, and a settlement dated before its commitment is rejected. So a winning call cannot be invented after the fact, and a losing one cannot quietly disappear.
 
-This is the evidence layer underneath a reputation score. A score can be moved by whoever keeps it; outcome evidence is a per-call artifact the agent cannot rewrite.`,
+This is the evidence layer underneath reputation. Vouch reputation is itself evidence-backed: a score recomputed from signed receipts, not a number a server keeps.`,
         helpLinks: [{ label: 'Outcome evidence how-to', href: '/help/#outcome-evidence' }],
         meta: 'Shipped on main - vouch.accountability, PAD-071',
+      },
+      {
+        q: 'How does Vouch reputation avoid being gamed?',
+        a: `Reputation is computed from signed receipts, each tied to a real interaction, by a public function anyone can rerun. The relying party the agent acted on signs the result of an action, a settled prediction signs whether it came true, and an authority signs a penalty. The score is the weighted, time-decayed aggregate of those across dimensions like reliability, performance, and compliance.
+
+A consumer does not trust a server's number: it fetches the receipts and recomputes the score itself. Anonymous star ratings carry almost no weight, and a human review only counts when it is bound to proof the rater actually used the agent. An agent can prove it clears a bar, say a composite of at least 75, without revealing its score, and a receipt issued in error can be disputed and dropped by an arbiter.`,
+        helpLinks: [{ label: 'Evidence-backed reputation', href: '/help/#reputation-evidence' }],
+        meta: 'Shipped on main - vouch.receipts, vouch.reputation_aggregate, vouch.reputation_ledger',
       },
     ],
   },

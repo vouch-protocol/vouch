@@ -971,7 +971,29 @@ Verification recomputes the fingerprint from the revealed call, confirms it matc
 
 ## Where it sits
 
-This is the per-verdict evidence layer underneath the reputation engine. Feed settled attestations into \`vouch.reputation\` rather than trusting a self-reported score. Full demo: \`python examples/accountability_demo.py\`. Defensive disclosure: PAD-071.
+This is the per-verdict evidence layer underneath reputation. Vouch reputation aggregates settled attestations and other signed receipts into a score anyone can recompute, covered in Evidence-Backed Reputation below. Full demo: \`python examples/accountability_demo.py\`. Defensive disclosure: PAD-071.
+`,
+      },
+      {
+        id: 'reputation-evidence',
+        title: 'Evidence-Backed Reputation',
+        summary: 'Compute an agent reputation from signed receipts with a public function, so anyone can recompute it instead of trusting a server.',
+        body: `
+## What it is
+
+Reputation is a verifiable aggregate of signed, interaction-bound receipts, keyed to the agent DID and computed by a public deterministic function. A consumer trusts the signatures and the math, not a server's stored number.
+
+## The signals (objective first)
+
+The relying party the agent acted on signs the result of an action (a StateReceipt), a settled prediction signs whether it came true (an OutcomeAttestationCredential), and an authority signs a violation (a PenaltyReceipt). A human ReviewCredential counts only when bound to proof the rater used the agent, and carries low weight.
+
+## How it works
+
+A ReputationLedger verifies each receipt before admitting it and keeps them in a Merkle log, so a consumer can recompute the score from the receipts and inclusion proofs rather than trust the registry signed snapshot. evaluate_reputation gates a decision against a policy of minimum composite, per-dimension minimums, and freshness. build_reputation_proof proves the agent clears a threshold without revealing its score, and apply_resolution drops a receipt an arbiter has ruled invalid.
+
+## Demo
+
+Run python examples/reputation_demo.py for the full path: receipts to ledger to signed snapshot to policy gate to threshold proof to dispute. The formats and the aggregation function are open; a hosted registry is a separate commercial layer.
 `,
       },
       {
