@@ -1,0 +1,104 @@
+name: Verified Conformance credential
+
+# Dogfoods the protocol: run the Vouch conformance test against this repo's own
+# implementation and, on a passing run, mint a signed "Vouch Verified Conformant"
+# credential chained back to the project root authority. Mirrors
+# .github/workflows/verified-contributor.yml.
+#
+# The robotics profile uses the same mint script (--profile robotics); it plugs
+# into this workflow once the robotics check lands in vouch/conformance.py.
+#
+# Setup (see conformance/README.md): add repository secrets
+# VOUCH_CONFORMANCE_PRIVATE_KEY (the conformance issuer Ed25519 JWK) and
+# VOUCH_CONFORMANCE_DID (did:web:vouch-protocol.com:conformance), and publish the
+# issuer public key at website/public/conformance/did.json. If
+# conformance/delegation.json is present, the badge is chained to the root
+# authority automatically. The job is a safe no-op if the secrets are not set.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install vouch
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run the conformance test
+        id: test
+        run: |
+          level=$(python - <<'PY'
+          from vouch.conformance import run_conformance
+
+          print(run_conformance().achieved or "")
+          PY
+          )
+          echo "Highest passing level: ${level:-none}"
+          echo "level=$level" >> "$GITHUB_OUTPUT"
+
+      - name: Mint the conformance credential
+        if: steps.test.outputs.level != ''
+        env:
+          VOUCH_CONFORMANCE_PRIVATE_KEY: ${{ secrets.VOUCH_CONFORMANCE_PRIVATE_KEY }}
+          VOUCH_CONFORMANCE_DID: ${{ secrets.VOUCH_CONFORMANCE_DID }}
+          LEVEL: ${{ steps.test.outputs.level }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$VOUCH_CONFORMANCE_PRIVATE_KEY" ] || [ -z "$VOUCH_CONFORMANCE_DID" ]; then
+            echo "Conformance issuer key not configured; skipping minting."
+            exit 0
+          fi
+          PARENT=""
+          if [ -f conformance/delegation.json ]; then
+            PARENT="--parent conformance/delegation.json"
+          fi
+          python scripts/mint_conformance_credential.py \
+            --subject "$REPO" --commit "$SHA" \
+            --profile core --level "$LEVEL" \
+            $PARENT --out credential.json
+
+      - name: Verify the badge against the published DID document
+        if: steps.test.outputs.level != '' && hashFiles('credential.json') != ''
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+
+          from vouch import Verifier
+
+          cred = open("credential.json").read()
+          doc = json.load(open("website/public/conformance/did.json"))
+          pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
+          ok, _ = Verifier.verify_credential(cred, public_key=pub)
+          print("Badge self-verify against published DID:", ok)
+          if not ok:
+              print("::error::Minted conformance badge does not verify against the published DID."
+                    " Check that VOUCH_CONFORMANCE_PRIVATE_KEY and the DID document hold the same key.")
+              sys.exit(1)
+          PY
+
+      - name: Summary
+        if: steps.test.outputs.level != '' && hashFiles('credential.json') != ''
+        run: |
+          {
+            echo "### Vouch Verified Conformant"
+            echo ""
+            echo "\`${{ github.repository }}\` passed conformance at **${{ steps.test.outputs.level }}**, credential signed and root-chained."
+            echo ""
+            echo '```json'
+            cat credential.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
