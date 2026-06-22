@@ -1,0 +1,32 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://vouch-protocol.com/contexts/v1"
+  ],
+  "id": "urn:uuid:69aecebd-d7e9-4aca-ac10-a40ecc224ec4",
+  "type": [
+    "VerifiableCredential",
+    "VouchCredential"
+  ],
+  "issuer": "did:web:vouch-protocol.com",
+  "validFrom": "2026-06-22T20:13:56Z",
+  "validUntil": "2036-06-19T20:13:56Z",
+  "credentialSubject": {
+    "id": "did:web:vouch-protocol.com",
+    "vouchVersion": "1.0",
+    "intent": {
+      "action": "delegate",
+      "target": "did:web:vouch-protocol.com:conformance",
+      "resource": "https://github.com/vouch-protocol/vouch",
+      "role": "conformance-issuer"
+    }
+  },
+  "proof": {
+    "type": "DataIntegrityProof",
+    "cryptosuite": "eddsa-jcs-2022",
+    "created": "2026-06-22T20:13:56Z",
+    "verificationMethod": "did:web:vouch-protocol.com#key-1",
+    "proofPurpose": "assertionMethod",
+    "proofValue": "z3eptxNEsjcs3AEgUEVqBCpqXgd9iHdgfNRRw3Fbqq4TVKSLKYi8o5nNhSbTv6sicH4EDCkwNJ6FNEH3XkZAGi55J"
+  }
+}
