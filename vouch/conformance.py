@@ -143,7 +143,14 @@ def check_nonce_replay() -> CheckResult:
         second = await tracker.is_used(nonce)
         return first, second
 
-    first_seen, second_seen = asyncio.run(present_twice())
+    # A dedicated loop we open and close ourselves; unlike asyncio.run() this
+    # never calls set_event_loop(None), so it cannot strand async tests that
+    # run later in the same process (a Python 3.9 event-loop pitfall).
+    loop = asyncio.new_event_loop()
+    try:
+        first_seen, second_seen = loop.run_until_complete(present_twice())
+    finally:
+        loop.close()
     if first_seen:
         return CheckResult("nonce_replay", Status.FAIL, "a fresh nonce was reported as used")
     if not second_seen:
