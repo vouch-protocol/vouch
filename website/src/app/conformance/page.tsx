@@ -292,6 +292,68 @@ export default function ConformancePage() {
                     </p>
                 </section>
 
+                <section className="mt-12 border-t border-rule pt-12">
+                    <p className="eyebrow text-burgundy mb-2">Also coming</p>
+                    <h2 className="font-serif text-[1.5rem] font-semibold mb-3">Robotics Conformant, a profile of its own</h2>
+                    <p className="text-ink leading-relaxed max-w-prose mb-6">
+                        Robots and embodied agents raise questions a software agent does not: hardware-rooted
+                        identity, model and config provenance, cryptographically scoped physical limits, a
+                        robot-to-robot handshake, an encrypted black box, and a verifiable kill switch. These
+                        sit in a separate Robotics Conformant profile rather than on the L1 to L3 ladder,
+                        because passing them proves something different from credential conformance.
+                    </p>
+                    <div className="bg-parchment-warm border border-rule p-6 md:p-8 max-w-xl">
+                        <svg
+                            role="img"
+                            aria-label="Vouch Verified, Robotics Conformant badge"
+                            viewBox="0 0 300 22"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="block h-7 w-auto"
+                        >
+                            <clipPath id="rb-clip">
+                                <rect width="300" height="22" rx="3" fill="#fff" />
+                            </clipPath>
+                            <linearGradient id="rb-gloss" x2="0" y2="100%">
+                                <stop offset="0" stopColor="#fff" stopOpacity=".12" />
+                                <stop offset="1" stopOpacity=".12" />
+                            </linearGradient>
+                            <linearGradient id="rb-grad" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0" stopColor="#7C2D3A" />
+                                <stop offset="1" stopColor="#FF6B5C" />
+                            </linearGradient>
+                            <g clipPath="url(#rb-clip)">
+                                <rect width="132" height="22" fill="#333333" />
+                                <rect x="132" width="168" height="22" fill="url(#rb-grad)" />
+                                <rect width="300" height="22" fill="url(#rb-gloss)" />
+                            </g>
+                            <path
+                                d="M9 11 l2.7 2.7 L17.8 7.4"
+                                fill="none"
+                                stroke="#34D399"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                            <g fontFamily="Verdana,DejaVu Sans,sans-serif" fontSize="11.5">
+                                <text x="79" y="16" fill="#010101" fillOpacity="0.3" textAnchor="middle">Vouch Verified</text>
+                                <text x="79" y="15" fill="#ffffff" textAnchor="middle">Vouch Verified</text>
+                                <text x="216" y="16" fill="#010101" fillOpacity="0.3" textAnchor="middle">Robotics Conformant</text>
+                                <text x="216" y="15" fill="#ffffff" textAnchor="middle">Robotics Conformant</text>
+                            </g>
+                        </svg>
+                        <p className="text-ink-soft text-[0.9rem] leading-relaxed mt-4">
+                            A distinct badge for robots that pass the robotics profile, issued and re-checkable
+                            the same way as the conformance badge.
+                        </p>
+                    </div>
+                    <Link
+                        href="/robotics/"
+                        className="font-mono uppercase tracking-[0.14em] text-[0.7rem] text-ink border-b border-ink no-underline hover:bg-ink hover:text-parchment px-1 py-0.5 transition-colors w-fit inline-block mt-6"
+                    >
+                        Explore the robotics profile →
+                    </Link>
+                </section>
+
                 <footer className="mt-16 border-t border-rule pt-8 flex flex-col md:flex-row gap-4 md:justify-between text-[0.92rem]">
                     <Link
                         href="https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md#17-conformance-levels"
