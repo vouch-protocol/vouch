@@ -27,6 +27,7 @@ Run it against the reference SDK:
 
 from __future__ import annotations
 
+import asyncio
 import json
 from dataclasses import dataclass
 from enum import Enum
@@ -34,6 +35,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Tuple
 
 from vouch import jcs, keys
+from vouch.nonce import MemoryNonceTracker
 from vouch.signer import Signer
 from vouch.verifier import Verifier
 
@@ -95,6 +97,67 @@ def check_sign_verify() -> CheckResult:
     return CheckResult("sign_verify", Status.PASS, "round-trip and tamper rejection")
 
 
+# A timestamp far enough out that the tracked nonce never expires mid-check.
+_NONCE_FAR_FUTURE = 4102444800  # 2100-01-01T00:00:00Z
+
+
+def check_validity_window() -> CheckResult:
+    """Temporal claims: a fresh credential verifies, an expired one is rejected."""
+    kp = keys.generate_identity("conformance.test")
+    signer = Signer(private_key=kp.private_key_jwk, did=kp.did)
+    intent = {
+        "action": "conformance_probe",
+        "target": "vector:validity",
+        "resource": "https://conformance.test/probe",
+    }
+    fresh = signer.sign_credential(intent=intent, valid_seconds=3600)
+    fresh_valid, _ = Verifier.verify_credential(fresh, public_key=kp.public_key_jwk)
+    if not fresh_valid:
+        return CheckResult("validity_window", Status.FAIL, "a fresh credential was rejected")
+
+    expired = signer.sign_credential(intent=intent, valid_seconds=-3600)
+    expired_valid, _ = Verifier.verify_credential(expired, public_key=kp.public_key_jwk)
+    if expired_valid:
+        return CheckResult("validity_window", Status.FAIL, "an expired credential was accepted")
+
+    return CheckResult("validity_window", Status.PASS, "fresh accepted, expired rejected")
+
+
+def check_nonce_replay() -> CheckResult:
+    """Replay resistance: a credential id seen twice is flagged on the second use."""
+    kp = keys.generate_identity("conformance.test")
+    signer = Signer(private_key=kp.private_key_jwk, did=kp.did)
+    credential = signer.sign_credential(
+        intent={
+            "action": "conformance_probe",
+            "target": "vector:nonce",
+            "resource": "https://conformance.test/probe",
+        }
+    )
+    nonce = credential["id"]
+
+    async def present_twice() -> Tuple[bool, bool]:
+        tracker = MemoryNonceTracker()
+        first = await tracker.is_used(nonce)
+        await tracker.mark_used(nonce, expires_at=_NONCE_FAR_FUTURE)
+        second = await tracker.is_used(nonce)
+        return first, second
+
+    # A dedicated loop we open and close ourselves; unlike asyncio.run() this
+    # never calls set_event_loop(None), so it cannot strand async tests that
+    # run later in the same process (a Python 3.9 event-loop pitfall).
+    loop = asyncio.new_event_loop()
+    try:
+        first_seen, second_seen = loop.run_until_complete(present_twice())
+    finally:
+        loop.close()
+    if first_seen:
+        return CheckResult("nonce_replay", Status.FAIL, "a fresh nonce was reported as used")
+    if not second_seen:
+        return CheckResult("nonce_replay", Status.FAIL, "a repeated nonce was not detected")
+    return CheckResult("nonce_replay", Status.PASS, "first use accepted, replay rejected")
+
+
 # --- L2 / L3 checks (contract defined, implementation pending) --------------
 
 
@@ -111,17 +174,8 @@ LEVELS: Dict[str, List[Tuple[str, Callable[[], CheckResult]]]] = {
     "L1": [
         ("canonicalization", check_canonicalization),
         ("sign_verify", check_sign_verify),
-        (
-            "validity_window",
-            _pending(
-                "validity_window",
-                "A credential past its validUntil is rejected as expired.",
-            ),
-        ),
-        (
-            "nonce_replay",
-            _pending("nonce_replay", "A repeated nonce is rejected as a replay."),
-        ),
+        ("validity_window", check_validity_window),
+        ("nonce_replay", check_nonce_replay),
     ],
     "L2": [
         (
