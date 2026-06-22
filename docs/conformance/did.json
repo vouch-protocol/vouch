@@ -1,0 +1,33 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1",
+    "https://w3id.org/security/multikey/v1"
+  ],
+  "id": "did:web:vouch-protocol.com:conformance",
+  "verificationMethod": [
+    {
+      "id": "did:web:vouch-protocol.com:conformance#key-1",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:vouch-protocol.com:conformance",
+      "publicKeyJwk": {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": "Th6o6p3r3qh6pUMSjHQkG9l4TsXZtn4VBlsi1hVf6mE"
+      }
+    },
+    {
+      "id": "did:web:vouch-protocol.com:conformance#key-2",
+      "type": "Multikey",
+      "controller": "did:web:vouch-protocol.com:conformance",
+      "publicKeyMultibase": "z4dcAB9h4tUrwd95jD44JtW9WLmPvi97UDs1LV2kNwXMBKqU3kEXJRjAkRGvbE3AkPMJfSm21omxPN5a3e7ypLGdtZDEYUrWpJSMeq5uZrhDsP3pHeEGdQAR2GXJUn36ELwxwVPaDMYCs27pLdSrc56HW1tgQavUY3cZd8TUnb4QW2JmYq27xAM3w19efiSbzANbg9XJeazWYpezsBXzt4WSeLm44BqybHuwMYYcgrbhXSJ5k4vtPgUr4MCvWDuNKtb5Wd2G5dZMmWEjTN5t98Rdfn5gwtoPyvQj59hJXH4Hiakd2gEeY7yDxwdcWHjCopMbTXCJE2qJn8Y2GPZqmBkaNtc8eg7Aew4qMHG4nkDaNAzFYtYWv5fXWLEgb2A7uZozR2w52od15SwdYnAiNaYenxwisi98Ze5szQVxDr3J5FkoMUXxv1bECLkMyXSNufwPEsag22GPDQQNqXW8iuzvEXxMs85z2VFvQ3nvb3EqdGobcuG3cjfdzsV8JQ2XgcEpGNzUVSpK1HcegPkzcHv385qRewHfjsPWPFudnNAhWGxsHWs5GEyVtcTJWzJkE58yq16crx77pUud86okDmb7cio2UUf4NFA6koa51eSn4K76vrqYEaKKuN35DRBBFw8SKMDWiWC9BxgCThkpb7Ry1kUJiPFsLQxSuC7eTq71ZTnKzbxM8uerKtXYd5MkXUJ3kgMciy2yN8zviLPL3vWtXEKXf52rnw6PqBMJL2TPEbHViSYPSBsfSj81ukbMpHFhDUCdVXJjs3sV7qP65NSnzAVdDMTPyifmEVuUaZ7v6tqKjK7ek3yoNfgSfWN3ZaJaKUbWdU7FDoeHJhPj9UTohoQ5ZQCcBo5gq8ndMWnF9FgG8rJTC5iE4BqXqE8vWxBzdCHa4y5wiLBVzyU6Rx4aor3d1uVTKrneykeJqJ6pMqfy23euqvR7KiQ9ojmbVLkJu7NtXrm7LWB1knfVpSxC89tinGtMusCXnPW3EUCaawHj9Rx9qLoj9tpZsxy677s1uEtgJWNuzX86SPP2cJ9iDXHwZ6bCydFACxT2DVBgT2XQuGjF8Ub8AsqqmDsKyxQqfttU1Ao3asUDBa7LkwHCPNoya13nsk39RUXrptdvKWmzMqrdxM4mL41EZkJUbYMCnbXDozc4AcaGVsqGoEoKdrmUi3MRcGjEivYDuCRpF2o3hkDCy6NNtWUySWCpCWXPAdCFJemD8CkZnd5orKdjKi77GKafVRZPz3DKKqxG23kQ6Zv6fuRhA7ucWE2JqYHnURtajRC1DonZN9UVrC3dEiZc5YzWxSJRU3pJVkGFUvcoEFd5utTyK1c5kgFjKBkuX59GPmb3w2xnCcvUEkLR7x6EJe8bEM6tVCvA6PBsGpwEeMrWWmoDUJEHVowAmJJZjoi4CSqqiLQ8V4cycZ7FNo7U7fUTfFjHSospLmru87pg4577VnMFczPPqdAbPKLdgLCXLNo8tsveUVNRJdQ1gz3yAeeLFSZZ17qBM25XfToTxHN2AG41EbWxio5e7KCK7cwX3ZNgmFac3TMHMJDd3cPTyWXm73k9CgtJK5bwitzJ51ohjUMFLPoFEfkXT4FZvV79as4CDJmBtW9wCJZxf7uBgN9tSdczi9EqTMJQeQ6Mcmc4KCB2FeLDqeiVHNTaS8r6pB45gJKAoz9yrFyU2psVqPXUyMtjpZ9aPZD1r7cD99gaP7MhEgSFumkZ5einuNPCbWcusqLk9wwVrFyghsT6XkwjR7v12tUGtH9po7G5jxeeDGYztEGUg4HkXGH1"
+    }
+  ],
+  "authentication": [
+    "did:web:vouch-protocol.com:conformance#key-1"
+  ],
+  "assertionMethod": [
+    "did:web:vouch-protocol.com:conformance#key-1",
+    "did:web:vouch-protocol.com:conformance#key-2"
+  ]
+}
