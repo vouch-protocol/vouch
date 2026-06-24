@@ -147,6 +147,17 @@ namespace vouch_core {
     string robotics_build_safety_record(bytes signer_seed, string params_json);
     [Throws=CoreError]
     string robotics_verify_safety_record(string credential_json, bytes public_key);
+
+    // Perception provenance (Phase 5.10).
+    string robotics_hash_frame(bytes frame);
+    [Throws=CoreError]
+    string robotics_perception_record(string params_json);
+    [Throws=CoreError]
+    string robotics_verify_perception_log(string entries_json, string? genesis_prev_hash);
+    [Throws=CoreError]
+    string robotics_build_perception(bytes robot_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_perception(string credential_json, bytes public_key, string? frame_mb);
 };
 
 dictionary Ed25519KeyPair {
