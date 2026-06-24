@@ -1,0 +1,57 @@
+name: SDK Tests
+
+# Compiles and tests the Go, Rust, and TypeScript SDKs on every PR. The existing
+# Tests workflow covers Python only; this closes the gap so a change that breaks
+# one of the other language implementations is caught in CI rather than after a
+# merge. Byte-identical interop is exercised by each SDK's robotics vector tests
+# against test-vectors/robotics/vector.json.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  go:
+    name: Go SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go-sidecar/go.mod
+      - name: Build and test
+        working-directory: go-sidecar
+        run: |
+          go build ./...
+          go test ./...
+
+  rust:
+    name: Rust core and facades
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Test the Rust core
+        run: cargo test --manifest-path core/vouch-core/Cargo.toml
+      - name: Build the UniFFI facade
+        run: cargo build --manifest-path core/uniffi/Cargo.toml
+      - name: Build the WebAssembly facade
+        run: cargo build --manifest-path core/wasm/Cargo.toml --target wasm32-unknown-unknown
+
+  typescript:
+    name: TypeScript SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install and test
+        working-directory: packages/sdk-ts
+        run: |
+          npm install
+          npm test
