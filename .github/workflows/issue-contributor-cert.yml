@@ -1,0 +1,118 @@
+name: Issue contributor certificate (manual)
+
+# Manually issue a Vouch Verified Contributor certificate for a contribution
+# that was not auto-issued on merge, for example a fix that landed another way,
+# or recognising someone who identified and resolved an issue. Renders the
+# certificate page at /c/<login>/<pr>/, lists them on /contributors, and
+# redeploys the site. Uses the same issuer key, scripts, and DID self-check as
+# the automatic verified-contributor workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      login:
+        description: "GitHub handle of the contributor"
+        required: true
+      pr:
+        description: "Number to anchor the certificate at /c/<login>/<pr>/ (the PR or issue)"
+        required: true
+      title:
+        description: "What the certificate recognises (shown on the page)"
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install vouch
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Mint credential
+        env:
+          VOUCH_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
+          VOUCH_DID: ${{ secrets.VOUCH_DID }}
+          LOGIN: ${{ inputs.login }}
+          PR: ${{ inputs.pr }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$VOUCH_PRIVATE_KEY" ] || [ -z "$VOUCH_DID" ]; then
+            echo "::error::Issuer key not configured (VOUCH_PRIVATE_KEY / VOUCH_DID)."
+            exit 1
+          fi
+          PARENT=""
+          if [ -f contributors/delegation.json ]; then
+            PARENT="--parent contributors/delegation.json"
+          fi
+          python scripts/mint_contributor_credential.py \
+            --subject "$LOGIN" \
+            --pr-url "https://github.com/${REPO}/pull/${PR}" \
+            --pr-number "$PR" \
+            --repo "$REPO" \
+            $PARENT \
+            --out credential.json
+
+      - name: Verify the badge against the published DID document
+        run: |
+          python - <<'PY'
+          import json, sys
+          from vouch import Verifier
+          cred = open("credential.json").read()
+          doc = json.load(open("website/public/contributors/did.json"))
+          pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
+          ok, _ = Verifier.verify_credential(cred, public_key=pub)
+          print("Badge self-verify against published DID:", ok)
+          if not ok:
+              print("::error::Minted badge does not verify against the published contributor DID."
+                    " Check that VOUCH_PRIVATE_KEY and VOUCH_DID hold the contributor issuer key.")
+              sys.exit(1)
+          PY
+
+      - name: Publish the certificate and list the contributor
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOGIN: ${{ inputs.login }}
+          PR: ${{ inputs.pr }}
+          TITLE: ${{ inputs.title }}
+        run: |
+          python scripts/render_contributor_cert.py \
+            --credential credential.json \
+            --login "$LOGIN" \
+            --pr "$PR" \
+            --title "$TITLE" \
+            --out "website/public/c/${LOGIN}/${PR}/index.html"
+          python - <<'PY'
+          import json, os
+          path = "website/src/data/contributors.json"
+          login = os.environ["LOGIN"]
+          pr = int(os.environ["PR"])
+          title = os.environ.get("TITLE", "")
+          data = json.load(open(path)) if os.path.exists(path) else []
+          if not any(c.get("login") == login and c.get("pr") == pr for c in data):
+              data.append({"login": login, "pr": pr, "title": title})
+              with open(path, "w") as f:
+                  json.dump(data, f, indent=2)
+                  f.write("\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "website/public/c/${LOGIN}/${PR}/index.html" website/src/data/contributors.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(contributors): certificate for @${LOGIN} (#${PR})"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push origin HEAD:main && break
+              sleep $((2 ** i))
+            done
+            gh workflow run deploy-website.yml --ref main
+          fi
