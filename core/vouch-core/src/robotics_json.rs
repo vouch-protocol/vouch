@@ -563,3 +563,77 @@ pub fn verify_safety_record(credential_json: &str, public_key: &[u8]) -> Result<
         public_key,
     )?))
 }
+
+// ---- perception provenance ------------------------------------------------
+
+/// Multibase SHA-256 of a raw sensor frame.
+pub fn hash_frame(frame: &[u8]) -> String {
+    r::hash_frame(frame)
+}
+
+/// Append one frame-provenance record to a log and return `{entry, head}`. The
+/// chain is stateless across calls: pass the previous head as `prevHash` (or the
+/// genesis). `params_json` is `{sensorId, modality, frameHash|frame_mb,
+/// timestamp, prevHash}` where `frame_mb` is a multibase-encoded raw frame.
+pub fn perception_record_entry(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let prev = gs(&p, "prevHash");
+    let mut log = r::PerceptionLog::new(Some(&prev));
+    let frame = match gos(&p, "frameMb") {
+        Some(mb) => Some(r::unmb64(&mb)?),
+        None => None,
+    };
+    let entry = log.record(
+        &gs(&p, "sensorId"),
+        &gs(&p, "modality"),
+        frame.as_deref(),
+        p.get("frameHash").and_then(|v| v.as_str()),
+        &gs(&p, "timestamp"),
+    )?;
+    Ok(json!({"entry": entry, "head": log.head()}).to_string())
+}
+
+pub fn verify_perception_log(
+    entries_json: &str,
+    genesis_prev_hash: Option<&str>,
+) -> Result<String> {
+    let entries = parse(entries_json)?;
+    let arr = entries
+        .as_array()
+        .ok_or_else(|| CoreError::Json("entries must be a JSON array".into()))?;
+    let res = r::verify_perception_log(arr, genesis_prev_hash);
+    Ok(json!({"ok": res.ok, "reason": res.reason}).to_string())
+}
+
+pub fn build_perception_attestation(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildPerception {
+        robot_did: gs(&p, "robotDid"),
+        sensor_id: gs(&p, "sensorId"),
+        modality: gs(&p, "modality"),
+        frame_hash: gs(&p, "frameHash"),
+        captured_at: gos(&p, "capturedAt"),
+        log_head: gos(&p, "logHead"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_perception_attestation(robot_seed, &params)?.to_string())
+}
+
+/// Verify a perception attestation. When `frame_mb` is a non-empty multibase
+/// string, the raw frame is decoded and its hash compared to the attested value.
+pub fn verify_perception_attestation(
+    credential_json: &str,
+    public_key: &[u8],
+    frame_mb: Option<&str>,
+) -> Result<String> {
+    let frame = match frame_mb {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(mb)?),
+        _ => None,
+    };
+    Ok(subj(r::verify_perception_attestation(
+        &parse(credential_json)?,
+        public_key,
+        frame.as_deref(),
+    )?))
+}

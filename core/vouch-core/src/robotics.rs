@@ -1843,6 +1843,212 @@ pub fn verify_safety_record(credential: &Value, public_key: &[u8]) -> Result<Opt
     Ok(Some(subject.clone()))
 }
 
+// ---------------------------------------------------------------------------
+// Perception provenance (Phase 5.10)
+// ---------------------------------------------------------------------------
+
+pub const PERCEPTION_TYPE: &str = "PerceptionProvenanceCredential";
+pub const PERCEPTION_LOG_VERSION: &str = "1.0";
+
+/// Standard sensor modalities: the interoperable set a verifier can rely on.
+/// Implementers MAY use additional values.
+pub const MODALITIES: [&str; 6] = ["camera", "lidar", "radar", "depth", "audio", "thermal"];
+
+/// Multibase (base64url) SHA-256 of a raw sensor frame. Only the hash travels in
+/// the log and the attestation; the frame stays wherever the deployment keeps it.
+pub fn hash_frame(frame: &[u8]) -> String {
+    mb64(&Sha256::digest(frame))
+}
+
+/// Append-only, plaintext, hash-linked log of sensor-frame provenance records.
+/// Reuses the black-box chain semantics ([`entry_hash`], [`genesis_prev_hash`]),
+/// so a perception log verifies the same way as the safety ledger. Each entry
+/// binds a sequence number, a timestamp, the sensor id, the modality, the frame
+/// hash, and the hash of the previous entry; the frames are not stored.
+pub struct PerceptionLog {
+    genesis: String,
+    entries: Vec<Value>,
+    head: String,
+}
+
+impl PerceptionLog {
+    /// Build a log. A `None` genesis uses [`genesis_prev_hash`].
+    pub fn new(genesis_prev_hash_override: Option<&str>) -> Self {
+        let genesis = genesis_prev_hash_override
+            .map(String::from)
+            .unwrap_or_else(genesis_prev_hash);
+        Self {
+            head: genesis.clone(),
+            genesis,
+            entries: Vec::new(),
+        }
+    }
+
+    /// Append one frame-provenance record, link it to the chain head, and return
+    /// the entry. Provide either the raw `frame` (it is hashed) or a precomputed
+    /// `frame_hash`, not both.
+    pub fn record(
+        &mut self,
+        sensor_id: &str,
+        modality: &str,
+        frame: Option<&[u8]>,
+        frame_hash: Option<&str>,
+        timestamp: &str,
+    ) -> Result<Value> {
+        if !MODALITIES.contains(&modality) {
+            return Err(CoreError::Json(format!(
+                "modality must be one of {MODALITIES:?}, got {modality:?}"
+            )));
+        }
+        if sensor_id.is_empty() {
+            return Err(CoreError::Json("sensor_id is required".into()));
+        }
+        if frame.is_some() && frame_hash.is_some() {
+            return Err(CoreError::Json(
+                "provide either frame or frame_hash, not both".into(),
+            ));
+        }
+        let resolved = match (frame, frame_hash) {
+            (Some(f), None) => hash_frame(f),
+            (None, Some(h)) if !h.is_empty() => h.to_string(),
+            _ => return Err(CoreError::Json("frame or frame_hash is required".into())),
+        };
+
+        let mut body = Map::new();
+        body.insert("version".into(), json!(PERCEPTION_LOG_VERSION));
+        body.insert("seq".into(), json!(self.entries.len() as u64));
+        body.insert("timestamp".into(), json!(timestamp));
+        body.insert("sensorId".into(), json!(sensor_id));
+        body.insert("modality".into(), json!(modality));
+        body.insert("frameHash".into(), json!(resolved));
+        body.insert("prevHash".into(), json!(self.head));
+        let h = entry_hash(&body)?;
+        body.insert("entryHash".into(), json!(h));
+        self.head = h;
+        let entry = Value::Object(body);
+        self.entries.push(entry.clone());
+        Ok(entry)
+    }
+
+    pub fn head(&self) -> &str {
+        &self.head
+    }
+
+    pub fn genesis(&self) -> &str {
+        &self.genesis
+    }
+
+    pub fn entries(&self) -> &[Value] {
+        &self.entries
+    }
+}
+
+/// Verify the hash chain over the perception log entries. Tamper-evident. Shares
+/// the black-box chain verifier so every hash-linked log verifies identically.
+pub fn verify_perception_log(
+    entries: &[Value],
+    genesis_prev_hash_override: Option<&str>,
+) -> ChainResult {
+    verify_blackbox_chain(entries, genesis_prev_hash_override)
+}
+
+/// Parameters for [`build_perception_attestation`]. The robot self-issues the
+/// credential with its own Ed25519 seed. `captured_at`, when `None`, defaults to
+/// `valid_from`. When `log_head` is supplied, the attestation also anchors the
+/// segment of frames up to that chain head.
+#[derive(Debug, Clone)]
+pub struct BuildPerception {
+    pub robot_did: String,
+    pub sensor_id: String,
+    pub modality: String,
+    pub frame_hash: String,
+    pub captured_at: Option<String>,
+    pub log_head: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `PerceptionProvenanceCredential` attesting that a robot's sensor
+/// captured a specific frame. Software frame-hash signing: the robot signs the
+/// provenance of the captured frame with its own key.
+pub fn build_perception_attestation(robot_seed: &[u8], params: &BuildPerception) -> Result<Value> {
+    if !MODALITIES.contains(&params.modality.as_str()) {
+        return Err(CoreError::Json(format!(
+            "modality must be one of {MODALITIES:?}, got {:?}",
+            params.modality
+        )));
+    }
+    if params.frame_hash.is_empty() {
+        return Err(CoreError::Json("frame_hash is required".into()));
+    }
+
+    let captured = params
+        .captured_at
+        .clone()
+        .unwrap_or_else(|| params.valid_from.clone());
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("sensorId".into(), json!(params.sensor_id));
+    subject.insert("modality".into(), json!(params.modality));
+    subject.insert("frameHash".into(), json!(params.frame_hash));
+    subject.insert("capturedAt".into(), json!(captured));
+    if let Some(head) = &params.log_head {
+        subject.insert("logHead".into(), json!(head));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", PERCEPTION_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.robot_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.robot_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), robot_seed, &opts)
+}
+
+/// Verify a `PerceptionProvenanceCredential`: the robot's proof and, when the raw
+/// `frame` is supplied, that its hash reproduces the attested `frameHash`. Returns
+/// the credentialSubject on success, `None` if invalid.
+pub fn verify_perception_attestation(
+    credential: &Value,
+    public_key: &[u8],
+    frame: Option<&[u8]>,
+) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), PERCEPTION_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, public_key)? {
+        return Ok(None);
+    }
+    let subject = match credential
+        .get("credentialSubject")
+        .and_then(|s| s.as_object())
+    {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let frame_hash = subject.get("frameHash").and_then(|v| v.as_str());
+    let modality = subject.get("modality").and_then(|v| v.as_str());
+    match (frame_hash, modality) {
+        (Some(fh), Some(m)) if !fh.is_empty() && MODALITIES.contains(&m) => {}
+        _ => return Ok(None),
+    }
+    if let Some(f) = frame {
+        if hash_frame(f) != frame_hash.unwrap_or("") {
+            return Ok(None);
+        }
+    }
+    Ok(Some(Value::Object(subject.clone())))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2685,5 +2891,192 @@ mod tests {
         assert!(
             !check_credential_status(&with_status, &clear_list, STATUS_PURPOSE_REVOCATION).unwrap()
         );
+    }
+
+    // Cross-language interop: Rust reproduces the exact frame hash Python pinned.
+    #[test]
+    fn frame_hash_matches_interop_vector() {
+        let vector = load_vector();
+        let sample_frame: Vec<u8> = (0u8..64).collect();
+        let got = hash_frame(&sample_frame);
+        assert_eq!(got, vector["expected_frame_hash"].as_str().unwrap());
+        assert_eq!(got, "u_eq5rPNxA2K9JljNyaKej5x1f8-YEWA6jER80dkVEQg");
+    }
+
+    // Cross-language interop: Rust reproduces the exact hash-linked perception log
+    // Python pinned from the same fixed frames and timestamps.
+    #[test]
+    fn perception_log_matches_interop_vector() {
+        let vector = load_vector();
+        let sample_frame: Vec<u8> = (0u8..64).collect();
+        let mut log = PerceptionLog::new(None);
+        log.record(
+            "cam-front",
+            "camera",
+            Some(&sample_frame),
+            None,
+            "2026-01-01T00:00:00Z",
+        )
+        .unwrap();
+        log.record(
+            "lidar-top",
+            "lidar",
+            None,
+            Some(&hash_frame(b"scan-0")),
+            "2026-01-01T00:00:01Z",
+        )
+        .unwrap();
+
+        assert_eq!(
+            Value::Array(log.entries().to_vec()),
+            vector["perception_log_entries"]
+        );
+        assert_eq!(
+            log.head(),
+            vector["expected_perception_log_head"].as_str().unwrap()
+        );
+        assert!(verify_perception_log(log.entries(), None).ok);
+    }
+
+    #[test]
+    fn perception_record_validation_and_tamper() {
+        let mut log = PerceptionLog::new(None);
+        // Unknown modality rejected.
+        assert!(log
+            .record("cam", "sonar", Some(b"x"), None, "2026-01-01T00:00:00Z")
+            .is_err());
+        // Both frame and frame_hash rejected.
+        assert!(log
+            .record(
+                "cam",
+                "camera",
+                Some(b"x"),
+                Some("uABC"),
+                "2026-01-01T00:00:00Z"
+            )
+            .is_err());
+        // Neither frame nor frame_hash rejected.
+        assert!(log
+            .record("cam", "camera", None, None, "2026-01-01T00:00:00Z")
+            .is_err());
+        // Empty sensor id rejected.
+        assert!(log
+            .record("", "camera", Some(b"x"), None, "2026-01-01T00:00:00Z")
+            .is_err());
+
+        log.record(
+            "cam",
+            "camera",
+            Some(b"frame-0"),
+            None,
+            "2026-01-01T00:00:00Z",
+        )
+        .unwrap();
+        log.record(
+            "cam",
+            "camera",
+            Some(b"frame-1"),
+            None,
+            "2026-01-01T00:00:01Z",
+        )
+        .unwrap();
+        assert!(verify_perception_log(log.entries(), None).ok);
+
+        // Tamper detection in the chain.
+        let mut entries = log.entries().to_vec();
+        entries[0]["frameHash"] = json!("uTAMPERED");
+        assert!(!verify_perception_log(&entries, None).ok);
+    }
+
+    #[test]
+    fn perception_attestation_build_verify_and_tamper() {
+        let seed = [24u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let did = "did:web:robot.example.com";
+        let frame = b"sensor-frame-bytes";
+        let frame_hash = hash_frame(frame);
+
+        let cred = build_perception_attestation(
+            &seed,
+            &BuildPerception {
+                robot_did: did.into(),
+                sensor_id: "cam-front".into(),
+                modality: "camera".into(),
+                frame_hash: frame_hash.clone(),
+                captured_at: Some("2026-01-01T00:00:00Z".into()),
+                log_head: Some("uHEAD".into()),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        // Verify the proof and the embedded provenance, and recompute the frame.
+        let subject = verify_perception_attestation(&cred, &kp.public_key(), Some(frame))
+            .unwrap()
+            .expect("perception attestation verifies");
+        assert_eq!(subject["sensorId"], json!("cam-front"));
+        assert_eq!(subject["frameHash"], json!(frame_hash));
+        assert_eq!(subject["logHead"], json!("uHEAD"));
+
+        // Verify without the raw frame still passes (proof only).
+        assert!(verify_perception_attestation(&cred, &kp.public_key(), None)
+            .unwrap()
+            .is_some());
+
+        // A different frame than the one attested is rejected.
+        assert!(
+            verify_perception_attestation(&cred, &kp.public_key(), Some(b"other-frame"))
+                .unwrap()
+                .is_none()
+        );
+
+        // Tampered subject fails the proof.
+        let mut tampered = cred.clone();
+        tampered["credentialSubject"]["sensorId"] = json!("cam-rear");
+        assert!(
+            verify_perception_attestation(&tampered, &kp.public_key(), None)
+                .unwrap()
+                .is_none()
+        );
+
+        // Wrong type rejected.
+        let mut wrong = cred.clone();
+        wrong["type"] = json!(["VerifiableCredential"]);
+        assert!(
+            verify_perception_attestation(&wrong, &kp.public_key(), None)
+                .unwrap()
+                .is_none()
+        );
+
+        // Bad modality and missing frame_hash rejected at build time.
+        assert!(build_perception_attestation(
+            &seed,
+            &BuildPerception {
+                robot_did: did.into(),
+                sensor_id: "s".into(),
+                modality: "sonar".into(),
+                frame_hash: frame_hash.clone(),
+                captured_at: None,
+                log_head: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .is_err());
+        assert!(build_perception_attestation(
+            &seed,
+            &BuildPerception {
+                robot_did: did.into(),
+                sensor_id: "s".into(),
+                modality: "camera".into(),
+                frame_hash: String::new(),
+                captured_at: None,
+                log_head: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .is_err());
     }
 }

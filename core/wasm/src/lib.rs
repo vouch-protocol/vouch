@@ -610,3 +610,36 @@ pub fn robotics_verify_safety_record(
 ) -> Result<String, JsError> {
     rjson::verify_safety_record(credential_json, &b64d(public_b64)?).map_err(jerr)
 }
+
+// Perception provenance (Phase 5.10).
+#[wasm_bindgen(js_name = roboticsHashFrame)]
+pub fn robotics_hash_frame(frame_b64: &str) -> Result<String, JsError> {
+    Ok(rjson::hash_frame(&b64d(frame_b64)?))
+}
+#[wasm_bindgen(js_name = roboticsPerceptionRecord)]
+pub fn robotics_perception_record(params_json: &str) -> Result<String, JsError> {
+    rjson::perception_record_entry(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyPerceptionLog)]
+pub fn robotics_verify_perception_log(
+    entries_json: &str,
+    genesis_prev_hash: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_perception_log(entries_json, genesis_prev_hash.as_deref()).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildPerception)]
+pub fn robotics_build_perception(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_perception_attestation(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyPerception)]
+pub fn robotics_verify_perception(
+    credential_json: &str,
+    public_b64: &str,
+    frame_b64: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_perception_attestation(credential_json, &b64d(public_b64)?, frame_b64.as_deref())
+        .map_err(jerr)
+}

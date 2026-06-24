@@ -373,6 +373,59 @@ claim a cleaner history than the ledger it anchors to.
 
 ---
 
+## 10. Perception provenance
+
+`vouch.robotics.perception`
+
+What it is: a signed record of the provenance of each captured sensor frame,
+created at capture. Each record binds the frame's hash (multibase SHA-256), the
+sensor id, the modality (camera, lidar, radar, depth, audio, thermal), the
+capture time, and the robot's DID. The records are hash-linked into an
+append-only `PerceptionLog`, so the sequence of what the robot perceived is
+tamper-evident. The frames themselves are not stored, only their hashes.
+
+The problem it closes: "what did the robot actually see, and in what order, when
+it acted?" Raw sensor logs can be edited, reordered, or substituted after the
+fact, and a frame can be swapped for one the robot never captured. Perception
+provenance makes the captured stream cryptographic: every frame is bound to a
+hash at capture, the order is fixed by the hash-link, and a verifier holding a
+frame can confirm it is the one the robot recorded.
+
+How it works: `hash_frame` computes the multibase SHA-256 of the raw frame
+bytes. Each entry binds that hash to the sensor id, modality, capture time, and
+robot DID, and links to the previous entry, so `verify_perception_log` catches
+any altered or reordered entry. A `PerceptionProvenanceCredential`
+(`build_perception_attestation`) attests a single frame, or a segment of the
+stream via the log head, and `verify_perception_attestation` checks it. A
+verifier that also holds the frame recomputes its hash to confirm it matches the
+attested one.
+
+The API: `hash_frame`, `PerceptionLog` (append, entries, head),
+`verify_perception_log`, `build_perception_attestation`,
+`verify_perception_attestation`, and `MODALITIES` (the allowed modality set:
+camera, lidar, radar, depth, audio, thermal).
+
+Worked example (Python):
+
+```python
+from vouch.robotics import perception
+
+log = perception.PerceptionLog()
+h = perception.hash_frame(frame_bytes)                         # multibase SHA-256
+entry = log.append(sensor_id="cam-0", modality="camera", frame_hash=h, robot_did=robot_did)
+assert perception.verify_perception_log(log.entries()).ok
+att = perception.build_perception_attestation(robot_signer, log.head())
+ok, subject = perception.verify_perception_attestation(att, robot_signer.public_key())
+```
+
+Security boundary: log verification fails on any altered or reordered entry. The
+attestation fails on a wrong type or an invalid proof. A verifier holding the
+frame and recomputing its hash detects a substituted frame, since the recomputed
+hash no longer matches the attested one. Only hashes are recorded, so the log
+proves what was perceived without retaining the frames themselves.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -381,9 +434,10 @@ physical limits before every move (3), negotiates bounded cooperation with robot
 it meets (4), records an encrypted tamper-evident log and honors a verifiable
 kill switch (5), presents a scannable passport anyone can check offline (6), keeps
 proving it is live and in-envelope with self-signed heartbeats (7), can have any
-one credential or its whole DID revoked (8), and carries a tamper-evident safety
-record that travels with it (9). Every artifact is the same Verifiable Credential
-format, so one verifier and one trust model cover all nine.
+one credential or its whole DID revoked (8), carries a tamper-evident safety
+record that travels with it (9), and signs the provenance of every sensor frame
+it captures (10). Every artifact is the same Verifiable Credential format, so one
+verifier and one trust model cover all ten.
 
 ## Quick answers
 
@@ -406,16 +460,20 @@ format, so one verifier and one trust model cover all nine.
   outright? Yes, per-credential status plus whole-DID revocation (8).
 - Can a robot carry a tamper-evident safety record across owners, insurers, and
   regulators? Yes, the accountable safety record (9).
+- Can a robot prove what it actually perceived, and in what order, when it acted?
+  Yes, perception provenance: a hash-linked log of signed frame records, with a
+  frame holder able to recompute the hash and confirm it (10).
 
 ## Status
 
-All nine capabilities are implemented and tested in Python, TypeScript, Go, and
+All ten capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the
 hardware-root binding and the config hash. The liveness heartbeat builds on the
 agent Heartbeat Protocol, the revocation paths reuse `vouch.status_list` and
-`vouch.revocation`, and the safety record reuses the black-box chain semantics.
+`vouch.revocation`, the safety record reuses the black-box chain semantics, and
+perception provenance reuses the same hash-linked log semantics.
 The novel methods are published as open defensive disclosures: PAD-064
 (hardware-rooted identity), PAD-067 (robot-to-robot handshake), PAD-069
 (confidential tamper-evident black box), and PAD-070 (scannable offline passport).
