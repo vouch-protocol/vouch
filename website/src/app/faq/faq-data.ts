@@ -487,6 +487,35 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: PERCEPTION PROVENANCE
+  // =====================================================================
+  {
+    id: 'robotics-perception',
+    audience: 'Robotics: perception',
+    title: 'Perception provenance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can a robot prove what its cameras and lidar actually saw?',
+        a: `Yes. At capture, the robot signs a \`PerceptionProvenanceCredential\` binding the frame's hash, the sensor id, the modality, and the capture time to its DID. A verifier that holds the frame recomputes its hash and checks it matches, so a substituted or edited frame is detectable.`,
+        helpLinks: [{ label: 'Perception provenance guide', href: '/help/#robotics-perception' }],
+        meta: 'Shipped - vouch.robotics.perception',
+      },
+      {
+        q: 'How is the sequence of frames kept tamper-evident?',
+        a: `Each frame's provenance record is hash-linked to the previous one in a \`PerceptionLog\`, the same append-only chain the black box uses. Altering or dropping a frame breaks the chain, and \`verify_perception_log\` detects it. An attestation can carry the chain head to anchor a whole segment of frames.`,
+        helpLinks: [{ label: 'Perception provenance guide', href: '/help/#robotics-perception' }],
+        meta: 'Shipped - vouch.robotics.perception',
+      },
+      {
+        q: 'Are the raw frames stored in the credential?',
+        a: `No. Only the frame hash and the metadata are carried, so the log stays small and the raw sensor data lives wherever the deployment keeps it. The hash is enough to prove, later, that a given frame is the one the robot attested.`,
+        meta: 'Shipped - vouch.robotics.perception',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

@@ -2305,6 +2305,32 @@ ok, subject = safety_record.verify_safety_record(rec, authority_signer.public_ke
 Security boundary: \`verify_safety_log\` detects any altered or removed entry (the hash chain breaks). The record summary is anchored to the ledger head, so a summary that understates the log no longer matches its chain. \`verify_safety_record\` fails closed on a wrong type, an invalid proof, or a malformed summary.
 `,
       },
+      {
+        id: 'robotics-perception',
+        title: 'Perception provenance',
+        summary: 'Sign what a robot sensor captured so it can prove what it saw and a substituted frame is detectable.',
+        body: `
+A \`PerceptionProvenanceCredential\` lets a robot prove what its sensors captured: the robot signs, at capture time, a record binding the frame's hash, the sensor, the modality, and the time to its DID.
+
+The problem it closes: a robot acts on what its sensors report, and that evidence is exactly what gets spoofed or disputed after the fact. Signing the frame's provenance at capture makes "this is what I saw" verifiable, and makes a substituted or edited frame detectable.
+
+How it works: \`hash_frame\` computes the multibase SHA-256 of the raw frame. A \`PerceptionLog\` hash-links each frame-provenance record into an append-only chain (the same chain the black box uses), so the sequence of perceived frames is tamper-evident. \`build_perception_attestation\` signs an attestation for a frame, optionally carrying the log head to anchor a whole segment. Only frame hashes are stored, never the raw frames.
+
+\`\`\`python
+from vouch.robotics import perception
+
+log = perception.PerceptionLog()
+entry = log.record(sensor_id="cam-front", modality="camera", frame=frame_bytes)
+att = perception.build_perception_attestation(robot_signer, robot_did=robot_did,
+    sensor_id="cam-front", modality="camera", frame_hash=entry["frameHash"],
+    log_head=log.head())
+ok, subject = perception.verify_perception_attestation(att, robot_signer.public_key(),
+    frame=frame_bytes)                                # recomputes and compares the hash
+\`\`\`
+
+Security boundary: \`verify_perception_attestation\` fails closed on a wrong type, an invalid proof, an unknown modality, or, when the frame is supplied, a hash that does not reproduce. \`verify_perception_log\` detects any altered or dropped frame in the chain. The open layer signs frame hashes in software, so it proves authorship and integrity of the recorded frame, not that the frame is a live hardware capture.
+`,
+      },
     ],
   },
 ];
