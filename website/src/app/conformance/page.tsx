@@ -73,7 +73,7 @@ const LEVELS: Level[] = [
 export default function ConformancePage() {
     return (
         <main className="min-h-screen bg-parchment text-ink">
-            <div className="max-w-prose-wide mx-auto px-6 py-16 md:py-24">
+            <div className="container-wide py-16 md:py-24">
                 <header className="mb-12">
                     <p className="eyebrow text-burgundy mb-3">Specification §17</p>
                     <h1 className="font-serif text-[2.2rem] md:text-[2.8rem] leading-tight tracking-tight mb-4">
@@ -199,7 +199,7 @@ export default function ConformancePage() {
                         above: the badge is the claim, the declaration is the proof.
                     </p>
                     <p className="text-ink-soft text-[0.92rem] mb-4">Each level has its own badge. Copy the one you meet:</p>
-                    <div className="space-y-7 max-w-2xl mb-7">
+                    <div className="grid md:grid-cols-3 gap-6 mb-8">
                         <div>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src="https://img.shields.io/badge/Vouch_Protocol-L1_Conformant-9B4051?style=flat&labelColor=333" alt="Vouch Protocol L1 Conformant badge" className="h-5 w-auto mb-2" />
@@ -241,7 +241,7 @@ export default function ConformancePage() {
                         Vouch-verified badge: a signed credential, unique to your implementation, hosted by
                         Vouch and re-checkable by anyone. The badge is the proof, no self-declaration needed.
                     </p>
-                    <div className="bg-parchment-warm border border-rule p-6 md:p-8 max-w-xl">
+                    <div className="bg-parchment-warm border border-rule p-6 md:p-8 max-w-3xl">
                         <svg
                             role="img"
                             aria-label="Vouch Verified, L2 Conformant badge"
