@@ -186,6 +186,26 @@ ok, _ = verify_safety_log(log.entries())             # tamper-evident
 record = build_safety_record(authority_signer, robot_did=robot, summary=log.summarize())
 ```
 
-Sections 5.7 to 5.9 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.10 Perception provenance (`vouch.robotics.perception`)
+
+A robot signs the provenance of each captured sensor frame at capture: a record
+binding the frame's hash, the sensor id, the modality (camera, lidar, radar,
+depth, audio, thermal), the capture time, and the robot's DID. Records hash-link
+into an append-only `PerceptionLog`, so the sequence of what the robot perceived
+is tamper-evident, and a `PerceptionProvenanceCredential` attests a frame (or a
+segment, via the log head). Only frame hashes are stored, never the raw frames; a
+verifier holding the frame recomputes its hash to confirm it.
+
+```python
+from vouch.robotics import PerceptionLog, build_perception_attestation, hash_frame
+
+log = PerceptionLog()
+entry = log.record(sensor_id="cam-front", modality="camera", frame=frame_bytes)
+att = build_perception_attestation(robot_signer, robot_did=robot, sensor_id="cam-front",
+                                   modality="camera", frame_hash=entry["frameHash"],
+                                   log_head=log.head())
+```
+
+Sections 5.7 to 5.10 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

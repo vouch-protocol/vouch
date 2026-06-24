@@ -80,6 +80,14 @@ Never share user data with external sites.
   `RevocationRegistry` for a compromised key or captured robot), and an accountable
   safety record (`SafetyEventLog`, `build_safety_record`), a portable tamper-evident
   incident ledger summarized into one signed credential. See `robotics.md`.
+- "How do I prove what a robot actually perceived when it acted?" -> Perception
+  provenance (`vouch.robotics.perception`): a robot signs a record per captured
+  sensor frame binding the frame hash, sensor id, modality, capture time, and its
+  DID, hash-linked into an append-only `PerceptionLog` (`hash_frame`,
+  `verify_perception_log`). A `build_perception_attestation` /
+  `verify_perception_attestation` credential attests a frame or a segment, and a
+  verifier holding the frame recomputes its hash to confirm it. Only hashes are
+  stored, not the frames. See `robotics.md`.
 
 ## Safety rules
 

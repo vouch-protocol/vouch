@@ -576,4 +576,41 @@ pub fn robotics_verify_safety_record(
     Ok(rjson::verify_safety_record(&credential_json, &public_key)?)
 }
 
+// Perception provenance (Phase 5.10).
+pub fn robotics_hash_frame(frame: Vec<u8>) -> String {
+    rjson::hash_frame(&frame)
+}
+pub fn robotics_perception_record(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::perception_record_entry(&params_json)?)
+}
+pub fn robotics_verify_perception_log(
+    entries_json: String,
+    genesis_prev_hash: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_perception_log(
+        &entries_json,
+        genesis_prev_hash.as_deref(),
+    )?)
+}
+pub fn robotics_build_perception(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_perception_attestation(
+        &robot_seed,
+        &params_json,
+    )?)
+}
+pub fn robotics_verify_perception(
+    credential_json: String,
+    public_key: Vec<u8>,
+    frame_mb: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_perception_attestation(
+        &credential_json,
+        &public_key,
+        frame_mb.as_deref(),
+    )?)
+}
+
 uniffi::include_scaffolding!("vouch_core");

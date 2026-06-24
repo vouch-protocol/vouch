@@ -20,10 +20,12 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from vouch import Signer
 from vouch.robotics import (
     MotionCollector,
+    PerceptionLog,
     SafetyEventLog,
     SoftwareRootOfTrust,
     build_status_list_entry,
     config_hash,
+    hash_frame,
     mint_robot_identity,
 )
 
@@ -79,17 +81,27 @@ def main():
         status_list_index=42,
     )
 
+    # Perception: a deterministic frame hash and a hash-linked perception log.
+    sample_frame = bytes(range(64))
+    plog = PerceptionLog()
+    plog.record(sensor_id="cam-front", modality="camera", frame=sample_frame,
+                timestamp="2026-01-01T00:00:00Z")
+    plog.record(sensor_id="lidar-top", modality="lidar", frame_hash=hash_frame(b"scan-0"),
+                timestamp="2026-01-01T00:00:01Z")
+    perception_entries = plog.entries()
+
     doc = {
         "description": (
             "Robotics interop vector. Pins the deterministic byte-level "
             "computations so other languages reproduce them: the hardware-root "
             "binding (RobotIdentityCredential), the config hash "
             "(ModelProvenanceAttestation), the motion digest (liveness), the "
-            "hash-linked safety ledger and its summary (safety_record), and the "
-            "credentialStatus entry (revocation). Credential proof values are not "
-            "pinned because the proof carries a wall-clock created timestamp."
+            "hash-linked safety ledger and its summary (safety_record), the "
+            "credentialStatus entry (revocation), and the frame hash plus the "
+            "hash-linked perception log (perception). Credential proof values are "
+            "not pinned because the proof carries a wall-clock created timestamp."
         ),
-        "version": "1.1",
+        "version": "1.2",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -100,6 +112,9 @@ def main():
         "expected_safety_log_head": log.head(),
         "expected_safety_summary": safety_summary,
         "expected_credential_status_entry": status_entry,
+        "expected_frame_hash": hash_frame(sample_frame),
+        "perception_log_entries": perception_entries,
+        "expected_perception_log_head": plog.head(),
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:

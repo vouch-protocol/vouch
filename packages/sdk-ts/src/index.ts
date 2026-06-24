@@ -204,6 +204,20 @@ export type {
   AppendEventOptions,
   BuildSafetyRecordOptions,
 } from './robotics/safety_record';
+export {
+  PERCEPTION_TYPE,
+  PERCEPTION_LOG_VERSION,
+  MODALITIES,
+  hashFrame,
+  PerceptionLog,
+  verifyPerceptionLog,
+  buildPerceptionAttestation,
+  verifyPerceptionAttestation,
+} from './robotics/perception';
+export type {
+  RecordFrameOptions,
+  BuildPerceptionAttestationOptions,
+} from './robotics/perception';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
