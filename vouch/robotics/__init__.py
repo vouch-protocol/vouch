@@ -13,6 +13,7 @@ robots and embodied agents:
   - liveness: robot heartbeat with safety-envelope conformance and trust decay.
   - revocation: whole-DID kill and surgical per-credential revocation.
   - safety_record: incident/near-miss ledger + portable safety-record credential.
+  - perception: signed, tamper-evident provenance for captured sensor frames.
 """
 
 from .capability import (
@@ -80,6 +81,14 @@ from .safety_record import (
     verify_safety_log,
     verify_safety_record,
 )
+from .perception import (
+    MODALITIES,
+    PerceptionLog,
+    build_perception_attestation,
+    hash_frame,
+    verify_perception_attestation,
+    verify_perception_log,
+)
 
 __all__ = [
     # identity
@@ -129,6 +138,13 @@ __all__ = [
     "check_credential_status",
     "build_status_list_credential",
     "build_status_list_entry",
+    # perception provenance (signed sensor-frame provenance)
+    "hash_frame",
+    "PerceptionLog",
+    "verify_perception_log",
+    "build_perception_attestation",
+    "verify_perception_attestation",
+    "MODALITIES",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
