@@ -21,6 +21,9 @@ The Python reference adds three robotics capabilities on the same
   BitstringStatusList plus whole-DID kill via the existing registry.
 - `vouch.robotics.safety_record`: a tamper-evident incident and near-miss ledger
   summarized into a portable, signed safety-record credential.
+- `vouch.robotics.perception`: signed, hash-linked provenance for captured sensor
+  frames (camera, lidar, audio, and more), so a robot can prove what its sensors
+  saw and a substituted frame is detectable.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by
