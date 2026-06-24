@@ -1,6 +1,6 @@
 {
-  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), and the credentialStatus entry (revocation). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
-  "version": "1.1",
+  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
+  "version": "1.2",
   "robot_public_key_jwk": {
     "kty": "OKP",
     "crv": "Ed25519",
@@ -38,10 +38,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-20T09:08:46Z",
+      "created": "2026-06-24T03:18:58Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "zMdmocAVbkNKZDdnXiS5qcR6MsEuJP99wDNCPvKU2gHtFzaNgGBocPontceLv8Q2VDgcQm4rjfGQGZZ9PVMvCbtp"
+      "proofValue": "z4MnB9VNJTto8J1JQB2kinFSA8r1EQ6mcn9KDLpvXzZrxXyC7wucVL7XUfwBNXoWfEdbR7CvNsYHU51YFAngkGYC2"
     }
   },
   "config": {
@@ -118,5 +118,29 @@
     "statusPurpose": "revocation",
     "statusListIndex": "42",
     "statusListCredential": "https://fleet.example.com/status/1"
-  }
+  },
+  "expected_frame_hash": "u_eq5rPNxA2K9JljNyaKej5x1f8-YEWA6jER80dkVEQg",
+  "perception_log_entries": [
+    {
+      "version": "1.0",
+      "seq": 0,
+      "timestamp": "2026-01-01T00:00:00Z",
+      "sensorId": "cam-front",
+      "modality": "camera",
+      "frameHash": "u_eq5rPNxA2K9JljNyaKej5x1f8-YEWA6jER80dkVEQg",
+      "prevHash": "uAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "entryHash": "uofeXs5oJdkyRvNREYeiuJalxoDfNh-Nz-OiC8idlJSg"
+    },
+    {
+      "version": "1.0",
+      "seq": 1,
+      "timestamp": "2026-01-01T00:00:01Z",
+      "sensorId": "lidar-top",
+      "modality": "lidar",
+      "frameHash": "uyuhEtHKI_ibzL6atwgdfBXiEHaYkDHIIKjI3rI1fiuM",
+      "prevHash": "uofeXs5oJdkyRvNREYeiuJalxoDfNh-Nz-OiC8idlJSg",
+      "entryHash": "uEzDzSib5gRep75mxX_YPm-B16VLCs5-jLh4J2oojntM"
+    }
+  ],
+  "expected_perception_log_head": "uEzDzSib5gRep75mxX_YPm-B16VLCs5-jLh4J2oojntM"
 }
