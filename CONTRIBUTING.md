@@ -47,21 +47,94 @@ Please see our [Security Policy](SECURITY.md) for reporting security issues. **D
 
 ## Development Setup
 
+### Option A — GitHub Codespaces (recommended)
+
+The repository ships a devcontainer, so Codespaces gives you a ready-made
+environment with no local build dependencies to worry about.
+
+1. Click **Code → Open with Codespaces → New codespace** on the repository page.
+2. Wait for the container to build. Dependencies are installed automatically, and the terminal prints the test command when ready.
+3. When the terminal attaches, run the test suite:
+
 ```bash
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/vouch.git
-cd vouch
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -e ".[dev]"
-
-# Run tests
 pytest tests/ -v
 ```
+
+A passing run ends with a summary line such as:
+
+```
+===== X passed, 0 failed in X.XXs =====
+```
+
+That's it — you're ready to make changes.
+
+---
+
+### Option B — Local setup
+
+**Prerequisites:** Python 3.9 or newer.
+
+**1. Clone your fork**
+
+```bash
+git clone https://github.com/YOUR_USERNAME/vouch.git
+cd vouch
+```
+
+**2. Create and activate a virtual environment**
+
+```bash
+python -m venv venv
+# macOS / Linux
+source venv/bin/activate
+# Windows (PowerShell)
+venv\Scripts\Activate.ps1
+```
+
+**3. Install development dependencies**
+
+The `[dev]` extra installs `pytest` and the other tools needed to run tests locally.
+
+```bash
+pip install -e ".[dev]"
+```
+
+**4. Run the test suite**
+
+```bash
+pytest tests/ -v
+```
+
+A passing run ends with a summary line such as:
+
+```
+===== X passed, 0 failed in X.XXs =====
+```
+
+---
+
+### Troubleshooting
+ 
+**`_cffi_backend` / cryptography build error**
+ 
+If you see an error referencing `_cffi_backend` or a failed build of the
+`cryptography` package, pip likely fell back to compiling it from source.
+Upgrading pip first usually pulls a prebuilt wheel and avoids the compile step:
+ 
+```bash
+pip install --upgrade pip
+pip install -e ".[dev]"
+```
+ 
+If the error persists, install the system build tools and retry:
+ 
+```bash
+# Debian / Ubuntu
+sudo apt-get install build-essential libffi-dev python3-dev
+```
+ 
+If you'd rather not deal with local build dependencies at all, switch to
+**Option A (Codespaces)** — the devcontainer has everything pre-installed.
 
 ## Pull Request Process
 
