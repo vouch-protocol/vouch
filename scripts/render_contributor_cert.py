@@ -11,6 +11,7 @@ import argparse
 import html
 import json
 import os
+from datetime import datetime
 from urllib.parse import quote
 
 ISSUES_URL = "https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22"
@@ -68,6 +69,20 @@ ICON_BLUESKY = (
 )
 
 
+def fmt_date(iso: str) -> str:
+    try:
+        return datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%-d %b %Y")
+    except Exception:
+        return iso or ""
+
+
+def fmt_time(iso: str) -> str:
+    try:
+        return datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%H:%M UTC")
+    except Exception:
+        return ""
+
+
 def esc(s: object) -> str:
     return html.escape(str(s)) if s is not None else ""
 
@@ -88,6 +103,8 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     root = chain[0].get("issuer", "") if chain else ""
     issuer = cred.get("issuer", "")
     proof_value = cred.get("proof", {}).get("proofValue", "")
+    issued = fmt_date(cred.get("validFrom", ""))
+    issued_time = fmt_time(cred.get("validFrom", ""))
     repo = intent.get("repository", "vouch-protocol/vouch")
     pr_url = f"https://github.com/{repo}/pull/{pr}" if pr else ""
     cert_url = f"https://vouch-protocol.com/c/{login}/{pr}".rstrip("/")
@@ -221,8 +238,9 @@ html, body {{ margin: 0; padding: 0; }}
 body {{ background: var(--parchment); color: var(--ink); font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.6; padding: 64px 24px; min-height: 100vh; }}
 .frame {{ max-width: 720px; margin: 0 auto; }}
 .eyebrow {{ font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }}
-.seal-wrap {{ display: flex; justify-content: center; margin-bottom: 40px; }}
+.seal-wrap {{ display: flex; justify-content: center; margin-bottom: 16px; }}
 .seal-img {{ width: 200px; height: 200px; object-fit: contain; }}
+.issued-line {{ text-align: center; font-family: "JetBrains Mono", monospace; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 40px; }}
 h1.title {{ text-align: center; font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 1.5rem; line-height: 1.3; margin: 0 0 12px; letter-spacing: -0.01em; }}
 .byline {{ text-align: center; color: var(--ink-soft); margin: 0 0 48px; font-style: italic; }}
 .byline a {{ color: var(--burgundy); text-decoration: none; }}
@@ -262,8 +280,9 @@ h1.title a {{ color: inherit; text-decoration: none; }}
   .frame {{ max-width: none; margin: 0; min-height: calc(100vh - 0.5cm); padding: 30px 56px 22px; border: 2px double var(--burgundy); display: flex; flex-direction: column; }}
   .frame > section {{ flex: 1 1 auto; display: flex; flex-direction: column; }}
   .cert-body {{ flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-evenly; }}
-  .seal-wrap {{ margin-bottom: 24px; }}
+  .seal-wrap {{ margin-bottom: 10px; }}
   .seal-img {{ width: 150px; height: 150px; }}
+  .issued-line {{ font-size: 0.66rem; margin-bottom: 22px; }}
   h1.title {{ font-size: 1.2rem; margin-bottom: 6px; }}
   .byline {{ margin-bottom: 26px; }}
   .section {{ margin: 0; }}
@@ -280,6 +299,7 @@ h1.title a {{ color: inherit; text-decoration: none; }}
   <div class="seal-wrap">
     <img class="seal-img" src="https://vouch-protocol.com/seal-verified.png" alt="Vouch Protocol Verified" />
   </div>
+  <p class="issued-line">{esc(issued)} &middot; {esc(issued_time)}</p>
   <h1 class="title">{cert_title}</h1>
   <p class="byline">{byline}</p>
   </div>
