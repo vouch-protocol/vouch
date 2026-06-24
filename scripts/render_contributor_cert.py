@@ -2,7 +2,7 @@
 """Render a static Vouch Verified Contributor certificate page.
 
 Matches the live vouch-protocol.com/v/ certificate design (parchment theme,
-burgundy seal, ruled sections). A right-side icon rail lets the contributor
+Vouch Verified wax seal, ruled sections). A right-side icon rail lets the contributor
 share to WhatsApp, X, LinkedIn, and Instagram. The print view is a compact,
 single-page, framed certificate. Intended for /c/<login>/<pr>/.
 """
@@ -11,7 +11,6 @@ import argparse
 import html
 import json
 import os
-from datetime import datetime
 from urllib.parse import quote
 
 ISSUES_URL = "https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22"
@@ -69,20 +68,6 @@ ICON_BLUESKY = (
 )
 
 
-def fmt_date(iso: str) -> str:
-    try:
-        return datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%-d %b %Y")
-    except Exception:
-        return iso or ""
-
-
-def fmt_time(iso: str) -> str:
-    try:
-        return datetime.fromisoformat(iso.replace("Z", "+00:00")).strftime("%H:%M UTC")
-    except Exception:
-        return ""
-
-
 def esc(s: object) -> str:
     return html.escape(str(s)) if s is not None else ""
 
@@ -103,8 +88,6 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     root = chain[0].get("issuer", "") if chain else ""
     issuer = cred.get("issuer", "")
     proof_value = cred.get("proof", {}).get("proofValue", "")
-    issued = fmt_date(cred.get("validFrom", ""))
-    issued_time = fmt_time(cred.get("validFrom", ""))
     repo = intent.get("repository", "vouch-protocol/vouch")
     pr_url = f"https://github.com/{repo}/pull/{pr}" if pr else ""
     cert_url = f"https://vouch-protocol.com/c/{login}/{pr}".rstrip("/")
@@ -239,11 +222,7 @@ body {{ background: var(--parchment); color: var(--ink); font-family: "Source Se
 .frame {{ max-width: 720px; margin: 0 auto; }}
 .eyebrow {{ font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }}
 .seal-wrap {{ display: flex; justify-content: center; margin-bottom: 40px; }}
-.seal {{ width: 220px; height: 220px; border: 2px solid var(--burgundy); outline: 2px solid var(--burgundy); outline-offset: 6px; background: var(--parchment); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 16px; }}
-.seal img {{ width: 48px; height: 48px; margin-bottom: 12px; }}
-.seal .check {{ color: var(--burgundy); font-size: 1.6rem; line-height: 1; margin-bottom: 6px; font-weight: 600; }}
-.seal .seal-line {{ font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--burgundy); margin: 2px 0; }}
-.seal .seal-line.muted {{ color: var(--ink-faint); letter-spacing: 0.1em; }}
+.seal-img {{ width: 200px; height: 200px; object-fit: contain; }}
 h1.title {{ text-align: center; font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 1.5rem; line-height: 1.3; margin: 0 0 12px; letter-spacing: -0.01em; }}
 .byline {{ text-align: center; color: var(--ink-soft); margin: 0 0 48px; font-style: italic; }}
 .byline a {{ color: var(--burgundy); text-decoration: none; }}
@@ -284,9 +263,7 @@ h1.title a {{ color: inherit; text-decoration: none; }}
   .frame > section {{ flex: 1 1 auto; display: flex; flex-direction: column; }}
   .cert-body {{ flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-evenly; }}
   .seal-wrap {{ margin-bottom: 24px; }}
-  .seal {{ width: 152px; height: 152px; padding: 12px; outline-offset: 5px; }}
-  .seal img {{ width: 34px; height: 34px; margin-bottom: 8px; }}
-  .seal .check {{ font-size: 1.3rem; margin-bottom: 4px; }}
+  .seal-img {{ width: 150px; height: 150px; }}
   h1.title {{ font-size: 1.2rem; margin-bottom: 6px; }}
   .byline {{ margin-bottom: 26px; }}
   .section {{ margin: 0; }}
@@ -300,13 +277,9 @@ h1.title a {{ color: inherit; text-decoration: none; }}
 <div class="frame">
 <section>
   <div class="cert-head">
-  <div class="seal-wrap"><div class="seal">
-    <a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer" aria-label="Vouch Protocol home"><img src="https://vouch-protocol.com/apple-touch-icon.png" alt="Vouch"></a>
-    <div class="check">✓</div>
-    <div class="seal-line">Verified Contributor</div>
-    <div class="seal-line muted">{esc(issued)}</div>
-    <div class="seal-line muted">{esc(issued_time)}</div>
-  </div></div>
+  <div class="seal-wrap">
+    <img class="seal-img" src="https://vouch-protocol.com/seal-verified.png" alt="Vouch Protocol Verified" />
+  </div>
   <h1 class="title">{cert_title}</h1>
   <p class="byline">{byline}</p>
   </div>
