@@ -524,6 +524,20 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
     title: 'Adding Vouch to your code',
     items: [
       {
+        q: 'What is the fastest way to add Vouch to my agent?',
+        a: `One line. Run \`vouch init --yes\` once to provision an identity, then wrap your tools:
+
+\`\`\`python
+from vouch import protect
+
+agent.tools = protect([charge_invoice, send_email])
+\`\`\`
+
+Every tool call is now signed in Python before it runs. There is no prompt to write and nothing for the model to remember, and identity is resolved automatically, so agent code needs no key plumbing. \`protect\` works for plain functions and for CrewAI, LangChain, AutoGen, AutoGPT, Vertex AI, Google, and ADK tools. For decorator frameworks you can also call \`<framework>.autosign()\` to sign every tool framework-wide. Verify on the receiving side with \`vouch.verify(credential)\`, or add the FastAPI \`VouchGate\` dependency to an endpoint.`,
+        helpLinks: [{ label: 'Integrations', href: '/help/#integrations' }],
+        meta: 'Shipped v1.6.x',
+      },
+      {
         q: 'Which languages have Vouch SDKs?',
         a: `One canonical Rust core does the cryptography once, and every language is a thin wrapper over it, so a credential signed on any platform verifies on every other, byte for byte (JCS canonicalization):
 
@@ -544,22 +558,22 @@ Every implementation passes the same cross-language test vectors at [test-vector
       },
       {
         q: 'How do I sign a credential in Python?',
-        a: `Three lines after imports:
+        a: `Build a signer from your identity, then pass the intent directly to \`sign_credential\`:
 
 \`\`\`python
-from vouch import Signer, build_vouch_credential
+from vouch import Signer, generate_identity
 
-signer = Signer.from_did("did:web:agent.example.com")
-credential = build_vouch_credential(
-  subject_did="did:web:agent.example.com",
-  intent={"action": "submit_claim", "target": "claim:HC-001",
-      "resource": "https://insurance.example.com/claims/HC-001"},
-  valid_seconds=300,
-)
-signed = signer.sign_credential(credential)
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+
+signed = signer.sign_credential(intent={
+  "action": "submit_claim",
+  "target": "claim:HC-001",
+  "resource": "https://insurance.example.com/claims/HC-001",
+}, valid_seconds=300)
 \`\`\`
 
-The \`signed\` dict has a \`proof\` object with a \`proofValue\` (z-base58 encoded Ed25519 signature) and verification metadata.`,
+The \`signed\` dict has a \`proof\` object with a \`proofValue\` (z-base58 encoded Ed25519 signature) and verification metadata. To make an agent sign every tool call automatically, use \`protect([...])\` instead (see the question above).`,
         helpLinks: [{ label: 'Full Python quickstart', href: '/help/#quickstart-python' }],
       },
       {
