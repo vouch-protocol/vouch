@@ -1,92 +1,119 @@
 #!/usr/bin/env python3
 """
-03_crewai_agent.py - A REAL CrewAI agent that signs its actions with Vouch.
+03_crewai_agent.py - Deterministic Vouch signing for a real CrewAI agent.
 
-Unlike 02_crewai.py (which simulates a crew with plain Signer/Verifier calls and
-print statements), this file uses actual CrewAI objects: a real `Agent`, a real
-`Task`, and a real `Crew` that you `.kickoff()`. The agent's LLM decides, on its
-own, to call the Vouch signing tool before it touches an external API.
+02_crewai.py *simulates* a crew with plain Signer/Verifier calls. This file
+shows the real, recommended integration: a genuine crewai Agent/Task/Crew where
+**every tool call is signed automatically, in Python, before it runs** — with no
+prompt telling the model to sign, and no dependence on the model remembering to.
 
-What to look for:
-  - `generate_identity(...)`         -> gives the agent a DID + Ed25519 keypair
-  - `tools=[sign_request]`           -> grants the agent the Vouch signing tool
-  - the agent calls that tool        -> produces a real, verifiable Vouch-Token
-  - `Verifier.verify(...)`           -> proves the token came from THIS agent
+The old way (fragile): give the agent a `sign_request` tool and write a
+paragraph begging the LLM to call it and thread the token onward. If the model
+forgets, nothing is signed and nothing fails loudly.
 
-Run:
+The new way (this file): wrap the real tool once. Signing is not the model's job.
+
     pip install vouch-protocol crewai
-    export OPENAI_API_KEY=sk-...      # (or any LLM provider CrewAI supports)
+    export OPENAI_API_KEY=sk-...
     python 03_crewai_agent.py
 """
 
 import os
 
-from crewai import Agent, Crew, Task
-
 from vouch import Verifier, generate_identity
-from vouch.integrations.crewai import sign_request  # a ready-made CrewAI @tool
+
+# `protect` wraps real tools so each call is signed deterministically;
+# `current_credential` exposes the credential that was signed for the last call.
+from vouch.integrations.crewai import current_credential, protect
 
 # -----------------------------------------------------------------------------
-# 1. Give the agent a cryptographic identity (DID + Ed25519 keypair).
-#    The Vouch tool reads the key/DID from the environment, so the private key
-#    never enters the LLM's context window — a prompt injection cannot read it.
+# 1. Identity. In production this comes from `vouch init` (env vars or the
+#    on-disk keystore) and the signer is resolved automatically. We set it
+#    inline here so the example is self-contained.
 # -----------------------------------------------------------------------------
 identity = generate_identity(domain="billing-agent.example.com")
 os.environ["VOUCH_PRIVATE_KEY"] = identity.private_key_jwk
 os.environ["VOUCH_DID"] = identity.did
-
 print(f"Agent identity: {identity.did}")
 
-# -----------------------------------------------------------------------------
-# 2. A REAL CrewAI agent. The only Vouch-specific line is `tools=[sign_request]`.
-#    `sign_request` is imported from vouch.integrations.crewai and is a CrewAI
-#    @tool whose body calls vouch.Signer.sign(...) under the hood.
-# -----------------------------------------------------------------------------
-billing_agent = Agent(
-    role="Billing Agent",
-    goal="Charge a customer's invoice, but cryptographically prove who you are "
-    "before making the call.",
-    backstory="An autonomous agent that moves money, so every action it takes "
-    "must be signed and accountable.",
-    tools=[sign_request],  # <-- this is what links the agent to Vouch
-    verbose=True,
-)
 
 # -----------------------------------------------------------------------------
-# 3. A REAL task. The instructions tell the agent to sign its intent first.
-#    When the LLM reasons through this, it will invoke the `sign_request` tool.
+# 2. A normal tool that does the real work. Note: it says NOTHING about Vouch.
+#    The developer just writes the action.
 # -----------------------------------------------------------------------------
-charge_task = Task(
-    description=(
-        "You need to charge invoice #42 for $99.00 via the billing API at "
-        "api.payments.example.com. Before making that call, use the "
-        "'Sign Request with Vouch' tool to sign your intent. Pass "
-        "intent='charge_invoice' and target='api.payments.example.com'. "
-        "Return the exact Vouch-Token string the tool gives you."
-    ),
-    expected_output="The Vouch-Token string produced by the signing tool.",
-    agent=billing_agent,
-)
+try:
+    from crewai.tools import tool
+    from crewai import Agent, Crew, Task
+
+    CREWAI = True
+except ImportError:
+    CREWAI = False
+
+    def tool(name):  # minimal stand-in so the file still runs without crewai
+        def deco(fn):
+            fn.name = name
+            return fn
+
+        return deco
+
+
+@tool("Charge Invoice")
+def charge_invoice(invoice_id: str, amount: float, target: str = "api.payments.example.com") -> str:
+    """Charge a customer's invoice via the billing API."""
+    # In real code: requests.post(f"https://{target}/charge", json=..., headers=...)
+    return f"Charged {amount} on invoice {invoice_id}"
+
 
 # -----------------------------------------------------------------------------
-# 4. Run the crew. The agent's LLM calls the Vouch tool on its own.
+# 3. The ONE line that adds Vouch: wrap the tools. Every call the agent makes to
+#    `charge_invoice` is now signed before the body runs — deterministically, in
+#    code, whether or not the LLM "knows" about signing.
 # -----------------------------------------------------------------------------
-crew = Crew(agents=[billing_agent], tasks=[charge_task], verbose=True)
-result = crew.kickoff()
+signed_tools = protect([charge_invoice])
 
-print("\n--- Crew result ---")
-print(result)
+
+def run_with_real_crew():
+    """The real path: a CrewAI agent that calls the protected tool."""
+    agent = Agent(
+        role="Billing Agent",
+        goal="Charge invoices. You do not need to think about security.",
+        backstory="An autonomous billing agent.",
+        tools=signed_tools,
+        verbose=True,
+    )
+    task = Task(
+        description="Charge invoice #42 for $99.00.",
+        expected_output="Confirmation that the invoice was charged.",
+        agent=agent,
+    )
+    Crew(agents=[agent], tasks=[task]).kickoff()
+
+
+def run_without_crew():
+    """No LLM key? Call the protected tool directly to see signing happen."""
+    print("\n(crewai/LLM not available — invoking the protected tool directly)")
+    result = signed_tools[0]("42", 99.00, target="api.payments.example.com")
+    print(f"Tool result: {result}")
+
+
+if CREWAI and os.getenv("OPENAI_API_KEY"):
+    run_with_real_crew()
+else:
+    run_without_crew()
 
 # -----------------------------------------------------------------------------
-# 5. Server side: prove the token the agent produced is genuinely from THIS
-#    agent's key. This is what the billing API would do on receipt.
+# 4. Server side: the credential the agent signed is available without the tool
+#    body or the prompt ever mentioning it. This is what the billing API verifies.
 # -----------------------------------------------------------------------------
-token = str(result).replace("Vouch-Token:", "").strip()
-is_valid, passport = Verifier.verify(token, identity.public_key_jwk)
-
+credential = current_credential()
 print("\n--- Server-side verification ---")
-print(f"Valid?  {is_valid}")
-if is_valid and passport:
-    print(f"Issuer: {passport.iss}")
-    print(f"Intent: {passport.payload}")
-    print("The billing API now KNOWS which agent asked, and what it intended.")
+if credential is None:
+    print("No credential — no identity was resolved.")
+else:
+    ok, passport = Verifier.verify_credential(credential, identity.public_key_jwk)
+    print(f"Valid?  {ok}")
+    if ok:
+        print(f"Issuer: {passport.iss}")
+        print(f"Intent: {passport.intent}")
+        print("The billing API knows which agent acted, and what it intended —")
+        print("and the agent's code never had to remember to sign.")

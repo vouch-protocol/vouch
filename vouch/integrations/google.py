@@ -9,6 +9,10 @@ from typing import Dict, Any, Optional
 
 from vouch import Signer
 
+# Deterministic signing (recommended): wrap real tools once instead of asking
+# the model to call a signing function on every action.
+from vouch.autosign import current_credential, protect, sign_intent, signed  # noqa: F401
+
 
 class VertexAISigner:
     """

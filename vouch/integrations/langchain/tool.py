@@ -25,6 +25,52 @@ except ImportError:
 
 from vouch import Signer
 
+# Deterministic-signing primitives (recommended over the LLM-driven tool below).
+from vouch.autosign import current_credential, sign_intent, signed  # noqa: F401
+from vouch.autosign import protect as _protect_callables
+
+
+def _inner_attr(obj):
+    """Attribute holding a LangChain tool's underlying callable, or None."""
+    import inspect
+
+    if inspect.isfunction(obj) or inspect.ismethod(obj):
+        return None
+    for attr in ("func", "_run", "run"):
+        if callable(getattr(obj, attr, None)):
+            return attr
+    return None
+
+
+def protect(tools, *, signer=None, **signed_kwargs):
+    """Sign-wrap a list of LangChain tools (or plain functions).
+
+    Plain callables are wrapped via the core signer. LangChain tool objects
+    (``BaseTool``/``StructuredTool``) have their underlying callable wrapped in
+    place so every invocation is signed, then the same object is returned.
+
+    Example::
+
+        from vouch.integrations.langchain import protect
+        agent = create_react_agent(llm, tools=protect([search, send_email]))
+    """
+    out = []
+    for t in tools:
+        attr = _inner_attr(t)
+        if attr is None:
+            out.append(_protect_callables([t], signer=signer, **signed_kwargs)[0])
+            continue
+        original = getattr(t, attr)
+        if getattr(original, "__vouch_signed__", False):
+            out.append(t)
+            continue
+        try:
+            object.__setattr__(t, attr, signed(original, signer=signer, **signed_kwargs))
+        except Exception:
+            setattr(t, attr, signed(original, signer=signer, **signed_kwargs))
+        out.append(t)
+    return out
+
 
 class VouchSignerInput(BaseModel):
     """Input schema for the Vouch Signer tool."""
