@@ -98,6 +98,40 @@ def charge_invoice(invoice_id, amount, vouch_credential=None):
     ...   # vouch_credential is the signed VC for this call
 ```
 
+## Server side: one-line gate
+
+The production counterpart to `protect()`. Instead of hand-writing header
+parsing + `verify_credential` + 401 in every endpoint, add one dependency:
+
+```python
+from fastapi import Depends, FastAPI
+from vouch.integrations.fastapi import VouchGate
+
+app = FastAPI()
+gate = VouchGate(require_action="charge")     # auto-resolves issuers via did:web
+
+@app.post("/charge")
+async def charge(passport = Depends(gate)):    # rejects unsigned/untrusted callers
+    return {"agent": passport.iss}
+```
+
+`VouchGate` reads the credential from the `Vouch-Credential` header (falling back
+to the request body), verifies it, optionally enforces intent
+(`require_action` / `require_target` / `require_resource`), and raises 401
+(missing/invalid) or 403 (intent not allowed) before your handler runs. It is a
+thin shell over the framework-agnostic `vouch.gate.CredentialGate`, which any web
+framework can use:
+
+```python
+from vouch.gate import CredentialGate
+
+gate = CredentialGate(trusted_keys={issuer_did: issuer_key})  # offline allowlist
+result = gate.check(incoming_credential)
+if not result.ok:
+    reject(result.reason)
+agent_did = result.passport.iss
+```
+
 ## Coverage
 
 Deterministic signing is wired into every agent-tool integration. `autosign()`
