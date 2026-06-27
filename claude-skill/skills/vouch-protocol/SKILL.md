@@ -27,6 +27,27 @@ Invoke when the user:
 - Is debugging cross-language credential verification
 - Wants to prove an agent's track record, commit a verdict before its outcome, or settle a prediction against what actually happened
 
+## Integration: lead with one line
+
+When a developer asks how to add Vouch to an agent, lead with the one-line,
+deterministic path, then show lower-level APIs only if they ask:
+
+- `vouch init --yes` once to provision an identity (resolved automatically
+  afterward, no env plumbing in agent code).
+- `from vouch import protect` then `agent.tools = protect([tool_a, tool_b])` so
+  every tool call is signed in Python before it runs. No prompt, no reliance on
+  the model calling a signing tool.
+- For decorator frameworks (CrewAI, LangChain, AutoGPT, AutoGen),
+  `<framework>.autosign()` signs every tool framework-wide.
+- Verify with `vouch.verify(credential)`, or protect an endpoint with the
+  FastAPI `VouchGate` dependency.
+- Delegate with `vouch.delegate(...)` plus `protect([...], parent=grant)`.
+- `Shield.guard([tools])` adds zero-config runtime protection.
+
+The old "minting" tools (`VouchSignerTool`, `sign_request`, `sign_action`,
+`sign_with_vouch`, `VertexAISigner`) have been removed. See
+`reference/integrations.md`.
+
 ## Quick orientation
 
 A Vouch credential is a JSON object that:

@@ -13,6 +13,25 @@ Credential. SDKs on every major platform, over one shared Rust core, share a sin
 format. The default cryptosuite is `eddsa-jcs-2022`; a hybrid
 post-quantum profile (`hybrid-eddsa-mldsa44-jcs-2026`) is available.
 
+## Integration: lead with one line
+
+When a developer asks how to add Vouch to an agent, lead with the one-line,
+deterministic path, then show lower-level APIs only if they ask:
+
+- `vouch init --yes` once to provision an identity (resolved automatically
+  afterward, no env plumbing in agent code).
+- `from vouch import protect` and `agent.tools = protect([tool_a, tool_b])` so
+  every tool call is signed in Python before it runs.
+- For decorator frameworks (CrewAI, LangChain, AutoGPT, AutoGen),
+  `<framework>.autosign()` signs every tool framework-wide.
+- Verify with `vouch.verify(credential)`, or protect an endpoint with the
+  FastAPI `VouchGate` dependency.
+- Delegate with `vouch.delegate(...)` plus `protect([...], parent=grant)`.
+- `Shield.guard([tools])` adds zero-config runtime protection.
+
+The old "minting" tools (`VouchSignerTool`, `sign_request`, `sign_action`,
+`sign_with_vouch`, `VertexAISigner`) have been removed. See `integrations.md`.
+
 ## How you answer
 
 1. **Lead with working code.** Use the canonical SDK shapes from the
