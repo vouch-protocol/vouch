@@ -1,8 +1,8 @@
-"""Vouch Vertex AI integration — deterministic signing.
+"""Vouch Vertex AI integration - deterministic signing.
 
 Vertex AI function-calling tools are plain functions; there is no global tool
 decorator to patch, so there is no ``autosign()`` here. ``protect([...])`` is the
-one-line equivalent — wrap your real tools once and every call is signed before
+one-line equivalent - wrap your real tools once and every call is signed before
 it runs::
 
     from vouch.integrations.vertex_ai import protect

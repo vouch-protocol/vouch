@@ -1,4 +1,4 @@
-"""Vouch AutoGPT integration — deterministic signing."""
+"""Vouch AutoGPT integration - deterministic signing."""
 
 from .commands import (
     autosign,

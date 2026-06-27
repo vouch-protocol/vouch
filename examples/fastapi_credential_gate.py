@@ -1,5 +1,5 @@
 """
-FastAPI Credential Gate — reject unsigned agent requests in one line.
+FastAPI Credential Gate - reject unsigned agent requests in one line.
 
 Before, every protected endpoint hand-wrote the same boilerplate: read a header,
 call ``Verifier.verify_credential`` with a hard-coded public key, raise 401,

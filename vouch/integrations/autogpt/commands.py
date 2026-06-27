@@ -1,12 +1,12 @@
 """
-Vouch Protocol AutoGPT Integration — deterministic signing.
+Vouch Protocol AutoGPT Integration - deterministic signing.
 
 AutoGPT exposes commands through the ``@command`` decorator, so all three tiers
 apply:
 
-  * ``protect([...])``  — wrap a list of commands (one line)
-  * ``@signed``         — annotate a single command (one decorator)
-  * ``autosign()``      — sign every ``@command`` framework-wide (near-zero)
+  * ``protect([...])``  - wrap a list of commands (one line)
+  * ``@signed``         - annotate a single command (one decorator)
+  * ``autosign()``      - sign every ``@command`` framework-wide (near-zero)
 
 See :mod:`vouch.autosign` for the framework-agnostic core.
 """

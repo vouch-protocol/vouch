@@ -202,3 +202,90 @@ class Shield:
         """Shutdown the shield (flush logs)."""
         self._flight_recorder.shutdown()
         logger.info("Vouch Shield shutdown")
+
+    # ------------------------------------------------------------------
+    # Zero-config protection
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def guard(
+        cls,
+        tools,
+        *,
+        sign: bool = True,
+        allow: Optional[list] = None,
+        audit_log_path: Optional[str] = None,
+        signer=None,
+        on_block: str = "raise",
+    ) -> list:
+        """Protect a list of agent tools with zero configuration.
+
+        No trust-registry file, no capability config, no per-call token
+        threading. Wraps each tool so that on every call it:
+
+          1. is **signed** (outbound identity) via the autosign layer, unless
+             ``sign=False``;
+          2. is checked against a **tool allowlist** - by default exactly the
+             tools you pass, so the agent cannot be steered into calling a tool
+             you never granted (the most common real attack);
+          3. is written to a tamper-evident **audit log** (the flight recorder).
+
+        This is the batteries-included counterpart to the fully-configurable
+        :class:`Shield`. Returns wrapped plain callables.
+
+        Args:
+            tools: plain callables to protect.
+            sign: sign each call before it runs (default True).
+            allow: explicit allowlist of tool names. Defaults to the names of
+                the tools passed in.
+            audit_log_path: where to write the audit log (default: the flight
+                recorder's default path).
+            signer: explicit Signer; otherwise resolved automatically.
+            on_block: "raise" a PermissionError on a disallowed call (default),
+                or "skip" to return None without running it.
+
+        Example::
+
+            from vouch.shield import Shield
+            agent.tools = Shield.guard([charge_invoice, send_email])
+        """
+        import functools
+
+        from vouch.autosign import current_credential, signed
+
+        recorder = FlightRecorder(log_path=audit_log_path)
+        allowed = set(allow) if allow is not None else {_tool_name(t) for t in tools}
+
+        wrapped = []
+        for tool in tools:
+            name = _tool_name(tool)
+            inner = signed(tool, signer=signer) if sign else tool
+
+            def make(name, inner):
+                @functools.wraps(inner)
+                def guarded(*args, **kwargs):
+                    if name not in allowed:
+                        recorder.blocked("unknown", name, "tool not in allowlist", None)
+                        if on_block == "skip":
+                            return None
+                        raise PermissionError(f"Tool '{name}' is not in the Shield allowlist")
+                    result = inner(*args, **kwargs)
+                    cred = current_credential()
+                    did = (cred or {}).get("issuer", "unsigned") if sign else "unsigned"
+                    recorder.allowed(did, name, None)
+                    return result
+
+                guarded.__vouch_guarded__ = True
+                return guarded
+
+            wrapped.append(make(name, inner))
+        return wrapped
+
+
+def _tool_name(tool) -> str:
+    """Best-effort display name for a tool callable or object."""
+    for attr in ("name", "__name__"):
+        value = getattr(tool, attr, None)
+        if isinstance(value, str) and value:
+            return value
+    return repr(tool)
