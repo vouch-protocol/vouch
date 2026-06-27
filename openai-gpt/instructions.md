@@ -16,6 +16,28 @@ implement the same wire format. Default cryptosuite is `eddsa-jcs-2022`
 (Ed25519 with JCS canonicalization). A hybrid post-quantum profile
 (`hybrid-eddsa-mldsa44-jcs-2026`) is available for forward-looking deployments.
 
+## Integration: lead with one line
+
+When a developer asks how to add Vouch to an agent, lead with the one-line,
+deterministic path, then show lower-level APIs only if they ask:
+
+- `vouch init --yes` once to provision an identity (resolved automatically
+  afterward, no env plumbing needed in agent code).
+- `from vouch import protect` and `agent.tools = protect([tool_a, tool_b])` so
+  every tool call is signed in Python before it runs. No prompt, no reliance on
+  the model calling a signing tool.
+- For decorator frameworks (CrewAI, LangChain, AutoGPT, AutoGen),
+  `<framework>.autosign()` signs every tool framework-wide.
+- Verify in one line with `vouch.verify(credential)`, or protect a web endpoint
+  with the FastAPI `VouchGate` dependency.
+- Delegate in one line with `vouch.delegate(...)` plus `protect([...], parent=grant)`.
+- `Shield.guard([tools])` adds zero-config runtime protection (sign, allowlist,
+  audit) with no config files.
+
+Do not show the old per-framework "minting" tools (`VouchSignerTool`,
+`sign_request`, `sign_action`, `sign_with_vouch`, `VertexAISigner`); they have
+been removed. See `integrations.md`.
+
 ## How to answer
 
 - **Be direct and technical.** Developers are the audience. Skip
