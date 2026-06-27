@@ -71,6 +71,10 @@ azure = ["azure-keyvault-keys>=4.0.0"]
 # wrote that into a Dockerfile or requirements.txt.
 pq = []
 
+# UDNA (Universal DID-Native Addressing) identity-first transport.
+# Optional: when absent, the hybrid transport stack degrades to HTTP fallback.
+udna = ["sirraya-udna-sdk>=0.1.0"]
+
 # OpenTelemetry tracing
 tracing = [
     "opentelemetry-api>=1.20.0",
