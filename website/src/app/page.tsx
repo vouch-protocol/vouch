@@ -284,38 +284,36 @@ export default function HomePage() {
             <h2>A quick taste</h2>
           </div>
           <p className="text-ink-soft max-w-prose mb-8 leading-relaxed">
-            Sign a Vouch Credential and read back its proof. The same credential verifies
-            byte-identically across every SDK, so pick your language.
+            One line makes an agent sign every tool call. The Python reference SDK wraps
+            your tools with <code>protect([...])</code> and verifies with{' '}
+            <code>vouch.verify(...)</code>, and the same credential verifies byte-identically
+            across every SDK, so pick your language.
           </p>
           <LangCodeBlock
             variants={[
               {
                 label: 'Python',
                 language: 'python',
-                code: `from vouch import Signer, build_vouch_credential
+                code: `# One line makes an agent sign every tool call.
+# Run \`vouch init --yes\` once; identity is resolved automatically.
+from vouch import protect, verify, current_credential
 
-signer = Signer.from_did("did:web:agent.example.com")
+def submit_claim(claim_id, amount):
+    return charge_api(claim_id, amount)
 
-credential = build_vouch_credential(
-  subject_did="did:web:agent.example.com",
-  intent={
-    "action": "submit_claim",
-    "target": "claim:HC-001",
-    "resource": "https://insurance.example.com/claims/HC-001",
-  },
-  reputation_score=92,
-  valid_seconds=300,
-)
+# The one line: every call is signed in Python before it runs.
+agent_tools = protect([submit_claim])
+agent_tools[0]("HC-001", 250)
 
-signed = signer.sign_credential(credential)
-print(signed["proof"]["proofValue"])  # z-base58-encoded Ed25519 signature
+# Verify on the receiving side, also one line.
+ok, passport = verify(current_credential())
+print(ok, passport.intent["action"])  # True submit_claim
 `,
               },
               {
                 label: 'TypeScript',
                 language: 'typescript',
-                code: `import { Signer, generateIdentity, buildVouchCredential }
-  from '@vouch-protocol-official/sdk';
+                code: `import { Signer, generateIdentity } from '@vouch-protocol-official/sdk';
 
 const identity = await generateIdentity('agent.example.com');
 const signer = new Signer({
@@ -323,8 +321,8 @@ const signer = new Signer({
   did: identity.did!,
 });
 
-const credential = buildVouchCredential({
-  subjectDid: identity.did!,
+// signCredential takes the intent directly (action, target, resource).
+const signed = await signer.signCredential({
   intent: {
     action: 'submit_claim',
     target: 'claim:HC-001',
@@ -333,7 +331,6 @@ const credential = buildVouchCredential({
   validSeconds: 300,
 });
 
-const signed = await signer.signCredential(credential);
 console.log(signed.proof.proofValue); // z-base58-encoded Ed25519 signature
 `,
               },
