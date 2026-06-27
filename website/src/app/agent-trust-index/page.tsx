@@ -60,7 +60,7 @@ export default function AgentTrustIndexPage() {
                     uncomfortable.
                 </p>
 
-                <div className="grid sm:grid-cols-3 gap-8 max-w-3xl mb-16">
+                <div className="grid sm:grid-cols-3 gap-8 max-w-3xl mb-4">
                     {HEADLINE.map((f) => (
                         <div key={f.label} className="border-l-2 border-burgundy pl-4">
                             <div className="font-serif font-semibold text-[2.2rem] tracking-tight mb-1">{f.stat}</div>
@@ -68,6 +68,10 @@ export default function AgentTrustIndexPage() {
                         </div>
                     ))}
                 </div>
+                <p className="font-mono uppercase text-[0.62rem] tracking-[0.14em] text-ink-faint mb-16">
+                    As of {ATI_SUMMARY.generated}. First sweep of {TOTAL} agents from the public Model
+                    Context Protocol registry.
+                </p>
 
                 <div className="max-w-3xl mb-16 border-l-2 border-burgundy pl-5">
                     <p className="font-serif font-semibold text-[1.35rem] tracking-tight mb-2">Is your agent one of them?</p>
@@ -111,7 +115,8 @@ export default function AgentTrustIndexPage() {
                     </div>
                 </div>
 
-                <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-5">What the first sweep found</h2>
+                <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-1">What the first sweep found</h2>
+                <p className="font-mono uppercase text-[0.62rem] tracking-[0.14em] text-ink-faint mb-5">As of {ATI_SUMMARY.generated}</p>
                 <div className="border border-rule max-w-2xl mb-4 overflow-hidden">
                     <table className="w-full text-[0.95rem]">
                         <thead>
@@ -141,8 +146,8 @@ export default function AgentTrustIndexPage() {
                 <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-2">The agents that can prove it</h2>
                 <p className="text-ink-soft max-w-prose mb-6">
                     The {ATI_SUMMARY.verifiable} agents that publish a verifiable signal, scored from 0
-                    to 100 and graded. The other {ATI_SUMMARY.cannot.toLocaleString('en-US')} scored
-                    zero. Filter by grade.
+                    to 100 and graded, as of {ATI_SUMMARY.generated}. The other{' '}
+                    {ATI_SUMMARY.cannot.toLocaleString('en-US')} scored zero. Filter by grade.
                 </p>
                 <div className="mb-16">
                     <AtiLeaderboard agents={ATI_AGENTS} />
