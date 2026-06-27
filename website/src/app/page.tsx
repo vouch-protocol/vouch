@@ -64,6 +64,12 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
     body: 'Reputation as a verifiable aggregate of signed receipts, the relying party attesting an action, a settled outcome, an authority recording a penalty, computed by a public deterministic function and keyed to the agent DID. A consumer recomputes the score from the receipts rather than trusting a server, with multi-dimensional scores, decay, threshold proofs that reveal nothing but the threshold, and disputes that exclude bad receipts.',
     spec: 'Reputation',
   },
+  {
+    num: 'xi.',
+    title: 'Reach AI Agents by Identity',
+    body: 'Agents move across hosts and clouds and rarely hold a stable domain or IP, but they always hold a key. Vouch reaches a peer by its identity, not its location. It prefers identity-first routing over UDNA (Universal DID-Native Addressing) and falls back to standard DNS and HTTPS when a peer is not on the overlay. The signed credential, liability attestations, and provenance cross the switch unchanged, so the trust properties hold whichever path the bytes take. Optional and aligned with the W3C UDNA Community Group.',
+    spec: 'Hybrid Transport',
+  },
 ];
 
 const LANGUAGE_TILES = [
@@ -153,6 +159,7 @@ export default function HomePage() {
             identity and delegation specifications. Built on Verifiable Credentials, Data Integrity
             proofs, and Decentralized Identifiers, with one byte-exact core and SDKs for every major
             platform: web, mobile, JVM, .NET, and native, plus the Python, TypeScript, and Go references.
+            Agents are reached by who they are, not where they are.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/faq/" className="btn-primary">Read the FAQ</Link>
