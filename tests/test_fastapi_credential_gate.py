@@ -52,10 +52,14 @@ def signer(identity):
 
 
 @pytest.fixture
-def client(identity):
-    """TestClient whose gate trusts `identity` as the issuer."""
+def client(identity, monkeypatch):
+    """TestClient whose gate trusts `identity` as the issuer.
+
+    The example builds its VouchGate from VOUCH_PUBLIC_KEY at import time, so set
+    the env var before loading the module.
+    """
+    monkeypatch.setenv("VOUCH_PUBLIC_KEY", identity.public_key_jwk)
     module = _load_example()
-    module.PUBLIC_KEY = identity.public_key_jwk
     return TestClient(module.app)
 
 

@@ -1,11 +1,9 @@
 """
-FastAPI Credential Gate - Reject unsigned agent requests (Vouch v1.0).
+FastAPI Credential Gate — reject unsigned agent requests in one line.
 
-A minimal gatekeeper for the modern credential path: one endpoint that reads a
-`Vouch-Credential` header, verifies it as a W3C Verifiable Credential with
-`Verifier.verify_credential()`, and returns 401 when the header is missing or invalid.
-
-(For the legacy JWS `Vouch-Token` path, see fastapi_server.py.)
+Before, every protected endpoint hand-wrote the same boilerplate: read a header,
+call ``Verifier.verify_credential`` with a hard-coded public key, raise 401,
+maybe check the intent. ``VouchGate`` collapses that to a single dependency.
 
 Run & verify:
   1. Mint a public key + a signed credential:
@@ -24,33 +22,24 @@ Run & verify:
 """
 
 import os
-from typing import Optional
+from typing import Annotated
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI
 
-from vouch import Verifier
+from vouch.integrations.fastapi import VouchGate
+from vouch.verifier import CredentialPassport
 
 app = FastAPI(title="Vouch Credential Gate")
 
-# The trusted issuer's public key (Multikey or JWK string). verify_credential
-# coerces either form. Set it before launching the server.
-PUBLIC_KEY = os.getenv("VOUCH_PUBLIC_KEY")
+# One gate, configured once. Pass `public_key=` for offline verification against
+# a known issuer, `trusted_keys={did: key}` for an allowlist, or nothing at all
+# to auto-resolve issuers via did:web. Add `require_action=...` to enforce intent.
+gate = VouchGate(public_key=os.getenv("VOUCH_PUBLIC_KEY"))
 
 
 @app.post("/api/resource")
-async def protected_resource(
-    vouch_credential: Optional[str] = Header(default=None, alias="Vouch-Credential"),
-):
-    """Require a valid Vouch credential; reject everything else with 401."""
-    if not PUBLIC_KEY:
-        raise RuntimeError("Set VOUCH_PUBLIC_KEY to the trusted issuer's public key")
-    if not vouch_credential:
-        raise HTTPException(status_code=401, detail="Missing Vouch-Credential header")
-
-    is_valid, passport = Verifier.verify_credential(vouch_credential, public_key=PUBLIC_KEY)
-    if not is_valid or passport is None:
-        raise HTTPException(status_code=401, detail="Invalid Vouch credential")
-
+async def protected_resource(passport: Annotated[CredentialPassport, Depends(gate)]):
+    """Require a valid Vouch credential; the gate rejects everything else."""
     return {"status": "verified", "agent": passport.sub, "intent": passport.intent}
 
 

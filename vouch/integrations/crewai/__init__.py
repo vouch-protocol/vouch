@@ -1,5 +1,17 @@
-"""Vouch CrewAI integration."""
+"""Vouch CrewAI integration — deterministic signing."""
 
-from .tool import sign_request, VouchCrewTools, VouchSignerTool
+from .tool import (
+    autosign,
+    current_credential,
+    protect,
+    sign_intent,
+    signed,
+)
 
-__all__ = ["sign_request", "VouchCrewTools", "VouchSignerTool"]
+__all__ = [
+    "protect",
+    "signed",
+    "autosign",
+    "sign_intent",
+    "current_credential",
+]
