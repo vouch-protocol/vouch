@@ -1,32 +1,55 @@
 # Quickstart
 
-Sign your first Vouch credential in five minutes.
+Make an agent sign every tool call in one line, or sign a single credential by
+hand. Both take about five minutes.
 
-## Python
+## Python: make an agent sign every tool call (one line)
 
 ```bash
 pip install vouch-protocol
+vouch init --yes        # provisions and saves an identity, prints the next line
 ```
 
 ```python
-from vouch import generate_identity, Signer, Verifier, build_vouch_credential
+from vouch import protect, verify, current_credential
 
-# Generate an identity, then build a signer from it
+# Your normal tool. It says nothing about Vouch.
+def charge_invoice(invoice_id, amount):
+    return f"charged {amount} on {invoice_id}"
+
+# The one line that adds Vouch: wrap your tools. Every call is now signed in
+# Python before it runs. Identity is resolved automatically from the keystore
+# that `vouch init` wrote (or from VOUCH_PRIVATE_KEY / VOUCH_DID).
+agent_tools = protect([charge_invoice])
+
+# When a tool runs, the signed credential is available without any plumbing.
+agent_tools[0]("INV-42", 99.0)
+
+# Receiving side: verify in one line (auto-resolves the issuer via did:web).
+ok, passport = verify(current_credential())
+assert ok
+```
+
+`protect` works for plain functions and for CrewAI, LangChain, AutoGen, AutoGPT,
+Vertex AI, Google, and ADK tools. See `integrations.md` for per-framework
+one-liners and `autosign()`.
+
+## Python: sign a single credential by hand
+
+```python
+from vouch import generate_identity, Signer, Verifier
+
 keys = generate_identity("agent.example.com")  # returns a KeyPair
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
-# Build and sign a credential for an action
-credential = build_vouch_credential(
-    issuer_did="did:web:agent.example.com",
-    intent={
-        "action": "submit_claim",
-        "target": "claim:HC-001",
-        "resource": "https://insurance.example.com/claims/HC-001",
-    },
-)
-signed = signer.sign_credential(credential)
+# sign_credential takes the intent directly (action, target, resource required).
+signed = signer.sign_credential(intent={
+    "action": "submit_claim",
+    "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+})
 
-# Verify. verify_credential returns a (is_valid, passport) tuple.
+# verify_credential returns a (is_valid, passport) tuple.
 is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
 assert is_valid
 ```
