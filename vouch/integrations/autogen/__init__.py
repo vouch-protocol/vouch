@@ -1,22 +1,50 @@
 """Vouch AutoGen integration — deterministic signing.
 
-AutoGen tools are plain functions registered per-agent; there is no global tool
-decorator to patch, so there is no ``autosign()`` here. ``protect([...])`` is the
-one-line equivalent — wrap your real tools once and every call is signed before
-it runs::
+AutoGen has no global tool *decorator*, but it does register tools through a
+module-level call, ``autogen.register_function(fn, caller=..., executor=...)``.
+``autosign()`` patches that call so every registered tool is signed before the
+executor runs it — near-zero setup::
 
-    from vouch.integrations.autogen import protect
+    import vouch.integrations.autogen as va
+    va.autosign()
 
-    tools = protect([search_db, send_email])
+    autogen.register_function(charge_invoice, caller=assistant, executor=user)
+    # charge_invoice is now signed on every execution, transparently.
 
-Or annotate individual tools with ``@signed``.
+For tools you register some other way (e.g. the ``@user_proxy.register_for_
+execution()`` decorator), wrap them with ``protect([...])`` or ``@signed``
+instead — ``register_function`` is the only global hook AutoGen exposes.
 """
 
-from vouch.autosign import current_credential, protect, sign_intent, signed
+from typing import Optional
+
+from vouch import Signer
+from vouch.autosign import (
+    current_credential,
+    install_callable_arg_autosign,
+    protect,
+    sign_intent,
+    signed,
+)
+
+
+def autosign(*, signer: Optional[Signer] = None) -> bool:
+    """Near-zero setup: sign every tool registered via ``autogen.register_function``.
+
+    Returns ``True`` if it patched, ``False`` if already patched. Raises if
+    AutoGen is not installed.
+    """
+    try:
+        import autogen
+    except ImportError as e:  # pragma: no cover - optional dep
+        raise RuntimeError("autogen is not installed; cannot autosign") from e
+    return install_callable_arg_autosign(autogen, "register_function", signer=signer)
+
 
 __all__ = [
     "protect",
     "signed",
+    "autosign",
     "sign_intent",
     "current_credential",
 ]

@@ -290,6 +290,29 @@ class TestDecoratorAutosignEngine:
         assert autosign.install_decorator_autosign(mod, "tool") is True
         assert autosign.install_decorator_autosign(mod, "tool") is False
 
+    def test_callable_arg_autosign(self, env_identity, pubkey):
+        """install_callable_arg_autosign wraps the tool passed to a register call
+        (the AutoGen register_function shape)."""
+        import types
+
+        mod = types.ModuleType("fakefw2")
+        registry = {}
+
+        def register_function(fn, *, name=None, **_):
+            registry[name or fn.__name__] = fn
+            return fn
+
+        mod.register_function = register_function
+        assert autosign.install_callable_arg_autosign(mod, "register_function") is True
+        assert autosign.install_callable_arg_autosign(mod, "register_function") is False
+
+        def charge(invoice_id, target=None):
+            return current_credential()
+
+        mod.register_function(charge, name="charge")
+        cred = registry["charge"]("42", target="bank")
+        assert _verify(cred, pubkey)[0]
+
 
 # Every agent integration exposes the deterministic signing primitives.
 @pytest.mark.parametrize(
@@ -319,7 +342,7 @@ def test_every_integration_exposes_deterministic_signers(module):
         ("vouch.integrations.crewai", True),
         ("vouch.integrations.langchain", True),
         ("vouch.integrations.autogpt", True),
-        ("vouch.integrations.autogen", False),
+        ("vouch.integrations.autogen", True),  # patches register_function
         ("vouch.integrations.vertex_ai", False),
         ("vouch.integrations.google", False),
     ],

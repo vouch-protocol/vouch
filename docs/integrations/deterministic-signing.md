@@ -144,7 +144,7 @@ equivalent one-liner.
 | CrewAI | ✅ | ✅ | ✅ | patches `crewai.tools.tool` |
 | LangChain | ✅ | ✅ | ✅ | patches `langchain[_core].tools.tool` |
 | AutoGPT | ✅ | ✅ | ✅ | patches `autogpt.command_decorator.command` |
-| AutoGen | ✅ | ✅ | — | tools are plain functions; no decorator |
+| AutoGen | ✅ | ✅ | ✅ | patches `autogen.register_function` |
 | Vertex AI | ✅ | ✅ | — | tools are plain functions; no decorator |
 | Google (Vertex Agent Builder) | ✅ | ✅ | — | tools are plain functions; no decorator |
 | Google ADK | ✅ (`protect_tools`) | — | — | tools are plain functions; no decorator |

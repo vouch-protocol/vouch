@@ -303,9 +303,10 @@ def install_decorator_autosign(
     ``True`` if it patched, ``False`` if it was already patched.
 
     Only frameworks that expose a single global tool-decorator (CrewAI,
-    LangChain, AutoGPT) can use this. Frameworks whose tools are plain
-    functions (AutoGen, Vertex AI, Google, ADK) have no decorator to hook —
-    there ``protect([...])`` is the one-line equivalent.
+    LangChain, AutoGPT) can use this. AutoGen has no decorator but registers
+    tools through a call, so it uses :func:`install_callable_arg_autosign`
+    instead. Frameworks whose tools are plain functions with no global hook
+    (Vertex AI, Google, ADK) use ``protect([...])`` — the one-line equivalent.
     """
     original = getattr(module, attr)
     if getattr(original, "__vouch_autosign__", False):
@@ -325,6 +326,43 @@ def install_decorator_autosign(
             return decorator(signed(func, signer=signer))
 
         return wrapping
+
+    patched.__vouch_autosign__ = True  # type: ignore[attr-defined]
+    setattr(module, attr, patched)
+    return True
+
+
+def install_callable_arg_autosign(
+    module: Any,
+    attr: str,
+    *,
+    signer: Optional[Signer] = None,
+    arg_index: int = 0,
+) -> bool:
+    """Monkeypatch a module-level function that *takes a tool function as an
+    argument* so the tool is sign-wrapped before it is used.
+
+    This is the engine behind frameworks that register tools through a call
+    rather than a decorator — e.g. ``autogen.register_function(fn, caller=...,
+    executor=...)``. The function at ``arg_index`` (positional) is wrapped with
+    :func:`signed`; everything else is passed through untouched.
+
+    Idempotent; returns ``True`` if it patched, ``False`` if already patched.
+    """
+    original = getattr(module, attr)
+    if getattr(original, "__vouch_autosign__", False):
+        return False
+
+    @functools.wraps(original)
+    def patched(*args, **kwargs):
+        args_list = list(args)
+        if (
+            len(args_list) > arg_index
+            and callable(args_list[arg_index])
+            and not getattr(args_list[arg_index], "__vouch_signed__", False)
+        ):
+            args_list[arg_index] = signed(args_list[arg_index], signer=signer)
+        return original(*args_list, **kwargs)
 
     patched.__vouch_autosign__ = True  # type: ignore[attr-defined]
     setattr(module, attr, patched)
@@ -358,6 +396,7 @@ __all__ = [
     "signed",
     "protect",
     "install_decorator_autosign",
+    "install_callable_arg_autosign",
     "sign_intent",
     "resolve_signer",
     "reset_default_signer",
