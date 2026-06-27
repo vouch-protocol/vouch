@@ -72,8 +72,9 @@ azure = ["azure-keyvault-keys>=4.0.0"]
 pq = []
 
 # UDNA (Universal DID-Native Addressing) identity-first transport.
+# Distribution `sirraya-udna-sdk` imports as the `udna_sdk` package.
 # Optional: when absent, the hybrid transport stack degrades to HTTP fallback.
-udna = ["sirraya-udna-sdk>=0.1.0"]
+udna = ["sirraya-udna-sdk>=1.0.3"]
 
 # OpenTelemetry tracing
 tracing = [

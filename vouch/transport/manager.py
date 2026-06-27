@@ -68,16 +68,19 @@ class TransportManager:
         cls,
         *,
         udna_node: Optional["UdnaNode"] = None,
+        udna_channel: Optional["UdnaChannel"] = None,
         private_key_jwk: Optional[str] = None,
         verify_ssl: bool = True,
     ) -> "TransportManager":
         """
         Build the canonical hybrid stack: UDNA preferred, HTTP fallback.
 
-        UDNA is wired optimistically — if neither an explicit ``udna_node`` nor
-        the ``sirraya-udna-sdk`` is available, the UDNA transport stays dormant
-        and every dispatch falls straight through to HTTP. Nothing to configure,
-        nothing to fail.
+        UDNA is wired optimistically. Pass an explicit ``udna_node`` to use a
+        ready-made node, or ``private_key_jwk`` + ``udna_channel`` to have a
+        :class:`SirrayaUdnaNode` auto-built on the real ``udna_sdk``. If neither
+        the SDK nor the prerequisites are available, the UDNA transport stays
+        dormant and every dispatch falls straight through to HTTP — nothing to
+        configure, nothing to fail.
         """
         from .http_transport import HttpTransport
         from .udna import UdnaTransport
@@ -85,7 +88,7 @@ class TransportManager:
         if udna_node is not None:
             udna = UdnaTransport(node=udna_node)
         else:
-            udna = UdnaTransport.from_sdk(private_key_jwk=private_key_jwk)
+            udna = UdnaTransport.from_sdk(private_key_jwk=private_key_jwk, channel=udna_channel)
 
         return cls([udna, HttpTransport(verify_ssl=verify_ssl)])
 
@@ -181,5 +184,5 @@ class TransportManager:
                 logger.debug("error closing transport %s", transport.name, exc_info=True)
 
 
-# Imported for the type annotation on `default(udna_node=...)` only.
-from .udna import UdnaNode  # noqa: E402
+# Imported for the type annotations on `default(...)` only.
+from .udna import UdnaChannel, UdnaNode  # noqa: E402

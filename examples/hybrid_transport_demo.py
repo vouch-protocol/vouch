@@ -10,8 +10,13 @@ Demonstrates the modular, DID-addressed transport layer:
      to standard DNS/IP + HTTP when the peer is not on the UDNA overlay.
   4. The signed payload is preserved byte-for-byte across the transition.
 
-The Sirraya UDNA SDK is optional. This demo wires an in-process fake UDNA node
-so you can watch routing and fallback without any network or the real SDK.
+The Sirraya UDNA SDK (``pip install vouch-protocol[udna]``, import ``udna_sdk``)
+is optional. In production it provides DID/address creation and the Noise
+handshake + ChaCha20-Poly1305 crypto, while a pluggable ``UdnaChannel`` moves
+the bytes (the SDK ships no production wire transport). To keep this demo
+network-free and runnable without the SDK, it wires an in-process fake UDNA
+node directly to the same ``UdnaNode`` seam ``SirrayaUdnaNode`` implements — so
+you can watch routing and fallback without the real SDK.
 
 Run:  python examples/hybrid_transport_demo.py
 """

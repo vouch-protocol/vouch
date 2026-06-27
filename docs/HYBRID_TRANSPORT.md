@@ -75,21 +75,43 @@ signatures intact. `from_wire()` re-verifies the seal on receipt and raises
 
 ### `UdnaTransport` — identity-first
 
-Wraps the core concepts of `sirraya-udna-sdk`:
+Targets the real `sirraya-udna-sdk` (distribution `sirraya-udna-sdk`, **import
+package `udna_sdk`**, v1.0.x). That SDK provides:
 
-- **DID generation** — derives a `did:key` from the agent's existing Ed25519
-  identity via `vouch.multikey` (no new key material, no registry).
-- **UDNA address creation** — projects a DID and a *facet* (a named capability
-  lane, default `vouch.message`) into a `udna://<did>/<facet>` address.
-- **Secure messaging** — hands the sealed envelope to the SDK node, which
-  performs the Noise handshake, verifies the peer's DID, and delivers the bytes.
+- **DID generation** — `UdnaSDK.create_did()` mints a `did:key`. Its encoding
+  (`z` + base58(`0xed01` ‖ pubkey)) is byte-identical to Vouch's own Multikey,
+  so a Vouch identity and a UDNA identity interoperate with no translation —
+  `UdnaTransport.generate_did(public_jwk)` derives the same `did:key` from the
+  agent's existing signing key.
+- **UDNA address creation** — `UdnaSDK.create_address(did, facet_id, flags)`
+  produces a signed base58 address. `facet_id` selects a capability lane
+  (`0x01` Control, `0x02` Messaging, `0x03` Telemetry); Vouch messages ride
+  Messaging.
+- **Address verification** — `UdnaSDK.verify_address(address)` checks the
+  address signature against the DID's key.
+- **Secure messaging** — `udna_sdk.udna.NoiseHandshake` (a DID-authenticated
+  Noise-IK handshake) plus `SecureMessaging` (ChaCha20-Poly1305 over the
+  derived session key).
+
+**What the SDK does not provide is a production wire transport** — byte
+delivery to a remote peer is left to the integrator (the bundled DHT is an
+in-memory demo). The adapter splits the two concerns accordingly:
+
+- **`UdnaNode`** — the session+delivery seam the transport talks to.
+  `SirrayaUdnaNode` implements it by composing the SDK's Noise/SecureMessaging
+  crypto with a delivery channel: a secure send is a real
+  `initiate → respond → finalize` handshake followed by an encrypted payload,
+  each carried as one channel exchange.
+- **`UdnaChannel`** — the pluggable byte-delivery overlay the deployment
+  supplies (a relay, a libp2p/QUIC overlay, a websocket bridge).
 
 The SDK is an **optional dependency** (`pip install vouch-protocol[udna]`). All
-SDK interaction goes through the minimal `UdnaNode` protocol, so the transport
-is fully testable without the SDK and the rest of Vouch imports it
-unconditionally. When the SDK is absent and no node is injected, the transport
-is **dormant**: it routes nothing and the manager falls back to HTTP. UDNA being
-unavailable is never an error — that is the point of the hybrid design.
+SDK interaction goes through the minimal `UdnaNode` seam, so the transport is
+fully testable without the SDK (see `tests/test_transport.py`) and validated
+against it when present (`tests/test_transport_udna_sdk.py`, auto-skipped
+otherwise). When the SDK is absent, or no node/channel is wired, the transport
+is **dormant**: it routes nothing and the manager falls back to HTTP. UDNA
+being unavailable is never an error — that is the point of the hybrid design.
 
 ### `HttpTransport` — location-first fallback
 

@@ -65,7 +65,17 @@ from .envelope import (
 )
 from .http_transport import HttpTransport
 from .manager import TransportManager
-from .udna import DEFAULT_FACET, UdnaNode, UdnaTransport, udna_address
+from .udna import (
+    DEFAULT_FACET,
+    FACET_CONTROL,
+    FACET_MESSAGING,
+    FACET_TELEMETRY,
+    SirrayaUdnaNode,
+    UdnaChannel,
+    UdnaNode,
+    UdnaTransport,
+    udna_address,
+)
 
 __all__ = [
     # Core abstractions
@@ -85,8 +95,13 @@ __all__ = [
     # Transports
     "UdnaTransport",
     "UdnaNode",
+    "UdnaChannel",
+    "SirrayaUdnaNode",
     "udna_address",
     "DEFAULT_FACET",
+    "FACET_CONTROL",
+    "FACET_MESSAGING",
+    "FACET_TELEMETRY",
     "HttpTransport",
     # did:key helpers
     "is_did_key",
