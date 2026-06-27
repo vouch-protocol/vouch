@@ -1,4 +1,4 @@
-"""Vouch CrewAI integration — deterministic signing."""
+"""Vouch CrewAI integration - deterministic signing."""
 
 from .tool import (
     autosign,

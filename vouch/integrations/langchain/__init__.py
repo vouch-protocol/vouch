@@ -1,4 +1,4 @@
-"""Vouch LangChain integration — deterministic signing."""
+"""Vouch LangChain integration - deterministic signing."""
 
 from .tool import (
     autosign,

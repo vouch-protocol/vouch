@@ -67,6 +67,22 @@ def setup_logging(verbose: bool = False) -> None:
     logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
 
+def _print_agent_quickstart(keys, file=None) -> None:
+    """Print the one-liner to wire this identity into an agent.
+
+    Once an identity is saved (here) or exported, ``vouch.protect`` resolves it
+    automatically - so making an agent sign every tool call is a single line.
+    """
+    file = file or sys.stdout  # resolve at call time, not import time
+    print("\n🚀 You're set up. Sign every tool call with one line:\n", file=file)
+    print("    from vouch import protect", file=file)
+    print("    agent.tools = protect([your_tool, another_tool])", file=file)
+    print(
+        "\n   (identity is resolved automatically from your keystore - no wiring needed)",
+        file=file,
+    )
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     """Generate a new Ed25519 keypair for agent identity."""
     try:
@@ -81,6 +97,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(f"export VOUCH_DID='{keys.did}'")
             print(f"export VOUCH_PRIVATE_KEY='{keys.private_key_jwk}'")
             print(f"# Public Key (for vouch.json): {keys.public_key_jwk}", file=sys.stderr)
+            _print_agent_quickstart(keys, file=sys.stderr)
         else:
             print("🔑 NEW AGENT IDENTITY GENERATED\n")
             print(f"DID: {keys.did}")
@@ -88,16 +105,21 @@ def cmd_init(args: argparse.Namespace) -> int:
             # Key Storage
             km = KeyManager()
 
-            # Prompt for passphrase
-            print("\n🔐 Secure Storage")
-            passphrase = getpass.getpass(
-                f"Enter passphrase for {keys.did} (leave empty for no encryption): "
-            )
-            confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+            # Non-interactive when --yes is passed or stdin is not a TTY (CI,
+            # pipes), so `vouch init` never hangs waiting for a passphrase.
+            non_interactive = args.yes or not sys.stdin.isatty()
 
-            if passphrase != confirm:
-                print("❌ Error: Passphrases do not match", file=sys.stderr)
-                return 1
+            if non_interactive:
+                passphrase = None
+            else:
+                print("\n🔐 Secure Storage")
+                passphrase = getpass.getpass(
+                    f"Enter passphrase for {keys.did} (leave empty for no encryption): "
+                )
+                confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+                if passphrase != confirm:
+                    print("❌ Error: Passphrases do not match", file=sys.stderr)
+                    return 1
 
             try:
                 km.save_identity(keys, passphrase if passphrase else None)
@@ -110,6 +132,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
             print("\n--- PUBLIC KEY (Put this in vouch.json) ---")
             print(keys.public_key_jwk)
+            _print_agent_quickstart(keys)
 
         return 0
 
@@ -1317,6 +1340,12 @@ def main() -> int:
     p_init = subparsers.add_parser("init", help="Generate a new agent identity")
     p_init.add_argument("--domain", help="Domain for the DID (e.g., example.com)")
     p_init.add_argument("--env", action="store_true", help="Output as environment variables")
+    p_init.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Non-interactive: save the identity without prompting for a passphrase",
+    )
 
     # sign command
     p_sign = subparsers.add_parser("sign", help="Sign a message or payload")

@@ -4,7 +4,7 @@ framework integration adapters that re-export it.
 
 The point of this layer: a tool call is signed in Python *before* it runs, with
 no dependence on the model choosing to call a signing tool. These tests pin that
-behaviour — every protected call produces a verifiable credential, the wrapped
+behaviour - every protected call produces a verifiable credential, the wrapped
 function still runs and returns normally, and signing never blocks the call.
 """
 
@@ -188,6 +188,85 @@ class TestCrewAIAdapter:
 
         for name in ("protect", "signed", "sign_intent", "current_credential", "autosign"):
             assert hasattr(vc, name), name
+
+
+class TestDelegation:
+    """delegate() + parent= thread a delegation grant through the signing layer."""
+
+    @pytest.fixture
+    def principal(self):
+        kp = generate_identity(domain="principal.example.com")
+        return kp, Signer(private_key=kp.private_key_jwk, did=kp.did)
+
+    def test_delegate_issues_grant_from_principal(self, env_identity, principal):
+        import vouch
+
+        kp, psigner = principal
+        grant = vouch.delegate(
+            action="charge",
+            target="api.bank",
+            resource="invoices",
+            to=env_identity.did,
+            signer=psigner,
+        )
+        assert grant["issuer"] == kp.did
+        assert grant["credentialSubject"]["intent"]["delegatee"] == env_identity.did
+
+    def test_protected_call_is_chained_under_grant(self, env_identity, principal, pubkey):
+        import vouch
+
+        kp, psigner = principal
+        grant = vouch.delegate(
+            action="charge", target="api.bank", resource="invoices", signer=psigner
+        )
+
+        @signed(parent=grant)
+        def charge_invoice(invoice_id):
+            return current_credential()
+
+        cred = charge_invoice("42")
+        chain = cred["credentialSubject"].get("delegationChain")
+        assert chain and len(chain) == 1
+        assert chain[0]["issuer"] == kp.did
+        assert chain[0]["subject"] == env_identity.did
+        # The agent's own credential still verifies under its own key.
+        assert _verify(cred, pubkey)[0]
+
+    def test_narrowing_is_enforced_no_widened_credential(self, env_identity, principal):
+        kp, psigner = principal
+        import vouch
+
+        grant = vouch.delegate(
+            action="charge", target="api.bank", resource="invoices", signer=psigner
+        )
+
+        # Attempt to act OUTSIDE the granted resource. Signing fails the
+        # narrowing rule, so the call runs unsigned - no widened credential is
+        # ever minted (the security property), and the call still completes.
+        autosign._current_credential.set(None)
+
+        @signed(action="charge", target="api.bank", resource="payroll", parent=grant)
+        def overreach():
+            return "ran"
+
+        assert overreach() == "ran"  # fail-open: the call is not blocked
+        assert current_credential() is None  # but nothing widened was signed
+
+    def test_narrower_child_within_grant_is_accepted(self, env_identity, principal, pubkey):
+        kp, psigner = principal
+        import vouch
+
+        grant = vouch.delegate(
+            action="charge", target="api.bank", resource="invoices", signer=psigner
+        )
+
+        @signed(action="charge", target="api.bank", resource="invoices/42", parent=grant)
+        def ok_call():
+            return current_credential()
+
+        cred = ok_call()
+        assert cred is not None
+        assert cred["credentialSubject"]["intent"]["resource"] == "invoices/42"
 
 
 class TestVerifyOneLiner:

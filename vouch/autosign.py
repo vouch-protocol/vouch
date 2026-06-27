@@ -19,7 +19,7 @@ Three tiers of effort, smallest first::
     @signed                                  # one decorator: annotate one tool
     <framework>.autosign()                   # near-zero: sign every tool, framework-wide
 
-Identity resolves the same way ``vouch init`` set it up — environment variables
+Identity resolves the same way ``vouch init`` set it up - environment variables
 first, then the on-disk keystore (``~/.vouch/keys``), then (opt-in) an ephemeral
 key. Configure it once and forget it, exactly like ``vouch git init``.
 
@@ -103,7 +103,7 @@ def _build_default_signer() -> Optional[Signer]:
         except Exception as e:  # pragma: no cover - defensive
             logger.warning("VOUCH_PRIVATE_KEY/VOUCH_DID present but unusable: %s", e)
 
-    # 3. On-disk keystore — whatever `vouch init` saved, unencrypted only
+    # 3. On-disk keystore - whatever `vouch init` saved, unencrypted only
     #    (an encrypted identity needs a passphrase we cannot prompt for here).
     try:
         km = KeyManager()
@@ -168,6 +168,7 @@ def sign_intent(
     resource: str = "unspecified",
     signer: Optional[Signer] = None,
     extra: Optional[Dict[str, Any]] = None,
+    parent: Optional[Dict[str, Any]] = None,
     publish: bool = True,
 ) -> Optional[Dict[str, Any]]:
     """Sign a single intent and (by default) publish it as the current credential.
@@ -177,8 +178,12 @@ def sign_intent(
     ``target``, ``resource``) are always populated, defaulting to sensible
     placeholders so a caller can sign with just an action.
 
+    Pass ``parent`` (a delegation grant credential from :func:`delegate`) to
+    chain this credential under it; the protocol's resource-narrowing rule
+    (§9.3) is enforced - a child can only narrow the granted authority.
+
     Returns the signed Verifiable Credential dict, or ``None`` if no identity
-    could be resolved (the call still proceeds — unsigned, loudly logged).
+    could be resolved (the call still proceeds - unsigned, loudly logged).
     """
     resolved = resolve_signer(signer)
     if resolved is None:
@@ -194,10 +199,59 @@ def sign_intent(
         for k, v in extra.items():
             intent.setdefault(k, v)
 
-    credential = resolved.sign_credential(intent)
+    credential = resolved.sign_credential(intent, parent_credential=parent)
     if publish:
         _current_credential.set(credential)
     return credential
+
+
+def _parent_intent(parent: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """The granted intent inside a delegation grant credential, or {}."""
+    if not parent:
+        return {}
+    return parent.get("credentialSubject", {}).get("intent", {}) or {}
+
+
+def delegate(
+    *,
+    action: str,
+    target: str,
+    resource: str,
+    to: Optional[str] = None,
+    signer: Optional[Signer] = None,
+    valid_seconds: Optional[int] = None,
+    reputation_score: Optional[int] = None,
+) -> Optional[Dict[str, Any]]:
+    """Issue a delegation grant in one call (the principal/supervisor side).
+
+    The principal (resolved signer) authorizes ``action`` on ``target`` /
+    ``resource``. Hand the returned grant to an agent and pass it as ``parent=``
+    to :func:`protect` / :func:`signed` / :func:`sign_intent`; every action the
+    agent signs is then chained under this grant and can only *narrow* the
+    authority, never widen it (Specification §9.3)::
+
+        grant = vouch.delegate(action="charge", target="api.bank",
+                               resource="invoices", signer=principal)
+        agent_tools = protect([charge_invoice], parent=grant)
+
+    ``to`` (the delegatee's DID) is recorded for your own audit trail; the
+    protocol binds authority through the credential chain and the
+    resource-narrowing rule rather than a subject match.
+
+    Returns the signed grant credential, or ``None`` if no identity resolved.
+    """
+    resolved = resolve_signer(signer)
+    if resolved is None:
+        return None
+
+    intent: Dict[str, Any] = {"action": action, "target": target, "resource": resource}
+    if to:
+        intent["delegatee"] = to
+    return resolved.sign_credential(
+        intent,
+        valid_seconds=valid_seconds,
+        reputation_score=reputation_score,
+    )
 
 
 def _derive_target(args: tuple, kwargs: Dict[str, Any]) -> str:
@@ -221,6 +275,7 @@ def signed(
     target: Optional[str] = None,
     resource: Optional[str] = None,
     signer: Optional[Signer] = None,
+    parent: Optional[Dict[str, Any]] = None,
 ):
     """Wrap a callable so every invocation is signed before it runs.
 
@@ -244,14 +299,25 @@ def signed(
         wants_injection = _accepts_kwarg(func, INJECT_CREDENTIAL_KW)
         resolved_action = action or getattr(func, "__name__", "tool_call")
 
+        # When delegating, default target/resource to the granted scope so the
+        # chain validates by default; an explicit narrower value still wins.
+        granted = _parent_intent(parent)
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
+                eff_target = target or granted.get("target") or _derive_target(args, kwargs)
+                eff_resource = (
+                    resource
+                    or granted.get("resource")
+                    or _derive_resource(args, kwargs, resolved_action)
+                )
                 cred = sign_intent(
                     resolved_action,
-                    target=target or _derive_target(args, kwargs),
-                    resource=resource or _derive_resource(args, kwargs, resolved_action),
+                    target=eff_target,
+                    resource=eff_resource,
                     signer=signer,
+                    parent=parent,
                 )
             except Exception as e:  # never let signing break the tool
                 logger.warning("Vouch autosign failed for %s: %s", resolved_action, e)
@@ -306,7 +372,7 @@ def install_decorator_autosign(
     LangChain, AutoGPT) can use this. AutoGen has no decorator but registers
     tools through a call, so it uses :func:`install_callable_arg_autosign`
     instead. Frameworks whose tools are plain functions with no global hook
-    (Vertex AI, Google, ADK) use ``protect([...])`` — the one-line equivalent.
+    (Vertex AI, Google, ADK) use ``protect([...])`` - the one-line equivalent.
     """
     original = getattr(module, attr)
     if getattr(original, "__vouch_autosign__", False):
@@ -343,7 +409,7 @@ def install_callable_arg_autosign(
     argument* so the tool is sign-wrapped before it is used.
 
     This is the engine behind frameworks that register tools through a call
-    rather than a decorator — e.g. ``autogen.register_function(fn, caller=...,
+    rather than a decorator - e.g. ``autogen.register_function(fn, caller=...,
     executor=...)``. The function at ``arg_index`` (positional) is wrapped with
     :func:`signed`; everything else is passed through untouched.
 
@@ -373,6 +439,7 @@ def protect(
     tools: Sequence[Callable],
     *,
     signer: Optional[Signer] = None,
+    parent: Optional[Dict[str, Any]] = None,
     **signed_kwargs: Any,
 ) -> List[Callable]:
     """Sign-wrap a list of plain callable tools, preserving their signatures.
@@ -382,19 +449,25 @@ def protect(
     Vertex AI, Google) this is all that is needed::
 
         agent.tools = protect([search_db, send_email])
+
+    Pass ``parent`` (a grant from :func:`delegate`) to chain every call under a
+    delegation, narrowing-enforced::
+
+        agent.tools = protect([charge_invoice], parent=grant)
     """
     out: List[Callable] = []
     for tool in tools:
         if getattr(tool, "__vouch_signed__", False):
-            out.append(tool)  # already wrapped — idempotent
+            out.append(tool)  # already wrapped - idempotent
         else:
-            out.append(signed(tool, signer=signer, **signed_kwargs))
+            out.append(signed(tool, signer=signer, parent=parent, **signed_kwargs))
     return out
 
 
 __all__ = [
     "signed",
     "protect",
+    "delegate",
     "install_decorator_autosign",
     "install_callable_arg_autosign",
     "sign_intent",

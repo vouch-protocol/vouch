@@ -665,7 +665,7 @@ def verify(
     Args:
       credential: a Vouch Credential dict or JSON string. If ``None``, verifies
         the credential most recently signed in this execution context
-        (``vouch.current_credential()``) — handy right after a protected call.
+        (``vouch.current_credential()``) - handy right after a protected call.
       public_key: an optional Multikey/JWK/``Ed25519PublicKey`` for OFFLINE
         verification. If omitted, the issuer's key is resolved automatically
         from trusted roots or ``did:web``.

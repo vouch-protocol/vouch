@@ -1,9 +1,9 @@
 """
-LangChain Agent Example — deterministic Vouch signing.
+LangChain Agent Example - deterministic Vouch signing.
 
 Instead of giving the agent a "sign a token" tool and hoping the LLM calls it,
 we wrap the agent's real tools with ``protect([...])``. Every tool call is then
-signed in Python before it runs — no prompt, no reliance on the model.
+signed in Python before it runs - no prompt, no reliance on the model.
 """
 
 import os

@@ -17,11 +17,12 @@ from .keys import generate_identity, KeyPair
 from .kms import RotatingKeyProvider, KeyConfig
 
 # Deterministic, zero-prompt signing for agent tool calls. Wrap a tool once and
-# every call is signed in Python before it runs — no reliance on the model
+# every call is signed in Python before it runs - no reliance on the model
 # choosing to call a signing tool. See vouch.autosign and the framework
 # adapters under vouch.integrations.*.
 from .autosign import (
     current_credential,
+    delegate,
     protect,
     resolve_signer,
     sign_intent,
@@ -295,6 +296,7 @@ __all__ = [
     # Deterministic agent-tool signing
     "protect",
     "signed",
+    "delegate",
     "sign_intent",
     "current_credential",
     "resolve_signer",

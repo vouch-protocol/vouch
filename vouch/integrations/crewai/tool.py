@@ -1,12 +1,12 @@
 """
-Vouch Protocol CrewAI Integration — deterministic signing.
+Vouch Protocol CrewAI Integration - deterministic signing.
 
 Every tool call is signed in Python before it runs. There is nothing for the
 model to remember and no prompt to write. Three tiers of effort:
 
-  * ``protect([...])``  — wrap a list of tools (one line)
-  * ``@signed``         — annotate a single tool (one decorator)
-  * ``autosign()``      — sign every ``@tool`` framework-wide (near-zero)
+  * ``protect([...])``  - wrap a list of tools (one line)
+  * ``@signed``         - annotate a single tool (one decorator)
+  * ``autosign()``      - sign every ``@tool`` framework-wide (near-zero)
 
 See :mod:`vouch.autosign` for the framework-agnostic core.
 """

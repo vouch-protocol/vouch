@@ -4,7 +4,7 @@
 
 02_crewai.py *simulates* a crew with plain Signer/Verifier calls. This file
 shows the real, recommended integration: a genuine crewai Agent/Task/Crew where
-**every tool call is signed automatically, in Python, before it runs** — with no
+**every tool call is signed automatically, in Python, before it runs** - with no
 prompt telling the model to sign, and no dependence on the model remembering to.
 
 The old way (fragile): give the agent a `sign_request` tool and write a
@@ -66,7 +66,7 @@ def charge_invoice(invoice_id: str, amount: float, target: str = "api.payments.e
 
 # -----------------------------------------------------------------------------
 # 3. The ONE line that adds Vouch: wrap the tools. Every call the agent makes to
-#    `charge_invoice` is now signed before the body runs — deterministically, in
+#    `charge_invoice` is now signed before the body runs - deterministically, in
 #    code, whether or not the LLM "knows" about signing.
 # -----------------------------------------------------------------------------
 signed_tools = protect([charge_invoice])
@@ -91,7 +91,7 @@ def run_with_real_crew():
 
 def run_without_crew():
     """No LLM key? Call the protected tool directly to see signing happen."""
-    print("\n(crewai/LLM not available — invoking the protected tool directly)")
+    print("\n(crewai/LLM not available - invoking the protected tool directly)")
     result = signed_tools[0]("42", 99.00, target="api.payments.example.com")
     print(f"Tool result: {result}")
 
@@ -108,12 +108,12 @@ else:
 credential = current_credential()
 print("\n--- Server-side verification ---")
 if credential is None:
-    print("No credential — no identity was resolved.")
+    print("No credential - no identity was resolved.")
 else:
     ok, passport = Verifier.verify_credential(credential, identity.public_key_jwk)
     print(f"Valid?  {ok}")
     if ok:
         print(f"Issuer: {passport.iss}")
         print(f"Intent: {passport.intent}")
-        print("The billing API knows which agent acted, and what it intended —")
+        print("The billing API knows which agent acted, and what it intended -")
         print("and the agent's code never had to remember to sign.")

@@ -1,9 +1,9 @@
-"""Vouch AutoGen integration — deterministic signing.
+"""Vouch AutoGen integration - deterministic signing.
 
 AutoGen has no global tool *decorator*, but it does register tools through a
 module-level call, ``autogen.register_function(fn, caller=..., executor=...)``.
 ``autosign()`` patches that call so every registered tool is signed before the
-executor runs it — near-zero setup::
+executor runs it - near-zero setup::
 
     import vouch.integrations.autogen as va
     va.autosign()
@@ -13,7 +13,7 @@ executor runs it — near-zero setup::
 
 For tools you register some other way (e.g. the ``@user_proxy.register_for_
 execution()`` decorator), wrap them with ``protect([...])`` or ``@signed``
-instead — ``register_function`` is the only global hook AutoGen exposes.
+instead - ``register_function`` is the only global hook AutoGen exposes.
 """
 
 from typing import Optional
