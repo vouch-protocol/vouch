@@ -9,7 +9,7 @@ __version__ = "1.6.0"
 
 # Core signing/verification
 from .signer import Signer
-from .verifier import Verifier, Passport, VerificationError, DelegationLink
+from .verifier import Verifier, Passport, VerificationError, DelegationLink, verify
 from .auditor import Auditor
 
 # Key management
@@ -282,6 +282,7 @@ __all__ = [
     # Core
     "Signer",
     "Verifier",
+    "verify",
     "Passport",
     "VerificationError",
     "DelegationLink",

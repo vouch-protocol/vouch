@@ -192,6 +192,53 @@ class TestCrewAIAdapter:
             assert hasattr(vc, name), name
 
 
+class TestVerifyOneLiner:
+    """vouch.verify is the receiving-side counterpart to protect()/sign_intent."""
+
+    def test_offline_with_key(self, env_identity, keypair, pubkey):
+        import vouch
+
+        signer = Signer(private_key=keypair.private_key_jwk, did=keypair.did)
+        cred = signer.sign_credential({"action": "a", "target": "t", "resource": "r"})
+
+        ok, passport = vouch.verify(cred, public_key=pubkey)
+        assert ok
+        assert passport.intent["action"] == "a"
+        # JWK form is accepted too
+        assert vouch.verify(cred, public_key=keypair.public_key_jwk)[0]
+
+    def test_verifies_current_credential_by_default(self, env_identity, keypair, pubkey):
+        import vouch
+
+        @signed(target="api.example.com")
+        def do(x):
+            return None
+
+        do(1)
+        # No credential argument: verify whatever was just signed.
+        ok, passport = vouch.verify(public_key=pubkey)
+        assert ok
+        assert passport.intent["target"] == "api.example.com"
+
+    def test_tamper_is_rejected(self, env_identity, keypair, pubkey):
+        import copy
+
+        import vouch
+
+        signer = Signer(private_key=keypair.private_key_jwk, did=keypair.did)
+        cred = signer.sign_credential({"action": "a", "target": "t", "resource": "r"})
+        tampered = copy.deepcopy(cred)
+        tampered["credentialSubject"]["intent"]["action"] = "STEAL"
+
+        assert vouch.verify(tampered, public_key=pubkey)[0] is False
+
+    def test_no_credential_returns_false_none(self, env_identity):
+        import vouch
+
+        autosign._current_credential.set(None)
+        assert vouch.verify() == (False, None)
+
+
 class TestDecoratorAutosignEngine:
     """install_decorator_autosign patches a framework's @tool decorator."""
 

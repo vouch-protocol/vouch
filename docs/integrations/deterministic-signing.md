@@ -75,12 +75,19 @@ cred = current_credential()                       # the VC dict
 headers = current_token_header()                  # {"Vouch-Token": "<json>"}
 ```
 
-Verify it on the receiving end exactly as before:
+Verify it on the receiving end in one line — the counterpart to `protect()`:
 
 ```python
-from vouch import Verifier
-ok, passport = Verifier.verify_credential(cred, issuer_public_key)
+import vouch
+
+ok, passport = vouch.verify(cred)                 # auto-resolves the issuer key
+ok, passport = vouch.verify(cred, public_key=k)   # or offline, with a known key
+ok, passport = vouch.verify()                      # or just verify the last signed call
 ```
+
+`vouch.verify` resolves the issuer's key from trusted roots or `did:web`
+automatically; pass `public_key=` for offline verification, or `credential=None`
+to verify whatever was most recently signed in this context.
 
 A tool can also opt in to *seeing* its own credential by declaring a
 `vouch_credential` keyword — the wrapper injects it automatically:
