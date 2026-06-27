@@ -642,6 +642,59 @@ class Verifier:
 
 
 # ---------------------------------------------------------------------------
+# One-line verification (the receiving-side counterpart to vouch.protect)
+# ---------------------------------------------------------------------------
+
+# A cached resolver-enabled Verifier so the convenience helper does not rebuild
+# (and re-warm DID caches) on every call.
+_DEFAULT_VERIFIER: Optional["Verifier"] = None
+
+
+def verify(
+    credential: Optional[Union[Dict[str, Any], str]] = None,
+    *,
+    public_key: Optional[Union[Ed25519PublicKey, str]] = None,
+    allow_did_resolution: bool = True,
+) -> Tuple[bool, Optional[CredentialPassport]]:
+    """Verify a Vouch Credential in one line.
+
+    The receiving-side counterpart to ``vouch.protect`` / ``vouch.sign_intent``::
+
+        ok, passport = vouch.verify(credential)
+
+    Args:
+      credential: a Vouch Credential dict or JSON string. If ``None``, verifies
+        the credential most recently signed in this execution context
+        (``vouch.current_credential()``) — handy right after a protected call.
+      public_key: an optional Multikey/JWK/``Ed25519PublicKey`` for OFFLINE
+        verification. If omitted, the issuer's key is resolved automatically
+        from trusted roots or ``did:web``.
+      allow_did_resolution: set ``False`` to forbid network DID resolution
+        (offline-only). Ignored when ``public_key`` is supplied.
+
+    Returns:
+      ``(is_valid, CredentialPassport | None)``.
+    """
+    if credential is None:
+        # Lazy import avoids a hard dependency cycle at module load time.
+        from vouch.autosign import current_credential
+
+        credential = current_credential()
+        if credential is None:
+            return False, None
+
+    # Offline path: a key was handed to us, no resolution needed.
+    if public_key is not None:
+        return Verifier.verify_credential(credential, public_key=public_key)
+
+    # Auto-resolving path: reuse a cached resolver-enabled Verifier.
+    global _DEFAULT_VERIFIER
+    if _DEFAULT_VERIFIER is None or _DEFAULT_VERIFIER._allow_resolution != allow_did_resolution:
+        _DEFAULT_VERIFIER = Verifier(allow_did_resolution=allow_did_resolution)
+    return _DEFAULT_VERIFIER.check_vouch_credential(credential)
+
+
+# ---------------------------------------------------------------------------
 # Module-private helpers
 # ---------------------------------------------------------------------------
 

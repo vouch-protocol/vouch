@@ -1,78 +1,42 @@
 """
-Vouch Protocol AutoGPT Integration.
+Vouch Protocol AutoGPT Integration — deterministic signing.
 
-Provides AutoGPT-compatible commands for generating Vouch-Tokens.
+AutoGPT exposes commands through the ``@command`` decorator, so all three tiers
+apply:
+
+  * ``protect([...])``  — wrap a list of commands (one line)
+  * ``@signed``         — annotate a single command (one decorator)
+  * ``autosign()``      — sign every ``@command`` framework-wide (near-zero)
+
+See :mod:`vouch.autosign` for the framework-agnostic core.
 """
 
-import os
 from typing import Optional
 
-try:
-    from autogpt.command_decorator import command
-except ImportError:
-    # Fallback decorator when AutoGPT is not installed
-    def command(name, description, args):
-        def decorator(func):
-            return func
-
-        return decorator
-
-
 from vouch import Signer
-
-
-@command(
-    "sign_with_vouch",
-    "Generates a cryptographic Vouch-Token to prove your identity to external services",
-    {
-        "intent": {
-            "type": "string",
-            "description": "What action you are taking (e.g., 'read_email', 'query_database')",
-            "required": True,
-        },
-        "target_service": {
-            "type": "string",
-            "description": "The target service domain",
-            "required": False,
-        },
-    },
+from vouch.autosign import (  # noqa: F401
+    current_credential,
+    install_decorator_autosign,
+    protect,
+    sign_intent,
+    signed,
 )
-def sign_with_vouch(intent: str, target_service: Optional[str] = None) -> str:
+
+
+def autosign(*, signer: Optional[Signer] = None) -> bool:
+    """Near-zero setup: sign **every** AutoGPT command defined after this call.
+
+    Monkeypatches ``autogpt.command_decorator.command`` so any command created
+    with ``@command(...)`` is automatically sign-wrapped::
+
+        import vouch.integrations.autogpt as va
+        va.autosign()
+
+        @command("read_email", ...)      # signed transparently
+        def read_email(...): ...
     """
-    Generate a Vouch-Token for authentication with external services.
-
-    Args:
-        intent: Description of the action being taken.
-        target_service: Optional target domain.
-
-    Returns:
-        Instructions with the generated Vouch-Token.
-    """
-    private_key = os.getenv("VOUCH_PRIVATE_KEY")
-    did = os.getenv("VOUCH_DID", "did:web:anonymous")
-
-    if not private_key:
-        return "Error: VOUCH_PRIVATE_KEY environment variable not set"
-
     try:
-        signer = Signer(private_key=private_key, did=did)
-
-        payload = {"intent": intent}
-        if target_service:
-            payload["target"] = target_service
-
-        token = signer.sign(payload)
-
-        return (
-            f"Vouch-Token generated successfully.\n"
-            f"Add this header to your request:\n"
-            f"Vouch-Token: {token}"
-        )
-
-    except Exception as e:
-        return f"Error generating Vouch-Token: {e}"
-
-
-def register_commands():
-    """Register Vouch commands with AutoGPT."""
-    return [sign_with_vouch]
+        import autogpt.command_decorator as cmd_module
+    except ImportError as e:  # pragma: no cover - optional dep
+        raise RuntimeError("autogpt is not installed; cannot autosign") from e
+    return install_decorator_autosign(cmd_module, "command", signer=signer)
