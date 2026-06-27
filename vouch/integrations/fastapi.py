@@ -1,10 +1,10 @@
 """
-Vouch Protocol FastAPI Integration — one-line credential gate.
+Vouch Protocol FastAPI Integration - one-line credential gate.
 
 Protect an endpoint by adding a single dependency. The gate reads the inbound
 credential (from the ``Vouch-Credential`` header, falling back to the request
 body), verifies it, optionally checks the intent matches the route, and rejects
-unsigned/untrusted callers with 401/403 — before your handler runs.
+unsigned/untrusted callers with 401/403 - before your handler runs.
 
     from fastapi import Depends, FastAPI
     from vouch.integrations.fastapi import VouchGate

@@ -1,11 +1,11 @@
 """
-Vouch Protocol LangChain Integration — deterministic signing.
+Vouch Protocol LangChain Integration - deterministic signing.
 
 Every tool call is signed in Python before it runs. Three tiers of effort:
 
-  * ``protect([...])``  — wrap a list of tools (one line)
-  * ``@signed``         — annotate a single tool (one decorator)
-  * ``autosign()``      — sign every ``@tool`` framework-wide (near-zero)
+  * ``protect([...])``  - wrap a list of tools (one line)
+  * ``@signed``         - annotate a single tool (one decorator)
+  * ``autosign()``      - sign every ``@tool`` framework-wide (near-zero)
 
 See :mod:`vouch.autosign` for the framework-agnostic core.
 """
@@ -74,8 +74,8 @@ def autosign(*, signer: Optional[Signer] = None) -> bool:
     """Near-zero setup: sign **every** LangChain tool defined after this call.
 
     Monkeypatches ``langchain_core.tools.tool`` (falling back to
-    ``langchain.tools.tool``) so any tool created with ``@tool`` — bare or with
-    arguments — is automatically sign-wrapped::
+    ``langchain.tools.tool``) so any tool created with ``@tool`` - bare or with
+    arguments - is automatically sign-wrapped::
 
         import vouch.integrations.langchain as vl
         vl.autosign()

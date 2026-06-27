@@ -1,5 +1,5 @@
 """
-Server-side credential gate — the production counterpart to ``vouch.protect``.
+Server-side credential gate - the production counterpart to ``vouch.protect``.
 
 On the sending side, ``protect`` / ``sign_intent`` make an agent sign every tool
 call. On the receiving side, an API has to verify those credentials and reject
@@ -7,7 +7,7 @@ unsigned or untrusted callers. That used to be hand-written per endpoint: pull a
 header, call ``verify_credential`` with a hard-coded public key, raise 401, and
 (if you cared) check the intent matched the route.
 
-``CredentialGate`` collapses that to one object. It is framework-agnostic — the
+``CredentialGate`` collapses that to one object. It is framework-agnostic - the
 FastAPI/ASGI adapter in :mod:`vouch.integrations.fastapi` is a thin shell over
 it, and the same core backs any other web framework.
 """
@@ -42,15 +42,15 @@ class CredentialGate:
 
     Key resolution, in order of what you configure:
 
-      * ``public_key=`` — a single trusted issuer key (offline, no network).
-      * ``trusted_keys=`` — a ``{did: public_key}`` map of allowed issuers
+      * ``public_key=`` - a single trusted issuer key (offline, no network).
+      * ``trusted_keys=`` - a ``{did: public_key}`` map of allowed issuers
         (offline; an issuer not in the map is rejected).
       * otherwise the issuer's key is resolved automatically from ``did:web``
         (set ``allow_did_resolution=False`` to forbid network resolution).
 
-    Optional intent policy — reject a credential whose intent does not match:
+    Optional intent policy - reject a credential whose intent does not match:
 
-      * ``require_action`` / ``require_target`` / ``require_resource`` — exact
+      * ``require_action`` / ``require_target`` / ``require_resource`` - exact
         string match against ``passport.intent``.
     """
 
