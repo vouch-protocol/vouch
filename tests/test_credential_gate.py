@@ -91,16 +91,19 @@ fastapi = pytest.importorskip("fastapi")
 
 @pytest.fixture
 def client(issuer):
+    from typing import Annotated
+
     from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
 
     from vouch.integrations.fastapi import VouchGate
+    from vouch.verifier import CredentialPassport
 
     app = FastAPI()
     gate = VouchGate(public_key=issuer.public_key_jwk, require_action="charge")
 
     @app.post("/charge")
-    async def charge(passport=Depends(gate)):
+    async def charge(passport: Annotated[CredentialPassport, Depends(gate)]):
         return {"agent": passport.iss, "intent": passport.intent}
 
     return TestClient(app)

@@ -22,10 +22,12 @@ Run & verify:
 """
 
 import os
+from typing import Annotated
 
 from fastapi import Depends, FastAPI
 
 from vouch.integrations.fastapi import VouchGate
+from vouch.verifier import CredentialPassport
 
 app = FastAPI(title="Vouch Credential Gate")
 
@@ -36,7 +38,7 @@ gate = VouchGate(public_key=os.getenv("VOUCH_PUBLIC_KEY"))
 
 
 @app.post("/api/resource")
-async def protected_resource(passport=Depends(gate)):
+async def protected_resource(passport: Annotated[CredentialPassport, Depends(gate)]):
     """Require a valid Vouch credential; the gate rejects everything else."""
     return {"status": "verified", "agent": passport.sub, "intent": passport.intent}
 

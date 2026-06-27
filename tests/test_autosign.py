@@ -33,9 +33,7 @@ def env_identity(monkeypatch, keypair):
 
 @pytest.fixture
 def pubkey(keypair):
-    return Signer(
-        private_key=keypair.private_key_jwk, did=keypair.did
-    ).get_public_key_multikey()
+    return Signer(private_key=keypair.private_key_jwk, did=keypair.did).get_public_key_multikey()
 
 
 def _verify(cred, pubkey):
