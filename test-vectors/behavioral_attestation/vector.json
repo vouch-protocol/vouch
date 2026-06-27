@@ -1,0 +1,161 @@
+{
+  "description": "Behavioural-attestation digest vectors (Specification 11.3). digest() aggregates recorded signals (apiCalls, tokensConsumed, resourcesAccessed, intentDriftScore=mean of drift samples). The scorer cases pin the three reference aggregators; the validate cases give one valid and three invalid digests (validate raises on the invalid ones).",
+  "module": "vouch.behavioral_attestation",
+  "spec_reference": "Specification 11.3",
+  "version": "1.0",
+  "cases": [
+    {
+      "name": "digest_from_recorded_signals",
+      "function": "BehavioralCollector.digest",
+      "input": {
+        "api_calls": [
+          {
+            "endpoint": "https://api.example.com/orders",
+            "tokens": 120,
+            "resource": "order:1",
+            "drift": 0.1
+          },
+          {
+            "endpoint": "https://api.example.com/orders",
+            "tokens": 80,
+            "resource": "order:1",
+            "drift": 0.2
+          },
+          {
+            "endpoint": "https://api.example.com/users",
+            "tokens": 50,
+            "resource": "user:7",
+            "drift": 0.0
+          }
+        ],
+        "resource_accesses": [
+          "config:flags"
+        ],
+        "drift_samples": [
+          0.3
+        ]
+      },
+      "expected": {
+        "digest": {
+          "apiCalls": 3,
+          "tokensConsumed": 250,
+          "resourcesAccessed": [
+            "order:1",
+            "user:7",
+            "config:flags"
+          ],
+          "intentDriftScore": 0.15
+        }
+      }
+    },
+    {
+      "name": "mean_drift_scorer",
+      "function": "mean_drift_scorer",
+      "input": {
+        "samples": [
+          0.1,
+          0.2,
+          0.0,
+          0.3
+        ]
+      },
+      "expected": {
+        "score": 0.15
+      }
+    },
+    {
+      "name": "max_drift_scorer",
+      "function": "max_drift_scorer",
+      "input": {
+        "samples": [
+          0.1,
+          0.2,
+          0.0,
+          0.3
+        ]
+      },
+      "expected": {
+        "score": 0.3
+      }
+    },
+    {
+      "name": "ewma_drift_scorer_alpha_0.3",
+      "function": "ewma_drift_scorer",
+      "input": {
+        "alpha": 0.3,
+        "samples": [
+          0.1,
+          0.2,
+          0.0,
+          0.3
+        ]
+      },
+      "expected": {
+        "score": 0.1537
+      }
+    },
+    {
+      "name": "validate_behavioral_digest_valid",
+      "function": "validate_behavioral_digest",
+      "input": {
+        "digest": {
+          "apiCalls": 3,
+          "tokensConsumed": 250,
+          "resourcesAccessed": [
+            "order:1",
+            "user:7",
+            "config:flags"
+          ],
+          "intentDriftScore": 0.15
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "name": "validate_behavioral_digest_invalid_0",
+      "function": "validate_behavioral_digest",
+      "input": {
+        "digest": {
+          "apiCalls": -1,
+          "tokensConsumed": 0,
+          "resourcesAccessed": [],
+          "intentDriftScore": 0.0
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "name": "validate_behavioral_digest_invalid_1",
+      "function": "validate_behavioral_digest",
+      "input": {
+        "digest": {
+          "apiCalls": 1,
+          "tokensConsumed": 0,
+          "resourcesAccessed": [],
+          "intentDriftScore": 1.5
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "name": "validate_behavioral_digest_invalid_2",
+      "function": "validate_behavioral_digest",
+      "input": {
+        "digest": {
+          "apiCalls": 1,
+          "tokensConsumed": 0,
+          "resourcesAccessed": []
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    }
+  ]
+}

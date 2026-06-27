@@ -1,0 +1,145 @@
+{
+  "description": "Heartbeat protocol vectors (Specification 11.3). build_request emits the wire format across two intervals (the canary reveal appears in interval 1 and interval_index increments). validate accepts the first heartbeat and returns a fully pinned SessionVoucher; a tampered reveal is rejected with reason 'canary_chain_broken'. The voucher's id/validFrom/validUntil come from the pinned clock and UUID.",
+  "module": "vouch.heartbeat",
+  "spec_reference": "Specification 11.3",
+  "version": "1.0",
+  "pinned": {
+    "now": "2026-01-01T00:00:00Z",
+    "uuid": "urn:uuid:00000000-0000-4000-8000-000000000001",
+    "os_urandom": "os.urandom is pinned: the nth call (0-indexed) returns the single byte (n + 1) repeated to the requested length. The counter resets per vector."
+  },
+  "cases": [
+    {
+      "name": "build_request_two_intervals",
+      "function": "HeartbeatSession.build_request",
+      "input": {
+        "subject_did": "did:web:agent.example.com",
+        "session_id": "urn:uuid:00000000-0000-4000-8000-0000000000ab",
+        "interval_0_now": "2026-01-01T00:00:00Z",
+        "interval_1_now": "2026-01-01T00:01:00Z"
+      },
+      "expected": {
+        "interval_0": {
+          "version": "1.0",
+          "type": "heartbeat_request",
+          "subject_did": "did:web:agent.example.com",
+          "session_id": "urn:uuid:00000000-0000-4000-8000-0000000000ab",
+          "interval_index": 0,
+          "issued_at": "2026-01-01T00:00:00Z",
+          "actionMerkleRoot": "uYuQLsYdy4JKdVaFrYlu3EzfcCa0fPpzkfC68tyQzZU8",
+          "canaryCommitment": "ucs1uhCLEB_ttCYaQ8RMLfe1-wvf14dML2dUh8BU2N5M",
+          "behavioralDigest": {
+            "apiCalls": 1,
+            "tokensConsumed": 100,
+            "resourcesAccessed": [
+              "order:1"
+            ],
+            "intentDriftScore": 0.05
+          }
+        },
+        "interval_1": {
+          "version": "1.0",
+          "type": "heartbeat_request",
+          "subject_did": "did:web:agent.example.com",
+          "session_id": "urn:uuid:00000000-0000-4000-8000-0000000000ab",
+          "interval_index": 1,
+          "issued_at": "2026-01-01T00:01:00Z",
+          "actionMerkleRoot": "uWAWHGevwbR6mbHtJxhMSkIihVatAlXfNjdF5V8KxZaY",
+          "canaryCommitment": "udYd7tB05O1-4RVzmDs2N2gAdBjFklrFN-n-JVlbuyko",
+          "behavioralDigest": {
+            "apiCalls": 1,
+            "tokensConsumed": 40,
+            "resourcesAccessed": [],
+            "intentDriftScore": 0.1
+          },
+          "canaryReveal": "uAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+        }
+      }
+    },
+    {
+      "name": "validate_accepts_first_heartbeat",
+      "function": "HeartbeatValidator.validate",
+      "input": {
+        "validator_did": "did:web:validator.example.com",
+        "request": {
+          "version": "1.0",
+          "type": "heartbeat_request",
+          "subject_did": "did:web:agent.example.com",
+          "session_id": "urn:uuid:00000000-0000-4000-8000-0000000000ab",
+          "interval_index": 0,
+          "issued_at": "2026-01-01T00:00:00Z",
+          "actionMerkleRoot": "uYuQLsYdy4JKdVaFrYlu3EzfcCa0fPpzkfC68tyQzZU8",
+          "canaryCommitment": "ucs1uhCLEB_ttCYaQ8RMLfe1-wvf14dML2dUh8BU2N5M",
+          "behavioralDigest": {
+            "apiCalls": 1,
+            "tokensConsumed": 100,
+            "resourcesAccessed": [
+              "order:1"
+            ],
+            "intentDriftScore": 0.05
+          }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "reasons": [],
+        "session_voucher": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://vouch-protocol.com/contexts/v1"
+          ],
+          "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "issuer": [
+            "did:web:validator.example.com"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2026-01-01T00:02:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "decayLambda": 0.01,
+            "initialTrust": 1.0,
+            "maxTtl": 3600,
+            "scope": [
+              "agent_actions"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "validate_rejects_broken_canary_chain",
+      "function": "HeartbeatValidator.validate",
+      "input": {
+        "validator_did": "did:web:validator.example.com",
+        "request": {
+          "version": "1.0",
+          "type": "heartbeat_request",
+          "subject_did": "did:web:agent.example.com",
+          "session_id": "urn:uuid:00000000-0000-4000-8000-0000000000ab",
+          "interval_index": 1,
+          "issued_at": "2026-01-01T00:01:00Z",
+          "actionMerkleRoot": "uWAWHGevwbR6mbHtJxhMSkIihVatAlXfNjdF5V8KxZaY",
+          "canaryCommitment": "udYd7tB05O1-4RVzmDs2N2gAdBjFklrFN-n-JVlbuyko",
+          "behavioralDigest": {
+            "apiCalls": 1,
+            "tokensConsumed": 40,
+            "resourcesAccessed": [],
+            "intentDriftScore": 0.1
+          },
+          "canaryReveal": "u__________________________________________8"
+        }
+      },
+      "expected": {
+        "ok": false,
+        "reasons": [
+          "canary_chain_broken"
+        ],
+        "session_voucher": null
+      }
+    }
+  ]
+}

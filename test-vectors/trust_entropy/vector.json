@@ -1,0 +1,290 @@
+{
+  "description": "Trust-entropy decay vectors (Specification 11.5). trust(t) = initialTrust * exp(-decayLambda * (t - validFrom)). Each case pins at_time / from_time explicitly so the wall-clock default is never used. Floats are the Python source-of-truth values; cross-language ports comparing exp() results should allow a small tolerance (see README).",
+  "module": "vouch.trust_entropy",
+  "spec_reference": "Specification 11.5",
+  "version": "1.0",
+  "pinned": {
+    "now": "2026-01-01T00:00:00Z"
+  },
+  "cases": [
+    {
+      "name": "compute_trust_at_elapsed_0s",
+      "function": "compute_trust_at",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "at_time": "2026-01-01T00:00:00Z"
+      },
+      "expected": {
+        "trust": 1.0
+      }
+    },
+    {
+      "name": "compute_trust_at_elapsed_60s",
+      "function": "compute_trust_at",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "at_time": "2026-01-01T00:01:00Z"
+      },
+      "expected": {
+        "trust": 0.5488116360940264
+      }
+    },
+    {
+      "name": "compute_trust_at_elapsed_100s",
+      "function": "compute_trust_at",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "at_time": "2026-01-01T00:01:40Z"
+      },
+      "expected": {
+        "trust": 0.36787944117144233
+      }
+    },
+    {
+      "name": "compute_trust_at_elapsed_600s",
+      "function": "compute_trust_at",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "at_time": "2026-01-01T00:10:00Z"
+      },
+      "expected": {
+        "trust": 0.0024787521766663585
+      }
+    },
+    {
+      "name": "compute_trust_at_elapsed_3600s",
+      "function": "compute_trust_at",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "at_time": "2026-01-01T01:00:00Z"
+      },
+      "expected": {
+        "trust": 2.3195228302435696e-16
+      }
+    },
+    {
+      "name": "compute_trust_at_overflow_guard_returns_zero",
+      "function": "compute_trust_at",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 1.0
+          }
+        },
+        "at_time": "2026-01-01T00:16:40Z"
+      },
+      "expected": {
+        "trust": 0.0
+      }
+    },
+    {
+      "name": "evaluate_trust_passes_low_threshold",
+      "function": "evaluate_trust",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "threshold": 0.3,
+        "at_time": "2026-01-01T00:01:40Z"
+      },
+      "expected": {
+        "trust": 0.36787944117144233,
+        "threshold": 0.3,
+        "passed": true,
+        "elapsed_seconds": 100.0,
+        "initial_trust": 1.0,
+        "decay_lambda": 0.01,
+        "evaluated_at": "2026-01-01T00:01:40Z"
+      }
+    },
+    {
+      "name": "evaluate_trust_fails_high_threshold",
+      "function": "evaluate_trust",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "threshold": 0.5,
+        "at_time": "2026-01-01T00:01:40Z"
+      },
+      "expected": {
+        "trust": 0.36787944117144233,
+        "threshold": 0.5,
+        "passed": false,
+        "elapsed_seconds": 100.0,
+        "initial_trust": 1.0,
+        "decay_lambda": 0.01,
+        "evaluated_at": "2026-01-01T00:01:40Z"
+      }
+    },
+    {
+      "name": "half_life_seconds_lambda_0.01",
+      "function": "half_life_seconds",
+      "input": {
+        "decay_lambda": 0.01
+      },
+      "expected": {
+        "half_life_seconds": 69.31471805599453
+      }
+    },
+    {
+      "name": "half_life_seconds_lambda_0.1",
+      "function": "half_life_seconds",
+      "input": {
+        "decay_lambda": 0.1
+      },
+      "expected": {
+        "half_life_seconds": 6.931471805599452
+      }
+    },
+    {
+      "name": "time_until_threshold_reachable",
+      "function": "time_until_threshold",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "threshold": 0.5,
+        "from_time": "2026-01-01T00:00:00Z"
+      },
+      "expected": {
+        "seconds": 69.314718
+      }
+    },
+    {
+      "name": "time_until_threshold_above_initial_is_zero",
+      "function": "time_until_threshold",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.01
+          }
+        },
+        "threshold": 2.0,
+        "from_time": "2026-01-01T00:00:00Z"
+      },
+      "expected": {
+        "seconds": 0.0
+      }
+    },
+    {
+      "name": "time_until_threshold_zero_lambda_is_none",
+      "function": "time_until_threshold",
+      "input": {
+        "session_voucher": {
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "initialTrust": 1.0,
+            "decayLambda": 0.0
+          }
+        },
+        "threshold": 0.5,
+        "from_time": "2026-01-01T00:00:00Z"
+      },
+      "expected": {
+        "seconds": null
+      }
+    }
+  ]
+}
