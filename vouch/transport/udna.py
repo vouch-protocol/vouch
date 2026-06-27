@@ -19,9 +19,11 @@ This adapter targets the real ``sirraya-udna-sdk`` (distribution
     lane (``0x01`` Control, ``0x02`` Messaging, ``0x03`` Telemetry).
   * **Address verification** — ``UdnaSDK.verify_address(address)`` checks the
     address signature against the DID's key.
-  * **Secure messaging** — ``udna_sdk.udna.NoiseHandshake`` (a DID-authenticated
-    Noise-IK handshake) plus ``SecureMessaging`` (ChaCha20-Poly1305 over the
-    derived session key).
+  * **Secure messaging** — ``udna_sdk.udna.NoiseHandshake`` (a handshake that
+    exchanges DID-signed ephemeral keys) plus ``SecureMessaging``
+    (ChaCha20-Poly1305 over the derived session key). NOTE: the v1.0.x handshake
+    authenticates peers but does *not* provide confidentiality — see the
+    security warning on :class:`SirrayaUdnaNode`.
 
 What the SDK deliberately does *not* ship is a production wire transport: byte
 delivery to a remote peer is left to the integrator (the bundled DHT is an
@@ -362,16 +364,34 @@ class SirrayaUdnaNode:
     Responsibilities are split exactly along what the SDK does and doesn't
     provide:
 
-      * **crypto (SDK):** ``udna_sdk.udna.NoiseHandshake`` runs a
-        DID-authenticated Noise-IK handshake bound to ``local_private_key``;
-        ``SecureMessaging`` encrypts the envelope with ChaCha20-Poly1305 over
+      * **crypto (SDK):** ``udna_sdk.udna.NoiseHandshake`` exchanges
+        DID-signed ephemeral keys bound to ``local_private_key``;
+        ``SecureMessaging`` then frames the envelope with ChaCha20-Poly1305 over
         the derived session key.
       * **delivery (channel):** the resulting handshake and ciphertext frames
         are moved to the peer by the injected :class:`UdnaChannel`.
 
-    A secure send is therefore two channel exchanges: the Noise handshake, then
-    the encrypted payload. The peer endpoint is expected to speak the same
+    A secure send is therefore two channel exchanges: the handshake, then the
+    encrypted payload. The peer endpoint is expected to speak the same
     ``udna_sdk`` handshake (``respond_to_handshake``) on the other side.
+
+    .. warning::
+       **The bundled ``udna_sdk`` v1.0.x handshake does NOT provide transport
+       confidentiality.** Its ``finalize_handshake`` derives the session key as
+       ``sha256(local_did ‖ remote_did ‖ both ephemeral *public* keys)`` — every
+       input is sent in the clear, with no Diffie-Hellman, so a passive observer
+       can recompute the key and decrypt the ChaCha20-Poly1305 frames (the SDK's
+       own code comments it as a demo placeholder for "a full Noise
+       implementation"). The handshake messages *are* signed, so peer
+       authenticity holds, but channel secrecy does not.
+
+       Vouch does not depend on this for security: the envelope payload is a
+       signed Vouch credential, so its integrity and authenticity hold
+       end-to-end regardless of transport. But do **not** treat a UDNA channel
+       as private for sensitive payloads until upstream ships a real DH
+       handshake (see ``docs/udna-upstream-proposal.md``). For confidential
+       payloads today, encrypt at the application layer before sealing, or
+       prefer a transport with real channel encryption.
 
     Args:
       channel: the byte-delivery overlay.
