@@ -18,22 +18,21 @@
   dependencies use `Annotated[..., Depends(...)]`, not call-in-default, to
   satisfy bugbear B008.
 
-## Glossary
+## Assistant-facing surfaces (keep in sync)
 
-- **FHKCOG**: the set of assistant-facing surfaces to keep in sync when the API
-  or philosophy changes. It stands for:
-  - **F** = FAQ (`agents-and-skills/FAQ-DRAFT.md`)
-  - **H** = Help Guide (`agents-and-skills/HELP-GUIDE-DRAFT.md`)
-  - **K** = Knowledge Base for the Vouch Assistant
-    (`website-agent/backend/knowledge/`)
-  - **C** = Claude Skill (`claude-skill/skills/vouch-protocol/`)
-  - **O** = OpenAI Custom GPT (`openai-gpt/`)
-  - **G** = Gemini Gem (`gemini-gem/`)
+When the API or philosophy changes, update these surfaces together:
 
-  The four assistant surfaces (Knowledge Base, Claude Skill, OpenAI GPT, Gemini
-  Gem) share the same knowledge files (`quickstart.md`, `integrations.md`,
-  `delegation.md`, etc.). Keep them identical: edit one canonical copy and
-  propagate to all four.
+- FAQ (`agents-and-skills/FAQ-DRAFT.md`)
+- Help Guide (`agents-and-skills/HELP-GUIDE-DRAFT.md`)
+- Knowledge Base for the Vouch Assistant (`website-agent/backend/knowledge/`)
+- Claude Skill (`claude-skill/skills/vouch-protocol/`)
+- OpenAI Custom GPT (`openai-gpt/`)
+- Gemini Gem (`gemini-gem/`)
+
+The four assistant surfaces (Knowledge Base, Claude Skill, OpenAI GPT, Gemini
+Gem) share the same knowledge files (`quickstart.md`, `integrations.md`,
+`delegation.md`, etc.). Keep them identical: edit one canonical copy and
+propagate to all four.
 
 ## Product philosophy
 
