@@ -1,20 +1,22 @@
-"""Vouch AutoGen integration.
+"""Vouch AutoGen integration — deterministic signing.
 
-AutoGen tools are plain functions, so the framework-agnostic deterministic
-signers apply directly: wrap your real tools with ``protect([...])`` or annotate
-them with ``@signed`` and every call is signed before it runs — no prompt, no
-reliance on the model calling ``sign_action``.
+AutoGen tools are plain functions registered per-agent; there is no global tool
+decorator to patch, so there is no ``autosign()`` here. ``protect([...])`` is the
+one-line equivalent — wrap your real tools once and every call is signed before
+it runs::
+
+    from vouch.integrations.autogen import protect
+
+    tools = protect([search_db, send_email])
+
+Or annotate individual tools with ``@signed``.
 """
 
 from vouch.autosign import current_credential, protect, sign_intent, signed
-
-from .tool import VOUCH_FUNCTIONS, sign_action
 
 __all__ = [
     "protect",
     "signed",
     "sign_intent",
     "current_credential",
-    "sign_action",
-    "VOUCH_FUNCTIONS",
 ]

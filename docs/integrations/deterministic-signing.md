@@ -93,21 +93,24 @@ def charge_invoice(invoice_id, amount, vouch_credential=None):
 
 ## Coverage
 
-Deterministic signing is wired into every agent-tool integration:
+Deterministic signing is wired into every agent-tool integration. `autosign()`
+exists only where a framework exposes a single global tool-decorator to patch;
+for frameworks whose tools are plain functions, `protect([...])` is the
+equivalent one-liner.
 
-| Integration | `protect` | `@signed` | `autosign()` |
-| --- | --- | --- | --- |
-| CrewAI | ✅ | ✅ | ✅ |
-| LangChain | ✅ | ✅ | — |
-| AutoGen | ✅ | ✅ | — |
-| AutoGPT | ✅ | ✅ | — |
-| Vertex AI | ✅ | ✅ | — |
-| Google (Vertex Agent Builder) | ✅ | ✅ | — |
-| Google ADK | ✅ (`protect_tools`) | — | — |
+| Integration | `protect` | `@signed` | `autosign()` | why |
+| --- | --- | --- | --- | --- |
+| CrewAI | ✅ | ✅ | ✅ | patches `crewai.tools.tool` |
+| LangChain | ✅ | ✅ | ✅ | patches `langchain[_core].tools.tool` |
+| AutoGPT | ✅ | ✅ | ✅ | patches `autogpt.command_decorator.command` |
+| AutoGen | ✅ | ✅ | — | tools are plain functions; no decorator |
+| Vertex AI | ✅ | ✅ | — | tools are plain functions; no decorator |
+| Google (Vertex Agent Builder) | ✅ | ✅ | — | tools are plain functions; no decorator |
+| Google ADK | ✅ (`protect_tools`) | — | — | tools are plain functions; no decorator |
 
-The legacy `sign_request` / `VouchSignerTool` / `sign_action` / `sign_with_vouch`
-tools still exist for backward compatibility, but new code should prefer the
-deterministic path above.
+The old LLM-driven "mint a token" tools (`sign_request`, `VouchSignerTool`,
+`sign_action`, `sign_with_vouch`, `VertexAISigner`, …) have been **removed** —
+they were never depended on, and deterministic signing replaces them entirely.
 
 Verify-side and non-tool-call integrations (Vouch Shield, the MCP server, the
 Hasura webhook, n8n, Streamlit) consume these credentials rather than producing

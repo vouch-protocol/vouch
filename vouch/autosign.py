@@ -284,6 +284,53 @@ def _accepts_kwarg(func: Callable, name: str) -> bool:
     return False
 
 
+def install_decorator_autosign(
+    module: Any,
+    attr: str,
+    *,
+    signer: Optional[Signer] = None,
+) -> bool:
+    """Monkeypatch a framework's tool-*decorator* so every tool it produces is
+    sign-wrapped.
+
+    This is the engine behind each framework's ``autosign()``. It handles both
+    decorator styles:
+
+      * bare        ``@tool`` applied straight to a function, and
+      * factory     ``@tool("name", ...)`` that returns a decorator.
+
+    Idempotent: patching an already-patched decorator is a no-op. Returns
+    ``True`` if it patched, ``False`` if it was already patched.
+
+    Only frameworks that expose a single global tool-decorator (CrewAI,
+    LangChain, AutoGPT) can use this. Frameworks whose tools are plain
+    functions (AutoGen, Vertex AI, Google, ADK) have no decorator to hook —
+    there ``protect([...])`` is the one-line equivalent.
+    """
+    original = getattr(module, attr)
+    if getattr(original, "__vouch_autosign__", False):
+        return False
+
+    @functools.wraps(original)
+    def patched(*args, **kwargs):
+        # Bare use: the decorator is applied directly to the function.
+        if len(args) == 1 and not kwargs and callable(args[0]):
+            return original(signed(args[0], signer=signer))
+
+        # Factory use: calling the decorator returns the real decorator, which
+        # we wrap so it sign-wraps the function it receives.
+        decorator = original(*args, **kwargs)
+
+        def wrapping(func):
+            return decorator(signed(func, signer=signer))
+
+        return wrapping
+
+    patched.__vouch_autosign__ = True  # type: ignore[attr-defined]
+    setattr(module, attr, patched)
+    return True
+
+
 def protect(
     tools: Sequence[Callable],
     *,
@@ -310,6 +357,7 @@ def protect(
 __all__ = [
     "signed",
     "protect",
+    "install_decorator_autosign",
     "sign_intent",
     "resolve_signer",
     "reset_default_signer",

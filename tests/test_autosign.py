@@ -192,6 +192,59 @@ class TestCrewAIAdapter:
             assert hasattr(vc, name), name
 
 
+class TestDecoratorAutosignEngine:
+    """install_decorator_autosign patches a framework's @tool decorator."""
+
+    def _fake_module(self):
+        import types
+
+        mod = types.ModuleType("fakefw")
+
+        def tool(*dargs, **dkw):
+            # bare: tool(func) ; factory: tool("name")(func)
+            if len(dargs) == 1 and callable(dargs[0]) and not dkw:
+                fn = dargs[0]
+                fn._toolname = fn.__name__
+                return fn
+
+            def deco(fn):
+                fn._toolname = dargs[0] if dargs else "x"
+                return fn
+
+            return deco
+
+        mod.tool = tool
+        return mod
+
+    def test_factory_style_is_signed(self, env_identity, pubkey):
+        mod = self._fake_module()
+        assert autosign.install_decorator_autosign(mod, "tool") is True
+
+        @mod.tool("Charge")
+        def charge(invoice_id, target=None):
+            return current_credential()
+
+        cred = charge("42", target="bank.example.com")
+        assert _verify(cred, pubkey)[0]
+        assert charge._toolname == "Charge"  # framework metadata preserved
+
+    def test_bare_style_is_signed(self, env_identity, pubkey):
+        mod = self._fake_module()
+        autosign.install_decorator_autosign(mod, "tool")
+
+        @mod.tool
+        def ping(target=None):
+            return current_credential()
+
+        assert _verify(ping(target="svc"), pubkey)[0]
+
+    def test_idempotent(self, env_identity):
+        mod = self._fake_module()
+        assert autosign.install_decorator_autosign(mod, "tool") is True
+        assert autosign.install_decorator_autosign(mod, "tool") is False
+
+
+# Every agent integration exposes the deterministic signing primitives.
 @pytest.mark.parametrize(
     "module",
     [
@@ -209,3 +262,44 @@ def test_every_integration_exposes_deterministic_signers(module):
     mod = importlib.import_module(module)
     for name in ("protect", "signed", "sign_intent", "current_credential"):
         assert hasattr(mod, name), f"{module} missing {name}"
+
+
+# Only the decorator-based frameworks expose autosign(); the function-based ones
+# deliberately do not (protect() is their one-liner).
+@pytest.mark.parametrize(
+    "module,has_autosign",
+    [
+        ("vouch.integrations.crewai", True),
+        ("vouch.integrations.langchain", True),
+        ("vouch.integrations.autogpt", True),
+        ("vouch.integrations.autogen", False),
+        ("vouch.integrations.vertex_ai", False),
+        ("vouch.integrations.google", False),
+    ],
+)
+def test_autosign_only_where_a_decorator_exists(module, has_autosign):
+    import importlib
+
+    mod = importlib.import_module(module)
+    assert hasattr(mod, "autosign") is has_autosign
+
+
+def test_legacy_signing_tools_are_gone():
+    """The LLM-driven 'mint a token' tools were removed (no legacy in use)."""
+    import importlib
+
+    import vouch.integrations.crewai as crewai
+    import vouch.integrations.langchain as langchain
+
+    for removed in ("sign_request", "VouchCrewTools", "VouchSignerTool"):
+        assert not hasattr(crewai, removed), f"crewai still exposes {removed}"
+    for removed in ("VouchSignerTool", "VouchSignerInput"):
+        assert not hasattr(langchain, removed), f"langchain still exposes {removed}"
+
+    # The deleted modules should no longer import.
+    for gone in (
+        "vouch.integrations.autogen.tool",
+        "vouch.integrations.vertex_ai.tool",
+    ):
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module(gone)
