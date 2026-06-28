@@ -196,6 +196,7 @@ class Signer:
         parent_credential: Optional[Dict[str, Any]] = None,
         valid_from: Optional[datetime] = None,
         credential_id: Optional[str] = None,
+        credential_status: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Issue a Verifiable Credential with a Data Integrity proof.
@@ -214,6 +215,10 @@ class Signer:
             a new link from the parent's subject to this Signer's DID.
           valid_from: Optional override for the credential's `validFrom`.
           credential_id: Optional credential ID. Defaults to a fresh UUID URN.
+          credential_status: Optional W3C `credentialStatus` entry (typically
+            from `vouch.status_list.build_status_list_entry`) so a credential
+            can be revoked later. The proof covers it, so it must be set at
+            signing time.
 
         Returns:
           A signed Vouch Credential dict conforming to VC Data Model 2.0
@@ -241,6 +246,7 @@ class Signer:
             delegation_chain=chain or None,
             credential_id=credential_id,
             valid_from=valid_from,
+            credential_status=credential_status,
         )
 
         proof = data_integrity.build_proof(

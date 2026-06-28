@@ -140,3 +140,25 @@ class TestKeyGeneration:
         keys1 = generate_identity(domain="test.com")
         keys2 = generate_identity(domain="test.com")
         assert keys1.private_key_jwk != keys2.private_key_jwk
+
+
+class TestSignCredentialStatus:
+    """sign_credential accepts a credentialStatus entry covered by the proof."""
+
+    def test_credential_status_is_attached_and_signed(self, keypair):
+        from vouch import Signer, Verifier
+        from vouch.status_list import build_status_list_entry
+
+        signer = Signer(private_key=keypair.private_key_jwk, did=keypair.did)
+        entry = build_status_list_entry(
+            status_list_credential="https://issuer.example/status/1",
+            status_list_index=0,
+        )
+        signed = signer.sign_credential(
+            intent={"action": "a", "target": "t", "resource": "r"},
+            credential_status=entry,
+        )
+        assert signed["credentialStatus"] == entry
+        # The proof covers the status entry, so verification still passes.
+        ok, _ = Verifier.verify_credential(signed, keypair.public_key_jwk)
+        assert ok
