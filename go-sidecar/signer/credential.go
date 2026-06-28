@@ -23,8 +23,16 @@ const maxDelegationDepth = 5
 // SignCredentialOptions configures Signer.SignCredential.
 type SignCredentialOptions struct {
 	// Intent is the action being authorized. Must contain action, target,
-	// resource (Specification §5.4.1).
+	// resource (Specification §5.4.1). The intent can also be supplied via the
+	// Action/Target/Resource fields below; when both are set, the named fields
+	// override the matching keys in Intent.
 	Intent map[string]any
+
+	// Action, Target, Resource are a convenience alternative to building the
+	// Intent map by hand. Any that are non-empty are folded into Intent.
+	Action   string
+	Target   string
+	Resource string
 
 	// ValidSeconds overrides the default validity window (Signer.defaultExpiry).
 	ValidSeconds int
@@ -59,6 +67,7 @@ type SignCredentialOptions struct {
 // proof using the eddsa-jcs-2022 cryptosuite (Specification §5, §7.1).
 // Returns the credential as a map suitable for JSON serialization.
 func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, error) {
+	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain
 	if opts.ParentCredential != nil {
 		extended, err := s.extendDelegationChain(opts.ParentCredential, opts.Intent)
@@ -175,6 +184,7 @@ func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) 
 // eddsa-jcs-2022 default. Implementations using this profile SHOULD
 // transmit credentials in the HTTP request body (§5.6).
 func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]any, error) {
+	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain
 	if opts.ParentCredential != nil {
 		extended, err := s.extendDelegationChain(opts.ParentCredential, opts.Intent)
@@ -286,4 +296,24 @@ func isSubResource(child, parent string) bool {
 	}
 	trimmed := strings.TrimRight(parent, "/")
 	return strings.HasPrefix(child, trimmed+"/")
+}
+
+// mergeIntent folds the named action/target/resource into a copy of the intent
+// map. Named values override matching keys; the caller's map is not mutated.
+// Required-field validation is left to BuildVouchCredential.
+func mergeIntent(intent map[string]any, action, target, resource string) map[string]any {
+	merged := make(map[string]any, len(intent)+3)
+	for k, v := range intent {
+		merged[k] = v
+	}
+	if action != "" {
+		merged["action"] = action
+	}
+	if target != "" {
+		merged["target"] = target
+	}
+	if resource != "" {
+		merged["resource"] = resource
+	}
+	return merged
 }
