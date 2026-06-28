@@ -80,7 +80,7 @@ class TestEnvelope:
             to_did="did:web:b.example.com",
             payload=cred,
         )
-        # The credential dict is carried verbatim — proof intact.
+        # The credential dict is carried verbatim, proof intact.
         assert env.payload is cred
         assert "proof" in env.payload
 

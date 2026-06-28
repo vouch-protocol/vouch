@@ -1,10 +1,10 @@
 """
-HTTP transport — the location-first fallback.
+HTTP transport, the location-first fallback.
 
 This is the transport Vouch has always implicitly used: resolve a ``did:web``
 to a domain via DNS/IP, then POST the sealed envelope to that domain's Vouch
-inbox over TLS. It is the universal lowest common denominator — any peer that
-publishes a ``did:web`` document and runs an HTTPS endpoint is reachable — and
+inbox over TLS. It is the universal lowest common denominator, any peer that
+publishes a ``did:web`` document and runs an HTTPS endpoint is reachable, and
 so it serves as the graceful-fallback target when an identity-first transport
 (UDNA) is unavailable or the peer does not support it.
 
@@ -75,7 +75,7 @@ class HttpTransport(Transport):
         return self._client
 
     async def can_route(self, did: str) -> bool:
-        """HTTP can route any ``did:web`` — that's the only location-bound DID."""
+        """HTTP can route any ``did:web``, that's the only location-bound DID."""
         return is_did_web(did)
 
     async def resolve(self, did: str) -> Optional[PeerAddress]:

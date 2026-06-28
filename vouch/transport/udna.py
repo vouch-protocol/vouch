@@ -1,28 +1,28 @@
 """
-UDNA transport — identity-first routing via the Sirraya UDNA SDK.
+UDNA transport, identity-first routing via the Sirraya UDNA SDK.
 
 UDNA (Universal DID-Native Addressing) inverts the usual stack: instead of
 resolving an identity *down to* a location (DID → domain → IP) and trusting
 whoever answers, UDNA treats the DID itself as the routing primitive and
 establishes an end-to-end encrypted channel (Noise protocol) directly to the
-key that owns it. There is no location to spoof and no domain to seize — the
+key that owns it. There is no location to spoof and no domain to seize, the
 peer you reach is, by construction, the peer whose key matches the DID.
 
 This adapter targets the real ``sirraya-udna-sdk`` (distribution
 ``sirraya-udna-sdk``, import package ``udna_sdk``, v1.0.x). That SDK provides:
 
-  * **DID generation** — ``UdnaSDK.create_did()`` mints a ``did:key`` whose
+  * **DID generation**, ``UdnaSDK.create_did()`` mints a ``did:key`` whose
     encoding (``z`` + base58(``0xed01`` ‖ pubkey)) is byte-identical to Vouch's
     own Multikey, so the two interoperate without translation.
-  * **UDNA address creation** — ``UdnaSDK.create_address(did, facet_id, flags)``
+  * **UDNA address creation**, ``UdnaSDK.create_address(did, facet_id, flags)``
     produces a signed, base58 UDNA address. ``facet_id`` selects a capability
     lane (``0x01`` Control, ``0x02`` Messaging, ``0x03`` Telemetry).
-  * **Address verification** — ``UdnaSDK.verify_address(address)`` checks the
+  * **Address verification**, ``UdnaSDK.verify_address(address)`` checks the
     address signature against the DID's key.
-  * **Secure messaging** — ``udna_sdk.udna.NoiseHandshake`` (a handshake that
+  * **Secure messaging**, ``udna_sdk.udna.NoiseHandshake`` (a handshake that
     exchanges DID-signed ephemeral keys) plus ``SecureMessaging``
     (ChaCha20-Poly1305 over the derived session key). NOTE: the v1.0.x handshake
-    authenticates peers but does *not* provide confidentiality — see the
+    authenticates peers but does *not* provide confidentiality, see the
     security warning on :class:`SirrayaUdnaNode`.
 
 What the SDK deliberately does *not* ship is a production wire transport: byte
@@ -34,7 +34,7 @@ in-memory demo). So this adapter splits the two concerns cleanly:
     Noise/SecureMessaging crypto with a pluggable :class:`UdnaChannel` that
     actually moves the bytes.
   * everything is *optional*. When the SDK is absent, or no node/channel is
-    wired, the transport is **dormant** — ``can_route`` returns nothing and the
+    wired, the transport is **dormant**, ``can_route`` returns nothing and the
     routing manager falls back to HTTP. UDNA being unavailable is never fatal;
     that is the whole point of the hybrid design.
 """
@@ -48,7 +48,7 @@ from .base import PeerAddress, Transport, TransportUnavailable
 from .did_key import did_key_from_ed25519_public, did_key_from_public_jwk
 from .envelope import VouchEnvelope
 
-#: Default facet — the capability lane Vouch messages travel on. Maps to the
+#: Default facet, the capability lane Vouch messages travel on. Maps to the
 #: SDK's Messaging facet (``facet_id=0x02``).
 DEFAULT_FACET = "vouch.message"
 
@@ -120,8 +120,8 @@ class UdnaChannel(Protocol):
 
     This is the piece ``sirraya-udna-sdk`` does *not* provide: the SDK supplies
     DID/address/Noise crypto but no production wire transport (only an in-memory
-    demo DHT). A deployment plugs in its own delivery here — a relay, a
-    libp2p/QUIC overlay, a websocket bridge — and :class:`SirrayaUdnaNode`
+    demo DHT). A deployment plugs in its own delivery here, a relay, a
+    libp2p/QUIC overlay, a websocket bridge, and :class:`SirrayaUdnaNode`
     layers the SDK's Noise handshake and ChaCha20-Poly1305 encryption on top.
     """
 
@@ -176,13 +176,13 @@ class UdnaTransport(Transport):
         """
         Build a UDNA transport backed by ``sirraya-udna-sdk``.
 
-        Returns a *dormant* transport (no node) — never raises — when any
+        Returns a *dormant* transport (no node), never raises, when any
         prerequisite is missing, so a caller can always wire UDNA in
         optimistically and rely on graceful fallback. The prerequisites are:
 
           * the ``udna_sdk`` package is importable;
           * ``private_key_jwk`` is supplied (the node's own ``did:key`` and the
-            Noise handshake are bound to this Ed25519 key — the same key Vouch
+            Noise handshake are bound to this Ed25519 key, the same key Vouch
             signs with);
           * a ``channel`` is supplied (the SDK provides no wire transport, so
             byte delivery must come from the deployment).
@@ -243,7 +243,7 @@ class UdnaTransport(Transport):
     # ------------------------------------------------------------------ #
     async def can_route(self, did: str) -> bool:
         """
-        UDNA can route any DID — *if* a node is attached. With no node the
+        UDNA can route any DID, *if* a node is attached. With no node the
         transport is dormant and routes nothing, so the manager falls back.
         """
         return self._node is not None and bool(did)
@@ -337,7 +337,7 @@ def _try_build_sirraya_node(
     ``None`` (so the transport stays dormant and the manager falls back).
 
     Prerequisites: the ``udna_sdk`` package importable, an identity key, and a
-    delivery channel (the SDK ships no wire transport — see :class:`UdnaChannel`).
+    delivery channel (the SDK ships no wire transport, see :class:`UdnaChannel`).
     """
     try:
         import udna_sdk  # type: ignore  # noqa: F401
@@ -378,7 +378,7 @@ class SirrayaUdnaNode:
     .. warning::
        **The bundled ``udna_sdk`` v1.0.x handshake does NOT provide transport
        confidentiality.** Its ``finalize_handshake`` derives the session key as
-       ``sha256(local_did ‖ remote_did ‖ both ephemeral *public* keys)`` — every
+       ``sha256(local_did ‖ remote_did ‖ both ephemeral *public* keys)``, every
        input is sent in the clear, with no Diffie-Hellman, so a passive observer
        can recompute the key and decrypt the ChaCha20-Poly1305 frames (the SDK's
        own code comments it as a demo placeholder for "a full Noise
