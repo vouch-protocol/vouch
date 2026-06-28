@@ -172,6 +172,24 @@ namespace vouch_core {
     string robotics_build_action_approval(bytes approver_seed, string params_json);
     [Throws=CoreError]
     string robotics_verify_action_authorization(string params_json);
+
+    // Robot lifecycle (Phase 5.13).
+    [Throws=CoreError]
+    string robotics_build_ownership_transfer(bytes current_owner_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_ownership_transfer(string credential_json, bytes public_key);
+    [Throws=CoreError]
+    string robotics_verify_custody_chain(string params_json);
+    [Throws=CoreError]
+    string robotics_build_key_rotation(bytes old_key_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_key_rotation(string credential_json, bytes old_public_key);
+    [Throws=CoreError]
+    string robotics_verify_key_history(string params_json);
+    [Throws=CoreError]
+    string robotics_build_decommission(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_decommission(string credential_json, bytes public_key, string? trusted_authorities_json);
 };
 
 dictionary Ed25519KeyPair {

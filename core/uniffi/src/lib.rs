@@ -643,5 +643,61 @@ pub fn robotics_build_action_approval(
 pub fn robotics_verify_action_authorization(params_json: String) -> Result<String, CoreError> {
     Ok(rjson::verify_action_authorization(&params_json)?)
 }
+pub fn robotics_build_ownership_transfer(
+    current_owner_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_ownership_transfer(
+        &current_owner_seed,
+        &params_json,
+    )?)
+}
+pub fn robotics_verify_ownership_transfer(
+    credential_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_ownership_transfer(
+        &credential_json,
+        &public_key,
+    )?)
+}
+pub fn robotics_verify_custody_chain(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_custody_chain(&params_json)?)
+}
+pub fn robotics_build_key_rotation(
+    old_key_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_key_rotation(&old_key_seed, &params_json)?)
+}
+pub fn robotics_verify_key_rotation(
+    credential_json: String,
+    old_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_key_rotation(
+        &credential_json,
+        &old_public_key,
+    )?)
+}
+pub fn robotics_verify_key_history(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_key_history(&params_json)?)
+}
+pub fn robotics_build_decommission(
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_decommission(&signer_seed, &params_json)?)
+}
+pub fn robotics_verify_decommission(
+    credential_json: String,
+    public_key: Vec<u8>,
+    trusted_authorities_json: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_decommission(
+        &credential_json,
+        &public_key,
+        trusted_authorities_json.as_deref(),
+    )?)
+}
 
 uniffi::include_scaffolding!("vouch_core");

@@ -681,3 +681,61 @@ pub fn robotics_build_action_approval(
 pub fn robotics_verify_action_authorization(params_json: &str) -> Result<String, JsError> {
     rjson::verify_action_authorization(params_json).map_err(jerr)
 }
+
+// Robot lifecycle (Phase 5.13).
+#[wasm_bindgen(js_name = roboticsBuildOwnershipTransfer)]
+pub fn robotics_build_ownership_transfer(
+    current_owner_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_ownership_transfer(&b64d(current_owner_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyOwnershipTransfer)]
+pub fn robotics_verify_ownership_transfer(
+    credential_json: &str,
+    public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_ownership_transfer(credential_json, &b64d(public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyCustodyChain)]
+pub fn robotics_verify_custody_chain(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_custody_chain(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildKeyRotation)]
+pub fn robotics_build_key_rotation(
+    old_key_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_key_rotation(&b64d(old_key_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyKeyRotation)]
+pub fn robotics_verify_key_rotation(
+    credential_json: &str,
+    old_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_key_rotation(credential_json, &b64d(old_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyKeyHistory)]
+pub fn robotics_verify_key_history(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_key_history(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildDecommission)]
+pub fn robotics_build_decommission(
+    signer_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_decommission(&b64d(signer_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyDecommission)]
+pub fn robotics_verify_decommission(
+    credential_json: &str,
+    public_b64: &str,
+    trusted_authorities_json: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_decommission(
+        credential_json,
+        &b64d(public_b64)?,
+        trusted_authorities_json.as_deref(),
+    )
+    .map_err(jerr)
+}
