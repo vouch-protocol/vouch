@@ -107,3 +107,22 @@ jobs:
       - name: Test
         working-directory: sdks/dotnet
         run: dotnet test --nologo
+
+  jvm:
+    name: JVM SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the native core and refresh the binding
+        working-directory: sdks/jvm
+        run: bash build-native.sh
+      - name: Test
+        working-directory: sdks/jvm
+        run: |
+          chmod +x gradlew
+          ./gradlew test --no-daemon
