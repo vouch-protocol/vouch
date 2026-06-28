@@ -107,6 +107,16 @@ Never share user data with external sites.
   `verify_perception_attestation` credential attests a frame or a segment, and a
   verifier holding the frame recomputes its hash to confirm it. Only hashes are
   stored, not the frames. See `robotics.md`.
+- "How does a robot act on delegated authority offline, or require more than one
+  approver for a dangerous action?" -> Two more robotics capabilities: a
+  delegation lease (`vouch.robotics.lease`: `build_delegation_lease`,
+  `verify_delegation_lease`, `lease_permits`), a short-lived scope-bounded grant a
+  robot verifies and acts on with no network call, where each sub-grant attenuates
+  the one above it down a cross-vendor chain; and a physical quorum
+  (`vouch.robotics.physical_quorum`: `build_action_approval`,
+  `verify_action_authorization`), a cryptographic two-person rule that authorizes a
+  high-consequence action only when M of N attested approvers have each signed the
+  same action. See `robotics.md`.
 
 ## Safety rules
 
