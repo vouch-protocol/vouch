@@ -2049,6 +2049,285 @@ pub fn verify_perception_attestation(
     Ok(Some(Value::Object(subject.clone())))
 }
 
+// ---------------------------------------------------------------------------
+// Delegation lease (Phase 5.11)
+// ---------------------------------------------------------------------------
+
+pub const DELEGATION_LEASE_TYPE: &str = "DelegationLeaseCredential";
+
+/// Parameters for [`build_delegation_lease`]. The issuer is the signer (an
+/// authority or the holder of a parent lease); `robot_did` is the subject the
+/// lease is granted to. `scope` is a physicalScope object (the same shape as a
+/// `PhysicalCapabilityScope` credentialSubject.physicalScope). Leases are
+/// short-lived by design, so the window is bounded by `valid_from`/`valid_until`.
+/// Set `parent_lease_id` when sub-granting from another lease.
+#[derive(Debug, Clone)]
+pub struct BuildDelegationLease {
+    pub issuer_did: String,
+    pub robot_did: String,
+    pub lease_id: String,
+    pub scope: Value,
+    pub parent_lease_id: Option<String>,
+    pub valid_from: String,
+    pub valid_until: String,
+}
+
+/// Build a signed `DelegationLeaseCredential` granting `robot_did` a bounded
+/// physical scope for a fixed window. The window is verifiable entirely offline.
+pub fn build_delegation_lease(signer_seed: &[u8], params: &BuildDelegationLease) -> Result<Value> {
+    if params.lease_id.is_empty() {
+        return Err(CoreError::Json("lease_id is required".into()));
+    }
+    if !params.scope.is_object() {
+        return Err(CoreError::Json(
+            "scope must be a physicalScope object".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("leaseId".into(), json!(params.lease_id));
+    subject.insert("physicalScope".into(), params.scope.clone());
+    if let Some(parent) = &params.parent_lease_id {
+        subject.insert("parentLeaseId".into(), json!(parent));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", DELEGATION_LEASE_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    cred.insert("validUntil".into(), json!(params.valid_until));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.issuer_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+/// True if the credential's `validFrom`/`validUntil` window contains `now_iso`.
+/// A `None` clock skips the check (the deterministic core leaves the wall clock
+/// to the wrapper), so the window is treated as current.
+fn lease_window_current(credential: &Value, now_iso: Option<&str>) -> bool {
+    let now = match now_iso {
+        Some(n) => n,
+        None => return true,
+    };
+    let moment = match crate::time::iso_to_epoch_seconds(now) {
+        Ok(t) => t,
+        Err(_) => return false,
+    };
+    if let Some(vf) = credential.get("validFrom").and_then(|v| v.as_str()) {
+        match crate::time::iso_to_epoch_seconds(vf) {
+            Ok(t) if moment < t => return false,
+            Err(_) => return false,
+            _ => {}
+        }
+    }
+    if let Some(vu) = credential.get("validUntil").and_then(|v| v.as_str()) {
+        match crate::time::iso_to_epoch_seconds(vu) {
+            Ok(t) if moment > t => return false,
+            Err(_) => return false,
+            _ => {}
+        }
+    }
+    true
+}
+
+/// Verify a `DelegationLeaseCredential` offline: the issuer's proof, that the
+/// window is current (when `now_iso` is supplied), and (when `parent_scope` is
+/// supplied) that this lease's scope attenuates the parent. No network call.
+/// Returns the credentialSubject on success, `None` if invalid.
+pub fn verify_delegation_lease(
+    credential: &Value,
+    public_key: &[u8],
+    now_iso: Option<&str>,
+    parent_scope: Option<&Value>,
+) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), DELEGATION_LEASE_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, public_key)? {
+        return Ok(None);
+    }
+    if !lease_window_current(credential, now_iso) {
+        return Ok(None);
+    }
+
+    let subject = match credential
+        .get("credentialSubject")
+        .and_then(|s| s.as_object())
+    {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let scope = match subject.get("physicalScope") {
+        Some(s) if s.is_object() => s,
+        _ => return Ok(None),
+    };
+    if let Some(parent) = parent_scope {
+        if !attenuates(parent, scope) {
+            return Ok(None);
+        }
+    }
+    Ok(Some(Value::Object(subject.clone())))
+}
+
+/// Decide whether a verified lease permits a proposed physical action: the
+/// action must fit the lease scope, and (when the full `credential` is supplied)
+/// the window must still be current.
+pub fn lease_permits(
+    subject: &Value,
+    action: &PhysicalAction,
+    credential: Option<&Value>,
+    now_iso: Option<&str>,
+) -> bool {
+    if let Some(cred) = credential {
+        if !lease_window_current(cred, now_iso) {
+            return false;
+        }
+    }
+    let empty = json!({});
+    let scope = subject.get("physicalScope").unwrap_or(&empty);
+    check_physical_action(scope, action).ok
+}
+
+// ---------------------------------------------------------------------------
+// Physical quorum (Phase 5.12)
+// ---------------------------------------------------------------------------
+
+pub const ACTION_APPROVAL_TYPE: &str = "PhysicalActionApprovalCredential";
+pub const APPROVE: &str = "approve";
+pub const REJECT: &str = "reject";
+
+/// Parameters for [`build_action_approval`]. The approver is the signer; the
+/// approval is over a specific physical action `action_id` that `robot_did`
+/// would perform. `decision` is "approve" or "reject".
+#[derive(Debug, Clone)]
+pub struct BuildActionApproval {
+    pub approver_did: String,
+    pub action_id: String,
+    pub robot_did: String,
+    pub decision: String,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `PhysicalActionApprovalCredential` by one approver for a
+/// specific physical action.
+pub fn build_action_approval(approver_seed: &[u8], params: &BuildActionApproval) -> Result<Value> {
+    if params.decision != APPROVE && params.decision != REJECT {
+        return Err(CoreError::Json(format!(
+            "decision must be {APPROVE:?} or {REJECT:?}, got {:?}",
+            params.decision
+        )));
+    }
+    if params.action_id.is_empty() {
+        return Err(CoreError::Json("action_id is required".into()));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.approver_did));
+    subject.insert("actionId".into(), json!(params.action_id));
+    subject.insert("robotDid".into(), json!(params.robot_did));
+    subject.insert("decision".into(), json!(params.decision));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", ACTION_APPROVAL_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.approver_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.approver_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), approver_seed, &opts)
+}
+
+/// One approver's public key, looked up by issuer DID, for
+/// [`verify_action_authorization`].
+#[derive(Debug, Clone)]
+pub struct ApproverKey {
+    pub did: String,
+    pub public_key: Vec<u8>,
+}
+
+/// Verify that a high-consequence physical action is authorized by a quorum.
+///
+/// Each approval must be the right type, carry an in-date proof signed by the
+/// approver's key (looked up in `approver_keys` by issuer DID), match `action_id`
+/// and `robot_did`, and carry an `approve` decision. When `approver_set` is
+/// supplied, the approver must be in it. The action is authorized when at least
+/// `threshold` DISTINCT valid approvers have approved; a single approver counts
+/// once even if it submits several approvals. Returns `(authorized, sorted list
+/// of the distinct approving DIDs)`.
+pub fn verify_action_authorization(
+    approvals: &[Value],
+    action_id: &str,
+    robot_did: &str,
+    approver_keys: &[ApproverKey],
+    threshold: i64,
+    approver_set: Option<&HashSet<String>>,
+    now_iso: Option<&str>,
+) -> Result<(bool, Vec<String>)> {
+    if threshold < 1 {
+        return Err(CoreError::Json("threshold must be at least 1".into()));
+    }
+
+    let mut approvers: HashSet<String> = HashSet::new();
+    for approval in approvals {
+        if !has_type(approval.get("type"), ACTION_APPROVAL_TYPE) {
+            continue;
+        }
+        let subject = match approval
+            .get("credentialSubject")
+            .and_then(|s| s.as_object())
+        {
+            Some(s) => s,
+            None => continue,
+        };
+        let issuer = approval
+            .get("issuer")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if subject.get("actionId").and_then(|v| v.as_str()) != Some(action_id)
+            || subject.get("robotDid").and_then(|v| v.as_str()) != Some(robot_did)
+        {
+            continue;
+        }
+        if subject.get("decision").and_then(|v| v.as_str()) != Some(APPROVE) {
+            continue;
+        }
+        if let Some(set) = approver_set {
+            if !set.contains(issuer) {
+                continue;
+            }
+        }
+        let key = match approver_keys.iter().find(|k| k.did == issuer) {
+            Some(k) => k,
+            None => continue,
+        };
+        if !lease_window_current(approval, now_iso) {
+            continue;
+        }
+        if !data_integrity::verify_proof(approval, &key.public_key)? {
+            continue;
+        }
+        approvers.insert(issuer.to_string());
+    }
+
+    let mut sorted: Vec<String> = approvers.into_iter().collect();
+    sorted.sort();
+    Ok((sorted.len() as i64 >= threshold, sorted))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3078,5 +3357,275 @@ mod tests {
             },
         )
         .is_err());
+    }
+
+    fn jwk_pub(jwk: &Value) -> Vec<u8> {
+        URL_SAFE_NO_PAD
+            .decode(jwk["x"].as_str().unwrap())
+            .expect("base64url JWK x")
+    }
+
+    // Cross-language interop: Go and TypeScript verify this same Python-signed
+    // delegation lease; the Rust core must too.
+    #[test]
+    fn verifies_python_lease_interop_vector() {
+        let vector = load_vector();
+        let robot_pub = jwk_pub(&vector["robot_public_key_jwk"]);
+        let lease = vector["delegation_lease_credential"].clone();
+
+        let subject = verify_delegation_lease(&lease, &robot_pub, None, None)
+            .unwrap()
+            .expect("the Python lease interop vector must verify in Rust");
+        assert_eq!(subject["leaseId"], json!("lease-vector-1"));
+    }
+
+    // Cross-language interop: Rust authorizes the Python-signed quorum with the
+    // same two approver keys and a threshold of 2.
+    #[test]
+    fn verifies_python_quorum_interop_vector() {
+        let vector = load_vector();
+        let approvals = vector["quorum_approvals"].as_array().unwrap().clone();
+        let action_id = vector["quorum_action_id"].as_str().unwrap();
+        let keys: Vec<ApproverKey> = vector["quorum_approver_keys"]
+            .as_object()
+            .unwrap()
+            .iter()
+            .map(|(did, jwk)| ApproverKey {
+                did: did.clone(),
+                public_key: jwk_pub(jwk),
+            })
+            .collect();
+
+        let (ok, approvers) = verify_action_authorization(
+            &approvals,
+            action_id,
+            "did:web:robot.example.com",
+            &keys,
+            2,
+            None,
+            None,
+        )
+        .unwrap();
+        assert!(
+            ok,
+            "the Python quorum interop vector must authorize in Rust"
+        );
+        assert_eq!(approvers.len(), 2);
+        assert_eq!(approvers[0], "did:web:approver-1.example.com");
+        assert_eq!(approvers[1], "did:web:approver-2.example.com");
+    }
+
+    #[test]
+    fn lease_build_verify_permits_and_expiry() {
+        let seed = [31u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let did = "did:web:robot.example.com";
+        let scope = json!({
+            "maxForceN": 80.0, "maxSpeedMps": 2.0, "maxSpeedNearHumansMps": 0.5,
+            "allowedZones": ["warehouse-a", "dock-3"]
+        });
+        let lease = build_delegation_lease(
+            &seed,
+            &BuildDelegationLease {
+                issuer_did: did.into(),
+                robot_did: did.into(),
+                lease_id: "lease-1".into(),
+                scope: scope.clone(),
+                parent_lease_id: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: "2026-01-01T01:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        // Round-trip verify, in-window.
+        let subject =
+            verify_delegation_lease(&lease, &kp.public_key(), Some("2026-01-01T00:30:00Z"), None)
+                .unwrap()
+                .expect("lease verifies in window");
+        assert_eq!(subject["leaseId"], json!("lease-1"));
+
+        // Permits a within-scope action, denies an out-of-scope one.
+        assert!(lease_permits(
+            &subject,
+            &PhysicalAction {
+                force_n: Some(50.0),
+                zone: Some("warehouse-a".into()),
+                ..Default::default()
+            },
+            Some(&lease),
+            Some("2026-01-01T00:30:00Z"),
+        ));
+        assert!(!lease_permits(
+            &subject,
+            &PhysicalAction {
+                force_n: Some(120.0),
+                ..Default::default()
+            },
+            Some(&lease),
+            Some("2026-01-01T00:30:00Z"),
+        ));
+
+        // Expired window: verify fails and the lease no longer permits.
+        assert!(verify_delegation_lease(
+            &lease,
+            &kp.public_key(),
+            Some("2026-01-01T02:00:00Z"),
+            None,
+        )
+        .unwrap()
+        .is_none());
+        assert!(!lease_permits(
+            &subject,
+            &PhysicalAction {
+                force_n: Some(50.0),
+                ..Default::default()
+            },
+            Some(&lease),
+            Some("2026-01-01T02:00:00Z"),
+        ));
+
+        // Tamper and wrong type rejected.
+        let mut tampered = lease.clone();
+        tampered["credentialSubject"]["leaseId"] = json!("lease-other");
+        assert!(
+            verify_delegation_lease(&tampered, &kp.public_key(), None, None)
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn lease_sub_grant_attenuation() {
+        let parent_seed = [32u8; 32];
+        let child_seed = [33u8; 32];
+        let parent_kp = Ed25519KeyPair::from_seed(&parent_seed);
+        let child_kp = Ed25519KeyPair::from_seed(&child_seed);
+        let parent_scope = json!({
+            "maxForceN": 80.0, "maxSpeedMps": 2.0,
+            "allowedZones": ["warehouse-a", "dock-3"]
+        });
+
+        // A narrower sub-lease attenuates the parent: accepted.
+        let narrower = build_delegation_lease(
+            &child_seed,
+            &BuildDelegationLease {
+                issuer_did: "did:web:integrator.example.com".into(),
+                robot_did: "did:web:robot.example.com".into(),
+                lease_id: "lease-2".into(),
+                scope: json!({
+                    "maxForceN": 50.0, "maxSpeedMps": 1.0,
+                    "allowedZones": ["warehouse-a"]
+                }),
+                parent_lease_id: Some("lease-1".into()),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: "2026-01-01T01:00:00Z".into(),
+            },
+        )
+        .unwrap();
+        assert!(verify_delegation_lease(
+            &narrower,
+            &child_kp.public_key(),
+            None,
+            Some(&parent_scope),
+        )
+        .unwrap()
+        .is_some());
+
+        // A widening sub-lease (force above the parent) is rejected against the
+        // parent scope.
+        let wider = build_delegation_lease(
+            &parent_seed,
+            &BuildDelegationLease {
+                issuer_did: "did:web:integrator.example.com".into(),
+                robot_did: "did:web:robot.example.com".into(),
+                lease_id: "lease-3".into(),
+                scope: json!({
+                    "maxForceN": 200.0, "maxSpeedMps": 1.0,
+                    "allowedZones": ["warehouse-a"]
+                }),
+                parent_lease_id: Some("lease-1".into()),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: "2026-01-01T01:00:00Z".into(),
+            },
+        )
+        .unwrap();
+        assert!(verify_delegation_lease(
+            &wider,
+            &parent_kp.public_key(),
+            None,
+            Some(&parent_scope),
+        )
+        .unwrap()
+        .is_none());
+    }
+
+    #[test]
+    fn quorum_threshold_and_distinct_counting() {
+        let s1 = [41u8; 32];
+        let s2 = [42u8; 32];
+        let k1 = Ed25519KeyPair::from_seed(&s1);
+        let k2 = Ed25519KeyPair::from_seed(&s2);
+        let a1 = "did:web:approver-1.example.com";
+        let a2 = "did:web:approver-2.example.com";
+        let robot = "did:web:robot.example.com";
+        let action = "action-x";
+
+        let build = |seed: &[u8], did: &str, decision: &str| {
+            build_action_approval(
+                seed,
+                &BuildActionApproval {
+                    approver_did: did.into(),
+                    action_id: action.into(),
+                    robot_did: robot.into(),
+                    decision: decision.into(),
+                    valid_from: "2026-01-01T00:00:00Z".into(),
+                    valid_until: None,
+                },
+            )
+            .unwrap()
+        };
+
+        let ap1 = build(&s1, a1, APPROVE);
+        let ap2 = build(&s2, a2, APPROVE);
+        let keys = vec![
+            ApproverKey {
+                did: a1.into(),
+                public_key: k1.public_key().to_vec(),
+            },
+            ApproverKey {
+                did: a2.into(),
+                public_key: k2.public_key().to_vec(),
+            },
+        ];
+
+        // Two distinct approvers meet a threshold of 2.
+        let (ok, approvers) =
+            verify_action_authorization(&[ap1.clone(), ap2], action, robot, &keys, 2, None, None)
+                .unwrap();
+        assert!(ok);
+        assert_eq!(approvers, vec![a1.to_string(), a2.to_string()]);
+
+        // Duplicate approvals from one approver count once: threshold 2 not met.
+        let dup = build(&s1, a1, APPROVE);
+        let (ok2, approvers2) =
+            verify_action_authorization(&[ap1.clone(), dup], action, robot, &keys, 2, None, None)
+                .unwrap();
+        assert!(!ok2);
+        assert_eq!(approvers2, vec![a1.to_string()]);
+
+        // A single valid approver does not meet a threshold of 2.
+        let (ok3, _) =
+            verify_action_authorization(&[ap1], action, robot, &keys, 2, None, None).unwrap();
+        assert!(!ok3);
+
+        // A rejection is never counted as an approval.
+        let rej = build(&s1, a1, REJECT);
+        let approve2 = build(&s2, a2, APPROVE);
+        let (ok4, approvers4) =
+            verify_action_authorization(&[rej, approve2], action, robot, &keys, 2, None, None)
+                .unwrap();
+        assert!(!ok4);
+        assert_eq!(approvers4, vec![a2.to_string()]);
     }
 }

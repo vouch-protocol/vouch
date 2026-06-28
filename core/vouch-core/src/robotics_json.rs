@@ -637,3 +637,138 @@ pub fn verify_perception_attestation(
         frame.as_deref(),
     )?))
 }
+
+// ---- delegation lease -----------------------------------------------------
+
+pub fn build_delegation_lease(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildDelegationLease {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        lease_id: gs(&p, "leaseId"),
+        scope: p.get("scope").cloned().unwrap_or(Value::Null),
+        parent_lease_id: gos(&p, "parentLeaseId"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gs(&p, "validUntil"),
+    };
+    Ok(r::build_delegation_lease(signer_seed, &params)?.to_string())
+}
+
+pub fn verify_delegation_lease(
+    credential_json: &str,
+    public_key: &[u8],
+    now_iso: Option<&str>,
+    parent_scope_json: Option<&str>,
+) -> Result<String> {
+    let now = match now_iso {
+        Some(n) if !n.is_empty() && n != "null" => Some(n),
+        _ => None,
+    };
+    let parent = opt_obj(parent_scope_json)?;
+    Ok(subj(r::verify_delegation_lease(
+        &parse(credential_json)?,
+        public_key,
+        now,
+        parent.as_ref(),
+    )?))
+}
+
+/// Decide whether a verified lease subject permits a proposed action.
+/// `params_json` is `{subject, action, credential?, now?}` where `action` is the
+/// same shape as [`check_physical_action`]'s action object.
+pub fn lease_permits(params_json: &str) -> Result<bool> {
+    let p = parse(params_json)?;
+    let subject = p.get("subject").cloned().unwrap_or(Value::Null);
+    let a = p.get("action").cloned().unwrap_or(Value::Null);
+    let action = r::PhysicalAction {
+        force_n: gof(&a, "forceN"),
+        speed_mps: gof(&a, "speedMps"),
+        near_humans: a
+            .get("nearHumans")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        zone: gos(&a, "zone"),
+        time_hm: gos(&a, "timeHm"),
+    };
+    let credential = p.get("credential").filter(|v| !v.is_null()).cloned();
+    let now = gos(&p, "now");
+    Ok(r::lease_permits(
+        &subject,
+        &action,
+        credential.as_ref(),
+        now.as_deref(),
+    ))
+}
+
+// ---- physical quorum ------------------------------------------------------
+
+pub fn build_action_approval(approver_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildActionApproval {
+        approver_did: gs(&p, "approverDid"),
+        action_id: gs(&p, "actionId"),
+        robot_did: gs(&p, "robotDid"),
+        decision: gos(&p, "decision").unwrap_or_else(|| r::APPROVE.to_string()),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_action_approval(approver_seed, &params)?.to_string())
+}
+
+/// Verify a quorum authorization. `params_json` is `{approvals: [...], actionId,
+/// robotDid, approverKeys: {did: keyB64url, ...}, threshold, approverSet?: [...],
+/// now?}`. Each `approverKeys` value is the approver's Ed25519 public key as a
+/// base64url-no-pad string (the same encoding as a JWK `x`). Returns
+/// `{authorized, approvers: [...]}`.
+pub fn verify_action_authorization(params_json: &str) -> Result<String> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+
+    let p = parse(params_json)?;
+    let approvals: Vec<Value> = p
+        .get("approvals")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let action_id = gs(&p, "actionId");
+    let robot_did = gs(&p, "robotDid");
+    let threshold = p.get("threshold").and_then(|v| v.as_i64()).unwrap_or(0);
+
+    let mut keys: Vec<r::ApproverKey> = Vec::new();
+    if let Some(obj) = p.get("approverKeys").and_then(|v| v.as_object()) {
+        for (did, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("approverKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::ApproverKey {
+                did: did.clone(),
+                public_key,
+            });
+        }
+    }
+
+    let approver_set: Option<HashSet<String>> = p
+        .get("approverSet")
+        .filter(|v| !v.is_null())
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|e| e.as_str().map(String::from))
+                .collect()
+        });
+    let now = gos(&p, "now");
+
+    let (authorized, approvers) = r::verify_action_authorization(
+        &approvals,
+        &action_id,
+        &robot_did,
+        &keys,
+        threshold,
+        approver_set.as_ref(),
+        now.as_deref(),
+    )?;
+    Ok(json!({"authorized": authorized, "approvers": approvers}).to_string())
+}
