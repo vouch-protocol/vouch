@@ -40,6 +40,7 @@ const FOOTER_GROUPS = [
     title: 'Community',
     links: [
       { label: 'Contributors', href: '/contributors/' },
+      { label: 'Adopters', href: '/adopters/' },
       { label: 'Discord', href: 'https://discord.gg/mMqx5cG9Y', external: true },
       { label: 'GitHub issues', href: 'https://github.com/vouch-protocol/vouch/issues', external: true },
       { label: 'X / Twitter', href: 'https://x.com/Vouch_Protocol', external: true },

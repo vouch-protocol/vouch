@@ -1,0 +1,12 @@
+[
+    {
+        "slug": "invinoveritas",
+        "name": "invinoveritas",
+        "by": "babyblueviper1",
+        "focus": "Outcome Evidence and the AccountabilityRecord",
+        "badge": "First reference integration",
+        "summary": "A live outcome-verified reputation service. invinoveritas emits a Vouch AccountabilityRecord on its handshake surface, conforming to the shipped field set (verifierKey, recordPointer, verifyEndpoint, reputationModel: recomputable, publishesLosses). Its review of the commit-before-outcome primitive also produced the third-party timestamp anchor and the existence-versus-ordering precedence affordance now in the protocol.",
+        "liveSurface": "https://api.babyblueviper.com/.well-known/agent-handshake",
+        "discussion": "https://github.com/vouch-protocol/vouch/discussions/53"
+    }
+]

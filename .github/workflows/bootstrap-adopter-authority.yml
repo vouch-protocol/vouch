@@ -1,0 +1,107 @@
+name: Bootstrap adopter authority (one-time)
+
+# Create the delegated Adopter Authority key entirely in CI, using the root key
+# that is already a repository secret. Mirrors the Conformance Authority setup.
+# This:
+#   1. Generates a fresh Ed25519 key for did:web:vouch-protocol.com:adopters.
+#   2. Signs a root -> adopter delegation with the VOUCH_PRIVATE_KEY secret.
+#   3. Commits the public DID document and the delegation to main.
+#   4. Stores VOUCH_ADOPTER_PRIVATE_KEY and VOUCH_ADOPTER_DID as repository
+#      secrets (needs GH_ADMIN_TOKEN), or uploads the key as a short-lived
+#      private artifact for one-time manual entry if that token is not set.
+#
+# The root private key is read from the secret and never leaves the runner.
+# Run this once. It refuses to overwrite an existing adopter authority.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type 'bootstrap' to confirm creating the adopter authority key"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm intent
+        run: |
+          if [ "${{ inputs.confirm }}" != "bootstrap" ]; then
+            echo "::error::Type 'bootstrap' in the confirm box to proceed."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install vouch
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Generate the adopter key and sign the delegation with the root key
+        env:
+          VOUCH_ROOT_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
+          VOUCH_ROOT_DID: ${{ secrets.VOUCH_DID }}
+        run: |
+          if [ -z "$VOUCH_ROOT_PRIVATE_KEY" ]; then
+            echo "::error::Root key not configured (VOUCH_PRIVATE_KEY)."
+            exit 1
+          fi
+          python scripts/bootstrap_adopter_authority.py
+
+      - name: Commit the public DID document and delegation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add website/public/adopters/did.json adopters/delegation.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(adopters): publish adopter authority DID and delegation"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push origin HEAD:main && break
+              sleep $((2 ** i))
+            done
+          fi
+
+      - name: Store the adopter signing key as a secret
+        id: store
+        env:
+          GH_ADMIN_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+          ADOPTER_DID_VALUE: did:web:vouch-protocol.com:adopters
+        run: |
+          if [ -n "$GH_ADMIN_TOKEN" ]; then
+            GH_TOKEN="$GH_ADMIN_TOKEN" gh secret set VOUCH_ADOPTER_PRIVATE_KEY \
+              --body "$(cat adopter-authority-key.json)"
+            GH_TOKEN="$GH_ADMIN_TOKEN" gh secret set VOUCH_ADOPTER_DID \
+              --body "$ADOPTER_DID_VALUE"
+            rm -f adopter-authority-key.json
+            echo "stored=true" >> "$GITHUB_OUTPUT"
+            echo "Stored VOUCH_ADOPTER_PRIVATE_KEY and VOUCH_ADOPTER_DID as repository secrets." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "stored=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Adopter authority bootstrapped"
+              echo ""
+              echo "No GH_ADMIN_TOKEN was set, so the signing key could not be stored automatically."
+              echo "Download the \`adopter-authority-key\` artifact below and set two repository secrets:"
+              echo ""
+              echo "- \`VOUCH_ADOPTER_DID\` = \`did:web:vouch-protocol.com:adopters\`"
+              echo "- \`VOUCH_ADOPTER_PRIVATE_KEY\` = the artifact contents"
+              echo ""
+              echo "Then delete the artifact."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the signing key for one-time manual entry
+        if: steps.store.outputs.stored == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: adopter-authority-key
+          path: adopter-authority-key.json
+          retention-days: 1
