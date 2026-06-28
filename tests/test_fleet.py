@@ -8,13 +8,30 @@ ties the device's action back to the trusted root. The device key never travels.
 
 import pytest
 
-from vouch import Agent, enroll_device, verify_delegated_chain
+from vouch import Agent, DeviceRegistry, enroll_device, verify_delegated_chain
 
 
 def _root_and_device():
     root = Agent("root.example")
     device = Agent()  # did:key minted on the device
     return root, device
+
+
+def _signed_chain(root, device):
+    grant = enroll_device(
+        root,
+        device_did=device.did,
+        action="charge",
+        target="api.bank",
+        resource="https://api.bank/invoices",
+    )
+    action = device.sign(
+        action="charge",
+        target="api.bank",
+        resource="https://api.bank/invoices/42",
+        parent_credential=grant,
+    )
+    return grant, action
 
 
 def test_enroll_and_verify_chain():
@@ -173,3 +190,72 @@ def test_did_key_root_resolves_without_trust_map_for_links():
     # Only the root key is supplied; the device link resolves from its did:key.
     result = verify_delegated_chain([grant, action], trusted_roots={root.did: root.public_key_jwk})
     assert result.ok
+
+
+# ---------------------------------------------------------------------------
+# Device revocation
+# ---------------------------------------------------------------------------
+
+
+def test_revoked_device_did_rejected():
+    root, device = _root_and_device()
+    grant, action = _signed_chain(root, device)
+    roots = {root.did: root.public_key_jwk}
+
+    # Before revocation: valid.
+    assert verify_delegated_chain([grant, action], trusted_roots=roots).ok
+
+    # Revoke the device DID: the chain through it stops verifying.
+    result = verify_delegated_chain([grant, action], trusted_roots=roots, revoked={device.did})
+    assert not result.ok
+    assert "revoked" in (result.reason or "")
+
+
+def test_revoked_grant_credential_id_rejected():
+    root, device = _root_and_device()
+    grant, action = _signed_chain(root, device)
+    roots = {root.did: root.public_key_jwk}
+    result = verify_delegated_chain([grant, action], trusted_roots=roots, revoked={grant["id"]})
+    assert not result.ok
+
+
+def test_revoked_predicate_callable():
+    root, device = _root_and_device()
+    grant, action = _signed_chain(root, device)
+    roots = {root.did: root.public_key_jwk}
+    blocked = {device.did}
+    result = verify_delegated_chain(
+        [grant, action], trusted_roots=roots, revoked=lambda i: i in blocked
+    )
+    assert not result.ok
+
+
+def test_other_device_unaffected_by_revocation():
+    root, device_a = _root_and_device()
+    device_b = Agent()
+    grant_b, action_b = _signed_chain(root, device_b)
+    roots = {root.did: root.public_key_jwk}
+    # Revoking device A does not affect device B's chain.
+    result = verify_delegated_chain(
+        [grant_b, action_b], trusted_roots=roots, revoked={device_a.did}
+    )
+    assert result.ok
+
+
+def test_device_registry():
+    root, device = _root_and_device()
+    grant, action = _signed_chain(root, device)
+    roots = {root.did: root.public_key_jwk}
+
+    registry = DeviceRegistry()
+    registry.enroll(device.did, grant)
+    assert registry.active_devices() == [device.did]
+    assert verify_delegated_chain(
+        [grant, action], trusted_roots=roots, revoked=registry.is_revoked
+    ).ok
+
+    registry.revoke(device.did)
+    assert registry.active_devices() == []
+    assert not verify_delegated_chain(
+        [grant, action], trusted_roots=roots, revoked=registry.is_revoked
+    ).ok

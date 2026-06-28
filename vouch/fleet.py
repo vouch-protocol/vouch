@@ -30,7 +30,7 @@ Two pieces:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Union
 
 from vouch.signer import Signer, _is_sub_resource
 from vouch.verifier import CredentialPassport, verify
@@ -103,6 +103,7 @@ def verify_delegated_chain(
     *,
     trusted_roots: Optional[Dict[str, Any]] = None,
     allow_did_resolution: bool = True,
+    revoked: Optional[Union[Iterable[str], Callable[[str], bool]]] = None,
     require_action: Optional[str] = None,
     require_target: Optional[str] = None,
     require_resource: Optional[str] = None,
@@ -122,6 +123,11 @@ def verify_delegated_chain(
         from this map, then ``did:key``/``did:web``.
       allow_did_resolution: allow network ``did:web`` resolution for non-root
         links (``did:key`` always resolves offline).
+      revoked: revocation oracle. Either a collection of revoked identifiers
+        (device DIDs and/or credential ids) or a callable ``is_revoked(id) ->
+        bool``. The chain is rejected if any link's issuer, any credential id, or
+        any grant's delegatee is revoked. This is how losing a device is handled:
+        revoke that device's DID and every chain through it stops verifying.
       require_action / require_target / require_resource: optional exact policy
         on the leaf action's intent.
 
@@ -131,6 +137,7 @@ def verify_delegated_chain(
     if not credentials:
         return FleetResult(ok=False, reason="empty chain")
     trusted_roots = trusted_roots or {}
+    is_revoked = _revocation_oracle(revoked)
 
     passports: List[CredentialPassport] = []
     for index, cred in enumerate(credentials):
@@ -147,6 +154,17 @@ def verify_delegated_chain(
         ok, passport = verify(cred, public_key=key, allow_did_resolution=allow_did_resolution)
         if not ok or passport is None:
             return FleetResult(ok=False, reason=f"credential {index} failed verification")
+
+        # Revocation: a revoked issuer (device or root) or a revoked specific
+        # credential breaks the chain.
+        if is_revoked(passport.issuer):
+            return FleetResult(
+                ok=False, reason=f"credential {index} issuer {passport.issuer!r} is revoked"
+            )
+        if passport.credential_id and is_revoked(passport.credential_id):
+            return FleetResult(
+                ok=False, reason=f"credential {index} ({passport.credential_id}) is revoked"
+            )
         passports.append(passport)
 
     # Walk parent -> child links.
@@ -159,6 +177,8 @@ def verify_delegated_chain(
             return FleetResult(
                 ok=False, reason=f"link {i} (grant by {parent.issuer!r}) names no delegatee"
             )
+        if is_revoked(delegatee):
+            return FleetResult(ok=False, reason=f"link {i}: delegatee {delegatee!r} is revoked")
         if child.issuer != delegatee:
             return FleetResult(
                 ok=False,
@@ -222,4 +242,50 @@ def _window_within(child: CredentialPassport, parent: CredentialPassport) -> boo
     return c_from >= p_from and c_until <= p_until
 
 
-__all__ = ["enroll_device", "verify_delegated_chain", "FleetResult"]
+def _revocation_oracle(
+    revoked: Optional[Iterable[str] | Callable[[str], bool]],
+) -> Callable[[str], bool]:
+    """Normalize the `revoked` argument into an `is_revoked(id) -> bool` callable."""
+    if revoked is None:
+        return lambda _id: False
+    if callable(revoked):
+        return revoked
+    revoked_set = set(revoked)
+    return lambda _id: _id in revoked_set
+
+
+class DeviceRegistry:
+    """A small in-memory record of a root's enrolled and revoked devices.
+
+    Convenience for the common case: track which device DIDs a root has enrolled
+    and which it has revoked, and pass :meth:`is_revoked` straight to
+    :func:`verify_delegated_chain`. Back it with your own store (a database, a
+    BitstringStatusList) by subclassing or by passing a different oracle; this is
+    only the simplest default.
+    """
+
+    def __init__(self) -> None:
+        self._enrolled: Dict[str, Dict[str, Any]] = {}
+        self._revoked: Set[str] = set()
+
+    def enroll(self, device_did: str, grant: Optional[Dict[str, Any]] = None) -> None:
+        """Record a device as enrolled (optionally keeping its grant)."""
+        self._enrolled[device_did] = {"grant": grant}
+        self._revoked.discard(device_did)
+
+    def revoke(self, device_did: str) -> None:
+        """Revoke a device. Chains issued by or delegated to it stop verifying."""
+        self._revoked.add(device_did)
+
+    def is_revoked(self, identifier: str) -> bool:
+        return identifier in self._revoked
+
+    def active_devices(self) -> List[str]:
+        return [d for d in self._enrolled if d not in self._revoked]
+
+    @property
+    def revoked(self) -> Set[str]:
+        return set(self._revoked)
+
+
+__all__ = ["enroll_device", "verify_delegated_chain", "FleetResult", "DeviceRegistry"]
