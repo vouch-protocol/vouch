@@ -23,6 +23,8 @@ from vouch.robotics import (
     PerceptionLog,
     SafetyEventLog,
     SoftwareRootOfTrust,
+    build_action_approval,
+    build_delegation_lease,
     build_status_list_entry,
     config_hash,
     hash_frame,
@@ -90,6 +92,32 @@ def main():
                 timestamp="2026-01-01T00:00:01Z")
     perception_entries = plog.entries()
 
+    # Lease: a Python-signed delegation lease other languages VERIFY (not
+    # reproduce, since the proof carries a wall-clock created). A long window so
+    # the fixture verifies at any realistic current time.
+    lease = build_delegation_lease(
+        signer, robot_did=ROBOT_DID, lease_id="lease-vector-1",
+        scope=physical_scope, valid_seconds=10 * 365 * 24 * 60 * 60, valid_from=VALID_FROM,
+    )
+
+    # Physical quorum: two Python-signed approvals from fixed approver keys, for a
+    # fixed action. Other languages verify the M-of-N reaches threshold 2.
+    def signer_from_seed(seed: bytes, did: str):
+        s = Ed25519PrivateKey.from_private_bytes(seed)
+        p = s.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        jwk = json.dumps({"kty": "OKP", "crv": "Ed25519", "d": b64u(seed), "x": b64u(p)})
+        return Signer(private_key=jwk, did=did), {"kty": "OKP", "crv": "Ed25519", "x": b64u(p)}
+
+    approver1, approver1_pub = signer_from_seed(bytes([1] * 32), "did:web:approver-1.example.com")
+    approver2, approver2_pub = signer_from_seed(bytes([2] * 32), "did:web:approver-2.example.com")
+    action_id = "vector-action-1"
+    approvals = [
+        build_action_approval(approver1, action_id=action_id, robot_did=ROBOT_DID,
+                              valid_from=VALID_FROM),
+        build_action_approval(approver2, action_id=action_id, robot_did=ROBOT_DID,
+                              valid_from=VALID_FROM),
+    ]
+
     doc = {
         "description": (
             "Robotics interop vector. Pins the deterministic byte-level "
@@ -98,10 +126,13 @@ def main():
             "(ModelProvenanceAttestation), the motion digest (liveness), the "
             "hash-linked safety ledger and its summary (safety_record), the "
             "credentialStatus entry (revocation), and the frame hash plus the "
-            "hash-linked perception log (perception). Credential proof values are "
-            "not pinned because the proof carries a wall-clock created timestamp."
+            "hash-linked perception log (perception). It also includes "
+            "Python-signed credentials other languages VERIFY rather than "
+            "reproduce: a delegation lease and a set of physical-quorum approvals. "
+            "Credential proof values are not pinned because the proof carries a "
+            "wall-clock created timestamp."
         ),
-        "version": "1.2",
+        "version": "1.3",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -115,6 +146,13 @@ def main():
         "expected_frame_hash": hash_frame(sample_frame),
         "perception_log_entries": perception_entries,
         "expected_perception_log_head": plog.head(),
+        "delegation_lease_credential": lease,
+        "quorum_action_id": action_id,
+        "quorum_approvals": approvals,
+        "quorum_approver_keys": {
+            "did:web:approver-1.example.com": approver1_pub,
+            "did:web:approver-2.example.com": approver2_pub,
+        },
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
