@@ -5,11 +5,11 @@ A modular, DID-addressed networking layer that lets a Vouch agent dispatch a
 message to a peer's *identity* and stay agnostic about how it is routed. Two
 transports ship in the box:
 
-  * :class:`UdnaTransport` — identity-first routing via the Sirraya UDNA SDK.
+  * :class:`UdnaTransport`, identity-first routing via the Sirraya UDNA SDK.
     The DID is the route; delivery rides a Noise-encrypted channel straight to
     the key that owns it. Optional; dormant (and harmless) when the SDK is
     absent.
-  * :class:`HttpTransport` — the location-first fallback. Resolve ``did:web``
+  * :class:`HttpTransport`, the location-first fallback. Resolve ``did:web``
     to a domain over DNS/IP and POST over TLS. Universally reachable.
 
 :class:`TransportManager` ties them together with graceful fallback: prefer
@@ -65,6 +65,14 @@ from .envelope import (
 )
 from .http_transport import HttpTransport
 from .manager import TransportManager
+from .rendezvous import (
+    ROUTE_RECORD_TYPE,
+    RendezvousChannel,
+    RendezvousRegistry,
+    RouteRecord,
+    build_route_record,
+    route_fingerprint,
+)
 from .udna import (
     DEFAULT_FACET,
     FACET_CONTROL,
@@ -103,6 +111,13 @@ __all__ = [
     "FACET_MESSAGING",
     "FACET_TELEMETRY",
     "HttpTransport",
+    # Rendezvous resolver (identity-first routing proof)
+    "RouteRecord",
+    "build_route_record",
+    "route_fingerprint",
+    "RendezvousRegistry",
+    "RendezvousChannel",
+    "ROUTE_RECORD_TYPE",
     # did:key helpers
     "is_did_key",
     "did_key_from_ed25519_public",
