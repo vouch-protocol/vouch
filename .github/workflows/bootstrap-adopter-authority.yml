@@ -4,7 +4,10 @@ name: Bootstrap adopter authority (one-time)
 # that is already a repository secret. Mirrors the Conformance Authority setup.
 # This:
 #   1. Generates a fresh Ed25519 key for did:web:vouch-protocol.com:adopters.
-#   2. Signs a root -> adopter delegation with the VOUCH_PRIVATE_KEY secret.
+#   2. Signs a root -> adopter delegation with the VOUCH_ROOT_PRIVATE_KEY secret
+#      (the true root key that signed contributors/delegation.json, held offline,
+#      added as a secret for this one run; not VOUCH_PRIVATE_KEY, which is the
+#      contributor authority key).
 #   3. Commits the public DID document and the delegation to main.
 #   4. Stores VOUCH_ADOPTER_PRIVATE_KEY and VOUCH_ADOPTER_DID as repository
 #      secrets (needs GH_ADMIN_TOKEN), or uploads the key as a short-lived
@@ -19,6 +22,10 @@ on:
       confirm:
         description: "Type 'bootstrap' to confirm creating the adopter authority key"
         required: true
+      delegation_only:
+        description: "Re-sign only the delegation (keep the existing adopter key)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -47,14 +54,20 @@ jobs:
 
       - name: Generate the adopter key and sign the delegation with the root key
         env:
-          VOUCH_ROOT_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
-          VOUCH_ROOT_DID: ${{ secrets.VOUCH_DID }}
+          VOUCH_ROOT_PRIVATE_KEY: ${{ secrets.VOUCH_ROOT_PRIVATE_KEY }}
+          VOUCH_ROOT_DID: ${{ secrets.VOUCH_ROOT_DID }}
         run: |
           if [ -z "$VOUCH_ROOT_PRIVATE_KEY" ]; then
-            echo "::error::Root key not configured (VOUCH_PRIVATE_KEY)."
+            echo "::error::Root key not configured. Add VOUCH_ROOT_PRIVATE_KEY"
+            echo "::error::(the true root key that signed contributors/delegation.json),"
+            echo "::error::not VOUCH_PRIVATE_KEY which is the contributor authority key."
             exit 1
           fi
-          python scripts/bootstrap_adopter_authority.py
+          if [ "${{ inputs.delegation_only }}" = "true" ]; then
+            python scripts/bootstrap_adopter_authority.py --delegation-only
+          else
+            python scripts/bootstrap_adopter_authority.py
+          fi
 
       - name: Commit the public DID document and delegation
         run: |
@@ -75,6 +88,11 @@ jobs:
           GH_ADMIN_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
           ADOPTER_DID_VALUE: did:web:vouch-protocol.com:adopters
         run: |
+          if [ ! -f adopter-authority-key.json ]; then
+            echo "stored=skip" >> "$GITHUB_OUTPUT"
+            echo "Delegation re-signed; the adopter key and its secrets are unchanged." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           if [ -n "$GH_ADMIN_TOKEN" ]; then
             GH_TOKEN="$GH_ADMIN_TOKEN" gh secret set VOUCH_ADOPTER_PRIVATE_KEY \
               --body "$(cat adopter-authority-key.json)"
