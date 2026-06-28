@@ -365,6 +365,35 @@ investigate within five business days.
 
 ---
 
+## Reaching agents by identity (transport)
+
+**Q: How does an agent reach another agent that has no domain or IP?**
+A: By its DID. The transport layer (`vouch.transport`) addresses a peer by
+identity, not location. It prefers identity-first routing over UDNA (Universal
+DID-Native Addressing) and falls back to standard DNS and HTTPS when the peer is
+not on the overlay. The agent dispatches to a DID and does not care which path
+the bytes take.
+
+**Q: Do I have to run UDNA to use Vouch?**
+A: No. The transport is optional and experimental, and it is dormant unless you
+opt in with `pip install vouch-protocol[udna]`. Without it, dispatch falls
+through to HTTP, so your code runs unchanged. UDNA is aligned with the W3C UDNA
+Community Group.
+
+**Q: Are my credentials safe if the message switches from UDNA to HTTP?**
+A: Yes. The message is a `VouchEnvelope` that carries the signed credential, its
+liability attestations, and provenance unchanged, with a content digest checked
+on receipt. The signature is what protects integrity and authenticity, so the
+trust properties hold whichever transport delivers the bytes.
+
+**Q: Is the UDNA channel encrypted?**
+A: Not yet in the reference SDK. The `udna_sdk` v1.0.x handshake authenticates
+the peer but does not provide channel confidentiality, so Vouch does not rely on
+it for secrecy. For confidential payloads, encrypt at the application layer
+before sealing. See `docs/udna-upstream-proposal.md`.
+
+---
+
 ## Notes for the user reviewing this draft
 
 - "https://agent.vouch-protocol.org" is the proposed hostname for the

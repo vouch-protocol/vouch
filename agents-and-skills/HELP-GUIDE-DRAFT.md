@@ -475,6 +475,55 @@ release notifications on https://github.com/vouch-protocol/vouch.
 
 ---
 
+# Part 3: Reach agents by identity (transport)
+
+Optional and experimental. Use this when agents need to reach each other by
+identity rather than by a fixed domain or IP. It is aligned with the W3C UDNA
+Community Group and is dormant unless you opt in.
+
+## When to use it
+
+- Agents are ephemeral or move across hosts, so a stable domain or IP is not
+  available, but a DID always is.
+- You want delivery to follow the identity, with a standard HTTP path as the
+  fallback for peers that are not on the overlay.
+
+## How it works
+
+`TransportManager` tries transports in order: UDNA first (identity-first), then
+HTTP (did:web, DNS, HTTPS). A peer that cannot be reached over one transport
+falls through to the next, and `DeliveryResult.attempts` records the path taken.
+The message is a `VouchEnvelope` that carries the signed credential, liability
+attestations, and provenance unchanged, with a content digest checked on
+receipt, so the trust properties hold whichever path delivers it.
+
+## Enable it
+
+```bash
+pip install vouch-protocol[udna]
+```
+
+```python
+from vouch.transport import TransportManager, build_envelope
+
+envelope = build_envelope(from_did=my_did, to_did=peer_did, payload=credential)
+manager = TransportManager.default(private_key_jwk=my_private_key_jwk)
+result = await manager.dispatch(envelope)   # result.transport -> "udna" or "http"
+```
+
+Without the extra installed, the UDNA transport stays dormant and dispatch falls
+through to HTTP, so the same code runs unchanged.
+
+## Security note
+
+The reference UDNA SDK (`udna_sdk` v1.0.x) authenticates the peer but does not
+provide channel confidentiality yet, so do not treat a UDNA channel as private.
+Vouch does not rely on it: envelope payloads are signed credentials, so their
+integrity and authenticity hold end to end. For confidential payloads, encrypt
+at the application layer before sealing.
+
+---
+
 # Notes for the user reviewing this draft
 
 - The `/help/ai-assistants` and `/help/sidecars` routes are proposals;
