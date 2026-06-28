@@ -21,6 +21,15 @@ from .credential import Credential
 from .keys import generate_identity, KeyPair
 from .kms import RotatingKeyProvider, KeyConfig
 
+# Where a minted identity is saved (secure by default). See vouch.keystore.
+from .keystore import (
+    EncryptedFileKeyStore,
+    KeyringKeyStore,
+    KeyStore,
+    MemoryKeyStore,
+    resolve_default_store,
+)
+
 # Deterministic, zero-prompt signing for agent tool calls. Wrap a tool once and
 # every call is signed in Python before it runs - no reliance on the model
 # choosing to call a signing tool. See vouch.autosign and the framework
@@ -308,6 +317,12 @@ __all__ = [
     "KeyPair",
     "RotatingKeyProvider",
     "KeyConfig",
+    # Key storage (secure by default)
+    "KeyStore",
+    "MemoryKeyStore",
+    "EncryptedFileKeyStore",
+    "KeyringKeyStore",
+    "resolve_default_store",
     # Deterministic agent-tool signing
     "protect",
     "signed",

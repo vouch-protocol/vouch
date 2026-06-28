@@ -26,7 +26,8 @@ import json
 import logging
 from typing import Any, Dict, Optional, Tuple
 
-from vouch.keys import KeyManager, KeyPair, generate_identity
+from vouch.keys import KeyPair, generate_identity
+from vouch.keystore import KeyStore, resolve_default_store
 from vouch.signer import Signer
 from vouch.verifier import CredentialPassport, Verifier, verify
 
@@ -37,39 +38,73 @@ class Agent:
     """An agent identity bundled with its signer.
 
     Construct it to mint a fresh identity, or use :meth:`load` /
-    :meth:`from_keypair` to rehydrate an existing one. With a ``domain`` the
-    identity is ``did:web:<domain>``; without one it is a self-certifying
-    ``did:key`` (verifiable offline, no DID document to host).
+    :meth:`from_keypair` / :meth:`from_store` to rehydrate an existing one. With
+    a ``domain`` the identity is ``did:web:<domain>``; without one it is a
+    self-certifying ``did:key`` (verifiable offline, no DID document to host).
 
-    Storage: a freshly minted DID, private key, and public key live in memory
-    only (on this Agent and its Signer). Nothing is written to disk until you
-    call :meth:`save`, which stores the identity under ``~/.vouch/keys`` (pass a
-    ``password`` to encrypt the private key at rest).
+    Storage (secure by default): a freshly minted identity is persisted to the
+    most secure store available (OS keyring, else an encrypted file when a
+    password is set) so it is not lost when the process exits. Pass ``store=`` to
+    choose one explicitly, or ``persist=False`` to keep it in memory (logged
+    clearly, since an unsaved identity disappears on exit). See
+    :mod:`vouch.keystore`.
+
+    The private key is not handed back by default. ``private_key_jwk`` and
+    ``keypair`` raise unless the Agent was created with ``allow_key_export=True``,
+    so an end user does not accidentally pass the raw key around. Signing always
+    works regardless, through :meth:`sign`.
     """
 
-    def __init__(self, domain: Optional[str] = None, *, default_expiry_seconds: int = 300) -> None:
+    def __init__(
+        self,
+        domain: Optional[str] = None,
+        *,
+        default_expiry_seconds: int = 300,
+        store: Optional[KeyStore] = None,
+        persist: bool = True,
+        password: Optional[str] = None,
+        allow_key_export: bool = False,
+    ) -> None:
         keypair = generate_identity(domain=domain)
-        if not keypair.did:
+        is_did_key = not keypair.did
+        if is_did_key:
             keypair.did = _did_key_from_pub_jwk(keypair.public_key_jwk)
-            # No domain was given, so the identity is a self-certifying did:key:
-            # the key IS the identifier, with nothing to host and no authority to
-            # resolve. Say so once, because a caller expecting a did:web anchor
-            # would otherwise not notice. Like every freshly minted identity it
-            # lives in memory only; call agent.save(password=...) to persist it.
-            logger.info(
-                "vouch.Agent minted a self-certifying did:key identity (%s). It "
-                "is held in memory only and is not persisted; pass a domain for a "
-                "did:web identity, or call agent.save(password=...) to keep it.",
-                keypair.did,
-            )
-        else:
-            logger.info(
-                "vouch.Agent minted identity %s (in memory only; call "
-                "agent.save(password=...) to persist it).",
-                keypair.did,
-            )
         self._keypair = keypair
+        self._allow_key_export = allow_key_export
+        self._store: Optional[KeyStore] = None
         self._signer = Signer.from_keypair(keypair, default_expiry_seconds=default_expiry_seconds)
+
+        # Secure by default: persist the new identity somewhere durable, or say
+        # plainly that it is memory-only so it is not silently lost.
+        resolved = (
+            store if store is not None else (resolve_default_store(password) if persist else None)
+        )
+        if persist and resolved is not None:
+            try:
+                location = resolved.save(keypair)
+                self._store = resolved
+                logger.info(
+                    "vouch.Agent saved identity %s to %s. You can also save it "
+                    "elsewhere (the CLI or another SDK) from the same keys.",
+                    keypair.did,
+                    location,
+                )
+            except Exception as e:  # never let a storage failure break minting
+                logger.warning(
+                    "vouch.Agent could not persist identity %s (%s); it is held "
+                    "in memory only. Call agent.save(...) to store it.",
+                    keypair.did,
+                    e,
+                )
+        else:
+            note = "did:key, " if is_did_key else ""
+            logger.warning(
+                "vouch.Agent minted identity %s (%sin memory only, not persisted). "
+                "It is lost when this process exits; call agent.save(...) or set a "
+                "store/password to keep it.",
+                keypair.did,
+                note,
+            )
 
     # -- constructors ---------------------------------------------------------
 
@@ -81,10 +116,13 @@ class Agent:
         *,
         public_key_jwk: Optional[str] = None,
         default_expiry_seconds: int = 300,
+        allow_key_export: bool = True,
     ) -> "Agent":
         """Rehydrate an Agent from stored keys (no new identity is minted).
 
-        The public key is derived from the private key when not supplied.
+        The public key is derived from the private key when not supplied. The
+        caller already holds the raw key here, so ``allow_key_export`` defaults
+        to True; pass False to still gate it.
         """
         if public_key_jwk is None:
             public_key_jwk = _public_jwk_from_private(private_key_jwk)
@@ -93,16 +131,51 @@ class Agent:
             public_key_jwk=public_key_jwk,
             did=did,
         )
-        return cls.from_keypair(keypair, default_expiry_seconds=default_expiry_seconds)
+        return cls.from_keypair(
+            keypair,
+            default_expiry_seconds=default_expiry_seconds,
+            allow_key_export=allow_key_export,
+        )
 
     @classmethod
-    def from_keypair(cls, keypair: KeyPair, *, default_expiry_seconds: int = 300) -> "Agent":
+    def from_keypair(
+        cls,
+        keypair: KeyPair,
+        *,
+        default_expiry_seconds: int = 300,
+        allow_key_export: bool = True,
+    ) -> "Agent":
         """Build an Agent from an existing :class:`~vouch.keys.KeyPair`."""
         if not keypair.did:
             raise ValueError("Agent.from_keypair requires a keypair with a DID")
         agent = cls.__new__(cls)
         agent._keypair = keypair
+        agent._allow_key_export = allow_key_export
+        agent._store = None
         agent._signer = Signer.from_keypair(keypair, default_expiry_seconds=default_expiry_seconds)
+        return agent
+
+    @classmethod
+    def from_store(
+        cls,
+        did: str,
+        store: KeyStore,
+        *,
+        default_expiry_seconds: int = 300,
+        allow_key_export: bool = False,
+    ) -> "Agent":
+        """Load a previously persisted identity from a :class:`KeyStore`.
+
+        The raw key stays gated by default (``allow_key_export=False``): the
+        Agent can sign, but does not hand the key back.
+        """
+        keypair = store.load(did)
+        agent = cls.from_keypair(
+            keypair,
+            default_expiry_seconds=default_expiry_seconds,
+            allow_key_export=allow_key_export,
+        )
+        agent._store = store
         return agent
 
     # -- identity -------------------------------------------------------------
@@ -117,11 +190,29 @@ class Agent:
 
     @property
     def private_key_jwk(self) -> str:
+        """The raw private key. Gated: requires ``allow_key_export=True``.
+
+        The whole point of an Agent is that signing happens through it without
+        the caller touching the key. Reading the raw key is an explicit,
+        opt-in action so it does not leak by accident.
+        """
+        self._require_export("private_key_jwk")
         return self._keypair.private_key_jwk
 
     @property
     def keypair(self) -> KeyPair:
+        """The full KeyPair (includes the private key). Gated like
+        :attr:`private_key_jwk`."""
+        self._require_export("keypair")
         return self._keypair
+
+    def _require_export(self, what: str) -> None:
+        if not self._allow_key_export:
+            raise PermissionError(
+                f"Access to {what} is disabled for this Agent. The private key is "
+                "meant to stay inside the Agent and sign on your behalf. If you "
+                "really need the raw key, create the Agent with allow_key_export=True."
+            )
 
     @property
     def signer(self) -> Signer:
@@ -205,13 +296,27 @@ class Agent:
 
     # -- persistence ----------------------------------------------------------
 
-    def save(self, *, password: Optional[str] = None, key_dir: Optional[str] = None) -> None:
-        """Persist this identity to the on-disk keystore (``~/.vouch/keys``).
+    def save(
+        self,
+        store: Optional[KeyStore] = None,
+        *,
+        password: Optional[str] = None,
+        key_dir: Optional[str] = None,
+    ) -> str:
+        """Persist this identity and return where it was saved.
 
-        Pass a ``password`` to encrypt the private key (strongly recommended).
+        Pass a :class:`KeyStore` to choose the backend. With no store, this saves
+        to the on-disk encrypted keystore (``~/.vouch/keys``); pass a
+        ``password`` to encrypt the private key at rest (strongly recommended).
         """
-        km = KeyManager(key_dir) if key_dir else KeyManager()
-        km.save_identity(self._keypair, password=password)
+        if store is None:
+            from vouch.keystore import EncryptedFileKeyStore
+
+            store = EncryptedFileKeyStore(key_dir=key_dir, password=password)
+        location = store.save(self._keypair)
+        self._store = store
+        logger.info("vouch.Agent saved identity %s to %s.", self.did, location)
+        return location
 
     def __repr__(self) -> str:
         return f"Agent(did={self.did!r})"

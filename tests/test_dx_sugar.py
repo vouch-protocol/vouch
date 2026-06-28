@@ -128,7 +128,7 @@ def test_verify_accepts_json_string(keypair):
 
 
 def test_agent_mint_sign_self_verify():
-    agent = Agent("agent.example")
+    agent = Agent("agent.example", persist=False)
     assert agent.did == "did:web:agent.example"
     signed = agent.sign(action="read", target="did:web:files", resource="https://files/x")
     ok, who = agent.verify(signed)  # knows its own key, no network
@@ -138,7 +138,7 @@ def test_agent_mint_sign_self_verify():
 
 
 def test_agent_did_key_when_no_domain():
-    agent = Agent()
+    agent = Agent(persist=False)
     assert agent.did.startswith("did:key:")
     signed = agent.sign(action="write", target="t", resource="r")
     # did:key resolves offline through the default verify path.
@@ -148,7 +148,7 @@ def test_agent_did_key_when_no_domain():
 
 
 def test_agent_load_roundtrip():
-    agent = Agent("agent.example")
+    agent = Agent("agent.example", persist=False, allow_key_export=True)
     signed = agent.sign(intent=INTENT)
     reloaded = Agent.load(agent.private_key_jwk, agent.did)
     assert reloaded.did == agent.did
@@ -165,8 +165,8 @@ def test_agent_from_keypair(keypair):
 
 
 def test_agent_verify_other_issuer_offline_key():
-    a = Agent("a.example")
-    b = Agent("b.example")
+    a = Agent("a.example", persist=False)
+    b = Agent("b.example", persist=False)
     signed_by_b = b.sign(intent=INTENT)
     # a does not know b's key and b is did:web (no network here); an explicit
     # key still verifies offline.
@@ -176,11 +176,11 @@ def test_agent_verify_other_issuer_offline_key():
 
 
 def test_agent_delegate_and_chain():
-    principal = Agent("principal.example")
+    principal = Agent("principal.example", persist=False)
     grant = principal.delegate(
         action="charge", target="api.bank", resource="https://api.bank/invoices"
     )
-    worker = Agent("worker.example")
+    worker = Agent("worker.example", persist=False)
     child = worker.sign(
         action="charge",
         target="api.bank",
@@ -198,7 +198,7 @@ def test_agent_delegate_and_chain():
 
 
 def test_did_key_resolves_without_network():
-    agent = Agent()  # did:key
+    agent = Agent(persist=False)  # did:key
     signed = agent.sign(intent=INTENT)
     ok, who = verify(signed)  # no key, no trusted root -> resolved from did:key
     assert ok
@@ -206,7 +206,7 @@ def test_did_key_resolves_without_network():
 
 
 def test_did_key_resolution_allowed_even_offline_flag():
-    agent = Agent()
+    agent = Agent(persist=False)
     signed = agent.sign(intent=INTENT)
     # did:key needs no network, so it works with resolution disabled too.
     ok, _ = verify(signed, allow_did_resolution=False)
@@ -214,7 +214,7 @@ def test_did_key_resolution_allowed_even_offline_flag():
 
 
 def test_did_key_tampered_credential_fails():
-    agent = Agent()
+    agent = Agent(persist=False)
     signed = agent.sign(intent=INTENT)
     signed["credentialSubject"]["intent"]["resource"] = "https://files/evil"
     ok, _ = verify(signed)
@@ -291,7 +291,7 @@ def test_credential_wrapper_rejects_bad_input():
 @pytest.fixture
 def did_key_agent():
     """A did:key agent whose credentials verify offline (no network)."""
-    return Agent()
+    return Agent(persist=False)
 
 
 def test_require_signed_allows_trusted(did_key_agent):
@@ -314,7 +314,7 @@ def test_require_signed_rejects_unsigned(did_key_agent):
 
 
 def test_require_signed_rejects_untrusted_issuer(did_key_agent):
-    other = Agent()
+    other = Agent(persist=False)
     signed = other.sign(intent=INTENT)
 
     @require_signed(trusted_dids=[did_key_agent.did])

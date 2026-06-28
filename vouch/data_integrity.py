@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Union
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -37,18 +37,27 @@ from .multikey import _b58decode, _b58encode
 CRYPTOSUITE_ID = "eddsa-jcs-2022"
 PROOF_TYPE = "DataIntegrityProof"
 
+# A signer is either a raw Ed25519 private key (signs in process) or any callable
+# that takes the 32-byte digest and returns the 64-byte Ed25519 signature. The
+# callable form lets the actual key live somewhere the process cannot read it:
+# an OS secure element, a sidecar, a cloud KMS/HSM, or an MPC quorum.
+Signer = Union[Ed25519PrivateKey, Callable[[bytes], bytes]]
+
 
 def build_proof(
     credential: Dict[str, Any],
-    private_key: Ed25519PrivateKey,
+    private_key: Signer,
     verification_method: str,
     proof_purpose: str = "assertionMethod",
     created: datetime | None = None,
 ) -> Dict[str, Any]:
     """
-    Generate a Data Integrity proof object for `credential` using the given
-    Ed25519 private key. Returns the proof dict (caller attaches it to the
-    credential).
+    Generate a Data Integrity proof object for `credential`.
+
+    `private_key` is either an Ed25519 private key (signed in process) or a
+    callable `sign(digest: bytes) -> bytes` that produces the Ed25519 signature
+    over the digest without exposing the key to this process. Returns the proof
+    dict (caller attaches it to the credential).
 
     Conforms to eddsa-jcs-2022 §3.1.
     """
@@ -66,7 +75,13 @@ def build_proof(
     canonical = jcs.canonicalize(cred_with_unsigned_proof)
     digest = hashlib.sha256(canonical).digest()
 
-    signature = private_key.sign(digest)
+    if isinstance(private_key, Ed25519PrivateKey):
+        signature = private_key.sign(digest)
+    elif callable(private_key):
+        signature = private_key(digest)
+    else:
+        raise TypeError("private_key must be an Ed25519PrivateKey or a sign(digest) callable")
+
     proof["proofValue"] = "z" + _b58encode(signature)
     return proof
 
