@@ -97,6 +97,35 @@ class Signer:
         except Exception:  # pragma: no cover - defensive
             self._raw_priv = None
 
+    @classmethod
+    def from_keypair(cls, keypair: Any, default_expiry_seconds: int = 300) -> "Signer":
+        """Construct a Signer directly from a :class:`~vouch.keys.KeyPair`.
+
+        Saves unpacking ``keypair.private_key_jwk`` and ``keypair.did`` by hand::
+
+            keys = generate_identity("agent.example")
+            signer = Signer.from_keypair(keys)
+
+        Args:
+          keypair: a KeyPair (or any object exposing ``private_key_jwk`` and
+            ``did`` attributes).
+          default_expiry_seconds: token validity period (default 5 minutes).
+
+        Raises:
+          ValueError: if the keypair has no DID.
+        """
+        did = getattr(keypair, "did", None)
+        if not did:
+            raise ValueError(
+                "Signer.from_keypair requires a keypair with a DID; "
+                "generate it with a domain, e.g. generate_identity('agent.example')"
+            )
+        return cls(
+            private_key=keypair.private_key_jwk,
+            did=did,
+            default_expiry_seconds=default_expiry_seconds,
+        )
+
     # ------------------------------------------------------------------
     # Legacy JWS path (v0.x). Preserved verbatim for backward compatibility.
     # ------------------------------------------------------------------
@@ -188,8 +217,11 @@ class Signer:
 
     def sign_credential(
         self,
-        intent: Dict[str, Any],
+        intent: Optional[Dict[str, Any]] = None,
         *,
+        action: Optional[str] = None,
+        target: Optional[str] = None,
+        resource: Optional[str] = None,
         valid_seconds: Optional[int] = None,
         reputation_score: Optional[int] = None,
         delegation_chain: Optional[List[Dict[str, Any]]] = None,
@@ -204,8 +236,23 @@ class Signer:
         returned credential is a dict that can be JSON-serialized and
         transmitted in an HTTP body or header.
 
+        The intent can be passed either as a dict (the original form) or as the
+        named keyword arguments `action`, `target`, and `resource`. The two
+        styles are equivalent and may be combined; named arguments override the
+        matching keys in the `intent` dict::
+
+            signer.sign_credential(action="read", target="inbox",
+                                   resource="https://mail/api/inbox")
+            signer.sign_credential(intent={"action": "read", "target": "inbox",
+                                           "resource": "https://mail/api/inbox"})
+
         Args:
-          intent: Intent payload. MUST contain `action`, `target`, `resource`.
+          intent: Intent payload dict. MUST contain `action`, `target`,
+            `resource` once merged with any named arguments.
+          action: Optional intent action (alternative to `intent["action"]`).
+          target: Optional intent target (alternative to `intent["target"]`).
+          resource: Optional intent resource (alternative to
+            `intent["resource"]`).
           valid_seconds: Optional validity window override.
           reputation_score: Optional self-reported score in [0, 100].
           delegation_chain: Pre-built delegation chain to attach (advanced).
@@ -220,7 +267,7 @@ class Signer:
           with a `proof` object (eddsa-jcs-2022).
 
         Raises:
-          ValueError: If `intent` is missing required fields, the chain
+          ValueError: If the merged intent is missing required fields, the chain
             exceeds max depth, or the private key bytes are unavailable.
         """
         if self._raw_priv is None:
@@ -228,6 +275,8 @@ class Signer:
                 "Cannot issue Data Integrity credentials: private key bytes "
                 "could not be derived from the JWK"
             )
+
+        intent = _merge_intent(intent, action=action, target=target, resource=resource)
 
         chain = delegation_chain or []
         if parent_credential is not None:
@@ -253,8 +302,11 @@ class Signer:
 
     def sign_credential_hybrid(
         self,
-        intent: Dict[str, Any],
+        intent: Optional[Dict[str, Any]] = None,
         *,
+        action: Optional[str] = None,
+        target: Optional[str] = None,
+        resource: Optional[str] = None,
         valid_seconds: Optional[int] = None,
         reputation_score: Optional[int] = None,
         delegation_chain: Optional[List[Dict[str, Any]]] = None,
@@ -270,6 +322,9 @@ class Signer:
         over the same canonical form. Verification REQUIRES both signatures
         to validate, providing safety against compromise of either algorithm.
 
+        Accepts the intent either as a dict or as the named `action`/`target`/
+        `resource` arguments, exactly like :meth:`sign_credential`.
+
         Note: this profile produces credentials roughly 2.5 KB larger than
         the eddsa-jcs-2022 default. Implementations using this profile
         SHOULD transmit credentials in the HTTP request body (§5.6).
@@ -282,6 +337,8 @@ class Signer:
                 "Cannot issue Data Integrity credentials: private key bytes "
                 "could not be derived from the JWK"
             )
+
+        intent = _merge_intent(intent, action=action, target=target, resource=resource)
 
         chain = delegation_chain or []
         if parent_credential is not None:
@@ -422,3 +479,76 @@ def _is_sub_resource(child: str, parent: str) -> bool:
     if child.startswith(parent.rstrip("/") + "/"):
         return True
     return False
+
+
+def _merge_intent(
+    intent: Optional[Dict[str, Any]],
+    *,
+    action: Optional[str] = None,
+    target: Optional[str] = None,
+    resource: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Combine a dict intent with the named action/target/resource arguments.
+
+    Named arguments override the matching keys in `intent`. The original dict is
+    never mutated. Required-field validation is left to `vc.build_vouch_credential`
+    so the error message stays in one place.
+    """
+    merged: Dict[str, Any] = dict(intent) if intent else {}
+    if action is not None:
+        merged["action"] = action
+    if target is not None:
+        merged["target"] = target
+    if resource is not None:
+        merged["resource"] = resource
+    return merged
+
+
+# ---------------------------------------------------------------------------
+# One-line signing (the sending-side counterpart to vouch.verify)
+# ---------------------------------------------------------------------------
+
+
+def sign(
+    keypair: Any,
+    intent: Optional[Dict[str, Any]] = None,
+    *,
+    action: Optional[str] = None,
+    target: Optional[str] = None,
+    resource: Optional[str] = None,
+    valid_seconds: Optional[int] = None,
+    reputation_score: Optional[int] = None,
+    parent_credential: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Sign an intent as a Vouch Credential in one line, no Signer to construct.
+
+    The no-class counterpart to :func:`vouch.verify`::
+
+        keys = vouch.generate_identity("agent.example")
+        signed = vouch.sign(keys, action="read", target="did:web:files",
+                            resource="https://files/x")
+        ok, who = vouch.verify(signed, keys.public_key_jwk)
+
+    Args:
+      keypair: a :class:`~vouch.keys.KeyPair` (must carry a DID).
+      intent: optional intent dict; alternatively pass `action`/`target`/
+        `resource` as named arguments. The two styles may be combined.
+      action / target / resource: named intent fields.
+      valid_seconds: optional validity window override.
+      reputation_score: optional self-reported score in [0, 100].
+      parent_credential: optional parent grant to chain this credential under.
+
+    Returns:
+      A signed Vouch Credential dict, identical to what
+      ``Signer.from_keypair(keypair).sign_credential(...)`` returns.
+    """
+    signer = Signer.from_keypair(keypair)
+    return signer.sign_credential(
+        intent,
+        action=action,
+        target=target,
+        resource=resource,
+        valid_seconds=valid_seconds,
+        reputation_score=reputation_score,
+        parent_credential=parent_credential,
+    )

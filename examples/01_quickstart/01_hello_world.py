@@ -9,34 +9,39 @@ it. This is the modern credential path; new code should use it.
 Run: python 01_hello_world.py
 """
 
-from vouch import Signer, Verifier, generate_identity
+import vouch
 
-# 1. Generate a new identity (Ed25519 keypair).
-identity = generate_identity(domain="example.com")
-print(f"🔑 Generated identity with DID: {identity.did}")
+# An Agent bundles a fresh identity with its signer, so there is one object to
+# pass around. The intent binds the action to a concrete resource; every Vouch
+# credential requires action, target, and resource.
+agent = vouch.Agent("example.com")
+print(f"🔑 Generated identity with DID: {agent.did}")
 
-# 2. Create a signer with the identity.
-signer = Signer(private_key=identity.private_key_jwk, did=identity.did)
-
-# 3. Sign an action as a Verifiable Credential. The intent binds the action to a
-#    concrete resource; every Vouch credential requires action, target, and resource.
-signed = signer.sign_credential(
-    intent={
-        "action": "greet",
-        "target": "world",
-        "resource": "https://example.com/greetings",
-    }
+signed = agent.sign(
+    action="greet",
+    target="world",
+    resource="https://example.com/greetings",
 )
 print(f"\n✅ Signed a Verifiable Credential (cryptosuite: {signed['proof']['cryptosuite']})")
 
-# 4. Verify the credential. verify_credential returns (is_valid, passport).
-is_valid, passport = Verifier.verify_credential(signed, public_key=identity.public_key_jwk)
+# The agent knows its own key, so verifying its own credential needs no key
+# argument. verify returns (is_valid, passport).
+is_valid, passport = agent.verify(signed)
 
 print("\n🔍 Verification result:")
 print(f"   Valid: {is_valid}")
 if passport:
-    print(f"   Issuer DID: {passport.iss}")
-    print(f"   Intent: {passport.intent}")
+    print(f"   Issuer DID: {passport.issuer}")
+    print(
+        f"   Action / target / resource: "
+        f"{passport.action} / {passport.target} / {passport.resource}"
+    )
+
+# No-class path: the same flow with module-level one-liners and a plain keypair.
+keys = vouch.generate_identity("example.com")
+signed2 = vouch.sign(keys, action="greet", target="world", resource="https://example.com/greetings")
+ok2, who2 = vouch.verify(signed2, keys.public_key_jwk)
+print(f"\n🔁 One-liner path valid: {ok2} (issuer {who2.issuer})")
 
 print("""
 That's it! You've:

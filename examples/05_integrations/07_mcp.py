@@ -125,6 +125,47 @@ if not is_valid:
 is_valid, _ = Verifier.verify(signed_calls[2]["token"], signer.get_public_key_jwk())
 print(f"\n   Legitimate execute_command('pytest') still valid? {is_valid} ✅")
 
+# =============================================================================
+# PART 5: One-line guard (verify every tool call with a single decorator)
+# =============================================================================
+
+print(f"\n{'=' * 60}")
+print("PART 5: One-Line Guard (modern credential path)")
+print("=" * 60)
+
+import vouch
+
+# The agent that is allowed to call your tools. A did:key identity verifies
+# offline; a did:web identity resolves over the network with no extra config.
+trusted_agent = vouch.Agent()
+
+# Guard a tool with one decorator. The credential arrives as `vouch_credential`;
+# an unsigned, forged, or untrusted call is rejected before the body runs.
+
+
+@vouch.require_signed(trusted_dids=[trusted_agent.did])
+def guarded_execute(command):
+    return f"ran: {command}"
+
+
+good = trusted_agent.sign(action="execute", target="shell", resource="pytest tests/ -v")
+print(f"\n   Trusted, signed call -> {guarded_execute('pytest tests/ -v', vouch_credential=good)}")
+
+rogue_agent = vouch.Agent()
+rogue = rogue_agent.sign(action="execute", target="shell", resource="cat ~/.ssh/id_rsa")
+try:
+    guarded_execute("cat ~/.ssh/id_rsa", vouch_credential=rogue)
+except PermissionError as exc:
+    print(f"   Rogue agent rejected -> {exc}")
+
+try:
+    guarded_execute("rm -rf /")  # unsigned
+except PermissionError as exc:
+    print(f"   Unsigned call rejected -> {exc}")
+
+# To guard a whole MCP server in one line:
+#     server = vouch.guard_mcp(server, trusted_dids=[trusted_agent.did])
+
 print("""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TAKEAWAY: MCP gives AI models powerful system access (file I/O,
