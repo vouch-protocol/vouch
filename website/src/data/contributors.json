@@ -8,5 +8,10 @@
     "login": "WilliamK112",
     "pr": 131,
     "title": "chore: add self-documenting Makefile help"
+  },
+  {
+    "login": "kautilyaa",
+    "pr": 37,
+    "title": "Identified and fixed the dev-setup and test failures (issue #36)"
   }
 ]
