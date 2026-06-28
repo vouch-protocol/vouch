@@ -49,6 +49,10 @@ from .autosign import (
 from .gate import CredentialGate, GateResult
 from .mcp_guard import guard_mcp, guard_tools, require_signed
 
+# Cross-device identity: per-device keys delegated from a root, with full chain
+# verification back to a trusted root (the key never travels). See vouch.fleet.
+from .fleet import FleetResult, enroll_device, verify_delegated_chain
+
 # Audio signing
 from .audio import AudioSigner, SignedAudioResult
 
@@ -338,6 +342,9 @@ __all__ = [
     "CredentialGate",
     "GateResult",
     "require_signed",
+    "enroll_device",
+    "verify_delegated_chain",
+    "FleetResult",
     "guard_mcp",
     "guard_tools",
     # Audio
