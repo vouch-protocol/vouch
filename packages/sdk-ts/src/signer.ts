@@ -240,6 +240,24 @@ export class Signer {
     return { ...credential, proof };
   }
 
+  /**
+   * Attach a hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof to a pre-built
+   * credential. The hybrid counterpart to `attachProof`, for custom credential
+   * types the caller assembles by hand. Lazily generates the ML-DSA-44 keypair.
+   */
+  async attachProofHybrid(
+    credential: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    this.ensureMldsa44KeyPair();
+    const ed25519PrivateKey = await this.rawPrivateKeyPromise;
+    const proof = buildHybridProof(credential, {
+      ed25519PrivateKey,
+      mldsa44SecretKey: this.mldsa44SecretKey!,
+      verificationMethod: this.verificationMethodId(),
+    });
+    return { ...credential, proof };
+  }
+
   // ------------------------------------------------------------------
   // Legacy JWS path. Behavior preserved verbatim.
   // ------------------------------------------------------------------
