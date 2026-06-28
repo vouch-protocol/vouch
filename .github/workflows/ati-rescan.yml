@@ -1,0 +1,81 @@
+name: Agent Trust Index rescan
+
+# Re-runs the Agent Trust Index sweep on a schedule, regenerates the site data
+# (numbers and the as-of date), rebuilds the static site into docs/, and pushes.
+# GitHub Pages serves from main:/docs, so the page updates on its own.
+#
+# Note: this workflow builds and publishes the site itself rather than relying
+# on deploy-website.yml. A push made with GITHUB_TOKEN does not trigger other
+# workflows, so deploy-website would not fire; building docs/ here avoids that.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ati-rescan
+  cancel-in-progress: false
+
+jobs:
+  rescan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Vouch (did:web and Multikey resolution)
+        run: pip install -e .
+
+      - name: Run the sweep
+        run: python agent-trust-index/run_sweep.py
+
+      - name: Sanity-check the sweep before publishing
+        run: |
+          COUNT=$(python -c "import json; print(len(json.load(open('agent-trust-index/data/results.json'))))")
+          echo "records=$COUNT"
+          if [ "$COUNT" -lt 5000 ]; then
+            echo "Only $COUNT records; the registry likely hiccuped. Not publishing a degraded dataset."
+            exit 1
+          fi
+
+      - name: Regenerate the site data
+        run: python scripts/extract-ati.py
+
+      - name: Detect whether the data changed
+        id: diff
+        run: |
+          if git diff --quiet -- website/src/app/agent-trust-index/ati-data.ts; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No change in the Index data; nothing to publish."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          node-version: "22"
+
+      - name: Build and export the site to docs/
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: website
+        run: |
+          npm ci
+          npm run export-to-docs
+
+      - name: Commit and publish
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add website/src/app/agent-trust-index/ati-data.ts docs
+          git commit -m "data(ati): weekly Agent Trust Index re-scan"
+          git push
