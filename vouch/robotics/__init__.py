@@ -15,6 +15,7 @@ robots and embodied agents:
   - safety_record: incident/near-miss ledger + portable safety-record credential.
   - lease: short-lived, offline-verifiable delegation lease (open cross-vendor chain).
   - physical_quorum: M-of-N approvals for high-consequence physical actions.
+  - lifecycle: ownership transfer, key rotation, and decommissioning.
   - perception: signed, tamper-evident provenance for captured sensor frames.
 """
 
@@ -100,6 +101,16 @@ from .physical_quorum import (
     build_action_approval,
     verify_action_authorization,
 )
+from .lifecycle import (
+    build_decommission,
+    build_key_rotation,
+    build_ownership_transfer,
+    verify_custody_chain,
+    verify_decommission,
+    verify_key_history,
+    verify_key_rotation,
+    verify_ownership_transfer,
+)
 
 __all__ = [
     # identity
@@ -163,6 +174,15 @@ __all__ = [
     # physical quorum (M-of-N approvals for high-consequence actions)
     "build_action_approval",
     "verify_action_authorization",
+    # lifecycle (ownership transfer, key rotation, decommissioning)
+    "build_ownership_transfer",
+    "verify_ownership_transfer",
+    "verify_custody_chain",
+    "build_key_rotation",
+    "verify_key_rotation",
+    "verify_key_history",
+    "build_decommission",
+    "verify_decommission",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
