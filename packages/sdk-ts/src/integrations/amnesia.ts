@@ -18,8 +18,6 @@
  *  // vc is a VC ready to POST, store, or pass to a verifier.
  */
 
-import { signVcDataIntegrity } from '../data-integrity.js';
-import { signVcHybrid } from '../data-integrity-hybrid.js';
 import type { Signer } from '../signer.js';
 
 /**
@@ -78,7 +76,7 @@ export async function attestDecision(
   validateDecision(decision);
 
   const cryptosuite = options.cryptosuite ?? 'eddsa-jcs-2022';
-  const issuer = options.issuer ?? signer.did;
+  const issuer = options.issuer ?? signer.getDid();
   const matched = decision.rule_decisions.filter((r) => r.matched);
 
   const contexts = [...DEFAULT_CONTEXTS];
@@ -104,9 +102,9 @@ export async function attestDecision(
 
   let credential: Record<string, unknown>;
   if (cryptosuite === 'eddsa-jcs-2022') {
-    credential = await signVcDataIntegrity(vc, signer);
+    credential = await signer.attachProof(vc);
   } else if (cryptosuite === 'hybrid-eddsa-mldsa44-jcs-2026') {
-    credential = await signVcHybrid(vc, signer);
+    credential = await signer.attachProofHybrid(vc);
   } else {
     throw new Error(`unsupported cryptosuite: ${String(cryptosuite)}`);
   }
