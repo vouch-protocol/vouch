@@ -3,16 +3,16 @@
     "https://www.w3.org/ns/credentials/v2",
     "https://vouch-protocol.com/contexts/v1"
   ],
-  "id": "urn:uuid:6e521307-4a3a-47ee-8460-d909d3177788",
+  "id": "urn:uuid:6a2ec9d1-50bd-44b4-9dd9-1dee24e22572",
   "type": [
     "VerifiableCredential",
     "VouchCredential"
   ],
-  "issuer": "did:web:vouch-protocol.com:contributors",
-  "validFrom": "2026-06-28T21:07:52Z",
-  "validUntil": "2036-06-25T21:07:52Z",
+  "issuer": "did:web:vouch-protocol.com",
+  "validFrom": "2026-06-28T21:43:50Z",
+  "validUntil": "2036-06-25T21:43:50Z",
   "credentialSubject": {
-    "id": "did:web:vouch-protocol.com:contributors",
+    "id": "did:web:vouch-protocol.com",
     "vouchVersion": "1.0",
     "intent": {
       "action": "delegate",
@@ -24,9 +24,9 @@
   "proof": {
     "type": "DataIntegrityProof",
     "cryptosuite": "eddsa-jcs-2022",
-    "created": "2026-06-28T21:07:52Z",
-    "verificationMethod": "did:web:vouch-protocol.com:contributors#key-1",
+    "created": "2026-06-28T21:43:50Z",
+    "verificationMethod": "did:web:vouch-protocol.com#key-1",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z4GJ5rHLZu6ARXoWFC3pMXUp18t5cr1DEeR6kKC3abZkEo2DcA7BeG1fGWxi614yCFdX136iTvaTN3H6s8SmimiGh"
+    "proofValue": "z5iYGZbzUeAnTdqPy9VZAjHqqmoFt5syAVLkuKwVpspEEFa4XUy9W35vkmo5Zc2zJbAiFUoPZ9ncZAyVpLUm17ehH"
   }
 }
