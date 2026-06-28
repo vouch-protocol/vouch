@@ -18,6 +18,18 @@ export const metadata: Metadata = {
     title: 'Agent Trust Index - Vouch Protocol',
     description: `An open benchmark of how many autonomous agents can prove who they are. The first sweep checked ${TOTAL} public agents from the Model Context Protocol registry. ${ATI_SUMMARY.pctCannot}% cannot present a verifiable identity.`,
     alternates: { canonical: 'https://index.vouch-protocol.com/' },
+    openGraph: {
+        title: `${ATI_SUMMARY.pctCannot}% of AI agents cannot prove who they are`,
+        description: `An open benchmark of the agent world. ${ATI_SUMMARY.verifiable} of ${TOTAL} public agents can prove who they are.`,
+        url: 'https://vouch-protocol.com/agent-trust-index/',
+        type: 'website',
+        images: [{ url: '/assets/ati-card.png', width: 1200, height: 630 }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        site: '@Vouch_Protocol',
+        images: ['/assets/ati-card.png'],
+    },
 };
 
 const HEADLINE = [
@@ -75,8 +87,9 @@ export default function AgentTrustIndexPage() {
                 </p>
                 <div className="mb-16">
                     <ShareButtons
-                        text={`${ATI_SUMMARY.pctCannot}% of public AI agents cannot prove who they are. The Agent Trust Index:`}
-                        url="https://vouch-protocol.com/agent-trust-index/"
+                        text={`AI agents now act on our behalf, yet ${ATI_SUMMARY.pctCannot}% of them cannot prove who they are or who authorized them. As they start touching money and real data, this is the AI trust gap to watch:`}
+                        url="https://vouch-protocol.com/the-trust-gap/"
+                        image="/assets/ati-card.png"
                     />
                 </div>
 
