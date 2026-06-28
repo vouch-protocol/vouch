@@ -182,6 +182,24 @@ caller.
 
 ---
 
+## Update (2026-06-27): Third-party timestamp anchoring
+
+The original disclosure relied on the signed `created` time to fix the commitment
+before its outcome. On its own that timestamp is asserted by the committer, so the
+pre-outcome timing is only as trustworthy as the committer's clock. This update
+adds an optional `anchor` to the commitment: one entry or a tier list, each
+carrying a `method` (a third-party timestamping service such as OpenTimestamps,
+an RFC 3161 timestamp authority, a transparency log, or an on-chain method), a
+`reference` to the proof at that service, and a `recomputeCmd` a verifier runs to
+check it. With an anchor, a consumer confirms the commitment existed before the
+outcome without trusting the committer. The anchor is carried inside the signed
+credential, so it is tamper-evident, and the anchor itself is checked out of band
+by the consumer against the named method. The original claims are unchanged; the
+anchor is a disclosed strengthening of the pre-outcome timing property, released
+under Apache 2.0.
+
+---
+
 ## Prior Art Declaration
 
 This document is published as a defensive disclosure to establish prior art as of
