@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, and signed sensor perception provenance.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, and a physical quorum for high-consequence actions.',
 };
 
 const CAPABILITIES = [
@@ -67,6 +67,18 @@ const CAPABILITIES = [
         title: 'Perception provenance',
         body: 'A robot signs the provenance of each captured sensor frame at capture: the frame hash, the sensor, the modality, and the time, hash-linked into a tamper-evident log. It can prove what its cameras and lidar actually saw, and a substituted frame is detectable.',
         module: 'vouch.robotics.perception',
+    },
+    {
+        num: 'xi.',
+        title: 'Offline delegation lease',
+        body: 'A short-lived, scope-bounded grant a disconnected robot can verify and act on with no network call. Leases nest, each sub-grant only narrowing the one above, so a vendor can lease to an integrator, the integrator to an operator, and the operator to the robot, all verifiable.',
+        module: 'vouch.robotics.lease',
+    },
+    {
+        num: 'xii.',
+        title: 'Physical quorum',
+        body: 'A cryptographic two-person rule for high-consequence actions. Applying large force near a person, or an irreversible move, can require M of N attested approvers to each sign off before the robot is authorized to act.',
+        module: 'vouch.robotics.physical_quorum',
     },
 ];
 

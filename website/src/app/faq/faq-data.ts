@@ -516,6 +516,59 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: OFFLINE DELEGATION LEASE
+  // =====================================================================
+  {
+    id: 'robotics-lease',
+    audience: 'Robotics: offline lease',
+    title: 'Offline delegation lease',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does a robot act safely where there is no connectivity?',
+        a: `An authority issues a \`DelegationLeaseCredential\` that bounds what the robot may physically do, a force, speed, near-humans, and zone scope, for a fixed short window. The robot verifies the signature, that the window is current, and that a proposed action fits the scope, all offline with no network call.`,
+        helpLinks: [{ label: 'Offline lease guide', href: '/help/#robotics-lease' }],
+        meta: 'Shipped - vouch.robotics.lease',
+      },
+      {
+        q: 'How does this work across vendors?',
+        a: `Leases nest, and each sub-grant can only narrow the one above it. A vendor leases to an integrator, the integrator to an operator, the operator to the robot, and every link is verifiable and bounded. \`verify_delegation_lease\` checks that a child lease attenuates its parent, so no link can widen authority.`,
+        helpLinks: [{ label: 'Offline lease guide', href: '/help/#robotics-lease' }],
+        meta: 'Shipped - vouch.robotics.lease',
+      },
+      {
+        q: 'What stops an expired lease from being used?',
+        a: `Verification checks the window: a lease that has expired or is not yet valid fails. Because leases are short-lived by design, the exposure from a compromised or stale lease is bounded to its window.`,
+        meta: 'Shipped - vouch.robotics.lease',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: PHYSICAL QUORUM
+  // =====================================================================
+  {
+    id: 'robotics-quorum',
+    audience: 'Robotics: physical quorum',
+    title: 'Physical quorum',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can I require more than one approval before a robot does something dangerous?',
+        a: `Yes. A physical quorum is a cryptographic two-person rule: a high-consequence action is authorized only when at least M of an attested set of N approvers have each signed an approval over the same action. \`verify_action_authorization\` counts the distinct valid approvers and authorizes only when the threshold is met.`,
+        helpLinks: [{ label: 'Physical quorum guide', href: '/help/#robotics-quorum' }],
+        meta: 'Shipped - vouch.robotics.physical_quorum',
+      },
+      {
+        q: 'Can one approver just sign twice to reach the threshold?',
+        a: `No. The verifier counts DISTINCT approvers, so a single approver counts once no matter how many approvals it submits. Approvals from outside the attested approver set, for a different action, or carrying a reject decision are all ignored.`,
+        helpLinks: [{ label: 'Physical quorum guide', href: '/help/#robotics-quorum' }],
+        meta: 'Shipped - vouch.robotics.physical_quorum',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {
