@@ -1,6 +1,6 @@
 {
-  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). It also includes Python-signed credentials other languages VERIFY rather than reproduce: a delegation lease and a set of physical-quorum approvals. Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
-  "version": "1.3",
+  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). It also includes Python-signed credentials other languages VERIFY rather than reproduce: a delegation lease, a set of physical-quorum approvals, and the lifecycle credentials (ownership transfer, key rotation, decommission). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
+  "version": "1.4",
   "robot_public_key_jwk": {
     "kty": "OKP",
     "crv": "Ed25519",
@@ -38,10 +38,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-28T08:54:13Z",
+      "created": "2026-06-28T21:23:57Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4NMuCzwZLiVhQoH9vymKr2xuqg4twdUYB6xmuUHFvd2gYtBJaDDCst3RKAQoiYqF8oNE8BFomEExhSGmKnJYmB5G"
+      "proofValue": "z41AEfrxpW7efQM6tt6uaPGASYThPD1H2L5vGTKs7XqfhdTeifBeMXwARjn31ZCEVwB74Bk83NJhDowFrKTMMEX3J"
     }
   },
   "config": {
@@ -170,10 +170,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-28T08:54:13Z",
+      "created": "2026-06-28T21:23:57Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "zv7KVHTRqBDBthue8s1Cv2Nq7vA91E1fhgrtyzapAD7ij4m5kYiqvh8ePpU4Cir4GsDQtnaZFY1RXzHvf6B69LnQ"
+      "proofValue": "z435veTjvT1qwTGHQjo89gSCBqNWfwHLxFzgQxqRvBaVoj9eckRiUQ16Z6a3UyjGNbH7wpmtXUyRwLC3WkhndNXCb"
     }
   },
   "quorum_action_id": "vector-action-1",
@@ -198,10 +198,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-06-28T08:54:13Z",
+        "created": "2026-06-28T21:23:57Z",
         "verificationMethod": "did:web:approver-1.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z5Lk1R4MTUDRzBdNeeefr4LSXZPh4UxatS11HprzwErLtw4bes4hdGWZ8XvVZd1uPiCbreRXsBTThvipc3QKEqsfR"
+        "proofValue": "z4XBDbwFCZAUUvBjrcJQGrYQpLxtPY9XbfKJPgcPUQzzwHrFayekGSZZDNUbaV1igAJguaEeHGb6x8zHKPRRa3AiU"
       }
     },
     {
@@ -224,10 +224,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-06-28T08:54:13Z",
+        "created": "2026-06-28T21:23:57Z",
         "verificationMethod": "did:web:approver-2.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z3AAsqoEJdhkkvjgxtGj4Hh4PMY4P97oGW173xmCBWcwtBuiLozDW7LBGRAfp77unXyHqn5TJ9UZSLLNEE9PvdPD1"
+        "proofValue": "z3BEP6N2RWGXVxL9fDt72hxqsxbhwMzoUemYwpGBNPsJ8NQXRiPZyvyaQeFGZ4EjVmJqMh5gHoBHUxbs7yruDswqy"
       }
     }
   ],
@@ -242,5 +242,91 @@
       "crv": "Ed25519",
       "x": "gTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5Q"
     }
+  },
+  "ownership_transfer_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "RobotOwnershipTransferCredential"
+    ],
+    "issuer": "did:web:owner-a.example.com",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:web:robot.example.com",
+      "fromOwner": "did:web:owner-a.example.com",
+      "toOwner": "did:web:owner-b.example.com"
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-06-28T21:23:57Z",
+      "verificationMethod": "did:web:owner-a.example.com#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z5HZdfWyEmzjCXpxXpibAo5fe3X3deSJJkAcLVUq3xBSxPde3F8tABPgSJMsrE7o7YQhJ1totNQZrotsXnkvnS5dy"
+    }
+  },
+  "ownership_transfer_owner_key": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "7UkoxijRwsbq6QM4kFmVYSlZJzpcY_k2NsFGFKyHN9E"
+  },
+  "key_rotation_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "RobotKeyRotationCredential"
+    ],
+    "issuer": "did:web:robot.example.com",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:web:robot.example.com",
+      "previousKey": "z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+      "newKey": "z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2"
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-06-28T21:23:57Z",
+      "verificationMethod": "did:web:robot.example.com#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z4YfPYq8WogjDj6dVNAwDewANVBXuAiwNMuE6vy5DaJh7871kvkDY59z9a5ABtnR2mudaxxb55MSX5gDDhKmESFZH"
+    }
+  },
+  "decommission_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "RobotDecommissionCredential"
+    ],
+    "issuer": "did:web:authority.example.com",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:web:robot.example.com",
+      "reason": "end of service life",
+      "decommissionedBy": "did:web:authority.example.com",
+      "finalDisposition": "recycled"
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-06-28T21:23:57Z",
+      "verificationMethod": "did:web:authority.example.com#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z4fVbi1Zu7hjgAzXQ1Ge4AxXiYb333YhEupuZMQnNpDKa1QqvdqYbNhEwU7sX2Euvu5gE5X9soH3AYWhY18xT1xaJ"
+    }
+  },
+  "decommission_authority_key": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "ypOsFwUYcHHWe4PH_w7-gQjo7EUwV113JoeTM9vavnw"
   }
 }

@@ -24,7 +24,10 @@ from vouch.robotics import (
     SafetyEventLog,
     SoftwareRootOfTrust,
     build_action_approval,
+    build_decommission,
     build_delegation_lease,
+    build_key_rotation,
+    build_ownership_transfer,
     build_status_list_entry,
     config_hash,
     hash_frame,
@@ -118,6 +121,25 @@ def main():
                               valid_from=VALID_FROM),
     ]
 
+    # Lifecycle: Python-signed transfer, key rotation, and decommission that other
+    # languages verify. The key rotation is signed by the robot's current key
+    # (robot_public_key_jwk verifies it).
+    owner_a, owner_a_pub = signer_from_seed(bytes([3] * 32), "did:web:owner-a.example.com")
+    authority, authority_pub = signer_from_seed(bytes([4] * 32), "did:web:authority.example.com")
+    new_robot, _ = signer_from_seed(bytes([5] * 32), ROBOT_DID)
+    ownership_transfer = build_ownership_transfer(
+        owner_a, robot_did=ROBOT_DID, to_owner="did:web:owner-b.example.com",
+        transferred_at=VALID_FROM,
+    )
+    key_rotation = build_key_rotation(
+        signer, robot_did=ROBOT_DID, new_key_multibase=new_robot.get_public_key_multikey(),
+        rotated_at=VALID_FROM,
+    )
+    decommission = build_decommission(
+        authority, robot_did=ROBOT_DID, reason="end of service life",
+        final_disposition="recycled", decommissioned_at=VALID_FROM,
+    )
+
     doc = {
         "description": (
             "Robotics interop vector. Pins the deterministic byte-level "
@@ -128,11 +150,12 @@ def main():
             "credentialStatus entry (revocation), and the frame hash plus the "
             "hash-linked perception log (perception). It also includes "
             "Python-signed credentials other languages VERIFY rather than "
-            "reproduce: a delegation lease and a set of physical-quorum approvals. "
-            "Credential proof values are not pinned because the proof carries a "
-            "wall-clock created timestamp."
+            "reproduce: a delegation lease, a set of physical-quorum approvals, and "
+            "the lifecycle credentials (ownership transfer, key rotation, "
+            "decommission). Credential proof values are not pinned because the "
+            "proof carries a wall-clock created timestamp."
         ),
-        "version": "1.3",
+        "version": "1.4",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -153,6 +176,11 @@ def main():
             "did:web:approver-1.example.com": approver1_pub,
             "did:web:approver-2.example.com": approver2_pub,
         },
+        "ownership_transfer_credential": ownership_transfer,
+        "ownership_transfer_owner_key": owner_a_pub,
+        "key_rotation_credential": key_rotation,
+        "decommission_credential": decommission,
+        "decommission_authority_key": authority_pub,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
