@@ -23,11 +23,14 @@ format changes.
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any, Dict, Optional, Tuple
 
 from vouch.keys import KeyManager, KeyPair, generate_identity
 from vouch.signer import Signer
 from vouch.verifier import CredentialPassport, Verifier, verify
+
+logger = logging.getLogger(__name__)
 
 
 class Agent:
@@ -37,12 +40,34 @@ class Agent:
     :meth:`from_keypair` to rehydrate an existing one. With a ``domain`` the
     identity is ``did:web:<domain>``; without one it is a self-certifying
     ``did:key`` (verifiable offline, no DID document to host).
+
+    Storage: a freshly minted DID, private key, and public key live in memory
+    only (on this Agent and its Signer). Nothing is written to disk until you
+    call :meth:`save`, which stores the identity under ``~/.vouch/keys`` (pass a
+    ``password`` to encrypt the private key at rest).
     """
 
     def __init__(self, domain: Optional[str] = None, *, default_expiry_seconds: int = 300) -> None:
         keypair = generate_identity(domain=domain)
         if not keypair.did:
             keypair.did = _did_key_from_pub_jwk(keypair.public_key_jwk)
+            # No domain was given, so the identity is a self-certifying did:key:
+            # the key IS the identifier, with nothing to host and no authority to
+            # resolve. Say so once, because a caller expecting a did:web anchor
+            # would otherwise not notice. Like every freshly minted identity it
+            # lives in memory only; call agent.save(password=...) to persist it.
+            logger.info(
+                "vouch.Agent minted a self-certifying did:key identity (%s). It "
+                "is held in memory only and is not persisted; pass a domain for a "
+                "did:web identity, or call agent.save(password=...) to keep it.",
+                keypair.did,
+            )
+        else:
+            logger.info(
+                "vouch.Agent minted identity %s (in memory only; call "
+                "agent.save(password=...) to persist it).",
+                keypair.did,
+            )
         self._keypair = keypair
         self._signer = Signer.from_keypair(keypair, default_expiry_seconds=default_expiry_seconds)
 
