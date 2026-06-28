@@ -208,6 +208,18 @@ class RendezvousRegistry:
             return None
         return record.endpoint
 
+    def get(self, fingerprint: str, facet: str = DEFAULT_FACET) -> Optional[RouteRecord]:
+        """
+        Return the full signed :class:`RouteRecord` indexed under ``fingerprint``
+        on ``facet``, re-verified on read, or ``None``. An HTTP rendezvous serves
+        by fingerprint (the DID never appears in the request path) and returns
+        the whole signed record so the client can verify it for itself.
+        """
+        record = self._records.get((fingerprint, facet))
+        if record is None or not record.verify():
+            return None
+        return record
+
 
 # An inbox handler takes a request frame and returns a reply frame.
 InboxHandler = Callable[[bytes], Awaitable[bytes]]

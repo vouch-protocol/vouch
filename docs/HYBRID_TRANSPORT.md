@@ -172,6 +172,77 @@ print(result.attempts)    # e.g. ["udna", "http"], the fallback path taken
 A runnable, network-free demo lives at
 [`examples/hybrid_transport_demo.py`](../examples/hybrid_transport_demo.py).
 
+## Identity-first routing: the rendezvous resolver
+
+`did:web` answers "where is this domain." It cannot answer the question an agent
+actually has, "where is this identity right now," without a domain and DNS. The
+rendezvous resolver answers it directly: an agent binds its DID to a current
+endpoint, signs that binding with the DID's own key, and publishes it. A sender
+that knows only the DID resolves it to the live endpoint and verifies the agent
+itself asserted the route. The contract is announce, resolve, verify, deliver.
+
+The unit of trust is the `RouteRecord`: a small signed object binding a DID to
+an endpoint, a facet, and an expiry. The signature covers everything but itself,
+so the record is self-authenticating; the verifier recovers the public key from
+the DID (`did:key`) and checks it, with no network lookup. The routing key on
+the wire is `sha256(did)`, so a lookup never leaks the DID itself.
+
+Two backends ship, behind the same record format and the same verification:
+
+- **In-memory (`RendezvousRegistry`, `RendezvousChannel`).** The simplest thing
+  that proves the contract end to end, with no network and no server. Useful for
+  tests, single-process deployments, and as the reference for the record format.
+  Demo: [`examples/udna_rendezvous_demo.py`](../examples/udna_rendezvous_demo.py).
+
+- **Deployable HTTPS (`RendezvousService`, `build_rendezvous_app`,
+  `HttpRendezvousResolver`, `HttpRendezvousChannel`).** The same contract over
+  commodity infrastructure: a small HTTPS service any operator can run, and a
+  client that announces and resolves over TLS. `HttpRendezvousChannel` completes
+  the path, resolving a `udna://` address to the agent's announced `https://`
+  inbox and delivering the sealed envelope there, so identity-first routing works
+  today with no DNS binding the agent to a location.
+
+The rendezvous is **untrusted**. It stores and serves signed records but never
+has to be believed: the client re-verifies every record's signature locally and
+checks that the record's DID is the one it asked for. A malicious or compromised
+rendezvous can withhold a record or serve a stale one, but it cannot forge a
+route or substitute another identity's, because it does not hold the agent's
+Ed25519 key. That is the property that lets the resolver run on a host the agent
+does not control, and it is why the single fixed host (the rendezvous) does not
+become a single point of trust.
+
+The lookup here is a single rendezvous, deliberately not a distributed hash
+table. Swapping it for a real overlay (a Kademlia DHT, libp2p, or UDNA's DHT
+when it lands) is a later step that reuses this record format and verification
+unchanged, and plugs in behind the same `UdnaChannel` seam. Run the deployable
+path, network-free, at
+[`examples/http_rendezvous_demo.py`](../examples/http_rendezvous_demo.py).
+
+```python
+from vouch.transport import (
+    HttpRendezvousResolver, HttpRendezvousChannel, build_route_record,
+)
+
+# The agent announces its current inbox, signed under its DID.
+resolver = HttpRendezvousResolver("https://rendezvous.example.com")
+await resolver.announce(build_route_record(
+    did=agent_did, endpoint="https://agent.example/inbox", private_key=agent_ed25519,
+))
+
+# A sender that knows only the DID resolves it and delivers, verifying locally.
+channel = HttpRendezvousChannel(resolver)
+reply = await channel.exchange(f"udna://{agent_did}/vouch.message", frame)
+```
+
+To run the rendezvous itself, mount the FastAPI app under any ASGI server:
+
+```python
+import uvicorn
+from vouch.transport import build_rendezvous_app
+
+uvicorn.run(build_rendezvous_app(), host="0.0.0.0", port=8080)
+```
+
 ## Extending
 
 To add a transport (libp2p, Tor, a message bus), subclass `Transport`,
