@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, and a physical quorum for high-consequence actions.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, and lifecycle credentials for ownership transfer and decommissioning.',
 };
 
 const CAPABILITIES = [
@@ -79,6 +79,12 @@ const CAPABILITIES = [
         title: 'Physical quorum',
         body: 'A cryptographic two-person rule for high-consequence actions. Applying large force near a person, or an irreversible move, can require M of N attested approvers to each sign off before the robot is authorized to act.',
         module: 'vouch.robotics.physical_quorum',
+    },
+    {
+        num: 'xiii.',
+        title: 'Lifecycle and decommissioning',
+        body: 'A robot outlives its first owner. Ownership transfers chain into a verifiable chain of custody, the current key can authorize its successor to form a key history, and a signed decommission retires the robot at end of life so a verifier refuses to trust it.',
+        module: 'vouch.robotics.lifecycle',
     },
 ];
 

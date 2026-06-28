@@ -569,6 +569,35 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: LIFECYCLE AND DECOMMISSIONING
+  // =====================================================================
+  {
+    id: 'robotics-lifecycle',
+    audience: 'Robotics: lifecycle',
+    title: 'Lifecycle and decommissioning',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How do I prove a robot changed hands legitimately when it is resold?',
+        a: `The current owner signs a \`RobotOwnershipTransferCredential\` handing the robot to the new owner. Linking each transfer to the previous one forms a chain of custody, and \`verify_custody_chain\` checks that every link's new owner matches the next link's seller and that only the current owner could sign each transfer.`,
+        helpLinks: [{ label: 'Lifecycle guide', href: '/help/#robotics-lifecycle' }],
+        meta: 'Shipped - vouch.robotics.lifecycle',
+      },
+      {
+        q: 'How does a robot rotate its key without losing its history?',
+        a: `The robot's current key signs a \`RobotKeyRotationCredential\` that authorizes the new key. Because the old key vouches for the new one, anyone who trusted the old key can follow \`verify_key_history\` to the current key, for a routine rotation or after a compromise.`,
+        helpLinks: [{ label: 'Lifecycle guide', href: '/help/#robotics-lifecycle' }],
+        meta: 'Shipped - vouch.robotics.lifecycle',
+      },
+      {
+        q: 'What happens when a robot is retired?',
+        a: `An owner or authority signs a \`RobotDecommissionCredential\` recording the reason and final disposition. After that, a verifier should refuse to trust the robot. With a trusted-authority set, only an attested authority can retire it.`,
+        meta: 'Shipped - vouch.robotics.lifecycle',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {
