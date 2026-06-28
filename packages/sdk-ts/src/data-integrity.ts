@@ -34,16 +34,28 @@ export interface DataIntegrityProof {
 }
 
 export interface BuildProofOptions {
-  privateKey: crypto.KeyObject;
+  /**
+   * The Ed25519 private key (signs in process), OR provide `sign` instead to
+   * keep the key outside this process. One of the two is required.
+   */
+  privateKey?: crypto.KeyObject;
+  /**
+   * A callback that signs the 32-byte digest and returns the 64-byte Ed25519
+   * signature, without exposing the key to this process (an OS secure element,
+   * a sidecar, a cloud KMS/HSM, or an MPC quorum). If both are set, `sign` wins.
+   */
+  sign?: (digest: Uint8Array) => Uint8Array;
   verificationMethod: string;
   proofPurpose?: string;
   created?: Date;
 }
 
 /**
- * Generate a Data Integrity proof object for `credential` using the given
- * Ed25519 private key. Returns the proof dict (caller attaches it to the
- * credential).
+ * Generate a Data Integrity proof object for `credential`.
+ *
+ * Sign either with `opts.privateKey` (in process) or `opts.sign` (a callback
+ * that signs the digest without exposing the key). Returns the proof dict
+ * (caller attaches it to the credential).
  *
  * Conforms to eddsa-jcs-2022 §3.1.
  */
@@ -64,10 +76,17 @@ export function buildProof(
   const canonical = canonicalize(withUnsignedProof);
   const digest = crypto.createHash('sha256').update(canonical).digest();
 
-  // Ed25519 signing in Node.js: algorithm parameter is null, the key type
-  // alone determines the algorithm.
-  const signature = crypto.sign(null, digest, opts.privateKey);
-  proof.proofValue = 'z' + b58encode(new Uint8Array(signature));
+  let signature: Uint8Array;
+  if (opts.sign) {
+    signature = opts.sign(new Uint8Array(digest));
+  } else if (opts.privateKey) {
+    // Ed25519 signing in Node.js: algorithm parameter is null, the key type
+    // alone determines the algorithm.
+    signature = new Uint8Array(crypto.sign(null, digest, opts.privateKey));
+  } else {
+    throw new Error('buildProof needs a privateKey or a sign callback');
+  }
+  proof.proofValue = 'z' + b58encode(signature);
   return proof;
 }
 
