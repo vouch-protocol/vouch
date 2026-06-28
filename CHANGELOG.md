@@ -24,6 +24,10 @@ The Python reference adds three robotics capabilities on the same
 - `vouch.robotics.perception`: signed, hash-linked provenance for captured sensor
   frames (camera, lidar, audio, and more), so a robot can prove what its sensors
   saw and a substituted frame is detectable.
+- `vouch.robotics.lease`: a short-lived, scope-bounded delegation lease a
+  disconnected robot verifies and acts on offline, nesting across vendors.
+- `vouch.robotics.physical_quorum`: a cryptographic two-person rule requiring M of
+  N attested approvers before a high-consequence physical action is authorized.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by
