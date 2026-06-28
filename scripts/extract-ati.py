@@ -2,8 +2,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-SRC = Path("/home/rampy/vouch-protocol/agent-trust-index/data/results.json")
-OUT = Path("/home/rampy/vouch-protocol/website/src/app/agent-trust-index/ati-data.ts")
+# Resolve paths relative to the repo root so this runs anywhere (local and CI).
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "agent-trust-index" / "data" / "results.json"
+OUT = ROOT / "website" / "src" / "app" / "agent-trust-index" / "ati-data.ts"
 
 data = json.loads(SRC.read_text())
 results = data["results"] if isinstance(data, dict) and "results" in data else data
@@ -29,7 +31,7 @@ def pct(n):
 
 # Sweep date from the data.
 dates = [a.get("checked_at", "") for a in agents if a.get("checked_at")]
-when = "7 June 2026"
+when = datetime.now().strftime("%-d %B %Y")
 if dates:
     try:
         d = datetime.fromisoformat(max(dates))
@@ -73,7 +75,6 @@ OUT.write_text(ts)
 print(f"total={total} verifiable={with_did} ({pct(with_did)}%) cannot={cannot} ({pct(cannot)}%) gradeA={grade_a}")
 print(f"card={card} ({pct(card)}%) endpoint(rev)={rev} ({pct(rev)}%) pq={pq} ({pct(pq)}%) date={when}")
 print(f"wrote {len(agents_out)} verifiable agents -> {OUT}")
-# em-dash guard on the generated file
-import io
-if "—" in OUT.read_text():
+# em-dash guard on the generated file (uses the escape so the repo holds no literal em-dash)
+if chr(0x2014) in OUT.read_text():
     print("WARNING: em-dash present in generated data (from agent names/domains)")

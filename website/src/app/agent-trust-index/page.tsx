@@ -4,6 +4,7 @@ import CodeBlock from '@/components/CodeBlock';
 import { ATI_SUMMARY, ATI_AGENTS } from './ati-data';
 import AtiLeaderboard from './AtiLeaderboard';
 import GradeChecker from './GradeChecker';
+import ShareButtons from './ShareButtons';
 
 const ACCOUNTABILITY = [
     { h: 'Who authorized it', p: 'A delegation chain shows who gave the agent its authority, on whose behalf, and within what limits, all verifiable.' },
@@ -68,10 +69,16 @@ export default function AgentTrustIndexPage() {
                         </div>
                     ))}
                 </div>
-                <p className="font-mono uppercase text-[0.62rem] tracking-[0.14em] text-ink-faint mb-16">
+                <p className="font-mono uppercase text-[0.62rem] tracking-[0.14em] text-ink-faint mb-6">
                     As of {ATI_SUMMARY.generated}. First sweep of {TOTAL} agents from the public Model
                     Context Protocol registry.
                 </p>
+                <div className="mb-16">
+                    <ShareButtons
+                        text={`${ATI_SUMMARY.pctCannot}% of public AI agents cannot prove who they are. The Agent Trust Index:`}
+                        url="https://vouch-protocol.com/agent-trust-index/"
+                    />
+                </div>
 
                 <div className="max-w-3xl mb-16 border-l-2 border-burgundy pl-5">
                     <p className="font-serif font-semibold text-[1.35rem] tracking-tight mb-2">Is your agent one of them?</p>
