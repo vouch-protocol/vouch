@@ -1,0 +1,66 @@
+<svg viewBox="0 0 380 850" xmlns="http://www.w3.org/2000/svg" role="img" font-family="Georgia, 'Times New Roman', serif">
+  <title>The trust handoff, stacked for mobile: a human delegates down to an AI agent with a verifiable identity, which acts on an MCP server, each handoff signed.</title>
+  <desc>A vertical flow: human at top, a downward arrow labelled delegates with a check seal, a friendly AI agent with a burgundy badge, a downward arrow labelled acts with a check seal, and a stacked MCP server at the bottom.</desc>
+  <defs>
+    <marker id="ahm" markerWidth="12" markerHeight="12" refX="5" refY="8.5" orient="auto">
+      <path d="M0,0 L5,10 L10,0 Z" fill="#0F172A"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="378" height="848" fill="#FAF7EE" stroke="#D9CFB6" stroke-width="2"/>
+  <text x="24" y="40" font-family="ui-monospace, monospace" font-size="13" letter-spacing="3" fill="#7C2D3A">THE TRUST HANDOFF</text>
+
+  <g stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="190" cy="92" r="27" fill="#F2EBD9"/>
+    <path d="M151 199 C151 151 229 151 229 199 Z" fill="#F2EBD9"/>
+  </g>
+  <text x="190" y="232" text-anchor="middle" font-size="20" fill="#0F172A">Human</text>
+  <text x="190" y="251" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.5" fill="#64748B">IN CHARGE</text>
+
+  <line x1="190" y1="268" x2="190" y2="326" stroke="#0F172A" stroke-width="3" marker-end="url(#ahm)"/>
+  <circle cx="190" cy="297" r="14" fill="#FAF7EE" stroke="#7C2D3A" stroke-width="2.5"/>
+  <path d="M183 297 l5 6 l9 -12" fill="none" stroke="#7C2D3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="214" y="302" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.5" fill="#334155">DELEGATES</text>
+
+  <g stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="190" y1="358" x2="190" y2="342"/>
+    <circle cx="190" cy="336" r="6" fill="#7C2D3A" stroke="none"/>
+    <rect x="144" y="358" width="92" height="68" rx="18" fill="#F2EBD9"/>
+    <path d="M167 404 Q190 420 213 404" fill="none"/>
+    <rect x="152" y="438" width="76" height="80" rx="16" fill="#FAF7EE"/>
+    <path d="M152 460 q-22 6 -27 26" fill="none"/>
+    <path d="M228 456 q26 -4 35 -26" fill="none"/>
+    <line x1="170" y1="518" x2="170" y2="536"/>
+    <line x1="210" y1="518" x2="210" y2="536"/>
+  </g>
+  <circle cx="168" cy="388" r="5.5" fill="#0F172A"/>
+  <circle cx="212" cy="388" r="5.5" fill="#0F172A"/>
+  <circle cx="159" cy="400" r="5" fill="#7C2D3A" opacity="0.25"/>
+  <circle cx="221" cy="400" r="5" fill="#7C2D3A" opacity="0.25"/>
+  <circle cx="263" cy="426" r="6" fill="#F2EBD9" stroke="#0F172A" stroke-width="2.5"/>
+  <circle cx="190" cy="476" r="18" fill="#7C2D3A"/>
+  <path d="M181 476 l6 7 l12 -15" fill="none" stroke="#FAF7EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="190" y="560" text-anchor="middle" font-size="20" fill="#0F172A">AI Agent</text>
+  <text x="190" y="579" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.5" fill="#7C2D3A">VERIFIABLE IDENTITY</text>
+
+  <line x1="190" y1="598" x2="190" y2="656" stroke="#0F172A" stroke-width="3" marker-end="url(#ahm)"/>
+  <circle cx="190" cy="627" r="14" fill="#FAF7EE" stroke="#7C2D3A" stroke-width="2.5"/>
+  <path d="M183 627 l5 6 l9 -12" fill="none" stroke="#7C2D3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="214" y="622" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.5" fill="#334155">ACTS</text>
+  <text x="214" y="638" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1" fill="#64748B">BUY · EMAIL · CODE</text>
+
+  <g stroke="#0F172A" stroke-width="3">
+    <rect x="125" y="678" width="130" height="32" rx="7" fill="#F2EBD9"/>
+    <rect x="125" y="714" width="130" height="32" rx="7" fill="#F2EBD9"/>
+    <rect x="125" y="750" width="130" height="32" rx="7" fill="#FAF7EE"/>
+  </g>
+  <circle cx="141" cy="694" r="4" fill="#7C2D3A"/>
+  <circle cx="141" cy="730" r="4" fill="#334155"/>
+  <circle cx="141" cy="766" r="4" fill="#334155"/>
+  <g stroke="#64748B" stroke-width="2" stroke-linecap="round">
+    <line x1="225" y1="690" x2="243" y2="690"/><line x1="225" y1="698" x2="243" y2="698"/>
+    <line x1="225" y1="726" x2="243" y2="726"/><line x1="225" y1="734" x2="243" y2="734"/>
+  </g>
+  <text x="190" y="808" text-anchor="middle" font-size="20" fill="#0F172A">MCP Server</text>
+  <text x="190" y="827" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" letter-spacing="1.5" fill="#64748B">MONEY · DATA · TOOLS</text>
+</svg>
