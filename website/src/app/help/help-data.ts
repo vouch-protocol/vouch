@@ -89,10 +89,8 @@ That round-trip is the entire credential layer: keypair, signed action, verified
 The legacy JWS form above stays for backward compatibility. New code should prefer the W3C Verifiable Credential form with a Data Integrity proof (\`eddsa-jcs-2022\`):
 
 \`\`\`python
-from vouch import build_vouch_credential
-
-credential = build_vouch_credential(
-    subject_did=identity.did,
+# sign_credential takes the intent directly (action, target, resource required).
+signed = signer.sign_credential(
     intent={
         "action": "submit_claim",
         "target": "claim:HC-001",
@@ -100,8 +98,6 @@ credential = build_vouch_credential(
     },
     valid_seconds=300,
 )
-
-signed = signer.sign_credential(credential)
 print(signed["proof"]["proofValue"])
 \`\`\`
 
@@ -173,7 +169,6 @@ import {
   Signer,
   Verifier,
   generateIdentity,
-  buildVouchCredential,
 } from '@vouch-protocol-official/sdk';
 
 async function main() {
@@ -186,8 +181,8 @@ async function main() {
     did: identity.did!,
   });
 
-  const credential = buildVouchCredential({
-    subjectDid: identity.did!,
+  // signCredential takes the intent directly (action, target, resource).
+  const signed = await signer.signCredential({
     intent: {
       action: 'submit_claim',
       target: 'claim:HC-001',
@@ -195,8 +190,6 @@ async function main() {
     },
     validSeconds: 300,
   });
-
-  const signed = await signer.signCredential(credential);
   console.log('signed proof value:', signed.proof.proofValue);
 
   // trustedRoots is the local-dev escape hatch: in production the verifier
@@ -603,10 +596,14 @@ The Cloudflare circl dependency is already transitive in the sidecar.
 Python:
 
 \`\`\`python
-from vouch import Signer
+from vouch import Signer, generate_identity
 
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(credential)
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+signed = signer.sign_credential_hybrid(intent={
+    "action": "submit_claim", "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+})
 \`\`\`
 
 TypeScript:
@@ -704,36 +701,37 @@ When a human principal delegates to an agent that delegates to a sub-agent, you 
 
 ## Build a chain in Python
 
+Each credential chains under its parent with \`parent_credential=\`, which appends a delegation link and enforces resource narrowing automatically:
+
 \`\`\`python
-from vouch import Signer, build_vouch_credential
+from vouch import Signer
 
-principal = Signer.from_did("did:web:principal.example.com")
-agent = Signer.from_did("did:web:agent.example.com")
-sub_agent = Signer.from_did("did:web:sub-agent.example.com")
+principal = Signer(private_key=principal_priv_jwk, did="did:web:principal.example.com")
+agent = Signer(private_key=agent_priv_jwk, did="did:web:agent.example.com")
+sub_agent = Signer(private_key=sub_agent_priv_jwk, did="did:web:sub-agent.example.com")
 
-# Principal delegates to agent
-principal_link = principal.sign_credential(build_vouch_credential(
-  subject_did=agent.did,
-  intent={"action": "*", "target": "*", "resource": "https://insurance.example.com/claims/*"},
+# Principal delegates broad authority to the agent.
+principal_link = principal.sign_credential(
+  intent={"action": "*", "target": "*", "resource": "claims"},
   valid_seconds=3600,
-))
+)
 
-# Agent narrows and delegates to sub-agent
-agent_link = agent.sign_credential(build_vouch_credential(
-  subject_did=sub_agent.did,
-  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+# Agent narrows and re-delegates to the sub-agent.
+agent_link = agent.sign_credential(
+  intent={"action": "read", "target": "claim:HC-001", "resource": "claims/HC-001"},
   valid_seconds=300,
-  delegated_from=[principal_link],
-))
+  parent_credential=principal_link,
+)
 
-# Sub-agent signs its actual action
-action = sub_agent.sign_credential(build_vouch_credential(
-  subject_did=sub_agent.did,
-  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+# Sub-agent signs its actual action under the chain.
+action = sub_agent.sign_credential(
+  intent={"action": "read", "target": "claim:HC-001", "resource": "claims/HC-001"},
   valid_seconds=60,
-  delegated_from=[principal_link, agent_link],
-))
+  parent_credential=agent_link,
+)
 \`\`\`
+
+For the one-line path, the principal can issue the grant with \`vouch.delegate(...)\` and the agent's tools can be wrapped with \`vouch.protect([...], parent=grant)\`.
 
 ## Verify
 
@@ -1061,7 +1059,7 @@ The issuer maintains one or more \`StatusList\` instances (one per status purpos
 from vouch import (
   Signer, StatusList, FilesystemStatusListStore,
   build_status_list_credential, build_status_list_entry,
-  build_vouch_credential,
+  generate_identity,
 )
 
 # Load or create the status list. Persisted state survives restarts.
@@ -1071,14 +1069,15 @@ try:
 except FileNotFoundError:
   status_list = StatusList(status_list_id="https://issuer.example/status/1")
 
-signer = Signer.from_did("did:web:issuer.example")
+keys = generate_identity("issuer.example")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
 # ---- Issue a credential with a credentialStatus entry ----
 index = status_list.allocate_index()
 store.save(status_list) # persist the new cursor
 
-credential = build_vouch_credential(
-  issuer_did="did:web:issuer.example",
+# Pass the status entry to sign_credential so the proof covers it.
+signed_credential = signer.sign_credential(
   intent={"action": "submit_claim", "target": "claim:HC-001",
       "resource": "https://insurance.example/claims/HC-001"},
   credential_status=build_status_list_entry(
@@ -1086,7 +1085,6 @@ credential = build_vouch_credential(
     status_list_index=index,
   ),
 )
-signed_credential = signer.sign_credential(credential)
 
 # ---- Later, revoke that credential ----
 status_list.revoke(index)

@@ -640,10 +640,16 @@ pip install vouch-protocol
 Then:
 
 \`\`\`python
-from vouch import Signer, build_vouch_credential
+from vouch import Signer, generate_identity
 
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(credential)
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+
+signed = signer.sign_credential_hybrid(intent={
+  "action": "submit_claim",
+  "target": "claim:HC-001",
+  "resource": "https://insurance.example.com/claims/HC-001",
+})
 \`\`\`
 
 The resulting credential's \`proof\` field is an **array** of two Data Integrity proofs: one with \`cryptosuite: "eddsa-jcs-2022"\` (the classical Ed25519 proof) and one with \`cryptosuite: "mldsa44-jcs-2026"\` (the post-quantum ML-DSA-44 proof). Both proofs cover the same JCS-canonicalized credential bytes. Verifiers iterate the array and apply their local policy (validate either, validate both).
@@ -688,31 +694,28 @@ The verifier walks every link, validates signatures, and confirms resource subse
       },
       {
         q: 'How do I make a credential revocable later?',
-        a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Two steps: allocate an index from your status list, then pass a status entry to \`build_vouch_credential\`:
+        a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Allocate an index from your status list, then pass the entry as \`credential_status\` to \`sign_credential\` so the proof covers it:
 
 \`\`\`python
-from vouch import (
-  StatusList, build_status_list_entry, build_vouch_credential, Signer,
-)
+from vouch import Signer, StatusList, build_status_list_entry, generate_identity
 
 # Issuer maintains a single StatusList per status purpose (revocation or suspension).
 status_list = StatusList(status_list_id="https://issuer.example/status/1")
 index = status_list.allocate_index()
 
-# Attach the status entry at issuance time.
 status_entry = build_status_list_entry(
   status_list_credential="https://issuer.example/status/1",
   status_list_index=index,
 )
 
-credential = build_vouch_credential(
-  issuer_did="did:web:issuer.example",
+keys = generate_identity("issuer.example")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+
+signed = signer.sign_credential(
   intent={"action": "submit_claim", "target": "claim:HC-001",
       "resource": "https://insurance.example/claims/HC-001"},
   credential_status=status_entry,
 )
-
-signed = Signer.from_did("did:web:issuer.example").sign_credential(credential)
 \`\`\`
 
 The TypeScript and Go SDKs expose the same API (\`buildStatusListEntry\` / \`BuildStatusListEntry\`) and accept \`credentialStatus\` / \`CredentialStatus\` on their credential builders.`,
@@ -1198,8 +1201,14 @@ You can issue dual-proof credentials right now and they remain valid whether you
         a: `Just call the hybrid signer. The \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so a plain \`pip install vouch-protocol\` gives you everything needed:
 
 \`\`\`python
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(credential)
+from vouch import Signer, generate_identity
+
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+signed = signer.sign_credential_hybrid(intent={
+  "action": "submit_claim", "target": "claim:HC-001",
+  "resource": "https://insurance.example/claims/HC-001",
+})
 \`\`\`
 
 TypeScript and Go work the same way. There is a full how-to in the [Guides](/help/#hybrid-pq) with code in all three languages.
