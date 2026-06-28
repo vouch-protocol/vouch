@@ -772,3 +772,153 @@ pub fn verify_action_authorization(params_json: &str) -> Result<String> {
     )?;
     Ok(json!({"authorized": authorized, "approvers": approvers}).to_string())
 }
+
+// ---- robot lifecycle ------------------------------------------------------
+
+fn owner_keys(v: &Value) -> Result<Vec<r::OwnerKey>> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+    let mut keys: Vec<r::OwnerKey> = Vec::new();
+    if let Some(obj) = v.as_object() {
+        for (did, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("publicKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::OwnerKey {
+                did: did.clone(),
+                public_key,
+            });
+        }
+    }
+    Ok(keys)
+}
+
+fn key_entries(v: &Value) -> Result<Vec<r::KeyEntry>> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+    let mut keys: Vec<r::KeyEntry> = Vec::new();
+    if let Some(obj) = v.as_object() {
+        for (multibase, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("publicKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::KeyEntry {
+                multibase: multibase.clone(),
+                public_key,
+            });
+        }
+    }
+    Ok(keys)
+}
+
+pub fn build_ownership_transfer(current_owner_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildOwnershipTransfer {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        to_owner: gs(&p, "toOwner"),
+        from_owner: gos(&p, "fromOwner"),
+        prev_transfer_id: gos(&p, "prevTransferId"),
+        valid_from: gs(&p, "validFrom"),
+    };
+    Ok(r::build_ownership_transfer(current_owner_seed, &params)?.to_string())
+}
+
+pub fn verify_ownership_transfer(credential_json: &str, public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_ownership_transfer(
+        &parse(credential_json)?,
+        public_key,
+    )?))
+}
+
+/// Verify a chain of custody. `params_json` is `{transfers: [...], publicKeys:
+/// {did: keyB64url, ...}, originOwner?}` where each `publicKeys` value is the
+/// owner's Ed25519 public key as a base64url-no-pad string. Returns `{ok,
+/// currentOwner}`.
+pub fn verify_custody_chain(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let transfers: Vec<Value> = p
+        .get("transfers")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let keys = owner_keys(p.get("publicKeys").unwrap_or(&Value::Null))?;
+    let origin = gos(&p, "originOwner");
+    let (ok, current) = r::verify_custody_chain(&transfers, &keys, origin.as_deref())?;
+    Ok(json!({"ok": ok, "currentOwner": current}).to_string())
+}
+
+pub fn build_key_rotation(old_key_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildKeyRotation {
+        robot_did: gs(&p, "robotDid"),
+        new_key_multibase: gs(&p, "newKey"),
+        reason: gos(&p, "reason"),
+        valid_from: gs(&p, "validFrom"),
+    };
+    Ok(r::build_key_rotation(old_key_seed, &params)?.to_string())
+}
+
+pub fn verify_key_rotation(credential_json: &str, old_public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_key_rotation(
+        &parse(credential_json)?,
+        old_public_key,
+    )?))
+}
+
+/// Verify a key history. `params_json` is `{rotations: [...], originKey,
+/// publicKeys: {keyMultibase: keyB64url, ...}}` where each `publicKeys` value is
+/// the Ed25519 public key as a base64url-no-pad string keyed by its multibase.
+/// Returns `{ok, currentKey}`.
+pub fn verify_key_history(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let rotations: Vec<Value> = p
+        .get("rotations")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let origin_key = gs(&p, "originKey");
+    let keys = key_entries(p.get("publicKeys").unwrap_or(&Value::Null))?;
+    let (ok, current) = r::verify_key_history(&rotations, &origin_key, &keys)?;
+    Ok(json!({"ok": ok, "currentKey": current}).to_string())
+}
+
+pub fn build_decommission(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildDecommission {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        reason: gs(&p, "reason"),
+        final_disposition: gos(&p, "finalDisposition"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_decommission(signer_seed, &params)?.to_string())
+}
+
+pub fn verify_decommission(
+    credential_json: &str,
+    public_key: &[u8],
+    trusted_authorities_json: Option<&str>,
+) -> Result<String> {
+    let trusted: Option<HashSet<String>> = opt_obj(trusted_authorities_json)?.map(|v| {
+        v.as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|e| e.as_str().map(String::from))
+                    .collect()
+            })
+            .unwrap_or_default()
+    });
+    Ok(subj(r::verify_decommission(
+        &parse(credential_json)?,
+        public_key,
+        trusted.as_ref(),
+    )?))
+}

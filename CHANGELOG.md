@@ -28,6 +28,8 @@ The Python reference adds three robotics capabilities on the same
   disconnected robot verifies and acts on offline, nesting across vendors.
 - `vouch.robotics.physical_quorum`: a cryptographic two-person rule requiring M of
   N attested approvers before a high-consequence physical action is authorized.
+- `vouch.robotics.lifecycle`: ownership transfer (chain of custody), key rotation
+  (key history), and a signed decommission credential for a robot's whole life.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by

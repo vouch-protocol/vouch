@@ -2328,6 +2328,333 @@ pub fn verify_action_authorization(
     Ok((sorted.len() as i64 >= threshold, sorted))
 }
 
+// ---------------------------------------------------------------------------
+// Robot lifecycle: ownership transfer, key rotation, decommission (Phase 5.13)
+// ---------------------------------------------------------------------------
+
+pub const OWNERSHIP_TRANSFER_TYPE: &str = "RobotOwnershipTransferCredential";
+pub const KEY_ROTATION_TYPE: &str = "RobotKeyRotationCredential";
+pub const DECOMMISSION_TYPE: &str = "RobotDecommissionCredential";
+
+/// Verify a typed lifecycle credential: the credential carries `expected_type`
+/// and its Data Integrity proof verifies under `public_key`. Returns the
+/// credentialSubject on success, `None` otherwise. The per-credential rules
+/// (issuer equals fromOwner, required subject fields) are applied by the caller.
+fn verify_typed(
+    credential: &Value,
+    public_key: &[u8],
+    expected_type: &str,
+) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), expected_type) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, public_key)? {
+        return Ok(None);
+    }
+    match credential
+        .get("credentialSubject")
+        .and_then(|s| s.as_object())
+    {
+        Some(s) => Ok(Some(Value::Object(s.clone()))),
+        None => Ok(None),
+    }
+}
+
+/// Parameters for [`build_ownership_transfer`]. The signer is the current owner;
+/// `from_owner` defaults to `issuer_did` (the current owner's DID). Setting
+/// `prev_transfer_id` links this transfer to the previous one, forming a chain.
+#[derive(Debug, Clone)]
+pub struct BuildOwnershipTransfer {
+    pub issuer_did: String,
+    pub robot_did: String,
+    pub to_owner: String,
+    pub from_owner: Option<String>,
+    pub prev_transfer_id: Option<String>,
+    pub valid_from: String,
+}
+
+/// Build a signed transfer of `robot_did` from the current owner to `to_owner`.
+/// The signer is the current owner; `from_owner` defaults to `issuer_did`.
+pub fn build_ownership_transfer(
+    current_owner_seed: &[u8],
+    params: &BuildOwnershipTransfer,
+) -> Result<Value> {
+    if params.robot_did.is_empty() || params.to_owner.is_empty() {
+        return Err(CoreError::Json(
+            "robot_did and to_owner are required".into(),
+        ));
+    }
+    let seller = params
+        .from_owner
+        .clone()
+        .unwrap_or_else(|| params.issuer_did.clone());
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("fromOwner".into(), json!(seller));
+    subject.insert("toOwner".into(), json!(params.to_owner));
+    if let Some(prev) = &params.prev_transfer_id {
+        subject.insert("prevTransferId".into(), json!(prev));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", OWNERSHIP_TRANSFER_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.issuer_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), current_owner_seed, &opts)
+}
+
+/// Verify a transfer: the current owner's proof and that the issuer is the
+/// `fromOwner` (only the current owner can transfer the robot). Returns the
+/// credentialSubject on success, `None` if invalid.
+pub fn verify_ownership_transfer(
+    credential: &Value,
+    current_owner_public_key: &[u8],
+) -> Result<Option<Value>> {
+    let subject = match verify_typed(
+        credential,
+        current_owner_public_key,
+        OWNERSHIP_TRANSFER_TYPE,
+    )? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let to_owner = subject.get("toOwner").and_then(|v| v.as_str());
+    let from_owner = subject.get("fromOwner").and_then(|v| v.as_str());
+    match (to_owner, from_owner) {
+        (Some(t), Some(f)) if !t.is_empty() && !f.is_empty() => {
+            if credential.get("issuer").and_then(|v| v.as_str()) != Some(f) {
+                return Ok(None);
+            }
+        }
+        _ => return Ok(None),
+    }
+    Ok(Some(subject))
+}
+
+/// One owner's public key, looked up by owner DID, for [`verify_custody_chain`].
+#[derive(Debug, Clone)]
+pub struct OwnerKey {
+    pub did: String,
+    pub public_key: Vec<u8>,
+}
+
+/// Verify an ordered list of transfer credentials forms a valid chain of custody:
+/// each transfer's proof verifies under the owner who signed it, every link's
+/// `toOwner` matches the next link's `fromOwner`, and (when given) the first
+/// `fromOwner` is `origin_owner`. `public_keys` maps an owner DID to its key.
+/// Returns `(ok, current_owner)`.
+pub fn verify_custody_chain(
+    transfers: &[Value],
+    public_keys: &[OwnerKey],
+    origin_owner: Option<&str>,
+) -> Result<(bool, Option<String>)> {
+    let mut expected_from: Option<String> = origin_owner.map(String::from);
+    let mut current_owner: Option<String> = origin_owner.map(String::from);
+    for transfer in transfers {
+        let issuer = transfer
+            .get("issuer")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let key = match public_keys.iter().find(|k| k.did == issuer) {
+            Some(k) => k,
+            None => return Ok((false, None)),
+        };
+        let subject = match verify_ownership_transfer(transfer, &key.public_key)? {
+            Some(s) => s,
+            None => return Ok((false, None)),
+        };
+        if let Some(expected) = &expected_from {
+            if subject.get("fromOwner").and_then(|v| v.as_str()) != Some(expected.as_str()) {
+                return Ok((false, None));
+            }
+        }
+        current_owner = subject
+            .get("toOwner")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+        expected_from = current_owner.clone();
+    }
+    Ok((true, current_owner))
+}
+
+/// Parameters for [`build_key_rotation`]. The credential is signed by the old key
+/// (the `signer_seed`) and issued under `robot_did`; the old key's public multibase
+/// is recorded as `previousKey` and `new_key_multibase` as the authorized successor.
+#[derive(Debug, Clone)]
+pub struct BuildKeyRotation {
+    pub robot_did: String,
+    pub new_key_multibase: String,
+    pub reason: Option<String>,
+    pub valid_from: String,
+}
+
+/// Build a key-rotation credential in which the robot's current (old) key
+/// authorizes a new key. Signed by the old key, so anyone trusting the old key
+/// can trust the new one. `old_key_seed` is the seed of the current key.
+pub fn build_key_rotation(old_key_seed: &[u8], params: &BuildKeyRotation) -> Result<Value> {
+    if params.new_key_multibase.is_empty() {
+        return Err(CoreError::Json("new_key_multibase is required".into()));
+    }
+    let old_kp = keys::Ed25519KeyPair::from_seed_slice(old_key_seed)?;
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("previousKey".into(), json!(old_kp.public_multikey()));
+    subject.insert("newKey".into(), json!(params.new_key_multibase));
+    if let Some(reason) = &params.reason {
+        subject.insert("reason".into(), json!(reason));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", KEY_ROTATION_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.robot_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.robot_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), old_key_seed, &opts)
+}
+
+/// Verify a key rotation: the OLD key signed it, binding the new key. Returns the
+/// credentialSubject (with `newKey` the authorized successor) on success.
+pub fn verify_key_rotation(credential: &Value, old_public_key: &[u8]) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, old_public_key, KEY_ROTATION_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let previous = subject.get("previousKey").and_then(|v| v.as_str());
+    let new_key = subject.get("newKey").and_then(|v| v.as_str());
+    match (previous, new_key) {
+        (Some(p), Some(n)) if !p.is_empty() && !n.is_empty() => {}
+        _ => return Ok(None),
+    }
+    Ok(Some(subject))
+}
+
+/// One key's public bytes, looked up by key multibase, for [`verify_key_history`].
+#[derive(Debug, Clone)]
+pub struct KeyEntry {
+    pub multibase: String,
+    pub public_key: Vec<u8>,
+}
+
+/// Verify an ordered list of key rotations forms a valid key history starting from
+/// `origin_key_multibase`: each rotation's `previousKey` matches the current key,
+/// and each is signed by the key it rotates from. `public_keys` maps a key
+/// multibase to the corresponding public key. Returns `(ok, current_key)`.
+pub fn verify_key_history(
+    rotations: &[Value],
+    origin_key_multibase: &str,
+    public_keys: &[KeyEntry],
+) -> Result<(bool, Option<String>)> {
+    let mut current_key = origin_key_multibase.to_string();
+    for rotation in rotations {
+        let previous = rotation
+            .get("credentialSubject")
+            .and_then(|s| s.get("previousKey"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if previous != current_key {
+            return Ok((false, None));
+        }
+        let key = match public_keys.iter().find(|k| k.multibase == current_key) {
+            Some(k) => k,
+            None => return Ok((false, None)),
+        };
+        let subject = match verify_key_rotation(rotation, &key.public_key)? {
+            Some(s) => s,
+            None => return Ok((false, None)),
+        };
+        current_key = subject
+            .get("newKey")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+    }
+    Ok((true, Some(current_key)))
+}
+
+/// Parameters for [`build_decommission`]. The signer is the owner or an authority;
+/// `final_disposition` records the outcome (for example recycled, destroyed, or
+/// transferred to parts). When `valid_until` is set it bounds the credential.
+#[derive(Debug, Clone)]
+pub struct BuildDecommission {
+    pub issuer_did: String,
+    pub robot_did: String,
+    pub reason: String,
+    pub final_disposition: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed decommission credential retiring `robot_did`. After
+/// decommissioning, a verifier should refuse to trust the robot. `decommissionedBy`
+/// is the issuer DID.
+pub fn build_decommission(signer_seed: &[u8], params: &BuildDecommission) -> Result<Value> {
+    if params.reason.is_empty() {
+        return Err(CoreError::Json("reason is required".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("reason".into(), json!(params.reason));
+    subject.insert("decommissionedBy".into(), json!(params.issuer_did));
+    if let Some(disposition) = &params.final_disposition {
+        subject.insert("finalDisposition".into(), json!(disposition));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", DECOMMISSION_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.issuer_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+/// Verify a decommission credential. When `trusted_authorities` is supplied, the
+/// issuer DID MUST be in it, so only an attested authority can retire the robot.
+/// Returns the credentialSubject on success.
+pub fn verify_decommission(
+    credential: &Value,
+    public_key: &[u8],
+    trusted_authorities: Option<&HashSet<String>>,
+) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, public_key, DECOMMISSION_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    if let Some(trusted) = trusted_authorities {
+        let issuer = credential
+            .get("issuer")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if !trusted.contains(issuer) {
+            return Ok(None);
+        }
+    }
+    Ok(Some(subject))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3627,5 +3954,329 @@ mod tests {
                 .unwrap();
         assert!(!ok4);
         assert_eq!(approvers4, vec![a2.to_string()]);
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed ownership transfer
+    // under the owner's key from the vector.
+    #[test]
+    fn verifies_python_ownership_transfer_interop_vector() {
+        let vector = load_vector();
+        let owner_pub = jwk_pub(&vector["ownership_transfer_owner_key"]);
+        let cred = vector["ownership_transfer_credential"].clone();
+
+        let subject = verify_ownership_transfer(&cred, &owner_pub)
+            .unwrap()
+            .expect("the Python ownership-transfer interop vector must verify in Rust");
+        assert_eq!(subject["toOwner"], json!("did:web:owner-b.example.com"));
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed key rotation under
+    // the robot key from robot_public_key_jwk.
+    #[test]
+    fn verifies_python_key_rotation_interop_vector() {
+        let vector = load_vector();
+        let robot_pub = jwk_pub(&vector["robot_public_key_jwk"]);
+        let cred = vector["key_rotation_credential"].clone();
+
+        let subject = verify_key_rotation(&cred, &robot_pub)
+            .unwrap()
+            .expect("the Python key-rotation interop vector must verify in Rust");
+        assert_eq!(
+            subject["newKey"],
+            json!("z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2")
+        );
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed decommission under
+    // the authority key from the vector.
+    #[test]
+    fn verifies_python_decommission_interop_vector() {
+        let vector = load_vector();
+        let authority_pub = jwk_pub(&vector["decommission_authority_key"]);
+        let cred = vector["decommission_credential"].clone();
+
+        let subject = verify_decommission(&cred, &authority_pub, None)
+            .unwrap()
+            .expect("the Python decommission interop vector must verify in Rust");
+        assert_eq!(subject["reason"], json!("end of service life"));
+        assert_eq!(subject["finalDisposition"], json!("recycled"));
+    }
+
+    #[test]
+    fn ownership_transfer_roundtrip_and_issuer_rule() {
+        let owner_a_seed = [51u8; 32];
+        let owner_b_seed = [52u8; 32];
+        let a = Ed25519KeyPair::from_seed(&owner_a_seed);
+        let b = Ed25519KeyPair::from_seed(&owner_b_seed);
+        let owner_a = "did:web:owner-a.example.com";
+        let owner_b = "did:web:owner-b.example.com";
+        let robot = "did:web:robot.example.com";
+
+        let transfer = build_ownership_transfer(
+            &owner_a_seed,
+            &BuildOwnershipTransfer {
+                issuer_did: owner_a.into(),
+                robot_did: robot.into(),
+                to_owner: owner_b.into(),
+                from_owner: None,
+                prev_transfer_id: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        let subject = verify_ownership_transfer(&transfer, &a.public_key())
+            .unwrap()
+            .expect("transfer verifies under the current owner key");
+        assert_eq!(subject["fromOwner"], json!(owner_a));
+        assert_eq!(subject["toOwner"], json!(owner_b));
+
+        // Wrong type rejected.
+        let mut wrong = transfer.clone();
+        wrong["type"] = json!(["VerifiableCredential"]);
+        assert!(verify_ownership_transfer(&wrong, &a.public_key())
+            .unwrap()
+            .is_none());
+
+        // The issuer must equal fromOwner: forge a transfer whose issuer is not the
+        // declared seller and re-sign it. It must be rejected even with a valid
+        // proof under the signing key.
+        let forged = build_ownership_transfer(
+            &owner_b_seed,
+            &BuildOwnershipTransfer {
+                issuer_did: owner_b.into(),
+                robot_did: robot.into(),
+                to_owner: "did:web:owner-c.example.com".into(),
+                // Claim the robot was sold by owner A while owner B signs.
+                from_owner: Some(owner_a.into()),
+                prev_transfer_id: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+        assert!(verify_ownership_transfer(&forged, &b.public_key())
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn custody_chain_links_and_rejects() {
+        let owner_a_seed = [51u8; 32];
+        let owner_b_seed = [52u8; 32];
+        let owner_c_seed = [53u8; 32];
+        let a = Ed25519KeyPair::from_seed(&owner_a_seed);
+        let b = Ed25519KeyPair::from_seed(&owner_b_seed);
+        let c = Ed25519KeyPair::from_seed(&owner_c_seed);
+        let owner_a = "did:web:owner-a.example.com";
+        let owner_b = "did:web:owner-b.example.com";
+        let owner_c = "did:web:owner-c.example.com";
+        let robot = "did:web:robot.example.com";
+
+        let t1 = build_ownership_transfer(
+            &owner_a_seed,
+            &BuildOwnershipTransfer {
+                issuer_did: owner_a.into(),
+                robot_did: robot.into(),
+                to_owner: owner_b.into(),
+                from_owner: None,
+                prev_transfer_id: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+        let t2 = build_ownership_transfer(
+            &owner_b_seed,
+            &BuildOwnershipTransfer {
+                issuer_did: owner_b.into(),
+                robot_did: robot.into(),
+                to_owner: owner_c.into(),
+                from_owner: None,
+                prev_transfer_id: Some("transfer-1".into()),
+                valid_from: "2026-02-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        let keys = vec![
+            OwnerKey {
+                did: owner_a.into(),
+                public_key: a.public_key().to_vec(),
+            },
+            OwnerKey {
+                did: owner_b.into(),
+                public_key: b.public_key().to_vec(),
+            },
+            OwnerKey {
+                did: owner_c.into(),
+                public_key: c.public_key().to_vec(),
+            },
+        ];
+
+        // A clean two-link chain rooted at owner A ends at owner C.
+        let (ok, current) =
+            verify_custody_chain(&[t1.clone(), t2.clone()], &keys, Some(owner_a)).unwrap();
+        assert!(ok);
+        assert_eq!(current.as_deref(), Some(owner_c));
+
+        // A wrong declared origin breaks the first link.
+        let (bad_origin, _) =
+            verify_custody_chain(&[t1.clone(), t2.clone()], &keys, Some(owner_c)).unwrap();
+        assert!(!bad_origin);
+
+        // A gap (link two without link one) breaks the toOwner -> fromOwner join.
+        let (gap, _) =
+            verify_custody_chain(std::slice::from_ref(&t2), &keys, Some(owner_a)).unwrap();
+        assert!(!gap);
+
+        // A missing key for an issuer fails the chain.
+        let partial = vec![OwnerKey {
+            did: owner_a.into(),
+            public_key: a.public_key().to_vec(),
+        }];
+        let (no_key, _) = verify_custody_chain(&[t1, t2], &partial, Some(owner_a)).unwrap();
+        assert!(!no_key);
+    }
+
+    #[test]
+    fn key_rotation_roundtrip_and_history() {
+        let k1_seed = [61u8; 32];
+        let k2_seed = [62u8; 32];
+        let k3_seed = [63u8; 32];
+        let k1 = Ed25519KeyPair::from_seed(&k1_seed);
+        let k2 = Ed25519KeyPair::from_seed(&k2_seed);
+        let k3 = Ed25519KeyPair::from_seed(&k3_seed);
+        let robot = "did:web:robot.example.com";
+
+        // Rotate k1 -> k2, signed by k1.
+        let r1 = build_key_rotation(
+            &k1_seed,
+            &BuildKeyRotation {
+                robot_did: robot.into(),
+                new_key_multibase: k2.public_multikey(),
+                reason: Some("scheduled rotation".into()),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        let subject = verify_key_rotation(&r1, &k1.public_key())
+            .unwrap()
+            .expect("rotation verifies under the old key");
+        assert_eq!(subject["previousKey"], json!(k1.public_multikey()));
+        assert_eq!(subject["newKey"], json!(k2.public_multikey()));
+
+        // The new key cannot verify a rotation that the old key signed.
+        assert!(verify_key_rotation(&r1, &k2.public_key())
+            .unwrap()
+            .is_none());
+
+        // Wrong type rejected.
+        let mut wrong = r1.clone();
+        wrong["type"] = json!(["VerifiableCredential"]);
+        assert!(verify_key_rotation(&wrong, &k1.public_key())
+            .unwrap()
+            .is_none());
+
+        // Rotate k2 -> k3, signed by k2, forming a history.
+        let r2 = build_key_rotation(
+            &k2_seed,
+            &BuildKeyRotation {
+                robot_did: robot.into(),
+                new_key_multibase: k3.public_multikey(),
+                reason: None,
+                valid_from: "2026-02-01T00:00:00Z".into(),
+            },
+        )
+        .unwrap();
+
+        let public_keys = vec![
+            KeyEntry {
+                multibase: k1.public_multikey(),
+                public_key: k1.public_key().to_vec(),
+            },
+            KeyEntry {
+                multibase: k2.public_multikey(),
+                public_key: k2.public_key().to_vec(),
+            },
+            KeyEntry {
+                multibase: k3.public_multikey(),
+                public_key: k3.public_key().to_vec(),
+            },
+        ];
+
+        let (ok, current) = verify_key_history(
+            &[r1.clone(), r2.clone()],
+            &k1.public_multikey(),
+            &public_keys,
+        )
+        .unwrap();
+        assert!(ok);
+        assert_eq!(current.as_deref(), Some(k3.public_multikey().as_str()));
+
+        // A wrong origin key breaks the first previousKey match.
+        let (bad_origin, _) =
+            verify_key_history(&[r1, r2], &k3.public_multikey(), &public_keys).unwrap();
+        assert!(!bad_origin);
+    }
+
+    #[test]
+    fn decommission_roundtrip_and_trusted_authority() {
+        let seed = [71u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let authority = "did:web:authority.example.com";
+        let robot = "did:web:robot.example.com";
+
+        let cred = build_decommission(
+            &seed,
+            &BuildDecommission {
+                issuer_did: authority.into(),
+                robot_did: robot.into(),
+                reason: "end of service life".into(),
+                final_disposition: Some("recycled".into()),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let mut trusted = HashSet::new();
+        trusted.insert(authority.to_string());
+        let subject = verify_decommission(&cred, &kp.public_key(), Some(&trusted))
+            .unwrap()
+            .expect("a trusted authority decommission verifies");
+        assert_eq!(subject["decommissionedBy"], json!(authority));
+
+        // An untrusted issuer is rejected even with a valid proof.
+        let mut other = HashSet::new();
+        other.insert("did:web:someone-else.example.com".to_string());
+        assert!(verify_decommission(&cred, &kp.public_key(), Some(&other))
+            .unwrap()
+            .is_none());
+
+        // No trusted-authority set: a valid proof verifies.
+        assert!(verify_decommission(&cred, &kp.public_key(), None)
+            .unwrap()
+            .is_some());
+
+        // Wrong type rejected.
+        let mut wrong = cred.clone();
+        wrong["type"] = json!(["VerifiableCredential"]);
+        assert!(verify_decommission(&wrong, &kp.public_key(), None)
+            .unwrap()
+            .is_none());
+
+        // reason is required at build time.
+        assert!(build_decommission(
+            &seed,
+            &BuildDecommission {
+                issuer_did: authority.into(),
+                robot_did: robot.into(),
+                reason: String::new(),
+                final_disposition: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .is_err());
     }
 }

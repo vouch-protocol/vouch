@@ -240,6 +240,25 @@ authorized, who = verify_action_authorization(approvals, action_id="weld-7", rob
                                               approver_keys=approver_keys, threshold=2)
 ```
 
-Sections 5.7 to 5.12 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.13 Lifecycle and decommissioning (`vouch.robotics.lifecycle`)
+
+A robot outlives its first owner, so its transitions are made cryptographically
+accountable. The current owner signs an ownership transfer to a new owner, and
+linking each transfer forms a chain of custody (`verify_custody_chain`). The
+robot's current key authorizes a successor, forming a key history
+(`verify_key_history`), for a routine rotation or after a compromise. An owner or
+authority signs a decommission credential retiring the robot, after which a
+verifier should refuse to trust it.
+
+```python
+from vouch.robotics import build_ownership_transfer, build_key_rotation, build_decommission
+
+transfer = build_ownership_transfer(seller_signer, robot_did=robot, to_owner=buyer_did)
+rotation = build_key_rotation(robot_signer, robot_did=robot, new_key_multibase=new_key)
+retired = build_decommission(authority_signer, robot_did=robot, reason="end of service life",
+                            final_disposition="recycled")
+```
+
+Sections 5.7 to 5.13 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

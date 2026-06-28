@@ -256,6 +256,26 @@ export type {
   BuildActionApprovalOptions,
   VerifyActionAuthorizationOptions,
 } from './robotics/physical_quorum';
+export {
+  OWNERSHIP_TRANSFER_TYPE,
+  KEY_ROTATION_TYPE,
+  DECOMMISSION_TYPE,
+  buildOwnershipTransfer,
+  verifyOwnershipTransfer,
+  verifyCustodyChain,
+  buildKeyRotation,
+  verifyKeyRotation,
+  verifyKeyHistory,
+  buildDecommission,
+  verifyDecommission,
+} from './robotics/lifecycle';
+export type {
+  BuildOwnershipTransferOptions,
+  VerifyCustodyChainOptions,
+  BuildKeyRotationOptions,
+  BuildDecommissionOptions,
+  VerifyDecommissionOptions,
+} from './robotics/lifecycle';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {

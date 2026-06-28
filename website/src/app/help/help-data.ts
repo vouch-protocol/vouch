@@ -2374,6 +2374,29 @@ authorized, who = verify_action_authorization(approvals, action_id="weld-7", rob
 Security boundary: only distinct approvers from the attested set count, so one approver cannot reach the threshold by signing twice. Approvals for a different action or robot, from outside the approver set, with an invalid proof, out of date, or carrying a reject decision are all ignored.
 `,
       },
+      {
+        id: 'robotics-lifecycle',
+        title: 'Lifecycle and decommissioning',
+        summary: 'Cryptographically accountable ownership transfer, key rotation, and retirement for a robot over its whole life.',
+        body: `
+A robot is commissioned, resold, repurposed, and eventually scrapped. This makes each of those transitions verifiable: a chain of custody, a key history, and an end-of-life record.
+
+The problem it closes: a robot outlives its first owner, and today there is no cryptographic way to prove who owns it now, which keys it has used, or that it was properly retired.
+
+How it works: \`build_ownership_transfer\` lets the current owner hand the robot to a new owner, and linking each transfer forms a chain that \`verify_custody_chain\` walks. \`build_key_rotation\` lets the current key authorize a successor, forming a key history (\`verify_key_history\`). \`build_decommission\` retires the robot, after which a verifier should refuse to trust it.
+
+\`\`\`python
+from vouch.robotics import build_ownership_transfer, build_key_rotation, build_decommission
+
+transfer = build_ownership_transfer(seller_signer, robot_did=robot, to_owner=buyer_did)
+rotation = build_key_rotation(robot_signer, robot_did=robot, new_key_multibase=new_key)
+retired  = build_decommission(authority_signer, robot_did=robot, reason="end of service life",
+                              final_disposition="recycled")
+\`\`\`
+
+Security boundary: a transfer verifies only when its issuer is the current owner, so no one but the owner can hand the robot on. A key rotation must be signed by the key it rotates from, so the chain of trust is unbroken. A decommission can be restricted to an attested authority set. The open layer records these as plain signed credentials; a verifier decides how strictly to enforce them.
+`,
+      },
     ],
   },
 ];

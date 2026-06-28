@@ -124,6 +124,15 @@ been removed. See `integrations.md`.
   `verify_action_authorization`), a cryptographic two-person rule that authorizes a
   high-consequence action only when M of N attested approvers have each signed the
   same action. See `robotics.md`.
+- "How do I transfer ownership of a robot, rotate its key, or retire it?" -> Robot
+  lifecycle (`vouch.robotics.lifecycle`): a `build_ownership_transfer` /
+  `verify_ownership_transfer` credential the current owner signs to a new owner,
+  with `verify_custody_chain` walking the linked transfers as a chain of custody; a
+  `build_key_rotation` / `verify_key_rotation` credential in which the current key
+  authorizes a new one, with `verify_key_history` walking the key history for a
+  routine rotation or after a compromise; and a `build_decommission` /
+  `verify_decommission` credential an owner or authority signs to retire the robot,
+  after which a verifier should refuse to trust it. See `robotics.md`.
 
 ## Actions (if enabled)
 

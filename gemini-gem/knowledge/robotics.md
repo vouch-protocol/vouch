@@ -524,6 +524,57 @@ no replayed approval can reach the threshold alone.
 
 ---
 
+## 13. Robot lifecycle
+
+`vouch.robotics.lifecycle`
+
+What it is: the cryptographically accountable transitions a robot goes through
+over its working life, ownership transfer, key rotation, and decommissioning,
+each one a signed credential that a verifier can check. A robot outlives its
+first owner, so each transition is made provable rather than assumed.
+
+The problem it closes: a robot changes hands, rotates its key after a routine
+schedule or a compromise, and is eventually retired, and each of those events
+changes who should be trusted to act for it. Without signed transitions the
+current owner, the current key, and the retired status are whatever a database
+says. Lifecycle makes each transition a credential, so chain of custody, key
+history, and retirement are all verifiable from the artifacts themselves.
+
+How it works: ownership transfer is a `RobotOwnershipTransferCredential` the
+current owner signs to a new owner, and linking each transfer to the previous one
+forms a chain of custody that `verify_custody_chain` walks end to end. Key
+rotation is a `RobotKeyRotationCredential` in which the robot's current key
+authorizes a new key, forming a key history that `verify_key_history` walks, used
+for a routine rotation or after a key compromise. Decommission is a
+`RobotDecommissionCredential` an owner or authority signs to retire the robot,
+after which a verifier should refuse to trust it.
+
+The API: `build_ownership_transfer`, `verify_ownership_transfer`,
+`verify_custody_chain`, `build_key_rotation`, `verify_key_rotation`,
+`verify_key_history`, `build_decommission`, and `verify_decommission`.
+
+Worked example (Python):
+
+```python
+from vouch.robotics import lifecycle
+
+transfer = lifecycle.build_ownership_transfer(
+    current_owner_signer, robot_did,
+    new_owner="did:web:new-owner.example.com",
+)
+ok, subject = lifecycle.verify_ownership_transfer(transfer, current_owner_signer.public_key())
+assert lifecycle.verify_custody_chain([transfer]).ok      # chain of custody
+```
+
+Security boundary: each transition verifies against the key that was authorized to
+make it, the current owner for a transfer, the current key for a rotation, so a
+forged transfer or an unauthorized key rotation fails. `verify_custody_chain` and
+`verify_key_history` fail on a broken link, so a chain cannot skip or reorder a
+transition. A verifier that sees a valid decommission refuses to trust the robot
+thereafter. Verification fails closed on a wrong type or an invalid proof.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -535,9 +586,11 @@ proving it is live and in-envelope with self-signed heartbeats (7), can have any
 one credential or its whole DID revoked (8), carries a tamper-evident safety
 record that travels with it (9), signs the provenance of every sensor frame
 it captures (10), acts on a short-lived offline delegation lease that attenuates
-down a cross-vendor chain (11), and gates its highest-consequence actions behind
-a physical quorum (12). Every artifact is the same Verifiable Credential format,
-so one verifier and one trust model cover all twelve.
+down a cross-vendor chain (11), gates its highest-consequence actions behind
+a physical quorum (12), and carries cryptographically accountable lifecycle
+transitions as it changes owners, rotates keys, and is retired (13). Every
+artifact is the same Verifiable Credential format, so one verifier and one trust
+model cover all thirteen.
 
 ## Quick answers
 
@@ -569,10 +622,14 @@ so one verifier and one trust model cover all twelve.
 - Can I require more than one approver before a high-consequence physical action?
   Yes, a physical quorum: M of N attested approvers must each sign the same
   action (12).
+- Can I prove who owns a robot now, that its key history is sound, and that a
+  retired robot is no longer trusted? Yes, robot lifecycle: signed ownership
+  transfers forming a chain of custody, a key rotation history, and a
+  decommission credential a verifier honors by refusing to trust the robot (13).
 
 ## Status
 
-All twelve capabilities are implemented and tested in Python, TypeScript, Go, and
+All thirteen capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the
