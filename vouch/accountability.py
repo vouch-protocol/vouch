@@ -121,8 +121,16 @@ def _type_list(credential: Dict[str, Any]) -> list:
 # ---------------------------------------------------------------------------
 
 
+PRECEDENCE_PRE_OUTCOME = "pre-outcome-ordering"
+PRECEDENCE_EXISTENCE = "existence-only"
+_PRECEDENCE_VALUES = (PRECEDENCE_PRE_OUTCOME, PRECEDENCE_EXISTENCE)
+
+
 def timestamp_anchor(
-    method: str, reference: str, recompute_cmd: Optional[str] = None
+    method: str,
+    reference: str,
+    recompute_cmd: Optional[str] = None,
+    establishes: str = PRECEDENCE_EXISTENCE,
 ) -> Dict[str, Any]:
     """
     Build a third-party timestamp anchor for a commitment.
@@ -130,13 +138,21 @@ def timestamp_anchor(
     `method` names the external timestamping service (for example
     ``opentimestamps``, ``rfc3161-tsa``, ``transparency-log``, or an on-chain
     method), `reference` is the proof or locator at that service, and
-    `recompute_cmd` is the literal command a verifier runs to check it. The anchor
-    lets a consumer confirm a commitment existed before its outcome without
-    trusting the committer's own clock.
+    `recompute_cmd` is the literal command a verifier runs to check it.
+
+    `establishes` states what the stamp proves. An anchor proves the commitment
+    existed by the stamped time; it does not by itself prove that time is before
+    the outcome. ``existence-only`` (the default) asserts only existence by the
+    stamped time; ``pre-outcome-ordering`` asserts the stamp was a forward
+    commitment made before the outcome. A consumer concludes commit-before-outcome
+    only when an anchor is ``pre-outcome-ordering`` and it independently confirms,
+    via ``recomputeCmd``, that the stamped time precedes the settlement time.
     """
     if not method or not reference:
         raise AccountabilityError("an anchor needs a method and a reference")
-    entry: Dict[str, Any] = {"method": method, "reference": reference}
+    if establishes not in _PRECEDENCE_VALUES:
+        raise AccountabilityError("establishes must be 'pre-outcome-ordering' or 'existence-only'")
+    entry: Dict[str, Any] = {"method": method, "reference": reference, "establishes": establishes}
     if recompute_cmd is not None:
         entry["recomputeCmd"] = recompute_cmd
     return entry
@@ -150,8 +166,28 @@ def _normalize_anchor(anchor: Any) -> Optional[list]:
     for a in items:
         if not isinstance(a, dict) or not a.get("method") or not a.get("reference"):
             raise AccountabilityError("each anchor needs a method and a reference")
-        out.append(dict(a))
+        entry = dict(a)
+        entry.setdefault("establishes", PRECEDENCE_EXISTENCE)
+        if entry["establishes"] not in _PRECEDENCE_VALUES:
+            raise AccountabilityError(
+                "anchor establishes must be 'pre-outcome-ordering' or 'existence-only'"
+            )
+        out.append(entry)
     return out
+
+
+def claims_precedence(commitment: Dict[str, Any]) -> bool:
+    """
+    Whether a commitment carries an anchor that claims pre-outcome ordering.
+
+    True only signals the claim; a consumer still confirms, out of band via the
+    anchor's ``recomputeCmd``, that the stamped time precedes the settlement time
+    before concluding the commitment was made before the outcome.
+    """
+    anchors = ((commitment.get("credentialSubject") or {}).get("commitment") or {}).get("anchor")
+    if not isinstance(anchors, list):
+        return False
+    return any(a.get("establishes") == PRECEDENCE_PRE_OUTCOME for a in anchors)
 
 
 def commit_outcome(
@@ -542,9 +578,12 @@ __all__ = [
     "OUTCOME_ATTESTATION_TYPE",
     "ACCOUNTABILITY_RECORD_TYPE",
     "COMMITMENT_ALGORITHM",
+    "PRECEDENCE_PRE_OUTCOME",
+    "PRECEDENCE_EXISTENCE",
     "AccountabilityError",
     "commitment_digest",
     "timestamp_anchor",
+    "claims_precedence",
     "commit_outcome",
     "verify_commitment",
     "attest_outcome",

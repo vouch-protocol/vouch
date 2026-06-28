@@ -191,12 +191,22 @@ adds an optional `anchor` to the commitment: one entry or a tier list, each
 carrying a `method` (a third-party timestamping service such as OpenTimestamps,
 an RFC 3161 timestamp authority, a transparency log, or an on-chain method), a
 `reference` to the proof at that service, and a `recomputeCmd` a verifier runs to
-check it. With an anchor, a consumer confirms the commitment existed before the
-outcome without trusting the committer. The anchor is carried inside the signed
-credential, so it is tamper-evident, and the anchor itself is checked out of band
-by the consumer against the named method. The original claims are unchanged; the
-anchor is a disclosed strengthening of the pre-outcome timing property, released
-under Apache 2.0.
+check it. The anchor is carried inside the signed credential, so it is
+tamper-evident, and the anchor itself is checked out of band by the consumer
+against the named method.
+
+A precision the first update glossed: an anchor proves the commitment existed by
+the stamped time, which is existence, not ordering. It does not by itself prove
+that time is before the outcome, because an anchor can be a post-hoc existence
+backfill, stamped after the outcome was known. So each anchor entry carries an
+`establishes` affordance: `existence-only` (the default, asserting only existence
+by the stamped time) or `pre-outcome-ordering` (asserting a forward commitment
+made before the outcome). A consumer concludes commit-before-outcome only when an
+anchor establishes `pre-outcome-ordering` and the consumer independently confirms,
+via the `recomputeCmd`, that the stamped time precedes the settlement time. This
+is the difference between anchored and anchored before the outcome. The original
+claims are unchanged; the anchor with its precedence affordance is a disclosed
+strengthening of the pre-outcome timing property, released under Apache 2.0.
 
 ---
 
