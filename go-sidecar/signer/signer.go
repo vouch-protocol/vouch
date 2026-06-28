@@ -101,17 +101,22 @@ type SensitiveVault struct {
 // composite JWS path: different parameter set, different deployment
 // profile (level-1 PQ security, smaller signatures, standards-aligned usage).
 type Signer struct {
-	did      string
-	defaultExpiry int
+	did            string
+	defaultExpiry  int
 	ed25519Private ed25519.PrivateKey
-	ed25519Public ed25519.PublicKey
-	mldsaPrivate  *mldsa65.PrivateKey
-	mldsaPublic  *mldsa65.PublicKey
+	ed25519Public  ed25519.PublicKey
+	mldsaPrivate   *mldsa65.PrivateKey
+	mldsaPublic    *mldsa65.PublicKey
 
 	// ML-DSA-44 keypair for the hybrid Data Integrity profile.
 	// Generated on demand if the caller did not supply one.
 	mldsa44Private *mldsa44.PrivateKey
-	mldsa44Public *mldsa44.PublicKey
+	mldsa44Public  *mldsa44.PublicKey
+
+	// signFunc is set for a backend Signer (NewBackend): the Ed25519 private
+	// key lives outside this process and this callback produces the signature
+	// over the digest. When set, ed25519Private is nil.
+	signFunc func(digest []byte) []byte
 }
 
 // Config holds the initialization parameters for a Signer.
@@ -177,14 +182,49 @@ func New(cfg Config) (*Signer, error) {
 	}
 
 	return &Signer{
-		did:      cfg.DID,
-		defaultExpiry: expiry,
+		did:            cfg.DID,
+		defaultExpiry:  expiry,
 		ed25519Private: edPriv,
-		ed25519Public: edPub,
-		mldsaPrivate:  mlPriv,
-		mldsaPublic:  mlPub,
+		ed25519Public:  edPub,
+		mldsaPrivate:   mlPriv,
+		mldsaPublic:    mlPub,
 		mldsa44Private: ml44Priv,
-		mldsa44Public: ml44Pub,
+		mldsa44Public:  ml44Pub,
+	}, nil
+}
+
+// NewBackend creates a Signer whose Ed25519 private key lives outside this
+// process. Instead of a seed, you supply the agent's public key and a callback
+// sign(digest) -> signature. The key can then live in an OS secure element, a
+// sidecar, a cloud KMS/HSM, or an MPC quorum. This Signer issues Data Integrity
+// credentials (the modern path); the composite JWS Sign and the hybrid profile,
+// which need the raw key in process, are not available.
+func NewBackend(
+	did string,
+	publicKey ed25519.PublicKey,
+	sign func(digest []byte) []byte,
+	defaultExpirySeconds int,
+) (*Signer, error) {
+	if did == "" {
+		return nil, errors.New("vouch: DID is required")
+	}
+	if len(publicKey) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("vouch: publicKey must be %d bytes", ed25519.PublicKeySize)
+	}
+	if sign == nil {
+		return nil, errors.New("vouch: sign callback is required")
+	}
+
+	expiry := defaultExpirySeconds
+	if expiry <= 0 {
+		expiry = 300
+	}
+
+	return &Signer{
+		did:           did,
+		defaultExpiry: expiry,
+		ed25519Public: publicKey,
+		signFunc:      sign,
 	}, nil
 }
 
@@ -194,20 +234,20 @@ func New(cfg Config) (*Signer, error) {
 
 // joseHeader is the protected header for the composite JWS.
 type joseHeader struct {
-	Algorithm string  `json:"alg"`
-	Type   string  `json:"typ"`
-	KeyID   string  `json:"kid"`
+	Algorithm string   `json:"alg"`
+	Type      string   `json:"typ"`
+	KeyID     string   `json:"kid"`
 	Composite []string `json:"vouch_composite_alg"`
 }
 
 // Claims is the JWT claims payload for a Vouch Token.
 type Claims struct {
-	JTI  string     `json:"jti"`
-	ISS  string     `json:"iss"`
-	SUB  string     `json:"sub"`
-	IAT  int64     `json:"iat"`
-	NBF  int64     `json:"nbf"`
-	EXP  int64     `json:"exp"`
+	JTI   string         `json:"jti"`
+	ISS   string         `json:"iss"`
+	SUB   string         `json:"sub"`
+	IAT   int64          `json:"iat"`
+	NBF   int64          `json:"nbf"`
+	EXP   int64          `json:"exp"`
 	Vouch map[string]any `json:"vouch"`
 }
 
@@ -219,8 +259,8 @@ type compositeSignature struct {
 
 // compositeJWS is the full composite JWS structure.
 type compositeJWS struct {
-	Protected string       `json:"protected"`
-	Payload  string       `json:"payload"`
+	Protected string             `json:"protected"`
+	Payload   string             `json:"payload"`
 	Signature compositeSignature `json:"signature"`
 }
 
@@ -228,6 +268,9 @@ type compositeJWS struct {
 // recipient ML-KEM public key is provided, the composite JWS is wrapped
 // inside an ML-KEM-768 / AES-256-GCM JWE vault.
 func (s *Signer) Sign(req SignRequest) ([]byte, error) {
+	if s.signFunc != nil {
+		return nil, errors.New("vouch: the composite JWS Sign needs the raw key and is not available for a backend Signer")
+	}
 	// 1. Build the composite JWS
 	jwsBytes, err := s.buildCompositeJWS(req)
 	if err != nil {
@@ -238,7 +281,7 @@ func (s *Signer) Sign(req SignRequest) ([]byte, error) {
 		// Standard mode: return the composite JWS directly.
 		out := VouchToken{
 			Token: string(jwsBytes),
-			Mode: "standard",
+			Mode:  "standard",
 		}
 		return json.MarshalIndent(out, "", " ")
 	}
@@ -267,8 +310,8 @@ func (s *Signer) buildCompositeJWS(req SignRequest) ([]byte, error) {
 	// Protected header
 	hdr := joseHeader{
 		Algorithm: "EdDSA+ML-DSA-65",
-		Type:   "vouch+jwt",
-		KeyID:   s.did,
+		Type:      "vouch+jwt",
+		KeyID:     s.did,
 		Composite: []string{"EdDSA", "ML-DSA-65"},
 	}
 	hdrJSON, err := json.Marshal(hdr)
@@ -311,7 +354,7 @@ func (s *Signer) buildCompositeJWS(req SignRequest) ([]byte, error) {
 	// Assemble composite JWS
 	jws := compositeJWS{
 		Protected: hdrB64,
-		Payload:  payloadB64,
+		Payload:   payloadB64,
 		Signature: compositeSignature{
 			Ed25519: base64url(edSig),
 			MLDSA65: base64url(mlSig),
@@ -379,13 +422,13 @@ func (s *Signer) wrapInJWEVault(jwsData []byte, recipientPubKeyB64 string) (*Sen
 
 	// Step 5: Assemble the JWE vault
 	return &SensitiveVault{
-		Mode:     "sensitive",
-		Algorithm:   "ML-KEM-768",
-		Encryption:  "A256GCM",
+		Mode:          "sensitive",
+		Algorithm:     "ML-KEM-768",
+		Encryption:    "A256GCM",
 		KEMCiphertext: base64url(kemCiphertext),
-		Nonce:     base64url(nonce),
-		Ciphertext:  base64url(ciphertext),
-		Tag:      base64url(tag),
+		Nonce:         base64url(nonce),
+		Ciphertext:    base64url(ciphertext),
+		Tag:           base64url(tag),
 	}, nil
 }
 
