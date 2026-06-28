@@ -67,7 +67,7 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
   {
     num: 'xi.',
     title: 'Reach AI Agents by Identity',
-    body: 'Agents move across hosts and clouds and rarely hold a stable domain or IP, but they always hold a key. Vouch reaches a peer by its identity, not its location. It prefers identity-first routing over UDNA (Universal DID-Native Addressing) and falls back to standard DNS and HTTPS when a peer is not on the overlay. The signed credential, liability attestations, and provenance cross the switch unchanged, so the trust properties hold whichever path the bytes take. Optional and aligned with the W3C UDNA Community Group.',
+    body: 'Agents move across hosts and clouds and rarely hold a stable domain or IP, but they always hold a key. Vouch reaches a peer by its identity, not its location. It builds on UDNA (Universal DID-Native Addressing), a general identity-native network substrate, and falls back to standard DNS and HTTPS when a peer is not on the overlay. The signed credential, liability attestations, and provenance cross the switch unchanged, so the trust properties hold whichever path the bytes take. Optional, and developed in the open at the W3C UDNA Community Group.',
     spec: 'Hybrid Transport',
   },
 ];
