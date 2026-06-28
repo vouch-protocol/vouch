@@ -324,10 +324,15 @@ export class Verifier {
     const passport: CredentialPassport = {
       sub: (subject.id as string) || '',
       iss: issuer,
+      issuer: issuer,
       validFrom: cred.validFrom as string,
       validUntil: cred.validUntil as string,
       credentialId: (cred.id as string) || '',
       intent: intent,
+      action: intent.action,
+      target: intent.target,
+      resource: intent.resource,
+      isExpired: validUntil.getTime() < Date.now(),
       reputationScore: repScore,
       delegationChain: chain,
       rawCredential: cred as unknown as VouchCredential,
@@ -391,6 +396,57 @@ export class Verifier {
       };
     }
   }
+}
+
+/**
+ * Verify a Vouch Credential in one line (the receiving-side counterpart to
+ * {@link sign}).
+ *
+ * With a `publicKey`, verifies offline against that key. Without one, the issuer
+ * key is resolved from a `did:key` issuer (self-certifying, offline). For
+ * `did:web` issuers, pass the public key or use a Verifier with trusted roots.
+ */
+export async function verify(
+  credential: VouchCredential | Record<string, unknown> | string,
+  publicKey?: crypto.KeyObject | string | Record<string, unknown>,
+  opts?: { clockSkewSeconds?: number }
+): Promise<CredentialVerificationResult> {
+  const skew = opts?.clockSkewSeconds ?? 30;
+  if (publicKey !== undefined) {
+    return Verifier.verifyCredential(credential, publicKey, skew);
+  }
+
+  let cred: Record<string, unknown>;
+  try {
+    cred =
+      typeof credential === 'string'
+        ? (JSON.parse(credential) as Record<string, unknown>)
+        : (credential as Record<string, unknown>);
+  } catch {
+    return { isValid: false, passport: null, error: 'Invalid credential JSON' };
+  }
+
+  const issuerField = cred.issuer;
+  const issuer =
+    typeof issuerField === 'string'
+      ? issuerField
+      : Array.isArray(issuerField)
+       ? (issuerField[0] as string) || ''
+       : '';
+
+  if (issuer.startsWith('did:key:')) {
+    // did:key is self-certifying: the multikey after the prefix is the key.
+    const multikey = issuer.slice('did:key:'.length);
+    return Verifier.verifyCredential(cred, multikey, skew);
+  }
+
+  return {
+    isValid: false,
+    passport: null,
+    error:
+      `Cannot resolve the issuer key for ${issuer || 'this credential'}; ` +
+      'pass a publicKey, or use a Verifier configured with trusted roots',
+  };
 }
 
 // ---------------------------------------------------------------------------

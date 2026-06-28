@@ -28,8 +28,24 @@
 // Cryptographic SDK (v1.0+)
 // ---------------------------------------------------------------------------
 
-export { Signer, generateIdentity } from './signer';
-export { Verifier } from './verifier';
+export { Signer, generateIdentity, sign } from './signer';
+export { Verifier, verify } from './verifier';
+export { Agent } from './agent';
+export type { AgentCreateOptions, AgentVerifyOptions } from './agent';
+export { Credential } from './credential';
+export {
+  requireSigned,
+  guardMcp,
+  guardTools,
+  DEFAULT_CREDENTIAL_ARG,
+} from './guard';
+export type { RequireSignedOptions } from './guard';
+export {
+  MemoryKeyStore,
+  EncryptedFileKeyStore,
+  resolveDefaultStore,
+} from './keystore';
+export type { KeyStore, StoredIdentity } from './keystore';
 
 export type {
   Passport,
