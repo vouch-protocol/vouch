@@ -4,7 +4,7 @@ Vouch Protocol: Hybrid Transport Demo (UDNA + HTTP fallback)
 Demonstrates the modular, DID-addressed transport layer:
 
   1. An agent signs a Vouch credential (its accountable intent).
-  2. It seals the credential — plus liability attestations and provenance —
+  2. It seals the credential, plus liability attestations and provenance -
      into a VouchEnvelope addressed to a peer's *DID* (not an IP).
   3. The TransportManager tries identity-first UDNA routing, then falls back
      to standard DNS/IP + HTTP when the peer is not on the UDNA overlay.
@@ -15,7 +15,7 @@ is optional. In production it provides DID/address creation and the Noise
 handshake + ChaCha20-Poly1305 crypto, while a pluggable ``UdnaChannel`` moves
 the bytes (the SDK ships no production wire transport). To keep this demo
 network-free and runnable without the SDK, it wires an in-process fake UDNA
-node directly to the same ``UdnaNode`` seam ``SirrayaUdnaNode`` implements — so
+node directly to the same ``UdnaNode`` seam ``SirrayaUdnaNode`` implements, so
 you can watch routing and fallback without the real SDK.
 
 Run:  python examples/hybrid_transport_demo.py
@@ -95,7 +95,7 @@ async def main():
         print(f"   ✅ delivered via '{result2.transport}'  attempts={result2.attempts}")
     except Exception as exc:
         # No real HTTPS inbox is running in this demo, so HTTP delivery will
-        # fail at the network step — but note UDNA was tried first and yielded.
+        # fail at the network step, but note UDNA was tried first and yielded.
         print("   ↪️  UDNA yielded, HTTP attempted; network step failed as expected:")
         print(f"      {type(exc).__name__}: {exc}")
 

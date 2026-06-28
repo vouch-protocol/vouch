@@ -1,5 +1,5 @@
 """
-Transport manager — the graceful-fallback routing middleware.
+Transport manager, the graceful-fallback routing middleware.
 
 This is the piece a Vouch agent actually talks to. It holds an ordered list of
 transports (identity-first UDNA in front, location-first HTTP behind) and a
@@ -7,15 +7,15 @@ single method, :meth:`dispatch`, that hides every routing decision behind one
 call: *"deliver this envelope to this DID."* The agent never learns, nor needs
 to, whether the bytes left over a Noise channel or an HTTPS POST.
 
-Fallback contract — the manager walks its transports in preference order and,
+Fallback contract, the manager walks its transports in preference order and,
 for each:
 
   1. skips it if ``can_route`` says no (cheap pre-filter);
   2. skips it if ``resolve`` returns ``None`` (peer doesn't support it);
   3. attempts ``send`` if resolution succeeded.
 
-A transport that raises :class:`TransportUnavailable` at any step — peer not on
-the overlay, resolution failed, Noise handshake refused, connection dropped —
+A transport that raises :class:`TransportUnavailable` at any step, peer not on
+the overlay, resolution failed, Noise handshake refused, connection dropped -
 is treated as "not this one, try the next." The manager moves on. Only when
 *every* transport has been exhausted does it raise the last error. The single
 exception is :class:`PayloadIntegrityError`: if an envelope fails its own seal
@@ -25,7 +25,7 @@ manager refuses to fall back and raises immediately.
 Payload preservation is structural: the *same* :class:`VouchEnvelope` instance
 is handed to whichever transport wins. The Vouch credential, its Data Integrity
 proof, the liability attestations, and the provenance metadata are never
-re-signed, re-encoded, or stripped during the UDNA→HTTP transition — the
+re-signed, re-encoded, or stripped during the UDNA→HTTP transition, the
 manager verifies the content digest once up front and then routes the bytes
 untouched.
 """
@@ -79,7 +79,7 @@ class TransportManager:
         ready-made node, or ``private_key_jwk`` + ``udna_channel`` to have a
         :class:`SirrayaUdnaNode` auto-built on the real ``udna_sdk``. If neither
         the SDK nor the prerequisites are available, the UDNA transport stays
-        dormant and every dispatch falls straight through to HTTP — nothing to
+        dormant and every dispatch falls straight through to HTTP, nothing to
         configure, nothing to fail.
         """
         from .http_transport import HttpTransport
@@ -107,13 +107,13 @@ class TransportManager:
           full ordered list of transports attempted.
 
         Raises:
-          PayloadIntegrityError: the envelope's cargo does not match its seal —
+          PayloadIntegrityError: the envelope's cargo does not match its seal -
             fatal, never retried.
           TransportError: no transport could reach the peer; carries the last
             underlying failure.
         """
         # Verify the seal once, up front. A corrupt payload must never be
-        # routed — falling back would just spread the corruption.
+        # routed, falling back would just spread the corruption.
         if not envelope.verify_integrity(envelope.content_digest()):  # pragma: no cover
             raise PayloadIntegrityError("envelope failed its content-digest self-check")
 

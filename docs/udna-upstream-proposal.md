@@ -13,7 +13,7 @@ so payload integrity and authenticity hold end-to-end regardless of transport.
 
 ---
 
-## 1. CRITICAL — the handshake provides no confidentiality
+## 1. CRITICAL, the handshake provides no confidentiality
 
 `udna_sdk/udna.py :: NoiseHandshake.finalize_handshake` derives the session key
 from **public values only**:
@@ -41,7 +41,7 @@ Impact: the "end-to-end encrypted messaging" claim does not hold. Peer
 authenticity *is* present (ephemeral keys are signed by the DID keys), but
 channel secrecy and forward secrecy are absent.
 
-### Proposed fix — real ephemeral ECDH (X25519), keep Ed25519 for auth
+### Proposed fix, real ephemeral ECDH (X25519), keep Ed25519 for auth
 
 Ed25519 identity keys can't do DH, so add an ephemeral **X25519** keypair per
 handshake and sign its public key with the Ed25519 DID key (Noise-IK / X3DH
@@ -76,7 +76,7 @@ an `x25519_ephemeral` field alongside the existing signed Ed25519 ephemeral.
 
 ---
 
-## 2. No transport / overlay — only an in-memory demo DHT
+## 2. No transport / overlay, only an in-memory demo DHT
 
 `DhtNode` is a single-process dict (`store`/`lookup`), so the SDK cannot
 actually deliver bytes between hosts. Vouch works around this with a pluggable

@@ -11,7 +11,7 @@ registry and no network.
 
 Method spec: ``did:key`` for Ed25519 is ``did:key:z6Mk…`` where the suffix is
 the ``Multikey`` encoding of the public key (multicodec ``0xed01`` || raw key,
-base58btc, ``z`` prefix) — identical to the ``publicKeyMultibase`` Vouch
+base58btc, ``z`` prefix), identical to the ``publicKeyMultibase`` Vouch
 publishes in DID Documents.
 """
 
@@ -63,7 +63,7 @@ def ed25519_public_from_did_key(did: str) -> bytes:
     Recover the raw 32-byte Ed25519 public key from a ``did:key``.
 
     This is what lets a UDNA peer verify, with no registry lookup, that the
-    party it established a Noise channel with actually owns the DID it claims —
+    party it established a Noise channel with actually owns the DID it claims -
     the key is right there in the identifier.
 
     Raises:

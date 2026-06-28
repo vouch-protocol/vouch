@@ -5,7 +5,7 @@ Vouch credentials (signed intents, liability attestations, provenance
 metadata) are *what* an agent says; a transport is *how* that statement
 reaches a peer. Historically the only transport was DNS/IP + HTTP(S): you
 resolve a `did:web` to a domain, then POST to it. That couples delivery to
-location — whoever controls the IP controls the route.
+location, whoever controls the IP controls the route.
 
 This module defines the location-agnostic interface every transport
 implements so that a Vouch agent can dispatch a message addressed only to a
@@ -13,14 +13,14 @@ peer's DID and remain unaware of whether it travelled over UDNA
 (identity-first) or HTTP (location-first). The :class:`Transport` contract is
 deliberately small:
 
-  * ``can_route(did)``  — could this transport plausibly reach this DID?
-  * ``resolve(did)``    — turn the DID into a concrete :class:`PeerAddress`.
-  * ``send(envelope, peer)`` — deliver the payload, returning the peer reply.
+  * ``can_route(did)``: could this transport plausibly reach this DID?
+  * ``resolve(did)``: turn the DID into a concrete :class:`PeerAddress`.
+  * ``send(envelope, peer)``, deliver the payload, returning the peer reply.
 
 A transport signals "not my problem, try the next one" by raising
 :class:`TransportUnavailable` (or returning ``None`` from ``resolve``). It
-signals a corrupted payload — a bug the caller must not paper over by
-silently re-routing — by raising :class:`PayloadIntegrityError`. The
+signals a corrupted payload, a bug the caller must not paper over by
+silently re-routing, by raising :class:`PayloadIntegrityError`. The
 :class:`~vouch.transport.manager.TransportManager` uses exactly that
 distinction to decide between graceful fallback and hard failure.
 """
@@ -38,7 +38,7 @@ class TransportError(Exception):
 
 class TransportUnavailable(TransportError):
     """
-    Raised when a transport cannot reach a peer — the peer does not advertise
+    Raised when a transport cannot reach a peer, the peer does not advertise
     this transport, resolution failed, or the underlying channel could not be
     established. This is the signal the routing manager treats as "fall back to
     the next transport"; it is never fatal on its own.
@@ -60,8 +60,8 @@ class PeerAddress:
     A resolved, transport-specific way to reach a peer DID.
 
     The ``did`` is the stable, location-independent identity. ``locator`` is
-    the concrete handle the owning transport understands — a UDNA address
-    (``udna://…``) or an HTTPS inbox URL — and is meaningful only to the
+    the concrete handle the owning transport understands, a UDNA address
+    (``udna://…``) or an HTTPS inbox URL, and is meaningful only to the
     transport that produced it. ``verified`` records whether the locator was
     cryptographically bound to the DID during resolution (UDNA verifies the
     DID owns the route; plain DNS does not).
@@ -97,7 +97,7 @@ class Transport(ABC):
     Implementations are addressed by DID, never by location. The manager calls
     ``can_route`` as a cheap pre-filter, then ``resolve`` to obtain a
     :class:`PeerAddress`, then ``send``. Implementations must not mutate the
-    envelope they are handed — the payload's cryptographic proofs depend on it
+    envelope they are handed, the payload's cryptographic proofs depend on it
     being byte-for-byte preserved across the transport boundary.
     """
 
@@ -131,7 +131,7 @@ class Transport(ABC):
 
         Raises:
           TransportUnavailable: the channel could not be established or the
-            peer rejected the connection — the manager will fall back.
+            peer rejected the connection, the manager will fall back.
           PayloadIntegrityError: the envelope failed its own integrity check.
         """
 
