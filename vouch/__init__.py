@@ -8,9 +8,14 @@ enabling verifiable proof of intent and non-repudiation.
 __version__ = "1.6.0"
 
 # Core signing/verification
-from .signer import Signer
+from .signer import Signer, sign
 from .verifier import Verifier, Passport, VerificationError, DelegationLink, verify
 from .auditor import Auditor
+
+# One-object identity and the read-friendly credential wrapper (ergonomic sugar
+# over Signer/Verifier; the credential dict stays the canonical wire form).
+from .agent import Agent
+from .credential import Credential
 
 # Key management
 from .keys import generate_identity, KeyPair
@@ -22,12 +27,18 @@ from .kms import RotatingKeyProvider, KeyConfig
 # adapters under vouch.integrations.*.
 from .autosign import (
     current_credential,
+    current_token_header,
     delegate,
     protect,
     resolve_signer,
     sign_intent,
     signed,
 )
+
+# Receiving-side verification guards: a server-side gate and one-line tool
+# guards (the counterpart to protect/sign on the sending side).
+from .gate import CredentialGate, GateResult
+from .mcp_guard import guard_mcp, guard_tools, require_signed
 
 # Audio signing
 from .audio import AudioSigner, SignedAudioResult
@@ -283,8 +294,11 @@ __all__ = [
     "__version__",
     # Core
     "Signer",
+    "sign",
     "Verifier",
     "verify",
+    "Agent",
+    "Credential",
     "Passport",
     "VerificationError",
     "DelegationLink",
@@ -300,7 +314,14 @@ __all__ = [
     "delegate",
     "sign_intent",
     "current_credential",
+    "current_token_header",
     "resolve_signer",
+    # Receiving-side verification guards
+    "CredentialGate",
+    "GateResult",
+    "require_signed",
+    "guard_mcp",
+    "guard_tools",
     # Audio
     "AudioSigner",
     "SignedAudioResult",
