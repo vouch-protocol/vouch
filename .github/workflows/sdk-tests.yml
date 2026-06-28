@@ -75,3 +75,35 @@ jobs:
         run: |
           wasm-pack build --target web --release
           node smoke.mjs
+
+  c:
+    name: C bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the C library
+        run: cargo build --release --manifest-path core/uniffi/Cargo.toml
+      - name: Build and run the C example
+        run: |
+          cc -O2 -std=c11 -Isdks/cpp/include sdks/cpp/examples/example.c \
+            -o sdks/cpp/examples/example \
+            -L"$GITHUB_WORKSPACE/core/uniffi/target/release" -lvouch_core_uniffi
+          cd sdks/cpp/examples
+          LD_LIBRARY_PATH="$GITHUB_WORKSPACE/core/uniffi/target/release" ./example
+
+  dotnet:
+    name: .NET SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the native core
+        working-directory: sdks/dotnet
+        run: bash build-native.sh
+      - name: Test
+        working-directory: sdks/dotnet
+        run: dotnet test --nologo
