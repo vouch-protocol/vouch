@@ -118,8 +118,12 @@ docs/specs/build.sh
 # Patent briefs (confidential - do not publish)
 docs/patents/
 
-# AI assistant config
+# AI assistant memory files (local only, not version controlled)
 claude.md
+CLAUDE.md
+CLAUDE.local.md
+**/CLAUDE.md
+**/CLAUDE.local.md
 
 # Claude Code local-only state (permission allowlist, agent settings, etc.)
 .claude/
