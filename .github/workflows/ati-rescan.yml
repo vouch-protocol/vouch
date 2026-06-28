@@ -49,6 +49,11 @@ jobs:
       - name: Regenerate the site data
         run: python scripts/extract-ati.py
 
+      - name: Render the social share card
+        run: |
+          pip install cairosvg
+          python scripts/render_ati_card.py
+
       - name: Detect whether the data changed
         id: diff
         run: |
@@ -76,6 +81,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add website/src/app/agent-trust-index/ati-data.ts docs
+          git add website/src/app/agent-trust-index/ati-data.ts website/public/assets/ati-card.png website/public/assets/ati-card.svg docs
           git commit -m "data(ati): weekly Agent Trust Index re-scan"
           git push

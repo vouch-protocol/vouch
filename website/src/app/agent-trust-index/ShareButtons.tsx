@@ -49,7 +49,15 @@ function IconLink() {
     );
 }
 
-export default function ShareButtons({ text, url }: { text: string; url: string }) {
+export default function ShareButtons({
+    text,
+    url,
+    image,
+}: {
+    text: string;
+    url: string;
+    image?: string;
+}) {
     const [copied, setCopied] = useState(false);
     const enc = encodeURIComponent;
     const x = `https://x.com/intent/tweet?text=${enc(text)}&url=${enc(url)}`;
@@ -105,6 +113,13 @@ export default function ShareButtons({ text, url }: { text: string; url: string 
             <button type="button" onClick={copy} className={srx} title={copied ? 'Copied' : 'Copy link'} aria-label="Copy link">
                 <IconLink />
             </button>
+            {image && (
+                <a className={srx} href={image} download title="Download image" aria-label="Download image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
+                    </svg>
+                </a>
+            )}
             {copied && (
                 <span className="font-mono uppercase text-[0.62rem] tracking-[0.14em] text-burgundy ml-1">
                     Copied
