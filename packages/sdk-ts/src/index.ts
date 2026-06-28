@@ -218,6 +218,28 @@ export type {
   RecordFrameOptions,
   BuildPerceptionAttestationOptions,
 } from './robotics/perception';
+export {
+  DELEGATION_LEASE_TYPE,
+  buildDelegationLease,
+  verifyDelegationLease,
+  leasePermits,
+} from './robotics/lease';
+export type {
+  BuildDelegationLeaseOptions,
+  VerifyDelegationLeaseOptions,
+  LeasePermitsOptions,
+} from './robotics/lease';
+export {
+  ACTION_APPROVAL_TYPE,
+  APPROVE,
+  REJECT,
+  buildActionApproval,
+  verifyActionAuthorization,
+} from './robotics/physical_quorum';
+export type {
+  BuildActionApprovalOptions,
+  VerifyActionAuthorizationOptions,
+} from './robotics/physical_quorum';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
