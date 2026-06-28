@@ -51,7 +51,7 @@ from .mcp_guard import guard_mcp, guard_tools, require_signed
 
 # Cross-device identity: per-device keys delegated from a root, with full chain
 # verification back to a trusted root (the key never travels). See vouch.fleet.
-from .fleet import FleetResult, enroll_device, verify_delegated_chain
+from .fleet import DeviceRegistry, FleetResult, enroll_device, verify_delegated_chain
 
 # Audio signing
 from .audio import AudioSigner, SignedAudioResult
@@ -345,6 +345,7 @@ __all__ = [
     "enroll_device",
     "verify_delegated_chain",
     "FleetResult",
+    "DeviceRegistry",
     "guard_mcp",
     "guard_tools",
     # Audio
