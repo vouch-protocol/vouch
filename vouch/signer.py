@@ -24,7 +24,7 @@ import json
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from jwcrypto import jwk, jws
@@ -97,6 +97,53 @@ class Signer:
         except Exception:  # pragma: no cover - defensive
             self._raw_priv = None
 
+        # A backend-signed Signer (see from_backend) leaves these set instead of
+        # holding the raw key. None here means "this Signer holds the key".
+        self._sign_func: Optional[Callable[[bytes], bytes]] = None
+        self._public_jwk_str: Optional[str] = None
+        self._public_multikey: Optional[str] = None
+
+    @classmethod
+    def from_backend(
+        cls,
+        did: str,
+        public_key: str,
+        sign: Callable[[bytes], bytes],
+        default_expiry_seconds: int = 300,
+    ) -> "Signer":
+        """Construct a Signer whose private key lives outside this process.
+
+        Instead of a private JWK, you supply the agent's public key and a
+        callable ``sign(digest: bytes) -> bytes`` that returns the Ed25519
+        signature over the digest. The raw key never enters this process, so it
+        can live in an OS secure element, a sidecar, a cloud KMS/HSM, or an MPC
+        quorum. This Signer issues Data Integrity credentials (the modern path);
+        the legacy JWS ``sign()`` is not available without the private key.
+
+        Args:
+          did: the agent's DID.
+          public_key: the agent's public key as a JWK JSON string or a Multikey
+            (z-prefixed) string.
+          sign: callable that signs a 32-byte digest and returns the 64-byte
+            Ed25519 signature.
+          default_expiry_seconds: token validity period (default 5 minutes).
+        """
+        if not did:
+            raise ValueError("Signer.from_backend requires a 'did'")
+        if not public_key:
+            raise ValueError("Signer.from_backend requires the agent 'public_key'")
+        if not callable(sign):
+            raise ValueError("Signer.from_backend requires a callable 'sign'")
+
+        self = cls.__new__(cls)
+        self.did = did
+        self.default_expiry = default_expiry_seconds
+        self._key = None
+        self._raw_priv = None
+        self._sign_func = sign
+        self._public_jwk_str, self._public_multikey = _normalize_public_key(public_key)
+        return self
+
     @classmethod
     def from_keypair(cls, keypair: Any, default_expiry_seconds: int = 300) -> "Signer":
         """Construct a Signer directly from a :class:`~vouch.keys.KeyPair`.
@@ -152,6 +199,13 @@ class Signer:
         Returns:
           A JWS compact serialized token string.
         """
+        if self._key is None:
+            raise NotImplementedError(
+                "The legacy JWS sign() needs the private key in this process and "
+                "is not available for a backend Signer (from_backend); use "
+                "sign_credential for the Data Integrity path"
+            )
+
         now = int(time.time())
         exp = expiry_seconds if expiry_seconds is not None else self.default_expiry
 
@@ -268,13 +322,9 @@ class Signer:
 
         Raises:
           ValueError: If the merged intent is missing required fields, the chain
-            exceeds max depth, or the private key bytes are unavailable.
+            exceeds max depth, or no signing key/backend is available.
         """
-        if self._raw_priv is None:
-            raise ValueError(
-                "Cannot issue Data Integrity credentials: private key bytes "
-                "could not be derived from the JWK"
-            )
+        signer = self._credential_signer()
 
         intent = _merge_intent(intent, action=action, target=target, resource=resource)
 
@@ -294,11 +344,23 @@ class Signer:
 
         proof = data_integrity.build_proof(
             credential,
-            private_key=self._raw_priv,
+            private_key=signer,
             verification_method=self.verification_method_id(),
         )
         credential["proof"] = proof
         return credential
+
+    def _credential_signer(self):
+        """Return the signer for the Data Integrity path: the raw key if this
+        Signer holds it, otherwise the backend sign callback."""
+        if self._raw_priv is not None:
+            return self._raw_priv
+        if self._sign_func is not None:
+            return self._sign_func
+        raise ValueError(
+            "Cannot issue Data Integrity credentials: no signing key is available "
+            "(construct the Signer with a private key or via Signer.from_backend)"
+        )
 
     def sign_credential_hybrid(
         self,
@@ -333,6 +395,14 @@ class Signer:
         Requires the `pqcrypto` package to be installed.
         """
         if self._raw_priv is None:
+            # The hybrid profile needs both an Ed25519 and an ML-DSA-44 signature.
+            # A backend Signer only exposes the Ed25519 sign callback, so the
+            # hybrid path is not available there yet.
+            if self._sign_func is not None:
+                raise NotImplementedError(
+                    "sign_credential_hybrid is not supported for a backend Signer "
+                    "(from_backend); use the eddsa-jcs-2022 path or hold the key locally"
+                )
             raise ValueError(
                 "Cannot issue Data Integrity credentials: private key bytes "
                 "could not be derived from the JWK"
@@ -443,7 +513,11 @@ class Signer:
 
     def get_public_key_jwk(self) -> str:
         """Return the public key in JWK format (legacy DID Documents)."""
-        return self._key.export_public()
+        if self._key is not None:
+            return self._key.export_public()
+        if self._public_jwk_str is not None:
+            return self._public_jwk_str
+        raise ValueError("No public key available for this Signer")
 
     def get_public_key_multikey(self) -> str:
         """
@@ -454,6 +528,10 @@ class Signer:
         """
         from jwcrypto.common import base64url_decode
 
+        if self._key is None:
+            if self._public_multikey is not None:
+                return self._public_multikey
+            raise ValueError("No public key available for this Signer")
         pub_b64 = self._key.get("x")
         if not pub_b64:
             raise ValueError("JWK does not expose the Ed25519 public component")
@@ -479,6 +557,40 @@ def _is_sub_resource(child: str, parent: str) -> bool:
     if child.startswith(parent.rstrip("/") + "/"):
         return True
     return False
+
+
+def _normalize_public_key(public_key: str) -> tuple:
+    """Accept a JWK JSON string or a Multikey (z...) string and return
+    (jwk_json_str, multikey_str) for both export formats."""
+    from jwcrypto.common import base64url_decode
+
+    if public_key.startswith("z"):
+        alg, raw = multikey.decode(public_key)
+        if alg != "Ed25519":
+            raise ValueError(f"Expected an Ed25519 public key, got {alg}")
+        key = jwk.JWK.from_json(
+            json.dumps(
+                {
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "x": _b64url_nopad(raw),
+                }
+            )
+        )
+        return key.export_public(), public_key
+
+    # Otherwise treat it as a JWK JSON string.
+    key = jwk.JWK.from_json(public_key)
+    if key.get("kty") != "OKP" or key.get("crv") != "Ed25519":
+        raise ValueError("Public key JWK must be an Ed25519 key (OKP, crv=Ed25519)")
+    raw = base64url_decode(key.get("x"))
+    return key.export_public(), multikey.encode_ed25519_public(raw)
+
+
+def _b64url_nopad(raw: bytes) -> str:
+    import base64
+
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
 
 
 def _merge_intent(
