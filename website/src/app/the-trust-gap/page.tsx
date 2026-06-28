@@ -27,12 +27,6 @@ export const metadata: Metadata = {
     },
 };
 
-const STEPS = [
-    { n: '01', h: 'They act', s: 'buy · email · code' },
-    { n: '02', h: "Can't prove it", s: 'no id · no permission' },
-    { n: '03', h: 'Vouch proves it', s: 'verified · signed', win: true },
-];
-
 export default function TrustGapPage() {
     return (
         <main className="min-h-screen bg-parchment text-ink">
@@ -58,29 +52,29 @@ export default function TrustGapPage() {
                 </div>
             </section>
 
-            {/* THREE-STEP INFOGRAPHIC */}
-            <section className="border-y border-rule">
-                <div className="container-wide grid grid-cols-1 md:grid-cols-3">
-                    {STEPS.map((st, i) => (
-                        <div
-                            key={st.n}
-                            className={`py-10 md:py-14 md:px-8 ${
-                                i < STEPS.length - 1 ? 'border-b md:border-b-0 md:border-r border-rule' : ''
-                            } ${st.win ? 'bg-parchment-warm' : ''}`}
-                        >
-                            <div className="font-mono text-sm text-ink-faint mb-3">{st.n}</div>
-                            <h2
-                                className={`font-serif font-semibold text-[1.6rem] tracking-tight mb-2 ${
-                                    st.win ? 'text-burgundy' : ''
-                                }`}
-                            >
-                                {st.h}
-                            </h2>
-                            <div className="font-mono uppercase text-[0.72rem] tracking-[0.08em] text-ink-soft">
-                                {st.s}
-                            </div>
-                        </div>
-                    ))}
+            {/* THE PROBLEM: the trust handoff */}
+            <section className="border-t border-rule bg-parchment-warm/40">
+                <div className="container-wide py-12 md:py-16">
+                    <p className="eyebrow text-burgundy mb-6">The handoff</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/assets/trust-handoff.svg"
+                        alt="A human delegates to an AI agent that carries a verifiable identity, and the agent acts on an MCP server. Each handoff is signed."
+                        className="w-full h-auto max-w-[940px] mx-auto"
+                    />
+                </div>
+            </section>
+
+            {/* THE SOLUTION: how Vouch works */}
+            <section className="border-t border-rule">
+                <div className="container-wide py-12 md:py-16">
+                    <p className="eyebrow text-burgundy mb-6">The fix, in four steps</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/assets/how-vouch-works.svg"
+                        alt="How Vouch works: give the agent a verifiable ID, the human sets the rules, every action is signed, and anyone can check it. Tampering and fakes are rejected."
+                        className="w-full h-auto max-w-[940px] mx-auto"
+                    />
                 </div>
             </section>
 
