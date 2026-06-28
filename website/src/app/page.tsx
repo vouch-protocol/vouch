@@ -159,7 +159,7 @@ export default function HomePage() {
             identity and delegation specifications. Built on Verifiable Credentials, Data Integrity
             proofs, and Decentralized Identifiers, with one byte-exact core and SDKs for every major
             platform: web, mobile, JVM, .NET, and native, plus the Python, TypeScript, and Go references.
-            Agents are reached by who they are, not where they are.
+            Agents can be reached by who they are, not where they are.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/faq/" className="btn-primary">Read the FAQ</Link>
