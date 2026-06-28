@@ -139,6 +139,41 @@ class CredentialPassport:
     reputation_score: Optional[int] = None
     delegation_chain: List[CredentialDelegationLink] = field(default_factory=list)
 
+    # Convenience accessors so callers can read what was authorized without
+    # reaching into `intent` or `raw_credential` by hand.
+
+    @property
+    def action(self) -> Optional[str]:
+        """The intent action that was signed, if present."""
+        return (self.intent or {}).get("action")
+
+    @property
+    def target(self) -> Optional[str]:
+        """The intent target that was signed, if present."""
+        return (self.intent or {}).get("target")
+
+    @property
+    def resource(self) -> Optional[str]:
+        """The intent resource that was signed, if present."""
+        return (self.intent or {}).get("resource")
+
+    @property
+    def issuer(self) -> str:
+        """The issuer DID. Alias for :attr:`iss`."""
+        return self.iss
+
+    @property
+    def is_expired(self) -> bool:
+        """True if the credential's validity window has passed.
+
+        Independent of the clock skew applied during verification: this is a
+        plain "is it past validUntil now" check for display and policy logic.
+        """
+        expires = _parse_iso8601(self.valid_until)
+        if expires is None:
+            return False
+        return datetime.now(timezone.utc) > expires
+
 
 class Verifier:
     """
@@ -630,6 +665,12 @@ class Verifier:
             except Exception:  # pragma: no cover
                 pass
 
+        # did:key is self-certifying: the public key is encoded in the DID
+        # itself, so it resolves offline with no network and is allowed even
+        # when allow_did_resolution is False.
+        if did.startswith("did:key:"):
+            return _resolve_did_key(did)
+
         if not (self._allow_resolution and did.startswith("did:web:")):
             return None
 
@@ -652,8 +693,8 @@ _DEFAULT_VERIFIER: Optional["Verifier"] = None
 
 def verify(
     credential: Optional[Union[Dict[str, Any], str]] = None,
-    *,
     public_key: Optional[Union[Ed25519PublicKey, str]] = None,
+    *,
     allow_did_resolution: bool = True,
 ) -> Tuple[bool, Optional[CredentialPassport]]:
     """Verify a Vouch Credential in one line.
@@ -697,6 +738,23 @@ def verify(
 # ---------------------------------------------------------------------------
 # Module-private helpers
 # ---------------------------------------------------------------------------
+
+
+def _resolve_did_key(did: str) -> Optional[Ed25519PublicKey]:
+    """Decode the Ed25519 public key embedded in a ``did:key`` identifier.
+
+    ``did:key:z6Mk...`` carries the multicodec-tagged public key in the DID
+    string, so there is no network resolution. Returns None for non-Ed25519
+    did:key values or malformed input.
+    """
+    try:
+        mk = did.split("did:key:", 1)[1]
+        alg, raw = multikey.decode(mk)
+        if alg == "Ed25519":
+            return Ed25519PublicKey.from_public_bytes(raw)
+    except (IndexError, ValueError):
+        return None
+    return None
 
 
 def _coerce_ed25519_public_key(
