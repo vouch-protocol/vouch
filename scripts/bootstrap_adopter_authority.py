@@ -23,6 +23,7 @@ The root key is read from the environment and never written anywhere:
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -85,7 +86,36 @@ def sign_delegation(root_private_key: str, root_did: str) -> dict:
     )
 
 
+def _write_delegation(root_private_key: str, root_did: str) -> int:
+    """Sign and write the root -> adopter delegation, then self-check it."""
+    delegation = sign_delegation(root_private_key, root_did)
+    os.makedirs(os.path.dirname(DELEGATION_PATH), exist_ok=True)
+    with open(DELEGATION_PATH, "w", encoding="utf-8") as handle:
+        json.dump(delegation, handle, indent=2)
+        handle.write("\n")
+
+    root_pub = Signer(private_key=root_private_key, did=root_did).get_public_key_jwk()
+    ok, _ = Verifier.verify_credential(json.dumps(delegation), public_key=root_pub)
+    if not ok:
+        print(
+            "::error:: delegation did not verify against the root key. "
+            "Check VOUCH_ROOT_PRIVATE_KEY and VOUCH_ROOT_DID.",
+            file=sys.stderr,
+        )
+        return 1
+    return 0
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Bootstrap the Vouch Adopter Authority")
+    parser.add_argument(
+        "--delegation-only",
+        action="store_true",
+        help="Re-sign adopters/delegation.json with the root key without "
+        "regenerating the adopter key or DID document.",
+    )
+    args = parser.parse_args()
+
     root_private_key = os.getenv("VOUCH_ROOT_PRIVATE_KEY")
     root_did = os.getenv("VOUCH_ROOT_DID") or "did:web:vouch-protocol.com"
     if not root_private_key:
@@ -95,6 +125,16 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+
+    if args.delegation_only:
+        # The adopter key already exists and is stored; only re-issue the
+        # delegation so it is signed by the true root authority.
+        rc = _write_delegation(root_private_key, root_did)
+        if rc != 0:
+            return rc
+        print(f"Re-signed {DELEGATION_PATH} with root {root_did}.")
+        print("Commit it. The adopter key and its secrets are unchanged.")
+        return 0
 
     if os.path.exists(DID_DOC_PATH) or os.path.exists(DELEGATION_PATH):
         print(
@@ -115,23 +155,10 @@ def main() -> int:
         json.dump(did_doc, handle, indent=2)
         handle.write("\n")
 
-    # 3: sign the root -> adopter delegation.
-    delegation = sign_delegation(root_private_key, root_did)
-    os.makedirs(os.path.dirname(DELEGATION_PATH), exist_ok=True)
-    with open(DELEGATION_PATH, "w", encoding="utf-8") as handle:
-        json.dump(delegation, handle, indent=2)
-        handle.write("\n")
-
-    # Self-check: the delegation must verify against the root DID's public key.
-    root_pub = Signer(private_key=root_private_key, did=root_did).get_public_key_jwk()
-    ok, _ = Verifier.verify_credential(json.dumps(delegation), public_key=root_pub)
-    if not ok:
-        print(
-            "::error:: delegation did not verify against the root key. "
-            "Check VOUCH_ROOT_PRIVATE_KEY and VOUCH_ROOT_DID.",
-            file=sys.stderr,
-        )
-        return 1
+    # 3: sign the root -> adopter delegation (self-checked against the root key).
+    rc = _write_delegation(root_private_key, root_did)
+    if rc != 0:
+        return rc
 
     # 4: write the adopter authority private key for the operator to store.
     with open(PRIVATE_KEY_PATH, "w", encoding="utf-8") as handle:
