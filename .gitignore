@@ -47,6 +47,8 @@ tests/test_pro.py
 *.key
 *.pem
 vouch/media/certs/
+# Delegated authority signing key, written by bootstrap, load into a secret then delete
+adopter-authority-key.json
 
 # Node modules
 node_modules/

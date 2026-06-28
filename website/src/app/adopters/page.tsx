@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import adoptersData from '@/data/adopters.json';
 
 export const metadata: Metadata = {
     title: 'Adopters - Vouch Protocol',
@@ -9,35 +10,25 @@ export const metadata: Metadata = {
 type LinkItem = { label: string; href: string };
 
 type Adopter = {
+    slug: string;
     name: string;
     by: string;
     focus: string;
     badge: string;
     summary: string;
-    links: LinkItem[];
+    liveSurface?: string;
+    discussion?: string;
 };
 
-const ADOPTERS: Adopter[] = [
-    {
-        name: 'invinoveritas',
-        by: 'babyblueviper1',
-        focus: 'Outcome Evidence and the AccountabilityRecord',
-        badge: 'First reference integration',
-        summary:
-            'A live outcome-verified reputation service. invinoveritas emits a Vouch AccountabilityRecord on its handshake surface, conforming to the shipped field set (verifierKey, recordPointer, verifyEndpoint, reputationModel: recomputable, publishesLosses). Its review of the commit-before-outcome primitive also produced the third-party timestamp anchor and the existence-versus-ordering precedence affordance now in the protocol.',
-        links: [
-            {
-                label: 'Live handshake',
-                href: 'https://api.babyblueviper.com/.well-known/agent-handshake',
-            },
-            {
-                label: 'Discussion #53',
-                href: 'https://github.com/vouch-protocol/vouch/discussions/53',
-            },
-            { label: 'Certificate', href: '/i/invinoveritas/' },
-        ],
-    },
-];
+const ADOPTERS = adoptersData as Adopter[];
+
+function adopterLinks(a: Adopter): LinkItem[] {
+    const links: LinkItem[] = [];
+    if (a.liveSurface) links.push({ label: 'Live handshake', href: a.liveSurface });
+    if (a.discussion) links.push({ label: 'Discussion', href: a.discussion });
+    links.push({ label: 'Certificate', href: `/i/${a.slug}/` });
+    return links;
+}
 
 export default function AdoptersPage() {
     return (
@@ -57,7 +48,7 @@ export default function AdoptersPage() {
 
                 <section className="space-y-12">
                     {ADOPTERS.map((a) => (
-                        <article key={a.name} className="bg-parchment-warm border border-rule p-8 md:p-10">
+                        <article key={a.slug} className="bg-parchment-warm border border-rule p-8 md:p-10">
                             <header className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-3 border-b border-rule-light pb-4">
                                 <h2 className="font-serif text-[1.6rem] md:text-[1.8rem] font-semibold tracking-tight">
                                     {a.name}
@@ -76,7 +67,7 @@ export default function AdoptersPage() {
                             <p className="text-ink leading-relaxed mb-6 max-w-prose">{a.summary}</p>
 
                             <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                {a.links.map((l) => (
+                                {adopterLinks(a).map((l) => (
                                     <a
                                         key={l.label}
                                         href={l.href}

@@ -1,0 +1,149 @@
+name: Issue adopter certificate (manual)
+
+# Issue a Vouch Verified Integration certificate for a system that integrates
+# Vouch Protocol against the published schema. Renders the certificate page at
+# /i/<slug>/, lists the adopter on /adopters, and redeploys the site. The
+# certificate is a Verifiable Credential signed by the Adopter Authority (a
+# delegated key, see scripts/bootstrap_adopter_authority.py) and chained to the
+# root authority through adopters/delegation.json.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "URL slug for the certificate at /i/<slug>/"
+        required: true
+      name:
+        description: "Display name of the integration"
+        required: true
+      by:
+        description: "Author handle or organization (optional)"
+        required: false
+      focus:
+        description: "What part of Vouch it integrates"
+        required: true
+      badge:
+        description: "Short badge label (e.g. First reference integration)"
+        required: true
+      summary:
+        description: "One-paragraph summary for the adopters page"
+        required: true
+      live_surface:
+        description: "URL a verifier can check (optional)"
+        required: false
+      discussion:
+        description: "Discussion or PR URL (optional)"
+        required: false
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install vouch
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Mint credential
+        env:
+          ADOPTER_PRIVATE_KEY: ${{ secrets.ADOPTER_PRIVATE_KEY }}
+          ADOPTER_DID: ${{ secrets.ADOPTER_DID }}
+          SLUG: ${{ inputs.slug }}
+          NAME: ${{ inputs.name }}
+          BY: ${{ inputs.by }}
+          FOCUS: ${{ inputs.focus }}
+          LIVE_SURFACE: ${{ inputs.live_surface }}
+          DISCUSSION: ${{ inputs.discussion }}
+        run: |
+          if [ -z "$ADOPTER_PRIVATE_KEY" ] || [ -z "$ADOPTER_DID" ]; then
+            echo "::error::Adopter issuer key not configured (ADOPTER_PRIVATE_KEY / ADOPTER_DID)."
+            echo "::error::Run scripts/bootstrap_adopter_authority.py first, then add the secrets."
+            exit 1
+          fi
+          PARENT=""
+          if [ -f adopters/delegation.json ]; then
+            PARENT="--parent adopters/delegation.json"
+          fi
+          python scripts/mint_adopter_credential.py \
+            --slug "$SLUG" \
+            --name "$NAME" \
+            --by "$BY" \
+            --focus "$FOCUS" \
+            --live-surface "$LIVE_SURFACE" \
+            --discussion "$DISCUSSION" \
+            $PARENT \
+            --out credential.json
+
+      - name: Verify the certificate against the published DID document
+        run: |
+          python - <<'PY'
+          import json, sys
+          from vouch import Verifier
+          cred = open("credential.json").read()
+          doc = json.load(open("website/public/adopters/did.json"))
+          pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
+          ok, _ = Verifier.verify_credential(cred, public_key=pub)
+          print("Certificate self-verify against published DID:", ok)
+          if not ok:
+              print("::error::Minted certificate does not verify against the published adopter DID."
+                    " Check that ADOPTER_PRIVATE_KEY and ADOPTER_DID hold the adopter issuer key.")
+              sys.exit(1)
+          PY
+
+      - name: Publish the certificate and list the adopter
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLUG: ${{ inputs.slug }}
+          NAME: ${{ inputs.name }}
+          BY: ${{ inputs.by }}
+          FOCUS: ${{ inputs.focus }}
+          BADGE: ${{ inputs.badge }}
+          SUMMARY: ${{ inputs.summary }}
+          LIVE_SURFACE: ${{ inputs.live_surface }}
+          DISCUSSION: ${{ inputs.discussion }}
+        run: |
+          python scripts/render_adopter_cert.py \
+            --credential credential.json \
+            --slug "$SLUG" \
+            --out "website/public/i/${SLUG}/index.html"
+          python - <<'PY'
+          import json, os
+          path = "website/src/data/adopters.json"
+          entry = {
+              "slug": os.environ["SLUG"],
+              "name": os.environ["NAME"],
+              "by": os.environ.get("BY", ""),
+              "focus": os.environ["FOCUS"],
+              "badge": os.environ["BADGE"],
+              "summary": os.environ["SUMMARY"],
+              "liveSurface": os.environ.get("LIVE_SURFACE", ""),
+              "discussion": os.environ.get("DISCUSSION", ""),
+          }
+          data = json.load(open(path)) if os.path.exists(path) else []
+          data = [a for a in data if a.get("slug") != entry["slug"]]
+          data.append(entry)
+          with open(path, "w") as f:
+              json.dump(data, f, indent=4)
+              f.write("\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "website/public/i/${SLUG}/index.html" website/src/data/adopters.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(adopters): certificate for ${SLUG}"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push origin HEAD:main && break
+              sleep $((2 ** i))
+            done
+            gh workflow run deploy-website.yml --ref main
+          fi
