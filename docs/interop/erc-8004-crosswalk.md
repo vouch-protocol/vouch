@@ -25,7 +25,7 @@ record, two transports, no translation layer required at the field level.
 |---|---|---|
 | `commitment.digest` | `verdictHash` / `artifactHash` | salted SHA-256 over JCS-canonical claim |
 | `validFrom` | `verdictTimestamp` (committed time) | self-asserted unless anchored |
-| `commitment.anchor[]` `{method, reference, recomputeCmd}` | ERC-8299 Appendix B anchor hierarchy | open `method` string; a consumer takes the strongest surviving tier |
+| `commitment.anchor[]` `{method, reference, recomputeCmd, establishes}` | ERC-8299 Appendix B anchor hierarchy | open `method` string; `establishes` is `pre-outcome-ordering` or `existence-only`; ordering also requires the stamped time to precede settlement |
 | `settlement` `{method, locator, resolutionCriteria}` | resolution descriptor | transport-neutral on the Vouch side |
 | `proof` (eddsa-jcs-2022) | on-chain signature | a pointer references on-chain entries; it does not re-verify their crypto |
 

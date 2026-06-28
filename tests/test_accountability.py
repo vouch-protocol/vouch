@@ -8,9 +8,12 @@ from vouch import Signer, generate_identity
 from vouch.accountability import (
     OUTCOME_ATTESTATION_TYPE,
     OUTCOME_COMMITMENT_TYPE,
+    PRECEDENCE_EXISTENCE,
+    PRECEDENCE_PRE_OUTCOME,
     AccountabilityError,
     accountability_pointer,
     attest_outcome,
+    claims_precedence,
     commit_outcome,
     commitment_digest,
     timestamp_anchor,
@@ -280,8 +283,54 @@ class TestAnchor:
         assert a == {
             "method": "transparency-log",
             "reference": "leaf-7",
+            "establishes": PRECEDENCE_EXISTENCE,
             "recomputeCmd": "rekor verify leaf-7",
         }
+
+    def test_anchor_defaults_to_existence_only(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor=timestamp_anchor("opentimestamps", "ref"),
+        )
+        anchor = cred["credentialSubject"]["commitment"]["anchor"][0]
+        assert anchor["establishes"] == PRECEDENCE_EXISTENCE
+        assert claims_precedence(cred) is False  # an anchor alone is not ordering
+
+    def test_pre_outcome_ordering_is_claimed(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor=timestamp_anchor(
+                "opentimestamps", "ref", "ots verify ref", establishes=PRECEDENCE_PRE_OUTCOME
+            ),
+        )
+        assert claims_precedence(cred) is True
+
+    def test_raw_anchor_dict_gets_existence_default(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor={"method": "rfc3161-tsa", "reference": "r"},
+        )
+        assert cred["credentialSubject"]["commitment"]["anchor"][0]["establishes"] == (
+            PRECEDENCE_EXISTENCE
+        )
+
+    def test_bad_establishes_rejected(self):
+        with pytest.raises(AccountabilityError):
+            timestamp_anchor("opentimestamps", "ref", establishes="whenever")
+
+    def test_no_anchor_does_not_claim_precedence(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(signer, claim=CLAIM, settlement=SETTLEMENT)
+        assert claims_precedence(cred) is False
 
 
 class TestSettlementAndPointerFields:

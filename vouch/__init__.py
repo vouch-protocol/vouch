@@ -199,6 +199,9 @@ def __getattr__(name):
         "accountability_pointer",
         "commitment_digest",
         "timestamp_anchor",
+        "claims_precedence",
+        "PRECEDENCE_PRE_OUTCOME",
+        "PRECEDENCE_EXISTENCE",
         "OUTCOME_COMMITMENT_TYPE",
         "OUTCOME_ATTESTATION_TYPE",
     ):
@@ -359,6 +362,9 @@ __all__ = [
     "accountability_pointer",
     "commitment_digest",
     "timestamp_anchor",
+    "claims_precedence",
+    "PRECEDENCE_PRE_OUTCOME",
+    "PRECEDENCE_EXISTENCE",
     "OUTCOME_COMMITMENT_TYPE",
     "OUTCOME_ATTESTATION_TYPE",
     # Reputation receipts and aggregation
