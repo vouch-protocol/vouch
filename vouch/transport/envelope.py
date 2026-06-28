@@ -4,25 +4,25 @@ The Vouch transport envelope.
 A transport moves bytes; Vouch moves *accountable* statements. The envelope is
 the bridge: a thin, transport-neutral container that carries a signed Vouch
 credential together with the liability and provenance context a peer needs to
-hold the sender accountable — without ever touching the signed bytes
+hold the sender accountable, without ever touching the signed bytes
 themselves.
 
 Three payload compartments, each preserved verbatim:
 
-  * ``payload``      — the signed Vouch credential (an ``eddsa-jcs-2022`` or
+  * ``payload``: the signed Vouch credential (an ``eddsa-jcs-2022`` or
     hybrid Verifiable Credential, complete with its ``proof`` block). This is
     opaque to the transport layer and is never re-serialized lossily.
-  * ``attestations`` — zero or more liability attestations (outcome
+  * ``attestations``, zero or more liability attestations (outcome
     commitments, penalty receipts, delegation links) that bind the sender to
     consequences.
-  * ``provenance``   — provenance metadata (content hashes, C2PA pointers,
+  * ``provenance``: provenance metadata (content hashes, C2PA pointers,
     capture context) describing where the payload's subject came from.
 
 Integrity across the transport boundary is enforced by ``content_digest()``: a
 SHA-256 over the JCS canonicalization of those three compartments. The manager
 stamps the digest at seal time; the receiver (or a fallback transport
 re-handling the same envelope) recomputes it and rejects any mismatch. Because
-the digest is computed over the canonical form — not the wire bytes — an
+the digest is computed over the canonical form, not the wire bytes, an
 envelope survives a UDNA→HTTP transition, re-indentation, or key reordering
 with its proofs intact.
 """
@@ -133,7 +133,7 @@ class VouchEnvelope:
 
         Raises:
           PayloadIntegrityError: if the recomputed digest does not match the
-            ``content_digest`` carried on the wire — the cargo was altered.
+            ``content_digest`` carried on the wire, the cargo was altered.
           ValueError: if the envelope is structurally malformed.
         """
         version = data.get("vouch_envelope")
@@ -181,7 +181,7 @@ def build_envelope(
     """
     Convenience constructor for a Vouch envelope.
 
-    ``payload`` should be an already-signed Vouch credential — typically the
+    ``payload`` should be an already-signed Vouch credential, typically the
     dict returned by ``Signer.sign_credential(...)``. It is stored by reference
     and never mutated, so its Data Integrity proof remains valid.
     """

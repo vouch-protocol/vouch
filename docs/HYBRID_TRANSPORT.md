@@ -9,13 +9,13 @@ standard DNS/IP + HTTP.
 
 ## Why
 
-Standard routing resolves an identity *down to a location* — `did:web` → domain
-→ IP — and then trusts whoever answers that IP. Location is the weak link:
+Standard routing resolves an identity *down to a location*, `did:web` → domain
+→ IP, and then trusts whoever answers that IP. Location is the weak link:
 domains get seized, DNS gets poisoned, IPs get hijacked.
 
 **UDNA (Universal DID-Native Addressing)** inverts the stack. The DID itself is
 the routing primitive; delivery rides a Noise-encrypted channel straight to the
-key that owns the DID. There is no location to spoof — the peer you reach is, by
+key that owns the DID. There is no location to spoof, the peer you reach is, by
 construction, the peer whose key matches the DID.
 
 UDNA is powerful but not universal: not every peer is on the overlay. So Vouch
@@ -29,11 +29,11 @@ location-first reachability everywhere else, behind a single API.
 vouch/transport/
 ├── __init__.py          Public API surface
 ├── base.py              Transport ABC, PeerAddress, DeliveryResult, errors
-├── envelope.py          VouchEnvelope — payload-preserving message container
+├── envelope.py          VouchEnvelope, payload-preserving message container
 ├── did_key.py           did:key generation/parsing (UDNA's native identity)
-├── http_transport.py    HttpTransport — DNS/IP + HTTPS (did:web), the fallback
-├── udna.py              UdnaTransport — Sirraya UDNA SDK adapter (Noise)
-└── manager.py           TransportManager — fallback routing middleware
+├── http_transport.py    HttpTransport, DNS/IP + HTTPS (did:web), the fallback
+├── udna.py              UdnaTransport, Sirraya UDNA SDK adapter (Noise)
+└── manager.py           TransportManager, fallback routing middleware
 ```
 
 ## Components
@@ -54,16 +54,16 @@ A transport signals **"not me, try the next one"** by raising
 `PayloadIntegrityError`. The manager keys its fallback-vs-fail decision on
 exactly that distinction.
 
-### `VouchEnvelope` — payload preservation
+### `VouchEnvelope`, payload preservation
 
 The envelope carries three compartments verbatim across any transport boundary:
 
-- `payload` — the signed Vouch credential, complete with its `eddsa-jcs-2022`
+- `payload`, the signed Vouch credential, complete with its `eddsa-jcs-2022`
   (or hybrid PQ) Data Integrity `proof`. Stored by reference, never
   re-serialized lossily.
-- `attestations` — liability attestations (outcome commitments, penalty
+- `attestations`, liability attestations (outcome commitments, penalty
   receipts, delegation links).
-- `provenance` — provenance metadata (content hashes, C2PA pointers, capture
+- `provenance`, provenance metadata (content hashes, C2PA pointers, capture
   context).
 
 Integrity is enforced by `content_digest()`: a SHA-256 over the **JCS
@@ -73,36 +73,36 @@ survives a UDNA→HTTP transition, re-indentation, or key reordering with its
 signatures intact. `from_wire()` re-verifies the seal on receipt and raises
 `PayloadIntegrityError` on any mismatch.
 
-### `UdnaTransport` — identity-first
+### `UdnaTransport`, identity-first
 
 Targets the real `sirraya-udna-sdk` (distribution `sirraya-udna-sdk`, **import
 package `udna_sdk`**, v1.0.x). That SDK provides:
 
-- **DID generation** — `UdnaSDK.create_did()` mints a `did:key`. Its encoding
+- **DID generation**, `UdnaSDK.create_did()` mints a `did:key`. Its encoding
   (`z` + base58(`0xed01` ‖ pubkey)) is byte-identical to Vouch's own Multikey,
-  so a Vouch identity and a UDNA identity interoperate with no translation —
+  so a Vouch identity and a UDNA identity interoperate with no translation -
   `UdnaTransport.generate_did(public_jwk)` derives the same `did:key` from the
   agent's existing signing key.
-- **UDNA address creation** — `UdnaSDK.create_address(did, facet_id, flags)`
+- **UDNA address creation**, `UdnaSDK.create_address(did, facet_id, flags)`
   produces a signed base58 address. `facet_id` selects a capability lane
   (`0x01` Control, `0x02` Messaging, `0x03` Telemetry); Vouch messages ride
   Messaging.
-- **Address verification** — `UdnaSDK.verify_address(address)` checks the
+- **Address verification**, `UdnaSDK.verify_address(address)` checks the
   address signature against the DID's key.
-- **Secure messaging** — `udna_sdk.udna.NoiseHandshake` (a DID-authenticated
+- **Secure messaging**, `udna_sdk.udna.NoiseHandshake` (a DID-authenticated
   Noise-IK handshake) plus `SecureMessaging` (ChaCha20-Poly1305 over the
   derived session key).
 
-**What the SDK does not provide is a production wire transport** — byte
+**What the SDK does not provide is a production wire transport**, byte
 delivery to a remote peer is left to the integrator (the bundled DHT is an
 in-memory demo). The adapter splits the two concerns accordingly:
 
-- **`UdnaNode`** — the session+delivery seam the transport talks to.
+- **`UdnaNode`**, the session+delivery seam the transport talks to.
   `SirrayaUdnaNode` implements it by composing the SDK's Noise/SecureMessaging
   crypto with a delivery channel: a secure send is a real
   `initiate → respond → finalize` handshake followed by an encrypted payload,
   each carried as one channel exchange.
-- **`UdnaChannel`** — the pluggable byte-delivery overlay the deployment
+- **`UdnaChannel`**, the pluggable byte-delivery overlay the deployment
   supplies (a relay, a libp2p/QUIC overlay, a websocket bridge).
 
 The SDK is an **optional dependency** (`pip install vouch-protocol[udna]`). All
@@ -111,9 +111,9 @@ fully testable without the SDK (see `tests/test_transport.py`) and validated
 against it when present (`tests/test_transport_udna_sdk.py`, auto-skipped
 otherwise). When the SDK is absent, or no node/channel is wired, the transport
 is **dormant**: it routes nothing and the manager falls back to HTTP. UDNA
-being unavailable is never an error — that is the point of the hybrid design.
+being unavailable is never an error, that is the point of the hybrid design.
 
-### `HttpTransport` — location-first fallback
+### `HttpTransport`, location-first fallback
 
 The universal lowest common denominator. Resolves `did:web` → domain via
 DNS/IP, discovers the peer's inbox (an explicit `VouchInbox` service in the DID
@@ -122,7 +122,7 @@ sealed envelope over TLS. Every outbound URL is screened by `vouch.ssrf`
 (https-only, public IPs only, redirects disabled) because the target host is
 derived from a potentially attacker-controlled DID.
 
-### `TransportManager` — fallback middleware
+### `TransportManager`, fallback middleware
 
 The single entry point for agents. Holds an ordered list of transports
 (UDNA preferred, HTTP behind) and exposes one method, `dispatch(envelope)`,
@@ -166,7 +166,7 @@ manager = TransportManager.default(private_key_jwk=kp.private_key_jwk)
 result = await manager.dispatch(envelope)
 
 print(result.transport)   # "udna" or "http"
-print(result.attempts)    # e.g. ["udna", "http"] — the fallback path taken
+print(result.attempts)    # e.g. ["udna", "http"], the fallback path taken
 ```
 
 A runnable, network-free demo lives at
@@ -176,5 +176,5 @@ A runnable, network-free demo lives at
 
 To add a transport (libp2p, Tor, a message bus), subclass `Transport`,
 implement the three methods, and insert it into the manager's preference list.
-Agents and the envelope are unaffected — that is the whole point of the
+Agents and the envelope are unaffected, that is the whole point of the
 abstraction.

@@ -3,9 +3,9 @@ Integration tests against the *real* ``sirraya-udna-sdk`` (import: ``udna_sdk``)
 
 These are skipped unless the SDK is installed (``pip install
 vouch-protocol[udna]``), so the default test run does not depend on it. When it
-is present, they exercise Vouch's UDNA adapter against the genuine SDK API —
+is present, they exercise Vouch's UDNA adapter against the genuine SDK API -
 ``UdnaSDK.create_did`` / ``create_address`` / ``verify_address`` and the
-``NoiseHandshake`` + ``SecureMessaging`` crypto — proving the adapter is wired
+``NoiseHandshake`` + ``SecureMessaging`` crypto, proving the adapter is wired
 to real method names, not guessed ones.
 """
 
@@ -115,7 +115,7 @@ async def test_secure_send_runs_real_noise_handshake():
     assert peer is not None and peer.verified is True
 
     # Completes a real initiate→respond→finalize handshake and encrypts the
-    # envelope with ChaCha20-Poly1305 — no exception means the real API matched.
+    # envelope with ChaCha20-Poly1305, no exception means the real API matched.
     reply = await transport.send(env, peer)
     assert reply == {}  # peer acknowledged without a body
     assert node._channel.received_ciphertext is not None
