@@ -1,0 +1,25 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:web:vouch-protocol.com:adopters",
+  "verificationMethod": [
+    {
+      "id": "did:web:vouch-protocol.com:adopters#key-1",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:vouch-protocol.com:adopters",
+      "publicKeyJwk": {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": "tIbm_y1n4OCYEBdETF_DSkN_pI619X3ZPpfiKFeOf-s"
+      }
+    }
+  ],
+  "authentication": [
+    "did:web:vouch-protocol.com:adopters#key-1"
+  ],
+  "assertionMethod": [
+    "did:web:vouch-protocol.com:adopters#key-1"
+  ]
+}
