@@ -13,6 +13,8 @@ robots and embodied agents:
   - liveness: robot heartbeat with safety-envelope conformance and trust decay.
   - revocation: whole-DID kill and surgical per-credential revocation.
   - safety_record: incident/near-miss ledger + portable safety-record credential.
+  - lease: short-lived, offline-verifiable delegation lease (open cross-vendor chain).
+  - physical_quorum: M-of-N approvals for high-consequence physical actions.
   - perception: signed, tamper-evident provenance for captured sensor frames.
 """
 
@@ -89,6 +91,15 @@ from .perception import (
     verify_perception_attestation,
     verify_perception_log,
 )
+from .lease import (
+    build_delegation_lease,
+    lease_permits,
+    verify_delegation_lease,
+)
+from .physical_quorum import (
+    build_action_approval,
+    verify_action_authorization,
+)
 
 __all__ = [
     # identity
@@ -145,6 +156,13 @@ __all__ = [
     "build_perception_attestation",
     "verify_perception_attestation",
     "MODALITIES",
+    # delegation lease (offline-verifiable, nesting cross-vendor chain)
+    "build_delegation_lease",
+    "verify_delegation_lease",
+    "lease_permits",
+    # physical quorum (M-of-N approvals for high-consequence actions)
+    "build_action_approval",
+    "verify_action_authorization",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

@@ -426,6 +426,104 @@ proves what was perceived without retaining the frames themselves.
 
 ---
 
+## 11. Delegation lease
+
+`vouch.robotics.lease`
+
+What it is: a short-lived, scope-bounded grant of authority that a robot can
+verify and act on entirely offline, with no network call. An authority issues a
+`DelegationLeaseCredential` bounding the robot's physical capability scope
+(including allowed zones) for a fixed window. The robot verifies the signature,
+that the window is current, and that a proposed action fits the scope.
+
+The problem it closes: a robot often has to act where there is no connectivity
+and no time to call home, yet handing it a long-lived broad grant is exactly the
+authority you do not want a captured or malfunctioning machine to hold. A
+delegation lease gives it just enough authority, for just long enough, and lets
+it prove that authority on its own.
+
+How it works: the lease credential carries a physical capability scope and a
+validity window. The robot checks three things locally: the issuer signature
+verifies, the current time falls inside the window, and the proposed action fits
+within the scope (the same shrink-only physical scope check from capability 3).
+Leases nest: each sub-grant attenuates the one above it, it never widens it,
+which forms the open cross-vendor chain (a vendor leases to an integrator, the
+integrator to an operator, the operator to the robot). Because every check is
+local, the whole chain verifies with no network call.
+
+The API: `build_delegation_lease`, `verify_delegation_lease`, and `lease_permits`
+(does a proposed action fall inside a current, valid lease).
+
+Worked example (Python):
+
+```python
+from vouch.robotics import lease
+
+leased = lease.build_delegation_lease(
+    operator_signer, robot_did,
+    scope={"maxForceN": 10.0, "maxSpeedMps": 1.0, "allowedZones": ["dock-a"]},
+    not_before=now, not_after=now + 3600,            # one-hour window
+)
+ok, scope = lease.verify_delegation_lease(leased, operator_signer.public_key(), now=now)
+allowed = lease.lease_permits(leased, {"zone": "dock-a", "speedMps": 0.8}, now=now)
+```
+
+Security boundary: verification fails closed on a wrong type, an invalid
+signature, a window that has not started or has expired, or a sub-lease that
+widens any cap, adds a zone, or extends the window beyond its parent. A proposed
+action outside the leased scope is refused locally, so a robot cannot act beyond
+the authority it can prove, even with no connectivity.
+
+---
+
+## 12. Physical quorum
+
+`vouch.robotics.physical_quorum`
+
+What it is: a cryptographic two-person rule. A high-consequence physical action
+is authorized only when at least M of an attested set of N approvers have each
+signed an approval over the same action. The verifier counts distinct valid
+approvers.
+
+The problem it closes: some physical actions are consequential enough that no
+single signer should be able to trigger them alone. A quorum makes the
+"two-person rule" cryptographic: the authorization is only valid when enough
+independent, attested approvers have each signed the very same action, so one
+compromised key is not sufficient.
+
+How it works: each approver signs an `ActionApproval` over the action
+description. The verifier is given the action, the approval set, the attested
+approver set (N), and the threshold (M). It checks every approval signature,
+counts only distinct valid approvers drawn from the attested set, and authorizes
+the action only when that count reaches M. Approvals over a different action, by
+a signer outside the attested set, or duplicated from one approver, do not count
+toward the threshold.
+
+The API: `build_action_approval` (one approver signs the action) and
+`verify_action_authorization` (counts distinct valid approvers against M of N).
+
+Worked example (Python):
+
+```python
+from vouch.robotics import physical_quorum as quorum
+
+action = {"action": "open_cell_gate", "zone": "cell-3", "robotDid": robot_did}
+a1 = quorum.build_action_approval(approver_one, action)
+a2 = quorum.build_action_approval(approver_two, action)
+ok = quorum.verify_action_authorization(
+    action, approvals=[a1, a2],
+    approvers={approver_one_pub, approver_two_pub}, threshold=2,
+)
+```
+
+Security boundary: authorization fails closed unless at least M distinct approvers
+from the attested set have each signed the same action. An approval over a
+different action, a signature from outside the attested set, an invalid proof, or
+the same approver counted twice does not advance the count, so no single key and
+no replayed approval can reach the threshold alone.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -435,9 +533,11 @@ it meets (4), records an encrypted tamper-evident log and honors a verifiable
 kill switch (5), presents a scannable passport anyone can check offline (6), keeps
 proving it is live and in-envelope with self-signed heartbeats (7), can have any
 one credential or its whole DID revoked (8), carries a tamper-evident safety
-record that travels with it (9), and signs the provenance of every sensor frame
-it captures (10). Every artifact is the same Verifiable Credential format, so one
-verifier and one trust model cover all ten.
+record that travels with it (9), signs the provenance of every sensor frame
+it captures (10), acts on a short-lived offline delegation lease that attenuates
+down a cross-vendor chain (11), and gates its highest-consequence actions behind
+a physical quorum (12). Every artifact is the same Verifiable Credential format,
+so one verifier and one trust model cover all twelve.
 
 ## Quick answers
 
@@ -463,10 +563,16 @@ verifier and one trust model cover all ten.
 - Can a robot prove what it actually perceived, and in what order, when it acted?
   Yes, perception provenance: a hash-linked log of signed frame records, with a
   frame holder able to recompute the hash and confirm it (10).
+- Can a robot act on delegated authority offline, with no network call? Yes, a
+  short-lived scope-bounded delegation lease it verifies and checks locally,
+  attenuating down a cross-vendor chain (11).
+- Can I require more than one approver before a high-consequence physical action?
+  Yes, a physical quorum: M of N attested approvers must each sign the same
+  action (12).
 
 ## Status
 
-All ten capabilities are implemented and tested in Python, TypeScript, Go, and
+All twelve capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the

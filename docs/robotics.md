@@ -206,6 +206,40 @@ att = build_perception_attestation(robot_signer, robot_did=robot, sensor_id="cam
                                    log_head=log.head())
 ```
 
-Sections 5.7 to 5.10 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.11 Offline delegation lease (`vouch.robotics.lease`)
+
+A short-lived, scope-bounded grant of authority a robot can verify and act on
+entirely offline, for places with no connectivity. An authority issues a
+`DelegationLeaseCredential` bounding the robot's physical capability scope
+(including zones) for a fixed window; the robot verifies the signature, that the
+window is current, and that a proposed action fits the scope, with no network
+call. Leases nest, each sub-grant only narrowing the one above, which forms the
+open cross-vendor chain.
+
+```python
+from vouch.robotics import build_delegation_lease, verify_delegation_lease, lease_permits
+
+lease = build_delegation_lease(authority_signer, robot_did=robot, lease_id="shift-42",
+                               scope={"maxForceN": 80.0, "allowedZones": ["cell-3"]},
+                               valid_seconds=3600)
+ok, subject = verify_delegation_lease(lease, authority_signer.public_key())   # offline
+```
+
+## 5.12 Physical quorum (`vouch.robotics.physical_quorum`)
+
+A cryptographic two-person rule: a high-consequence physical action is authorized
+only when at least M of an attested set of N approvers have each signed an
+approval over the same action. `verify_action_authorization` counts the distinct
+valid approvers, so one approver cannot reach the threshold by signing twice.
+
+```python
+from vouch.robotics import build_action_approval, verify_action_authorization
+
+approvals = [build_action_approval(a, action_id="weld-7", robot_did=robot) for a in approvers]
+authorized, who = verify_action_authorization(approvals, action_id="weld-7", robot_did=robot,
+                                              approver_keys=approver_keys, threshold=2)
+```
+
+Sections 5.7 to 5.12 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

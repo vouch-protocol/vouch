@@ -2331,6 +2331,51 @@ ok, subject = perception.verify_perception_attestation(att, robot_signer.public_
 Security boundary: \`verify_perception_attestation\` fails closed on a wrong type, an invalid proof, an unknown modality, or, when the frame is supplied, a hash that does not reproduce. \`verify_perception_log\` detects any altered or dropped frame in the chain. The open layer signs frame hashes in software, so it proves authorship and integrity of the recorded frame, not that the frame is a live hardware capture.
 `,
       },
+      {
+        id: 'robotics-lease',
+        title: 'Offline delegation lease',
+        summary: 'A short-lived, scope-bounded grant a disconnected robot verifies and acts on with no network call.',
+        body: `
+A \`DelegationLeaseCredential\` is a self-contained grant of authority a robot can verify and act on entirely offline, for places with no connectivity.
+
+The problem it closes: a robot in a warehouse aisle, a field, or a tunnel cannot call home to check whether it is still allowed to do something. A lease bounds what it may physically do for a fixed, short window, and it carries everything needed to verify that, so the robot needs no network.
+
+How it works: \`build_delegation_lease\` issues a lease bounding a physical capability scope (force, speed, near-humans, zones) with a validFrom and a short validUntil. \`verify_delegation_lease\` checks the signature, that the window is current, and, when a parent scope is supplied, that the lease attenuates it. Leases nest, each sub-grant only narrowing the one above, which forms the open cross-vendor chain.
+
+\`\`\`python
+from vouch.robotics import build_delegation_lease, verify_delegation_lease, lease_permits, PhysicalAction
+
+lease = build_delegation_lease(authority_signer, robot_did=robot_did, lease_id="shift-42",
+    scope={"maxForceN": 80.0, "allowedZones": ["cell-3"]}, valid_seconds=3600)
+ok, subject = verify_delegation_lease(lease, authority_signer.public_key())   # offline
+allowed = lease_permits(subject, PhysicalAction(force_n=10.0, zone="cell-3"), lease)
+\`\`\`
+
+Security boundary: verification is fully offline. An expired or not-yet-valid lease fails. A sub-lease that widens any dimension of its parent (more force, a new zone, a wider window) is rejected by the attenuation check, so authority can only narrow down a chain, never grow.
+`,
+      },
+      {
+        id: 'robotics-quorum',
+        title: 'Physical quorum',
+        summary: 'A cryptographic two-person rule: M of N attested approvers must sign off before a high-consequence action.',
+        body: `
+A physical quorum requires several independent approvals before a robot performs a high-consequence action, such as applying large force near a person or an irreversible move.
+
+The problem it closes: some actions are serious enough that no single authority should be able to order them alone. A quorum makes the two-person rule cryptographic rather than procedural.
+
+How it works: each approver signs a \`PhysicalActionApprovalCredential\` over the same action id and robot. \`verify_action_authorization\` counts the DISTINCT valid approvers from an attested approver set and authorizes the action only when at least the threshold number have approved.
+
+\`\`\`python
+from vouch.robotics import build_action_approval, verify_action_authorization
+
+approvals = [build_action_approval(a, action_id="weld-7", robot_did=robot_did) for a in approvers]
+authorized, who = verify_action_authorization(approvals, action_id="weld-7", robot_did=robot_did,
+    approver_keys=approver_public_keys, threshold=2)
+\`\`\`
+
+Security boundary: only distinct approvers from the attested set count, so one approver cannot reach the threshold by signing twice. Approvals for a different action or robot, from outside the approver set, with an invalid proof, out of date, or carrying a reject decision are all ignored.
+`,
+      },
     ],
   },
 ];

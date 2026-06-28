@@ -612,5 +612,36 @@ pub fn robotics_verify_perception(
         frame_mb.as_deref(),
     )?)
 }
+pub fn robotics_build_lease(
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_delegation_lease(&signer_seed, &params_json)?)
+}
+pub fn robotics_verify_lease(
+    credential_json: String,
+    public_key: Vec<u8>,
+    now_iso: Option<String>,
+    parent_scope_json: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_delegation_lease(
+        &credential_json,
+        &public_key,
+        now_iso.as_deref(),
+        parent_scope_json.as_deref(),
+    )?)
+}
+pub fn robotics_lease_permits(params_json: String) -> Result<bool, CoreError> {
+    Ok(rjson::lease_permits(&params_json)?)
+}
+pub fn robotics_build_action_approval(
+    approver_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_action_approval(&approver_seed, &params_json)?)
+}
+pub fn robotics_verify_action_authorization(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_action_authorization(&params_json)?)
+}
 
 uniffi::include_scaffolding!("vouch_core");

@@ -158,6 +158,20 @@ namespace vouch_core {
     string robotics_build_perception(bytes robot_seed, string params_json);
     [Throws=CoreError]
     string robotics_verify_perception(string credential_json, bytes public_key, string? frame_mb);
+
+    // Delegation lease (Phase 5.11).
+    [Throws=CoreError]
+    string robotics_build_lease(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_lease(string credential_json, bytes public_key, string? now_iso, string? parent_scope_json);
+    [Throws=CoreError]
+    boolean robotics_lease_permits(string params_json);
+
+    // Physical quorum (Phase 5.12).
+    [Throws=CoreError]
+    string robotics_build_action_approval(bytes approver_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_action_authorization(string params_json);
 };
 
 dictionary Ed25519KeyPair {

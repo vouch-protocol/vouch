@@ -233,7 +233,7 @@ Reference implementations under `vouch/integrations/`. See
 
 ### "How do I give a robot a verifiable identity, or enforce physical limits?"
 
-Vouch ships ten robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
+Vouch ships twelve robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
 and the Rust core that flows to Swift, Kotlin/JVM, .NET, C/C++, and WASM):
 hardware-rooted identity (`mint_robot_identity` / `verify_robot_identity`, bound
 to a TPM or secure element), model and config provenance
@@ -253,7 +253,13 @@ whole-DID `RevocationRegistry`), and an accountable safety record (`SafetyEventL
 ledger), and perception provenance (`hash_frame`, `PerceptionLog`,
 `verify_perception_log`, `build_perception_attestation` /
 `verify_perception_attestation`, a hash-linked log of signed sensor-frame records
-so a verifier holding a frame can confirm what the robot perceived). Same
+so a verifier holding a frame can confirm what the robot perceived), a delegation
+lease (`build_delegation_lease` / `verify_delegation_lease` / `lease_permits`, a
+short-lived scope-bounded grant a robot verifies and acts on entirely offline,
+attenuating down a cross-vendor chain), and a physical quorum
+(`build_action_approval` / `verify_action_authorization`, a cryptographic
+two-person rule that authorizes a high-consequence action only when M of N
+attested approvers have each signed it). Same
 Verifiable Credentials as the rest of Vouch, so they verify in every language. See
 `reference/robotics.md`.
 
@@ -267,7 +273,7 @@ Verifiable Credentials as the rest of Vouch, so they verify in every language. S
 - **User wants continuous trust** -> Heartbeat Protocol with validator quorum (Python only today).
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
 - **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
-- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), and perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived).
+- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived), a delegation lease (a short-lived scope-bounded grant a robot verifies and acts on entirely offline, attenuating down a cross-vendor chain), and a physical quorum (a cryptographic two-person rule authorizing a high-consequence action only when M of N attested approvers have each signed it).
 
 ## Reference files
 
@@ -283,7 +289,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
 - `reference/outcome-evidence.md` - Commit-before-outcome verdicts, settlement, track record
 - `reference/reputation-evidence.md` - Evidence-backed reputation: receipts, aggregation, ledger, policy, threshold proofs, disputes
-- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record, perception provenance
+- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record, perception provenance, delegation lease, physical quorum
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
 - `reference/troubleshooting.md` - Common errors and fixes

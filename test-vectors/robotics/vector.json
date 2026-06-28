@@ -1,6 +1,6 @@
 {
-  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
-  "version": "1.2",
+  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). It also includes Python-signed credentials other languages VERIFY rather than reproduce: a delegation lease and a set of physical-quorum approvals. Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
+  "version": "1.3",
   "robot_public_key_jwk": {
     "kty": "OKP",
     "crv": "Ed25519",
@@ -38,10 +38,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-24T03:18:58Z",
+      "created": "2026-06-28T08:54:13Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4MnB9VNJTto8J1JQB2kinFSA8r1EQ6mcn9KDLpvXzZrxXyC7wucVL7XUfwBNXoWfEdbR7CvNsYHU51YFAngkGYC2"
+      "proofValue": "z4NMuCzwZLiVhQoH9vymKr2xuqg4twdUYB6xmuUHFvd2gYtBJaDDCst3RKAQoiYqF8oNE8BFomEExhSGmKnJYmB5G"
     }
   },
   "config": {
@@ -142,5 +142,105 @@
       "entryHash": "uEzDzSib5gRep75mxX_YPm-B16VLCs5-jLh4J2oojntM"
     }
   ],
-  "expected_perception_log_head": "uEzDzSib5gRep75mxX_YPm-B16VLCs5-jLh4J2oojntM"
+  "expected_perception_log_head": "uEzDzSib5gRep75mxX_YPm-B16VLCs5-jLh4J2oojntM",
+  "delegation_lease_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "DelegationLeaseCredential"
+    ],
+    "issuer": "did:web:robot.example.com",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "validUntil": "2035-12-30T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:web:robot.example.com",
+      "leaseId": "lease-vector-1",
+      "physicalScope": {
+        "maxForceN": 80.0,
+        "maxSpeedMps": 1.5,
+        "maxSpeedNearHumansMps": 0.25,
+        "allowedZones": [
+          "cell-3"
+        ]
+      }
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-06-28T08:54:13Z",
+      "verificationMethod": "did:web:robot.example.com#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "zv7KVHTRqBDBthue8s1Cv2Nq7vA91E1fhgrtyzapAD7ij4m5kYiqvh8ePpU4Cir4GsDQtnaZFY1RXzHvf6B69LnQ"
+    }
+  },
+  "quorum_action_id": "vector-action-1",
+  "quorum_approvals": [
+    {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://vouch-protocol.com/contexts/v1"
+      ],
+      "type": [
+        "VerifiableCredential",
+        "PhysicalActionApprovalCredential"
+      ],
+      "issuer": "did:web:approver-1.example.com",
+      "validFrom": "2026-01-01T00:00:00Z",
+      "credentialSubject": {
+        "id": "did:web:approver-1.example.com",
+        "actionId": "vector-action-1",
+        "robotDid": "did:web:robot.example.com",
+        "decision": "approve"
+      },
+      "proof": {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "created": "2026-06-28T08:54:13Z",
+        "verificationMethod": "did:web:approver-1.example.com#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z5Lk1R4MTUDRzBdNeeefr4LSXZPh4UxatS11HprzwErLtw4bes4hdGWZ8XvVZd1uPiCbreRXsBTThvipc3QKEqsfR"
+      }
+    },
+    {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://vouch-protocol.com/contexts/v1"
+      ],
+      "type": [
+        "VerifiableCredential",
+        "PhysicalActionApprovalCredential"
+      ],
+      "issuer": "did:web:approver-2.example.com",
+      "validFrom": "2026-01-01T00:00:00Z",
+      "credentialSubject": {
+        "id": "did:web:approver-2.example.com",
+        "actionId": "vector-action-1",
+        "robotDid": "did:web:robot.example.com",
+        "decision": "approve"
+      },
+      "proof": {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "created": "2026-06-28T08:54:13Z",
+        "verificationMethod": "did:web:approver-2.example.com#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z3AAsqoEJdhkkvjgxtGj4Hh4PMY4P97oGW173xmCBWcwtBuiLozDW7LBGRAfp77unXyHqn5TJ9UZSLLNEE9PvdPD1"
+      }
+    }
+  ],
+  "quorum_approver_keys": {
+    "did:web:approver-1.example.com": {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "x": "iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w"
+    },
+    "did:web:approver-2.example.com": {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "x": "gTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5Q"
+    }
+  }
 }

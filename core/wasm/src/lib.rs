@@ -643,3 +643,41 @@ pub fn robotics_verify_perception(
     rjson::verify_perception_attestation(credential_json, &b64d(public_b64)?, frame_b64.as_deref())
         .map_err(jerr)
 }
+
+// Delegation lease (Phase 5.11).
+#[wasm_bindgen(js_name = roboticsBuildLease)]
+pub fn robotics_build_lease(signer_seed_b64: &str, params_json: &str) -> Result<String, JsError> {
+    rjson::build_delegation_lease(&b64d(signer_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyLease)]
+pub fn robotics_verify_lease(
+    credential_json: &str,
+    public_b64: &str,
+    now_iso: Option<String>,
+    parent_scope_json: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_delegation_lease(
+        credential_json,
+        &b64d(public_b64)?,
+        now_iso.as_deref(),
+        parent_scope_json.as_deref(),
+    )
+    .map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsLeasePermits)]
+pub fn robotics_lease_permits(params_json: &str) -> Result<bool, JsError> {
+    rjson::lease_permits(params_json).map_err(jerr)
+}
+
+// Physical quorum (Phase 5.12).
+#[wasm_bindgen(js_name = roboticsBuildActionApproval)]
+pub fn robotics_build_action_approval(
+    approver_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_action_approval(&b64d(approver_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyActionAuthorization)]
+pub fn robotics_verify_action_authorization(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_action_authorization(params_json).map_err(jerr)
+}
