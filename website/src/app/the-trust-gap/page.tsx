@@ -60,7 +60,13 @@ export default function TrustGapPage() {
                     <img
                         src="/assets/trust-handoff.svg"
                         alt="A human delegates to an AI agent that carries a verifiable identity, and the agent acts on an MCP server. Each handoff is signed."
-                        className="w-full h-auto max-w-[940px] mx-auto"
+                        className="hidden md:block w-full h-auto max-w-[940px] mx-auto"
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/assets/trust-handoff-mobile.svg"
+                        alt="A human delegates to an AI agent that carries a verifiable identity, and the agent acts on an MCP server. Each handoff is signed."
+                        className="block md:hidden w-full h-auto max-w-[340px] mx-auto"
                     />
                 </div>
             </section>
@@ -73,7 +79,13 @@ export default function TrustGapPage() {
                     <img
                         src="/assets/how-vouch-works.svg"
                         alt="How Vouch works: give the agent a verifiable ID, the human sets the rules, every action is signed, and anyone can check it. Tampering and fakes are rejected."
-                        className="w-full h-auto max-w-[940px] mx-auto"
+                        className="hidden md:block w-full h-auto max-w-[940px] mx-auto"
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/assets/how-vouch-works-mobile.svg"
+                        alt="How Vouch works: give the agent a verifiable ID, the human sets the rules, every action is signed, and anyone can check it. Tampering and fakes are rejected."
+                        className="block md:hidden w-full h-auto max-w-[360px] mx-auto"
                     />
                 </div>
             </section>
