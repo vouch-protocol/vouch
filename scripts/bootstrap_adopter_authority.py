@@ -1,26 +1,24 @@
 #!/usr/bin/env python3
 """Bootstrap the Vouch Adopter Authority: a delegated signing key for adopters.
 
-This mirrors the Contributor Authority. It creates a delegated key whose only
-job is to sign "Vouch Verified Integration" certificates for systems that
-build on the protocol, so the root key is never used for routine issuance.
+This mirrors the Conformance and Contributor authorities. It creates a delegated
+key whose only job is to sign "Vouch Verified Integration" certificates for
+systems that build on the protocol, so the root key is never used for routine
+issuance.
 
-Run this ONCE, on the machine that holds the root private key. It:
+It is run once by the bootstrap-adopter-authority workflow, which supplies the
+root key from the VOUCH_PRIVATE_KEY repository secret, so the root key never
+leaves CI. It can also be run locally if you prefer. It:
   1. Generates a fresh Ed25519 keypair for did:web:vouch-protocol.com:adopters.
   2. Writes the public DID document to website/public/adopters/did.json.
   3. Signs a root -> adopter-authority delegation to adopters/delegation.json,
      using the root key supplied in the environment.
   4. Writes the adopter authority PRIVATE key to adopter-authority-key.json
-     (gitignored) for you to load into the ADOPTER_PRIVATE_KEY GitHub secret.
+     (gitignored) for storage in the VOUCH_ADOPTER_PRIVATE_KEY secret.
 
 The root key is read from the environment and never written anywhere:
   VOUCH_ROOT_PRIVATE_KEY  Ed25519 private key JWK (JSON string) for the root DID
   VOUCH_ROOT_DID          Root issuer DID (default did:web:vouch-protocol.com)
-
-Example:
-  export VOUCH_ROOT_DID='did:web:vouch-protocol.com'
-  export VOUCH_ROOT_PRIVATE_KEY='{"kty":"OKP","crv":"Ed25519",...}'
-  python scripts/bootstrap_adopter_authority.py
 """
 
 from __future__ import annotations
@@ -89,7 +87,7 @@ def sign_delegation(root_private_key: str, root_did: str) -> dict:
 
 def main() -> int:
     root_private_key = os.getenv("VOUCH_ROOT_PRIVATE_KEY")
-    root_did = os.getenv("VOUCH_ROOT_DID", "did:web:vouch-protocol.com")
+    root_did = os.getenv("VOUCH_ROOT_DID") or "did:web:vouch-protocol.com"
     if not root_private_key:
         print(
             "VOUCH_ROOT_PRIVATE_KEY (and optionally VOUCH_ROOT_DID) must be set "
@@ -147,9 +145,9 @@ def main() -> int:
     print()
     print("Next steps:")
     print(f"  1. Commit {DID_DOC_PATH} and {DELEGATION_PATH}.")
-    print("  2. Add two GitHub Actions secrets:")
-    print(f"       ADOPTER_DID          = {ADOPTER_DID}")
-    print(f"       ADOPTER_PRIVATE_KEY  = contents of {PRIVATE_KEY_PATH}")
+    print("  2. Store two repository secrets:")
+    print(f"       VOUCH_ADOPTER_DID          = {ADOPTER_DID}")
+    print(f"       VOUCH_ADOPTER_PRIVATE_KEY  = contents of {PRIVATE_KEY_PATH}")
     print(f"  3. Delete {PRIVATE_KEY_PATH} once the secret is stored.")
     print("  4. Run the 'Issue adopter certificate' workflow for each adopter.")
     return 0

@@ -56,8 +56,8 @@ jobs:
 
       - name: Mint credential
         env:
-          ADOPTER_PRIVATE_KEY: ${{ secrets.ADOPTER_PRIVATE_KEY }}
-          ADOPTER_DID: ${{ secrets.ADOPTER_DID }}
+          VOUCH_ADOPTER_PRIVATE_KEY: ${{ secrets.VOUCH_ADOPTER_PRIVATE_KEY }}
+          VOUCH_ADOPTER_DID: ${{ secrets.VOUCH_ADOPTER_DID }}
           SLUG: ${{ inputs.slug }}
           NAME: ${{ inputs.name }}
           BY: ${{ inputs.by }}
@@ -65,9 +65,9 @@ jobs:
           LIVE_SURFACE: ${{ inputs.live_surface }}
           DISCUSSION: ${{ inputs.discussion }}
         run: |
-          if [ -z "$ADOPTER_PRIVATE_KEY" ] || [ -z "$ADOPTER_DID" ]; then
-            echo "::error::Adopter issuer key not configured (ADOPTER_PRIVATE_KEY / ADOPTER_DID)."
-            echo "::error::Run scripts/bootstrap_adopter_authority.py first, then add the secrets."
+          if [ -z "$VOUCH_ADOPTER_PRIVATE_KEY" ] || [ -z "$VOUCH_ADOPTER_DID" ]; then
+            echo "::error::Adopter issuer key not configured (VOUCH_ADOPTER_PRIVATE_KEY / VOUCH_ADOPTER_DID)."
+            echo "::error::Run the 'Bootstrap adopter authority' workflow first."
             exit 1
           fi
           PARENT=""

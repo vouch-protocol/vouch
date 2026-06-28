@@ -7,12 +7,12 @@ a part of Vouch Protocol against the published schema. The credential traces
 back to the root authority through the attached delegation.
 
 The issuer key is read from the environment:
-  ADOPTER_PRIVATE_KEY  Ed25519 private key JWK (JSON string)
-  ADOPTER_DID          Issuer DID, e.g. did:web:vouch-protocol.com:adopters
+  VOUCH_ADOPTER_PRIVATE_KEY  Ed25519 private key JWK (JSON string)
+  VOUCH_ADOPTER_DID          Issuer DID, e.g. did:web:vouch-protocol.com:adopters
 
 Example:
-  export ADOPTER_DID='did:web:vouch-protocol.com:adopters'
-  export ADOPTER_PRIVATE_KEY='{"kty":"OKP","crv":"Ed25519",...}'
+  export VOUCH_ADOPTER_DID='did:web:vouch-protocol.com:adopters'
+  export VOUCH_ADOPTER_PRIVATE_KEY='{"kty":"OKP","crv":"Ed25519",...}'
   python scripts/mint_adopter_credential.py \\
       --slug invinoveritas --name invinoveritas --by babyblueviper1 \\
       --focus "Outcome Evidence and the AccountabilityRecord" \\
@@ -88,11 +88,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    private_key = os.getenv("ADOPTER_PRIVATE_KEY")
-    did = os.getenv("ADOPTER_DID")
+    private_key = os.getenv("VOUCH_ADOPTER_PRIVATE_KEY")
+    did = os.getenv("VOUCH_ADOPTER_DID")
     if not private_key or not did:
         print(
-            "ADOPTER_PRIVATE_KEY and ADOPTER_DID must be set to mint a credential.",
+            "VOUCH_ADOPTER_PRIVATE_KEY and VOUCH_ADOPTER_DID must be set to mint a credential.",
             file=sys.stderr,
         )
         return 1
