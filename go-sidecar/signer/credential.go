@@ -11,6 +11,7 @@ package signer
 import (
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -96,10 +97,13 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 		return nil, err
 	}
 
-	proof, err := BuildDataIntegrityProof(cred, BuildProofOptions{
-		PrivateKey:         s.ed25519Private,
-		VerificationMethod: s.VerificationMethodID(),
-	})
+	proofOpts := BuildProofOptions{VerificationMethod: s.VerificationMethodID()}
+	if s.signFunc != nil {
+		proofOpts.Sign = s.signFunc
+	} else {
+		proofOpts.PrivateKey = s.ed25519Private
+	}
+	proof, err := BuildDataIntegrityProof(cred, proofOpts)
 	if err != nil {
 		return nil, fmt.Errorf("build proof: %w", err)
 	}
@@ -184,6 +188,12 @@ func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) 
 // eddsa-jcs-2022 default. Implementations using this profile SHOULD
 // transmit credentials in the HTTP request body (§5.6).
 func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]any, error) {
+	if s.signFunc != nil {
+		// The hybrid profile needs both an Ed25519 and an ML-DSA-44 signature.
+		// A backend Signer only exposes the Ed25519 callback, so this path is
+		// not available there.
+		return nil, errors.New("vouch: SignCredentialHybrid is not supported for a backend Signer")
+	}
 	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain
 	if opts.ParentCredential != nil {
