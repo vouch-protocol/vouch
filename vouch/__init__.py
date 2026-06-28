@@ -198,6 +198,7 @@ def __getattr__(name):
         "verify_attestation",
         "accountability_pointer",
         "commitment_digest",
+        "timestamp_anchor",
         "OUTCOME_COMMITMENT_TYPE",
         "OUTCOME_ATTESTATION_TYPE",
     ):
@@ -357,6 +358,7 @@ __all__ = [
     "verify_attestation",
     "accountability_pointer",
     "commitment_digest",
+    "timestamp_anchor",
     "OUTCOME_COMMITMENT_TYPE",
     "OUTCOME_ATTESTATION_TYPE",
     # Reputation receipts and aggregation

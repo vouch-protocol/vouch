@@ -121,6 +121,39 @@ def _type_list(credential: Dict[str, Any]) -> list:
 # ---------------------------------------------------------------------------
 
 
+def timestamp_anchor(
+    method: str, reference: str, recompute_cmd: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Build a third-party timestamp anchor for a commitment.
+
+    `method` names the external timestamping service (for example
+    ``opentimestamps``, ``rfc3161-tsa``, ``transparency-log``, or an on-chain
+    method), `reference` is the proof or locator at that service, and
+    `recompute_cmd` is the literal command a verifier runs to check it. The anchor
+    lets a consumer confirm a commitment existed before its outcome without
+    trusting the committer's own clock.
+    """
+    if not method or not reference:
+        raise AccountabilityError("an anchor needs a method and a reference")
+    entry: Dict[str, Any] = {"method": method, "reference": reference}
+    if recompute_cmd is not None:
+        entry["recomputeCmd"] = recompute_cmd
+    return entry
+
+
+def _normalize_anchor(anchor: Any) -> Optional[list]:
+    if anchor is None:
+        return None
+    items = anchor if isinstance(anchor, list) else [anchor]
+    out = []
+    for a in items:
+        if not isinstance(a, dict) or not a.get("method") or not a.get("reference"):
+            raise AccountabilityError("each anchor needs a method and a reference")
+        out.append(dict(a))
+    return out
+
+
 def commit_outcome(
     signer: Any,
     *,
@@ -130,6 +163,7 @@ def commit_outcome(
     claim_type: str = "prediction",
     private: bool = False,
     salt: Optional[bytes] = None,
+    anchor: Any = None,
     valid_from: Optional[datetime] = None,
     credential_id: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -157,6 +191,11 @@ def commit_outcome(
         private: If True, withhold the cleartext claim and publish only the digest.
         salt: Optional explicit salt. A random 32-byte salt is generated when the
             commitment is private and no salt is supplied.
+        anchor: Optional third-party timestamp anchor (one entry or a list of
+            tiers), each ``{"method", "reference", "recomputeCmd"?}``. Built with
+            :func:`timestamp_anchor`. It makes the pre-outcome timing checkable
+            without trusting the committer's own clock; absent it, the timing is
+            self-asserted by the signed ``validFrom``.
         valid_from: Commitment time (defaults to now, UTC).
         credential_id: Optional credential id (defaults to a ``urn:uuid``).
 
@@ -176,18 +215,23 @@ def commit_outcome(
     if salt is None and private:
         salt = secrets.token_bytes(32)
     digest = commitment_digest(claim, salt)
+    normalized_anchor = _normalize_anchor(anchor)
 
     issuer = signer.get_did()
     issued = (valid_from or datetime.now(timezone.utc)).astimezone(timezone.utc)
 
+    commitment_block: Dict[str, Any] = {
+        "algorithm": COMMITMENT_ALGORITHM,
+        "digest": _mb64(digest),
+        "salted": salt is not None,
+    }
+    if normalized_anchor is not None:
+        commitment_block["anchor"] = normalized_anchor
+
     subject_block: Dict[str, Any] = {
         "id": subject or issuer,
         "claimType": claim_type,
-        "commitment": {
-            "algorithm": COMMITMENT_ALGORITHM,
-            "digest": _mb64(digest),
-            "salted": salt is not None,
-        },
+        "commitment": commitment_block,
         "settlement": dict(settlement),
     }
     if not private:
@@ -263,6 +307,8 @@ def attest_outcome(
     claim: Optional[Dict[str, Any]] = None,
     salt: Optional[bytes] = None,
     matches: Optional[bool] = None,
+    settlement_venue: Optional[str] = None,
+    settlement_ref: Optional[str] = None,
     valid_from: Optional[datetime] = None,
     credential_id: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -287,6 +333,9 @@ def attest_outcome(
         salt: The raw salt bytes, if not supplied via ``secret``.
         matches: Optional explicit verdict on whether the claim proved correct;
             recorded as ``outcome.matchesCommitment``.
+        settlement_venue: Optional name of the venue where the outcome is recorded
+            and the issuer cannot edit it (a chain, a notary, a public feed).
+        settlement_ref: Optional locator of the settlement at that venue.
         valid_from: Settlement time (defaults to now, UTC).
         credential_id: Optional credential id (defaults to a ``urn:uuid``).
 
@@ -340,6 +389,13 @@ def attest_outcome(
         "reveal": reveal,
         "outcome": outcome_block,
     }
+    if settlement_venue is not None or settlement_ref is not None:
+        settlement: Dict[str, Any] = {}
+        if settlement_venue is not None:
+            settlement["venue"] = settlement_venue
+        if settlement_ref is not None:
+            settlement["reference"] = settlement_ref
+        subject_block["settlement"] = settlement
 
     credential: Dict[str, Any] = {
         "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
@@ -429,6 +485,11 @@ def accountability_pointer(
     record: Optional[str] = None,
     subject: Optional[str] = None,
     digest: Optional[str] = None,
+    verifier_key: Optional[str] = None,
+    record_pointer: Optional[str] = None,
+    verify_endpoint: Optional[str] = None,
+    reputation_model: Optional[str] = None,
+    publishes_losses: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
     Build a vendor-neutral ``AccountabilityRecord`` pointer that another credential
@@ -439,9 +500,23 @@ def accountability_pointer(
         record: Optional anchor or id of the specific record within the ledger.
         subject: Optional DID the record is about.
         digest: Optional commitment digest the pointer references.
+        verifier_key: Optional published key every entry is signed against, so a
+            consumer verifies against it rather than trusting the presenter.
+        record_pointer: Optional resolvable feed plus per-entry path.
+        verify_endpoint: Optional free, no-auth recompute endpoint, a convenience
+            on top of self-recompute, not a trust root.
+        reputation_model: Optional ``recomputable`` (a consumer derives standing
+            from public inputs) or ``asserted-score`` (a stored number to trust).
+        publishes_losses: Optional flag asserting the feed publishes losses, not
+            only wins.
     """
     if not ledger:
         raise AccountabilityError("ledger is required")
+    if reputation_model is not None and reputation_model not in (
+        "recomputable",
+        "asserted-score",
+    ):
+        raise AccountabilityError("reputationModel must be 'recomputable' or 'asserted-score'")
     pointer: Dict[str, Any] = {"type": ACCOUNTABILITY_RECORD_TYPE, "ledger": ledger}
     if record is not None:
         pointer["record"] = record
@@ -449,6 +524,16 @@ def accountability_pointer(
         pointer["subject"] = subject
     if digest is not None:
         pointer["digest"] = digest
+    if verifier_key is not None:
+        pointer["verifierKey"] = verifier_key
+    if record_pointer is not None:
+        pointer["recordPointer"] = record_pointer
+    if verify_endpoint is not None:
+        pointer["verifyEndpoint"] = verify_endpoint
+    if reputation_model is not None:
+        pointer["reputationModel"] = reputation_model
+    if publishes_losses is not None:
+        pointer["publishesLosses"] = bool(publishes_losses)
     return pointer
 
 
@@ -459,6 +544,7 @@ __all__ = [
     "COMMITMENT_ALGORITHM",
     "AccountabilityError",
     "commitment_digest",
+    "timestamp_anchor",
     "commit_outcome",
     "verify_commitment",
     "attest_outcome",
