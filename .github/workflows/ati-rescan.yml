@@ -64,7 +64,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         if: steps.diff.outputs.changed == 'true'
         with:
           node-version: "22"
