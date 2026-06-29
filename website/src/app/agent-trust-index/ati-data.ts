@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 14063,
-  "verifiable": 176,
-  "cannot": 13887,
-  "gradeA": 76,
+  "total": 14155,
+  "verifiable": 177,
+  "cannot": 13978,
+  "gradeA": 77,
   "pctVerifiable": 1.3,
   "pctCannot": 98.7,
-  "pctCard": 0.9,
+  "pctCard": 0.8,
   "pctRev": 0.6,
   "pctPq": 0.0,
-  "cardCount": 121,
-  "revCount": 80,
+  "cardCount": 119,
+  "revCount": 79,
   "pqCount": 0,
-  "generated": "28 June 2026"
+  "generated": "29 June 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -91,6 +91,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "frog03-20494.wykr.es",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:frog03-20494.wykr.es"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.MarkovianProtocol/provenance",
+    "domains": "api.quantsynth.net",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.quantsynth.net"
   },
   {
     "grade": "A",
