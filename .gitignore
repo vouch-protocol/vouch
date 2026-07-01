@@ -136,3 +136,6 @@ docs/preview-green.html
 
 # Wave 1 diagrams (work in progress, kept local until ready)
 docs/diagrams/
+
+# Private strategy doc (keep out of the public repo)
+docs/execution/udna-interop-and-amir-engagement.md

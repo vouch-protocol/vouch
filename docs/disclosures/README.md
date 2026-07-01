@@ -79,6 +79,24 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-069](./PAD-069-confidential-tamper-evident-robot-blackbox.md) | Confidential, Tamper-Evident Robot Black-Box with Separable Confidentiality and Integrity | 2026-06-15 | Published |
 | [PAD-070](./PAD-070-scannable-offline-robot-passport.md) | Self-Contained, Offline-Verifiable Robot Passport for Physical-World Scanning | 2026-06-15 | Published |
 | [PAD-071](./PAD-071-outcome-evidence-commit-before-outcome-credential.md) | Commit-Before-Outcome Verdict Credential with Neutral-Settler Outcome Attestation | 2026-06-17 | Published |
+| [PAD-072](./PAD-072-trust-preserving-transport-failover.md) | Trust-Preserving Multi-Transport Failover for Liability-Bearing Credential Envelopes | 2026-06-30 | Published |
+| [PAD-073](./PAD-073-untrusted-resolver-identity-routing.md) | Untrusted-Resolver Identity Routing via Self-Signed Route Records with Anti-Substitution Binding | 2026-06-30 | Published |
+
+
+## June 30, 2026: Identity-First Transport Primitives (PAD-072, PAD-073)
+
+Two disclosures covering the `vouch.transport` identity-first routing layer.
+PAD-072 is a trust-preserving multi-transport
+failover discipline: a self-protecting envelope carrying a credential, liability
+attestations, and provenance is handed byte-for-byte to whichever transport
+succeeds, with an integrity-versus-availability error taxonomy that forbids
+re-routing a corrupted payload, so the trust posture is invariant under failover.
+PAD-073 is an untrusted-resolver routing model: an agent self-signs a record
+binding its DID to a current endpoint, and the requesting party re-verifies the
+record and confirms its subject equals the queried DID, so resolving
+infrastructure can neither forge a route nor substitute another identity's record.
+Both build on, and explicitly do not claim, UDNA's DID-as-routing-primitive,
+fingerprint scheme, and facet model.
 
 
 ## June 17, 2026: Commit-Before-Outcome Verdict Evidence (PAD-071)
