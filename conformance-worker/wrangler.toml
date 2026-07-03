@@ -1,0 +1,20 @@
+name = "vouch-conformance"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Served on the conformance subdomain the website wizard and the Action call.
+routes = [
+  { pattern = "conformance.vouch-protocol.com", custom_domain = true }
+]
+
+# KV for short-lived sessions and issued results. Create the namespace and paste
+# its id here (see README).
+[[kv_namespaces]]
+binding = "CONFORMANCE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Public issuer identity (not secret). The Ed25519 seed is set separately as a
+# secret: `wrangler secret put ISSUER_SEED_B64`.
+[vars]
+ISSUER_DID = "did:web:vouch-protocol.com:conformance"
+ISSUER_VM = "did:web:vouch-protocol.com:conformance#key-1"
