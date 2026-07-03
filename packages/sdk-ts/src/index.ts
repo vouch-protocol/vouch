@@ -277,6 +277,25 @@ export type {
   VerifyDecommissionOptions,
 } from './robotics/lifecycle';
 
+// Regulatory conformance profiles, deterministic checker, and signed
+// point-in-time attestation, byte-identical with the Python module.
+export {
+  CONFORMANCE_ATTESTATION_TYPE,
+  PROFILES,
+  profile,
+  checkConformance,
+  reportDigest,
+  buildConformanceAttestation,
+  verifyConformanceAttestation,
+} from './robotics/conformance';
+export type {
+  Requirement,
+  Profile,
+  RequirementResult,
+  ConformanceReport,
+  BuildConformanceAttestationOptions,
+} from './robotics/conformance';
+
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
   StatusList,
