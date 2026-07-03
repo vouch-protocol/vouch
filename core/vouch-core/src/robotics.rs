@@ -21,7 +21,8 @@ use serde_json::{json, Map, Value};
 use crate::data_integrity::{self, BuildProofOptions};
 use crate::error::{CoreError, Result};
 use crate::keys;
-use crate::{jcs, multikey};
+use crate::pq::{MlDsa44KeyPair, MLDSA44_PUBLIC_LEN};
+use crate::{hybrid, jcs, multikey};
 
 use aes_gcm::aead::Aead;
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
@@ -3087,6 +3088,155 @@ pub fn verify_conformance_attestation(
     Ok(Some(Value::Object(subject.clone())))
 }
 
+// ---------------------------------------------------------------------------
+// Post-quantum robot credentials (Phase 5.13)
+// ---------------------------------------------------------------------------
+//
+// A robot fielded today lives for ten to twenty years, longer than classical
+// Ed25519 is expected to stay safe, so a robot identity signed now could be
+// forged once a quantum computer arrives. This section makes the hybrid
+// post-quantum cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`, a classical
+// Ed25519 signature alongside an ML-DSA-44 signature) available for robot
+// credentials so they stay unforgeable across the robot's whole service life.
+//
+//   - sign_pq: attach a hybrid proof to a robot credential.
+//   - verify_robot_credential: verify a robot credential whether it carries a
+//     classical or a hybrid proof, auto-detected from the proof, so a fleet can
+//     move to PQ gradually without breaking the classical credentials already in
+//     the field.
+//   - migrate_to_pq: re-sign a fielded robot's classical credential under PQ.
+//
+// This is the open layer: hybrid signing, backward-compatible verification, and
+// a software re-signing migration path. It reuses the existing hybrid composite
+// path ([`crate::hybrid`]) and the ML-DSA-44 and multikey helpers rather than
+// re-deriving any cryptography.
+
+/// The classical (Ed25519-only) robot credential cryptosuite.
+pub const CLASSICAL_CRYPTOSUITE: &str = data_integrity::CRYPTOSUITE_ID;
+/// The hybrid post-quantum robot credential cryptosuite.
+pub const HYBRID_CRYPTOSUITE: &str = hybrid::HYBRID_COMPOSITE_CRYPTOSUITE_ID;
+
+/// Coerce an ML-DSA-44 public key supplied either as raw 1312-byte bytes or as a
+/// Multikey string into raw bytes. Errors on the wrong length or a non-ML-DSA
+/// multikey.
+pub fn coerce_mldsa44_public(mldsa44_public: &[u8]) -> Result<Vec<u8>> {
+    if mldsa44_public.len() != MLDSA44_PUBLIC_LEN {
+        return Err(CoreError::InvalidKeyLength {
+            expected: MLDSA44_PUBLIC_LEN,
+            got: mldsa44_public.len(),
+        });
+    }
+    Ok(mldsa44_public.to_vec())
+}
+
+/// Coerce an ML-DSA-44 Multikey string into raw public-key bytes. Errors if the
+/// multikey does not carry an ML-DSA-44 key.
+pub fn mldsa44_public_from_multikey(multikey_str: &str) -> Result<Vec<u8>> {
+    let decoded = multikey::decode(multikey_str)?;
+    if decoded.algorithm != "ML-DSA-44" {
+        return Err(CoreError::InvalidMultikey(format!(
+            "expected an ML-DSA-44 multikey, got {}",
+            decoded.algorithm
+        )));
+    }
+    coerce_mldsa44_public(&decoded.raw_key)
+}
+
+fn pq_verification_method(credential: &Value) -> String {
+    let issuer = credential
+        .as_object()
+        .and_then(|o| o.get("issuer"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    format!("{issuer}#key-1")
+}
+
+/// Attach a hybrid (classical Ed25519 plus post-quantum ML-DSA-44) Data Integrity
+/// proof to a pre-built robot `credential`. Any existing proof is replaced. The
+/// robot signs with its Ed25519 seed and its ML-DSA-44 key pair; `created` is the
+/// caller-supplied ISO-8601 instant, keeping the core deterministic.
+pub fn sign_pq(
+    credential: &Value,
+    ed25519_seed: &[u8],
+    mldsa: &MlDsa44KeyPair,
+    created: &str,
+) -> Result<Value> {
+    let vm = pq_verification_method(credential);
+    hybrid::sign_composite(credential, ed25519_seed, mldsa, &vm, created)
+}
+
+/// Return true if `credential` carries a hybrid post-quantum proof.
+pub fn is_pq(credential: &Value) -> bool {
+    credential
+        .as_object()
+        .and_then(|o| o.get("proof"))
+        .and_then(|p| p.as_object())
+        .and_then(|p| p.get("cryptosuite"))
+        .and_then(|v| v.as_str())
+        == Some(HYBRID_CRYPTOSUITE)
+}
+
+/// Verify a hybrid robot credential. Both the Ed25519 and the ML-DSA-44 signature
+/// MUST validate. `mldsa44_public_key` is raw 1312-byte bytes or an ML-DSA-44
+/// Multikey string (pass `mldsa44_multikey` for the string form).
+pub fn verify_pq(
+    credential: &Value,
+    ed25519_public_key: &[u8],
+    mldsa44_public_key: &[u8],
+) -> Result<bool> {
+    let resolved_ml = coerce_mldsa44_public(mldsa44_public_key)?;
+    hybrid::verify_composite(credential, ed25519_public_key, &resolved_ml)
+}
+
+/// Verify a robot credential whether it carries a classical or a hybrid proof,
+/// auto-detected from the proof cryptosuite. A hybrid credential REQUIRES
+/// `mldsa44_public_key` (returns Ok(false) if absent); a classical credential
+/// ignores it and is verified under `eddsa-jcs-2022`. This is the
+/// backward-compatible verify a fleet uses while migrating to PQ.
+///
+/// `mldsa44_public_key` accepts raw 1312-byte bytes or an ML-DSA-44 Multikey
+/// string, matched by length: a 1312-byte input is treated as raw, anything else
+/// is parsed as a UTF-8 Multikey string.
+pub fn verify_robot_credential(
+    credential: &Value,
+    ed25519_public_key: &[u8],
+    mldsa44_public_key: Option<&[u8]>,
+) -> Result<bool> {
+    if is_pq(credential) {
+        let ml = match mldsa44_public_key {
+            Some(k) => k,
+            None => return Ok(false),
+        };
+        let resolved_ml = resolve_mldsa44_public(ml)?;
+        return hybrid::verify_composite(credential, ed25519_public_key, &resolved_ml);
+    }
+    data_integrity::verify_proof(credential, ed25519_public_key)
+}
+
+/// Resolve an ML-DSA-44 public key given either raw bytes or a Multikey string.
+/// A 1312-byte input is the raw key; otherwise it is parsed as a UTF-8 Multikey.
+pub fn resolve_mldsa44_public(mldsa44_public_key: &[u8]) -> Result<Vec<u8>> {
+    if mldsa44_public_key.len() == MLDSA44_PUBLIC_LEN {
+        return Ok(mldsa44_public_key.to_vec());
+    }
+    let s = std::str::from_utf8(mldsa44_public_key).map_err(|_| {
+        CoreError::InvalidMultikey("ML-DSA-44 key must be raw bytes or a Multikey string".into())
+    })?;
+    mldsa44_public_from_multikey(s)
+}
+
+/// Re-sign a fielded robot's classical `credential` under the hybrid PQ
+/// cryptosuite, preserving its body. The robot holds its current Ed25519 seed and
+/// an ML-DSA-44 key pair; `created` is the caller-supplied re-signing instant.
+pub fn migrate_to_pq(
+    credential: &Value,
+    ed25519_seed: &[u8],
+    mldsa: &MlDsa44KeyPair,
+    created: &str,
+) -> Result<Value> {
+    sign_pq(credential, ed25519_seed, mldsa, created)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4846,5 +4996,129 @@ mod tests {
             },
         )
         .is_err());
+    }
+
+    // -- post-quantum robot credentials ------------------------------------
+
+    fn classical_robot_credential(issuer: &str, seed: &[u8]) -> Value {
+        let cred = json!({
+            "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
+            "type": ["VerifiableCredential", ROBOT_IDENTITY_TYPE],
+            "issuer": issuer,
+            "validFrom": "2026-01-01T00:00:00Z",
+            "credentialSubject": {
+                "id": issuer,
+                "make": "Acme Robotics",
+                "model": "AR-7",
+                "serial": "SN-000123"
+            }
+        });
+        let opts = BuildProofOptions::new(format!("{issuer}#key-1"), "2026-01-01T00:00:00Z");
+        data_integrity::sign(&cred, seed, &opts).unwrap()
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed hybrid PQ robot
+    // identity under the Ed25519 key and the ML-DSA-44 multikey from the vector.
+    #[test]
+    fn verifies_python_pq_robot_identity_interop_vector() {
+        let vector = load_vector();
+        let ed_pub = jwk_pub(&vector["robot_public_key_jwk"]);
+        let ml_multikey = vector["robot_mldsa44_public_multikey"].as_str().unwrap();
+        let cred = vector["pq_robot_identity_credential"].clone();
+
+        // (b) the credential is detected as post-quantum.
+        assert!(is_pq(&cred));
+
+        // (a) dual verify auto-detected from the proof, with the ML-DSA multikey.
+        let ok = verify_robot_credential(&cred, &ed_pub, Some(ml_multikey.as_bytes()))
+            .expect("the Python hybrid PQ interop vector must verify in Rust");
+        assert!(ok);
+
+        // verify_pq accepts the multikey string form directly.
+        let resolved = mldsa44_public_from_multikey(ml_multikey).unwrap();
+        assert!(verify_pq(&cred, &ed_pub, &resolved).unwrap());
+    }
+
+    #[test]
+    fn pq_sign_verify_roundtrip_and_rejects() {
+        let issuer = "did:web:robot.example.com";
+        let seed = [21u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let ml = MlDsa44KeyPair::generate().unwrap();
+
+        let classical = classical_robot_credential(issuer, &seed);
+        assert!(!is_pq(&classical));
+
+        // Sign hybrid; any prior proof is replaced by exactly one hybrid proof.
+        let signed = sign_pq(&classical, &seed, &ml, "2026-02-01T00:00:00Z").unwrap();
+        assert!(is_pq(&signed));
+        assert!(signed["proof"].is_object());
+        assert_eq!(signed["proof"]["cryptosuite"], json!(HYBRID_CRYPTOSUITE));
+
+        // Round-trip: both signatures validate under the correct keys.
+        assert!(verify_pq(&signed, &kp.public_key(), &ml.public_key()).unwrap());
+        assert!(
+            verify_robot_credential(&signed, &kp.public_key(), Some(&ml.public_key())).unwrap()
+        );
+
+        // The multikey string form is accepted too (as UTF-8 bytes).
+        let ml_mk = multikey::encode_mldsa44_public(&ml.public_key()).unwrap();
+        assert!(
+            verify_robot_credential(&signed, &kp.public_key(), Some(ml_mk.as_bytes())).unwrap()
+        );
+
+        // Tampering the body breaks verification.
+        let mut tampered = signed.clone();
+        tampered["credentialSubject"]["model"] = json!("AR-9");
+        assert!(!verify_pq(&tampered, &kp.public_key(), &ml.public_key()).unwrap());
+
+        // Wrong Ed25519 key is rejected.
+        let other_ed = Ed25519KeyPair::from_seed(&[99u8; 32]);
+        assert!(!verify_pq(&signed, &other_ed.public_key(), &ml.public_key()).unwrap());
+
+        // Wrong ML-DSA-44 key is rejected.
+        let other_ml = MlDsa44KeyPair::generate().unwrap();
+        assert!(!verify_pq(&signed, &kp.public_key(), &other_ml.public_key()).unwrap());
+
+        // A hybrid credential without the ML-DSA key returns false, not true.
+        assert!(!verify_robot_credential(&signed, &kp.public_key(), None).unwrap());
+    }
+
+    #[test]
+    fn classical_credential_passes_dual_verify_without_pq_key() {
+        let issuer = "did:web:robot.example.com";
+        let seed = [22u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let classical = classical_robot_credential(issuer, &seed);
+
+        assert!(!is_pq(&classical));
+        // A classical credential verifies through the dual path with no ML-DSA key.
+        assert!(verify_robot_credential(&classical, &kp.public_key(), None).unwrap());
+
+        // A wrong key still fails.
+        let other = Ed25519KeyPair::from_seed(&[7u8; 32]);
+        assert!(!verify_robot_credential(&classical, &other.public_key(), None).unwrap());
+    }
+
+    #[test]
+    fn migrate_to_pq_resigns_classical_credential() {
+        let issuer = "did:web:robot.example.com";
+        let seed = [23u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let ml = MlDsa44KeyPair::generate().unwrap();
+
+        let classical = classical_robot_credential(issuer, &seed);
+        assert!(verify_robot_credential(&classical, &kp.public_key(), None).unwrap());
+
+        let migrated = migrate_to_pq(&classical, &seed, &ml, "2026-03-01T00:00:00Z").unwrap();
+        assert!(is_pq(&migrated));
+        // The body is preserved across migration.
+        assert_eq!(
+            migrated["credentialSubject"],
+            classical["credentialSubject"]
+        );
+        assert!(
+            verify_robot_credential(&migrated, &kp.public_key(), Some(&ml.public_key())).unwrap()
+        );
     }
 }

@@ -961,3 +961,53 @@ pub fn verify_conformance_attestation(credential_json: &str, public_key: &[u8]) 
         public_key,
     )?))
 }
+
+// ---- post-quantum robot credentials --------------------------------------
+
+pub fn sign_pq(
+    credential_json: &str,
+    ed25519_seed: &[u8],
+    mldsa_secret: &[u8],
+    mldsa_public: &[u8],
+    created: &str,
+) -> Result<String> {
+    let ml = crate::pq::MlDsa44KeyPair::from_bytes(mldsa_secret, mldsa_public)?;
+    Ok(r::sign_pq(&parse(credential_json)?, ed25519_seed, &ml, created)?.to_string())
+}
+
+pub fn is_pq(credential_json: &str) -> Result<bool> {
+    Ok(r::is_pq(&parse(credential_json)?))
+}
+
+/// Verify a hybrid robot credential. `mldsa44_public` is raw 1312-byte bytes or
+/// an ML-DSA-44 Multikey string carried as UTF-8 bytes.
+pub fn verify_pq(
+    credential_json: &str,
+    ed25519_public: &[u8],
+    mldsa44_public: &[u8],
+) -> Result<bool> {
+    let resolved = r::resolve_mldsa44_public(mldsa44_public)?;
+    r::verify_pq(&parse(credential_json)?, ed25519_public, &resolved)
+}
+
+/// Dual verify auto-detected from the proof. `mldsa44_public`, when present, is
+/// raw 1312-byte bytes or an ML-DSA-44 Multikey string carried as UTF-8 bytes; a
+/// hybrid credential requires it, a classical credential ignores it.
+pub fn verify_robot_credential(
+    credential_json: &str,
+    ed25519_public: &[u8],
+    mldsa44_public: Option<&[u8]>,
+) -> Result<bool> {
+    r::verify_robot_credential(&parse(credential_json)?, ed25519_public, mldsa44_public)
+}
+
+pub fn migrate_to_pq(
+    credential_json: &str,
+    ed25519_seed: &[u8],
+    mldsa_secret: &[u8],
+    mldsa_public: &[u8],
+    created: &str,
+) -> Result<String> {
+    let ml = crate::pq::MlDsa44KeyPair::from_bytes(mldsa_secret, mldsa_public)?;
+    Ok(r::migrate_to_pq(&parse(credential_json)?, ed25519_seed, &ml, created)?.to_string())
+}

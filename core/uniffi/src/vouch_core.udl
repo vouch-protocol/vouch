@@ -200,6 +200,18 @@ namespace vouch_core {
     string robotics_build_conformance_attestation(bytes signer_seed, string params_json);
     [Throws=CoreError]
     string robotics_verify_conformance_attestation(string credential_json, bytes public_key);
+
+    // Post-quantum robot credentials (Phase 5.13).
+    [Throws=CoreError]
+    string robotics_sign_pq(string credential_json, bytes ed25519_seed, bytes mldsa_secret, bytes mldsa_public, string created);
+    [Throws=CoreError]
+    boolean robotics_is_pq(string credential_json);
+    [Throws=CoreError]
+    boolean robotics_verify_pq(string credential_json, bytes ed25519_public, bytes mldsa44_public);
+    [Throws=CoreError]
+    boolean robotics_verify_robot_credential(string credential_json, bytes ed25519_public, bytes? mldsa44_public);
+    [Throws=CoreError]
+    string robotics_migrate_to_pq(string credential_json, bytes ed25519_seed, bytes mldsa_secret, bytes mldsa_public, string created);
 };
 
 dictionary Ed25519KeyPair {

@@ -764,3 +764,81 @@ pub fn robotics_verify_conformance_attestation(
 ) -> Result<String, JsError> {
     rjson::verify_conformance_attestation(credential_json, &b64d(public_b64)?).map_err(jerr)
 }
+
+// --------------------------------------------------------------------------
+// Robotics: post-quantum robot credentials
+// --------------------------------------------------------------------------
+
+#[wasm_bindgen(js_name = roboticsSignPq)]
+pub fn robotics_sign_pq(
+    credential_json: &str,
+    ed25519_seed_b64: &str,
+    mldsa_secret_b64: &str,
+    mldsa_public_b64: &str,
+    created: &str,
+) -> Result<String, JsError> {
+    rjson::sign_pq(
+        credential_json,
+        &b64d(ed25519_seed_b64)?,
+        &b64d(mldsa_secret_b64)?,
+        &b64d(mldsa_public_b64)?,
+        created,
+    )
+    .map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsIsPq)]
+pub fn robotics_is_pq(credential_json: &str) -> Result<bool, JsError> {
+    rjson::is_pq(credential_json).map_err(jerr)
+}
+
+/// Verify a hybrid robot credential. `mldsa44_public_b64` is base64 of raw
+/// 1312-byte bytes or of an ML-DSA-44 Multikey string (UTF-8).
+#[wasm_bindgen(js_name = roboticsVerifyPq)]
+pub fn robotics_verify_pq(
+    credential_json: &str,
+    ed25519_public_b64: &str,
+    mldsa44_public_b64: &str,
+) -> Result<bool, JsError> {
+    rjson::verify_pq(
+        credential_json,
+        &b64d(ed25519_public_b64)?,
+        &b64d(mldsa44_public_b64)?,
+    )
+    .map_err(jerr)
+}
+
+/// Dual verify auto-detected from the proof. `mldsa44_public_b64`, when present,
+/// is base64 of raw 1312-byte bytes or of an ML-DSA-44 Multikey string (UTF-8);
+/// a hybrid credential requires it, a classical credential ignores it.
+#[wasm_bindgen(js_name = roboticsVerifyRobotCredential)]
+pub fn robotics_verify_robot_credential(
+    credential_json: &str,
+    ed25519_public_b64: &str,
+    mldsa44_public_b64: Option<String>,
+) -> Result<bool, JsError> {
+    let ml = match mldsa44_public_b64 {
+        Some(s) => Some(b64d(&s)?),
+        None => None,
+    };
+    rjson::verify_robot_credential(credential_json, &b64d(ed25519_public_b64)?, ml.as_deref())
+        .map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsMigrateToPq)]
+pub fn robotics_migrate_to_pq(
+    credential_json: &str,
+    ed25519_seed_b64: &str,
+    mldsa_secret_b64: &str,
+    mldsa_public_b64: &str,
+    created: &str,
+) -> Result<String, JsError> {
+    rjson::migrate_to_pq(
+        credential_json,
+        &b64d(ed25519_seed_b64)?,
+        &b64d(mldsa_secret_b64)?,
+        &b64d(mldsa_public_b64)?,
+        created,
+    )
+    .map_err(jerr)
+}
