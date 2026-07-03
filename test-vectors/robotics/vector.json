@@ -1,6 +1,6 @@
 {
-  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). It also includes Python-signed credentials other languages VERIFY rather than reproduce: a delegation lease, a set of physical-quorum approvals, and the lifecycle credentials (ownership transfer, key rotation, decommission). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
-  "version": "1.4",
+  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). It also includes Python-signed credentials other languages VERIFY rather than reproduce: a delegation lease, a set of physical-quorum approvals, and the lifecycle credentials (ownership transfer, key rotation, decommission). It also pins a regulatory conformance report and digest computed from a fixed credential set against a named profile. Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
+  "version": "1.5",
   "robot_public_key_jwk": {
     "kty": "OKP",
     "crv": "Ed25519",
@@ -38,10 +38,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-28T21:23:57Z",
+      "created": "2026-07-03T17:03:04Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z41AEfrxpW7efQM6tt6uaPGASYThPD1H2L5vGTKs7XqfhdTeifBeMXwARjn31ZCEVwB74Bk83NJhDowFrKTMMEX3J"
+      "proofValue": "zzGNSkogDyqkDP223mMz5qFg1LohV7mVfiKY4bxAb2uxKS97fNJDqdPwb1vkwCwTVv5JaAcq8jiZzKgrZv3omTmd"
     }
   },
   "config": {
@@ -170,10 +170,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-28T21:23:57Z",
+      "created": "2026-07-03T17:03:04Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z435veTjvT1qwTGHQjo89gSCBqNWfwHLxFzgQxqRvBaVoj9eckRiUQ16Z6a3UyjGNbH7wpmtXUyRwLC3WkhndNXCb"
+      "proofValue": "z2muCT2DVv6fDRvYGLtz3b7sHVVTZGoX3cvv9duxh3w3kHkVMipujmgNnrnGBBM4uNeuphu2CNzgsQctUADSRf9dh"
     }
   },
   "quorum_action_id": "vector-action-1",
@@ -198,10 +198,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-06-28T21:23:57Z",
+        "created": "2026-07-03T17:03:04Z",
         "verificationMethod": "did:web:approver-1.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z4XBDbwFCZAUUvBjrcJQGrYQpLxtPY9XbfKJPgcPUQzzwHrFayekGSZZDNUbaV1igAJguaEeHGb6x8zHKPRRa3AiU"
+        "proofValue": "zQiw15dP9mJNs2ttHLxGsKbLCnn2d6Vd19FRiVHLD4f84xR3HTKriDChm1HpHJ5mh6dZBYJKBMhBeHnLsgT7r9bj"
       }
     },
     {
@@ -224,10 +224,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-06-28T21:23:57Z",
+        "created": "2026-07-03T17:03:04Z",
         "verificationMethod": "did:web:approver-2.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z3BEP6N2RWGXVxL9fDt72hxqsxbhwMzoUemYwpGBNPsJ8NQXRiPZyvyaQeFGZ4EjVmJqMh5gHoBHUxbs7yruDswqy"
+        "proofValue": "z5agyDo473ZR5DFZeLKk9i3rb8EtKvbmN67C3GkiMBpotpVKUoqKpD5SF6SeUNjrNvFbRwr11uiPZmiSuvQQrbCVc"
       }
     }
   ],
@@ -262,10 +262,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-28T21:23:57Z",
+      "created": "2026-07-03T17:03:04Z",
       "verificationMethod": "did:web:owner-a.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z5HZdfWyEmzjCXpxXpibAo5fe3X3deSJJkAcLVUq3xBSxPde3F8tABPgSJMsrE7o7YQhJ1totNQZrotsXnkvnS5dy"
+      "proofValue": "z5D6qqshS5efDrN21fgGV9heC2eRmRrzCes5KJvb9A4UFeicj9mtCMNvuqokiqHgTRDVBkmkRp3ErKKRh8UwuBYpr"
     }
   },
   "ownership_transfer_owner_key": {
@@ -292,10 +292,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-28T21:23:57Z",
+      "created": "2026-07-03T17:03:04Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4YfPYq8WogjDj6dVNAwDewANVBXuAiwNMuE6vy5DaJh7871kvkDY59z9a5ABtnR2mudaxxb55MSX5gDDhKmESFZH"
+      "proofValue": "zjSiBLs1Hn8waQxWnashcscU7PCk5wns9X7nUbS6r1BhU68NsjFfL9bxs9zR8fwyFH6CUjRKois4XqPBuS1oFA33"
     }
   },
   "decommission_credential": {
@@ -318,15 +318,111 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-06-28T21:23:57Z",
+      "created": "2026-07-03T17:03:04Z",
       "verificationMethod": "did:web:authority.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4fVbi1Zu7hjgAzXQ1Ge4AxXiYb333YhEupuZMQnNpDKa1QqvdqYbNhEwU7sX2Euvu5gE5X9soH3AYWhY18xT1xaJ"
+      "proofValue": "z3vpPyT7mGGYMx9qryYvKUDpvBvGY6qJq14JXLaHimPPmNbQpkKB8mcjVZVeHJhDhGTQY9kehQ9toLdU7beG5oLnK"
     }
   },
   "decommission_authority_key": {
     "kty": "OKP",
     "crv": "Ed25519",
     "x": "ypOsFwUYcHHWe4PH_w7-gQjo7EUwV113JoeTM9vavnw"
-  }
+  },
+  "conformance_credentials": [
+    {
+      "type": [
+        "VerifiableCredential",
+        "RobotIdentityCredential"
+      ],
+      "credentialSubject": {
+        "id": "did:web:robot.example.com",
+        "make": "Acme",
+        "model": "AR-7",
+        "serial": "SN-000123",
+        "hardwareRoot": {
+          "kind": "TPM"
+        }
+      }
+    },
+    {
+      "type": [
+        "VerifiableCredential",
+        "ModelProvenanceAttestation"
+      ],
+      "credentialSubject": {
+        "id": "did:web:robot.example.com",
+        "vla": {
+          "modelName": "OpenVLA-7B",
+          "weightsHash": "uWEIGHTS",
+          "safetyPolicy": "uPOLICY",
+          "configHash": "uCONFIG"
+        }
+      }
+    },
+    {
+      "type": [
+        "VerifiableCredential",
+        "PhysicalCapabilityScope"
+      ],
+      "credentialSubject": {
+        "id": "did:web:robot.example.com",
+        "physicalScope": {
+          "maxForceN": 80.0,
+          "maxSpeedMps": 1.5,
+          "maxSpeedNearHumansMps": 0.25,
+          "allowedZones": [
+            "cell-3"
+          ]
+        }
+      }
+    },
+    {
+      "type": [
+        "VerifiableCredential",
+        "RobotSafetyRecordCredential"
+      ],
+      "credentialSubject": {
+        "id": "did:web:robot.example.com",
+        "totalEvents": 2,
+        "logHead": "uHEAD"
+      }
+    }
+  ],
+  "conformance_profile_id": "eu-ai-act-high-risk",
+  "expected_conformance_report": {
+    "profileId": "eu-ai-act-high-risk",
+    "regime": "EU AI Act high-risk systems",
+    "version": "2024",
+    "conforms": true,
+    "satisfiedCount": 4,
+    "totalCount": 4,
+    "requirements": [
+      {
+        "id": "eu-aia-record-keeping",
+        "clause": "Reg (EU) 2024/1689, Art. 12",
+        "title": "Automatic recording of events (logging)",
+        "satisfied": true
+      },
+      {
+        "id": "eu-aia-transparency",
+        "clause": "Reg (EU) 2024/1689, Art. 13",
+        "title": "Model and configuration transparency",
+        "satisfied": true
+      },
+      {
+        "id": "eu-aia-human-oversight",
+        "clause": "Reg (EU) 2024/1689, Art. 14",
+        "title": "Human oversight through enforced operating limits",
+        "satisfied": true
+      },
+      {
+        "id": "eu-aia-accuracy-robustness",
+        "clause": "Reg (EU) 2024/1689, Art. 15",
+        "title": "Accuracy and robustness traceable to a known build",
+        "satisfied": true
+      }
+    ]
+  },
+  "expected_conformance_report_digest": "uMuWAsxwdw8uZVkWugGE5LTh6hHB0NVvqGm-fcXaO6zs"
 }

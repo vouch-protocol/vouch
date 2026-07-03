@@ -29,9 +29,11 @@ from vouch.robotics import (
     build_key_rotation,
     build_ownership_transfer,
     build_status_list_entry,
+    check_conformance,
     config_hash,
     hash_frame,
     mint_robot_identity,
+    report_digest,
 )
 
 ROBOT_SEED = bytes(range(32))
@@ -140,6 +142,41 @@ def main():
         final_disposition="recycled", decommissioned_at=VALID_FROM,
     )
 
+    # Conformance: a fixed credential set (the checker reads structure and fields,
+    # not proofs, so these are plain credentials) and the deterministic report and
+    # digest other languages reproduce.
+    conformance_credentials = [
+        {
+            "type": ["VerifiableCredential", "RobotIdentityCredential"],
+            "credentialSubject": {
+                "id": ROBOT_DID, "make": "Acme", "model": "AR-7", "serial": "SN-000123",
+                "hardwareRoot": {"kind": "TPM"},
+            },
+        },
+        {
+            "type": ["VerifiableCredential", "ModelProvenanceAttestation"],
+            "credentialSubject": {
+                "id": ROBOT_DID,
+                "vla": {"modelName": "OpenVLA-7B", "weightsHash": "uWEIGHTS",
+                        "safetyPolicy": "uPOLICY", "configHash": "uCONFIG"},
+            },
+        },
+        {
+            "type": ["VerifiableCredential", "PhysicalCapabilityScope"],
+            "credentialSubject": {
+                "id": ROBOT_DID,
+                "physicalScope": {"maxForceN": 80.0, "maxSpeedMps": 1.5,
+                                  "maxSpeedNearHumansMps": 0.25, "allowedZones": ["cell-3"]},
+            },
+        },
+        {
+            "type": ["VerifiableCredential", "RobotSafetyRecordCredential"],
+            "credentialSubject": {"id": ROBOT_DID, "totalEvents": 2, "logHead": "uHEAD"},
+        },
+    ]
+    conformance_profile_id = "eu-ai-act-high-risk"
+    conformance_report = check_conformance(conformance_credentials, conformance_profile_id)
+
     doc = {
         "description": (
             "Robotics interop vector. Pins the deterministic byte-level "
@@ -152,10 +189,12 @@ def main():
             "Python-signed credentials other languages VERIFY rather than "
             "reproduce: a delegation lease, a set of physical-quorum approvals, and "
             "the lifecycle credentials (ownership transfer, key rotation, "
-            "decommission). Credential proof values are not pinned because the "
-            "proof carries a wall-clock created timestamp."
+            "decommission). It also pins a regulatory conformance report and digest "
+            "computed from a fixed credential set against a named profile. "
+            "Credential proof values are not pinned because the proof carries a "
+            "wall-clock created timestamp."
         ),
-        "version": "1.4",
+        "version": "1.5",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -181,6 +220,10 @@ def main():
         "key_rotation_credential": key_rotation,
         "decommission_credential": decommission,
         "decommission_authority_key": authority_pub,
+        "conformance_credentials": conformance_credentials,
+        "conformance_profile_id": conformance_profile_id,
+        "expected_conformance_report": conformance_report,
+        "expected_conformance_report_digest": report_digest(conformance_report),
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
