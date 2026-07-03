@@ -34,6 +34,7 @@ from vouch.robotics import (
     hash_frame,
     mint_robot_identity,
     report_digest,
+    sign_pq,
 )
 
 ROBOT_SEED = bytes(range(32))
@@ -59,6 +60,12 @@ def main():
         owner="did:web:owner.example.com", valid_from=VALID_FROM,
         lifecycle=[{"event": "manufactured", "timestamp": "2026-01-01T00:00:00Z"}],
     )
+
+    # Post-quantum: the same robot identity re-signed under the hybrid
+    # classical-plus-ML-DSA-44 cryptosuite. Other languages verify it (the ML-DSA
+    # key is generated at build time and pinned alongside the credential).
+    pq_identity = sign_pq(dict(identity), signer)
+    robot_mldsa44_public_multikey = signer.public_key_mldsa44_multikey()
 
     config = {"temperature": 0.0, "max_torque": 12.5, "guardrails": ["no_humans_zone"]}
 
@@ -187,14 +194,16 @@ def main():
             "credentialStatus entry (revocation), and the frame hash plus the "
             "hash-linked perception log (perception). It also includes "
             "Python-signed credentials other languages VERIFY rather than "
-            "reproduce: a delegation lease, a set of physical-quorum approvals, and "
+            "reproduce: a delegation lease, a set of physical-quorum approvals, "
             "the lifecycle credentials (ownership transfer, key rotation, "
-            "decommission). It also pins a regulatory conformance report and digest "
-            "computed from a fixed credential set against a named profile. "
+            "decommission), and a hybrid post-quantum robot identity "
+            "(RobotIdentityCredential under hybrid-eddsa-mldsa44-jcs-2026). It also "
+            "pins a regulatory conformance report and digest computed from a fixed "
+            "credential set against a named profile. "
             "Credential proof values are not pinned because the proof carries a "
             "wall-clock created timestamp."
         ),
-        "version": "1.5",
+        "version": "1.6",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -224,6 +233,8 @@ def main():
         "conformance_profile_id": conformance_profile_id,
         "expected_conformance_report": conformance_report,
         "expected_conformance_report_digest": report_digest(conformance_report),
+        "pq_robot_identity_credential": pq_identity,
+        "robot_mldsa44_public_multikey": robot_mldsa44_public_multikey,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
