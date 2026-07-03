@@ -232,6 +232,19 @@ def __getattr__(name):
         from . import accountability
 
         return getattr(accountability, name)
+    # Proof-of-Integration recognition primitive (PAD-072)
+    elif name in (
+        "ProofOfIntegrationError",
+        "build_integration_challenge",
+        "answer_integration_challenge",
+        "verify_integration_response",
+        "proof_of_integration_block",
+        "CHALLENGE_TYPE",
+        "RESPONSE_TYPE",
+    ):
+        from . import proof_of_integration
+
+        return getattr(proof_of_integration, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -411,6 +424,14 @@ __all__ = [
     "PRECEDENCE_EXISTENCE",
     "OUTCOME_COMMITMENT_TYPE",
     "OUTCOME_ATTESTATION_TYPE",
+    # Proof-of-Integration recognition primitive (PAD-072)
+    "ProofOfIntegrationError",
+    "build_integration_challenge",
+    "answer_integration_challenge",
+    "verify_integration_response",
+    "proof_of_integration_block",
+    "CHALLENGE_TYPE",
+    "RESPONSE_TYPE",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
