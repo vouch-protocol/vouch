@@ -31,16 +31,16 @@ export default function TrustGapPage() {
     return (
         <main className="min-h-screen bg-parchment text-ink">
             {/* HERO */}
-            <section className="container-wide pt-20 md:pt-28 pb-14">
+            <section className="container-wide pt-20 md:pt-28 pb-16 md:pb-20">
                 <p className="eyebrow text-burgundy mb-5">The Agent Trust Index</p>
                 <h1 className="font-serif font-semibold text-[clamp(2.6rem,7vw,5rem)] leading-[1.02] tracking-tight mb-6">
                     &ldquo;Trust me,
                     <br />
                     I&rsquo;m an AI agent.&rdquo;
                 </h1>
-                <p className="text-[clamp(1.3rem,3vw,1.9rem)] text-ink-soft mb-9">
+                <p className="text-[clamp(1.25rem,3vw,1.75rem)] leading-snug text-ink-soft mb-9 max-w-[24ch]">
                     <strong className="text-burgundy font-semibold">{ATI_SUMMARY.pctCannot}%</strong> can&rsquo;t
-                    back that up.
+                    back that up. Only {VERIFIABLE} of {TOTAL} public agents can prove who they are.
                 </p>
                 <div className="flex flex-wrap gap-3">
                     <Link href="/agent-trust-index/" className="btn-primary">
@@ -52,78 +52,75 @@ export default function TrustGapPage() {
                 </div>
             </section>
 
-            {/* THE PROBLEM: the trust handoff */}
-            <section className="border-t border-rule bg-parchment-warm/40">
-                <div className="container-wide py-12 md:py-16">
-                    <p className="eyebrow text-burgundy mb-6">The handoff</p>
+            {/* THE PROBLEM */}
+            <section className="border-t border-rule">
+                <div className="container-wide py-16 md:py-20">
+                    <p className="eyebrow text-burgundy mb-4">The gap</p>
+                    <h2 className="font-serif font-semibold text-[clamp(1.7rem,4vw,2.6rem)] leading-tight tracking-tight mb-4 max-w-[16ch]">
+                        Your AI already acts on real systems.
+                    </h2>
+                    <p className="text-ink-soft text-[1.05rem] leading-relaxed max-w-[52ch] mb-10">
+                        It books, buys, emails, and ships code for you. The open question is whether it can prove
+                        who it is, and who allowed it.
+                    </p>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="/assets/trust-handoff.svg"
                         alt="A human delegates to an AI agent that carries a verifiable identity, and the agent acts on an MCP server. Each handoff is signed."
-                        className="hidden md:block w-full h-auto max-w-[940px] mx-auto"
+                        className="hidden md:block w-full h-auto max-w-[880px]"
                     />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="/assets/trust-handoff-mobile.svg"
                         alt="A human delegates to an AI agent that carries a verifiable identity, and the agent acts on an MCP server. Each handoff is signed."
-                        className="block md:hidden w-full h-auto max-w-[340px] mx-auto"
+                        className="block md:hidden w-full h-auto max-w-[320px]"
                     />
                 </div>
             </section>
 
-            {/* THE SOLUTION: how Vouch works */}
+            {/* THE SOLUTION */}
             <section className="border-t border-rule">
-                <div className="container-wide py-12 md:py-16">
-                    <p className="eyebrow text-burgundy mb-6">The fix, in four steps</p>
+                <div className="container-wide py-16 md:py-20">
+                    <p className="eyebrow text-burgundy mb-4">The fix</p>
+                    <h2 className="font-serif font-semibold text-[clamp(1.7rem,4vw,2.6rem)] leading-tight tracking-tight mb-4 max-w-[16ch]">
+                        Give every agent a way to prove it.
+                    </h2>
+                    <p className="text-ink-soft text-[1.05rem] leading-relaxed max-w-[52ch] mb-10">
+                        A verifiable identity, a signed permission slip, and a signature on every action that
+                        anyone can check.
+                    </p>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="/assets/how-vouch-works.svg"
                         alt="How Vouch works: give the agent a verifiable ID, the human sets the rules, every action is signed, and anyone can check it. Tampering and fakes are rejected."
-                        className="hidden md:block w-full h-auto max-w-[940px] mx-auto"
+                        className="hidden md:block w-full h-auto max-w-[880px]"
                     />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="/assets/how-vouch-works-mobile.svg"
                         alt="How Vouch works: give the agent a verifiable ID, the human sets the rules, every action is signed, and anyone can check it. Tampering and fakes are rejected."
-                        className="block md:hidden w-full h-auto max-w-[360px] mx-auto"
+                        className="block md:hidden w-full h-auto max-w-[340px]"
                     />
                 </div>
             </section>
 
-            {/* THE NUMBER */}
-            <section className="container-wide py-16 md:py-24">
-                <div className="flex flex-col md:flex-row md:items-baseline gap-5 md:gap-12">
-                    <div className="font-serif font-semibold text-[clamp(4.5rem,13vw,9rem)] leading-none tracking-tight">
-                        {ATI_SUMMARY.pctCannot}%
-                    </div>
-                    <p className="text-[1.3rem] leading-snug text-ink-soft max-w-[22ch]">
-                        of AI agents <strong className="text-ink font-semibold">cannot prove who they are.</strong>{' '}
-                        Only {VERIFIABLE} of {TOTAL} can.
-                    </p>
-                </div>
-            </section>
-
-            {/* ONE-LINER */}
-            <section className="border-t border-rule">
-                <div className="container-wide py-14 md:py-16">
-                    <p className="font-serif italic text-[clamp(1.5rem,4vw,2.5rem)] tracking-tight">
+            {/* CLOSING LINE + CTA */}
+            <section className="bg-ink text-parchment border-t border-rule">
+                <div className="container-wide py-16 md:py-20">
+                    <p className="font-serif italic text-[clamp(1.6rem,4vw,2.6rem)] leading-tight tracking-tight mb-8 max-w-[20ch]">
                         The web got a padlock. Agents get Vouch.
                     </p>
-                </div>
-            </section>
-
-            {/* CTA BAND */}
-            <section className="bg-ink text-parchment">
-                <div className="container-wide py-14 md:py-16 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                    <p className="font-serif font-semibold text-[clamp(1.6rem,4vw,2.4rem)] tracking-tight">
-                        Can your agent prove it?
-                    </p>
-                    <Link
-                        href="/agent-trust-index/"
-                        className="inline-flex items-center gap-2 font-mono uppercase text-[0.75rem] tracking-[0.16em] px-6 py-[0.85rem] bg-burgundy text-parchment border border-burgundy no-underline transition-colors hover:bg-[#5f222c] hover:border-[#5f222c]"
-                    >
-                        Grade it in 10 seconds
-                    </Link>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                        <span className="font-serif font-semibold text-[1.4rem] tracking-tight">
+                            Can your agent prove it?
+                        </span>
+                        <Link
+                            href="/agent-trust-index/"
+                            className="inline-flex items-center gap-2 font-mono uppercase text-[0.75rem] tracking-[0.16em] px-6 py-[0.85rem] bg-burgundy text-parchment border border-burgundy no-underline transition-colors hover:bg-[#5f222c] hover:border-[#5f222c] self-start"
+                        >
+                            Grade it in 10 seconds
+                        </Link>
+                    </div>
                 </div>
             </section>
 

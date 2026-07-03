@@ -1,6 +1,14 @@
 <svg viewBox="0 0 1120 340" xmlns="http://www.w3.org/2000/svg" role="img" font-family="Georgia, 'Times New Roman', serif">
   <title>How Vouch works in four steps: give the agent a verifiable ID, have the human sign the rules, sign every action, and let anyone verify.</title>
   <desc>Four illustrated columns. One: an ID card with an agent photo and a seal. Two: a signed permission document. Three: an action sealed like a stamped envelope. Four: a large verification check with fakes rejected.</desc>
+  <style>
+    @keyframes stamp{0%,68%{transform:scale(1)}80%{transform:scale(1.16)}90%{transform:scale(.99)}100%{transform:scale(1)}}
+    @keyframes stamplg{0%,68%{transform:scale(1)}80%{transform:scale(1.07)}90%{transform:scale(.995)}100%{transform:scale(1)}}
+    .seal{transform-box:fill-box;transform-origin:center;animation:stamp 4.5s ease-in-out infinite}
+    .seal-lg{transform-box:fill-box;transform-origin:center;animation:stamplg 4.5s ease-in-out infinite}
+    .s0{animation-delay:0s}.s1{animation-delay:.4s}.s2{animation-delay:.8s}.s3{animation-delay:1.2s}
+    @media(prefers-reduced-motion:reduce){.seal,.seal-lg{animation:none}}
+  </style>
 
   <rect x="1" y="1" width="1118" height="338" fill="#FAF7EE" stroke="#D9CFB6" stroke-width="2"/>
   <text x="40" y="42" font-family="ui-monospace, monospace" font-size="13" letter-spacing="4" fill="#7C2D3A">HOW VOUCH WORKS</text>
@@ -23,8 +31,8 @@
     <g stroke="#64748B" stroke-width="3" stroke-linecap="round">
       <line x1="158" y1="130" x2="212" y2="130"/><line x1="158" y1="146" x2="212" y2="146"/><line x1="158" y1="162" x2="196" y2="162"/>
     </g>
-    <circle cx="205" cy="186" r="12" fill="#7C2D3A"/>
-    <path d="M199 186 l4 5 l8 -10" fill="none" stroke="#FAF7EE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="seal s0"><circle cx="205" cy="186" r="12" fill="#7C2D3A"/>
+    <path d="M199 186 l4 5 l8 -10" fill="none" stroke="#FAF7EE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g>
   </g>
   <text x="155" y="248" text-anchor="middle" font-size="19" fill="#0F172A">Give it an ID</text>
   <text x="155" y="272" text-anchor="middle" font-size="13" fill="#334155">A verifiable identity,</text>
@@ -45,8 +53,8 @@
       <line x1="422" y1="134" x2="470" y2="134"/><line x1="422" y1="158" x2="470" y2="158"/>
     </g>
     <path d="M398 190 q8 -12 16 0 t16 0" fill="none" stroke="#7C2D3A" stroke-width="2.5" stroke-linecap="round"/>
-    <circle cx="468" cy="188" r="10" fill="#7C2D3A"/>
-    <path d="M463 188 l3 4 l7 -8" fill="none" stroke="#FAF7EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="seal s1"><circle cx="468" cy="188" r="10" fill="#7C2D3A"/>
+    <path d="M463 188 l3 4 l7 -8" fill="none" stroke="#FAF7EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
   </g>
   <text x="435" y="248" text-anchor="middle" font-size="19" fill="#0F172A">Set the rules</text>
   <text x="435" y="272" text-anchor="middle" font-size="13" fill="#334155">The human signs</text>
@@ -57,8 +65,8 @@
   <g>
     <rect x="655" y="118" width="120" height="82" rx="6" fill="#F2EBD9" stroke="#0F172A" stroke-width="3"/>
     <path d="M657 124 L715 160 L773 124" fill="none" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="715" cy="196" r="16" fill="#7C2D3A" stroke="#FAF7EE" stroke-width="2.5"/>
-    <path d="M706 196 l6 7 l11 -14" fill="none" stroke="#FAF7EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="seal s2"><circle cx="715" cy="196" r="16" fill="#7C2D3A" stroke="#FAF7EE" stroke-width="2.5"/>
+    <path d="M706 196 l6 7 l11 -14" fill="none" stroke="#FAF7EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
   </g>
   <text x="715" y="248" text-anchor="middle" font-size="19" fill="#0F172A">Sign every move</text>
   <text x="715" y="272" text-anchor="middle" font-size="13" fill="#334155">Each action carries</text>
@@ -67,8 +75,8 @@
   <!-- 04 ANYONE CAN CHECK -->
   <text x="985" y="92" text-anchor="middle" font-family="ui-monospace, monospace" font-size="20" letter-spacing="2" fill="#7C2D3A">04</text>
   <g>
-    <circle cx="978" cy="152" r="40" fill="#7C2D3A"/>
-    <path d="M958 152 l13 15 l27 -33" fill="none" stroke="#FAF7EE" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="seal-lg s3"><circle cx="978" cy="152" r="40" fill="#7C2D3A"/>
+    <path d="M958 152 l13 15 l27 -33" fill="none" stroke="#FAF7EE" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>
     <circle cx="1034" cy="120" r="13" fill="#FAF7EE" stroke="#64748B" stroke-width="2.5"/>
     <path d="M1026 112 l16 16 M1042 112 l-16 16" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/>
   </g>
