@@ -2655,6 +2655,438 @@ pub fn verify_decommission(
     Ok(Some(subject))
 }
 
+// ---------------------------------------------------------------------------
+// Regulatory conformance profiles (Phase 5.14)
+// ---------------------------------------------------------------------------
+//
+// A conformance profile is a machine-checkable mapping from Vouch robotics
+// credentials to the clauses of a public safety or AI regulation. Given the
+// credentials a robot presents, the checker reports which clauses are satisfied
+// and cites each one, and an issuer can sign a point-in-time conformance
+// attestation an auditor or notified body can consume. The profiles are plain
+// data so every language reproduces them identically.
+//
+// This is the open layer: declarative profiles, a deterministic checker, and a
+// signed point-in-time attestation over the full report. It is a reference
+// crosswalk to make conformance verifiable in the open, not legal advice.
+
+pub const CONFORMANCE_ATTESTATION_TYPE: &str = "RobotConformanceAttestation";
+
+/// One requirement in a profile: a clause of a regulation mapped to the
+/// credential type and field paths that satisfy it.
+struct ProfileRequirement {
+    id: &'static str,
+    clause: &'static str,
+    title: &'static str,
+    credential: &'static str,
+    fields: &'static [&'static str],
+}
+
+/// A built-in conformance profile: a regime, a version, and its requirements.
+struct ConformanceProfile {
+    regime: &'static str,
+    version: &'static str,
+    requirements: &'static [ProfileRequirement],
+}
+
+const ISO_10218_REQUIREMENTS: &[ProfileRequirement] = &[
+    ProfileRequirement {
+        id: "iso10218-identification",
+        clause: "ISO 10218-1:2011, 5.2",
+        title: "Robot identification bound to its hardware",
+        credential: "RobotIdentityCredential",
+        fields: &["hardwareRoot.kind"],
+    },
+    ProfileRequirement {
+        id: "iso10218-software-integrity",
+        clause: "ISO 10218-1:2011, 5.3",
+        title: "Control software and configuration integrity",
+        credential: "ModelProvenanceAttestation",
+        fields: &["vla.weightsHash"],
+    },
+    ProfileRequirement {
+        id: "iso10218-limits",
+        clause: "ISO 10218-1:2011, 5.6",
+        title: "Limiting of speed, force, and workspace",
+        credential: "PhysicalCapabilityScope",
+        fields: &["physicalScope.maxForceN", "physicalScope.maxSpeedMps"],
+    },
+    ProfileRequirement {
+        id: "iso10218-records",
+        clause: "ISO 10218-2:2011, 5.2",
+        title: "Records of safety-relevant events",
+        credential: "RobotSafetyRecordCredential",
+        fields: &["totalEvents"],
+    },
+];
+
+const ISO_TS_15066_REQUIREMENTS: &[ProfileRequirement] = &[
+    ProfileRequirement {
+        id: "iso15066-power-force-limiting",
+        clause: "ISO/TS 15066:2016, 5.5.4",
+        title: "Power and force limiting near humans",
+        credential: "PhysicalCapabilityScope",
+        fields: &[
+            "physicalScope.maxSpeedNearHumansMps",
+            "physicalScope.maxForceN",
+        ],
+    },
+    ProfileRequirement {
+        id: "iso15066-collaborative-workspace",
+        clause: "ISO/TS 15066:2016, 5.5.2",
+        title: "Defined collaborative workspace",
+        credential: "PhysicalCapabilityScope",
+        fields: &["physicalScope.allowedZones"],
+    },
+    ProfileRequirement {
+        id: "iso15066-monitoring",
+        clause: "ISO/TS 15066:2016, 5.2",
+        title: "Continuous monitoring of the collaborative operation",
+        credential: "RobotHeartbeatCredential",
+        fields: &["motionDigest"],
+    },
+];
+
+const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
+    ProfileRequirement {
+        id: "eu-mr-identification",
+        clause: "Reg (EU) 2023/1230, Annex III 1.7.4",
+        title: "Machinery identification and traceability",
+        credential: "RobotIdentityCredential",
+        fields: &["make", "model", "serial"],
+    },
+    ProfileRequirement {
+        id: "eu-mr-software-integrity",
+        clause: "Reg (EU) 2023/1230, Annex III 1.1.9",
+        title: "Protection against corruption of safety software",
+        credential: "ModelProvenanceAttestation",
+        fields: &["vla.weightsHash", "vla.safetyPolicy"],
+    },
+    ProfileRequirement {
+        id: "eu-mr-safe-limits",
+        clause: "Reg (EU) 2023/1230, Annex III 1.2.1",
+        title: "Safety and reliability of control systems and limits",
+        credential: "PhysicalCapabilityScope",
+        fields: &["physicalScope.maxForceN"],
+    },
+    ProfileRequirement {
+        id: "eu-mr-records",
+        clause: "Reg (EU) 2023/1230, Annex III 1.2.1",
+        title: "Recording of safety-relevant data",
+        credential: "RobotSafetyRecordCredential",
+        fields: &["totalEvents"],
+    },
+];
+
+const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
+    ProfileRequirement {
+        id: "eu-aia-record-keeping",
+        clause: "Reg (EU) 2024/1689, Art. 12",
+        title: "Automatic recording of events (logging)",
+        credential: "RobotSafetyRecordCredential",
+        fields: &["logHead"],
+    },
+    ProfileRequirement {
+        id: "eu-aia-transparency",
+        clause: "Reg (EU) 2024/1689, Art. 13",
+        title: "Model and configuration transparency",
+        credential: "ModelProvenanceAttestation",
+        fields: &["vla.modelName", "vla.configHash"],
+    },
+    ProfileRequirement {
+        id: "eu-aia-human-oversight",
+        clause: "Reg (EU) 2024/1689, Art. 14",
+        title: "Human oversight through enforced operating limits",
+        credential: "PhysicalCapabilityScope",
+        fields: &["physicalScope.maxSpeedNearHumansMps"],
+    },
+    ProfileRequirement {
+        id: "eu-aia-accuracy-robustness",
+        clause: "Reg (EU) 2024/1689, Art. 15",
+        title: "Accuracy and robustness traceable to a known build",
+        credential: "ModelProvenanceAttestation",
+        fields: &["vla.weightsHash"],
+    },
+];
+
+const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
+    ProfileRequirement {
+        id: "ul3300-identity",
+        clause: "UL 3300, identification",
+        title: "Robot identity bound to its hardware",
+        credential: "RobotIdentityCredential",
+        fields: &["hardwareRoot.kind"],
+    },
+    ProfileRequirement {
+        id: "ul3300-operating-limits",
+        clause: "UL 3300, operating limits",
+        title: "Enforced speed and zone limits",
+        credential: "PhysicalCapabilityScope",
+        fields: &["physicalScope.maxSpeedMps", "physicalScope.allowedZones"],
+    },
+    ProfileRequirement {
+        id: "ul3300-perception-integrity",
+        clause: "UL 3300, sensing integrity",
+        title: "Integrity of perception used for safe operation",
+        credential: "PerceptionProvenanceCredential",
+        fields: &["frameHash"],
+    },
+    ProfileRequirement {
+        id: "ul3300-records",
+        clause: "UL 3300, incident records",
+        title: "Records of safety-relevant incidents",
+        credential: "RobotSafetyRecordCredential",
+        fields: &["totalEvents"],
+    },
+];
+
+/// Return a built-in profile by id, or `None` if it is unknown. The five profiles
+/// cover ISO 10218-1/-2 (industrial), ISO/TS 15066 (collaborative), the EU
+/// Machinery Regulation 2023/1230, the EU AI Act high-risk requirements, and
+/// UL 3300 (service and mobile robots).
+fn conformance_profile(profile_id: &str) -> Option<ConformanceProfile> {
+    match profile_id {
+        "iso-10218" => Some(ConformanceProfile {
+            regime: "ISO 10218-1/-2 industrial robots",
+            version: "2011",
+            requirements: ISO_10218_REQUIREMENTS,
+        }),
+        "iso-ts-15066" => Some(ConformanceProfile {
+            regime: "ISO/TS 15066 collaborative robots",
+            version: "2016",
+            requirements: ISO_TS_15066_REQUIREMENTS,
+        }),
+        "eu-machinery-2023-1230" => Some(ConformanceProfile {
+            regime: "EU Machinery Regulation 2023/1230",
+            version: "2023",
+            requirements: EU_MACHINERY_REQUIREMENTS,
+        }),
+        "eu-ai-act-high-risk" => Some(ConformanceProfile {
+            regime: "EU AI Act high-risk systems",
+            version: "2024",
+            requirements: EU_AI_ACT_REQUIREMENTS,
+        }),
+        "ul-3300" => Some(ConformanceProfile {
+            regime: "UL 3300 service, communication, and mobile robots",
+            version: "2022",
+            requirements: UL_3300_REQUIREMENTS,
+        }),
+        _ => None,
+    }
+}
+
+/// The type array of a credential, accepting a JSON string or an array of strings.
+fn credential_types(credential: &Value) -> Vec<&str> {
+    match credential.get("type") {
+        Some(Value::String(s)) => vec![s.as_str()],
+        Some(Value::Array(items)) => items.iter().filter_map(|v| v.as_str()).collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// Follow a dot-separated path from the credentialSubject, returning the value at
+/// the leaf or `None` if any segment is missing or not an object.
+fn path_value<'a>(subject: &'a Value, path: &str) -> Option<&'a Value> {
+    let mut node = subject;
+    for part in path.split('.') {
+        match node {
+            Value::Object(map) => match map.get(part) {
+                Some(v) => node = v,
+                None => return None,
+            },
+            _ => return None,
+        }
+    }
+    Some(node)
+}
+
+/// True when a value is present and non-empty: not null, and not an empty array
+/// or empty object. Any other value (including `false`, `0`, or `""`) counts.
+fn value_present(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Array(a) => !a.is_empty(),
+        Value::Object(o) => !o.is_empty(),
+        _ => true,
+    }
+}
+
+/// True when `credential` satisfies `requirement`: its type array includes the
+/// requirement's credential type and its credentialSubject has a non-null,
+/// non-empty value at every field path.
+fn credential_satisfies(credential: &Value, requirement: &ProfileRequirement) -> bool {
+    if !credential_types(credential).contains(&requirement.credential) {
+        return false;
+    }
+    let empty = Value::Object(Map::new());
+    let subject = credential.get("credentialSubject").unwrap_or(&empty);
+    for path in requirement.fields {
+        match path_value(subject, path) {
+            Some(v) if value_present(v) => {}
+            _ => return false,
+        }
+    }
+    true
+}
+
+/// Check the presented `credentials` against the named profile and return a
+/// deterministic report. Each requirement is satisfied when some presented
+/// credential matches its type and has every required field. The caller is
+/// expected to have verified the credentials' signatures first; this checks
+/// structure and coverage, not proofs.
+///
+/// The report has exactly `{profileId, regime, version, conforms,
+/// satisfiedCount, totalCount, requirements:[{id, clause, title, satisfied}]}`.
+pub fn check_conformance(credentials: &[Value], profile_id: &str) -> Result<Value> {
+    let prof = conformance_profile(profile_id)
+        .ok_or_else(|| CoreError::Json(format!("unknown conformance profile: {profile_id}")))?;
+
+    let mut results: Vec<Value> = Vec::with_capacity(prof.requirements.len());
+    let mut satisfied = 0i64;
+    for requirement in prof.requirements {
+        let ok = credentials
+            .iter()
+            .any(|c| credential_satisfies(c, requirement));
+        if ok {
+            satisfied += 1;
+        }
+        results.push(json!({
+            "id": requirement.id,
+            "clause": requirement.clause,
+            "title": requirement.title,
+            "satisfied": ok,
+        }));
+    }
+    let total = prof.requirements.len() as i64;
+
+    let mut report = Map::new();
+    report.insert("profileId".into(), json!(profile_id));
+    report.insert("regime".into(), json!(prof.regime));
+    report.insert("version".into(), json!(prof.version));
+    report.insert("conforms".into(), json!(satisfied == total));
+    report.insert("satisfiedCount".into(), json!(satisfied));
+    report.insert("totalCount".into(), json!(total));
+    report.insert("requirements".into(), Value::Array(results));
+    Ok(Value::Object(report))
+}
+
+/// Multibase SHA-256 of the JCS-canonical report, for binding into an
+/// attestation. Every language canonicalizes identically, so the digest is the
+/// same byte string everywhere.
+pub fn report_digest(report: &Value) -> String {
+    mb64(&Sha256::digest(jcs::canonicalize(report)))
+}
+
+/// Parameters for [`build_conformance_attestation`]. The signer is the robot, its
+/// owner, or an assessing authority; `robot_did` names the robot the attestation
+/// is about. `report` is produced by [`check_conformance`] and is embedded and
+/// bound by digest. When `valid_seconds` is set it bounds the attestation.
+#[derive(Debug, Clone)]
+pub struct BuildConformanceAttestation {
+    pub issuer_did: String,
+    pub robot_did: String,
+    pub report: Value,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed point-in-time `RobotConformanceAttestation` for `robot_did`
+/// over a `report` produced by [`check_conformance`]. The report is embedded and
+/// bound by digest.
+pub fn build_conformance_attestation(
+    signer_seed: &[u8],
+    params: &BuildConformanceAttestation,
+) -> Result<Value> {
+    if params.robot_did.is_empty() {
+        return Err(CoreError::Json("robot_did is required".into()));
+    }
+    let report = params
+        .report
+        .as_object()
+        .ok_or_else(|| CoreError::Json("report must come from check_conformance".into()))?;
+    if !report.contains_key("profileId") || !report.contains_key("conforms") {
+        return Err(CoreError::Json(
+            "report must come from check_conformance".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert(
+        "profileId".into(),
+        report.get("profileId").cloned().unwrap_or(Value::Null),
+    );
+    subject.insert(
+        "regime".into(),
+        report.get("regime").cloned().unwrap_or(Value::Null),
+    );
+    subject.insert(
+        "conforms".into(),
+        report.get("conforms").cloned().unwrap_or(Value::Null),
+    );
+    subject.insert(
+        "satisfiedCount".into(),
+        report.get("satisfiedCount").cloned().unwrap_or(Value::Null),
+    );
+    subject.insert(
+        "totalCount".into(),
+        report.get("totalCount").cloned().unwrap_or(Value::Null),
+    );
+    subject.insert("reportDigest".into(), json!(report_digest(&params.report)));
+    subject.insert("report".into(), params.report.clone());
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", CONFORMANCE_ATTESTATION_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.issuer_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.issuer_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+/// Verify a conformance attestation: the issuer's proof, that the embedded report
+/// matches its bound digest, and that the subject's `conforms` matches the report.
+/// Returns the credentialSubject on success, `None` if invalid.
+pub fn verify_conformance_attestation(
+    credential: &Value,
+    public_key: &[u8],
+) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), CONFORMANCE_ATTESTATION_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, public_key)? {
+        return Ok(None);
+    }
+    let subject = match credential
+        .get("credentialSubject")
+        .and_then(|s| s.as_object())
+    {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let embedded = match subject.get("report") {
+        Some(r) if r.is_object() => r,
+        _ => return Ok(None),
+    };
+    if subject.get("reportDigest").and_then(|v| v.as_str())
+        != Some(report_digest(embedded).as_str())
+    {
+        return Ok(None);
+    }
+    if subject.get("conforms") != embedded.get("conforms") {
+        return Ok(None);
+    }
+    Ok(Some(Value::Object(subject.clone())))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4273,6 +4705,142 @@ mod tests {
                 robot_did: robot.into(),
                 reason: String::new(),
                 final_disposition: None,
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .is_err());
+    }
+
+    // Cross-language interop: Rust reproduces the exact conformance report and
+    // digest Python pinned, from the same credential set and profile.
+    #[test]
+    fn conformance_matches_interop_vector() {
+        let vector = load_vector();
+        let credentials: Vec<Value> = vector["conformance_credentials"]
+            .as_array()
+            .expect("conformance_credentials present")
+            .clone();
+        let profile_id = vector["conformance_profile_id"].as_str().unwrap();
+
+        let report = check_conformance(&credentials, profile_id).unwrap();
+        assert_eq!(report, vector["expected_conformance_report"]);
+
+        let digest = report_digest(&report);
+        assert_eq!(
+            digest,
+            vector["expected_conformance_report_digest"]
+                .as_str()
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn conformance_unknown_profile_and_missing_field() {
+        assert!(check_conformance(&[], "no-such-profile").is_err());
+
+        // An empty credential set satisfies nothing.
+        let empty = check_conformance(&[], "eu-ai-act-high-risk").unwrap();
+        assert_eq!(empty["conforms"], json!(false));
+        assert_eq!(empty["satisfiedCount"], json!(0));
+        assert_eq!(empty["totalCount"], json!(4));
+
+        // A safety record with no logHead does not satisfy the record-keeping
+        // requirement (a missing field counts as unsatisfied).
+        let creds = vec![json!({
+            "type": ["VerifiableCredential", "RobotSafetyRecordCredential"],
+            "credentialSubject": { "id": "did:web:robot.example.com", "totalEvents": 2 }
+        })];
+        let report = check_conformance(&creds, "eu-ai-act-high-risk").unwrap();
+        let record_keeping = report["requirements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == json!("eu-aia-record-keeping"))
+            .unwrap();
+        assert_eq!(record_keeping["satisfied"], json!(false));
+
+        // An empty allowedZones array is also unsatisfied.
+        let zone_creds = vec![json!({
+            "type": ["VerifiableCredential", "PhysicalCapabilityScope"],
+            "credentialSubject": {
+                "id": "did:web:robot.example.com",
+                "physicalScope": { "maxSpeedMps": 1.5, "allowedZones": [] }
+            }
+        })];
+        let ul = check_conformance(&zone_creds, "ul-3300").unwrap();
+        let limits = ul["requirements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == json!("ul3300-operating-limits"))
+            .unwrap();
+        assert_eq!(limits["satisfied"], json!(false));
+    }
+
+    #[test]
+    fn conformance_attestation_roundtrip_and_rejections() {
+        let seed = [77u8; 32];
+        let kp = Ed25519KeyPair::from_seed(&seed);
+        let vector = load_vector();
+        let credentials: Vec<Value> = vector["conformance_credentials"]
+            .as_array()
+            .unwrap()
+            .clone();
+        let report = check_conformance(&credentials, "eu-ai-act-high-risk").unwrap();
+
+        let att = build_conformance_attestation(
+            &seed,
+            &BuildConformanceAttestation {
+                issuer_did: "did:web:authority.example.com".into(),
+                robot_did: "did:web:robot.example.com".into(),
+                report: report.clone(),
+                valid_from: "2026-01-01T00:00:00Z".into(),
+                valid_until: Some("2027-01-01T00:00:00Z".into()),
+            },
+        )
+        .unwrap();
+
+        // Round-trip: a well-formed attestation verifies and surfaces the subject.
+        let subject = verify_conformance_attestation(&att, &kp.public_key())
+            .unwrap()
+            .expect("a valid conformance attestation verifies");
+        assert_eq!(subject["profileId"], json!("eu-ai-act-high-risk"));
+        assert_eq!(subject["conforms"], json!(true));
+        assert_eq!(
+            subject["reportDigest"],
+            vector["expected_conformance_report_digest"]
+        );
+
+        // Wrong key is rejected.
+        let wrong_kp = Ed25519KeyPair::from_seed(&[88u8; 32]);
+        assert!(verify_conformance_attestation(&att, &wrong_kp.public_key())
+            .unwrap()
+            .is_none());
+
+        // A tampered embedded report no longer matches the bound digest.
+        let mut tampered = att.clone();
+        tampered["credentialSubject"]["report"]["conforms"] = json!(false);
+        assert!(verify_conformance_attestation(&tampered, &kp.public_key())
+            .unwrap()
+            .is_none());
+
+        // Wrong type is rejected.
+        let mut wrong_type = att.clone();
+        wrong_type["type"] = json!(["VerifiableCredential"]);
+        assert!(
+            verify_conformance_attestation(&wrong_type, &kp.public_key())
+                .unwrap()
+                .is_none()
+        );
+
+        // robot_did is required at build time.
+        assert!(build_conformance_attestation(
+            &seed,
+            &BuildConformanceAttestation {
+                issuer_did: "did:web:authority.example.com".into(),
+                robot_did: String::new(),
+                report,
                 valid_from: "2026-01-01T00:00:00Z".into(),
                 valid_until: None,
             },
