@@ -33,6 +33,9 @@ The Python reference adds three robotics capabilities on the same
 - `vouch.robotics.conformance`: machine-checkable profiles mapping robot credentials
   to ISO 10218/15066, the EU Machinery Regulation, the EU AI Act, and UL 3300, a
   deterministic conformance checker, and a signed conformance attestation.
+- `vouch.robotics.pq`: hybrid post-quantum signing for robot credentials
+  (hybrid-eddsa-mldsa44-jcs-2026), backward-compatible dual verification, and a
+  re-signing migration path for a robot's decade-long service life.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by

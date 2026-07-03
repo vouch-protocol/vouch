@@ -2422,6 +2422,28 @@ Built-in reference profiles: \`iso-10218\`, \`iso-ts-15066\`, \`eu-machinery-202
 Security boundary: the report is deterministic, so any language reproduces it from the same credentials. The attestation embeds the report and binds it by digest, so \`verify_conformance_attestation\` rejects a report that was altered after signing. The profiles are a reference crosswalk, not legal advice; a deployment confirms each mapping against the current regulation text for its market.
 `,
       },
+      {
+        id: 'robotics-pq',
+        title: 'Post-quantum signing',
+        summary: 'Sign robot credentials with a hybrid classical and post-quantum signature so they stay unforgeable across a robot decade-long life.',
+        body: `
+A robot fielded today runs for ten to twenty years, longer than classical Ed25519 is expected to stay safe. This signs robot credentials with the hybrid post-quantum cryptosuite so a robot identity signed now cannot be forged once a quantum computer arrives.
+
+The problem it closes: a long-lived robot signed with a classical-only key could have its identity forged decades into its service life, when the classical signature no longer holds.
+
+How it works: \`sign_pq\` attaches a hybrid proof, a classical Ed25519 signature alongside an ML-DSA-44 post-quantum signature, under \`hybrid-eddsa-mldsa44-jcs-2026\`. \`verify_robot_credential\` verifies a robot credential whether it carries a classical or a hybrid proof, detected from the credential, so a fleet moves to post-quantum gradually. \`migrate_to_pq\` re-signs a fielded robot's classical credential under a post-quantum key.
+
+\`\`\`python
+from vouch.robotics import sign_pq, verify_robot_credential, mint_robot_identity
+
+identity = sign_pq(mint_robot_identity(robot, root, make="Acme", model="AR-7", serial="SN-1"), robot)
+ok = verify_robot_credential(identity, robot_ed25519_public_key,
+                             mldsa44_public_key=robot.public_key_mldsa44_multikey())
+\`\`\`
+
+Security boundary: a hybrid credential passes only when both the classical and the post-quantum signature validate, so it is at least as strong as the classical signature and stays safe once classical signatures do not. Verifying a hybrid credential needs the ML-DSA-44 public key. The open layer is software signing, backward-compatible verification, and a software re-sign migration; managed post-quantum key custody and fleet migration are commercial.
+`,
+      },
     ],
   },
 ];

@@ -626,6 +626,34 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: POST-QUANTUM
+  // =====================================================================
+  {
+    id: 'robotics-pq',
+    audience: 'Robotics: post-quantum',
+    title: 'Post-quantum signing',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Why do robot credentials need post-quantum signatures?',
+        a: `A robot fielded today runs for ten to twenty years, longer than classical Ed25519 is expected to stay safe. A robot identity signed now could be forged once a quantum computer arrives. Signing robot credentials with the hybrid cryptosuite (\`hybrid-eddsa-mldsa44-jcs-2026\`, a classical signature alongside an ML-DSA-44 signature) keeps them unforgeable across the robot's whole service life. Use \`sign_pq\` to sign.`,
+        helpLinks: [{ label: 'Post-quantum guide', href: '/help/#robotics-pq' }],
+        meta: 'Shipped - vouch.robotics.pq',
+      },
+      {
+        q: 'Do I have to migrate every robot at once?',
+        a: `No. \`verify_robot_credential\` accepts a classical or a hybrid proof and detects which from the credential, so a fleet moves to post-quantum gradually while the classical credentials already in the field keep verifying. \`migrate_to_pq\` re-signs a fielded robot's classical credential under a post-quantum key when you are ready.`,
+        meta: 'Shipped - vouch.robotics.pq',
+      },
+      {
+        q: 'Does a verifier need the post-quantum key?',
+        a: `To verify a hybrid credential, yes: pass the ML-DSA-44 public key (raw bytes or a multikey) to \`verify_pq\` or \`verify_robot_credential\`. Both the classical and the post-quantum signature must validate for the credential to pass.`,
+        meta: 'Shipped - vouch.robotics.pq',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {
