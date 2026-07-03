@@ -1,6 +1,12 @@
 <svg viewBox="0 0 1120 380" xmlns="http://www.w3.org/2000/svg" role="img" font-family="Georgia, 'Times New Roman', serif">
   <title>The trust handoff: a human delegates to a humanified AI agent that carries a verifiable identity badge, which then acts on an MCP server, with a signed checkpoint on each handoff.</title>
   <desc>A human figure on the left, an arrow labelled delegates with a check seal, a friendly AI agent character with a burgundy identity badge in the centre, an arrow labelled acts with a check seal, and a stacked MCP server on the right.</desc>
+  <style>
+    @keyframes stamp{0%,70%{transform:scale(1)}80%{transform:scale(1.14)}90%{transform:scale(.99)}100%{transform:scale(1)}}
+    .seal{transform-box:fill-box;transform-origin:center;animation:stamp 4s ease-in-out infinite}
+    .s0{animation-delay:0s}.s1{animation-delay:.45s}.s2{animation-delay:.9s}
+    @media(prefers-reduced-motion:reduce){.seal{animation:none}}
+  </style>
   <defs>
     <marker id="ah" markerWidth="12" markerHeight="12" refX="8.5" refY="5" orient="auto">
       <path d="M0,0 L10,5 L0,10 Z" fill="#0F172A"/>
@@ -21,7 +27,7 @@
   <!-- ARROW 1 -->
   <line x1="214" y1="160" x2="486" y2="160" stroke="#0F172A" stroke-width="3" marker-end="url(#ah)"/>
   <text x="350" y="138" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" letter-spacing="2" fill="#334155">DELEGATES</text>
-  <g>
+  <g class="seal s1">
     <circle cx="350" cy="160" r="14" fill="#FAF7EE" stroke="#7C2D3A" stroke-width="2.5"/>
     <path d="M343 160 l5 6 l9 -12" fill="none" stroke="#7C2D3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
@@ -43,15 +49,17 @@
   <circle cx="508" cy="131" r="5" fill="#7C2D3A" opacity="0.25"/>
   <circle cx="572" cy="131" r="5" fill="#7C2D3A" opacity="0.25"/>
   <circle cx="614" cy="156" r="6" fill="#F2EBD9" stroke="#0F172A" stroke-width="2.5"/>
-  <circle cx="540" cy="206" r="18" fill="#7C2D3A"/>
-  <path d="M531 206 l6 7 l12 -15" fill="none" stroke="#FAF7EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="seal s0">
+    <circle cx="540" cy="206" r="18" fill="#7C2D3A"/>
+    <path d="M531 206 l6 7 l12 -15" fill="none" stroke="#FAF7EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
   <text x="540" y="292" text-anchor="middle" font-size="20" fill="#0F172A">AI Agent</text>
   <text x="540" y="312" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" letter-spacing="2" fill="#7C2D3A">VERIFIABLE IDENTITY</text>
 
   <!-- ARROW 2 -->
   <line x1="630" y1="160" x2="908" y2="160" stroke="#0F172A" stroke-width="3" marker-end="url(#ah)"/>
   <text x="772" y="138" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" letter-spacing="2" fill="#334155">ACTS · BUY · EMAIL · CODE</text>
-  <g>
+  <g class="seal s2">
     <circle cx="772" cy="160" r="14" fill="#FAF7EE" stroke="#7C2D3A" stroke-width="2.5"/>
     <path d="M765 160 l5 6 l9 -12" fill="none" stroke="#7C2D3A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
