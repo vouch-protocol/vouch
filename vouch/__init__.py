@@ -245,6 +245,20 @@ def __getattr__(name):
         from . import proof_of_integration
 
         return getattr(proof_of_integration, name)
+    # Liveness-conformance-decaying recognition trust (PAD-073)
+    elif name in (
+        "LivenessError",
+        "build_conformance_receipt",
+        "verify_conformance_receipt",
+        "last_conformant",
+        "consumable_trust",
+        "should_revoke",
+        "revocation_entry",
+        "CONFORMANCE_RECEIPT_TYPE",
+    ):
+        from . import liveness_conformance
+
+        return getattr(liveness_conformance, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -432,6 +446,15 @@ __all__ = [
     "proof_of_integration_block",
     "CHALLENGE_TYPE",
     "RESPONSE_TYPE",
+    # Liveness-conformance-decaying recognition trust (PAD-073)
+    "LivenessError",
+    "build_conformance_receipt",
+    "verify_conformance_receipt",
+    "last_conformant",
+    "consumable_trust",
+    "should_revoke",
+    "revocation_entry",
+    "CONFORMANCE_RECEIPT_TYPE",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
