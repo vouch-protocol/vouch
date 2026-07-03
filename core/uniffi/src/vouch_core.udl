@@ -190,6 +190,16 @@ namespace vouch_core {
     string robotics_build_decommission(bytes signer_seed, string params_json);
     [Throws=CoreError]
     string robotics_verify_decommission(string credential_json, bytes public_key, string? trusted_authorities_json);
+
+    // Regulatory conformance (Phase 5.14).
+    [Throws=CoreError]
+    string robotics_check_conformance(string credentials_json, string profile_id);
+    [Throws=CoreError]
+    string robotics_report_digest(string report_json);
+    [Throws=CoreError]
+    string robotics_build_conformance_attestation(bytes signer_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_conformance_attestation(string credential_json, bytes public_key);
 };
 
 dictionary Ed25519KeyPair {

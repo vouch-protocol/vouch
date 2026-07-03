@@ -2397,6 +2397,31 @@ retired  = build_decommission(authority_signer, robot_did=robot, reason="end of 
 Security boundary: a transfer verifies only when its issuer is the current owner, so no one but the owner can hand the robot on. A key rotation must be signed by the key it rotates from, so the chain of trust is unbroken. A decommission can be restricted to an attested authority set. The open layer records these as plain signed credentials; a verifier decides how strictly to enforce them.
 `,
       },
+      {
+        id: 'robotics-conformance',
+        title: 'Regulatory conformance',
+        summary: 'Map a robot credentials to safety and AI regulations, check coverage, and sign an attestation an auditor can consume.',
+        body: `
+A conformance profile is a machine-checkable mapping from a robot's Vouch credentials to the clauses of a public safety or AI regulation. Instead of a static certificate on paper, conformance becomes something a verifier can check from the credentials the robot actually holds.
+
+The problem it closes: regulators and operators need to know a robot meets ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, or UL 3300, and today that lives in documents no machine can check.
+
+How it works: \`check_conformance(credentials, profile_id)\` walks the named profile and reports, for each requirement, whether the presented credentials satisfy it, citing the clause. An assessing party then signs an attestation over that report.
+
+\`\`\`python
+from vouch.robotics import check_conformance, build_conformance_attestation
+
+report = check_conformance([identity, provenance, scope, safety_record], "eu-ai-act-high-risk")
+print(report["conforms"], report["satisfiedCount"], "/", report["totalCount"])
+
+attestation = build_conformance_attestation(assessor_signer, robot_did=robot, report=report)
+\`\`\`
+
+Built-in reference profiles: \`iso-10218\`, \`iso-ts-15066\`, \`eu-machinery-2023-1230\`, \`eu-ai-act-high-risk\`, and \`ul-3300\`.
+
+Security boundary: the report is deterministic, so any language reproduces it from the same credentials. The attestation embeds the report and binds it by digest, so \`verify_conformance_attestation\` rejects a report that was altered after signing. The profiles are a reference crosswalk, not legal advice; a deployment confirms each mapping against the current regulation text for its market.
+`,
+      },
     ],
   },
 ];

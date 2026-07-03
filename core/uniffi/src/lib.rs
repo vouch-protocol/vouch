@@ -699,5 +699,32 @@ pub fn robotics_verify_decommission(
         trusted_authorities_json.as_deref(),
     )?)
 }
+pub fn robotics_check_conformance(
+    credentials_json: String,
+    profile_id: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::check_conformance(&credentials_json, &profile_id)?)
+}
+pub fn robotics_report_digest(report_json: String) -> Result<String, CoreError> {
+    Ok(rjson::report_digest(&report_json)?)
+}
+pub fn robotics_build_conformance_attestation(
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_conformance_attestation(
+        &signer_seed,
+        &params_json,
+    )?)
+}
+pub fn robotics_verify_conformance_attestation(
+    credential_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_conformance_attestation(
+        &credential_json,
+        &public_key,
+    )?)
+}
 
 uniffi::include_scaffolding!("vouch_core");

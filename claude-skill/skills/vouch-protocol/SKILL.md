@@ -233,7 +233,7 @@ Reference implementations under `vouch/integrations/`. See
 
 ### "How do I give a robot a verifiable identity, or enforce physical limits?"
 
-Vouch ships thirteen robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
+Vouch ships fourteen robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
 and the Rust core that flows to Swift, Kotlin/JVM, .NET, C/C++, and WASM):
 hardware-rooted identity (`mint_robot_identity` / `verify_robot_identity`, bound
 to a TPM or secure element), model and config provenance
@@ -264,7 +264,12 @@ attested approvers have each signed it), and robot lifecycle
 `build_key_rotation` / `verify_key_rotation` / `verify_key_history`,
 `build_decommission` / `verify_decommission`, signed ownership transfers forming a
 chain of custody, a key rotation history, and a decommission a verifier honors by
-refusing to trust the robot). Same
+refusing to trust the robot), and regulatory conformance
+(`check_conformance` / `build_conformance_attestation` /
+`verify_conformance_attestation`, machine-checkable reference profiles for ISO
+10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300 that
+map a robot's credentials to the clauses of a regulation and produce a
+deterministic, signable conformance report). Same
 Verifiable Credentials as the rest of Vouch, so they verify in every language. See
 `reference/robotics.md`.
 
@@ -278,7 +283,7 @@ Verifiable Credentials as the rest of Vouch, so they verify in every language. S
 - **User wants continuous trust** -> Heartbeat Protocol with validator quorum (Python only today).
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
 - **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
-- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived), a delegation lease (a short-lived scope-bounded grant a robot verifies and acts on entirely offline, attenuating down a cross-vendor chain), a physical quorum (a cryptographic two-person rule authorizing a high-consequence action only when M of N attested approvers have each signed it), and robot lifecycle (signed ownership transfers forming a chain of custody, a key rotation history, and a decommission credential a verifier honors by refusing to trust a retired robot).
+- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived), a delegation lease (a short-lived scope-bounded grant a robot verifies and acts on entirely offline, attenuating down a cross-vendor chain), a physical quorum (a cryptographic two-person rule authorizing a high-consequence action only when M of N attested approvers have each signed it), and robot lifecycle (signed ownership transfers forming a chain of custody, a key rotation history, and a decommission credential a verifier honors by refusing to trust a retired robot), and regulatory conformance (machine-checkable reference profiles for ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300 that map the robot's credentials to the clauses of a regulation and produce a deterministic report an authority can sign as a conformance attestation).
 
 ## Reference files
 
@@ -294,7 +299,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
 - `reference/outcome-evidence.md` - Commit-before-outcome verdicts, settlement, track record
 - `reference/reputation-evidence.md` - Evidence-backed reputation: receipts, aggregation, ledger, policy, threshold proofs, disputes
-- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record, perception provenance, delegation lease, physical quorum, lifecycle (ownership transfer, key rotation, decommission)
+- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record, perception provenance, delegation lease, physical quorum, lifecycle (ownership transfer, key rotation, decommission), regulatory conformance (ISO 10218, ISO/TS 15066, EU Machinery Regulation, EU AI Act, UL 3300 profiles plus signed conformance attestation)
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
 - `reference/troubleshooting.md` - Common errors and fixes

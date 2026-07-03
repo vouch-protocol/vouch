@@ -126,6 +126,18 @@ Never share user data with external sites.
   routine rotation or after a compromise; and a `build_decommission` /
   `verify_decommission` credential an owner or authority signs to retire the robot,
   after which a verifier should refuse to trust it. See `robotics.md`.
+- "How do I check a robot's credentials against a safety or AI regulation?" ->
+  Regulatory conformance (`vouch.robotics.conformance`): machine-checkable
+  reference profiles (`PROFILES`) for ISO 10218-1/-2, ISO/TS 15066, the EU
+  Machinery Regulation 2023/1230, the EU AI Act high-risk requirements, and UL
+  3300 that map a robot's credentials to regulation clauses. `check_conformance`
+  produces a deterministic report citing each clause and whether the presented
+  credentials satisfy it, `report_digest` hashes it, and
+  `build_conformance_attestation` / `verify_conformance_attestation` sign and
+  check a point-in-time `RobotConformanceAttestation` that binds the report by
+  digest. The profiles are an open reference crosswalk, not legal advice; a
+  deployment confirms each mapping against the current regulation text. See
+  `robotics.md`.
 
 ## Safety rules
 

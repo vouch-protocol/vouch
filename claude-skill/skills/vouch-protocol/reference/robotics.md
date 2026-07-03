@@ -575,6 +575,72 @@ thereafter. Verification fails closed on a wrong type or an invalid proof.
 
 ---
 
+## 14. Regulatory conformance
+
+`vouch.robotics.conformance`
+
+What it is: a machine-checkable mapping from a robot's Vouch credentials to the
+clauses of a public safety or AI regulation, called a conformance profile.
+Built-in reference profiles cover ISO 10218-1/-2 (industrial robots), ISO/TS
+15066 (collaborative operation, power and force limiting), the EU Machinery
+Regulation 2023/1230, the EU AI Act high-risk requirements, and UL 3300 (service
+and mobile robots). `check_conformance` runs a profile against a set of
+credentials and returns a deterministic report; an issuer can sign a
+point-in-time conformance attestation over that report.
+
+The problem it closes: a robot may carry a hardware-rooted identity, a physical
+scope, a safety record, and the rest, but "does this satisfy ISO 10218-1 or the
+EU Machinery Regulation?" is still answered by hand, in a document, against
+evidence nobody can independently recheck. A conformance profile turns that
+mapping into something a verifier runs: each regulatory requirement is linked to
+the credentials that satisfy it, and the answer is reproducible from the same
+inputs.
+
+How it works: a profile is an ordered list of requirements, each naming the
+clause it maps to and the credential evidence it needs.
+`check_conformance(credentials, profile_id)` walks the profile and, for each
+requirement, decides whether the presented credentials satisfy it, citing the
+clause. The report is deterministic: the same credentials and the same profile
+produce the same report, and `report_digest` gives its multibase SHA-256 so it
+can be referenced by hash. An issuer, the robot, its owner, or an assessing
+authority, calls `build_conformance_attestation` to sign a point-in-time
+`RobotConformanceAttestation` that embeds the report and binds it by digest;
+`verify_conformance_attestation` checks the signature and that the embedded
+report reproduces its bound digest. The profiles are a reference crosswalk that
+makes conformance verifiable in the open. They are not legal advice, and a
+deployment confirms each mapping against the current text of the regulation it
+cites.
+
+The API: `PROFILES` (the built-in reference profiles), `profile` (fetch one by
+id), `check_conformance` (credentials plus a profile id to a deterministic
+report), `report_digest`, `build_conformance_attestation`, and
+`verify_conformance_attestation`. Credential type: `RobotConformanceAttestation`.
+
+Worked example (Python):
+
+```python
+from vouch.robotics import conformance
+
+report = conformance.check_conformance(credentials, profile_id="iso-10218-1")
+for req in report.requirements:
+    print(req.clause, req.satisfied)           # each clause cited, satisfied or not
+
+att = conformance.build_conformance_attestation(authority_signer, report)
+ok, subject = conformance.verify_conformance_attestation(att, authority_signer.public_key())
+```
+
+Security boundary: the report is deterministic, so anyone with the same
+credentials and profile recomputes the same result and cannot be shown a
+different answer. The attestation binds its report by digest, so the report
+cannot be swapped after signing without breaking verification, and
+`verify_conformance_attestation` fails closed on a wrong type, an invalid proof,
+or a report that does not reproduce its bound digest. The profiles are a
+reference crosswalk, not a legal ruling: a passing report attests that the cited
+credentials satisfy the mapped clauses as the profile defines them, which a
+deployment confirms against the regulation text.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -587,10 +653,11 @@ one credential or its whole DID revoked (8), carries a tamper-evident safety
 record that travels with it (9), signs the provenance of every sensor frame
 it captures (10), acts on a short-lived offline delegation lease that attenuates
 down a cross-vendor chain (11), gates its highest-consequence actions behind
-a physical quorum (12), and carries cryptographically accountable lifecycle
-transitions as it changes owners, rotates keys, and is retired (13). Every
-artifact is the same Verifiable Credential format, so one verifier and one trust
-model cover all thirteen.
+a physical quorum (12), carries cryptographically accountable lifecycle
+transitions as it changes owners, rotates keys, and is retired (13), and maps its
+credentials to the clauses of a public safety or AI regulation with a signed
+conformance report (14). Every artifact is the same Verifiable Credential format,
+so one verifier and one trust model cover all fourteen.
 
 ## Quick answers
 
@@ -626,17 +693,25 @@ model cover all thirteen.
   retired robot is no longer trusted? Yes, robot lifecycle: signed ownership
   transfers forming a chain of custody, a key rotation history, and a
   decommission credential a verifier honors by refusing to trust the robot (13).
+- Can I check a robot's credentials against a safety or AI regulation and get a
+  signed result? Yes, regulatory conformance: machine-checkable reference
+  profiles (ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act,
+  UL 3300) that produce a deterministic report `check_conformance` builds and
+  `build_conformance_attestation` signs, citing the clause each requirement maps
+  to (14).
 
 ## Status
 
-All thirteen capabilities are implemented and tested in Python, TypeScript, Go, and
+All fourteen capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the
 hardware-root binding and the config hash. The liveness heartbeat builds on the
 agent Heartbeat Protocol, the revocation paths reuse `vouch.status_list` and
-`vouch.revocation`, the safety record reuses the black-box chain semantics, and
-perception provenance reuses the same hash-linked log semantics.
+`vouch.revocation`, the safety record reuses the black-box chain semantics,
+perception provenance reuses the same hash-linked log semantics, and the
+conformance profiles map robotics credentials to the clauses of public safety and
+AI regulations as an open reference crosswalk.
 The novel methods are published as open defensive disclosures: PAD-064
 (hardware-rooted identity), PAD-067 (robot-to-robot handshake), PAD-069
 (confidential tamper-evident black box), and PAD-070 (scannable offline passport).

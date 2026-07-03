@@ -922,3 +922,42 @@ pub fn verify_decommission(
         trusted.as_ref(),
     )?))
 }
+
+// ---- regulatory conformance -----------------------------------------------
+
+/// Check a credential set against a named profile and return the report.
+/// `credentials_json` is a JSON array of credentials.
+pub fn check_conformance(credentials_json: &str, profile_id: &str) -> Result<String> {
+    let credentials = parse(credentials_json)?;
+    let arr = credentials
+        .as_array()
+        .ok_or_else(|| CoreError::Json("credentials must be a JSON array".into()))?;
+    Ok(r::check_conformance(arr, profile_id)?.to_string())
+}
+
+/// Multibase SHA-256 of the JCS-canonical report.
+pub fn report_digest(report_json: &str) -> Result<String> {
+    Ok(r::report_digest(&parse(report_json)?))
+}
+
+/// Build a signed `RobotConformanceAttestation`. `params_json` is `{issuerDid,
+/// robotDid, report, validFrom, validUntil?}` where `report` comes from
+/// [`check_conformance`].
+pub fn build_conformance_attestation(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildConformanceAttestation {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        report: p.get("report").cloned().unwrap_or(Value::Null),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_conformance_attestation(signer_seed, &params)?.to_string())
+}
+
+pub fn verify_conformance_attestation(credential_json: &str, public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_conformance_attestation(
+        &parse(credential_json)?,
+        public_key,
+    )?))
+}

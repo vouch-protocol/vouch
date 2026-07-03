@@ -17,6 +17,7 @@ robots and embodied agents:
   - physical_quorum: M-of-N approvals for high-consequence physical actions.
   - lifecycle: ownership transfer, key rotation, and decommissioning.
   - perception: signed, tamper-evident provenance for captured sensor frames.
+  - conformance: machine-checkable mapping from credentials to safety regulations.
 """
 
 from .capability import (
@@ -111,6 +112,14 @@ from .lifecycle import (
     verify_key_rotation,
     verify_ownership_transfer,
 )
+from .conformance import (
+    PROFILES,
+    build_conformance_attestation,
+    check_conformance,
+    profile,
+    report_digest,
+    verify_conformance_attestation,
+)
 
 __all__ = [
     # identity
@@ -183,6 +192,13 @@ __all__ = [
     "verify_key_history",
     "build_decommission",
     "verify_decommission",
+    # conformance (credentials mapped to safety and AI regulations)
+    "PROFILES",
+    "profile",
+    "check_conformance",
+    "report_digest",
+    "build_conformance_attestation",
+    "verify_conformance_attestation",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

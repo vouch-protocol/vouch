@@ -739,3 +739,28 @@ pub fn robotics_verify_decommission(
     )
     .map_err(jerr)
 }
+#[wasm_bindgen(js_name = roboticsCheckConformance)]
+pub fn robotics_check_conformance(
+    credentials_json: &str,
+    profile_id: &str,
+) -> Result<String, JsError> {
+    rjson::check_conformance(credentials_json, profile_id).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsReportDigest)]
+pub fn robotics_report_digest(report_json: &str) -> Result<String, JsError> {
+    rjson::report_digest(report_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildConformanceAttestation)]
+pub fn robotics_build_conformance_attestation(
+    signer_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_conformance_attestation(&b64d(signer_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyConformanceAttestation)]
+pub fn robotics_verify_conformance_attestation(
+    credential_json: &str,
+    public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_conformance_attestation(credential_json, &b64d(public_b64)?).map_err(jerr)
+}

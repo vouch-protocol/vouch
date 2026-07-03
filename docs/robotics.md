@@ -259,6 +259,27 @@ retired = build_decommission(authority_signer, robot_did=robot, reason="end of s
                             final_disposition="recycled")
 ```
 
-Sections 5.7 to 5.13 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.14 Regulatory conformance (`vouch.robotics.conformance`)
+
+A conformance profile is a machine-checkable mapping from a robot's credentials to
+the clauses of a public safety or AI regulation. Built-in reference profiles cover
+ISO 10218-1/-2, ISO/TS 15066, the EU Machinery Regulation 2023/1230, the EU AI Act
+high-risk requirements, and UL 3300. `check_conformance` walks a profile and
+reports, per requirement, whether the presented credentials satisfy it, citing the
+clause. An assessing party signs a point-in-time attestation over that report.
+
+```python
+from vouch.robotics import check_conformance, build_conformance_attestation
+
+report = check_conformance([identity, provenance, scope, safety_record], "eu-ai-act-high-risk")
+attestation = build_conformance_attestation(assessor, robot_did=robot, report=report)
+```
+
+The report is deterministic, so every language reproduces it from the same
+credentials, and the attestation binds the embedded report by digest. The profiles
+are a reference crosswalk, not legal advice; a deployment confirms each mapping
+against the current regulation text for its market.
+
+Sections 5.7 to 5.14 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.
