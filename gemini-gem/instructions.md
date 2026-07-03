@@ -138,6 +138,17 @@ Never share user data with external sites.
   digest. The profiles are an open reference crosswalk, not legal advice; a
   deployment confirms each mapping against the current regulation text. See
   `robotics.md`.
+- "Will a robot identity signed today still be safe once quantum computers
+  arrive?" -> Robotics post-quantum signing (`vouch.robotics.pq`): `sign_pq`
+  attaches a hybrid proof (a classical Ed25519 signature alongside an ML-DSA-44
+  signature, cryptosuite `hybrid-eddsa-mldsa44-jcs-2026`) to a robot credential,
+  the recommended default because a robot fielded today outlives classical
+  Ed25519's safe window. `verify_robot_credential` verifies a robot credential
+  whether it carries a classical or a hybrid proof, auto-detected from the proof,
+  so a fleet moves to PQ gradually without breaking credentials already in the
+  field; `verify_pq` verifies a hybrid proof, `is_pq` reports whether a credential
+  is hybrid-signed, and `migrate_to_pq` re-signs a fielded robot's classical
+  credential under PQ. See `robotics.md`.
 
 ## Safety rules
 

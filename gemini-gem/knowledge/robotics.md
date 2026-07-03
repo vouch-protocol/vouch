@@ -641,6 +641,46 @@ deployment confirms against the regulation text.
 
 ---
 
+## 15. Robotics post-quantum signing
+
+`vouch.robotics.pq`
+
+What it is: a hybrid post-quantum signing path for robot credentials. A hybrid
+proof carries a classical Ed25519 signature alongside an ML-DSA-44 signature
+under one cryptosuite, `hybrid-eddsa-mldsa44-jcs-2026`.
+
+The problem it closes: a robot fielded today lives ten to twenty years, longer
+than classical Ed25519 is expected to stay safe, so a robot identity signed now
+could be forged once a quantum computer arrives. Signing robot credentials with a
+hybrid proof keeps the classical guarantee for verifiers that only understand
+Ed25519 today and adds a quantum-resistant guarantee that holds for the working
+life of the robot. This makes the hybrid cryptosuite the recommended default for
+robot credentials.
+
+How it works: `sign_pq` attaches a hybrid proof to a robot credential, so the
+credential carries both signatures. Verification is backward compatible:
+`verify_robot_credential` verifies a robot credential whether it carries a
+classical or a hybrid proof, auto-detected from the proof, so a fleet can move to
+PQ gradually without breaking the classical credentials already in the field.
+`verify_pq` verifies a hybrid proof directly and needs the ML-DSA-44 public key,
+passed as raw bytes or a multikey. `is_pq` reports whether a credential is
+hybrid-signed. `migrate_to_pq` re-signs a fielded robot's classical credential
+under PQ, so a deployment can upgrade credentials already in the field with a
+software re-sign rather than reissuing from scratch.
+
+The API: `sign_pq`, `is_pq`, `verify_pq`, `verify_robot_credential`,
+`migrate_to_pq`, and `HYBRID_CRYPTOSUITE`.
+
+Security boundary: `verify_pq` fails closed on a wrong type, a missing or wrong
+ML-DSA-44 public key, or either signature failing to verify, so a hybrid proof is
+accepted only when both the classical and the post-quantum signature are valid.
+`verify_robot_credential` accepts a classical-only credential as before and a
+hybrid credential when both signatures verify, so migrating a fleet to PQ never
+invalidates the classical credentials still in the field. This is the open layer;
+managed PQ key custody and fleet-wide PQ migration orchestration are commercial.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -654,10 +694,12 @@ record that travels with it (9), signs the provenance of every sensor frame
 it captures (10), acts on a short-lived offline delegation lease that attenuates
 down a cross-vendor chain (11), gates its highest-consequence actions behind
 a physical quorum (12), carries cryptographically accountable lifecycle
-transitions as it changes owners, rotates keys, and is retired (13), and maps its
+transitions as it changes owners, rotates keys, and is retired (13), maps its
 credentials to the clauses of a public safety or AI regulation with a signed
-conformance report (14). Every artifact is the same Verifiable Credential format,
-so one verifier and one trust model cover all fourteen.
+conformance report (14), and can sign those robot credentials with a hybrid
+post-quantum proof so an identity issued today still holds once quantum computers
+arrive (15). Every artifact is the same Verifiable Credential format, so one
+verifier and one trust model cover all fifteen.
 
 ## Quick answers
 
@@ -699,10 +741,14 @@ so one verifier and one trust model cover all fourteen.
   UL 3300) that produce a deterministic report `check_conformance` builds and
   `build_conformance_attestation` signs, citing the clause each requirement maps
   to (14).
+- Will a robot identity signed today still be safe once quantum computers
+  arrive? Yes, robotics post-quantum signing: a hybrid Ed25519 and ML-DSA-44
+  proof, with verification that auto-detects classical or hybrid so a fleet
+  migrates gradually without breaking credentials already in the field (15).
 
 ## Status
 
-All fourteen capabilities are implemented and tested in Python, TypeScript, Go, and
+All fifteen capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the
