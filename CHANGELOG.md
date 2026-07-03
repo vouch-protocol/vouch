@@ -30,6 +30,9 @@ The Python reference adds three robotics capabilities on the same
   N attested approvers before a high-consequence physical action is authorized.
 - `vouch.robotics.lifecycle`: ownership transfer (chain of custody), key rotation
   (key history), and a signed decommission credential for a robot's whole life.
+- `vouch.robotics.conformance`: machine-checkable profiles mapping robot credentials
+  to ISO 10218/15066, the EU Machinery Regulation, the EU AI Act, and UL 3300, a
+  deterministic conformance checker, and a signed conformance attestation.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by

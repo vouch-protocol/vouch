@@ -598,6 +598,34 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: REGULATORY CONFORMANCE
+  // =====================================================================
+  {
+    id: 'robotics-conformance',
+    audience: 'Robotics: conformance',
+    title: 'Regulatory conformance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can I check a robot against a safety regulation automatically?',
+        a: `Yes. A conformance profile maps the robot's credentials to the clauses of a regulation, and \`check_conformance(credentials, profile_id)\` returns a report saying which clauses the presented credentials satisfy, each one cited. Built-in reference profiles cover ISO 10218-1/-2, ISO/TS 15066, the EU Machinery Regulation 2023/1230, the EU AI Act high-risk requirements, and UL 3300.`,
+        helpLinks: [{ label: 'Conformance guide', href: '/help/#robotics-conformance' }],
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
+      {
+        q: 'How does an auditor consume the result?',
+        a: `The robot, its owner, or an assessing authority signs a \`RobotConformanceAttestation\` with \`build_conformance_attestation\`. It embeds the report and binds it by digest, so an auditor verifies the signature and the digest with \`verify_conformance_attestation\` and knows the report was not altered.`,
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
+      {
+        q: 'Are the built-in profiles legal advice?',
+        a: `No. The profiles are a reference crosswalk to make conformance verifiable in the open. A deployment confirms each mapping against the current text of the regulation for its market before relying on it.`,
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

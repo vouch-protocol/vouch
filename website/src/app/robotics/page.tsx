@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, and lifecycle credentials for ownership transfer and decommissioning.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, and a regulatory conformance profile mapping credentials to safety and AI regulations.',
 };
 
 const CAPABILITIES = [
@@ -85,6 +85,12 @@ const CAPABILITIES = [
         title: 'Lifecycle and decommissioning',
         body: 'A robot outlives its first owner. Ownership transfers chain into a verifiable chain of custody, the current key can authorize its successor to form a key history, and a signed decommission retires the robot at end of life so a verifier refuses to trust it.',
         module: 'vouch.robotics.lifecycle',
+    },
+    {
+        num: 'xiv.',
+        title: 'Regulatory conformance',
+        body: "A machine-checkable mapping from a robot's credentials to the clauses of public safety and AI regulations, ISO 10218 and 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300. A checker reports which clauses the credentials satisfy, and an assessor can sign a conformance attestation an auditor consumes.",
+        module: 'vouch.robotics.conformance',
     },
 ];
 
