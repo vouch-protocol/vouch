@@ -369,16 +369,28 @@ investigate within five business days.
 
 **Q: How does an agent reach another agent that has no domain or IP?**
 A: By its DID. The transport layer (`vouch.transport`) addresses a peer by
-identity, not location. It prefers identity-first routing over UDNA (Universal
-DID-Native Addressing) and falls back to standard DNS and HTTPS when the peer is
-not on the overlay. The agent dispatches to a DID and does not care which path
-the bytes take.
+identity, not location. The agent publishes a signed record that binds its DID
+to its current endpoint, and a sender resolves the DID to that endpoint and
+verifies the agent itself asserted the route. This ships today over plain HTTPS
+through a rendezvous, and falls back to standard DNS and HTTPS (`did:web`) for
+any peer that has a domain. The agent dispatches to a DID and does not care
+which path the bytes take.
 
-**Q: Do I have to run UDNA to use Vouch?**
-A: No. The transport is optional and experimental, and it is dormant unless you
-opt in with `pip install vouch-protocol[udna]`. Without it, dispatch falls
-through to HTTP, so your code runs unchanged. UDNA is aligned with the W3C UDNA
-Community Group.
+**Q: Do I need UDNA, or a special network, to be reached by identity?**
+A: No. The identity-first resolver runs on commodity HTTPS today, so you do not
+wait on any overlay. Vouch builds on UDNA (Universal DID-Native Addressing) as a
+general identity-native substrate when one is present, and tracks the W3C UDNA
+Community Group so the two interoperate as UDNA's baseline lands. The UDNA SDK is
+an optional extra (`pip install vouch-protocol[udna]`); without it, dispatch
+falls through to the rendezvous or HTTP, so your code runs unchanged.
+
+**Q: If the rendezvous is a single server, is it a single point of trust?**
+A: No. The rendezvous is untrusted. It stores and serves signed route records
+but never has to be believed: the sender re-verifies every record's signature
+itself and checks the record's DID against the one it asked for. A malicious or
+compromised rendezvous can withhold a record or serve a stale one, but it cannot
+forge a route or point you at a different identity, because it does not hold the
+agent's key.
 
 **Q: Are my credentials safe if the message switches from UDNA to HTTP?**
 A: Yes. The message is a `VouchEnvelope` that carries the signed credential, its

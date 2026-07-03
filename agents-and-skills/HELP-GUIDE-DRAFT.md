@@ -1,4 +1,4 @@
-# Help Guide Draft (NOT PUBLISHED — awaiting your approval)
+# Help Guide Draft (NOT PUBLISHED: awaiting your approval)
 
 Long-form help content for the website. Probable home: a new page under
 `/help/ai-assistants` (or merged into the existing `/help` route) for
@@ -7,7 +7,7 @@ tiering. Show the user this file before merging.
 
 ---
 
-# Part 1 — Pick your sidecar
+# Part 1: Pick your sidecar
 
 The Vouch sidecar holds the agent's signing key. Three implementations
 ship today (Go, Python, TypeScript) and they are not interchangeable in
@@ -59,10 +59,10 @@ design intent, not a workaround.
 
 All three sidecars expose the same HTTP API:
 
-- `GET  /health` — liveness probe
-- `GET  /did` — the sidecar's DID
-- `GET  /.well-known/did.json` — DID Document (optional, dev-friendly)
-- `POST /sign` — sign an intent, return a Verifiable Credential
+- `GET  /health`: liveness probe
+- `GET  /did`: the sidecar's DID
+- `GET  /.well-known/did.json`: DID Document (optional, dev-friendly)
+- `POST /sign`: sign an intent, return a Verifiable Credential
 
 A contract test suite (`test-vectors/sidecar-contract/`) verifies that
 each implementation accepts and rejects the same inputs and emits
@@ -92,7 +92,7 @@ a real did:web rooted on your domain), and the key material changes
 
 ---
 
-# Part 2 — Use the Vouch AI assistants
+# Part 2: Use the Vouch AI assistants
 
 Vouch ships four AI surfaces. Pick the one that matches the tool you
 already use; all four route to the same canonical documentation.
@@ -115,7 +115,7 @@ already use; all four route to the same canonical documentation.
 
 ---
 
-## Walkthrough — Claude Skill
+## Walkthrough: Claude Skill
 
 ### Install
 
@@ -195,7 +195,7 @@ new cryptosuite or SDK shape.
 
 ---
 
-## Walkthrough — Vouch Agent
+## Walkthrough: Vouch Agent
 
 ### Where to find it
 
@@ -343,7 +343,7 @@ Or set them in `website-agent/.env` (auto-loaded on backend start).
 
 ---
 
-## Walkthrough — OpenAI Custom GPT
+## Walkthrough: OpenAI Custom GPT
 
 ### Build your own
 
@@ -397,7 +397,7 @@ note in the Instructions.
 
 ---
 
-## Walkthrough — Gemini Gem
+## Walkthrough: Gemini Gem
 
 ### Build the Gem
 
@@ -477,30 +477,58 @@ release notifications on https://github.com/vouch-protocol/vouch.
 
 # Part 3: Reach agents by identity (transport)
 
-Optional and experimental. Use this when agents need to reach each other by
-identity rather than by a fixed domain or IP. It is aligned with the W3C UDNA
-Community Group and is dormant unless you opt in.
+Optional. Use this when agents need to reach each other by identity rather than
+by a fixed domain or IP. The identity-first resolver ships today over commodity
+HTTPS, and a standard HTTP path is always there as the fallback, so it is never
+all-or-nothing.
 
 ## When to use it
 
 - Agents are ephemeral or move across hosts, so a stable domain or IP is not
   available, but a DID always is.
 - You want delivery to follow the identity, with a standard HTTP path as the
-  fallback for peers that are not on the overlay.
+  fallback for peers that have a domain.
 
 ## How it works
 
-`TransportManager` tries transports in order: UDNA first (identity-first), then
-HTTP (did:web, DNS, HTTPS). A peer that cannot be reached over one transport
+An agent binds its DID to its current endpoint, signs that binding with its own
+key, and publishes it to a rendezvous. A sender that knows only the DID resolves
+it to the endpoint and verifies the agent itself asserted the route, then
+delivers. `TransportManager` tries transports in order, identity-first and then
+HTTP (did:web, DNS, HTTPS); a peer that cannot be reached over one transport
 falls through to the next, and `DeliveryResult.attempts` records the path taken.
 The message is a `VouchEnvelope` that carries the signed credential, liability
 attestations, and provenance unchanged, with a content digest checked on
 receipt, so the trust properties hold whichever path delivers it.
 
-## Enable it
+The rendezvous is untrusted: the sender re-verifies every signed record locally
+and checks its DID, so a rendezvous cannot forge a route or redirect you to a
+different identity. Swapping the rendezvous for a real overlay (libp2p, or
+UDNA's DHT when its baseline lands) reuses the same record format and
+verification, so what you build now keeps working.
+
+## Reach an agent by DID
+
+```python
+from vouch.transport import (
+    HttpRendezvousResolver, HttpRendezvousChannel, build_route_record,
+)
+
+# The agent announces its current inbox, signed under its DID.
+resolver = HttpRendezvousResolver("https://rendezvous.example.com")
+await resolver.announce(build_route_record(
+    did=agent_did, endpoint="https://agent.example/inbox", private_key=agent_ed25519,
+))
+
+# A sender that knows only the DID resolves it and delivers, verifying locally.
+channel = HttpRendezvousChannel(resolver)
+reply = await channel.exchange(f"udna://{agent_did}/vouch.message", frame)
+```
+
+## Use the manager with HTTP fallback
 
 ```bash
-pip install vouch-protocol[udna]
+pip install vouch-protocol[udna]   # optional; SDK-backed UDNA path
 ```
 
 ```python
@@ -511,8 +539,8 @@ manager = TransportManager.default(private_key_jwk=my_private_key_jwk)
 result = await manager.dispatch(envelope)   # result.transport -> "udna" or "http"
 ```
 
-Without the extra installed, the UDNA transport stays dormant and dispatch falls
-through to HTTP, so the same code runs unchanged.
+Without the extra installed, the SDK-backed UDNA path stays dormant and dispatch
+falls through to the rendezvous or HTTP, so the same code runs unchanged.
 
 ## Security note
 

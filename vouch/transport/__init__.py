@@ -63,6 +63,12 @@ from .envelope import (
     VouchEnvelope,
     build_envelope,
 )
+from .http_rendezvous import (
+    HttpRendezvousChannel,
+    HttpRendezvousResolver,
+    RendezvousService,
+    build_rendezvous_app,
+)
 from .http_transport import HttpTransport
 from .manager import TransportManager
 from .rendezvous import (
@@ -118,6 +124,11 @@ __all__ = [
     "RendezvousRegistry",
     "RendezvousChannel",
     "ROUTE_RECORD_TYPE",
+    # HTTPS rendezvous (deployable identity-first resolver)
+    "RendezvousService",
+    "build_rendezvous_app",
+    "HttpRendezvousResolver",
+    "HttpRendezvousChannel",
     # did:key helpers
     "is_did_key",
     "did_key_from_ed25519_public",
