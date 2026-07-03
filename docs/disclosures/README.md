@@ -79,8 +79,26 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-069](./PAD-069-confidential-tamper-evident-robot-blackbox.md) | Confidential, Tamper-Evident Robot Black-Box with Separable Confidentiality and Integrity | 2026-06-15 | Published |
 | [PAD-070](./PAD-070-scannable-offline-robot-passport.md) | Self-Contained, Offline-Verifiable Robot Passport for Physical-World Scanning | 2026-06-15 | Published |
 | [PAD-071](./PAD-071-outcome-evidence-commit-before-outcome-credential.md) | Commit-Before-Outcome Verdict Credential with Neutral-Settler Outcome Attestation | 2026-06-17 | Published |
+| [PAD-072](./PAD-072-proof-of-integration-recognition-credential.md) | Proof-of-Integration Recognition Credential Gated by a Live Keyed Challenge-Response | 2026-07-03 | Published |
+| [PAD-073](./PAD-073-liveness-conformance-decaying-recognition-credential.md) | Liveness-Conformance-Decaying Recognition Credential with Automatic Revocation | 2026-07-03 | Published |
 | [PAD-074](./PAD-074-trust-preserving-transport-failover.md) | Trust-Preserving Multi-Transport Failover for Liability-Bearing Credential Envelopes | 2026-06-30 | Published |
 | [PAD-075](./PAD-075-untrusted-resolver-identity-routing.md) | Untrusted-Resolver Identity Routing via Self-Signed Route Records with Anti-Substitution Binding | 2026-06-30 | Published |
+
+
+## July 3, 2026: Proof-of-Integration and Liveness-Decaying Recognition (PAD-072, PAD-073)
+
+Two disclosures covering how a recognition credential, a badge attesting that an
+independent system integrates the protocol, is made evidence rather than
+assertion. PAD-072 gates issuance on a challenge-response: the candidate answers a
+fresh nonce through its own live surface, signed with the key bound to its
+claimed DID, so the credential proves a working, keyed deployment and embeds a
+proof any verifier can re-check. PAD-073 makes such a credential's trust a
+continuous function of independently observed liveness-conformance: an automated
+prober emits signed conformance receipts, the credential's consumable trust
+decays with elapsed time since the last passing observation, and it auto-revokes
+through the status list when conformance lapses. Both build on the same
+eddsa-jcs-2022 credentials, heartbeat cadence (PAD-016), and verifiable state
+receipts (PAD-036, PAD-071) as the rest of Vouch.
 
 
 ## June 30, 2026: Identity-First Transport Primitives (PAD-074, PAD-075)
