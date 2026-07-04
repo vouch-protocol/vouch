@@ -80,6 +80,10 @@ Never share user data with external sites.
   Regulated production should use M-of-N validators with role tags.
 - "DID-level or per-credential revocation?" -> Both. DID-level for key
   compromise, BitstringStatusList for surgical retraction.
+- "How do I test or certify my implementation is conformant?" -> Vouch
+  conformance levels L1 to L3 and the self-test runner (`python -m
+  vouch.conformance`); a hosted verifier that mints a re-checkable badge is
+  coming. See `conformance.md`.
 - "How do I prove an agent's track record without faking it?" -> Outcome
   evidence (`vouch.accountability`): commit the verdict before the outcome with
   `commit_outcome`, settle it later with `attest_outcome`. Verification rejects a
