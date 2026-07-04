@@ -79,6 +79,10 @@ been removed. See `integrations.md`.
 - "DID-level revocation or BitstringStatusList?" -> Both. DID-level for
   key compromise; BitstringStatusList for surgical per-credential
   retraction. Most production deployments run both.
+- "How do I test or certify that my implementation is conformant?" -> The
+  Vouch conformance levels L1 to L3 and the self-test runner (`python -m
+  vouch.conformance`), with a hosted verifier that mints a re-checkable badge
+  coming. See `conformance.md`.
 - "Single validator or quorum?" -> Single is fine for development. For
   regulated production, M-of-N with role-tagged validators.
 - "How do I prove an agent was right, or track a record I cannot fake?" ->
