@@ -818,6 +818,26 @@ The verifier walks every link, validates signatures, and confirms resource subse
         meta: 'Specification §9 Delegation Chains',
       },
       {
+        q: 'How do I use one identity across my devices without copying my private key?',
+        a: `Each device makes its own key and keeps it local. Your root identity signs a scoped grant for each device, and the device signs its actions with its own key, chained under that grant. A verifier ties any action back to the trusted root. The private key never travels between devices.
+
+\`\`\`python
+from vouch import Agent, enroll_device, verify_delegated_chain
+
+root = Agent("alice.example")
+phone = Agent()  # a did:key minted on the phone
+grant = enroll_device(root, device_did=phone.did, action="charge",
+                      target="api.bank", resource="https://api.bank/invoices")
+action = phone.sign(action="charge", target="api.bank",
+                    resource="https://api.bank/invoices/42", parent_credential=grant)
+result = verify_delegated_chain([grant, action],
+                                trusted_roots={root.did: root.public_key_jwk})
+\`\`\`
+
+Lose a device and you revoke it with a \`DeviceRegistry\`; lose the root and you rebuild it from a threshold of Shamir shares with \`split_identity\` and \`recover_identity\`. The TypeScript SDK exposes the same helpers.`,
+        meta: 'Cross-device identity',
+      },
+      {
         q: 'How do I make a credential revocable later?',
         a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Allocate an index from your status list, then pass the entry as \`credential_status\` to \`sign_credential\` so the proof covers it:
 
