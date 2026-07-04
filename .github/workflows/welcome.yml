@@ -18,7 +18,11 @@ jobs:
   welcome:
     runs-on: ubuntu-latest
     steps:
+      # The greeter posts only on a contributor's first issue or PR. On every
+      # other open (maintainers, returning contributors) it has nothing to do
+      # and exits non-zero, so never let that mark the check as failed.
       - uses: actions/first-interaction@v3
+        continue-on-error: true
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-message: |
