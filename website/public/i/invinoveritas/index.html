@@ -21,6 +21,7 @@ body { background: var(--parchment); color: var(--ink); font-family: "Source Ser
 .frame { max-width: 720px; margin: 0 auto; }
 .eyebrow { font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }
 .seal-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+.seal-wrap a { display: inline-flex; line-height: 0; }
 .seal-img { width: 200px; height: 200px; object-fit: contain; }
 .issued-line { text-align: center; font-family: "JetBrains Mono", monospace; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 40px; }
 h1.title { text-align: center; font-weight: 600; font-size: 1.5rem; line-height: 1.3; margin: 0 0 12px; letter-spacing: -0.01em; }
@@ -86,9 +87,11 @@ h1.title { text-align: center; font-weight: 600; font-size: 1.5rem; line-height:
 <section>
   <div class="cert-head">
   <div class="seal-wrap">
-    <img class="seal-img" src="https://vouch-protocol.com/seal-verified.png" alt="Vouch Protocol Verified" />
+    <a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer" aria-label="Vouch Protocol">
+      <img class="seal-img" src="https://vouch-protocol.com/seal-verified.png" alt="Vouch Protocol Verified" />
+    </a>
   </div>
-  <p class="issued-line">4 Jul 2026 &middot; 15:04 UTC</p>
+  <p class="issued-line">4 Jul 2026 &middot; 15:29 UTC</p>
   <h1 class="title">Vouch Verified Integration</h1>
   <p class="byline">invinoveritas &middot; by <a href="https://github.com/babyblueviper1" target="_blank" rel="noopener noreferrer">@babyblueviper1</a></p>
   </div>
@@ -127,7 +130,7 @@ h1.title { text-align: center; font-weight: 600; font-size: 1.5rem; line-height:
   <div class="section">
     <div class="section-head"><div class="rule-line"></div><span class="eyebrow">Signature</span><div class="rule-line"></div></div>
     <div class="section-body">
-      <div class="mono-text dim">zPHTp9bj7pVCwtreU8eQxNgQd1D857GHH29Rpov4GwC8tm3jKrXFgw6dtMNpMFjhGXTzmxXYTxr7jkNSd4wbebuK</div>
+      <div class="mono-text dim">z5je5uzWaC7dseEYDGJe5X1EWWvL9dNYars9TUCZcm3TFuobVzuV4JbECAnEa7WszqPN4RfkMq1hoykwduvDTvpWk</div>
     </div>
   </div>
   
@@ -157,7 +160,7 @@ h1.title { text-align: center; font-weight: 600; font-size: 1.5rem; line-height:
     agent is still trustworthy. The accountability layer adds commit-before-outcome evidence and an
     AccountabilityRecord a counterparty can recompute rather than trust.</p>
     <p>The <a href="https://vouch-protocol.com/agent-trust-index" target="_blank" rel="noopener noreferrer">Agent Trust Index</a> grades how verifiable and accountable an AI agent is, an open, public scorecard.</p>
-    <p class="cta"><a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer">Build on Vouch</a></p>
+    <p class="cta"><a href="https://vouch-protocol.com/the-trust-gap" target="_blank" rel="noopener noreferrer">See the AI trust gap</a></p>
   </div>
 
   <div class="footer-cta">
