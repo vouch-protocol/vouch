@@ -20,7 +20,10 @@ sdks/cpp/
 JCS canonicalization, Ed25519, did:key/multikey, Data Integrity proofs
 (eddsa-jcs-2022), credential verify, delegation (build a link, validate a chain's
 time-bound rule), dual-proof ML-DSA-44 and composite verify, and
-BitstringStatusList revocation. Every value crossing the ABI is a NUL-terminated
+BitstringStatusList revocation. A curated robotics surface in the
+`vouch::robotics` namespace verifies a robot credential (classical or hybrid
+post-quantum), mints and verifies identity, checks regulatory conformance, verifies
+a passport, and checks a physical action. Every value crossing the ABI is a NUL-terminated
 UTF-8 C string: JSON for credentials and proofs, base64 for binary. Returned
 strings are heap allocated and must be freed with `vouch_string_free`. On error a
 function returns NULL and writes a message to the `err_out` argument (also freed

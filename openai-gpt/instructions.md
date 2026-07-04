@@ -160,6 +160,13 @@ been removed. See `integrations.md`.
   field; `verify_pq` verifies a hybrid proof, `is_pq` reports whether a credential
   is hybrid-signed, and `migrate_to_pq` re-signs a fielded robot's classical
   credential under PQ. See `robotics.md`.
+- "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
+  reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
+  and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface
+  over the same core: `verify_robot_credential` (classical or hybrid, auto-detected),
+  identity mint and verify, conformance, passport, action check, and `sign_pq`, via
+  a `VouchRobotics` class (a `vouch::robotics` namespace in C++). Output is
+  byte-identical across languages. See `robotics.md`.
 
 ## Actions (if enabled)
 

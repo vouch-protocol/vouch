@@ -118,9 +118,12 @@ export default function RoboticsPage() {
                     </p>
                     <p className="text-ink-soft text-[1rem] leading-relaxed max-w-prose">
                         Every piece below is built on the same Verifiable Credentials as the rest of
-                        Vouch, so it verifies with the Python, Rust, TypeScript, and Go SDKs. These are
-                        open formats and reference implementations; hosted black-box storage and
-                        fleet-scale infrastructure are left to whoever deploys them.
+                        Vouch, so it verifies with the Python, Rust, TypeScript, and Go SDKs. A curated
+                        surface, verifying a robot credential, identity, conformance, passport, action
+                        checks, and post-quantum signing, is also callable from the C, C++, .NET, JVM,
+                        and Swift wrappers, so an app in any of those languages can verify and integrate.
+                        These are open formats and reference implementations; hosted black-box storage
+                        and fleet-scale infrastructure are left to whoever deploys them.
                     </p>
                 </div>
             </section>
