@@ -2495,6 +2495,25 @@ ok = verify_robot_credential(identity, robot_ed25519_public_key,
 Security boundary: a hybrid credential passes only when both the classical and the post-quantum signature validate, so it is at least as strong as the classical signature and stays safe once classical signatures do not. Verifying a hybrid credential needs the ML-DSA-44 public key. The open layer is software signing, backward-compatible verification, and a software re-sign migration; managed post-quantum key custody and fleet migration are commercial.
 `,
       },
+      {
+        id: 'robotics-wrapper-sdks',
+        title: 'Robotics from the C, C++, .NET, JVM, and Swift SDKs',
+        summary: 'Verify and integrate robot credentials from the wrapper SDKs through a curated VouchRobotics surface over the same Rust core.',
+        body: `
+The reference SDKs (Python, TypeScript, Go, and the Rust core) carry the full robotics surface. The C, C++, .NET, JVM (Java and Kotlin), and Swift wrappers expose a curated consumer surface over the same core, the same way they expose the agent operations, so an application in those languages can verify and integrate robot credentials without leaving its stack.
+
+The curated surface: \`verify_robot_credential\` (verify a classical or a hybrid post-quantum proof, auto-detected), \`mint_identity\` and \`verify_identity\`, \`check_conformance\` with \`build_conformance_attestation\` and \`verify_conformance_attestation\`, \`verify_passport\`, \`check_action\`, and \`sign_pq\`. In .NET, JVM, and Swift these are a \`VouchRobotics\` class; in C++ a \`vouch::robotics\` namespace.
+
+\`\`\`csharp
+using VouchProtocol.Core;
+
+bool ok = VouchRobotics.VerifyRobotCredential(credentialJson, ed25519PublicB64);
+string report = VouchRobotics.CheckConformance(credentialsJson, "eu-ai-act-high-risk");
+\`\`\`
+
+Output is byte-identical to the reference SDKs, so a robot credential produced in one language verifies in every other. The producer-side operations (handshakes, the black box, physical quorum, the liveness heartbeat) stay in the reference SDKs; a wrapper application that needs one of those calls a reference SDK or a service built on it.
+`,
+      },
     ],
   },
 ];

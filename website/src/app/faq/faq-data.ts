@@ -674,6 +674,11 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
         a: `To verify a hybrid credential, yes: pass the ML-DSA-44 public key (raw bytes or a multikey) to \`verify_pq\` or \`verify_robot_credential\`. Both the classical and the post-quantum signature must validate for the credential to pass.`,
         meta: 'Shipped - vouch.robotics.pq',
       },
+      {
+        q: 'Can I verify a robot credential from .NET, Java, Swift, or C++?',
+        a: `Yes. The reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface, and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface over the same core: verify a robot credential (classical or hybrid, auto-detected), mint and verify identity, conformance, passport, action check, and post-quantum sign. In .NET, JVM, and Swift these are a \`VouchRobotics\` class; in C++ a \`vouch::robotics\` namespace. Output is byte-identical across languages.`,
+        meta: 'Shipped - C, C++, .NET, JVM, Swift',
+      },
     ],
   },
 

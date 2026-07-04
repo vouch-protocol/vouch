@@ -761,3 +761,34 @@ AI regulations as an open reference crosswalk.
 The novel methods are published as open defensive disclosures: PAD-064
 (hardware-rooted identity), PAD-067 (robot-to-robot handshake), PAD-069
 (confidential tamper-evident black box), and PAD-070 (scannable offline passport).
+
+## From the wrapper SDKs (C, C++, .NET, JVM, Swift)
+
+The reference SDKs (Python, TypeScript, Go, and the Rust core) carry the full
+robotics surface. The C, C++, .NET, JVM (Java and Kotlin), and Swift wrappers
+expose a curated consumer surface over the same core, the same way they expose the
+agent operations: a `VouchRobotics` class in .NET, JVM, and Swift, and a
+`vouch::robotics` namespace in C++. The curated surface is what an application
+verifies and integrates with:
+
+- `verify_robot_credential`: verify a robot credential whether it carries a
+  classical or a hybrid post-quantum proof, auto-detected from the proof.
+- `mint_identity` and `verify_identity` for a hardware-rooted robot identity.
+- `check_conformance` with `build_conformance_attestation` and
+  `verify_conformance_attestation` for regulatory conformance.
+- `verify_passport` for an offline passport scan.
+- `check_action` to enforce a physical capability scope.
+- `sign_pq` to attach a hybrid post-quantum proof.
+
+Output is byte-identical to the reference SDKs, so a robot credential produced in
+one language verifies in every other. The producer-side operations (handshakes,
+the black box, physical quorum, the liveness heartbeat) stay in the reference SDKs;
+a wrapper application that needs one of those calls a reference SDK or a service
+built on it. Example, verifying a robot credential from .NET:
+
+```csharp
+using VouchProtocol.Core;
+
+bool ok = VouchRobotics.VerifyRobotCredential(credentialJson, ed25519PublicB64);
+string report = VouchRobotics.CheckConformance(credentialsJson, "eu-ai-act-high-risk");
+```

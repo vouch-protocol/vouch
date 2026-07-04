@@ -285,8 +285,12 @@ with `HYBRID_CRYPTOSUITE`, a hybrid Ed25519 and ML-DSA-44 proof so a robot
 identity signed today stays safe over a ten to twenty year service life, with
 verification that auto-detects classical or hybrid so a fleet migrates gradually
 without breaking credentials already in the field). Same
-Verifiable Credentials as the rest of Vouch, so they verify in every language. See
-`reference/robotics.md`.
+Verifiable Credentials as the rest of Vouch, so they verify in every language. A
+curated robotics surface (verify a robot credential, mint and verify identity,
+conformance, passport, action check, and PQ sign) is also callable from the C,
+C++, .NET, JVM, and Swift wrappers through a `VouchRobotics` class (a
+`vouch::robotics` namespace in C++), for verifying and integrating from those
+languages. See `reference/robotics.md`.
 
 ## Decision rules
 
