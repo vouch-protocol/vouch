@@ -56,9 +56,19 @@ export default function AdoptersPage() {
                                 <span className="font-mono uppercase tracking-[0.16em] text-burgundy text-[0.72rem]">
                                     {a.badge}
                                 </span>
-                                <span className="font-serif italic text-ink-faint text-[0.95rem]">
-                                    by {a.by}
-                                </span>
+                                {a.by && (
+                                    <span className="font-serif italic text-ink-faint text-[0.95rem]">
+                                        by{' '}
+                                        <a
+                                            href={`https://github.com/${a.by}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-burgundy no-underline hover:underline"
+                                        >
+                                            @{a.by}
+                                        </a>
+                                    </span>
+                                )}
                             </header>
 
                             <h3 className="eyebrow mb-2">Integrates</h3>
