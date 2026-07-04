@@ -83,6 +83,29 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-073](./PAD-073-liveness-conformance-decaying-recognition-credential.md) | Liveness-Conformance-Decaying Recognition Credential with Automatic Revocation | 2026-07-03 | Published |
 | [PAD-074](./PAD-074-trust-preserving-transport-failover.md) | Trust-Preserving Multi-Transport Failover for Liability-Bearing Credential Envelopes | 2026-06-30 | Published |
 | [PAD-075](./PAD-075-untrusted-resolver-identity-routing.md) | Untrusted-Resolver Identity Routing via Self-Signed Route Records with Anti-Substitution Binding | 2026-06-30 | Published |
+| [PAD-076](./PAD-076-offline-physical-delegation-lease.md) | Offline-Verifiable, Scope-Bounded Delegation Lease for Physical Authority with Shrink-Only Nesting | 2026-07-04 | Published |
+| [PAD-077](./PAD-077-physical-action-quorum.md) | Cryptographic M-of-N Quorum Gating a High-Consequence Physical Robot Action | 2026-07-04 | Published |
+| [PAD-078](./PAD-078-robot-lifecycle-custody-chain.md) | Verifiable Robot Lifecycle: Chained Custody, Key History, and Signed Decommission | 2026-07-04 | Published |
+| [PAD-079](./PAD-079-machine-checkable-regulatory-conformance.md) | Machine-Checkable Regulatory Conformance Over Robot Verifiable Credentials | 2026-07-04 | Published |
+| [PAD-080](./PAD-080-post-quantum-default-robot-credentials.md) | Post-Quantum-by-Default Robot Credentials with Backward-Compatible Dual Verification and Software Migration | 2026-07-04 | Published |
+
+
+## July 4, 2026: Robotics Delegation, Governance, Lifecycle, Conformance, and Post-Quantum (PAD-076 through PAD-080)
+
+Five disclosures cover the robotics capabilities added since the first robotics
+batch, each reducing an established primitive to the embodied, physical setting.
+PAD-076 is an offline-verifiable delegation lease bounded by a physical capability
+scope, with shrink-only nesting across parties, so a disconnected robot can prove it
+is acting inside a currently valid grant. PAD-077 gates a high-consequence physical
+action behind an M-of-N quorum of attested approvers counted as distinct signers
+over the same action. PAD-078 makes a robot's whole life accountable through a
+chained ownership custody record, a predecessor-signed key history, and a signed
+decommission, all bound to a hardware-rooted identity. PAD-079 expresses a
+regulatory clause as a machine-checkable predicate over robot credentials, producing
+a deterministic report and a signed conformance attestation. PAD-080 defaults a
+long-lived robot's credentials to a hybrid post-quantum signature, with dual
+verification that auto-detects classical or hybrid and a software re-sign migration
+for fielded robots.
 
 
 ## July 3, 2026: Proof-of-Integration and Liveness-Decaying Recognition (PAD-072, PAD-073)
