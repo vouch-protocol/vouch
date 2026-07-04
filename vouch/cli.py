@@ -1335,6 +1335,29 @@ def cmd_scan(args) -> int:
     return 0
 
 
+def _guided_start() -> "list[str] | None":
+    """Interactive picker shown when ``vouch`` is run with no subcommand.
+
+    Turns a first-time user with no idea which command to run into a single
+    choice. Returns the argv for the chosen action (fed back through the same
+    parser), or ``None`` to exit.
+    """
+    print("Vouch Protocol\n")
+    print("What would you like to do?\n")
+    print("  1) Sign my git commits        (verified badge on GitHub)")
+    print("  2) Give my agent an identity  (a DID and a keypair)")
+    print("  3) Full guided setup          (identity, allow-list, verifier, heartbeat)")
+    print("  4) Quit\n")
+    mapping = {"1": ["git", "init"], "2": ["init"], "3": ["onboard"]}
+    while True:
+        choice = input("Choose 1-4 [1]: ").strip() or "1"
+        if choice in mapping:
+            return mapping[choice]
+        if choice == "4" or choice.lower() in {"q", "quit", "exit"}:
+            return None
+        print("  Please enter 1, 2, 3, or 4.")
+
+
 def main() -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
@@ -1508,6 +1531,11 @@ def main() -> int:
         help="Do not prompt, use presets and defaults only",
     )
     p_onboard.add_argument(
+        "--quick",
+        action="store_true",
+        help="Zero-question setup: accept every recommended default and generate a working config in one command",
+    )
+    p_onboard.add_argument(
         "--dry-run",
         dest="dry_run",
         action="store_true",
@@ -1517,6 +1545,14 @@ def main() -> int:
     args = parser.parse_args()
 
     setup_logging(args.verbose if hasattr(args, "verbose") else False)
+
+    # Bare `vouch` at an interactive terminal: offer a short menu instead of a
+    # wall of help. Piped/non-TTY runs keep the old behaviour (print help).
+    if args.command is None and sys.stdin.isatty() and sys.stdout.isatty():
+        chosen = _guided_start()
+        if chosen is None:
+            return 0
+        args = parser.parse_args(chosen)
 
     if args.command == "init":
         return cmd_init(args)

@@ -46,6 +46,11 @@ The old "minting" tools (`VouchSignerTool`, `sign_request`, `sign_action`,
 5. **If the answer is not in the knowledge**, say so, then either
    search for it or point the user at https://github.com/vouch-protocol/vouch/issues
    and https://discord.gg/mMqx5cG9Y.
+6. **For newcomers who are not ready to code**, point at the one-line
+   install on Linux or macOS (`curl -fsSL https://vouch-protocol.com/install.sh | sh`,
+   or `pip install vouch-protocol` on Windows), then `vouch` with no
+   arguments for a short menu, or `vouch onboard --quick` for a full
+   agent setup in one command.
 
 ## Use of Workspace tools
 

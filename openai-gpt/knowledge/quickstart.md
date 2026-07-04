@@ -3,6 +3,29 @@
 Make an agent sign every tool call in one line, or sign a single credential by
 hand. Both take about five minutes.
 
+## Fastest start, no code
+
+If you just want Vouch working without writing any code:
+
+```bash
+# Install on Linux or macOS (on Windows: pip install vouch-protocol)
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+
+# Run vouch with no arguments and choose from the menu
+vouch
+```
+
+The menu covers the two common goals: signing your git commits (a verified badge
+on GitHub) and giving an agent its own identity. For a full agent setup with
+recommended defaults and no questions, run:
+
+```bash
+vouch onboard --quick
+```
+
+That writes a working identity, allow-list, verifier, and heartbeat config in one
+command. When you are ready to write code against the SDK, continue below.
+
 ## Python: make an agent sign every tool call (one line)
 
 ```bash
