@@ -18,5 +18,15 @@
     "login": "277zyq",
     "pr": 181,
     "title": "Add shared load_signer() with friendlier missing-env error"
+  },
+  {
+    "login": "fahadhewad",
+    "pr": 182,
+    "title": "Print helpful message when vouch init is run without --domain"
+  },
+  {
+    "login": "Abhi757575",
+    "pr": 183,
+    "title": "docs: expand development setup with devcontainer and troubleshooting"
   }
 ]
