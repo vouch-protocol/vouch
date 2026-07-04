@@ -317,7 +317,7 @@ h1.title a {{ color: inherit; text-decoration: none; }}
     protocol for continuous trust, so anyone can prove who acted, under whose authority, and that the
     agent is still trustworthy.</p>
     <p>The <a href="https://vouch-protocol.com/agent-trust-index" target="_blank" rel="noopener noreferrer">Agent Trust Index</a> grades how verifiable and accountable an AI agent is, an open, public scorecard.</p>
-    <p class="cta"><a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer">Secure your AI agent with Vouch</a></p>
+    <p class="cta"><a href="https://vouch-protocol.com/the-trust-gap" target="_blank" rel="noopener noreferrer">See the AI trust gap</a></p>
   </div>
 
   <div class="footer-cta">
