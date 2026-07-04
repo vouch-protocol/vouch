@@ -280,6 +280,28 @@ credentials, and the attestation binds the embedded report by digest. The profil
 are a reference crosswalk, not legal advice; a deployment confirms each mapping
 against the current regulation text for its market.
 
-Sections 5.7 to 5.14 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.15 Post-quantum signing (`vouch.robotics.pq`)
+
+A robot fielded today runs for ten to twenty years, longer than classical Ed25519
+is expected to stay safe, so robot credentials sign with the hybrid post-quantum
+cryptosuite `hybrid-eddsa-mldsa44-jcs-2026` (a classical Ed25519 signature
+alongside an ML-DSA-44 signature). `verify_robot_credential` verifies a credential
+whether it carries a classical or a hybrid proof, detected from the credential, so
+a fleet moves to post-quantum without breaking the credentials already in the
+field. `migrate_to_pq` re-signs a fielded robot's classical credential under a
+post-quantum key.
+
+```python
+from vouch.robotics import sign_pq, verify_robot_credential, mint_robot_identity
+
+identity = sign_pq(mint_robot_identity(robot, root, make="Acme", model="AR-7", serial="SN-1"), robot)
+ok = verify_robot_credential(identity, robot_ed25519_public_key,
+                             mldsa44_public_key=robot.public_key_mldsa44_multikey())
+```
+
+A hybrid credential passes only when both signatures validate, so it is at least as
+strong as the classical signature and stays safe once classical signatures do not.
+
+Sections 5.7 to 5.15 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

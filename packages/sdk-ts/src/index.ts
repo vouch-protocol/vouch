@@ -296,6 +296,18 @@ export type {
   BuildConformanceAttestationOptions,
 } from './robotics/conformance';
 
+// Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
+export {
+  CLASSICAL_CRYPTOSUITE,
+  HYBRID_CRYPTOSUITE,
+  signPq,
+  isPq,
+  verifyPq,
+  verifyRobotCredential,
+  migrateToPq,
+} from './robotics/pq';
+export type { VerifyRobotCredentialOptions } from './robotics/pq';
+
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
   StatusList,

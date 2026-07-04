@@ -274,3 +274,160 @@ pub extern "C" fn vouch_verify_chain_time_bound(
         ))
     })
 }
+
+// ---------------------------------------------------------------------------
+// Robotics: a curated set of the robot-credential operations, for C/C++/.NET/JVM/Swift.
+// JSON in, JSON out; keys are base64. Same shapes as the Python, TypeScript, Go,
+// and Rust reference implementations.
+// ---------------------------------------------------------------------------
+
+/// Mint a RobotIdentityCredential.  carries make/model/serial and
+/// the hardware root; returns the signed credential JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_mint_identity(
+    robot_seed_b64: *const c_char,
+    params_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let seed = unb64(&cstr_in(robot_seed_b64)?)?;
+        let params = cstr_in(params_json)?;
+        vouch_core::robotics_json::mint_robot_identity(&seed, &params).map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a RobotIdentityCredential. Returns the credentialSubject JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_identity(
+    credential_json: *const c_char,
+    public_b64: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let cred = cstr_in(credential_json)?;
+        let pk = unb64(&cstr_in(public_b64)?)?;
+        vouch_core::robotics_json::verify_robot_identity(&cred, &pk).map_err(|e| e.to_string())
+    })
+}
+
+/// Check a physical action against a physical capability scope. Returns JSON
+/// {ok, reasons}.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_check_action(
+    scope_json: *const c_char,
+    action_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let scope = cstr_in(scope_json)?;
+        let action = cstr_in(action_json)?;
+        vouch_core::robotics_json::check_physical_action(&scope, &action).map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a scannable robot passport URI. Returns the passport summary JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_passport(
+    uri: *const c_char,
+    public_b64: *const c_char,
+    now_iso: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let uri = cstr_in(uri)?;
+        let pk = unb64(&cstr_in(public_b64)?)?;
+        let now = cstr_in(now_iso)?;
+        vouch_core::robotics_json::verify_passport_uri(&uri, &pk, &now).map_err(|e| e.to_string())
+    })
+}
+
+/// Check a set of robot credentials against a named regulatory profile.
+///  is a JSON array; returns the deterministic report JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_check_conformance(
+    credentials_json: *const c_char,
+    profile_id: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let creds = cstr_in(credentials_json)?;
+        let profile = cstr_in(profile_id)?;
+        vouch_core::robotics_json::check_conformance(&creds, &profile).map_err(|e| e.to_string())
+    })
+}
+
+/// Sign a point-in-time conformance attestation over a report. 
+/// carries issuerDid/robotDid/report; returns the signed credential JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_build_conformance_attestation(
+    signer_seed_b64: *const c_char,
+    params_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let seed = unb64(&cstr_in(signer_seed_b64)?)?;
+        let params = cstr_in(params_json)?;
+        vouch_core::robotics_json::build_conformance_attestation(&seed, &params).map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a conformance attestation and its bound report digest. Returns the
+/// credentialSubject JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_conformance_attestation(
+    credential_json: *const c_char,
+    public_b64: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let cred = cstr_in(credential_json)?;
+        let pk = unb64(&cstr_in(public_b64)?)?;
+        vouch_core::robotics_json::verify_conformance_attestation(&cred, &pk).map_err(|e| e.to_string())
+    })
+}
+
+/// Attach a hybrid post-quantum proof (Ed25519 + ML-DSA-44) to a robot
+/// credential. Returns the re-signed credential JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_sign_pq(
+    credential_json: *const c_char,
+    ed25519_seed_b64: *const c_char,
+    mldsa_secret_b64: *const c_char,
+    mldsa_public_b64: *const c_char,
+    created_iso: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let cred = cstr_in(credential_json)?;
+        let ed_seed = unb64(&cstr_in(ed25519_seed_b64)?)?;
+        let ml_sec = unb64(&cstr_in(mldsa_secret_b64)?)?;
+        let ml_pub = unb64(&cstr_in(mldsa_public_b64)?)?;
+        let created = cstr_in(created_iso)?;
+        vouch_core::robotics_json::sign_pq(&cred, &ed_seed, &ml_sec, &ml_pub, &created)
+            .map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a robot credential whether it carries a classical or a hybrid proof,
+/// auto-detected from the proof. Pass the ML-DSA-44 public key (base64) for a
+/// hybrid credential, or NULL for a classical one. Returns "true"/"false".
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_robot_credential(
+    credential_json: *const c_char,
+    ed25519_public_b64: *const c_char,
+    mldsa44_public_b64: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let cred = cstr_in(credential_json)?;
+        let ed_pub = unb64(&cstr_in(ed25519_public_b64)?)?;
+        let ml_pub = match cstr_in_opt(mldsa44_public_b64)? {
+            Some(s) => Some(unb64(&s)?),
+            None => None,
+        };
+        Ok(bool_str(
+            vouch_core::robotics_json::verify_robot_credential(&cred, &ed_pub, ml_pub.as_deref())
+                .map_err(|e| e.to_string())?,
+        ))
+    })
+}

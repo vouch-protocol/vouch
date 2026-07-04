@@ -110,6 +110,80 @@ char *vouch_verify_chain_time_bound(const char *chain_json,
                                     int64_t clock_skew_seconds,
                                     char **err_out);
 
+/**
+ * Mint a RobotIdentityCredential.  carries make/model/serial and
+ * the hardware root; returns the signed credential JSON.
+ */
+char *vouch_robotics_mint_identity(const char *robot_seed_b64,
+                                   const char *params_json,
+                                   char **err_out);
+
+/**
+ * Verify a RobotIdentityCredential. Returns the credentialSubject JSON.
+ */
+char *vouch_robotics_verify_identity(const char *credential_json,
+                                     const char *public_b64,
+                                     char **err_out);
+
+/**
+ * Check a physical action against a physical capability scope. Returns JSON
+ * {ok, reasons}.
+ */
+char *vouch_robotics_check_action(const char *scope_json, const char *action_json, char **err_out);
+
+/**
+ * Verify a scannable robot passport URI. Returns the passport summary JSON.
+ */
+char *vouch_robotics_verify_passport(const char *uri,
+                                     const char *public_b64,
+                                     const char *now_iso,
+                                     char **err_out);
+
+/**
+ * Check a set of robot credentials against a named regulatory profile.
+ *  is a JSON array; returns the deterministic report JSON.
+ */
+char *vouch_robotics_check_conformance(const char *credentials_json,
+                                       const char *profile_id,
+                                       char **err_out);
+
+/**
+ * Sign a point-in-time conformance attestation over a report. 
+ * carries issuerDid/robotDid/report; returns the signed credential JSON.
+ */
+char *vouch_robotics_build_conformance_attestation(const char *signer_seed_b64,
+                                                   const char *params_json,
+                                                   char **err_out);
+
+/**
+ * Verify a conformance attestation and its bound report digest. Returns the
+ * credentialSubject JSON.
+ */
+char *vouch_robotics_verify_conformance_attestation(const char *credential_json,
+                                                    const char *public_b64,
+                                                    char **err_out);
+
+/**
+ * Attach a hybrid post-quantum proof (Ed25519 + ML-DSA-44) to a robot
+ * credential. Returns the re-signed credential JSON.
+ */
+char *vouch_robotics_sign_pq(const char *credential_json,
+                             const char *ed25519_seed_b64,
+                             const char *mldsa_secret_b64,
+                             const char *mldsa_public_b64,
+                             const char *created_iso,
+                             char **err_out);
+
+/**
+ * Verify a robot credential whether it carries a classical or a hybrid proof,
+ * auto-detected from the proof. Pass the ML-DSA-44 public key (base64) for a
+ * hybrid credential, or NULL for a classical one. Returns "true"/"false".
+ */
+char *vouch_robotics_verify_robot_credential(const char *credential_json,
+                                             const char *ed25519_public_b64,
+                                             const char *mldsa44_public_b64,
+                                             char **err_out);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

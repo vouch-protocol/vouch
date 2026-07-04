@@ -726,5 +726,60 @@ pub fn robotics_verify_conformance_attestation(
         &public_key,
     )?)
 }
+pub fn robotics_sign_pq(
+    credential_json: String,
+    ed25519_seed: Vec<u8>,
+    mldsa_secret: Vec<u8>,
+    mldsa_public: Vec<u8>,
+    created: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::sign_pq(
+        &credential_json,
+        &ed25519_seed,
+        &mldsa_secret,
+        &mldsa_public,
+        &created,
+    )?)
+}
+pub fn robotics_is_pq(credential_json: String) -> Result<bool, CoreError> {
+    Ok(rjson::is_pq(&credential_json)?)
+}
+pub fn robotics_verify_pq(
+    credential_json: String,
+    ed25519_public: Vec<u8>,
+    mldsa44_public: Vec<u8>,
+) -> Result<bool, CoreError> {
+    Ok(rjson::verify_pq(
+        &credential_json,
+        &ed25519_public,
+        &mldsa44_public,
+    )?)
+}
+pub fn robotics_verify_robot_credential(
+    credential_json: String,
+    ed25519_public: Vec<u8>,
+    mldsa44_public: Option<Vec<u8>>,
+) -> Result<bool, CoreError> {
+    Ok(rjson::verify_robot_credential(
+        &credential_json,
+        &ed25519_public,
+        mldsa44_public.as_deref(),
+    )?)
+}
+pub fn robotics_migrate_to_pq(
+    credential_json: String,
+    ed25519_seed: Vec<u8>,
+    mldsa_secret: Vec<u8>,
+    mldsa_public: Vec<u8>,
+    created: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::migrate_to_pq(
+        &credential_json,
+        &ed25519_seed,
+        &mldsa_secret,
+        &mldsa_public,
+        &created,
+    )?)
+}
 
 uniffi::include_scaffolding!("vouch_core");

@@ -18,6 +18,7 @@ robots and embodied agents:
   - lifecycle: ownership transfer, key rotation, and decommissioning.
   - perception: signed, tamper-evident provenance for captured sensor frames.
   - conformance: machine-checkable mapping from credentials to safety regulations.
+  - pq: hybrid post-quantum signing and backward-compatible verification.
 """
 
 from .capability import (
@@ -120,6 +121,14 @@ from .conformance import (
     report_digest,
     verify_conformance_attestation,
 )
+from .pq import (
+    HYBRID_CRYPTOSUITE,
+    is_pq,
+    migrate_to_pq,
+    sign_pq,
+    verify_pq,
+    verify_robot_credential,
+)
 
 __all__ = [
     # identity
@@ -199,6 +208,13 @@ __all__ = [
     "report_digest",
     "build_conformance_attestation",
     "verify_conformance_attestation",
+    # post-quantum (hybrid signing + backward-compatible verification)
+    "HYBRID_CRYPTOSUITE",
+    "sign_pq",
+    "is_pq",
+    "verify_pq",
+    "verify_robot_credential",
+    "migrate_to_pq",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

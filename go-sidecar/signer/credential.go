@@ -178,6 +178,29 @@ func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) 
 	return credential, nil
 }
 
+// AttachHybridProof attaches a hybrid post-quantum (Ed25519 plus ML-DSA-44)
+// Data Integrity proof to a pre-built credential map, for custom credential
+// types (for example robotics credentials) the caller assembles directly
+// rather than from an intent. Mirrors AttachProof but uses the
+// hybrid-eddsa-mldsa44-jcs-2026 cryptosuite; both keys live in this process,
+// so it is not available for a backend Signer. Returns the credential with its
+// "proof" set.
+func (s *Signer) AttachHybridProof(credential map[string]any) (map[string]any, error) {
+	if s.signFunc != nil {
+		return nil, errors.New("vouch: AttachHybridProof needs the raw keys and is not available for a backend Signer")
+	}
+	proof, err := BuildHybridDataIntegrityProof(credential, BuildHybridProofOptions{
+		Ed25519PrivateKey:  s.ed25519Private,
+		MLDSA44PrivateKey:  s.mldsa44Private,
+		VerificationMethod: s.VerificationMethodID(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("attach hybrid proof: %w", err)
+	}
+	credential["proof"] = proofToMap(proof)
+	return credential, nil
+}
+
 // SignCredentialHybrid issues a Vouch Credential under the hybrid
 // post-quantum profile (Specification §13.2). The credential carries a
 // hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof containing both an
