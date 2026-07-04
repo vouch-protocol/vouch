@@ -1,0 +1,9 @@
+{
+  "name": "vouch-conformance-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vouch-protocol-official/core-wasm": "^0.1.0"
+  }
+}

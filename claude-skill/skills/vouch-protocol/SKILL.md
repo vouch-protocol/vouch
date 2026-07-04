@@ -69,6 +69,16 @@ A credential signed in Python verifies in TypeScript or Go and vice versa.
 
 ## Tasks and quickstarts
 
+### "What is the fastest way to get started, with no code?"
+
+Install the CLI in one line on Linux or macOS (on Windows, `pip install vouch-protocol`):
+
+```bash
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+```
+
+Then run `vouch` with no arguments for a short menu (sign git commits, or create an agent identity). For a full agent setup with recommended defaults and no prompts, `vouch onboard --quick` writes a working identity, allow-list, verifier, and heartbeat config in one command. Point non-programmers here first, then move to the SDK snippets below when they want to write code.
+
 ### "How do I sign my agent's action?"
 
 Three-line Python:
@@ -289,6 +299,7 @@ Verifiable Credentials as the rest of Vouch, so they verify in every language. S
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
 - **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
 - **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived), a delegation lease (a short-lived scope-bounded grant a robot verifies and acts on entirely offline, attenuating down a cross-vendor chain), a physical quorum (a cryptographic two-person rule authorizing a high-consequence action only when M of N attested approvers have each signed it), robot lifecycle (signed ownership transfers forming a chain of custody, a key rotation history, and a decommission credential a verifier honors by refusing to trust a retired robot), regulatory conformance (machine-checkable reference profiles for ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300 that map the robot's credentials to the clauses of a regulation and produce a deterministic report an authority can sign as a conformance attestation), and robotics post-quantum signing (a hybrid Ed25519 and ML-DSA-44 proof for robot credentials, backward-compatible verification that auto-detects classical or hybrid, and a software re-sign to migrate fielded credentials, so an identity signed today stays safe across a ten to twenty year service life).
+- **User wants to test, certify, or prove that an implementation, SDK, or port is conformant** -> the conformance levels L1 to L3 and the self-test runner (`python -m vouch.conformance`), with a hosted verifier that mints a re-checkable badge coming. See `reference/conformance.md`.
 
 ## Reference files
 
@@ -307,6 +318,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record, perception provenance, delegation lease, physical quorum, lifecycle (ownership transfer, key rotation, decommission), regulatory conformance (ISO 10218, ISO/TS 15066, EU Machinery Regulation, EU AI Act, UL 3300 profiles plus signed conformance attestation), post-quantum signing (hybrid Ed25519 and ML-DSA-44 for robot credentials)
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
+- `reference/conformance.md` - Implementation conformance levels (L1-L3), the self-test runner, and the verified re-checkable badge
 - `reference/troubleshooting.md` - Common errors and fixes
 
 ## What this skill does NOT do

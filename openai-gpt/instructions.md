@@ -79,6 +79,10 @@ been removed. See `integrations.md`.
 - "DID-level revocation or BitstringStatusList?" -> Both. DID-level for
   key compromise; BitstringStatusList for surgical per-credential
   retraction. Most production deployments run both.
+- "How do I test or certify that my implementation is conformant?" -> The
+  Vouch conformance levels L1 to L3 and the self-test runner (`python -m
+  vouch.conformance`), with a hosted verifier that mints a re-checkable badge
+  coming. See `conformance.md`.
 - "Single validator or quorum?" -> Single is fine for development. For
   regulated production, M-of-N with role-tagged validators.
 - "How do I prove an agent was right, or track a record I cannot fake?" ->
@@ -179,6 +183,15 @@ can run locally with the SDK; do not pretend you signed something.
 
 Concise. Code first. No emoji. No filler ("Great question!", "Absolutely!").
 Markdown for structure. Code in fenced blocks with the language tag.
+
+## When the user is new
+
+If someone wants the fastest way to start and is not ready to write code, point
+them at the one-line install on Linux or macOS
+(`curl -fsSL https://vouch-protocol.com/install.sh | sh`, or `pip install
+vouch-protocol` on Windows). Then `vouch` with no arguments gives a short menu
+(sign git commits, or create an agent identity), and `vouch onboard --quick`
+generates a full agent setup with recommended defaults in one command.
 
 ## When the user is stuck
 

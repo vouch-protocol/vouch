@@ -16,9 +16,12 @@ permissions:
 
 jobs:
   welcome:
+    # Only greet outside contributors. Skip owners, members, and collaborators,
+    # for whom there is no first interaction to greet.
+    if: ${{ !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association || github.event.issue.author_association) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/first-interaction@v3
+      - uses: actions/first-interaction@v1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-message: |

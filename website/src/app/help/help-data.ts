@@ -42,10 +42,16 @@ export const HELP_SECTIONS: HelpSection[] = [
 ## Install
 
 \`\`\`bash
+# Linux and macOS: one line (on Windows, use pip below)
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+
+# Or with pip on any platform
 pip install vouch-protocol
 \`\`\`
 
 The hybrid post-quantum profile (\`hybrid-eddsa-mldsa44-jcs-2026\`) is bundled by default; nothing else to install.
+
+Not ready to write code yet? Run \`vouch\` with no arguments for a short menu (sign your git commits, or create an agent identity), or run \`vouch onboard --quick\` to generate a full agent setup with recommended defaults in one command.
 
 ## Step 1 - Sign and verify locally
 
@@ -1944,6 +1950,51 @@ export VOUCH_SIDECAR_URL=http://localhost:8877
 \`\`\`
 
 The agent code does not change. What changes is the DID (production agents use a real did:web on your domain) and the key material (production loads from KMS).
+`,
+      },
+    ],
+  },
+  {
+    id: 'conformance',
+    title: 'Conformance',
+    description:
+      'Test whether an implementation, an SDK, fork, or port, produces byte-correct protocol output and supports the required feature sets, graded L1 to L3.',
+    articles: [
+      {
+        id: 'test-your-implementation',
+        title: 'Test your conformance level',
+        summary:
+          'Run the reference conformance runner against your implementation and read the highest level it passes.',
+        body: `
+## What conformance checks
+
+Conformance grades an implementation in three cumulative levels. A level is achieved only when every check at that level and all lower levels passes.
+
+- **L1 Credential**: RFC 8785 JCS canonicalization, \`eddsa-jcs-2022\` sign and verify, the validity window (an expired credential is rejected), and nonce replay resistance.
+- **L2 Structural-Security**: everything in L1, plus BitstringStatusList revocation, delegation narrowing with the five-link depth bound, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail.
+- **L3 State Verifiable plus Post-Quantum**: everything in L2, plus the hybrid dual-proof (\`eddsa-jcs-2022\` and \`mldsa44-jcs-2026\` over the same JCS bytes), the Heartbeat renewal chain, and an M-of-N validator quorum.
+
+Robotics is a separate profile, Robotics Conformant, not part of L1 to L3.
+
+## Run the self-test
+
+\`\`\`bash
+python -m vouch.conformance
+\`\`\`
+
+It runs the checks in-process against the SDK and prints a per-check pass or fail, then the highest fully-passing level:
+
+\`\`\`
+L1
+  [PASS] canonicalization: 13 vectors
+  [PASS] sign_verify: round-trip and tamper rejection
+  ...
+Highest fully-passing level: L3
+\`\`\`
+
+## The verified badge (coming)
+
+The self-test proves conformance to yourself. A hosted verifier is coming that issues fresh random challenges, re-checks every response server-side with the canonical core, and mints a signed \`VouchConformanceCredential\` unique to your implementation. Because it recomputes every expected answer, a pass cannot be faked by replaying the public test vectors, and anyone can re-verify Vouch's signature and re-run the challenges. Until it is live, the [conformance page](/conformance) carries a self-declaration and shows what a verified pass earns.
 `,
       },
     ],

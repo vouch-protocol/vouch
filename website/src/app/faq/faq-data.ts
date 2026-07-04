@@ -179,6 +179,30 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // CONFORMANCE
+  // =====================================================================
+  {
+    id: 'conformance',
+    audience: 'Conformance',
+    title: 'Proving an implementation is conformant',
+    items: [
+      {
+        q: 'What does Vouch conformance mean?',
+        a: `Conformance proves that an implementation, an SDK, a fork, or a port, produces byte-correct protocol output and supports the required feature sets. It is graded in three cumulative levels. L1 Credential: canonicalization, eddsa-jcs-2022 sign and verify, the validity window, and nonce replay resistance. L2 Structural-Security: everything in L1 plus BitstringStatusList revocation, delegation narrowing with the five-link depth bound, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail. L3 State Verifiable plus Post-Quantum: everything in L2 plus the hybrid dual-proof, the Heartbeat renewal chain, and an M-of-N validator quorum. This is separate from robotics regulatory conformance, which grades a robot against a regulation.`,
+        meta: 'Spec section 17',
+      },
+      {
+        q: 'How do I test my implementation?',
+        a: `Run the reference runner. It checks your implementation against the levels and reports the highest it fully satisfies: \`python -m vouch.conformance\`. It runs the checks in-process against the SDK and prints a per-check pass or fail with the highest passing level.`,
+      },
+      {
+        q: 'Is there a verified badge?',
+        a: `The self-test proves conformance to yourself. A hosted verifier is coming that turns it into a Vouch-verified, re-checkable result: it issues fresh random challenges, re-checks every response server-side with the canonical core, and mints a signed credential unique to your implementation. Because it recomputes every expected answer, a pass cannot be faked by replaying the public test vectors. Until it is live, the conformance page carries a self-declaration and shows what a verified pass will earn.`,
+      },
+    ],
+  },
+
+  // =====================================================================
   // EMBODIED AGENTS (ROBOTICS)
   // =====================================================================
   {
@@ -674,6 +698,17 @@ agent.tools = protect([charge_invoice, send_email])
 Every tool call is now signed in Python before it runs. There is no prompt to write and nothing for the model to remember, and identity is resolved automatically, so agent code needs no key plumbing. \`protect\` works for plain functions and for CrewAI, LangChain, AutoGen, AutoGPT, Vertex AI, Google, and ADK tools. For decorator frameworks you can also call \`<framework>.autosign()\` to sign every tool framework-wide. Verify on the receiving side with \`vouch.verify(credential)\`, or add the FastAPI \`VouchGate\` dependency to an endpoint.`,
         helpLinks: [{ label: 'Integrations', href: '/help/#integrations' }],
         meta: 'Shipped v1.6.x',
+      },
+      {
+        q: 'What is the fastest way to start using Vouch?',
+        a: `On Linux or macOS, one line installs the \`vouch\` command (on Windows, use \`pip install vouch-protocol\`):
+
+\`\`\`bash
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+\`\`\`
+
+Then run \`vouch\` with no arguments and pick from a short menu: sign your git commits (a verified badge on GitHub), or give an agent its own identity. For a full agent setup with recommended defaults and no questions, run \`vouch onboard --quick\`, which writes a working identity, allow-list, verifier, and heartbeat config in one command.`,
+        helpLinks: [{ label: 'Getting started', href: '/help/#quickstart-python' }],
       },
       {
         q: 'Which languages have Vouch SDKs?',

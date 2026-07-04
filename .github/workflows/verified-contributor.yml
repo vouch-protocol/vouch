@@ -5,7 +5,12 @@ name: Verified Contributor credential
 # /c/<login>/<pr>/, list them on /contributors, and post a congratulatory
 # comment linking to the certificate. One certificate per merged PR.
 #
-# Skips merges authored by the maintainer (rampyg) and by bots.
+# The credited contributor is the author of the pull request's commits, meaning
+# the person who wrote the code, rather than whoever opened the pull request.
+# This keeps credit correct when a maintainer relays a contribution for someone
+# else.
+#
+# Skips when the commit author is the maintainer (rampyg) or a bot.
 #
 # Setup: repository secrets VOUCH_PRIVATE_KEY (the contributor-issuer Ed25519
 # JWK) and VOUCH_DID (did:web:vouch-protocol.com:contributors). The job is a
@@ -26,28 +31,51 @@ permissions:
 
 jobs:
   mint:
-    if: >
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.user.login != 'rampyg' &&
-      !endsWith(github.event.pull_request.user.login, '[bot]')
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve contributor from commit authors
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Credit the person who wrote the code. Pick the most frequent commit
+          # author login that is neither the maintainer nor a bot.
+          login=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/commits?per_page=100" \
+            --jq '[.[].author.login // empty]
+                  | map(select(. != "rampyg" and (endswith("[bot]") | not)))
+                  | (group_by(.) | max_by(length) | .[0]) // ""')
+          if [ -z "$login" ]; then
+            echo "No external contributor to credit (authored by the maintainer or bots)."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Crediting contributor: ${login}"
+            echo "login=${login}" >> "$GITHUB_OUTPUT"
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v6
+        if: steps.resolve.outputs.should_run == 'true'
 
       - uses: actions/setup-python@v6
+        if: steps.resolve.outputs.should_run == 'true'
         with:
           python-version: "3.11"
 
       - name: Install vouch
+        if: steps.resolve.outputs.should_run == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -e .
 
       - name: Mint credential
+        if: steps.resolve.outputs.should_run == 'true'
         env:
           VOUCH_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
           VOUCH_DID: ${{ secrets.VOUCH_DID }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_AUTHOR: ${{ steps.resolve.outputs.login }}
           PR_URL: ${{ github.event.pull_request.html_url }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
@@ -89,19 +117,33 @@ jobs:
         if: hashFiles('credential.json') != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_AUTHOR: ${{ steps.resolve.outputs.login }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          # Render the certificate page, served at /c/<login>/<pr>/.
-          python scripts/render_contributor_cert.py \
-            --credential credential.json \
-            --login "$PR_AUTHOR" \
-            --pr "$PR_NUMBER" \
-            --title "$PR_TITLE" \
-            --out "website/public/c/${PR_AUTHOR}/${PR_NUMBER}/index.html"
-          # Add this contribution to the index list (idempotent per login+pr).
-          python - <<'PY'
+          # Publish the certificate page and the contributors list to main. This
+          # runs after a merge, and several merges can happen close together, so
+          # each attempt re-syncs to the latest main and rebuilds its files on
+          # top of it. Rendering the page and adding the index entry are both
+          # idempotent, so a retry after a rejected push is safe and concurrent
+          # certificate jobs cannot overwrite each other.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          published=0
+          for attempt in 1 2 3 4 5 6; do
+            git fetch --quiet origin main
+            git reset --hard --quiet origin/main
+
+            # Render the certificate page, served at /c/<login>/<pr>/.
+            python scripts/render_contributor_cert.py \
+              --credential credential.json \
+              --login "$PR_AUTHOR" \
+              --pr "$PR_NUMBER" \
+              --title "$PR_TITLE" \
+              --out "website/public/c/${PR_AUTHOR}/${PR_NUMBER}/index.html"
+            # Add this contribution to the index list (idempotent per login+pr).
+            python - <<'PY'
           import json, os
           path = "website/src/data/contributors.json"
           login = os.environ["PR_AUTHOR"]
@@ -114,32 +156,43 @@ jobs:
                   json.dump(data, f, indent=2)
                   f.write("\n")
           PY
-          # Commit to main so the website redeploys with the new certificate.
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "website/public/c/${PR_AUTHOR}/${PR_NUMBER}/index.html" website/src/data/contributors.json
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(contributors): certificate for @${PR_AUTHOR} (#${PR_NUMBER})"
-            for i in 1 2 3; do
-              git pull --rebase origin main && git push origin HEAD:main && break
-              sleep $((2 ** i))
-            done
-            # The commit above is pushed with GITHUB_TOKEN, which does not trigger
-            # the on:push deploy workflow. Dispatch it explicitly so the cert and
-            # the contributors list go live. workflow_dispatch still fires from
-            # GITHUB_TOKEN, unlike push.
-            gh workflow run deploy-website.yml --ref main
+            git add "website/public/c/${PR_AUTHOR}/${PR_NUMBER}/index.html" website/src/data/contributors.json
+
+            if git diff --cached --quiet; then
+              echo "Certificate already present on main; nothing to publish."
+              published=1
+              break
+            fi
+
+            git commit -q -m "chore(contributors): certificate for @${PR_AUTHOR} (#${PR_NUMBER})"
+            if git push origin HEAD:main; then
+              published=1
+              break
+            fi
+            echo "Push rejected because main advanced. Re-syncing and retrying (attempt ${attempt})."
+            sleep $((2 ** attempt))
+          done
+
+          if [ "$published" -ne 1 ]; then
+            echo "::error::Could not publish the contributor certificate for @${PR_AUTHOR} (#${PR_NUMBER}) after several attempts."
+            exit 1
           fi
+
+          # The push above uses GITHUB_TOKEN, which does not trigger the on:push
+          # deploy workflow. Dispatch it explicitly so the certificate and the
+          # contributors list go live. workflow_dispatch still fires from
+          # GITHUB_TOKEN, unlike push.
+          gh workflow run deploy-website.yml --ref main
 
       - name: Congratulate the contributor
         if: hashFiles('credential.json') != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_AUTHOR: ${{ steps.resolve.outputs.login }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           BADGE: "https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
-          CERT_URL: "https://vouch-protocol.com/c/${{ github.event.pull_request.user.login }}/${{ github.event.pull_request.number }}"
+          CERT_URL: "https://vouch-protocol.com/c/${{ steps.resolve.outputs.login }}/${{ github.event.pull_request.number }}"
         run: |
           {
             echo "### Vouch Verified Contributor :sparkles:"
