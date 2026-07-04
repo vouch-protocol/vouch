@@ -51,12 +51,18 @@ laptop = Agent()  # did:key minted on the laptop
 registry = DeviceRegistry()
 
 phone_grant = enroll_device(
-    root, device_did=phone.did, action="charge",
-    target="api.bank", resource="https://api.bank/invoices",
+    root,
+    device_did=phone.did,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices",
 )
 laptop_grant = enroll_device(
-    root, device_did=laptop.did, action="charge",
-    target="api.bank", resource="https://api.bank/invoices",
+    root,
+    device_did=laptop.did,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices",
 )
 registry.enroll(phone.did, phone_grant)
 registry.enroll(laptop.did, laptop_grant)
@@ -69,11 +75,14 @@ print("   The root never saw either device's private key.")
 # ---------------------------------------------------------------------------
 rule("3. The phone signs an action, and it verifies back to the root")
 phone_action = phone.sign(
-    action="charge", target="api.bank",
-    resource="https://api.bank/invoices/42", parent_credential=phone_grant,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices/42",
+    parent_credential=phone_grant,
 )
 result = verify_delegated_chain(
-    [phone_grant, phone_action], trusted_roots=trusted_roots,
+    [phone_grant, phone_action],
+    trusted_roots=trusted_roots,
     revoked=registry.is_revoked,
 )
 print(f"   Verified: {result.ok}  (issued by {result.leaf.issuer[:24]}...)")
@@ -84,17 +93,21 @@ print(f"   Verified: {result.ok}  (issued by {result.leaf.issuer[:24]}...)")
 rule("4. The phone is lost: revoke it")
 registry.revoke(phone.did)
 after_revoke = verify_delegated_chain(
-    [phone_grant, phone_action], trusted_roots=trusted_roots,
+    [phone_grant, phone_action],
+    trusted_roots=trusted_roots,
     revoked=registry.is_revoked,
 )
 print(f"   Phone action still valid? {after_revoke.ok}  ({after_revoke.reason})")
 
 laptop_action = laptop.sign(
-    action="charge", target="api.bank",
-    resource="https://api.bank/invoices/99", parent_credential=laptop_grant,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices/99",
+    parent_credential=laptop_grant,
 )
 laptop_ok = verify_delegated_chain(
-    [laptop_grant, laptop_action], trusted_roots=trusted_roots,
+    [laptop_grant, laptop_action],
+    trusted_roots=trusted_roots,
     revoked=registry.is_revoked,
 )
 print(f"   Laptop still works? {laptop_ok.ok}")
@@ -114,12 +127,17 @@ print(f"   Recovered root DID matches: {recovered.did == root.did}")
 # The recovered root can enroll a new device, proving it is the same identity.
 new_tablet = Agent()
 tablet_grant = enroll_device(
-    recovered_signer, device_did=new_tablet.did, action="charge",
-    target="api.bank", resource="https://api.bank/invoices",
+    recovered_signer,
+    device_did=new_tablet.did,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices",
 )
 tablet_action = new_tablet.sign(
-    action="charge", target="api.bank",
-    resource="https://api.bank/invoices/7", parent_credential=tablet_grant,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices/7",
+    parent_credential=tablet_grant,
 )
 tablet_ok = verify_delegated_chain(
     [tablet_grant, tablet_action],
