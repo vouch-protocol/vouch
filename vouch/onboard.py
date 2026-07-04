@@ -730,19 +730,37 @@ def run_wizard(
 
 
 def cmd_onboard(args: argparse.Namespace) -> int:
+    quick = getattr(args, "quick", False)
+    domain_supplied = bool(getattr(args, "domain", None))
     preset: Dict[str, str] = {}
-    if getattr(args, "domain", None):
+    if domain_supplied:
         preset["domain"] = args.domain
     if getattr(args, "tier", None):
         preset["tier"] = args.tier
     if getattr(args, "lang", None):
         preset["toolwire_lang"] = args.lang
         preset["verifier_lang"] = args.lang
-    return run_wizard(
+
+    # Quick mode: run start-to-finish with no questions. Every other field
+    # already has a recommended default; domain is the only one that does not,
+    # so seed a placeholder the summary tells the user to replace.
+    if quick and not domain_supplied:
+        preset.setdefault("domain", "agent.example")
+
+    rc = run_wizard(
         resume=getattr(args, "resume", False),
-        reset=getattr(args, "reset", False),
-        interactive=not getattr(args, "non_interactive", False),
+        # Quick mode always starts fresh so re-running it just works instead of
+        # short-circuiting on a prior completed run.
+        reset=getattr(args, "reset", False) or quick,
+        interactive=not (getattr(args, "non_interactive", False) or quick),
         dry_run=getattr(args, "dry_run", False),
         out_dir=getattr(args, "out_dir", ".") or ".",
         preset_answers=preset,
     )
+
+    if rc == 0 and quick and not domain_supplied:
+        print(
+            "\nNote: used the placeholder domain 'agent.example'. "
+            "Re-run with --domain your.domain to bind the identity to a real host."
+        )
+    return rc

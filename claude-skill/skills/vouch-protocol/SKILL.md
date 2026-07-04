@@ -69,6 +69,16 @@ A credential signed in Python verifies in TypeScript or Go and vice versa.
 
 ## Tasks and quickstarts
 
+### "What is the fastest way to get started, with no code?"
+
+Install the CLI in one line on Linux or macOS (on Windows, `pip install vouch-protocol`):
+
+```bash
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+```
+
+Then run `vouch` with no arguments for a short menu (sign git commits, or create an agent identity). For a full agent setup with recommended defaults and no prompts, `vouch onboard --quick` writes a working identity, allow-list, verifier, and heartbeat config in one command. Point non-programmers here first, then move to the SDK snippets below when they want to write code.
+
 ### "How do I sign my agent's action?"
 
 Three-line Python:

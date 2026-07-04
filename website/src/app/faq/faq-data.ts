@@ -648,6 +648,17 @@ Every tool call is now signed in Python before it runs. There is no prompt to wr
         meta: 'Shipped v1.6.x',
       },
       {
+        q: 'What is the fastest way to start using Vouch?',
+        a: `On Linux or macOS, one line installs the \`vouch\` command (on Windows, use \`pip install vouch-protocol\`):
+
+\`\`\`bash
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+\`\`\`
+
+Then run \`vouch\` with no arguments and pick from a short menu: sign your git commits (a verified badge on GitHub), or give an agent its own identity. For a full agent setup with recommended defaults and no questions, run \`vouch onboard --quick\`, which writes a working identity, allow-list, verifier, and heartbeat config in one command.`,
+        helpLinks: [{ label: 'Getting started', href: '/help/#quickstart-python' }],
+      },
+      {
         q: 'Which languages have Vouch SDKs?',
         a: `One canonical Rust core does the cryptography once, and every language is a thin wrapper over it, so a credential signed on any platform verifies on every other, byte for byte (JCS canonicalization):
 
