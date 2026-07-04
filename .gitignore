@@ -120,8 +120,9 @@ docs/specs/build.sh
 # Patent briefs (confidential - do not publish)
 docs/patents/
 
-# AI assistant config
+# AI assistant config (case-sensitive filesystems need the exact name)
 claude.md
+CLAUDE.md
 
 # Claude Code local-only state (permission allowlist, agent settings, etc.)
 .claude/
