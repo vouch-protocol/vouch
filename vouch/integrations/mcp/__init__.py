@@ -1,5 +1,5 @@
-"""Vouch MCP Server integration."""
+"""Vouch MCP Server integration (built on the official MCP SDK / FastMCP)."""
 
-from .server import VouchMCPServer, main
+from .server import main, mcp
 
-__all__ = ["VouchMCPServer", "main"]
+__all__ = ["main", "mcp"]
