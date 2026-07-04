@@ -239,6 +239,7 @@ body {{ background: var(--parchment); color: var(--ink); font-family: "Source Se
 .frame {{ max-width: 720px; margin: 0 auto; }}
 .eyebrow {{ font-family: "JetBrains Mono", monospace; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }}
 .seal-wrap {{ display: flex; justify-content: center; margin-bottom: 16px; }}
+.seal-wrap a {{ display: inline-flex; line-height: 0; }}
 .seal-img {{ width: 200px; height: 200px; object-fit: contain; }}
 .issued-line {{ text-align: center; font-family: "JetBrains Mono", monospace; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 40px; }}
 h1.title {{ text-align: center; font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 1.5rem; line-height: 1.3; margin: 0 0 12px; letter-spacing: -0.01em; }}
@@ -297,7 +298,9 @@ h1.title a {{ color: inherit; text-decoration: none; }}
 <section>
   <div class="cert-head">
   <div class="seal-wrap">
-    <img class="seal-img" src="https://vouch-protocol.com/seal-verified.png" alt="Vouch Protocol Verified" />
+    <a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer" aria-label="Vouch Protocol">
+      <img class="seal-img" src="https://vouch-protocol.com/seal-verified.png" alt="Vouch Protocol Verified" />
+    </a>
   </div>
   <p class="issued-line">{esc(issued)} &middot; {esc(issued_time)}</p>
   <h1 class="title">{cert_title}</h1>
