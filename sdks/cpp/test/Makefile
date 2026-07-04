@@ -6,10 +6,14 @@ LDFLAGS ?= -L../lib -lvouch_core_uniffi
 test_agent: test_agent.cpp ../include/vouch.hpp
 	$(CXX) $(CXXFLAGS) test_agent.cpp -o test_agent $(LDFLAGS)
 
-run: test_agent
+test_robotics: test_robotics.cpp ../include/vouch.hpp
+	$(CXX) $(CXXFLAGS) test_robotics.cpp -o test_robotics $(LDFLAGS)
+
+run: test_agent test_robotics
 	LD_LIBRARY_PATH=../lib ./test_agent
+	LD_LIBRARY_PATH=../lib ./test_robotics
 
 clean:
-	rm -f test_agent
+	rm -f test_agent test_robotics
 
 .PHONY: run clean

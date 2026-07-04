@@ -291,6 +291,111 @@ class Agent {
   int64_t default_expiry_;
 };
 
+// Idiomatic wrappers over the robotics C ABI. Each function takes and returns
+// strings (JSON or base64), turns a NULL core result into a VouchError, and
+// frees the heap strings the core hands back. The wire format is unchanged; this
+// only removes the manual char*/err_out/free bookkeeping from callers.
+namespace robotics {
+
+// Mint a RobotIdentityCredential from a robot seed and params JSON. Returns the
+// signed credential JSON.
+inline std::string mint_identity(const std::string& robot_seed_b64,
+                                 const std::string& params_json) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_mint_identity(robot_seed_b64.c_str(), params_json.c_str(), &err), err);
+}
+
+// Verify a RobotIdentityCredential. Returns the credentialSubject JSON.
+inline std::string verify_identity(const std::string& credential_json,
+                                   const std::string& public_b64) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_verify_identity(credential_json.c_str(), public_b64.c_str(), &err), err);
+}
+
+// Check a physical action against a physical capability scope. Returns JSON
+// {ok, reasons}.
+inline std::string check_action(const std::string& scope_json,
+                                const std::string& action_json) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_check_action(scope_json.c_str(), action_json.c_str(), &err), err);
+}
+
+// Verify a scannable robot passport URI. Returns the passport summary JSON.
+inline std::string verify_passport(const std::string& uri, const std::string& public_b64,
+                                   const std::string& now_iso) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_verify_passport(uri.c_str(), public_b64.c_str(), now_iso.c_str(), &err),
+      err);
+}
+
+// Check a set of robot credentials against a named regulatory profile. Returns
+// the report JSON {profileId, regime, conforms, satisfiedCount, totalCount,
+// requirements}.
+inline std::string check_conformance(const std::string& credentials_json,
+                                     const std::string& profile_id) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_check_conformance(credentials_json.c_str(), profile_id.c_str(), &err),
+      err);
+}
+
+// Sign a point-in-time conformance attestation over a report. Returns the signed
+// credential JSON.
+inline std::string build_conformance_attestation(const std::string& signer_seed_b64,
+                                                 const std::string& params_json) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_build_conformance_attestation(signer_seed_b64.c_str(),
+                                                   params_json.c_str(), &err),
+      err);
+}
+
+// Verify a conformance attestation and its bound report digest. Returns the
+// credentialSubject JSON.
+inline std::string verify_conformance_attestation(const std::string& credential_json,
+                                                  const std::string& public_b64) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_verify_conformance_attestation(credential_json.c_str(),
+                                                    public_b64.c_str(), &err),
+      err);
+}
+
+// Attach a hybrid post-quantum proof (Ed25519 + ML-DSA-44) to a robot
+// credential. Returns the re-signed credential JSON.
+inline std::string sign_pq(const std::string& credential_json,
+                           const std::string& ed25519_seed_b64,
+                           const std::string& mldsa_secret_b64,
+                           const std::string& mldsa_public_b64,
+                           const std::string& created_iso) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_sign_pq(credential_json.c_str(), ed25519_seed_b64.c_str(),
+                             mldsa_secret_b64.c_str(), mldsa_public_b64.c_str(),
+                             created_iso.c_str(), &err),
+      err);
+}
+
+// Verify a robot credential. Pass an empty ML-DSA public key for a classical
+// (Ed25519-only) credential; a non-empty value verifies the hybrid PQ proof.
+inline bool verify_robot_credential(const std::string& credential_json,
+                                    const std::string& ed25519_public_b64,
+                                    const std::string& mldsa44_public_b64 = "") {
+  char* err = nullptr;
+  const char* mldsa = mldsa44_public_b64.empty() ? nullptr : mldsa44_public_b64.c_str();
+  std::string result = detail::take(
+      vouch_robotics_verify_robot_credential(credential_json.c_str(),
+                                             ed25519_public_b64.c_str(), mldsa, &err),
+      err);
+  return result == "true";
+}
+
+}  // namespace robotics
+
 }  // namespace vouch
 
 #endif  // VOUCH_HPP
