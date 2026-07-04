@@ -46,6 +46,19 @@ export {
   resolveDefaultStore,
 } from './keystore';
 export type { KeyStore, StoredIdentity } from './keystore';
+export { enrollDevice, verifyDelegatedChain, DeviceRegistry } from './fleet';
+export type {
+  EnrollDeviceOptions,
+  FleetResult,
+  VerifyDelegatedChainOptions,
+} from './fleet';
+export {
+  splitSecret,
+  combineShares,
+  splitIdentity,
+  recoverIdentity,
+} from './recovery';
+export type { SplitOptions, RecoveredIdentity } from './recovery';
 
 export type {
   Passport,
