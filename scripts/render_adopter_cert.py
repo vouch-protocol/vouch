@@ -332,7 +332,7 @@ h1.title {{ text-align: center; font-weight: 600; font-size: 1.5rem; line-height
     agent is still trustworthy. The accountability layer adds commit-before-outcome evidence and an
     AccountabilityRecord a counterparty can recompute rather than trust.</p>
     <p>The <a href="https://vouch-protocol.com/agent-trust-index" target="_blank" rel="noopener noreferrer">Agent Trust Index</a> grades how verifiable and accountable an AI agent is, an open, public scorecard.</p>
-    <p class="cta"><a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer">Build on Vouch</a></p>
+    <p class="cta"><a href="https://vouch-protocol.com/the-trust-gap" target="_blank" rel="noopener noreferrer">See the AI trust gap</a></p>
   </div>
 
   <div class="footer-cta">

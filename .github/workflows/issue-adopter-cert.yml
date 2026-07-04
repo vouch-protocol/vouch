@@ -5,7 +5,9 @@ name: Issue adopter certificate (manual)
 # /i/<slug>/, lists the adopter on /adopters, and redeploys the site. The
 # certificate is a Verifiable Credential signed by the Adopter Authority (a
 # delegated key, see scripts/bootstrap_adopter_authority.py) and chained to the
-# root authority through adopters/delegation.json.
+# root authority through adopters/delegation.json. When a discussion, pull
+# request, or issue URL is given, it also posts the certificate there to notify
+# the adopter, mirroring the contributor certificate flow.
 
 on:
   workflow_dispatch:
@@ -38,6 +40,9 @@ on:
 permissions:
   contents: write
   actions: write
+  discussions: write
+  issues: write
+  pull-requests: write
 
 jobs:
   issue:
@@ -146,4 +151,55 @@ jobs:
               sleep $((2 ** i))
             done
             gh workflow run deploy-website.yml --ref main
+          fi
+
+      - name: Notify the adopter
+        if: ${{ inputs.discussion != '' && hashFiles('credential.json') != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NAME: ${{ inputs.name }}
+          SLUG: ${{ inputs.slug }}
+          DISCUSSION: ${{ inputs.discussion }}
+          REPO: ${{ github.repository }}
+          BADGE: "https://img.shields.io/badge/Vouch-Verified_Integration-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
+        run: |
+          CERT_URL="https://vouch-protocol.com/i/${SLUG}/"
+          {
+            echo "### Vouch Verified Integration :sparkles:"
+            echo ""
+            echo "**${NAME}** is now a Vouch Verified Integration, a signed certificate from the Vouch Adopter Authority, chained to the project root and verifiable by anyone against the published DID document."
+            echo ""
+            echo "[![Vouch Verified Integration](${BADGE})](${CERT_URL})"
+            echo ""
+            echo "**Certificate (download and share it):** ${CERT_URL}"
+            echo ""
+            echo "**Listed on the adopters page:** https://vouch-protocol.com/adopters/"
+            echo ""
+            echo "**Add the badge to your site (optional):**"
+            echo ""
+            echo '```markdown'
+            echo "[![Vouch Verified Integration](${BADGE})](${CERT_URL})"
+            echo '```'
+            echo ""
+            echo "<details><summary>The Verifiable Credential (eddsa-jcs-2022)</summary>"
+            echo ""
+            echo '```json'
+            cat credential.json
+            echo ""
+            echo '```'
+            echo ""
+            echo "</details>"
+          } > notify.md
+          num="${DISCUSSION##*/}"
+          owner="${REPO%%/*}"
+          reponame="${REPO##*/}"
+          if echo "$DISCUSSION" | grep -q "/discussions/"; then
+            disc_id=$(gh api graphql -f query='query($o:String!,$n:String!,$num:Int!){repository(owner:$o,name:$n){discussion(number:$num){id}}}' -F o="$owner" -F n="$reponame" -F num="$num" --jq '.data.repository.discussion.id')
+            gh api graphql -f query='mutation($id:ID!,$b:String!){addDiscussionComment(input:{discussionId:$id,body:$b}){comment{url}}}' -F id="$disc_id" -F b=@notify.md --jq '.data.addDiscussionComment.comment.url'
+          elif echo "$DISCUSSION" | grep -q "/pull/"; then
+            gh pr comment "$num" --repo "$REPO" --body-file notify.md
+          elif echo "$DISCUSSION" | grep -q "/issues/"; then
+            gh issue comment "$num" --repo "$REPO" --body-file notify.md
+          else
+            echo "Discussion URL type not recognized ($DISCUSSION); skipping notification."
           fi
