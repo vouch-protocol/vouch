@@ -53,6 +53,15 @@ from .mcp_guard import guard_mcp, guard_tools, require_signed
 # verification back to a trusted root (the key never travels). See vouch.fleet.
 from .fleet import DeviceRegistry, FleetResult, enroll_device, verify_delegated_chain
 
+# Root-identity recovery by Shamir secret sharing (split the root across
+# guardians; any threshold reconstruct it). See vouch.recovery.
+from .recovery import (
+    combine_shares,
+    recover_identity,
+    split_identity,
+    split_secret,
+)
+
 # Audio signing
 from .audio import AudioSigner, SignedAudioResult
 
@@ -373,6 +382,10 @@ __all__ = [
     "verify_delegated_chain",
     "FleetResult",
     "DeviceRegistry",
+    "split_secret",
+    "combine_shares",
+    "split_identity",
+    "recover_identity",
     "guard_mcp",
     "guard_tools",
     # Audio
