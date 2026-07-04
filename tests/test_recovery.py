@@ -7,6 +7,7 @@ deterministic), proven by signing with the recovered key and verifying against
 the original public key.
 """
 
+import json
 import os
 
 import pytest
@@ -88,14 +89,16 @@ def test_split_and_recover_identity_signs_identically():
     cred = signer.sign_credential(action="read", target="t", resource="https://x/y")
     ok, _ = Verifier.verify_credential(cred, public_key=keys.public_key_jwk)
     assert ok
-    assert recovered.public_key_jwk == keys.public_key_jwk
+    # The public key material matches (compare the JWK 'x', not the serialized
+    # string, which can differ by jwcrypto version).
+    assert json.loads(recovered.public_key_jwk)["x"] == json.loads(keys.public_key_jwk)["x"]
 
 
 def test_recover_from_private_jwk_string():
     keys = generate_identity("root.example")
     shares = split_identity(keys.private_key_jwk, threshold=2, shares=3)
     recovered = recover_identity([shares[0], shares[2]])
-    assert recovered.public_key_jwk == keys.public_key_jwk
+    assert json.loads(recovered.public_key_jwk)["x"] == json.loads(keys.public_key_jwk)["x"]
 
 
 def test_too_few_shares_does_not_recover_identity():

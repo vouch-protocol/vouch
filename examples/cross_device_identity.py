@@ -104,7 +104,7 @@ print(f"   Laptop still works? {laptop_ok.ok}")
 # ---------------------------------------------------------------------------
 rule("5. Recover the root from guardian shares")
 shares = split_identity(root, threshold=2, shares=3)
-print(f"   Split the root into 3 shares (any 2 rebuild it).")
+print("   Split the root into 3 shares (any 2 rebuild it).")
 
 # Two guardians hand back their shares. Rebuild the exact same root key.
 recovered = recover_identity([shares[0], shares[2]], did=root.did)
