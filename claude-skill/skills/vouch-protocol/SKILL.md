@@ -183,6 +183,31 @@ chain backward.
 
 See `reference/delegation.md` for the construction and verification flow.
 
+### "How do I use one identity across many devices?"
+
+Each device mints its own key locally, and a root identity delegates
+scoped, time-bound authority to that device's DID. A device signs its
+actions with its own key, chained under the root grant, so the private
+key never travels between devices. `verify_delegated_chain` ties a
+device's action back to the trusted root. Lose a device and you revoke
+it; lose the root and you rebuild it from Shamir recovery shares.
+
+```python
+from vouch import Agent, enroll_device, verify_delegated_chain
+
+root = Agent("alice.example")
+phone = Agent()  # a did:key minted on the phone
+grant = enroll_device(root, device_did=phone.did, action="charge",
+                      target="api.bank", resource="https://api.bank/invoices")
+action = phone.sign(action="charge", target="api.bank",
+                    resource="https://api.bank/invoices/42", parent_credential=grant)
+result = verify_delegated_chain([grant, action],
+                                trusted_roots={root.did: root.public_key_jwk})
+```
+
+See `reference/cross-device-identity.md` for enrollment, revocation, and
+recovery.
+
 ### "How do I revoke a specific credential?"
 
 BitstringStatusList: flip the bit at the credential's index, re-sign

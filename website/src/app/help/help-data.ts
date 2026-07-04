@@ -750,6 +750,85 @@ result = await verifier.verify_delegation_chain([principal_link, agent_link, act
 The verifier walks every link, validates each signature, and confirms resource narrowing.
 `,
       },
+      {
+        id: 'cross-device-identity',
+        title: 'One Identity Across Your Devices',
+        summary: 'Use the same identity on many devices without ever copying your private key: per-device keys, delegation, revocation, and recovery.',
+        body: `
+## The idea
+
+Each device makes its own key and keeps it local. Your root identity signs a scoped permission slip (a delegation grant) for each device. A verifier ties any device's action back to your trusted root. Lose a device and you revoke it; lose all of them and you rebuild the root from recovery shares. What moves between devices is authority, never key material.
+
+## Enroll a device
+
+Each device mints its own key. The root delegates a scope to that device's DID.
+
+\`\`\`python
+from vouch import Agent, enroll_device
+
+root = Agent("alice.example")
+trusted_roots = {root.did: root.public_key_jwk}
+
+phone = Agent()  # a did:key minted on the phone
+grant = enroll_device(
+    root,
+    device_did=phone.did,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices",
+)
+\`\`\`
+
+## Sign and verify
+
+The device signs with its own key, chained under the grant. A verifier checks the whole chain back to the trusted root.
+
+\`\`\`python
+from vouch import verify_delegated_chain
+
+action = phone.sign(
+    action="charge", target="api.bank",
+    resource="https://api.bank/invoices/42", parent_credential=grant,
+)
+result = verify_delegated_chain([grant, action], trusted_roots=trusted_roots)
+assert result.ok
+\`\`\`
+
+## Revoke a lost device
+
+Track devices with a \`DeviceRegistry\` and revoke one when it is lost. Its actions stop verifying; other devices are unaffected.
+
+\`\`\`python
+from vouch import DeviceRegistry
+
+registry = DeviceRegistry()
+registry.enroll(phone.did, grant)
+registry.revoke(phone.did)
+
+result = verify_delegated_chain(
+    [grant, action], trusted_roots=trusted_roots, revoked=registry.is_revoked
+)
+assert not result.ok
+\`\`\`
+
+## Recover the root
+
+Split the root into shares so any threshold rebuild it. Distribute the shares to guardians or separate locations. Fewer than the threshold reveal nothing.
+
+\`\`\`python
+from vouch import split_identity, recover_identity, Signer
+
+# Splitting needs the root's key, so create the root with allow_key_export=True.
+root = Agent("alice.example", allow_key_export=True)
+shares = split_identity(root, threshold=2, shares=3)
+
+recovered = recover_identity([shares[0], shares[2]], did=root.did)
+signer = Signer.from_keypair(recovered)
+\`\`\`
+
+The TypeScript SDK exposes the same helpers with camelCase names. See the runnable example in \`examples/cross_device_identity.py\`.
+`,
+      },
     ],
   },
 

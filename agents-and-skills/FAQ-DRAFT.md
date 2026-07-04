@@ -33,6 +33,17 @@ signer=principal_signer)`, then `agent.tools = vouch.protect([tool], parent=gran
 The protocol enforces that the agent can only narrow the granted authority,
 never widen it.
 
+**Q: How do I use one identity across my devices without copying my private key?**
+A: Each device mints its own key locally, and your root identity delegates
+scoped authority to that device: `grant = vouch.enroll_device(root,
+device_did=device.did, action=..., target=..., resource=...)`. The device signs
+with its own key (`device.sign(..., parent_credential=grant)`), and a verifier
+ties it back to the root with `vouch.verify_delegated_chain([grant, action],
+trusted_roots={root.did: root.public_key_jwk})`. Lose a device and you revoke it
+with a `DeviceRegistry`; lose the root and you rebuild it from Shamir shares with
+`vouch.split_identity` and `vouch.recover_identity`. The private key never
+travels between devices.
+
 ---
 
 ## Sidecars (which language to run)
