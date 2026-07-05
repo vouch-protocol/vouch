@@ -216,11 +216,55 @@ jobs:
             exit 1
           fi
 
-          # The push above uses GITHUB_TOKEN, which does not trigger the on:push
-          # deploy workflow. Dispatch it explicitly so the certificate and the
-          # contributors list go live. workflow_dispatch still fires from
-          # GITHUB_TOKEN, unlike push.
-          gh workflow run deploy-website.yml --ref main
+      - name: Deploy the website and wait for the certificate to publish
+        if: hashFiles('credential.json') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_AUTHOR: ${{ steps.resolve.outputs.login }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+        run: |
+          # The certificate commit was pushed with GITHUB_TOKEN, which does not
+          # trigger the on:push deploy. Dispatch the deploy and wait until the
+          # rebuilt docs/ output on main actually contains the certificate page.
+          # A deploy can race an older commit, so re-dispatch if the page does
+          # not appear. This keeps the live site from briefly serving (and edge
+          # caching) a 404 for a freshly minted certificate.
+          CERT_PATH="docs/c/${PR_AUTHOR}/${PR_NUMBER}/index.html"
+          published=0
+          for attempt in 1 2 3 4 5; do
+            echo "Deploy attempt ${attempt}: dispatching deploy-website.yml on main."
+            gh workflow run deploy-website.yml --ref main || echo "Dispatch call failed; will retry."
+            # Wait for the deploy to rebuild and commit docs/ back to main.
+            for _ in $(seq 1 16); do
+              sleep 15
+              if gh api "repos/${REPO}/contents/${CERT_PATH}?ref=main" >/dev/null 2>&1; then
+                published=1
+                break
+              fi
+            done
+            if [ "$published" -eq 1 ]; then
+              echo "Certificate page is in the deployed docs/ output."
+              break
+            fi
+            echo "Certificate not deployed yet after attempt ${attempt}; re-dispatching."
+          done
+
+          if [ "$published" -ne 1 ]; then
+            echo "::warning::Deploy did not confirm the certificate page for @${PR_AUTHOR} (#${PR_NUMBER})."
+            echo "It may still publish shortly; re-run this workflow with the PR number if needed."
+            exit 0
+          fi
+
+          # Best effort: wait for the live page to serve, using a unique query
+          # string to bypass any cached negative response at the edge.
+          CERT_URL="https://vouch-protocol.com/c/${PR_AUTHOR}/${PR_NUMBER}/"
+          for _ in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "${CERT_URL}?cb=${GITHUB_RUN_ID}-${RANDOM}" || echo 000)
+            echo "Live check ${CERT_URL} -> ${code}"
+            if [ "$code" = "200" ]; then break; fi
+            sleep 15
+          done
 
       - name: Congratulate the contributor
         if: hashFiles('credential.json') != ''
