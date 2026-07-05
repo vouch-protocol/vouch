@@ -35,9 +35,7 @@ class Bank:
             return False, "no valid Vouch Credential attached"
 
         # 1. Is the credential genuine, unexpired, and from a key we trust?
-        is_valid, passport = Verifier.verify(
-            credential, public_key=self.trusted_public_key_jwk
-        )
+        is_valid, passport = Verifier.verify(credential, public_key=self.trusted_public_key_jwk)
         if not is_valid or passport is None:
             return False, "credential failed signature or validity check"
 

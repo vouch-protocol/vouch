@@ -133,8 +133,11 @@ async def main() -> int:
             intent = doc.get("credentialSubject", {}).get("intent", {})
             binding_ok = intent.get("resource") == pq["requested_resource"]
             print("  cryptosuite:  " + yellow(proof.get("cryptosuite", "unknown")))
-            print("  signature:    " + str(len(proof.get("proofValue", "")))
-                  + " base58 chars (Ed25519 and ML-DSA-44 composite)")
+            print(
+                "  signature:    "
+                + str(len(proof.get("proofValue", "")))
+                + " base58 chars (Ed25519 and ML-DSA-44 composite)"
+            )
             print("  binding:      " + (green("intact") if binding_ok else red("mismatch")))
             print(dim("  One flag switched the whole flow to quantum-safe signing."))
             print(dim("  A verifier completes hybrid checks with the issuer's ML-DSA"))
@@ -150,7 +153,9 @@ async def main() -> int:
             voucher = json.loads(voucher_json)
             subject = voucher.get("credentialSubject", {})
             print("  purpose:      payments_session")
-            print("  initial trust: " + str(subject.get("initialTrust", subject.get("trust", "1.0"))))
+            print(
+                "  initial trust: " + str(subject.get("initialTrust", subject.get("trust", "1.0")))
+            )
             print(dim("  trust decays over time; a verifier can refuse once it drops."))
         else:
             print(dim("  " + voucher_json.strip().splitlines()[0]))

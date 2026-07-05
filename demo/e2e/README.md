@@ -38,12 +38,53 @@ The agent process cannot leak the key, because it never receives it. It holds
 one `VouchSidecar` handle and nothing else. A prompt-injected model in the agent
 cannot exfiltrate a secret it does not have.
 
+## Use the sidecar from your own MCP client
+
+The demo launches the sidecar as a child process so it runs in one command. In a
+real setup you install it once and register it with your MCP client, the same
+way you add any other server. There is a ready-to-edit config next to this file,
+[`mcp_client_config.json`](mcp_client_config.json):
+
+```json
+{
+  "mcpServers": {
+    "vouch": {
+      "command": "vouch-mcp",
+      "env": {
+        "VOUCH_DID": "did:web:your-agent.example.com",
+        "VOUCH_PRIVATE_KEY": "PASTE_YOUR_PRIVATE_KEY_JWK_JSON_STRING"
+      }
+    }
+  }
+}
+```
+
+Install the server with `pip install vouch-mcp`, then drop that block into your
+Claude Desktop or Cursor config. To get real values for the two env vars:
+
+```python
+from vouch import generate_identity
+kp = generate_identity("your-agent.example.com")
+print(kp.did)              # -> VOUCH_DID
+print(kp.private_key_jwk)  # -> VOUCH_PRIVATE_KEY
+```
+
+Once it is registered, your agent has `sign`, `verify`, `create_session`,
+`check_revocation`, and `get_identity` as ordinary MCP tools, and the key stays
+in the server process.
+
 ## Turning this into a real framework agent
 
 The agent here is framework-agnostic on purpose. To drive it with a real LLM
-agent (LangChain, CrewAI, AutoGen, Google ADK, Vertex AI, n8n), wrap the single
-`sidecar.sign` call as a tool the framework can invoke. The per-framework glue
-lives in [`examples/05_integrations/`](../../examples/05_integrations/).
+agent, wrap the single `sidecar.sign` call as a tool the framework can invoke.
+One server serves every framework through its standard MCP client, so there is
+no per-framework Vouch connector to maintain:
+
+- [`examples/mcp-vouch/`](../../examples/mcp-vouch/) wires the same `vouch-mcp`
+  server into LangChain, LangGraph, CrewAI, AutoGen, Google ADK, Vertex AI,
+  AutoGPT, n8n, and Hasura, each through that framework's own MCP client.
+- [`examples/05_integrations/`](../../examples/05_integrations/) has the
+  per-framework agent scripts if you want a full runnable agent for one stack.
 
 ## The sidecar
 

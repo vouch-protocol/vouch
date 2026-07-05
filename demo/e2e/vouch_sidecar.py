@@ -58,12 +58,8 @@ class VouchSidecar:
         # Send the child's server logs to nowhere so the demo output stays clean.
         errlog = open(os.devnull, "w")
         self._stack.callback(errlog.close)
-        read, write = await self._stack.enter_async_context(
-            stdio_client(params, errlog=errlog)
-        )
-        self._session = await self._stack.enter_async_context(
-            ClientSession(read, write)
-        )
+        read, write = await self._stack.enter_async_context(stdio_client(params, errlog=errlog))
+        self._session = await self._stack.enter_async_context(ClientSession(read, write))
         await self._session.initialize()
         return self
 
@@ -113,6 +109,4 @@ class VouchSidecar:
 
     async def create_session(self, purpose: str, valid_seconds: int = 3600) -> str:
         """Issue a trust-decaying session voucher (Heartbeat Protocol)."""
-        return await self._call(
-            "create_session", purpose=purpose, valid_seconds=valid_seconds
-        )
+        return await self._call("create_session", purpose=purpose, valid_seconds=valid_seconds)

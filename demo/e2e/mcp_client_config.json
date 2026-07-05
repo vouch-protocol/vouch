@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "vouch": {
+      "command": "vouch-mcp",
+      "env": {
+        "VOUCH_DID": "did:web:your-agent.example.com",
+        "VOUCH_PRIVATE_KEY": "PASTE_YOUR_PRIVATE_KEY_JWK_JSON_STRING"
+      }
+    }
+  }
+}
