@@ -96,6 +96,18 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-086](./PAD-086-executable-caveats-delegation-chains.md) | Deterministic Executable Caveats Embedded in Object-Capability Delegation Chains | 2026-07-05 | Published |
 | [PAD-087](./PAD-087-bounded-infrastructure-access-grant.md) | Bounded, Offline-Verifiable Robot Access to Physical Infrastructure With Shrink-Only Attenuation | 2026-07-05 | Published |
 | [PAD-088](./PAD-088-auditable-access-use-record.md) | Auditable, Attributable Record of a Robot's Use of Physical Infrastructure | 2026-07-05 | Published |
+| [PAD-089](./PAD-089-fused-sensor-provenance-attestation.md) | Signed Provenance Binding a Robot's Fused World Model to Its Input Frames | 2026-07-05 | Published |
+| [PAD-090](./PAD-090-fused-input-provenance-completeness.md) | Detecting a Dropped or Substituted Input in a Robot's Fused Perception Output | 2026-07-05 | Published |
+
+
+## July 5, 2026: Fused-Sensor Provenance (PAD-089, PAD-090)
+
+Two disclosures cover the provenance of a robot's fused world model. PAD-089 is a signed
+fused-perception attestation binding the hash of a fused output to the ordered set of
+input frame hashes, a reproducible digest over them, and the fusion method that produced
+it, so a manipulated fusion result no longer matches. PAD-090 reconciles the inputs a
+fused attestation names against the robot's signed perception log and names any that were
+never recorded, so a dropped or substituted fused input is detected.
 
 
 ## July 5, 2026: Robot Infrastructure Access (PAD-087, PAD-088)

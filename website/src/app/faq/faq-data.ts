@@ -752,6 +752,29 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: FUSED-SENSOR PROVENANCE
+  // =====================================================================
+  {
+    id: 'robotics-fusion',
+    audience: 'Robotics: fusion',
+    title: 'Fused-sensor provenance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot acts on fused sensor data, not one frame. Can I prove where a fused result came from?',
+        a: `Yes. \`build_fused_attestation\` signs a \`FusedPerceptionAttestation\` that binds the hash of the fused output (a world model, an occupancy grid, or a pose) to the ordered list of input frame hashes and the fusion method that produced it. \`verify_fused_attestation\` checks the robot's proof and reproduces a digest over the listed inputs, so the attestation commits to exactly those inputs and that output, and a manipulated fusion result no longer matches.`,
+        helpLinks: [{ label: 'Fused-sensor provenance guide', href: '/help/#robotics-fusion' }],
+        meta: 'Shipped - vouch.robotics.fusion',
+      },
+      {
+        q: 'Can I tell if a fused result quietly dropped or swapped one of its input frames?',
+        a: `Yes. \`verify_fusion_inputs\` checks every input frame the attestation names against the robot's signed perception log and returns any that were never recorded, so a dropped or substituted fused input is named rather than hidden. Because the input digest is signed, adding, removing, or reordering an input also changes the digest and breaks verification.`,
+        meta: 'Shipped - vouch.robotics.fusion',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

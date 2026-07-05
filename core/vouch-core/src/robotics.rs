@@ -3888,6 +3888,221 @@ pub fn attenuates_grant(parent: &Value, child: &Value) -> bool {
     true
 }
 
+// ---------------------------------------------------------------------------
+// Fused-sensor provenance (Phase 5.18)
+// ---------------------------------------------------------------------------
+//
+// Perception provenance signs individual sensor frames. A robot rarely acts on
+// one frame, though: it fuses many frames, from cameras, lidar, radar, and other
+// sensors, into a single world model, an object set, an occupancy grid, or a
+// pose estimate, and acts on that. This binds a fused output to the exact set of
+// input frames that produced it and the fusion method that produced it, signed by
+// the robot, so a manipulated fusion result or a silently dropped or substituted
+// input is detectable at the provenance layer.
+//
+// A fused-perception attestation carries the hash of the fused output, an ordered
+// list of the input frame hashes, a digest over those inputs, and a fusion method
+// identifier, signed by the robot. A verifier reproduces the input digest from the
+// listed inputs and, when it holds the raw fused output, reproduces its hash, so
+// the attestation commits to exactly those inputs and that output. Checking each
+// listed input against the robot's signed perception log confirms every fused
+// input traces to a frame the robot actually recorded.
+//
+// This is the open layer: the robot signs the binding of a fused output to its
+// inputs in software, reusing the perception frame hashes. Hardware sensor
+// attestation and managed sensor-fusion orchestration are out of scope for the
+// open layer.
+
+pub const FUSED_PERCEPTION_TYPE: &str = "FusedPerceptionAttestation";
+
+/// Multibase (base64url) SHA-256 of a raw fused output. Only the hash travels in
+/// the attestation; the fused output stays wherever the deployment keeps it.
+pub fn hash_fused_output(output: &[u8]) -> String {
+    mb64(&Sha256::digest(output))
+}
+
+/// Return a deterministic multibase digest over an ordered list of input frame
+/// hashes. The digest commits to the exact inputs and their order, so adding,
+/// removing, or reordering an input changes it. Reproduced byte-identically
+/// across language SDKs by hashing the input hashes joined with newlines.
+pub fn fusion_inputs_digest(input_frame_hashes: &[String]) -> Result<String> {
+    if input_frame_hashes.is_empty() {
+        return Err(CoreError::Json(
+            "input_frame_hashes must be a non-empty list".into(),
+        ));
+    }
+    for h in input_frame_hashes {
+        if h.is_empty() {
+            return Err(CoreError::Json(
+                "each input frame hash must be a non-empty string".into(),
+            ));
+        }
+    }
+    let joined = input_frame_hashes.join("\n");
+    Ok(mb64(&Sha256::digest(joined.as_bytes())))
+}
+
+/// Parameters for [`build_fused_attestation`]. The robot self-issues the
+/// credential with its own Ed25519 seed. Provide either the raw `fused_output` (it
+/// is hashed) or a precomputed `fused_output_hash`, not both. `captured_at`, when
+/// `None`, defaults to `valid_from`.
+#[derive(Debug, Clone)]
+pub struct BuildFusedAttestation {
+    pub robot_did: String,
+    pub fusion_method: String,
+    pub input_frame_hashes: Vec<String>,
+    pub fused_output: Option<Vec<u8>>,
+    pub fused_output_hash: Option<String>,
+    pub captured_at: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `FusedPerceptionAttestation`: the robot attests that a fused
+/// output was produced by `fusion_method` from the frames named in
+/// `input_frame_hashes`. The attestation carries a digest over the ordered inputs,
+/// so the set of inputs is tamper-evident. Signed by the robot.
+pub fn build_fused_attestation(robot_seed: &[u8], params: &BuildFusedAttestation) -> Result<Value> {
+    if params.robot_did.is_empty() {
+        return Err(CoreError::Json("robot_did is required".into()));
+    }
+    if params.fusion_method.is_empty() {
+        return Err(CoreError::Json("fusion_method is required".into()));
+    }
+    if params.input_frame_hashes.is_empty() {
+        return Err(CoreError::Json(
+            "input_frame_hashes must be a non-empty list".into(),
+        ));
+    }
+    if params.fused_output.is_some() && params.fused_output_hash.is_some() {
+        return Err(CoreError::Json(
+            "provide either fused_output or fused_output_hash, not both".into(),
+        ));
+    }
+    let fused_output_hash = match (&params.fused_output, &params.fused_output_hash) {
+        (Some(o), None) => hash_fused_output(o),
+        (None, Some(h)) if !h.is_empty() => h.clone(),
+        _ => {
+            return Err(CoreError::Json(
+                "fused_output or fused_output_hash is required".into(),
+            ))
+        }
+    };
+
+    let captured = params
+        .captured_at
+        .clone()
+        .unwrap_or_else(|| params.valid_from.clone());
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("fusionMethod".into(), json!(params.fusion_method));
+    subject.insert("fusedOutputHash".into(), json!(fused_output_hash));
+    subject.insert("inputFrameHashes".into(), json!(params.input_frame_hashes));
+    subject.insert(
+        "inputsDigest".into(),
+        json!(fusion_inputs_digest(&params.input_frame_hashes)?),
+    );
+    subject.insert("capturedAt".into(), json!(captured));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", FUSED_PERCEPTION_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.robot_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.robot_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), robot_seed, &opts)
+}
+
+/// Verify a `FusedPerceptionAttestation`: the robot's proof, that the digest over
+/// the listed inputs reproduces the attested `inputsDigest` (so the inputs are
+/// internally consistent and tamper-evident), and, when the raw `fused_output` is
+/// supplied, that its hash reproduces the attested `fusedOutputHash`. Returns the
+/// credentialSubject on success, `None` if invalid.
+pub fn verify_fused_attestation(
+    credential: &Value,
+    public_key: &[u8],
+    fused_output: Option<&[u8]>,
+) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, public_key, FUSED_PERCEPTION_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let fused_output_hash = subject.get("fusedOutputHash").and_then(|v| v.as_str());
+    let inputs: Vec<String> = subject
+        .get("inputFrameHashes")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|e| e.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    match fused_output_hash {
+        Some(h) if !h.is_empty() && !inputs.is_empty() => {}
+        _ => return Ok(None),
+    }
+    match fusion_inputs_digest(&inputs) {
+        Ok(d) => {
+            if Some(d.as_str()) != subject.get("inputsDigest").and_then(|v| v.as_str()) {
+                return Ok(None);
+            }
+        }
+        Err(_) => return Ok(None),
+    }
+    if let Some(o) = fused_output {
+        if hash_fused_output(o) != fused_output_hash.unwrap_or("") {
+            return Ok(None);
+        }
+    }
+    Ok(Some(subject))
+}
+
+/// The outcome of confirming an attestation's inputs against a perception log:
+/// `ok` plus the input frame hashes not found. Surfaced by [`verify_fusion_inputs`].
+#[derive(Debug, Clone)]
+pub struct FusionInputsResult {
+    pub ok: bool,
+    pub missing: Vec<String>,
+}
+
+/// Confirm every input frame the attestation names was actually recorded in the
+/// robot's perception log. Returns `ok` plus `missing`, the input frame hashes that
+/// do not appear as a recorded frame, so a dropped or substituted fused input is
+/// named rather than hidden.
+pub fn verify_fusion_inputs(credential: &Value, log_entries: &[Value]) -> FusionInputsResult {
+    let recorded: HashSet<&str> = log_entries
+        .iter()
+        .filter_map(|e| e.get("frameHash").and_then(|v| v.as_str()))
+        .collect();
+    let inputs: Vec<String> = credential
+        .get("credentialSubject")
+        .and_then(|s| s.get("inputFrameHashes"))
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|e| e.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    let missing: Vec<String> = inputs
+        .into_iter()
+        .filter(|h| !recorded.contains(h.as_str()))
+        .collect();
+    FusionInputsResult {
+        ok: missing.is_empty(),
+        missing,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -6222,5 +6437,41 @@ mod tests {
             "the Python grant and request must authorize in Rust"
         );
         assert!(res.reasons.is_empty());
+    }
+
+    // Fused-sensor provenance (Phase 5.18) ---------------------------------
+
+    // Cross-language interop: Rust reproduces the exact inputs digest and fused
+    // output hash Python pinned, and verifies the Python-signed attestation.
+    #[test]
+    fn verifies_python_fused_interop_vector() {
+        let vector = load_vector();
+        let robot_pub = jwk_pub(&vector["robot_public_key_jwk"]);
+
+        let inputs: Vec<String> = vector["fused_input_frame_hashes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(
+            fusion_inputs_digest(&inputs).unwrap(),
+            vector["expected_fusion_inputs_digest"].as_str().unwrap()
+        );
+
+        assert_eq!(
+            hash_fused_output(b"world-model-0"),
+            vector["expected_fused_output_hash"].as_str().unwrap()
+        );
+
+        let cred = vector["fused_perception_attestation"].clone();
+        let subject = verify_fused_attestation(&cred, &robot_pub, None)
+            .unwrap()
+            .expect("fused attestation verifies");
+        assert_eq!(subject["fusionMethod"], "occupancy-grid-v1");
+        assert_eq!(
+            subject["inputsDigest"].as_str().unwrap(),
+            vector["expected_fusion_inputs_digest"].as_str().unwrap()
+        );
     }
 }

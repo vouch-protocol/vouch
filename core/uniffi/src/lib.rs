@@ -928,4 +928,32 @@ pub fn robotics_attenuates_grant(params_json: String) -> Result<String, CoreErro
     Ok(rjson::attenuates_grant(&params_json)?)
 }
 
+// Fused-sensor provenance (Phase 5.18).
+pub fn robotics_fusion_inputs_digest(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::fusion_inputs_digest(&params_json)?)
+}
+pub fn robotics_hash_fused_output(output: Vec<u8>) -> String {
+    rjson::hash_fused_output(&output)
+}
+pub fn robotics_build_fused_attestation(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_fused_attestation(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_fused_attestation(
+    credential_json: String,
+    public_key: Vec<u8>,
+    fused_output_mb: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_fused_attestation(
+        &credential_json,
+        &public_key,
+        fused_output_mb.as_deref(),
+    )?)
+}
+pub fn robotics_verify_fusion_inputs(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_fusion_inputs(&params_json)?)
+}
+
 uniffi::include_scaffolding!("vouch_core");
