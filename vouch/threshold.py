@@ -10,7 +10,7 @@ threshold of custodians, and the key never exists whole anywhere.
 
 The critical property that makes this a drop-in fit for Vouch: the aggregated
 signature is a STANDARD Ed25519 signature, so it verifies with the existing
-:meth:`vouch.verifier.Verifier.verify_credential` and needs no new proof type
+:meth:`vouch.verifier.Verifier.verify` and needs no new proof type
 or verifier. Combine it with :meth:`vouch.signer.Signer.from_backend` to get a
 ``Signer`` whose "sign callback" runs a threshold-signing ceremony instead of
 holding a raw key::
@@ -22,7 +22,7 @@ holding a raw key::
         public_key=generated.group_public_key.public_key_jwk,
         sign=threshold_signer.sign,
     )
-    credential = signer.sign_credential(action="read", target="t", resource="https://x/y")
+    credential = signer.sign(action="read", target="t", resource="https://x/y")
 
 The cryptography is not implemented here: this module is a thin ctypes binding
 over the same audited Rust core (`frost-ed25519`, the Zcash Foundation crate,
@@ -289,7 +289,7 @@ def aggregate(
 ) -> bytes:
     """Combine ``min_signers`` (or more) signature shares into the final,
     standard Ed25519 signature. Verify the result with
-    ``Verifier.verify_credential`` against ``group_public_key.public_key_jwk``,
+    ``Verifier.verify`` against ``group_public_key.public_key_jwk``,
     exactly like any other Vouch credential."""
     group_public_key_json = json.dumps(
         {

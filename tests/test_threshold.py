@@ -130,7 +130,7 @@ def test_threshold_signer_requires_at_least_two_shares():
 
 def test_integrates_with_signer_from_backend_and_existing_verifier():
     """The whole point: a threshold-backed Signer produces a credential that
-    verifies through the EXISTING Verifier.verify_credential, no new proof
+    verifies through the EXISTING Verifier.verify, no new proof
     type or verification path."""
     generated = generate_key(2, 3)
     threshold_signer = ThresholdSigner(generated.shares[:2], generated.group_public_key)
@@ -140,11 +140,9 @@ def test_integrates_with_signer_from_backend_and_existing_verifier():
         public_key=generated.group_public_key.public_key_jwk,
         sign=threshold_signer.sign,
     )
-    credential = signer.sign_credential(action="read", target="t", resource="https://x/y")
+    credential = signer.sign(action="read", target="t", resource="https://x/y")
 
-    ok, passport = Verifier.verify_credential(
-        credential, public_key=generated.group_public_key.public_key_jwk
-    )
+    ok, passport = Verifier.verify(credential, public_key=generated.group_public_key.public_key_jwk)
     assert ok
     assert passport.intent["action"] == "read"
 
