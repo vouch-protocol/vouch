@@ -83,14 +83,22 @@ export default function ContributorsPage() {
                         <ul className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {CONTRIBUTORS.map((c) => (
                                 <li key={`${c.login}-${c.pr}`} className="bg-parchment-warm border border-rule p-4">
-                                    <Link
-                                        href={`/c/${c.login}/${c.pr}/`}
-                                        className="font-mono text-burgundy no-underline"
-                                    >
-                                        @{c.login}
-                                    </Link>
+                                    <div className="flex items-baseline justify-between gap-2">
+                                        <Link
+                                            href={`/c/${c.login}/${c.pr}/`}
+                                            className="font-mono text-burgundy no-underline"
+                                        >
+                                            @{c.login}
+                                        </Link>
+                                        <Link
+                                            href={`https://github.com/vouch-protocol/vouch/pull/${c.pr}`}
+                                            className="font-mono text-[0.8rem] text-ink-faint no-underline hover:text-burgundy"
+                                        >
+                                            #{c.pr}
+                                        </Link>
+                                    </div>
                                     <p className="text-ink-faint text-[0.85rem] mt-1 leading-snug">
-                                        {c.title ? c.title : `PR #${c.pr}`}
+                                        {c.title}
                                     </p>
                                 </li>
                             ))}
