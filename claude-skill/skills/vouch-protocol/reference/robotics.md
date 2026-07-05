@@ -1002,6 +1002,86 @@ predictive-maintenance modeling are commercial.
 
 ---
 
+## 21. Bystander-consent evidence
+
+`vouch.robotics.consent`
+
+What it is: a robot working in a shared or public space captures people
+incidentally, and this records, at capture time, the basis on which a capture was
+permitted, bound to the specific capture (by its hash, reusing the perception
+capture hash) and to the robot's identity, holding only hashes and never an image
+or a bystander's identifying data. A bystander (or their device) can sign a
+`BystanderConsentToken` bound to that one capture hash and the robot, so the
+consent verifies only against the capture it was given for and cannot be replayed
+to a different recording. A `BystanderConsentEvidence` credential is signed by the
+robot, binding the capture to a consent basis (explicit consent, posted notice,
+legitimate interest, or a redaction that was applied) and, for explicit consent,
+to the tokens that cover it, referenced by their proof value so no identifying data
+is embedded.
+
+The problem it closes: "on what basis did a robot capture the people around it,
+and can that be shown after the fact without keeping anyone's biometrics?" A robot
+in a shared space records people it never enrolled, and a plain log either keeps
+identifying data it should not hold or proves nothing about why the capture was
+allowed. Bystander-consent evidence makes the permission basis a signed artifact
+bound to the exact capture and the robot: consent is provable, tied to one
+recording, and stored as hashes and a basis rather than images or identities.
+
+How it works: `hash_capture` computes the capture hash (the same hash the
+perception log uses). `build_consent_token` lets a bystander sign a
+`BystanderConsentToken` over that capture hash and the robot's DID, so the token is
+bound to one capture and one robot, and `verify_consent_token` checks the
+bystander's proof, the binding, and the window, so a token cannot be replayed to a
+different recording. `build_consent_evidence` lets the robot sign a
+`BystanderConsentEvidence` credential binding the capture hash to a basis from
+`CONSENT_BASES`, and for explicit consent it commits to the covering tokens by
+their proof value, never embedding identifying data. `verify_consent_evidence`
+checks the robot's proof and the accepted basis, reproduces the capture hash when
+the capture is supplied, and, when tokens and bystander keys are supplied, confirms
+every token verifies, is bound to this capture and this robot, and matches a
+committed reference, so an explicit-consent evidence is backed by real tokens for
+exactly that capture.
+
+The API: `hash_capture`, `build_consent_token`, `verify_consent_token`,
+`build_consent_evidence`, and `verify_consent_evidence`. Credential types:
+`BystanderConsentEvidence` and `BystanderConsentToken`. Accepted bases:
+`CONSENT_BASES` (explicit consent, posted notice, legitimate interest, redacted).
+
+Worked example (Python):
+
+```python
+from vouch.robotics import consent
+
+cap_hash = consent.hash_capture(frame_bytes)                 # reuses the capture hash
+token = consent.build_consent_token(                         # bystander signs, bound to one capture
+    bystander_signer, bystander_did=bystander_did,
+    capture_hash=cap_hash, robot_did=robot_did,
+)
+evidence = consent.build_consent_evidence(                   # robot signs the basis for this capture
+    robot_signer, robot_did=robot_did, capture_hash=cap_hash,
+    basis="explicit-consent", consent_tokens=[token],        # committed by proof value, no PII
+)
+ok, subject = consent.verify_consent_evidence(
+    evidence, robot_signer.public_key(),
+    capture=frame_bytes, consent_tokens=[token],
+    bystander_keys={bystander_did: bystander_signer.public_key()},
+)
+assert ok                                                    # basis backed by a token for this capture
+```
+
+Security boundary: `verify_consent_token` fails on a wrong type, an invalid proof,
+a token bound to a different capture or robot, or an expired token, and
+`verify_consent_evidence` fails on a wrong type, an invalid proof, an unaccepted
+basis, a capture whose hash does not match, an explicit-consent evidence with no
+tokens, or any supplied token that does not verify or does not match a committed
+reference, so consent is bound to one capture, tied to the robot's identity, and
+cannot be replayed. Only hashes and a basis are stored, never an image or a
+bystander's identifying data, so the evidence is verifiable without retaining
+anyone's biometrics. On-device biometric detection and redaction, and managed
+consent-registry orchestration, are commercial.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -1030,8 +1110,11 @@ frames it combined and the output it acted on are exactly what it committed to,
 each fused input tracing back to a frame it recorded (19), and attests its own
 wear as a signed, hash-linked history from which a tighter physical capability
 scope is derived, so a worn robot operates inside a narrower verifiable envelope
-than the one it shipped with (20). Every artifact is the same Verifiable
-Credential format, so one verifier and one trust model cover all twenty.
+than the one it shipped with (20), and records, at capture time, the basis on
+which it captured the people around it, binding that basis to the exact capture and
+to its own identity while holding only hashes so consent is provable without
+retaining anyone's biometrics (21). Every artifact is the same Verifiable
+Credential format, so one verifier and one trust model cover all twenty-one.
 
 ## Quick answers
 
@@ -1110,10 +1193,17 @@ Credential format, so one verifier and one trust model cover all twenty.
   capability scope whose caps are scaled down by that wear level, a valid
   attenuation of the original so the robot runs inside a tighter verifiable
   envelope (20).
+- Can a robot show on what basis it captured the people around it, without keeping
+  their biometrics? Yes, bystander-consent evidence: the robot records a consent
+  basis (explicit consent, posted notice, legitimate interest, or redacted) in a
+  `BystanderConsentEvidence` credential bound to the exact capture hash and its own
+  identity, a bystander can sign a `BystanderConsentToken` bound to that one capture
+  so it cannot be replayed, and `verify_consent_evidence` confirms the basis (and,
+  for explicit consent, the covering tokens) while only hashes are ever stored (21).
 
 ## Status
 
-All twenty capabilities are implemented and tested in Python, TypeScript, Go, and
+All twenty-one capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the

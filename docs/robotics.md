@@ -424,6 +424,31 @@ The open layer is the signed wear state and the derived narrowed scope credentia
 firmware-level enforcement of the narrowed envelope and managed predictive-maintenance
 modeling are commercial.
 
-Sections 5.7 to 5.20 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.21 Bystander consent (`vouch.robotics.consent`)
+
+A robot in a shared or public space captures people incidentally. `build_consent_token`
+has a bystander sign over the hash of one capture and the robot's DID, so
+`verify_consent_token` accepts it only for that capture and that robot and it cannot be
+replayed to another recording. `build_consent_evidence` has the robot bind the capture
+hash to a consent basis, one of `CONSENT_BASES` (explicit-consent, posted-notice,
+legitimate-interest, or redacted), and for explicit consent it commits to the covering
+tokens by their proof value. `verify_consent_evidence` checks the robot's proof, that the
+basis is accepted, and, when given the raw capture, that its hash matches. Only hashes
+and the basis are stored, never an image or a bystander's identifying data.
+
+```python
+from vouch.robotics import hash_capture, build_consent_token, build_consent_evidence, verify_consent_evidence
+
+ch = hash_capture(frame)
+token = build_consent_token(person, bystander_did=person_did, capture_hash=ch, robot_did=robot_did, valid_seconds=3600)
+ev = build_consent_evidence(robot, robot_did=robot_did, capture_hash=ch, basis="explicit-consent", consent_tokens=[token])
+ok, subject = verify_consent_evidence(ev, robot_key, capture=frame, consent_tokens=[token], bystander_keys={person_did: person_key})
+```
+
+The open layer is the cryptographic binding of a consent basis to a capture and its
+verification, holding only hashes; on-device biometric detection and redaction, and
+managed consent-registry orchestration, are commercial.
+
+Sections 5.7 to 5.21 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

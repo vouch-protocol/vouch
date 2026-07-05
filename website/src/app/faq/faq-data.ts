@@ -845,6 +845,29 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: BYSTANDER CONSENT
+  // =====================================================================
+  {
+    id: 'robotics-consent',
+    audience: 'Robotics: consent',
+    title: 'Bystander consent',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot with cameras records people in public. Can it prove it had a basis to?',
+        a: `Yes. \`build_consent_evidence\` signs a \`BystanderConsentEvidence\` credential that binds a capture, named only by its hash, to a consent basis: an explicit token, posted notice, a legitimate interest, or a redaction the robot applied. It stores only hashes and the basis, never an image or anyone's identifying data, so the record is verifiable without retaining biometrics. \`verify_consent_evidence\` checks the robot's proof, that the basis is one an interoperable verifier accepts, and, when given the raw capture, that its hash matches.`,
+        helpLinks: [{ label: 'Bystander consent guide', href: '/help/#robotics-consent' }],
+        meta: 'Shipped - vouch.robotics.consent',
+      },
+      {
+        q: 'If a person consents to being recorded, can that consent be reused for other footage?',
+        a: `No, and that is the point. \`build_consent_token\` has the bystander sign over the hash of the one capture and the robot's DID, so \`verify_consent_token\` accepts it only for that capture and that robot. A token given for one recording cannot be replayed against another. The evidence commits to its tokens by their proof value, so an explicit-consent record names exactly which consents cover the capture without embedding anyone's identity.`,
+        meta: 'Shipped - vouch.robotics.consent',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

@@ -24,6 +24,7 @@ robots and embodied agents:
   - access: bounded, revocable robot access to physical infrastructure resources.
   - fusion: signed provenance binding a fused world model to its input frames.
   - wear: signed wear and degradation attestation with capability auto-attenuation.
+  - consent: bystander-consent evidence binding a consent basis to a robot capture.
 """
 
 from .capability import (
@@ -170,6 +171,16 @@ from .wear import (
     verify_wear_attestation,
     verify_wear_chain,
 )
+from .consent import (
+    CONSENT_BASES,
+    CONSENT_EVIDENCE_TYPE,
+    CONSENT_TOKEN_TYPE,
+    build_consent_evidence,
+    build_consent_token,
+    hash_capture,
+    verify_consent_evidence,
+    verify_consent_token,
+)
 
 __all__ = [
     # identity
@@ -287,6 +298,15 @@ __all__ = [
     "verify_wear_attestation",
     "verify_wear_chain",
     "attenuate_for_wear",
+    # bystander consent (consent basis bound to a robot capture, privacy-preserving)
+    "CONSENT_EVIDENCE_TYPE",
+    "CONSENT_TOKEN_TYPE",
+    "CONSENT_BASES",
+    "hash_capture",
+    "build_consent_token",
+    "verify_consent_token",
+    "build_consent_evidence",
+    "verify_consent_evidence",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

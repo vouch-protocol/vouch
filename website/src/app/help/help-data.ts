@@ -2767,6 +2767,29 @@ narrowed = attenuate_for_wear(full_scope, latest["wearLevel"])   # caps scaled t
 Security boundary: the robot signs its wear state and derives the narrowed scope credential in software. Firmware-level enforcement of the narrowed envelope and managed predictive-maintenance modeling are commercial.
 `,
       },
+      {
+        id: 'robotics-consent',
+        title: 'Bystander consent',
+        summary: 'A robot records a privacy-preserving, verifiable basis for capturing people, with bystander consent bound to the one capture it was given for.',
+        body: `
+A robot in a shared or public space captures people incidentally through its cameras and microphones. This lets it record why a capture was permitted, bound to the capture and to its own identity, holding only hashes and never anyone's identifying data.
+
+The problem it closes: a robot that records people has no verifiable, privacy-preserving way to show the basis it acted on, and a plain consent record can be reused to justify footage the person never agreed to.
+
+How it works: \`build_consent_token\` has a bystander sign over the hash of one capture and the robot's DID, so \`verify_consent_token\` accepts it only for that capture and that robot and it cannot be replayed. \`build_consent_evidence\` has the robot bind the capture hash to a consent basis (explicit-consent, posted-notice, legitimate-interest, or redacted), and for explicit consent it commits to the covering tokens by their proof value. \`verify_consent_evidence\` checks the robot's proof, the basis, and, when given the raw capture, that its hash matches.
+
+\`\`\`python
+from vouch.robotics import hash_capture, build_consent_token, build_consent_evidence, verify_consent_evidence
+
+ch = hash_capture(frame)
+token = build_consent_token(person, bystander_did=person_did, capture_hash=ch, robot_did=robot_did, valid_seconds=3600)
+ev = build_consent_evidence(robot, robot_did=robot_did, capture_hash=ch, basis="explicit-consent", consent_tokens=[token])
+ok, subject = verify_consent_evidence(ev, robot_key, capture=frame, consent_tokens=[token], bystander_keys={person_did: person_key})
+\`\`\`
+
+Security boundary: the open layer is the cryptographic binding of a consent basis to a capture and its verification, holding only hashes. On-device biometric detection and redaction, and managed consent-registry orchestration, are commercial.
+`,
+      },
     ],
   },
   {

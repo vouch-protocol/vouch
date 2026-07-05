@@ -64,6 +64,9 @@ The Python reference adds three robotics capabilities on the same
   bound to its identity and hash-linked over time, with a deterministic rule that
   narrows its physical capability scope as it degrades, so the derated scope stays a
   valid attenuation of the original.
+- `vouch.robotics.consent`: bystander-consent evidence, a robot binds the basis for a
+  capture to the capture hash and its identity, holding only hashes, and a bystander
+  signs a consent token bound to one capture and robot so it cannot be replayed.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by

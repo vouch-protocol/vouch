@@ -234,6 +234,24 @@ been removed. See `integrations.md`.
   verifiable envelope instead of a static factory limit. Open layer only;
   firmware-level enforcement of the narrowed envelope and managed
   predictive-maintenance modeling are commercial. See `robotics.md`.
+- "On what basis did a robot capture the people around it, and can it be shown
+  without keeping their biometrics?" -> Bystander-consent evidence
+  (`vouch.robotics.consent`): a robot in a shared or public space records, at
+  capture time, the basis on which a capture was permitted, bound to the specific
+  capture (by its hash, reusing the perception capture hash) and to the robot's
+  identity, holding only hashes and never an image or a bystander's identifying
+  data. A bystander (or their device) signs a `BystanderConsentToken` bound to that
+  one capture hash and the robot, so consent verifies only against the capture it
+  was given for and cannot be replayed (`build_consent_token`,
+  `verify_consent_token`). The robot signs a `BystanderConsentEvidence` credential
+  binding the capture to a basis from `CONSENT_BASES` (explicit consent, posted
+  notice, legitimate interest, redacted) and, for explicit consent, to the covering
+  tokens by their proof value, and `verify_consent_evidence` checks the proof, the
+  accepted basis, the reproduced capture hash, and the tokens, so consent is
+  provable, bound to one capture, and stored without retaining anyone's biometrics
+  (`hash_capture`, `build_consent_evidence`, `verify_consent_evidence`). Open layer
+  only; on-device biometric detection and redaction, and managed consent-registry
+  orchestration, are commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface

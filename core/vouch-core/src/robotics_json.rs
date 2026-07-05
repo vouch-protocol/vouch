@@ -1355,3 +1355,99 @@ pub fn attenuate_for_wear(params_json: &str) -> Result<String> {
     let wear_level = gof(&p, "wearLevel").unwrap_or(0.0);
     Ok(r::attenuate_for_wear(&scope, wear_level)?.to_string())
 }
+
+// ---- bystander-consent evidence -------------------------------------------
+
+/// Multibase SHA-256 of a raw capture.
+pub fn hash_capture(capture: &[u8]) -> String {
+    r::hash_capture(capture)
+}
+
+/// Build a signed bystander consent token. `params_json` is `{bystanderDid,
+/// captureHash, robotDid, scope?, grantedAt, validUntil?}`.
+pub fn build_consent_token(bystander_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildConsentToken {
+        bystander_did: gs(&p, "bystanderDid"),
+        capture_hash: gs(&p, "captureHash"),
+        robot_did: gs(&p, "robotDid"),
+        scope: gos(&p, "scope"),
+        granted_at: gs(&p, "grantedAt"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_consent_token(bystander_seed, &params)?.to_string())
+}
+
+/// Verify a bystander consent token bound to a capture and a robot. `params_json`
+/// is `{token: {...}, captureHash, robotDid, now?}`. Returns the credentialSubject
+/// on success, `null` if invalid.
+pub fn verify_consent_token(params_json: &str, bystander_public_key: &[u8]) -> Result<String> {
+    let p = parse(params_json)?;
+    let token = p.get("token").cloned().unwrap_or(Value::Null);
+    Ok(subj(r::verify_consent_token(
+        &token,
+        bystander_public_key,
+        &gs(&p, "captureHash"),
+        &gs(&p, "robotDid"),
+        gos(&p, "now").as_deref(),
+    )?))
+}
+
+/// Build a signed bystander-consent evidence credential. `params_json` is
+/// `{robotDid, captureHash, basis, consentTokens?, redactionHash?, validFrom,
+/// validUntil?}` where `consentTokens` is a list of signed token credentials.
+pub fn build_consent_evidence(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let consent_tokens = p
+        .get("consentTokens")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let params = r::BuildConsentEvidence {
+        robot_did: gs(&p, "robotDid"),
+        capture_hash: gs(&p, "captureHash"),
+        basis: gs(&p, "basis"),
+        consent_tokens,
+        redaction_hash: gos(&p, "redactionHash"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_consent_evidence(robot_seed, &params)?.to_string())
+}
+
+/// Verify a bystander-consent evidence credential. `params_json` is `{evidence:
+/// {...}, captureMb?, consentTokens?, bystanderKeys?, now?}` where `captureMb` is
+/// the multibase-encoded raw capture and `bystanderKeys` maps a bystander DID to
+/// its multibase public key. Returns the credentialSubject on success, `null` if
+/// invalid.
+pub fn verify_consent_evidence(params_json: &str, robot_public_key: &[u8]) -> Result<String> {
+    let p = parse(params_json)?;
+    let evidence = p.get("evidence").cloned().unwrap_or(Value::Null);
+    let capture = match gos(&p, "captureMb") {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(&mb)?),
+        _ => None,
+    };
+    let consent_tokens = p.get("consentTokens").and_then(|v| v.as_array()).cloned();
+    let bystander_keys = match p.get("bystanderKeys").and_then(|v| v.as_object()) {
+        Some(map) => {
+            let mut keys = Vec::with_capacity(map.len());
+            for (did, mb) in map {
+                let mb = mb.as_str().unwrap_or("");
+                keys.push(r::BystanderKey {
+                    did: did.clone(),
+                    public_key: r::unmb64(mb)?,
+                });
+            }
+            Some(keys)
+        }
+        None => None,
+    };
+    Ok(subj(r::verify_consent_evidence(
+        &evidence,
+        robot_public_key,
+        capture.as_deref(),
+        consent_tokens.as_deref(),
+        bystander_keys.as_deref(),
+        gos(&p, "now").as_deref(),
+    )?))
+}

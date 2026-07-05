@@ -293,6 +293,17 @@ namespace vouch_core {
     string robotics_verify_wear_chain(string params_json, bytes public_key);
     [Throws=CoreError]
     string robotics_attenuate_for_wear(string params_json);
+
+    // Bystander-consent evidence (Phase 5.20).
+    string robotics_hash_capture(bytes capture);
+    [Throws=CoreError]
+    string robotics_build_consent_token(bytes bystander_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_consent_token(string params_json, bytes bystander_public_key);
+    [Throws=CoreError]
+    string robotics_build_consent_evidence(bytes robot_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_consent_evidence(string params_json, bytes robot_public_key);
 };
 
 dictionary Ed25519KeyPair {
