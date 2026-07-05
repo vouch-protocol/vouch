@@ -345,6 +345,25 @@ def __getattr__(name):
         from . import provenance
 
         return getattr(provenance, name)
+    # Action transparency (append-only RFC 6962 log of agent actions)
+    elif name in (
+        "TransparencyError",
+        "SIGNED_TREE_HEAD_TYPE",
+        "TransparencyLog",
+        "entry_digest",
+        "merkle_tree_hash",
+        "inclusion_proof",
+        "verify_inclusion",
+        "consistency_proof",
+        "verify_consistency",
+        "sign_tree_head",
+        "verify_tree_head",
+        "check_inclusion",
+        "check_consistency",
+    ):
+        from . import transparency
+
+        return getattr(transparency, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -615,6 +634,20 @@ __all__ = [
     "verify_inference_provenance",
     "verify_context",
     "check_replay",
+    # Action transparency (append-only RFC 6962 log)
+    "TransparencyError",
+    "SIGNED_TREE_HEAD_TYPE",
+    "TransparencyLog",
+    "entry_digest",
+    "merkle_tree_hash",
+    "inclusion_proof",
+    "verify_inclusion",
+    "consistency_proof",
+    "verify_consistency",
+    "sign_tree_head",
+    "verify_tree_head",
+    "check_inclusion",
+    "check_consistency",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
