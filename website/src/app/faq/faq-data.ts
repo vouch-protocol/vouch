@@ -283,7 +283,7 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
       {
         q: 'Can I prove what model and safety policy a robot ran, even after an OTA update?',
         a: `Yes, via a \`ModelProvenanceAttestation\` recording the model name, weights hash, safety policy, and config hash. On an over-the-air update the robot re-signs a new attestation with a \`supersedes\` link to the previous one, forming a tamper-evident chain you can walk to answer "what was running at any past time."`,
-        helpLinks: [{ label: 'Provenance guide', href: '/help/#robotics-provenance' }],
+        helpLinks: [{ label: 'Provenance guide', href: '/help/#robotics-provenance' }, { label: 'See it: reproduce and replay a decision', href: '/demos/#provenance' }],
         meta: 'Shipped - vouch.robotics.provenance, PAD-065',
       },
       {

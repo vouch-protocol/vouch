@@ -25,7 +25,8 @@ export default function DemosPage() {
             Every verdict here mirrors the shipped SDK modules
             {' '}<code className="font-mono text-[0.85em]">vouch.reasoning</code>,
             {' '}<code className="font-mono text-[0.85em]">vouch.deliberation</code>, and
-            {' '}<code className="font-mono text-[0.85em]">vouch.caveats</code>. Disclosed as PAD-085 and PAD-086.
+            {' '}<code className="font-mono text-[0.85em]">vouch.caveats</code>, and
+            {' '}<code className="font-mono text-[0.85em]">vouch.provenance</code>. Disclosed as PAD-043, PAD-045, PAD-085, and PAD-086.
           </p>
         </div>
       </section>

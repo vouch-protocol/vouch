@@ -260,6 +260,49 @@ function ReasonedAction() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Section IV — Inference provenance (vouch.provenance)                */
+/* ------------------------------------------------------------------ */
+
+function Provenance() {
+  const [mode, setMode] = useState<'sound' | 'substitute' | 'swap'>('sound');
+  const verdicts = {
+    sound: { ok: true, reason: 'context reproduces and the replay byte-matches', label: 'MATCH' },
+    substitute: { ok: false, reason: 'context_root_mismatch · a retrieved source was swapped', label: 'MISMATCH' },
+    swap: { ok: false, reason: 'weights_mismatch · a different model claims this output', label: 'MISMATCH' },
+  } as const;
+  const v = verdicts[mode];
+  return (
+    <div className="grid md:grid-cols-2 gap-8 items-start">
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          The agent binds its output to a fingerprint of the <b className="text-ink">model</b> and a Merkle root over the
+          <b className="text-ink"> context</b> it was grounded in. An auditor can re-fetch the sources to reproduce the
+          root, and re-run the model on the same seed to byte-compare the output.
+        </p>
+        <div className="eyebrow-faint mb-2">Try it as the auditor</div>
+        <div className="flex flex-col gap-2">
+          <button className={`demo-radio${mode === 'sound' ? ' on' : ''}`} onClick={() => setMode('sound')}>Re-fetch the same sources, re-run the same model</button>
+          <button className={`demo-radio${mode === 'substitute' ? ' on' : ''}`} onClick={() => setMode('substitute')}>Substitute a retrieved source</button>
+          <button className={`demo-radio${mode === 'swap' ? ' on' : ''}`} onClick={() => setMode('swap')}>Swap in a different model</button>
+        </div>
+      </div>
+      <div>
+        <div className="demo-ledger" style={{ minHeight: '150px' }}>
+          <div className="demo-line"><span className="k">output</span> approve_refund · A-1007 · usd:120</div>
+          <div className="demo-line"><span className="k">contextRoot</span> {mode === 'substitute' ? 'uRniQ… recomputes ✗' : 'uRniQ… reproduces ✓'}</div>
+          <div className="demo-line"><span className="k">model</span> {mode === 'swap' ? 'llama-3-8b · hash ✗' : 'llama-3-8b · weightsHash ✓'}</div>
+          <div className="demo-line"><span className="k">sampler</span> seed 42 · temp 0.0</div>
+        </div>
+        <div className="demo-verdict mt-4" style={{ borderColor: v.ok ? ALLOW : DENY }}>
+          <span className="demo-badge" style={{ color: v.ok ? ALLOW : DENY, borderColor: v.ok ? ALLOW : DENY }}>{v.label}</span>
+          <span className="font-mono text-[0.85rem] text-ink-soft">{v.reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export default function DemosClient() {
   return (
@@ -286,7 +329,7 @@ export default function DemosClient() {
         </div>
       </section>
 
-      <section id="caveats" className="scroll-mt-24">
+      <section id="caveats" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ III</span>
@@ -294,6 +337,17 @@ export default function DemosClient() {
           </div>
           <p className="eyebrow mb-6">A rule the CEO sets binds an agent two hops down · vouch.caveats</p>
           <Envelope />
+        </div>
+      </section>
+
+      <section id="provenance" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ IV</span>
+            <h2>The provenance</h2>
+          </div>
+          <p className="eyebrow mb-6">Prove the output came from this model on this context · vouch.provenance</p>
+          <Provenance />
         </div>
       </section>
     </>
