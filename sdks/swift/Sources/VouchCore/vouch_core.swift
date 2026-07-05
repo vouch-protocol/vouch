@@ -399,6 +399,22 @@ fileprivate class UniffiHandleMap<T> {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
+    typealias FfiType = UInt16
+    typealias SwiftType = UInt16
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt16 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
     typealias FfiType = UInt64
     typealias SwiftType = UInt64
@@ -1029,6 +1045,39 @@ public func mldsa44Verify(publicKey: Data, message: Data, signature: Data)throws
     )
 })
 }
+public func recoveryCombineShares(sharesJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_recovery_combine_shares(
+        FfiConverterString.lower(sharesJson),$0
+    )
+})
+}
+public func recoveryRecoverIdentity(sharesJson: String, did: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_recovery_recover_identity(
+        FfiConverterString.lower(sharesJson),
+        FfiConverterString.lower(did),$0
+    )
+})
+}
+public func recoverySplitIdentity(seedB64: String, threshold: UInt16, shares: UInt16)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_recovery_split_identity(
+        FfiConverterString.lower(seedB64),
+        FfiConverterUInt16.lower(threshold),
+        FfiConverterUInt16.lower(shares),$0
+    )
+})
+}
+public func recoverySplitSecret(secretB64: String, threshold: UInt16, shares: UInt16)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_recovery_split_secret(
+        FfiConverterString.lower(secretB64),
+        FfiConverterUInt16.lower(threshold),
+        FfiConverterUInt16.lower(shares),$0
+    )
+})
+}
 public func roboticsAttachStatus(credentialJson: String, signerSeed: Data, paramsJson: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_attach_status(
@@ -1107,6 +1156,14 @@ public func roboticsBuildDecommission(signerSeed: Data, paramsJson: String)throw
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_build_decommission(
         FfiConverterData.lower(signerSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsBuildEmbodiment(agentSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_embodiment(
+        FfiConverterData.lower(agentSeed),
         FfiConverterString.lower(paramsJson),$0
     )
 })
@@ -1222,6 +1279,13 @@ public func roboticsCheckConformance(credentialsJson: String, profileId: String)
     uniffi_vouch_core_uniffi_fn_func_robotics_check_conformance(
         FfiConverterString.lower(credentialsJson),
         FfiConverterString.lower(profileId),$0
+    )
+})
+}
+public func roboticsCheckNoFork(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_check_no_fork(
+        FfiConverterString.lower(paramsJson),$0
     )
 })
 }
@@ -1408,6 +1472,14 @@ public func roboticsVerifyConformanceAttestation(credentialJson: String, publicK
     )
 })
 }
+public func roboticsVerifyContinuityChain(paramsJson: String, agentPublicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_continuity_chain(
+        FfiConverterString.lower(paramsJson),
+        FfiConverterData.lower(agentPublicKey),$0
+    )
+})
+}
 public func roboticsVerifyCustodyChain(paramsJson: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_verify_custody_chain(
@@ -1421,6 +1493,14 @@ public func roboticsVerifyDecommission(credentialJson: String, publicKey: Data, 
         FfiConverterString.lower(credentialJson),
         FfiConverterData.lower(publicKey),
         FfiConverterOptionString.lower(trustedAuthoritiesJson),$0
+    )
+})
+}
+public func roboticsVerifyEmbodiment(credentialJson: String, agentPublicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_embodiment(
+        FfiConverterString.lower(credentialJson),
+        FfiConverterData.lower(agentPublicKey),$0
     )
 })
 }
@@ -1583,6 +1663,41 @@ public func signDual(credentialJson: String, ed25519Seed: Data, mldsaSecret: Dat
     )
 })
 }
+public func thresholdAggregate(message: Data, commitmentsJson: String, sharesJson: String, groupPublicKeyJson: String)throws  -> Data {
+    return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_threshold_aggregate(
+        FfiConverterData.lower(message),
+        FfiConverterString.lower(commitmentsJson),
+        FfiConverterString.lower(sharesJson),
+        FfiConverterString.lower(groupPublicKeyJson),$0
+    )
+})
+}
+public func thresholdCommit(keyShareJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_threshold_commit(
+        FfiConverterString.lower(keyShareJson),$0
+    )
+})
+}
+public func thresholdGenerateKey(minSigners: UInt16, maxSigners: UInt16)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_threshold_generate_key(
+        FfiConverterUInt16.lower(minSigners),
+        FfiConverterUInt16.lower(maxSigners),$0
+    )
+})
+}
+public func thresholdSignShare(message: Data, keyShareJson: String, noncesB64: String, commitmentsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_threshold_sign_share(
+        FfiConverterData.lower(message),
+        FfiConverterString.lower(keyShareJson),
+        FfiConverterString.lower(noncesB64),
+        FfiConverterString.lower(commitmentsJson),$0
+    )
+})
+}
 public func verify(credentialJson: String, publicKey: Data, nowIso: String, clockSkewSeconds: Int64)throws  -> VerifyResult {
     return try  FfiConverterTypeVerifyResult.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_verify(
@@ -1697,6 +1812,18 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_mldsa44_verify() != 56375) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_recovery_combine_shares() != 51111) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_recovery_recover_identity() != 63715) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_recovery_split_identity() != 36521) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_recovery_split_secret() != 28685) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_attach_status() != 59495) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1722,6 +1849,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_decommission() != 34705) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_embodiment() != 40638) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_heartbeat() != 17046) {
@@ -1764,6 +1894,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_check_conformance() != 38679) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_check_no_fork() != 17618) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_check_status() != 55540) {
@@ -1835,10 +1968,16 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_conformance_attestation() != 13223) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_continuity_chain() != 16539) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_custody_chain() != 27600) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_decommission() != 57617) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_embodiment() != 653) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_heartbeat() != 58554) {
@@ -1893,6 +2032,18 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_sign_dual() != 32161) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_threshold_aggregate() != 60222) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_threshold_commit() != 64642) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_threshold_generate_key() != 24504) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_threshold_sign_share() != 34204) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_verify() != 57533) {
