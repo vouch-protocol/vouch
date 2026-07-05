@@ -19,6 +19,8 @@ pub mod pq;
 pub mod robotics;
 pub mod robotics_json;
 pub mod status_list;
+pub mod threshold;
+pub mod threshold_json;
 pub mod time;
 
 pub use error::{CoreError, Result};

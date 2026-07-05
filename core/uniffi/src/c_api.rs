@@ -276,6 +276,89 @@ pub extern "C" fn vouch_verify_chain_time_bound(
 }
 
 // ---------------------------------------------------------------------------
+// FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
+// signature is a standard Ed25519 signature: verify it with
+// vouch_verify_proof / vouch_verify_credential like any other credential, no
+// new proof type. JSON in, JSON out; keys and shares are base64 inside the
+// JSON, matching the rest of this file. See vouch_core::threshold for the
+// ceremony and why the full private key is never reconstructed.
+// ---------------------------------------------------------------------------
+
+/// Mint a fresh threshold-native Ed25519 identity: max_signers key shares, any
+/// min_signers of which can sign together. Returns JSON
+/// {shares: [{identifier, key_package}, ...], group_public_key: {verifying_key, public_key_package}}.
+#[no_mangle]
+pub extern "C" fn vouch_threshold_generate_key(
+    min_signers: u16,
+    max_signers: u16,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        core::threshold_generate_key(min_signers, max_signers).map_err(|e| e.to_string())
+    })
+}
+
+/// Round 1 for one signer (one entry from generate_key's shares array).
+/// Returns JSON {nonces, commitments}. `nonces` is SECRET: keep it on this
+/// signer's device only, use it for exactly one vouch_threshold_sign_share
+/// call, then discard it.
+#[no_mangle]
+pub extern "C" fn vouch_threshold_commit(
+    key_share_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let key_share = cstr_in(key_share_json)?;
+        core::threshold_commit(key_share).map_err(|e| e.to_string())
+    })
+}
+
+/// Round 2 for one signer. message is the raw bytes to sign (base64).
+/// commitments_json maps every participating signer's base64 identifier to
+/// its base64 commitment, including this signer's own. Returns the
+/// base64-encoded signature share.
+#[no_mangle]
+pub extern "C" fn vouch_threshold_sign_share(
+    message_b64: *const c_char,
+    key_share_json: *const c_char,
+    nonces_b64: *const c_char,
+    commitments_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let message = unb64(&cstr_in(message_b64)?)?;
+        let key_share = cstr_in(key_share_json)?;
+        let nonces = cstr_in(nonces_b64)?;
+        let commitments = cstr_in(commitments_json)?;
+        core::threshold_sign_share(message, key_share, nonces, commitments).map_err(|e| e.to_string())
+    })
+}
+
+/// Combine signature shares into the final signature. commitments_json and
+/// shares_json map each signer's base64 identifier to its base64 commitment /
+/// signature share. group_public_key_json is the group_public_key object from
+/// vouch_threshold_generate_key. Returns the base64-encoded 64-byte Ed25519
+/// signature.
+#[no_mangle]
+pub extern "C" fn vouch_threshold_aggregate(
+    message_b64: *const c_char,
+    commitments_json: *const c_char,
+    shares_json: *const c_char,
+    group_public_key_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let message = unb64(&cstr_in(message_b64)?)?;
+        let commitments = cstr_in(commitments_json)?;
+        let shares = cstr_in(shares_json)?;
+        let group_public_key = cstr_in(group_public_key_json)?;
+        let sig = core::threshold_aggregate(message, commitments, shares, group_public_key)
+            .map_err(|e| e.to_string())?;
+        Ok(b64(&sig))
+    })
+}
+
+// ---------------------------------------------------------------------------
 // Robotics: a curated set of the robot-credential operations, for C/C++/.NET/JVM/Swift.
 // JSON in, JSON out; keys are base64. Same shapes as the Python, TypeScript, Go,
 // and Rust reference implementations.

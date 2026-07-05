@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use vouch_core::{
     credentials, data_integrity, delegation, hybrid, keys, multikey, pq, robotics_json as rjson,
-    status_list,
+    status_list, threshold_json,
 };
 
 // Clean C ABI (cbindgen generates vouch_core.h) for .NET and C/C++ consumers.
@@ -185,6 +185,42 @@ pub fn build_delegation_link(
         parent_proof_value,
     };
     Ok(delegation::build_delegation_link(&input).to_string())
+}
+
+pub fn threshold_generate_key(min_signers: u16, max_signers: u16) -> Result<String, CoreError> {
+    Ok(threshold_json::generate_key(min_signers, max_signers)?)
+}
+
+pub fn threshold_commit(key_share_json: String) -> Result<String, CoreError> {
+    Ok(threshold_json::commit(&key_share_json)?)
+}
+
+pub fn threshold_sign_share(
+    message: Vec<u8>,
+    key_share_json: String,
+    nonces_b64: String,
+    commitments_json: String,
+) -> Result<String, CoreError> {
+    Ok(threshold_json::sign_share(
+        &message,
+        &key_share_json,
+        &nonces_b64,
+        &commitments_json,
+    )?)
+}
+
+pub fn threshold_aggregate(
+    message: Vec<u8>,
+    commitments_json: String,
+    shares_json: String,
+    group_public_key_json: String,
+) -> Result<Vec<u8>, CoreError> {
+    Ok(threshold_json::aggregate(
+        &message,
+        &commitments_json,
+        &shares_json,
+        &group_public_key_json,
+    )?)
 }
 
 pub fn generate_mldsa44() -> Result<MlDsaKeyPair, CoreError> {

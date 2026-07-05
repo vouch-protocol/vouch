@@ -48,6 +48,20 @@ namespace vouch_core {
     [Throws=CoreError]
     boolean verify_chain_time_bound(string chain_json, string now_iso, i64 clock_skew_seconds);
 
+    // FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
+    // signature is a standard Ed25519 signature, verifiable with
+    // ed25519_verify like any other; no new proof type. See
+    // vouch_core::threshold for the ceremony and the never-reconstructed
+    // guarantee.
+    [Throws=CoreError]
+    string threshold_generate_key(u16 min_signers, u16 max_signers);
+    [Throws=CoreError]
+    string threshold_commit(string key_share_json);
+    [Throws=CoreError]
+    string threshold_sign_share(bytes message, string key_share_json, string nonces_b64, string commitments_json);
+    [Throws=CoreError]
+    bytes threshold_aggregate(bytes message, string commitments_json, string shares_json, string group_public_key_json);
+
     // Post-quantum ML-DSA-44 and dual proofs.
     [Throws=CoreError]
     MlDsaKeyPair generate_mldsa44();

@@ -339,6 +339,21 @@ def __getattr__(name):
         from . import kms
 
         return getattr(kms, name)
+    # FROST(Ed25519) threshold signing (needs the native vouch_core_uniffi
+    # library). The ceremony functions (generate_key, commit, sign_share,
+    # aggregate) have names too generic to export at the top level without
+    # colliding with unrelated symbols (aggregate is already reputation
+    # aggregation); use vouch.threshold.generate_key(...) directly.
+    elif name in (
+        "ThresholdError",
+        "ThresholdSigner",
+        "KeyShare",
+        "GroupPublicKey",
+        "GenerateKeyResult",
+    ):
+        from . import threshold
+
+        return getattr(threshold, name)
     raise AttributeError(f"module 'vouch' has no attribute '{name}'")
 
 
@@ -505,4 +520,10 @@ __all__ = [
     "AWSKMSProvider",
     "GCPKMSProvider",
     "AzureKeyVaultProvider",
+    # FROST(Ed25519) threshold signing
+    "ThresholdError",
+    "ThresholdSigner",
+    "KeyShare",
+    "GroupPublicKey",
+    "GenerateKeyResult",
 ]
