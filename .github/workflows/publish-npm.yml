@@ -36,10 +36,10 @@ jobs:
       - name: Publish sdk
         working-directory: packages/sdk-ts
         run: |
-          npm ci
+          npm install
           npm publish --access public || echo "sdk: version may already be published, continuing"
       - name: Publish api-client
         working-directory: sdks/clients/typescript
         run: |
-          npm ci
+          npm install
           npm publish --access public || echo "api-client: version may already be published, continuing"
