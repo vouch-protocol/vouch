@@ -20,6 +20,7 @@ robots and embodied agents:
   - conformance: machine-checkable mapping from credentials to safety regulations.
   - pq: hybrid post-quantum signing and backward-compatible verification.
   - embodiment: cross-embodiment identity continuity for an agent across bodies.
+  - custody: physical custody handoff chain for a task or object across actors.
 """
 
 from .capability import (
@@ -136,6 +137,13 @@ from .embodiment import (
     verify_continuity_chain,
     verify_embodiment,
 )
+from .custody import (
+    build_handoff,
+    holder_at,
+    locate_condition_change,
+    verify_handoff,
+    verify_handoff_chain,
+)
 
 __all__ = [
     # identity
@@ -227,6 +235,12 @@ __all__ = [
     "verify_embodiment",
     "verify_continuity_chain",
     "check_no_fork",
+    # custody handoff (physical task/object across human and robot actors)
+    "build_handoff",
+    "verify_handoff",
+    "verify_handoff_chain",
+    "holder_at",
+    "locate_condition_change",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
