@@ -761,6 +761,8 @@ The verifier walks every link, validates each signature, and confirms resource n
 
 Each device makes its own key and keeps it local. Your root identity signs a scoped permission slip (a delegation grant) for each device. A verifier ties any device's action back to your trusted root. Lose a device and you revoke it; lose all of them and you rebuild the root from recovery shares. What moves between devices is authority, never key material.
 
+See it in the browser: the [interactive demos](/demos/identity/#enrollment) show a device acting on a delegated grant, getting revoked, and a root rebuilt from a threshold of Shamir shares.
+
 ## Enroll a device
 
 Each device mints its own key. The root delegates a scope to that device's DID.
@@ -841,6 +843,8 @@ Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) exposes the same helpers
 FROST(Ed25519) threshold signing splits a key among several custodians so that any threshold of them can produce a signature together, without the full private key ever existing whole at any point, not even during signing. The result is a standard Ed25519 signature, so it verifies exactly like any other Vouch credential. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) binds the same audited \`frost-ed25519\` core (the Zcash Foundation's RFC 9591 implementation), so every language produces byte-identical results from one implementation.
 
 This is distinct from root-identity recovery above: recovery reconstructs a key once, for a deliberate restore. Threshold signing never reconstructs the key at all, and is meant for live, repeated signing.
+
+See it in the browser: the [interactive demo](/demos/identity/#threshold-signing) shows any threshold of custodians signing together, with the same signature verifying regardless of who signed.
 
 ## Generate a threshold identity
 

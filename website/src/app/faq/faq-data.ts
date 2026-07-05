@@ -1021,6 +1021,10 @@ result = verify_delegated_chain([grant, action],
 
 Lose a device and you revoke it with a \`DeviceRegistry\`; lose the root and you rebuild it from a threshold of Shamir shares with \`split_identity\` and \`recover_identity\`. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) exposes the same helpers.`,
         meta: 'Cross-device identity',
+        helpLinks: [
+          { label: 'See it: enroll and revoke a device', href: '/demos/identity/#enrollment' },
+          { label: 'See it: recover a root from Shamir shares', href: '/demos/identity/#recovery' },
+        ],
       },
       {
         q: 'Can several people jointly sign one action without any of them holding the full key?',
@@ -1042,6 +1046,7 @@ credential = signer.sign(action="read", target="t", resource="https://x/y")
 
 This is distinct from the recovery shares above: recovery reconstructs a key once, for a deliberate restore; threshold signing never reconstructs it at all, and is meant for live, repeated signing. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) binds the same audited \`frost-ed25519\` core (the Zcash Foundation's RFC 9591 implementation), so every language produces byte-identical results.`,
         meta: 'FROST threshold signing',
+        helpLinks: [{ label: 'See it: any threshold of custodians signs', href: '/demos/identity/#threshold-signing' }],
       },
       {
         q: 'How do I make a credential revocable later?',

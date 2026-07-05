@@ -1,0 +1,150 @@
+/*
+ * Component-scoped styles for the identity interactive demos (cross-device
+ * delegation, Shamir recovery, FROST threshold signing). Scoped as a CSS
+ * module so nothing here collides with the site-wide demo classes. Colors
+ * come from the shared theme variables, so this reads as part of the
+ * document on both light and dark themes.
+ */
+
+.demo {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+@media (min-width: 768px) {
+  .demo {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radio {
+  text-align: left;
+  border: 1px solid rgb(var(--color-rule));
+  background: transparent;
+  color: rgb(var(--color-ink-soft));
+  padding: 0.6rem 0.85rem;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.radio:hover {
+  border-color: rgb(var(--color-burgundy));
+}
+.radio.on {
+  border-color: rgb(var(--color-burgundy));
+  background: rgba(var(--color-burgundy), 0.05);
+  color: rgb(var(--color-ink));
+}
+
+.stage {
+  border: 1px dashed rgb(var(--color-rule));
+  padding: 1.4rem;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.card {
+  border: 1px solid rgb(var(--color-rule));
+  padding: 0.75rem 0.9rem;
+  background: rgba(var(--color-parchment-deep), 0.35);
+}
+.cardLabel {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--color-ink-faint));
+  margin-bottom: 0.3rem;
+}
+.mono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.82rem;
+  color: rgb(var(--color-ink-soft));
+  word-break: break-word;
+}
+
+.verdict {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-top: 1px solid rgb(var(--color-rule));
+  padding-top: 0.9rem;
+}
+.badge {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid;
+  padding: 0.2rem 0.55rem;
+  white-space: nowrap;
+}
+.reason {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8rem;
+  color: rgb(var(--color-ink-soft));
+}
+
+/* Recovery: pick which shares to combine. */
+.shareRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.share {
+  border: 1px solid rgb(var(--color-rule));
+  background: transparent;
+  color: rgb(var(--color-ink-soft));
+  padding: 0.5rem 0.9rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.share:hover {
+  border-color: rgb(var(--color-burgundy));
+}
+.share.held {
+  border-color: rgb(var(--color-burgundy));
+  background: rgba(var(--color-burgundy), 0.08);
+  color: rgb(var(--color-ink));
+}
+.shareCount {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+  color: rgb(var(--color-ink-faint));
+  margin-top: 0.5rem;
+}
+
+/* Threshold signing: pick which custodians participate. */
+.custodianRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.custodian {
+  border: 1px solid rgb(var(--color-rule));
+  background: transparent;
+  color: rgb(var(--color-ink-soft));
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.custodian:hover {
+  border-color: rgb(var(--color-burgundy));
+}
+.custodian.signing {
+  border-color: #3f7d55;
+  background: rgba(63, 125, 85, 0.08);
+  color: rgb(var(--color-ink));
+}
