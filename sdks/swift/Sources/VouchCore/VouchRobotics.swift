@@ -90,4 +90,98 @@ public enum VouchRobotics {
             mldsa44Public: mldsa44Public
         )
     }
+
+    // MARK: Robot-to-infrastructure bounded access
+
+    /// Authorize an infrastructure access request offline against an operator
+    /// grant. `paramsJson` carries `{grant, request, now?}`. Pass the operator and
+    /// robot public keys. Returns the decision JSON `{ok, reasons}`.
+    public static func authorizeAccess(
+        paramsJson: String,
+        operatorPublicKey: Data,
+        robotPublicKey: Data
+    ) throws -> String {
+        try VouchCore.roboticsAuthorizeAccess(
+            paramsJson: paramsJson,
+            operatorPublicKey: operatorPublicKey,
+            robotPublicKey: robotPublicKey
+        )
+    }
+
+    // MARK: Fused-sensor provenance
+
+    /// Verify a fused-sensor provenance attestation. Pass the robot public key
+    /// and, optionally, the raw fused output as multibase to reproduce its hash.
+    /// Returns the credentialSubject JSON, or the JSON literal `null` if invalid.
+    public static func verifyFusedAttestation(
+        _ credentialJson: String,
+        publicKey: Data,
+        fusedOutputMb: String? = nil
+    ) throws -> String {
+        try VouchCore.roboticsVerifyFusedAttestation(
+            credentialJson: credentialJson,
+            publicKey: publicKey,
+            fusedOutputMb: fusedOutputMb
+        )
+    }
+
+    // MARK: Wear and degradation
+
+    /// Verify a robot wear attestation. Pass the robot public key. Returns the
+    /// credentialSubject JSON, or the JSON literal `null` if invalid.
+    public static func verifyWearAttestation(
+        _ credentialJson: String,
+        publicKey: Data
+    ) throws -> String {
+        try VouchCore.roboticsVerifyWearAttestation(
+            credentialJson: credentialJson,
+            publicKey: publicKey
+        )
+    }
+
+    /// Derive a physical capability scope narrowed for a wear level. `paramsJson`
+    /// carries `{scope, wearLevel}`. Returns the narrowed scope JSON.
+    public static func attenuateForWear(paramsJson: String) throws -> String {
+        try VouchCore.roboticsAttenuateForWear(paramsJson: paramsJson)
+    }
+
+    // MARK: Bystander-consent evidence
+
+    /// Verify bystander-consent evidence. `paramsJson` carries `{evidence,
+    /// captureMb?, consentTokens?, bystanderKeys?, now?}`. Pass the robot public
+    /// key. Returns the credentialSubject JSON, or the JSON literal `null` if
+    /// invalid.
+    public static func verifyConsentEvidence(
+        paramsJson: String,
+        robotPublicKey: Data
+    ) throws -> String {
+        try VouchCore.roboticsVerifyConsentEvidence(
+            paramsJson: paramsJson,
+            robotPublicKey: robotPublicKey
+        )
+    }
+
+    // MARK: Cross-embodiment continuity
+
+    /// Verify a cross-embodiment continuity chain. `paramsJson` carries the chain
+    /// (`{embodiments, originBody?}`). Pass the agent public key. Returns the
+    /// result JSON `{ok, currentBody}`.
+    public static func verifyContinuityChain(
+        paramsJson: String,
+        agentPublicKey: Data
+    ) throws -> String {
+        try VouchCore.roboticsVerifyContinuityChain(
+            paramsJson: paramsJson,
+            agentPublicKey: agentPublicKey
+        )
+    }
+
+    // MARK: Physical custody handoff
+
+    /// Verify a physical custody handoff chain. `paramsJson` carries the chain,
+    /// the actor keys, and options (`{handoffs, publicKeys, originActor?}`).
+    /// Returns the result JSON `{ok, currentHolder}`.
+    public static func verifyHandoffChain(paramsJson: String) throws -> String {
+        try VouchCore.roboticsVerifyHandoffChain(paramsJson: paramsJson)
+    }
 }

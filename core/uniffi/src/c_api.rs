@@ -602,3 +602,114 @@ pub extern "C" fn vouch_robotics_verify_robot_credential(
         ))
     })
 }
+
+/// Authorize an infrastructure access request offline against an operator grant.
+/// params_json carries {grant, request, now?}. Pass the operator and robot public
+/// keys (base64). Returns the authorize result JSON {ok, reasons}.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_authorize_access(
+    params_json: *const c_char,
+    operator_public_b64: *const c_char,
+    robot_public_b64: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let params = cstr_in(params_json)?;
+        let op = unb64(&cstr_in(operator_public_b64)?)?;
+        let robot = unb64(&cstr_in(robot_public_b64)?)?;
+        vouch_core::robotics_json::authorize_access(&params, &op, &robot).map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a fused-sensor provenance attestation. Pass the robot public key
+/// (base64) and, optionally, the raw fused output as multibase (or NULL) to
+/// reproduce its hash. Returns the subject JSON or "null".
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_fused_attestation(
+    credential_json: *const c_char,
+    public_b64: *const c_char,
+    fused_output_mb: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let cred = cstr_in(credential_json)?;
+        let pk = unb64(&cstr_in(public_b64)?)?;
+        let fused = cstr_in_opt(fused_output_mb)?;
+        vouch_core::robotics_json::verify_fused_attestation(&cred, &pk, fused.as_deref())
+            .map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a robot wear attestation. Pass the robot public key (base64). Returns
+/// the subject JSON or "null".
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_wear_attestation(
+    credential_json: *const c_char,
+    public_b64: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let cred = cstr_in(credential_json)?;
+        let pk = unb64(&cstr_in(public_b64)?)?;
+        vouch_core::robotics_json::verify_wear_attestation(&cred, &pk).map_err(|e| e.to_string())
+    })
+}
+
+/// Derive a physical capability scope narrowed for a wear level. params_json
+/// carries {scope, wearLevel}. Returns the narrowed scope JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_attenuate_for_wear(
+    params_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let params = cstr_in(params_json)?;
+        vouch_core::robotics_json::attenuate_for_wear(&params).map_err(|e| e.to_string())
+    })
+}
+
+/// Verify bystander-consent evidence. params_json carries {evidence, capture?,
+/// consentTokens?, bystanderKeys?, now?}. Pass the robot public key (base64).
+/// Returns the subject JSON or "null".
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_consent_evidence(
+    params_json: *const c_char,
+    robot_public_b64: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let params = cstr_in(params_json)?;
+        let robot = unb64(&cstr_in(robot_public_b64)?)?;
+        vouch_core::robotics_json::verify_consent_evidence(&params, &robot)
+            .map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a cross-embodiment continuity chain. params_json carries the chain and
+/// options. Pass the agent public key (base64). Returns the result JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_continuity_chain(
+    params_json: *const c_char,
+    agent_public_b64: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let params = cstr_in(params_json)?;
+        let agent = unb64(&cstr_in(agent_public_b64)?)?;
+        vouch_core::robotics_json::verify_continuity_chain(&params, &agent)
+            .map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a physical custody handoff chain. params_json carries the chain, the
+/// actor keys, and options. Returns the result JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_handoff_chain(
+    params_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let params = cstr_in(params_json)?;
+        vouch_core::robotics_json::verify_handoff_chain(&params).map_err(|e| e.to_string())
+    })
+}
