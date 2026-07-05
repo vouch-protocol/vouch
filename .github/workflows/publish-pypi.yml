@@ -30,6 +30,8 @@ jobs:
           - { name: vouch-api-client, dir: "sdks/clients/python" }
           - { name: vouch-mcp, dir: "packages/vouch-mcp" }
           - { name: vouch-a2a, dir: "packages/vouch-a2a" }
+          - { name: vouch-langchain, dir: "packages/vouch-langchain" }
+          - { name: vouch-crewai, dir: "packages/vouch-crewai" }
           - { name: vouch-langgraph, dir: "packages/vouch-langgraph" }
           - { name: vouch-goose, dir: "packages/vouch-goose" }
     name: publish ${{ matrix.name }}
