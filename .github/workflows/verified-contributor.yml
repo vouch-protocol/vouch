@@ -12,17 +12,28 @@ name: Verified Contributor credential
 #
 # Skips when the commit author is the maintainer (rampyg) or a bot.
 #
+# Can also be run manually (workflow_dispatch) with a PR number to re-issue a
+# certificate for an already-merged PR, for example after a transient failure.
+#
 # Setup: repository secrets VOUCH_PRIVATE_KEY (the contributor-issuer Ed25519
 # JWK) and VOUCH_DID (did:web:vouch-protocol.com:contributors). The job is a
 # safe no-op if they are not set. If contributors/delegation.json is present,
 # the badge is chained back to the root authority automatically.
 #
 # Security note: uses pull_request_target with the default (base) checkout, so
-# only trusted repository code runs. The contributor's PR code is never executed.
+# only trusted repository code runs. The contributor's PR code is never checked
+# out or executed (allow-unsafe-pr-checkout is safe here because no PR ref is
+# passed to checkout, so it takes the base branch).
 
 on:
   pull_request_target:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Merged PR number to (re)issue a certificate for"
+        required: true
+        type: string
 
 permissions:
   pull-requests: write
@@ -31,18 +42,32 @@ permissions:
 
 jobs:
   mint:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve contributor from commit authors
+      - name: Resolve contributor and PR metadata
         id: resolve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+          INPUT_PR: ${{ github.event.inputs.pr_number }}
         run: |
-          # Credit the person who wrote the code. Pick the most frequent commit
-          # author login that is neither the maintainer nor a bot.
+          # Works for both the merge event and a manual dispatch. Resolve the PR
+          # number, confirm it is merged, then credit the person who wrote the
+          # code: the most frequent commit author login that is neither the
+          # maintainer nor a bot.
+          PR_NUMBER="${EVENT_PR:-$INPUT_PR}"
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::No PR number available."
+            exit 1
+          fi
+          merged=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.merged')
+          if [ "$merged" != "true" ]; then
+            echo "PR #${PR_NUMBER} is not merged; nothing to do."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           login=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}/commits?per_page=100" \
             --jq '[.[].author.login // empty]
                   | map(select(. != "rampyg" and (endswith("[bot]") | not)))
@@ -50,14 +75,27 @@ jobs:
           if [ -z "$login" ]; then
             echo "No external contributor to credit (authored by the maintainer or bots)."
             echo "should_run=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Crediting contributor: ${login}"
-            echo "login=${login}" >> "$GITHUB_OUTPUT"
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          url=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.html_url')
+          title=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.title')
+          echo "Crediting contributor: ${login} for PR #${PR_NUMBER}"
+          {
+            echo "should_run=true"
+            echo "login=${login}"
+            echo "pr_number=${PR_NUMBER}"
+            echo "pr_url=${url}"
+            echo "pr_title<<CERT_EOF"
+            echo "${title}"
+            echo "CERT_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v7
         if: steps.resolve.outputs.should_run == 'true'
+        with:
+          # No PR ref is passed, so this checks out the trusted base branch.
+          # v7 requires opting in to run at all under pull_request_target.
+          allow-unsafe-pr-checkout: true
 
       - uses: actions/setup-python@v6
         if: steps.resolve.outputs.should_run == 'true'
@@ -76,8 +114,8 @@ jobs:
           VOUCH_PRIVATE_KEY: ${{ secrets.VOUCH_PRIVATE_KEY }}
           VOUCH_DID: ${{ secrets.VOUCH_DID }}
           PR_AUTHOR: ${{ steps.resolve.outputs.login }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ steps.resolve.outputs.pr_url }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
           REPO: ${{ github.repository }}
         run: |
           if [ -z "$VOUCH_PRIVATE_KEY" ] || [ -z "$VOUCH_DID" ]; then
@@ -118,8 +156,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_AUTHOR: ${{ steps.resolve.outputs.login }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+          PR_TITLE: ${{ steps.resolve.outputs.pr_title }}
         run: |
           # Publish the certificate page and the contributors list to main. This
           # runs after a merge, and several merges can happen close together, so
@@ -189,10 +227,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_AUTHOR: ${{ steps.resolve.outputs.login }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
           REPO: ${{ github.repository }}
           BADGE: "https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
-          CERT_URL: "https://vouch-protocol.com/c/${{ steps.resolve.outputs.login }}/${{ github.event.pull_request.number }}"
+          CERT_URL: "https://vouch-protocol.com/c/${{ steps.resolve.outputs.login }}/${{ steps.resolve.outputs.pr_number }}"
         run: |
           {
             echo "### Vouch Verified Contributor :sparkles:"
