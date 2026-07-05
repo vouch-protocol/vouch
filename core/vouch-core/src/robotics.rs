@@ -3237,6 +3237,209 @@ pub fn migrate_to_pq(
     sign_pq(credential, ed25519_seed, mldsa, created)
 }
 
+// ---------------------------------------------------------------------------
+// Cross-embodiment identity continuity (Phase 5.15)
+// ---------------------------------------------------------------------------
+//
+// An AI agent (a policy with its own Vouch identity) can run on one robot body
+// today and a different body tomorrow. An embodiment credential binds the agent
+// identity to a specific body (a hardware-rooted robot identity) and that body's
+// hardware root for a period, signed by the agent's own persistent key. Linking
+// each embodiment to the previous forms a continuity chain a verifier walks to
+// confirm the same accountable agent persisted across bodies, re-binding to each
+// body's hardware root as it moved. A fork check confirms the agent was never
+// actively embodied in two bodies at once.
+//
+// This is the inverse of the ownership custody chain: there one body passes
+// between owners; here one mind passes between bodies, and the constant that
+// signs every link is the agent identity itself.
+//
+// This is the open layer: plain signed embodiment credentials, continuity-chain
+// verification, and software fork detection. It reuses the core proof path
+// ([`data_integrity`]) rather than re-deriving any cryptography.
+
+pub const EMBODIMENT_TYPE: &str = "AgentEmbodimentCredential";
+
+/// Parameters for [`build_embodiment`]. The signer is the agent's own persistent
+/// key; `agent_did` is both issuer and subject id, so the whole continuity chain
+/// is signed by one accountable identity. `from_body`, when set, links this
+/// embodiment to the body the agent left, forming the chain. `valid_until`, when
+/// set, bounds the active window (used by [`check_no_fork`]).
+#[derive(Debug, Clone)]
+pub struct BuildEmbodiment {
+    pub agent_did: String,
+    pub body_did: String,
+    pub body_hardware_root: String,
+    pub from_body: Option<String>,
+    pub embodied_at: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed embodiment credential: the agent `agent_did` authorizes running
+/// on `body_did`, re-binding to that body's hardware root `body_hardware_root`.
+/// Signed by the agent's own persistent key. `from_body` links this embodiment to
+/// the body the agent left.
+pub fn build_embodiment(agent_seed: &[u8], params: &BuildEmbodiment) -> Result<Value> {
+    if params.agent_did.is_empty()
+        || params.body_did.is_empty()
+        || params.body_hardware_root.is_empty()
+    {
+        return Err(CoreError::Json(
+            "agent_did, body_did, and body_hardware_root are required".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.agent_did));
+    subject.insert("body".into(), json!(params.body_did));
+    subject.insert("bodyHardwareRoot".into(), json!(params.body_hardware_root));
+    if let Some(from_body) = &params.from_body {
+        subject.insert("fromBody".into(), json!(from_body));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", EMBODIMENT_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.agent_did));
+    cred.insert("validFrom".into(), json!(params.embodied_at));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.agent_did), &params.embodied_at);
+    data_integrity::sign(&Value::Object(cred), agent_seed, &opts)
+}
+
+/// Verify an embodiment credential: the agent's proof, that the issuer is the
+/// agent itself (a mind authorizes its own embodiment), and that the subject
+/// carries a `body` and a `bodyHardwareRoot`. Returns the credentialSubject on
+/// success, `None` if invalid.
+pub fn verify_embodiment(credential: &Value, agent_public_key: &[u8]) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, agent_public_key, EMBODIMENT_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let has_body = subject
+        .get("body")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    let has_root = subject
+        .get("bodyHardwareRoot")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    if !has_body || !has_root {
+        return Ok(None);
+    }
+    let subject_id = subject.get("id").and_then(|v| v.as_str());
+    if credential.get("issuer").and_then(|v| v.as_str()) != subject_id {
+        return Ok(None);
+    }
+    Ok(Some(subject))
+}
+
+/// Verify an ordered list of embodiment credentials forms a valid continuity chain
+/// for one agent: every link verifies under the SAME agent key (the persistent
+/// mind), each link's `fromBody` matches the previous link's `body`, and (when
+/// given) the first `fromBody` is `origin_body`. Returns `(ok, current_body)`.
+pub fn verify_continuity_chain(
+    embodiments: &[Value],
+    agent_public_key: &[u8],
+    origin_body: Option<&str>,
+) -> Result<(bool, Option<String>)> {
+    let mut expected_from: Option<String> = origin_body.map(String::from);
+    let mut current_body: Option<String> = origin_body.map(String::from);
+    for embodiment in embodiments {
+        let subject = match verify_embodiment(embodiment, agent_public_key)? {
+            Some(s) => s,
+            None => return Ok((false, None)),
+        };
+        if let Some(expected) = &expected_from {
+            if subject.get("fromBody").and_then(|v| v.as_str()) != Some(expected.as_str()) {
+                return Ok((false, None));
+            }
+        }
+        current_body = subject
+            .get("body")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+        expected_from = current_body.clone();
+    }
+    Ok((true, current_body))
+}
+
+/// Two conflicting bodies surfaced by [`check_no_fork`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForkConflict {
+    pub body_a: String,
+    pub body_b: String,
+}
+
+/// Half-open intervals [start, end); a missing end is open-ended (+infinity). A
+/// clean handover sets one window's end to the next window's start, which does not
+/// overlap.
+fn windows_overlap(start_a: i64, end_a: Option<i64>, start_b: i64, end_b: Option<i64>) -> bool {
+    let a_before_b = end_a.map(|e| e <= start_b).unwrap_or(false);
+    let b_before_a = end_b.map(|e| e <= start_a).unwrap_or(false);
+    !(a_before_b || b_before_a)
+}
+
+/// Confirm no two embodiments place the agent in different bodies with overlapping
+/// active windows. Each embodiment is active from `validFrom` to `validUntil` (a
+/// missing `validUntil` is treated as open-ended). Two embodiments on different
+/// bodies whose windows overlap are a fork. Returns `(ok, conflict)` where
+/// conflict, when present, names the two conflicting bodies.
+pub fn check_no_fork(embodiments: &[Value]) -> Result<(bool, Option<ForkConflict>)> {
+    let mut windows: Vec<(String, i64, Option<i64>)> = Vec::with_capacity(embodiments.len());
+    for embodiment in embodiments {
+        let subject = embodiment
+            .get("credentialSubject")
+            .and_then(|s| s.as_object());
+        let body = subject
+            .and_then(|s| s.get("body"))
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty());
+        let start = embodiment
+            .get("validFrom")
+            .and_then(|v| v.as_str())
+            .and_then(|s| crate::time::iso_to_epoch_seconds(s).ok());
+        let (body, start) = match (body, start) {
+            (Some(b), Some(s)) => (b.to_string(), s),
+            _ => return Ok((false, None)),
+        };
+        let end = embodiment
+            .get("validUntil")
+            .and_then(|v| v.as_str())
+            .and_then(|s| crate::time::iso_to_epoch_seconds(s).ok());
+        windows.push((body, start, end));
+    }
+
+    for i in 0..windows.len() {
+        let (body_i, start_i, end_i) = &windows[i];
+        for window_j in windows.iter().skip(i + 1) {
+            let (body_j, start_j, end_j) = window_j;
+            if body_i == body_j {
+                continue;
+            }
+            if windows_overlap(*start_i, *end_i, *start_j, *end_j) {
+                return Ok((
+                    false,
+                    Some(ForkConflict {
+                        body_a: body_i.clone(),
+                        body_b: body_j.clone(),
+                    }),
+                ));
+            }
+        }
+    }
+    Ok((true, None))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5120,5 +5323,226 @@ mod tests {
         assert!(
             verify_robot_credential(&migrated, &kp.public_key(), Some(&ml.public_key())).unwrap()
         );
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed embodiment continuity
+    // chain under the one agent key from the vector, ending on body-b, with no fork.
+    #[test]
+    fn verifies_python_embodiment_interop_vector() {
+        let vector = load_vector();
+        let agent_pub = jwk_pub(&vector["embodiment_agent_key"]);
+        let chain: Vec<Value> = vector["embodiment_chain"]
+            .as_array()
+            .expect("embodiment_chain array")
+            .clone();
+
+        let (ok, current) = verify_continuity_chain(&chain, &agent_pub, None).unwrap();
+        assert!(ok, "the Python embodiment chain must verify in Rust");
+        assert_eq!(
+            current.as_deref(),
+            Some("did:web:body-b.example.com"),
+            "the chain ends on body-b"
+        );
+
+        let (no_fork, conflict) = check_no_fork(&chain).unwrap();
+        assert!(no_fork, "the Python embodiment chain has no fork");
+        assert!(conflict.is_none());
+    }
+
+    #[test]
+    fn embodiment_roundtrip_and_issuer_rule() {
+        let agent_seed = [61u8; 32];
+        let other_seed = [62u8; 32];
+        let agent = Ed25519KeyPair::from_seed(&agent_seed);
+        let other = Ed25519KeyPair::from_seed(&other_seed);
+        let agent_did = "did:web:agent.example.com";
+        let body_a = "did:web:body-a.example.com";
+
+        let cred = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_a.into(),
+                body_hardware_root: "uROOTA".into(),
+                from_body: None,
+                embodied_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let subject = verify_embodiment(&cred, &agent.public_key())
+            .unwrap()
+            .expect("embodiment verifies under the agent key");
+        assert_eq!(subject["body"], json!(body_a));
+        assert_eq!(subject["bodyHardwareRoot"], json!("uROOTA"));
+
+        // The issuer must equal the subject id: forge a credential issued by an
+        // impostor over an unchanged subject (still the agent) and re-sign it. It
+        // must be rejected even with a valid proof under the signing key, because a
+        // mind only authorizes its own embodiment.
+        let forged = {
+            let mut bare = cred.clone();
+            bare.as_object_mut().unwrap().remove("proof");
+            bare["issuer"] = json!("did:web:impostor.example.com");
+            let opts = BuildProofOptions::new(
+                "did:web:impostor.example.com#key-1".to_string(),
+                "2026-01-01T00:00:00Z",
+            );
+            data_integrity::sign(&bare, &other_seed, &opts).unwrap()
+        };
+        assert!(verify_embodiment(&forged, &other.public_key())
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn continuity_chain_links_and_rejects() {
+        let agent_seed = [61u8; 32];
+        let stranger_seed = [63u8; 32];
+        let agent = Ed25519KeyPair::from_seed(&agent_seed);
+        let stranger = Ed25519KeyPair::from_seed(&stranger_seed);
+        let agent_did = "did:web:agent.example.com";
+        let body_a = "did:web:body-a.example.com";
+        let body_b = "did:web:body-b.example.com";
+
+        let e1 = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_a.into(),
+                body_hardware_root: "uROOTA".into(),
+                from_body: None,
+                embodied_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: Some("2026-01-01T01:00:00Z".into()),
+            },
+        )
+        .unwrap();
+        let e2 = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_b.into(),
+                body_hardware_root: "uROOTB".into(),
+                from_body: Some(body_a.into()),
+                embodied_at: "2026-01-01T01:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        // A clean two-link chain ends at body-b: the first link opens on body-a
+        // and the second link's fromBody re-binds to it.
+        let (ok, current) =
+            verify_continuity_chain(&[e1.clone(), e2.clone()], &agent.public_key(), None).unwrap();
+        assert!(ok);
+        assert_eq!(current.as_deref(), Some(body_b));
+
+        // Declaring the wrong origin body breaks the first link, since the first
+        // link's fromBody must match the origin when given.
+        let (bad_origin, _) =
+            verify_continuity_chain(&[e1.clone(), e2.clone()], &agent.public_key(), Some(body_b))
+                .unwrap();
+        assert!(!bad_origin);
+
+        // A broken link (second link's fromBody does not match the first's body)
+        // fails the chain.
+        let broken = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_b.into(),
+                body_hardware_root: "uROOTB".into(),
+                from_body: Some("did:web:body-x.example.com".into()),
+                embodied_at: "2026-01-01T01:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        let (bad_link, _) =
+            verify_continuity_chain(&[e1.clone(), broken], &agent.public_key(), None).unwrap();
+        assert!(!bad_link);
+
+        // Every link must verify under the SAME agent key: a link signed by a
+        // different key breaks the chain (a mind is one persistent identity).
+        let e2_stranger = build_embodiment(
+            &stranger_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_b.into(),
+                body_hardware_root: "uROOTB".into(),
+                from_body: Some(body_a.into()),
+                embodied_at: "2026-01-01T01:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        assert!(verify_embodiment(&e2_stranger, &stranger.public_key())
+            .unwrap()
+            .is_some());
+        let (mixed_keys, _) =
+            verify_continuity_chain(&[e1, e2_stranger], &agent.public_key(), None).unwrap();
+        assert!(!mixed_keys);
+    }
+
+    #[test]
+    fn fork_detection_flags_overlapping_bodies() {
+        let agent_seed = [61u8; 32];
+        let agent_did = "did:web:agent.example.com";
+        let body_a = "did:web:body-a.example.com";
+        let body_b = "did:web:body-b.example.com";
+
+        let build = |body: &str, root: &str, from: &str, until: &str| {
+            build_embodiment(
+                &agent_seed,
+                &BuildEmbodiment {
+                    agent_did: agent_did.into(),
+                    body_did: body.into(),
+                    body_hardware_root: root.into(),
+                    from_body: None,
+                    embodied_at: from.into(),
+                    valid_until: Some(until.into()),
+                },
+            )
+            .unwrap()
+        };
+
+        // A clean handover: body-a's window ends exactly where body-b's begins.
+        // Half-open intervals do not overlap, so this is not a fork.
+        let clean_a = build(
+            body_a,
+            "uROOTA",
+            "2026-01-01T00:00:00Z",
+            "2026-01-01T01:00:00Z",
+        );
+        let clean_b = build(
+            body_b,
+            "uROOTB",
+            "2026-01-01T01:00:00Z",
+            "2026-01-01T02:00:00Z",
+        );
+        let (clean, conflict) = check_no_fork(&[clean_a, clean_b]).unwrap();
+        assert!(clean);
+        assert!(conflict.is_none());
+
+        // Overlapping windows on different bodies are a fork; the conflict names
+        // both bodies.
+        let fork_a = build(
+            body_a,
+            "uROOTA",
+            "2026-01-01T00:00:00Z",
+            "2026-01-01T02:00:00Z",
+        );
+        let fork_b = build(
+            body_b,
+            "uROOTB",
+            "2026-01-01T01:00:00Z",
+            "2026-01-01T03:00:00Z",
+        );
+        let (forked, conflict) = check_no_fork(&[fork_a, fork_b]).unwrap();
+        assert!(!forked);
+        let conflict = conflict.expect("a fork names the two conflicting bodies");
+        assert_eq!(conflict.body_a, body_a);
+        assert_eq!(conflict.body_b, body_b);
     }
 }
