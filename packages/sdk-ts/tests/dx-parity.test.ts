@@ -48,21 +48,21 @@ describe('named-argument intent and fromKeypair', () => {
   test('named args equal the intent object and verify', async () => {
     const keys = await generateIdentity('agent.example');
     const signer = Signer.fromKeypair(keys);
-    const byObject = await signer.signCredential({ intent: INTENT });
-    const byNamed = await signer.signCredential({
+    const byObject = await signer.sign({ intent: INTENT });
+    const byNamed = await signer.sign({
       action: 'read',
       target: 'did:web:files',
       resource: 'https://files/x',
     });
     expect(byNamed.credentialSubject.intent).toEqual(byObject.credentialSubject.intent);
-    const { isValid } = await Verifier.verifyCredential(byNamed, keys.publicKeyJwk);
+    const { isValid } = await Verifier.verify(byNamed, keys.publicKeyJwk);
     expect(isValid).toBe(true);
   });
 
   test('named fields override the intent object', async () => {
     const keys = await generateIdentity('agent.example');
     const signer = Signer.fromKeypair(keys);
-    const cred = await signer.signCredential({
+    const cred = await signer.sign({
       intent: INTENT,
       resource: 'https://files/override',
     });
@@ -198,7 +198,7 @@ describe('backend signing', () => {
     });
     (cred as Record<string, unknown>).proof = proof;
     expect(calls).toBe(1);
-    const { isValid } = await Verifier.verifyCredential(cred, keys.publicKeyJwk);
+    const { isValid } = await Verifier.verify(cred, keys.publicKeyJwk);
     expect(isValid).toBe(true);
   });
 
@@ -208,8 +208,8 @@ describe('backend signing', () => {
     const signer = Signer.fromBackend(keys.did!, keys.publicKeyJwk, (digest) =>
       new Uint8Array(crypto.sign(null, Buffer.from(digest), raw))
     );
-    const cred = await signer.signCredential({ intent: INTENT });
-    const { isValid, passport } = await Verifier.verifyCredential(cred, keys.publicKeyJwk);
+    const cred = await signer.sign({ intent: INTENT });
+    const { isValid, passport } = await Verifier.verify(cred, keys.publicKeyJwk);
     expect(isValid).toBe(true);
     expect(passport?.issuer).toBe(keys.did);
   });
@@ -222,7 +222,7 @@ describe('backend signing', () => {
     );
     await expect(signer.sign({ action: 'x' })).rejects.toThrow();
     await expect(
-      signer.signCredentialHybrid({ action: 'a', target: 'b', resource: 'c' })
+      signer.signHybrid({ action: 'a', target: 'b', resource: 'c' })
     ).rejects.toThrow();
   });
 });

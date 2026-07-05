@@ -106,7 +106,7 @@ impl VerifyResult {
 }
 
 /// Verify the Data Integrity proof and the validity window against `now_iso`.
-pub fn verify_credential(
+pub fn verify(
     credential: &Value,
     raw_public_key: &[u8],
     now_iso: &str,
@@ -186,10 +186,10 @@ mod tests {
         );
         let signed = sign_vouch_credential(&opts(), &seed, &proof_opts).unwrap();
         let pk = crate::keys::Ed25519KeyPair::from_seed(&seed).public_key();
-        let r = verify_credential(&signed, &pk, "2026-04-26T10:02:00Z", 30).unwrap();
+        let r = verify(&signed, &pk, "2026-04-26T10:02:00Z", 30).unwrap();
         assert!(r.is_valid());
         // Expired.
-        let r2 = verify_credential(&signed, &pk, "2026-04-26T11:00:00Z", 30).unwrap();
+        let r2 = verify(&signed, &pk, "2026-04-26T11:00:00Z", 30).unwrap();
         assert!(r2.proof_valid && !r2.time_valid);
     }
 }

@@ -84,7 +84,7 @@ public final class VouchAgent {
         String credentialId = "urn:uuid:" + UUID.randomUUID();
         String unsigned = VouchCredentials.build(
                 did, action, target, resource, validFrom, validUntil, credentialId);
-        return Vouch.signCredential(unsigned, seedB64, did + "#key-1", validFrom);
+        return Vouch.sign(unsigned, seedB64, did + "#key-1", validFrom);
     }
 
     /**
@@ -103,7 +103,7 @@ public final class VouchAgent {
 
     /** Verify a credential against an explicit public key (base64). */
     public static boolean verifyWith(String credentialJson, String publicB64) {
-        String result = Vouch.verifyCredential(
+        String result = Vouch.verify(
                 credentialJson, publicB64, iso(Instant.now()), 30);
         return result.contains("\"valid\":true");
     }

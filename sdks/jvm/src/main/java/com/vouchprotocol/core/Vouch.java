@@ -23,10 +23,10 @@ public final class Vouch {
         Pointer vouch_version();
         Pointer vouch_canonicalize(String json, PointerByReference err);
         Pointer vouch_generate_ed25519(PointerByReference err);
-        Pointer vouch_sign_credential(String cred, String seedB64, String vm, String created, PointerByReference err);
+        Pointer vouch_sign(String cred, String seedB64, String vm, String created, PointerByReference err);
         Pointer vouch_build_proof(String cred, String seedB64, String vm, String created, PointerByReference err);
         Pointer vouch_verify_proof(String cred, String pubB64, PointerByReference err);
-        Pointer vouch_verify_credential(String cred, String pubB64, String nowIso, long skew, PointerByReference err);
+        Pointer vouch_verify(String cred, String pubB64, String nowIso, long skew, PointerByReference err);
         Pointer vouch_verify_dual(String cred, String edPubB64, String mldsaPubB64, PointerByReference err);
         Pointer vouch_verify_composite(String cred, String edPubB64, String mldsaPubB64, PointerByReference err);
         Pointer vouch_verify_status(String csJson, String slJson, PointerByReference err);
@@ -79,9 +79,9 @@ public final class Vouch {
     }
 
     /** Sign a credential (eddsa-jcs-2022), returning the credential with a proof attached. */
-    public static String signCredential(String credentialJson, String seedB64, String verificationMethod, String created) {
+    public static String sign(String credentialJson, String seedB64, String verificationMethod, String created) {
         PointerByReference err = new PointerByReference();
-        return take(LIB.vouch_sign_credential(credentialJson, seedB64, verificationMethod, created, err), err);
+        return take(LIB.vouch_sign(credentialJson, seedB64, verificationMethod, created, err), err);
     }
 
     /** Build a detached eddsa-jcs-2022 proof object (JSON). */
@@ -97,9 +97,9 @@ public final class Vouch {
     }
 
     /** Verify proof + validity window, as JSON {proofValid, timeValid, valid}. */
-    public static String verifyCredential(String credentialJson, String publicB64, String nowIso, long clockSkewSeconds) {
+    public static String verify(String credentialJson, String publicB64, String nowIso, long clockSkewSeconds) {
         PointerByReference err = new PointerByReference();
-        return take(LIB.vouch_verify_credential(credentialJson, publicB64, nowIso, clockSkewSeconds, err), err);
+        return take(LIB.vouch_verify(credentialJson, publicB64, nowIso, clockSkewSeconds, err), err);
     }
 
     /** Verify a dual proof (Ed25519 + ML-DSA-44). */

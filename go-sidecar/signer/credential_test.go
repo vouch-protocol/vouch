@@ -145,9 +145,9 @@ func TestMultikeyAlgorithmHelper(t *testing.T) {
 // Credential issuance
 // ---------------------------------------------------------------------------
 
-func TestSignCredentialReturnsW3CVC(t *testing.T) {
+func TestSignReturnsW3CVC(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, err := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	cred, err := s.Sign(SignOptions{Intent: validIntent()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,13 +199,13 @@ func TestSignCredentialReturnsW3CVC(t *testing.T) {
 	}
 }
 
-func TestSignCredentialClampsReputation(t *testing.T) {
+func TestSignClampsReputation(t *testing.T) {
 	s := newTestSigner(t, "")
 	high, low := 200, -10
-	credHigh, _ := s.SignCredential(SignCredentialOptions{
+	credHigh, _ := s.Sign(SignOptions{
 		Intent: validIntent(), ReputationScore: &high,
 	})
-	credLow, _ := s.SignCredential(SignCredentialOptions{
+	credLow, _ := s.Sign(SignOptions{
 		Intent: validIntent(), ReputationScore: &low,
 	})
 	if v := credHigh["credentialSubject"].(map[string]any)["reputationScore"]; v != 100 {
@@ -216,17 +216,17 @@ func TestSignCredentialClampsReputation(t *testing.T) {
 	}
 }
 
-func TestSignCredentialRejectsMissingResource(t *testing.T) {
+func TestSignRejectsMissingResource(t *testing.T) {
 	s := newTestSigner(t, "")
 	bad := map[string]any{"action": "x", "target": "y"}
-	if _, err := s.SignCredential(SignCredentialOptions{Intent: bad}); err == nil {
+	if _, err := s.Sign(SignOptions{Intent: bad}); err == nil {
 		t.Fatal("expected error on missing resource")
 	}
 }
 
-func TestSignCredentialJSON(t *testing.T) {
+func TestSignJSON(t *testing.T) {
 	s := newTestSigner(t, "")
-	jsonBytes, err := s.SignCredentialJSON(SignCredentialOptions{
+	jsonBytes, err := s.SignJSON(SignOptions{
 		Intent: validIntent(),
 	})
 	if err != nil {
@@ -242,7 +242,7 @@ func TestSignCredentialJSON(t *testing.T) {
 	}
 }
 
-func TestSignCredentialPublicKeyMultikey(t *testing.T) {
+func TestSignPublicKeyMultikey(t *testing.T) {
 	s := newTestSigner(t, "")
 	mk, err := s.PublicKeyMultikey()
 	if err != nil {
@@ -273,7 +273,7 @@ func TestVerificationMethodID(t *testing.T) {
 
 func TestVerifyValidCredential(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, err := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	cred, err := s.Sign(SignOptions{Intent: validIntent()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +288,7 @@ func TestVerifyValidCredential(t *testing.T) {
 
 func TestVerifyRejectsTamperedIntent(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, _ := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	cred, _ := s.Sign(SignOptions{Intent: validIntent()})
 
 	subject := cred["credentialSubject"].(map[string]any)
 	intent := subject["intent"].(map[string]any)
@@ -302,7 +302,7 @@ func TestVerifyRejectsTamperedIntent(t *testing.T) {
 
 func TestVerifyRejectsTamperedIssuer(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, _ := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	cred, _ := s.Sign(SignOptions{Intent: validIntent()})
 	cred["issuer"] = "did:web:attacker.example.com"
 
 	ok, _ := VerifyDataIntegrityProof(cred, s.PublicKeyEd25519())
@@ -313,7 +313,7 @@ func TestVerifyRejectsTamperedIssuer(t *testing.T) {
 
 func TestVerifyRejectsTamperedProofValue(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, _ := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	cred, _ := s.Sign(SignOptions{Intent: validIntent()})
 
 	proof := cred["proof"].(map[string]any)
 	pv := proof["proofValue"].(string)
@@ -336,7 +336,7 @@ func TestVerifyRejectsTamperedProofValue(t *testing.T) {
 func TestVerifyWithWrongPublicKey(t *testing.T) {
 	s := newTestSigner(t, "did:web:a.example.com")
 	other := newTestSigner(t, "did:web:b.example.com")
-	cred, _ := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	cred, _ := s.Sign(SignOptions{Intent: validIntent()})
 
 	ok, _ := VerifyDataIntegrityProof(cred, other.PublicKeyEd25519())
 	if ok {
@@ -352,14 +352,14 @@ func TestDelegationAppendsLinkFromParent(t *testing.T) {
 	parent := newTestSigner(t, "did:web:alice.example.com")
 	child := newTestSigner(t, "did:web:assistant.example.com")
 
-	parentCred, _ := parent.SignCredential(SignCredentialOptions{
+	parentCred, _ := parent.Sign(SignOptions{
 		Intent: map[string]any{
 			"action":  "plan_trip",
 			"target":  "destination:Paris",
 			"resource": "https://travel-api.example.com/v1/bookings",
 		},
 	})
-	childCred, err := child.SignCredential(SignCredentialOptions{
+	childCred, err := child.Sign(SignOptions{
 		Intent: map[string]any{
 			"action":  "book_flight",
 			"target":  "flight:AF123",
@@ -394,7 +394,7 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 	parent := newTestSigner(t, "did:web:alice.example.com")
 	child := newTestSigner(t, "did:web:rogue.example.com")
 
-	parentCred, _ := parent.SignCredential(SignCredentialOptions{
+	parentCred, _ := parent.Sign(SignOptions{
 		Intent: map[string]any{
 			"action":  "read",
 			"target":  "users",
@@ -402,7 +402,7 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 		},
 	})
 
-	_, err := child.SignCredential(SignCredentialOptions{
+	_, err := child.Sign(SignOptions{
 		Intent: map[string]any{
 			"action":  "read",
 			"target":  "admin",
@@ -430,12 +430,12 @@ func TestDelegationDepthLimit(t *testing.T) {
 		signers[i] = newTestSigner(t, fmt.Sprintf("did:web:agent%d.example.com", i))
 	}
 
-	cred, err := signers[0].SignCredential(SignCredentialOptions{Intent: intent})
+	cred, err := signers[0].Sign(SignOptions{Intent: intent})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for i := 1; i <= 5; i++ {
-		cred, err = signers[i].SignCredential(SignCredentialOptions{
+		cred, err = signers[i].Sign(SignOptions{
 			Intent:      intent,
 			ParentCredential: cred,
 		})
@@ -449,7 +449,7 @@ func TestDelegationDepthLimit(t *testing.T) {
 		t.Fatalf("expected 5 links, got %d", len(chain))
 	}
 
-	if _, err := signers[6].SignCredential(SignCredentialOptions{
+	if _, err := signers[6].Sign(SignOptions{
 		Intent:      intent,
 		ParentCredential: cred,
 	}); err == nil {
@@ -465,7 +465,7 @@ func TestLegacyAndModernCoexist(t *testing.T) {
 	s := newTestSigner(t, "")
 
 	// Legacy composite JWS still works.
-	jws, err := s.Sign(SignRequest{Payload: map[string]any{"action": "ping"}})
+	jws, err := s.SignToken(SignRequest{Payload: map[string]any{"action": "ping"}})
 	if err != nil {
 		t.Fatalf("legacy Sign: %v", err)
 	}
@@ -478,9 +478,9 @@ func TestLegacyAndModernCoexist(t *testing.T) {
 	}
 
 	// Modern credential path also works on the same signer.
-	cred, err := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	cred, err := s.Sign(SignOptions{Intent: validIntent()})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 	if cred["issuer"] != s.DID() {
 		t.Fatal("modern path issuer mismatch")

@@ -68,7 +68,7 @@ export type {
   SignerConfig,
   VerifierConfig,
   JWKKey,
-  SignCredentialOptions,
+  SignOptions,
 } from './types';
 
 export type {

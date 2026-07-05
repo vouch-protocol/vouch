@@ -34,8 +34,8 @@ const proof = JSON.parse(core.buildProof(JSON.stringify(eddsa.unsigned_credentia
 ok('reproduces shared proofValue', proof.proofValue === eddsa.proofValue);
 
 // Temporal verify
-const vr = JSON.parse(core.verifyCredential(JSON.stringify(eddsa.signed_credential), pub, '2026-04-26T10:02:00Z', 30));
-ok('verifyCredential within window', vr.valid === true);
+const vr = JSON.parse(core.verify(JSON.stringify(eddsa.signed_credential), pub, '2026-04-26T10:02:00Z', 30));
+ok('verify within window', vr.valid === true);
 
 // Dual proof (ML-DSA keys from the hybrid vector, no RNG)
 const signedDual = core.signDual(JSON.stringify(eddsa.unsigned_credential), seed,

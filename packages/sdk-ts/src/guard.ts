@@ -160,7 +160,7 @@ async function checkCredential(
     if (!key) {
       return { isValid: false, passport: null, error: 'issuer not in trustedKeys' };
     }
-    result = await Verifier.verifyCredential(credential, key);
+    result = await Verifier.verify(credential, key);
   } else {
     result = await verify(credential);
   }

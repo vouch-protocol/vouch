@@ -1560,9 +1560,9 @@ public func roboticsVerifySafetyRecord(credentialJson: String, publicKey: Data)t
     )
 })
 }
-public func signCredential(credentialJson: String, seed: Data, verificationMethod: String, created: String)throws  -> String {
+public func sign(credentialJson: String, seed: Data, verificationMethod: String, created: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
-    uniffi_vouch_core_uniffi_fn_func_sign_credential(
+    uniffi_vouch_core_uniffi_fn_func_sign(
         FfiConverterString.lower(credentialJson),
         FfiConverterData.lower(seed),
         FfiConverterString.lower(verificationMethod),
@@ -1583,6 +1583,16 @@ public func signDual(credentialJson: String, ed25519Seed: Data, mldsaSecret: Dat
     )
 })
 }
+public func verify(credentialJson: String, publicKey: Data, nowIso: String, clockSkewSeconds: Int64)throws  -> VerifyResult {
+    return try  FfiConverterTypeVerifyResult.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_verify(
+        FfiConverterString.lower(credentialJson),
+        FfiConverterData.lower(publicKey),
+        FfiConverterString.lower(nowIso),
+        FfiConverterInt64.lower(clockSkewSeconds),$0
+    )
+})
+}
 public func verifyChainTimeBound(chainJson: String, nowIso: String, clockSkewSeconds: Int64)throws  -> Bool {
     return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_verify_chain_time_bound(
@@ -1598,16 +1608,6 @@ public func verifyComposite(credentialJson: String, ed25519Public: Data, mldsaPu
         FfiConverterString.lower(credentialJson),
         FfiConverterData.lower(ed25519Public),
         FfiConverterData.lower(mldsaPublic),$0
-    )
-})
-}
-public func verifyCredential(credentialJson: String, publicKey: Data, nowIso: String, clockSkewSeconds: Int64)throws  -> VerifyResult {
-    return try  FfiConverterTypeVerifyResult.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
-    uniffi_vouch_core_uniffi_fn_func_verify_credential(
-        FfiConverterString.lower(credentialJson),
-        FfiConverterData.lower(publicKey),
-        FfiConverterString.lower(nowIso),
-        FfiConverterInt64.lower(clockSkewSeconds),$0
     )
 })
 }
@@ -1889,19 +1889,19 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_safety_record() != 3427) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_vouch_core_uniffi_checksum_func_sign_credential() != 57541) {
+    if (uniffi_vouch_core_uniffi_checksum_func_sign() != 119) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_sign_dual() != 32161) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_verify() != 57533) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_verify_chain_time_bound() != 45726) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_verify_composite() != 16114) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_vouch_core_uniffi_checksum_func_verify_credential() != 17868) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_verify_dual() != 159) {

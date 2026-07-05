@@ -17,7 +17,7 @@ func TestStandardSign(t *testing.T) {
 		Sensitive: false,
 	}
 
-	out, err := s.Sign(req)
+	out, err := s.SignToken(req)
 	if err != nil {
 		t.Fatalf("Sign() failed: %v", err)
 	}
@@ -53,7 +53,7 @@ func TestSensitiveSign_RoundTrip(t *testing.T) {
 		ExpirySeconds:         60,
 	}
 
-	out, err := s.Sign(req)
+	out, err := s.SignToken(req)
 	if err != nil {
 		t.Fatalf("Sign() failed: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestSensitiveSign_MissingRecipientKey(t *testing.T) {
 		// RecipientKEMPublicKey intentionally omitted
 	}
 
-	_, err := s.Sign(req)
+	_, err := s.SignToken(req)
 	if err == nil {
 		t.Fatal("expected error for missing recipient key, got nil")
 	}
@@ -139,7 +139,7 @@ func TestDecryptVault_WrongKey(t *testing.T) {
 		RecipientKEMPublicKey: recipientPubB64,
 	}
 
-	out, err := s.Sign(req)
+	out, err := s.SignToken(req)
 	if err != nil {
 		t.Fatalf("Sign() failed: %v", err)
 	}

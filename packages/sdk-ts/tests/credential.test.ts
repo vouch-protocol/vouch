@@ -119,10 +119,10 @@ describe('Multikey encoding', () => {
 // Credential issuance
 // ---------------------------------------------------------------------------
 
-describe('Signer.signCredential', () => {
+describe('Signer.sign', () => {
   test('returns a VC with eddsa-jcs-2022 proof', async () => {
     const { signer } = await newSigner();
-    const cred = await signer.signCredential({ intent: intent() });
+    const cred = await signer.sign({ intent: intent() });
 
     expect(cred['@context']).toEqual([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]);
     expect(cred.type).toContain(VC_TYPE);
@@ -143,11 +143,11 @@ describe('Signer.signCredential', () => {
 
   test('clamps reputation score to [0, 100]', async () => {
     const { signer } = await newSigner();
-    const high = await signer.signCredential({
+    const high = await signer.sign({
       intent: intent(),
       reputationScore: 200,
     });
-    const low = await signer.signCredential({
+    const low = await signer.sign({
       intent: intent(),
       reputationScore: -10,
     });
@@ -158,14 +158,14 @@ describe('Signer.signCredential', () => {
   test('rejects an intent missing the resource binding', async () => {
     const { signer } = await newSigner();
     const bad = { action: 'x', target: 'y' } as unknown as Intent;
-    await expect(signer.signCredential({ intent: bad })).rejects.toThrow(
+    await expect(signer.sign({ intent: bad })).rejects.toThrow(
       /resource/
     );
   });
 
-  test('signCredentialJson returns a JSON-serializable string', async () => {
+  test('signJson returns a JSON-serializable string', async () => {
     const { signer } = await newSigner();
-    const text = await signer.signCredentialJson({ intent: intent() });
+    const text = await signer.signJson({ intent: intent() });
     const parsed = JSON.parse(text) as Record<string, unknown>;
     expect((parsed.proof as Record<string, unknown>).cryptosuite).toBe(
       DATA_INTEGRITY_CRYPTOSUITE
@@ -193,13 +193,13 @@ describe('Signer.signCredential', () => {
 // Verification roundtrip
 // ---------------------------------------------------------------------------
 
-describe('Verifier.verifyCredential', () => {
+describe('Verifier.verify', () => {
   test('accepts a valid credential with a Node KeyObject', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const cred = await signer.signCredential({ intent: intent() });
+    const cred = await signer.sign({ intent: intent() });
     const pub = publicKeyObject(publicKeyJwk);
 
-    const result = await Verifier.verifyCredential(cred, pub);
+    const result = await Verifier.verify(cred, pub);
     expect(result.isValid).toBe(true);
     expect(result.passport!.sub).toBe(signer.getDid());
     expect(result.passport!.intent).toEqual(intent());
@@ -207,23 +207,23 @@ describe('Verifier.verifyCredential', () => {
 
   test('accepts a JWK string as the public key', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const cred = await signer.signCredential({ intent: intent() });
-    const result = await Verifier.verifyCredential(cred, publicKeyJwk);
+    const cred = await signer.sign({ intent: intent() });
+    const result = await Verifier.verify(cred, publicKeyJwk);
     expect(result.isValid).toBe(true);
   });
 
   test('accepts a Multikey string as the public key', async () => {
     const { signer } = await newSigner();
-    const cred = await signer.signCredential({ intent: intent() });
+    const cred = await signer.sign({ intent: intent() });
     const mk = await signer.getPublicKeyMultikey();
-    const result = await Verifier.verifyCredential(cred, mk);
+    const result = await Verifier.verify(cred, mk);
     expect(result.isValid).toBe(true);
   });
 
   test('accepts a JSON-encoded credential string', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const json = await signer.signCredentialJson({ intent: intent() });
-    const result = await Verifier.verifyCredential(
+    const json = await signer.signJson({ intent: intent() });
+    const result = await Verifier.verify(
       json,
       publicKeyObject(publicKeyJwk)
     );
@@ -232,9 +232,9 @@ describe('Verifier.verifyCredential', () => {
 
   test('rejects a tampered intent.resource', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const cred = await signer.signCredential({ intent: intent() });
+    const cred = await signer.sign({ intent: intent() });
     cred.credentialSubject.intent.resource = 'https://evil.example.com/x';
-    const result = await Verifier.verifyCredential(
+    const result = await Verifier.verify(
       cred,
       publicKeyObject(publicKeyJwk)
     );
@@ -243,9 +243,9 @@ describe('Verifier.verifyCredential', () => {
 
   test('rejects a tampered issuer', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const cred = await signer.signCredential({ intent: intent() });
+    const cred = await signer.sign({ intent: intent() });
     cred.issuer = 'did:web:attacker.example.com';
-    const result = await Verifier.verifyCredential(
+    const result = await Verifier.verify(
       cred,
       publicKeyObject(publicKeyJwk)
     );
@@ -255,12 +255,12 @@ describe('Verifier.verifyCredential', () => {
   test('rejects an expired credential', async () => {
     const { signer, publicKeyJwk } = await newSigner();
     const longAgo = new Date(Date.now() - 600_000);
-    const cred = await signer.signCredential({
+    const cred = await signer.sign({
       intent: intent(),
       validFrom: longAgo,
       validSeconds: 10,
     });
-    const result = await Verifier.verifyCredential(
+    const result = await Verifier.verify(
       cred,
       publicKeyObject(publicKeyJwk),
       30
@@ -271,11 +271,11 @@ describe('Verifier.verifyCredential', () => {
   test('rejects a not-yet-valid credential', async () => {
     const { signer, publicKeyJwk } = await newSigner();
     const future = new Date(Date.now() + 600_000);
-    const cred = await signer.signCredential({
+    const cred = await signer.sign({
       intent: intent(),
       validFrom: future,
     });
-    const result = await Verifier.verifyCredential(
+    const result = await Verifier.verify(
       cred,
       publicKeyObject(publicKeyJwk),
       30
@@ -286,14 +286,14 @@ describe('Verifier.verifyCredential', () => {
   test('clock skew tolerance applies', async () => {
     const { signer, publicKeyJwk } = await newSigner();
     const justExpired = new Date(Date.now() - 320_000);
-    const cred = await signer.signCredential({
+    const cred = await signer.sign({
       intent: intent(),
       validFrom: justExpired,
       validSeconds: 300,
     });
 
     // ~20 seconds expired, 30s skew accepts it.
-    const withSkew = await Verifier.verifyCredential(
+    const withSkew = await Verifier.verify(
       cred,
       publicKeyObject(publicKeyJwk),
       30
@@ -301,7 +301,7 @@ describe('Verifier.verifyCredential', () => {
     expect(withSkew.isValid).toBe(true);
 
     // 5s skew rejects it.
-    const noSkew = await Verifier.verifyCredential(
+    const noSkew = await Verifier.verify(
       cred,
       publicKeyObject(publicKeyJwk),
       5
@@ -311,11 +311,11 @@ describe('Verifier.verifyCredential', () => {
 
   test('rejects credentials missing intent.resource', async () => {
     const { signer } = await newSigner();
-    const cred = await signer.signCredential({ intent: intent() });
+    const cred = await signer.sign({ intent: intent() });
     // Strip resource after signing. The Verifier MUST reject regardless
     // (structural rule per §5.4.1, §8.4).
     delete (cred.credentialSubject.intent as Partial<Intent>).resource;
-    const result = await Verifier.verifyCredential(cred);
+    const result = await Verifier.verify(cred);
     expect(result.isValid).toBe(false);
   });
 });
@@ -331,7 +331,7 @@ describe('Delegation chains', () => {
       'did:web:assistant.example.com'
     );
 
-    const parentCred = await parent.signCredential({
+    const parentCred = await parent.sign({
       intent: {
         action: 'plan_trip',
         target: 'destination:Paris',
@@ -339,7 +339,7 @@ describe('Delegation chains', () => {
       },
     });
 
-    const childCred = await child.signCredential({
+    const childCred = await child.sign({
       intent: {
         action: 'book_flight',
         target: 'flight:AF123',
@@ -357,7 +357,7 @@ describe('Delegation chains', () => {
       'https://travel-api.example.com/v1/bookings/flight-AF123'
     );
 
-    const result = await Verifier.verifyCredential(
+    const result = await Verifier.verify(
       childCred,
       publicKeyObject(childKey)
     );
@@ -369,7 +369,7 @@ describe('Delegation chains', () => {
     const { signer: parent } = await newSigner('did:web:alice.example.com');
     const { signer: child } = await newSigner('did:web:rogue.example.com');
 
-    const parentCred = await parent.signCredential({
+    const parentCred = await parent.sign({
       intent: {
         action: 'read',
         target: 'users',
@@ -378,7 +378,7 @@ describe('Delegation chains', () => {
     });
 
     await expect(
-      child.signCredential({
+      child.sign({
         intent: {
           action: 'read',
           target: 'admin',
@@ -403,11 +403,11 @@ describe('Delegation chains', () => {
       signers.push(s.signer);
     }
 
-    let cred: VouchCredential = await signers[0].signCredential({
+    let cred: VouchCredential = await signers[0].sign({
       intent: intentTpl,
     });
     for (let i = 1; i < 6; i++) {
-      cred = await signers[i].signCredential({
+      cred = await signers[i].sign({
         intent: intentTpl,
         parentCredential: cred,
       });
@@ -415,7 +415,7 @@ describe('Delegation chains', () => {
     expect(cred.credentialSubject.delegationChain).toHaveLength(5);
 
     await expect(
-      signers[6].signCredential({
+      signers[6].sign({
         intent: intentTpl,
         parentCredential: cred,
       })
@@ -426,29 +426,6 @@ describe('Delegation chains', () => {
 // ---------------------------------------------------------------------------
 // Coexistence with legacy JWS path
 // ---------------------------------------------------------------------------
-
-describe('Legacy and modern paths coexist', () => {
-  test('legacy sign() still returns a JWS compact string', async () => {
-    const { signer } = await newSigner();
-    const token = await signer.sign({ action: 'ping' });
-    expect(token.split('.').length).toBe(3);
-  });
-
-  test('one signer can issue both formats', async () => {
-    const { signer, publicKeyJwk } = await newSigner();
-
-    const legacyToken = await signer.sign({ action: 'x' });
-    const legacy = await Verifier.verify(legacyToken, publicKeyJwk);
-    expect(legacy.isValid).toBe(true);
-
-    const modernCred = await signer.signCredential({ intent: intent() });
-    const modern = await Verifier.verifyCredential(
-      modernCred,
-      publicKeyObject(publicKeyJwk)
-    );
-    expect(modern.isValid).toBe(true);
-  });
-});
 
 // ---------------------------------------------------------------------------
 // buildVouchCredential as a low-level builder

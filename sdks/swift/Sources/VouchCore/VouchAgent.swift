@@ -68,7 +68,7 @@ public struct VouchAgent {
             issuerDid: did, action: action, target: target, resource: resource,
             validFrom: validFrom, validUntil: validUntil, credentialId: credentialId
         )
-        return try Vouch.signCredential(
+        return try Vouch.sign(
             unsigned, seed: seed, verificationMethod: "\(did)#key-1", created: validFrom
         )
     }
@@ -92,7 +92,7 @@ public struct VouchAgent {
 
     /// Verify a credential against an explicit public key.
     public static func verifyWith(_ credentialJson: String, publicKey: Data) throws -> Bool {
-        let result = try Vouch.verifyCredential(
+        let result = try Vouch.verify(
             credentialJson, publicKey: publicKey, now: iso(Date()), clockSkewSeconds: 30
         )
         return result.valid

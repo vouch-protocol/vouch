@@ -248,7 +248,7 @@ class Agent {
     std::string vm = did_ + "#key-1";
     char* err = nullptr;
     return detail::take(
-        vouch_sign_credential(unsigned_cred.c_str(), seed_b64_.c_str(), vm.c_str(),
+        vouch_sign(unsigned_cred.c_str(), seed_b64_.c_str(), vm.c_str(),
                               valid_from.c_str(), &err),
         err);
   }
@@ -264,7 +264,7 @@ class Agent {
   static bool verify_with(const std::string& credential_json, const std::string& public_b64) {
     char* err = nullptr;
     std::string result = detail::take(
-        vouch_verify_credential(credential_json.c_str(), public_b64.c_str(),
+        vouch_verify(credential_json.c_str(), public_b64.c_str(),
                                 detail::iso_now().c_str(), 30, &err),
         err);
     return result.find("\"valid\":true") != std::string::npos;

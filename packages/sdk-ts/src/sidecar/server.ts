@@ -71,7 +71,7 @@ export function createSidecarServer(config: SidecarConfig): Server {
           return sendError(res, 400, 'invalid JSON body');
         }
         try {
-          const signed = signCredential(config, verificationMethod, body);
+          const signed = sign(config, verificationMethod, body);
           return sendJson(res, 200, signed);
         } catch (e) {
           return sendError(res, 400, (e as Error).message);
@@ -83,7 +83,7 @@ export function createSidecarServer(config: SidecarConfig): Server {
   });
 }
 
-function signCredential(
+function sign(
   config: SidecarConfig,
   verificationMethod: string,
   body: SignRequestBody

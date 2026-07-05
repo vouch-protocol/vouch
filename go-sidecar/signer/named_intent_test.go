@@ -1,20 +1,20 @@
-// Tests for the named-argument intent convenience on SignCredentialOptions
+// Tests for the named-argument intent convenience on SignOptions
 // (Action/Target/Resource). Mirrors the Python tests in tests/test_dx_sugar.py.
 
 package signer
 
 import "testing"
 
-func TestSignCredentialNamedIntentFields(t *testing.T) {
+func TestSignNamedIntentFields(t *testing.T) {
 	s := newTestSigner(t, "")
 
-	cred, err := s.SignCredential(SignCredentialOptions{
+	cred, err := s.Sign(SignOptions{
 		Action:   "read",
 		Target:   "users_table",
 		Resource: "https://api.example.com/v1/users",
 	})
 	if err != nil {
-		t.Fatalf("SignCredential with named fields: %v", err)
+		t.Fatalf("Sign with named fields: %v", err)
 	}
 
 	subject, ok := cred["credentialSubject"].(map[string]any)
@@ -31,15 +31,15 @@ func TestSignCredentialNamedIntentFields(t *testing.T) {
 	}
 }
 
-func TestSignCredentialNamedFieldsOverrideIntentMap(t *testing.T) {
+func TestSignNamedFieldsOverrideIntentMap(t *testing.T) {
 	s := newTestSigner(t, "")
 
-	cred, err := s.SignCredential(SignCredentialOptions{
+	cred, err := s.Sign(SignOptions{
 		Intent:   validIntent(),
 		Resource: "https://api.example.com/v1/users/override",
 	})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 	intent := cred["credentialSubject"].(map[string]any)["intent"].(map[string]any)
 	if intent["resource"] != "https://api.example.com/v1/users/override" {

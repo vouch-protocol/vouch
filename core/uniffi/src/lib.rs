@@ -114,7 +114,7 @@ pub fn build_proof(
     Ok(data_integrity::build_proof(&parse(&credential_json)?, &seed, &opts)?.to_string())
 }
 
-pub fn sign_credential(
+pub fn sign(
     credential_json: String,
     seed: Vec<u8>,
     verification_method: String,
@@ -131,13 +131,13 @@ pub fn verify_proof(credential_json: String, public_key: Vec<u8>) -> Result<bool
     )?)
 }
 
-pub fn verify_credential(
+pub fn verify(
     credential_json: String,
     public_key: Vec<u8>,
     now_iso: String,
     clock_skew_seconds: i64,
 ) -> Result<VerifyResult, CoreError> {
-    let r = credentials::verify_credential(
+    let r = credentials::verify(
         &parse(&credential_json)?,
         &public_key,
         &now_iso,
