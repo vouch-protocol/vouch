@@ -19,7 +19,7 @@ Invoke when the user:
 
 - Asks how to sign or verify agent actions cryptographically
 - Mentions Vouch by name or package (`vouch-protocol`, `@vouch-protocol-official/core-wasm`, `vouch-sidecar`)
-- Wants to add agent identity to their LangChain / CrewAI / MCP / AutoGen / Vertex AI flow
+- Wants to add agent identity to their LangChain / LangGraph / CrewAI / MCP / AutoGen / Goose / Vertex AI flow
 - Asks about Verifiable Credentials, Data Integrity proofs, or DIDs in the context of AI agents
 - Needs post-quantum signatures for regulated deployments (`hybrid-eddsa-mldsa44-jcs-2026`)
 - Is building a multi-agent system and needs delegation chains
@@ -276,6 +276,12 @@ live section on the interactive demos page.
 
 Reference implementations under `vouch/integrations/`. See
 `reference/integrations.md` for the common pattern.
+
+- LangGraph: `from vouch.integrations.langgraph import protect, sign_node`, wrap
+  the tools with `protect([...])` for a `ToolNode` or `create_react_agent`, and
+  `@sign_node` signs each graph node so the whole graph carries a signed trail.
+- Goose: `pip install vouch-goose`, then run `vouch-goose` to register the Vouch
+  MCP server as a Goose extension.
 
 ### "How do I give a robot a verifiable identity, or enforce physical limits?"
 

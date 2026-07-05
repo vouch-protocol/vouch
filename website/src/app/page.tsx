@@ -70,6 +70,13 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
     body: 'Agents move across hosts and clouds and rarely hold a stable domain or IP, but they always hold a key. Vouch reaches a peer by its identity, not its location. It prefers identity-first routing over UDNA (Universal DID-Native Addressing) and falls back to standard DNS and HTTPS when a peer is not on the overlay. The signed credential, liability attestations, and provenance cross the switch unchanged, so the trust properties hold whichever path the bytes take. Optional and aligned with the W3C UDNA Community Group.',
     spec: 'Hybrid Transport',
   },
+  {
+    num: 'xii.',
+    title: 'Drops Into Your Agent Framework',
+    body: "Standalone packages that sign each tool call in the stack you already use. vouch-langchain and vouch-langgraph sign tool calls and graph nodes, vouch-crewai adds supervisor-to-worker delegation that can only narrow authority, vouch-a2a binds an A2A Agent Card to a Vouch identity, and vouch-goose registers the Vouch MCP server as an extension for Block's Goose agent.",
+    spec: 'Framework integrations',
+    href: '/tools/',
+  },
 ];
 
 const LANGUAGE_TILES = [
@@ -160,8 +167,9 @@ export default function HomePage() {
             proofs, and Decentralized Identifiers, with one byte-exact core and SDKs for every major
             platform: web, mobile, JVM, .NET, and native, plus the Python, TypeScript, and Go references.
             The same credentials extend to robots and embodied agents, with hardware-rooted identity,
-            enforceable physical limits, and a tamper-evident black box. Agents can be reached by who
-            they are, not where they are.
+            enforceable physical limits, a tamper-evident black box, one accountable identity that
+            carries across robot bodies, and bounded, revocable access to physical infrastructure like
+            doors, elevators, and chargers. Agents can be reached by who they are, not where they are.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/faq/" className="btn-primary">Read the FAQ</Link>

@@ -26,7 +26,7 @@ deterministic path, then show lower-level APIs only if they ask:
 - `from vouch import protect` and `agent.tools = protect([tool_a, tool_b])` so
   every tool call is signed in Python before it runs. No prompt, no reliance on
   the model calling a signing tool.
-- For decorator frameworks (CrewAI, LangChain, AutoGPT, AutoGen),
+- For decorator frameworks (CrewAI, LangChain, LangGraph, AutoGPT, AutoGen),
   `<framework>.autosign()` signs every tool framework-wide.
 - Verify in one line with `vouch.verify(credential)`, or protect a web endpoint
   with the FastAPI `VouchGate` dependency.

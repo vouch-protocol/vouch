@@ -132,7 +132,7 @@ Same license as the main Vouch Protocol repository (Apache-2.0).
 ## Framework integration packages (coming soon, v1.6.2)
 
 Standalone, separately installable packages that wrap a specific framework:
-`vouch-langchain`, `vouch-crewai`, `vouch-mcp`, `vouch-a2a`, `vouch-mlflow`, and
+`vouch-langchain`, `vouch-langgraph`, `vouch-crewai`, `vouch-mcp`, `vouch-a2a`, `vouch-goose`, `vouch-mlflow`, and
 `vouch-safetensors`. Each issues a verifiable credential per tool call, with
 optional delegation back to a human principal. Until v1.6.2 publishes to PyPI,
 use the integrations from the main package, for example

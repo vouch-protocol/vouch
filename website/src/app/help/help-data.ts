@@ -1334,7 +1334,7 @@ Then point at your collector via \`OTEL_EXPORTER_OTLP_ENDPOINT\`. Verifier spans
       {
         id: 'integrations',
         title: 'Which AI Frameworks Vouch Plugs Into',
-        summary: 'Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.',
+        summary: 'Ready-made integrations for LangChain, LangGraph, CrewAI, Goose, AutoGPT, AutoGen, MCP, Vertex AI, and more.',
         body: `
 ## Python integrations
 
@@ -1343,6 +1343,7 @@ All under \`vouch/integrations/\`:
 | Framework | File | What it does |
 |---|---|---|
 | LangChain | \`langchain/tool.py\` | Wraps a LangChain Tool so its inputs are signed before execution |
+| LangGraph | \`langgraph.py\` | Signs LangGraph tool calls and graph nodes across a graph |
 | CrewAI | \`crewai/tool.py\` | Same pattern for crew-style multi-agent flows |
 | AutoGPT | \`autogpt/commands.py\` | Command integration for AutoGPT plugins |
 | AutoGen | \`autogen/tool.py\` | Tool wrapper for AutoGen conversational agents |
@@ -1353,6 +1354,7 @@ All under \`vouch/integrations/\`:
 | n8n | \`n8n.py\` | n8n workflow automation node |
 | Hasura | \`hasura/webhook.py\` | GraphQL webhook handler |
 | MCP | \`mcp/server.py\` | Reference Model Context Protocol server |
+| Goose | \`goose.py\` | Registers the Vouch MCP server as an extension for Block's Goose agent |
 | Amnesia | \`amnesia.py\` | Wraps an Amnesia egress decision in a Verifiable Credential for a replayable audit trail |
 
 End-to-end examples are at [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).

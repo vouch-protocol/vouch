@@ -1096,6 +1096,7 @@ status_list = store.load()
         a: `Python integrations live under \`vouch/integrations/\`:
 
 - **LangChain** - tool wrapper that signs tool inputs before execution
+- **LangGraph** - signs tool calls and graph nodes across a LangGraph graph
 - **CrewAI** - tool wrapper for crew-style multi-agent flows
 - **AutoGPT** - command integration
 - **AutoGen** - tool wrapper
@@ -1106,8 +1107,9 @@ status_list = store.load()
 - **n8n** - workflow automation node
 - **Hasura** - GraphQL webhook
 - **MCP** - Model Context Protocol server
+- **Goose** - registers the Vouch MCP server as an extension for Block's Goose agent
 
-**New standalone packages in v1.6.2:** \`vouch-langchain\`, \`vouch-crewai\`, \`vouch-a2a\` (binds an A2A Agent Card to a Vouch identity), \`vouch-mlflow\` (signs a model artifact at registration time, bound to its content digest), and \`vouch-safetensors\` (embeds a credential in the model header, complementary to OpenSSF Model Signing). Each issues a verifiable credential per tool call, with optional delegation back to a human principal.
+**New standalone packages:** \`vouch-langchain\`, \`vouch-langgraph\` (signs LangGraph tool calls and graph nodes), \`vouch-crewai\`, \`vouch-a2a\` (binds an A2A Agent Card to a Vouch identity), \`vouch-goose\` (registers the Vouch MCP server as a Goose extension), \`vouch-mlflow\` (signs a model artifact at registration time, bound to its content digest), and \`vouch-safetensors\` (embeds a credential in the model header, complementary to OpenSSF Model Signing). Each issues a verifiable credential per tool call, with optional delegation back to a human principal.
 
 Examples for each are in [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
 
