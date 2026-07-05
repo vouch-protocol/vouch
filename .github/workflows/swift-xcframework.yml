@@ -39,7 +39,7 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Guard 2: pin Xcode instead of trusting the runner default.
       - name: Select Xcode
