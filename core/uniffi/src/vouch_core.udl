@@ -226,6 +226,16 @@ namespace vouch_core {
     boolean robotics_verify_robot_credential(string credential_json, bytes ed25519_public, bytes? mldsa44_public);
     [Throws=CoreError]
     string robotics_migrate_to_pq(string credential_json, bytes ed25519_seed, bytes mldsa_secret, bytes mldsa_public, string created);
+
+    // Cross-embodiment identity continuity (Phase 5.15).
+    [Throws=CoreError]
+    string robotics_build_embodiment(bytes agent_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_embodiment(string credential_json, bytes agent_public_key);
+    [Throws=CoreError]
+    string robotics_verify_continuity_chain(string params_json, bytes agent_public_key);
+    [Throws=CoreError]
+    string robotics_check_no_fork(string params_json);
 };
 
 dictionary Ed25519KeyPair {

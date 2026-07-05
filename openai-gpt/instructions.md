@@ -160,6 +160,18 @@ been removed. See `integrations.md`.
   field; `verify_pq` verifies a hybrid proof, `is_pq` reports whether a credential
   is hybrid-signed, and `migrate_to_pq` re-signs a fielded robot's classical
   credential under PQ. See `robotics.md`.
+- "How does one AI agent run on one robot body today and a different body
+  tomorrow while staying the same accountable identity?" -> Cross-embodiment
+  identity continuity (`vouch.robotics.embodiment`): the agent, a mind holding its
+  own persistent Vouch identity, signs an `AgentEmbodimentCredential` binding
+  itself to a body's hardware-rooted identity and hardware root for a window, with
+  a `fromBody` link to the previous embodiment (`build_embodiment`,
+  `verify_embodiment`). `verify_continuity_chain` walks the linked chain to confirm
+  the same agent key persisted across bodies, re-binding to each body's hardware
+  root, and `check_no_fork` confirms the agent was never actively embodied in two
+  bodies at once. It is the inverse of the ownership custody chain: there one body
+  passes between owners, here one mind passes between bodies. Open layer only;
+  managed key custody and fleet migration are commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface

@@ -88,6 +88,20 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-078](./PAD-078-robot-lifecycle-custody-chain.md) | Verifiable Robot Lifecycle: Chained Custody, Key History, and Signed Decommission | 2026-07-04 | Published |
 | [PAD-079](./PAD-079-machine-checkable-regulatory-conformance.md) | Machine-Checkable Regulatory Conformance Over Robot Verifiable Credentials | 2026-07-04 | Published |
 | [PAD-080](./PAD-080-post-quantum-default-robot-credentials.md) | Post-Quantum-by-Default Robot Credentials with Backward-Compatible Dual Verification and Software Migration | 2026-07-04 | Published |
+| [PAD-081](./PAD-081-cross-embodiment-identity-continuity.md) | Cross-Embodiment Identity Continuity Across Robot Bodies via a Chain of Hardware-Re-Bound Embodiment Credentials | 2026-07-04 | Published |
+| [PAD-082](./PAD-082-portable-agent-identity-fork-detection.md) | Fork Detection for a Portable Agent Identity via Embodiment Time-Overlap | 2026-07-04 | Published |
+
+
+## July 4, 2026: Cross-Embodiment Identity Continuity (PAD-081, PAD-082)
+
+Two disclosures cover a portable agent identity moving between robot bodies. PAD-081
+binds one accountable agent identity across a sequence of bodies: an embodiment
+credential binds the agent to a body and that body's hardware root, signed by the
+agent's own persistent key, and linking each embodiment forms a continuity chain a
+verifier walks to confirm the same agent persisted, the inverse of an ownership
+custody chain. PAD-082 detects a fork of that portable identity by confirming no two
+embodiments place the agent in different bodies with overlapping active time windows,
+so a clean handover passes and a mind active in two bodies at once is caught.
 
 
 ## July 4, 2026: Robotics Delegation, Governance, Lifecycle, Conformance, and Post-Quantum (PAD-076 through PAD-080)

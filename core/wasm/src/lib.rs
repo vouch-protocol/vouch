@@ -842,3 +842,29 @@ pub fn robotics_migrate_to_pq(
     )
     .map_err(jerr)
 }
+
+#[wasm_bindgen(js_name = roboticsBuildEmbodiment)]
+pub fn robotics_build_embodiment(
+    agent_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_embodiment(&b64d(agent_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyEmbodiment)]
+pub fn robotics_verify_embodiment(
+    credential_json: &str,
+    agent_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_embodiment(credential_json, &b64d(agent_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyContinuityChain)]
+pub fn robotics_verify_continuity_chain(
+    params_json: &str,
+    agent_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_continuity_chain(params_json, &b64d(agent_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsCheckNoFork)]
+pub fn robotics_check_no_fork(params_json: &str) -> Result<String, JsError> {
+    rjson::check_no_fork(params_json).map_err(jerr)
+}

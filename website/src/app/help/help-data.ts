@@ -2593,6 +2593,29 @@ string report = VouchRobotics.CheckConformance(credentialsJson, "eu-ai-act-high-
 Output is byte-identical to the reference SDKs, so a robot credential produced in one language verifies in every other. The producer-side operations (handshakes, the black box, physical quorum, the liveness heartbeat) stay in the reference SDKs; a wrapper application that needs one of those calls a reference SDK or a service built on it.
 `,
       },
+      {
+        id: 'robotics-embodiment',
+        title: 'Cross-embodiment identity continuity',
+        summary: 'Let one accountable AI agent move between robot bodies with a verifiable continuity chain, and detect a fork if it is ever in two bodies at once.',
+        body: `
+An AI agent, a mind with its own Vouch identity, can run on one robot body today and a different body tomorrow. This makes that continuous and accountable.
+
+The problem it closes: as agent minds get decoupled from bodies, there is no cryptographic way to prove that the accountable agent on body B is the same one that was on body A, or to stop the same mind running on two bodies at once.
+
+How it works: \`build_embodiment\` binds the agent to a body and that body's hardware root for a period, signed by the agent's own key. Each embodiment names the body it left (\`fromBody\`), so \`verify_continuity_chain\` walks the links, confirms every one is signed by the same agent key, and returns the current body. \`check_no_fork\` confirms no two embodiments place the agent in different bodies with overlapping active windows. It is the inverse of the ownership custody chain: there one body passes between owners, here one mind passes between bodies.
+
+\`\`\`python
+from vouch.robotics import build_embodiment, verify_continuity_chain, check_no_fork
+
+a = build_embodiment(agent, agent_did=agent_did, body_did="body-a", body_hardware_root="uA", valid_seconds=3600)
+b = build_embodiment(agent, agent_did=agent_did, body_did="body-b", body_hardware_root="uB", from_body="body-a")
+ok, current_body = verify_continuity_chain([a, b], agent_public_key)
+no_fork, _ = check_no_fork([a, b])
+\`\`\`
+
+Security boundary: the whole chain is signed by one persistent agent key, so a link signed by any other key breaks the continuity, and re-binding to each body's hardware root ties the mind to real hardware at each step. This is the open layer, signed credentials and software verification; managed key custody and fleet migration are commercial.
+`,
+      },
     ],
   },
 ];

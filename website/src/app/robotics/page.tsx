@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, a regulatory conformance profile mapping credentials to safety and AI regulations, and post-quantum signing by default for a robot\'s decade-long life.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, a regulatory conformance profile mapping credentials to safety and AI regulations, post-quantum signing by default for a robot\'s decade-long life, and cross-embodiment identity continuity so one accountable agent can move between robot bodies.',
 };
 
 const CAPABILITIES = [
@@ -97,6 +97,12 @@ const CAPABILITIES = [
         title: 'Post-quantum by default',
         body: 'A robot fielded today runs for decades, longer than classical signatures are expected to stay safe. Robot credentials sign with the hybrid post-quantum cryptosuite, a classical and an ML-DSA-44 signature together, and verification accepts either kind so a fleet moves to post-quantum without breaking the credentials already in the field.',
         module: 'vouch.robotics.pq',
+    },
+    {
+        num: 'xvi.',
+        title: 'Cross-embodiment continuity',
+        body: 'An AI agent can run on one robot body today and a different body tomorrow. An embodiment credential binds the agent to a body and its hardware root for a period, signed by the agent\'s own key, and linking each embodiment forms a continuity chain that proves the same accountable agent persisted across bodies. A fork check confirms the agent was never active in two bodies at once.',
+        module: 'vouch.robotics.embodiment',
     },
 ];
 

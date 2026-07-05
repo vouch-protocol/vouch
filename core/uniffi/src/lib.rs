@@ -817,5 +817,32 @@ pub fn robotics_migrate_to_pq(
         &created,
     )?)
 }
+pub fn robotics_build_embodiment(
+    agent_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_embodiment(&agent_seed, &params_json)?)
+}
+pub fn robotics_verify_embodiment(
+    credential_json: String,
+    agent_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_embodiment(
+        &credential_json,
+        &agent_public_key,
+    )?)
+}
+pub fn robotics_verify_continuity_chain(
+    params_json: String,
+    agent_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_continuity_chain(
+        &params_json,
+        &agent_public_key,
+    )?)
+}
+pub fn robotics_check_no_fork(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::check_no_fork(&params_json)?)
+}
 
 uniffi::include_scaffolding!("vouch_core");
