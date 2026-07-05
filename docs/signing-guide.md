@@ -108,7 +108,7 @@ the v1.0 VC + Data Integrity API instead:
 from vouch import Signer
 
 signer = Signer(private_key=key, did='did:web:agent.example.com')
-credential = signer.sign_credential(intent={
+credential = signer.sign(intent={
   'action': 'submit_claim',
   'target': 'claim:42',
   'resource': 'https://payer.example.com/api/claims/42',

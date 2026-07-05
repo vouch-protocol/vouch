@@ -81,7 +81,7 @@ async function main() {
     validSeconds: 300,
   });
 
-  const signed = await signer.signCredential(credential);
+  const signed = await signer.sign(credential);
   console.log('signed proof value:', signed.proof.proofValue);
 
   // trustedRoots is the local-dev escape hatch. In production drop both
@@ -90,7 +90,7 @@ async function main() {
     trustedRoots: { [identity.did!]: identity.publicKeyJwk },
     allowDidResolution: false,
   });
-  const result = await verifier.verifyCredential(signed);
+  const result = await verifier.verify(signed);
   console.log('valid:', result.valid, 'reasons:', result.reasons);
 }
 

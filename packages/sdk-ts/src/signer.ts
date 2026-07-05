@@ -1,19 +1,10 @@
 /**
  * Vouch Protocol Signer (TypeScript).
  *
- * Two issuance modes coexist during the migration from JWS to W3C Data
- * Integrity (Specification §3.1):
- *
- *   1. Legacy JWS Compact Serialization (v0.x): Signer.sign().
- *    Retained for backward compatibility while integrations migrate.
- *
- *   2. Verifiable Credentials with Data Integrity proofs
- *    (eddsa-jcs-2022, v1.0): Signer.sign().
- *    The standards-aligned form aligned with the CG Report.
- *
- * Both modes share the same Ed25519 signing key. Existing callers using
- * Signer.sign() continue to work unchanged. New callers should prefer
- * sign().
+ * Issues Verifiable Credentials with W3C Data Integrity proofs
+ * (eddsa-jcs-2022, Specification §3.1) via Signer.sign(). The post-quantum
+ * hybrid profile (hybrid-eddsa-mldsa44-jcs-2026) is available via
+ * Signer.signHybrid().
  */
 
 import * as crypto from 'crypto';

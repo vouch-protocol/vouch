@@ -278,7 +278,7 @@ pub extern "C" fn vouch_verify_chain_time_bound(
 // ---------------------------------------------------------------------------
 // FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
 // signature is a standard Ed25519 signature: verify it with
-// vouch_verify_proof / vouch_verify_credential like any other credential, no
+// vouch_verify_proof / vouch_verify like any other credential, no
 // new proof type. JSON in, JSON out; keys and shares are base64 inside the
 // JSON, matching the rest of this file. See vouch_core::threshold for the
 // ceremony and why the full private key is never reconstructed.

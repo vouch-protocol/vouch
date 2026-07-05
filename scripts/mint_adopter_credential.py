@@ -65,7 +65,7 @@ def mint_credential(
         intent["liveSurface"] = live_surface
     if discussion:
         intent["discussion"] = discussion
-    return signer.sign_credential(
+    return signer.sign(
         intent=intent,
         valid_seconds=valid_days * 86400,
         parent_credential=parent_credential,

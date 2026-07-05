@@ -97,7 +97,7 @@ credential = build_vouch_credential(
     },
     valid_seconds=300,
 )
-signed = signer.sign_credential(credential)
+signed = signer.sign(credential)
 ```
 
 The `signed` dict is a full Verifiable Credential with a Data Integrity
@@ -111,8 +111,8 @@ TypeScript and Go equivalents in `reference/typescript-sdk.md` and
 ```python
 from vouch import Verifier
 
-# verify_credential returns a (is_valid, passport) tuple
-is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
+# verify returns a (is_valid, passport) tuple
+is_valid, passport = Verifier.verify(signed, public_key=keys.public_key_jwk)
 if is_valid:
     print(f"Verified: {passport.subject_did} did {passport.intent}")
 else:
@@ -135,7 +135,7 @@ Then:
 
 ```python
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
-signed = signer.sign_credential_hybrid(intent={
+signed = signer.sign_hybrid(intent={
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
@@ -371,7 +371,7 @@ When you see these in a user's code, mention the issue:
 - **Private key inside the LLM context window**: violates the Identity
   Sidecar principle. Recommend they move signing to a sidecar process.
 - **Using JWS Compact Serialization for new code**: the legacy v0.x path.
-  v1.0+ uses Data Integrity proofs. Recommend `sign_credential` over `sign`.
+  v1.0+ uses Data Integrity proofs. Recommend `sign` over `sign`.
 - **No `resource` in intent**: the protocol requires intent to bind to a
   specific resource. A credential without one is rejected by verifiers.
 - **Delegation chain depth > 5**: enforced limit. Restructure to fewer hops.

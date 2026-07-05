@@ -74,7 +74,7 @@ signer = Signer(private_key=jwk_str, did="did:web:agent.example.com")
 
 # Issue under the hybrid profile. The signer transparently generates
 # the ML-DSA-44 keypair if one is not already provisioned.
-credential = signer.sign_credential_hybrid(intent={
+credential = signer.sign_hybrid(intent={
   "action": "submit_clinical_finding",
   "target": "trial:NCT00000001",
   "resource": "https://fda-submissions.example.com/api/findings",
@@ -93,7 +93,7 @@ import { Signer, generateMLDSA44KeyPair } from 'vouch-protocol';
 const mldsaKeys = await generateMLDSA44KeyPair();
 const signer = new Signer({ privateKey, did, mldsa44: mldsaKeys });
 
-const credential = await signer.signCredentialHybrid({
+const credential = await signer.signHybrid({
  intent: {
   action: 'submit_clinical_finding',
   target: 'trial:NCT00000001',
@@ -112,7 +112,7 @@ s, _ := signer.New(signer.Config{
   Ed25519Seed: ed25519Seed, // 32-byte seed
 })
 
-cred, _ := s.SignCredentialHybrid(signer.SignCredentialOptions{
+cred, _ := s.SignHybrid(signer.SignOptions{
   Intent: map[string]any{
     "action": "submit_clinical_finding",
     "target": "trial:NCT00000001",
@@ -135,7 +135,7 @@ Ed25519 signature, ignores the ML-DSA-44 portion.
 
 ```python
 # Python
-is_valid, passport = Verifier.verify_credential(
+is_valid, passport = Verifier.verify(
   credential,
   public_key=ed25519_public_key,
   hybrid_mode="classical_only",
@@ -150,7 +150,7 @@ the remaining 2,420 bytes as the ML-DSA-44 signature, ignores the
 Ed25519 portion.
 
 ```python
-is_valid, passport = Verifier.verify_credential(
+is_valid, passport = Verifier.verify(
   credential,
   public_key=mldsa44_public_key,
   hybrid_mode="pq_only",
@@ -163,7 +163,7 @@ The default for regulated deployments. Both signatures must validate
 against the same canonical bytes for the credential to be accepted.
 
 ```python
-is_valid, passport = Verifier.verify_credential(
+is_valid, passport = Verifier.verify(
   credential,
   public_key=(ed25519_public_key, mldsa44_public_key),
   hybrid_mode="both_required",

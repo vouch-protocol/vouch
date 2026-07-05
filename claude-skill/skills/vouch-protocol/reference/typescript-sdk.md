@@ -36,8 +36,8 @@ const reloaded = new Signer({
 ## Credential issuance
 
 ```ts
-// signCredential takes an options object whose required field is `intent`.
-const signed = await signer.signCredential({
+// sign takes an options object whose required field is `intent`.
+const signed = await signer.sign({
     intent: {
         action: 'submit_claim',
         target: 'claim:HC-001',
@@ -52,9 +52,9 @@ const signed = await signer.signCredential({
 ## Hybrid post-quantum
 
 ```ts
-// The Signer manages its own ML-DSA-44 keypair. Call signCredentialHybrid
-// with the same options shape as signCredential.
-const signedHybrid = await signer.signCredentialHybrid({
+// The Signer manages its own ML-DSA-44 keypair. Call signHybrid
+// with the same options shape as sign.
+const signedHybrid = await signer.signHybrid({
     intent: {
         action: 'submit_claim',
         target: 'claim:HC-001',
@@ -69,8 +69,8 @@ const signedHybrid = await signer.signCredentialHybrid({
 ```ts
 import { Verifier } from '@vouch-protocol-official/sdk';
 
-// verifyCredential returns { isValid, passport, error }
-const result = await Verifier.verifyCredential(signed);
+// verify returns { isValid, passport, error }
+const result = await Verifier.verify(signed);
 
 if (result.isValid) {
     console.log('OK', result.passport);

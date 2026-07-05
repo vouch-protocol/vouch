@@ -105,7 +105,7 @@ jobs:
           cred = open("credential.json").read()
           doc = json.load(open("website/public/contributors/did.json"))
           pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
-          ok, _ = Verifier.verify_credential(cred, public_key=pub)
+          ok, _ = Verifier.verify(cred, public_key=pub)
           print("Badge self-verify against published DID:", ok)
           if not ok:
               print("::error::Minted badge does not verify against the published contributor DID."

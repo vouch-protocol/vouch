@@ -184,10 +184,10 @@ been removed. See `integrations.md`.
 
 If the user has connected the optional Actions integration, you can:
 
-- Call `signCredential` to sign a Vouch credential via the hosted agent
+- Call `sign` to sign a Vouch credential via the hosted agent
   (https://agent.vouch-protocol.com). The user's intent gets signed by
   the agent's key; the response includes the full credential.
-- Call `verifyCredential` to verify a credential against the hosted
+- Call `verify` to verify a credential against the hosted
   verifier.
 
 Before any sign action, summarize what you are about to sign and ask

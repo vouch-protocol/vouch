@@ -144,13 +144,13 @@ across Python, TypeScript, and Go SDKs:
 
 standards-aligned alignment with backward-compatible coexistence of the legacy v0.x JWS path.
 
-- **Verifiable Credentials issuance** (`Signer.sign_credential`): produces a VC Data Model 2.0 credential carrying the agent's intent (`action`, `target`, required `resource`), reputation, and optional delegation chain.
-- **Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (`Verifier.verify_credential`): proof attaches as a sibling object on the credential, no Base64-wrapping of the payload.
+- **Verifiable Credentials issuance** (`Signer.sign`): produces a VC Data Model 2.0 credential carrying the agent's intent (`action`, `target`, required `resource`), reputation, and optional delegation chain.
+- **Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (`Verifier.verify`): proof attaches as a sibling object on the credential, no Base64-wrapping of the payload.
 - **JCS canonicalization** (`vouch.jcs`): RFC 8785 implementation. Cross-implementation interop verified against shared test vectors at `test-vectors/jcs/vectors.json`.
 - **Multikey verification methods** (`vouch.multikey`): multibase + multicodec encoding for Ed25519 (`0xed01`) and ML-DSA-44 (`0x1207`). Algorithm-agnostic key resolution via `DIDDocument.get_ed25519_public_key()` (auto-falls-back to legacy JWK).
-- **Hybrid post-quantum profile** (`Signer.sign_credential_hybrid`): optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite. Both Ed25519 and ML-DSA-44 sign the same JCS canonical bytes for graceful verifier downgrade. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines. Requires `pip install vouch-protocol[pq]` for the optional `pqcrypto` dependency.
+- **Hybrid post-quantum profile** (`Signer.sign_hybrid`): optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite. Both Ed25519 and ML-DSA-44 sign the same JCS canonical bytes for graceful verifier downgrade. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines. Requires `pip install vouch-protocol[pq]` for the optional `pqcrypto` dependency.
 - **VC envelope helpers** (`vouch.vc`): `build_vouch_credential`, `build_session_voucher`.
-- **Async verifier credential path** (`AsyncVerifier.verify_credential`, `AsyncVerifier.check_vouch_credential`): mirrors the sync path with async DID resolution.
+- **Async verifier credential path** (`AsyncVerifier.verify`, `AsyncVerifier.check_vouch_credential`): mirrors the sync path with async DID resolution.
 - **Three-language interop** with TypeScript (`typescript/`) and Go (`go-sidecar/`) producing byte-identical canonical form.
 - **Three new defensive disclosures** (PAD-039, PAD-040, PAD-041) plus 16 amendments to existing PADs documenting Data Integrity embodiments and JCS-determinism properties.
 

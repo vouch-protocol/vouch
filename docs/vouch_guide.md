@@ -132,25 +132,5 @@ remains valid under either algorithm.
 
 ---
 
-## 6. Legacy v0.x JWS API
-
-The legacy JWS path remains operational during the deprecation window so
-existing integrations keep working. New code should prefer
-`Signer.sign_credential()` and `Verifier.verify_credential()`.
-
-```python
-# Legacy JWS path (v0.x)
-token = signer.sign({"action": "read_email"})
-is_valid, passport = Verifier.verify(token, public_key_jwk=public_key)
-```
-
-The migration path is straightforward:
-1. Replace `signer.sign(payload)` with `signer.sign_credential(intent={...})`.
-2. Replace `Verifier.verify(token, public_key_jwk=...)` with `Verifier.verify_credential(credential, public_key=...)`.
-3. Update the intent payload to carry an explicit `resource` URI (REQUIRED in v1.0 per Specification §5.4.1).
-4. Update DID Documents to use Multikey verification methods (`type: "Multikey"`, `publicKeyMultibase: "z6Mk..."`) instead of legacy JWK.
-
----
-
 ## Summary
-Vouch Protocol is not just a library; it's a standard for trust. By using it, you move your agent from a "random script" to a "verifiable digital entity."
+Vouch Protocol is a standard for trust. By using it, you move your agent from a "random script" to a "verifiable digital entity."
