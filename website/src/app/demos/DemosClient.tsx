@@ -29,7 +29,7 @@ function useReducedMotion() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Section II — The Deliberation (vouch.deliberation)                  */
+/* Section II - The Deliberation (vouch.deliberation)                  */
 /* ------------------------------------------------------------------ */
 
 type DelibState = 'idle' | 'running' | 'executed' | 'blocked';
@@ -130,7 +130,7 @@ function Deliberation() {
       <div>
         <div className="eyebrow-faint mb-2">Signed action ledger</div>
         <div className="demo-ledger">
-          {log.length === 0 ? <div className="k">— idle —</div> : log.map((l, i) => <div key={i} className="demo-line">{l}</div>)}
+          {log.length === 0 ? <div className="k">idle</div> : log.map((l, i) => <div key={i} className="demo-line">{l}</div>)}
         </div>
       </div>
       {toast && <div className="demo-toast">{toast}</div>}
@@ -139,7 +139,7 @@ function Deliberation() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Section III — The Envelope (vouch.caveats)                          */
+/* Section III - The Envelope (vouch.caveats)                          */
 /* ------------------------------------------------------------------ */
 
 function Envelope() {
@@ -218,7 +218,7 @@ function Envelope() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Section I — Reasoned Action (vouch.reasoning)                       */
+/* Section I - Reasoned Action (vouch.reasoning)                       */
 /* ------------------------------------------------------------------ */
 
 function ReasonedAction() {
@@ -260,7 +260,7 @@ function ReasonedAction() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Section IV — Inference provenance (vouch.provenance)                */
+/* Section IV - Inference provenance (vouch.provenance)                */
 /* ------------------------------------------------------------------ */
 
 function Provenance() {
@@ -358,7 +358,7 @@ export default function DemosClient() {
             <span className="num">§ I</span>
             <h2>Reasoned action</h2>
           </div>
-          <p className="eyebrow mb-6">Every action states why — and can&apos;t lie about it · vouch.reasoning</p>
+          <p className="eyebrow mb-6">Every action states why, and can&apos;t lie about it · vouch.reasoning</p>
           <ReasonedAction />
         </div>
       </section>
