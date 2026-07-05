@@ -759,7 +759,7 @@ Every implementation passes the same cross-language test vectors at [test-vector
       },
       {
         q: 'How do I sign a credential in Python?',
-        a: `Build a signer from your identity, then pass the intent directly to \`sign_credential\`:
+        a: `Build a signer from your identity, then pass the intent directly to \`sign\`:
 
 \`\`\`python
 from vouch import Signer, generate_identity
@@ -767,7 +767,7 @@ from vouch import Signer, generate_identity
 keys = generate_identity("agent.example.com")
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
-signed = signer.sign_credential(intent={
+signed = signer.sign(intent={
   "action": "submit_claim",
   "target": "claim:HC-001",
   "resource": "https://insurance.example.com/claims/HC-001",
@@ -779,7 +779,7 @@ The \`signed\` dict has a \`proof\` object with a \`proofValue\` (z-base58 encod
       },
       {
         q: 'How do I sign with the hybrid post-quantum profile?',
-        a: `Use \`sign_credential_hybrid()\` instead of \`sign_credential()\`. The required \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so nothing else to install:
+        a: `Use \`sign_hybrid()\` instead of \`sign()\`. The required \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so nothing else to install:
 
 \`\`\`bash
 pip install vouch-protocol
@@ -793,7 +793,7 @@ from vouch import Signer, generate_identity
 keys = generate_identity("agent.example.com")
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
-signed = signer.sign_credential_hybrid(intent={
+signed = signer.sign_hybrid(intent={
   "action": "submit_claim",
   "target": "claim:HC-001",
   "resource": "https://insurance.example.com/claims/HC-001",
@@ -813,7 +813,7 @@ The resulting credential's \`proof\` field is an **array** of two Data Integrity
 \`\`\`python
 from vouch import Verifier
 verifier = Verifier()
-result = await verifier.verify_credential(signed) # accepts credentials from any SDK
+result = await verifier.verify(signed) # accepts credentials from any SDK
 \`\`\`
 
 The published test vectors at [test-vectors/hybrid-eddsa-mldsa44/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/hybrid-eddsa-mldsa44) include a Python-generated signature that is exercised by both the TypeScript and Go test suites.`,
@@ -862,7 +862,7 @@ Lose a device and you revoke it with a \`DeviceRegistry\`; lose the root and you
       },
       {
         q: 'How do I make a credential revocable later?',
-        a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Allocate an index from your status list, then pass the entry as \`credential_status\` to \`sign_credential\` so the proof covers it:
+        a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Allocate an index from your status list, then pass the entry as \`credential_status\` to \`sign\` so the proof covers it:
 
 \`\`\`python
 from vouch import Signer, StatusList, build_status_list_entry, generate_identity
@@ -879,7 +879,7 @@ status_entry = build_status_list_entry(
 keys = generate_identity("issuer.example")
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
-signed = signer.sign_credential(
+signed = signer.sign(
   intent={"action": "submit_claim", "target": "claim:HC-001",
       "resource": "https://insurance.example/claims/HC-001"},
   credential_status=status_entry,
@@ -901,7 +901,7 @@ status_credential = build_status_list_credential(
   issuer_did="did:web:issuer.example",
   status_list=status_list,
 )
-signed_status_credential = signer.sign_credential(status_credential)
+signed_status_credential = signer.sign(status_credential)
 
 # Publish signed_status_credential at the URL referenced by issued credentials.
 \`\`\`
@@ -1373,7 +1373,7 @@ from vouch import Signer, generate_identity
 
 keys = generate_identity("agent.example.com")
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
-signed = signer.sign_credential_hybrid(intent={
+signed = signer.sign_hybrid(intent={
   "action": "submit_claim", "target": "claim:HC-001",
   "resource": "https://insurance.example/claims/HC-001",
 })

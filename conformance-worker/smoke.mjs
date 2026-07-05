@@ -50,7 +50,7 @@ function implCredential(intent) {
     validUntil: "2100-01-01T00:00:00Z",
     credentialSubject: { id: impl.did_key, vouchVersion: "1.0", intent },
   };
-  return JSON.parse(core.signCredential(JSON.stringify(skel), impl.seed_b64, `${impl.did_key}#key-1`, now));
+  return JSON.parse(core.sign(JSON.stringify(skel), impl.seed_b64, `${impl.did_key}#key-1`, now));
 }
 
 function honestResponses(session) {
@@ -63,7 +63,7 @@ function honestResponses(session) {
     }
     if (ch.check === "validity_window") {
       const r = JSON.parse(
-        core.verifyCredential(JSON.stringify(ch.input.credential), ch.input.publicKeyB64, now, 30)
+        core.verify(JSON.stringify(ch.input.credential), ch.input.publicKeyB64, now, 30)
       );
       return { challengeId: ch.challengeId, output: { valid: r.valid } };
     }

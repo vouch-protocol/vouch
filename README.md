@@ -69,7 +69,7 @@ Vouch Protocol v1.0 aligns directly with the open standard:
 - **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`) as an optional add-on for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
 - **Three-way cross-implementation interop** verified across Python, TypeScript, and Go.
 
-The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work unchanged for a deprecation window. New code should prefer `Signer.sign_credential()` and `Verifier.verify_credential()`. See the Specification at [vouch-protocol.com/specs/SPEC/](https://vouch-protocol.com/specs/SPEC/) for the full specification.
+Credentials are issued with `Signer.sign()` and checked with `Verifier.verify()`. See the Specification at [vouch-protocol.com/specs/SPEC/](https://vouch-protocol.com/specs/SPEC/) for the full specification.
 
 ---
 
@@ -160,7 +160,6 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 - **Human-readable JSON** (proof attaches as a sibling object, no Base64-wrapped opaque payload)
 - **Framework-agnostic** (works with MCP, LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI)
 - **Cross-language interop** (Python, TypeScript, Go, byte-identical canonical form)
-- **Backward-compatible** (legacy v0.x JWS API still supported during deprecation window)
 - **Open source** (Apache 2.0 license, CC0 prior-art portfolio)
 
 **Think of it as:**
@@ -182,9 +181,9 @@ flowchart LR
   V{"✅ Verified"}
 
   P -->|"Delegation VC"| A
-  A -->|"sign_credential(intent)"| C
+  A -->|"sign(intent)"| C
   C -->|"HTTP body<br/>application/vc+vouch"| API
-  API -->|"verify_credential()"| V
+  API -->|"verify()"| V
 ```
 
 **4 Simple Steps:**
@@ -266,19 +265,13 @@ signer = Signer(
   did=os.environ['VOUCH_DID']
 )
 
-credential = signer.sign_credential(intent={
+credential = signer.sign(intent={
   'action': 'read_database',
   'target': 'users_table',
   'resource': 'https://api.example.com/v1/users',
 })
 # Send credential as the JSON body of the API request, content-type
-# application/vc+vouch  (legacy: application/vouch+credential+json)
-```
-
-**Legacy v0.x path (JWS, still supported):**
-```python
-token = signer.sign({'action': 'read_database', 'target': 'users'})
-# Include token in Vouch-Token header
+# application/vc+vouch
 ```
 
 ### 4. Verify (API Side)
@@ -295,7 +288,7 @@ async def protected_route(request: Request):
   credential = await request.json()
   public_key = '{"kty":"OKP", ...}' # Resolved from did:web or trusted root
 
-  is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
+  is_valid, passport = Verifier.verify(credential, public_key=public_key)
   if not is_valid:
     raise HTTPException(status_code=401, detail="Untrusted Agent")
 
@@ -304,18 +297,6 @@ async def protected_route(request: Request):
     "agent": passport.sub,
     "intent": passport.intent,
   }
-```
-
-**Legacy v0.x path:**
-```python
-from vouch import Verifier
-
-@app.post("/api/legacy")
-def legacy_route(vouch_token: str = Header(alias="Vouch-Token")):
-  is_valid, passport = Verifier.verify(vouch_token, public_key_jwk=public_key)
-  if not is_valid:
-    raise HTTPException(status_code=401, detail="Untrusted Agent")
-  return {"status": "Verified", "agent": passport.sub}
 ```
 
 **That's it.** A few lines to sign, a few to verify, on either path.
@@ -353,7 +334,7 @@ Works with all major AI frameworks out-of-the-box:
 
 ```python
 # Optional v1.0 profile, requires `pip install pqcrypto`
-credential = signer.sign_credential_hybrid(intent={
+credential = signer.sign_hybrid(intent={
   'action': 'submit_clinical_finding',
   'target': 'trial:NCT00000001',
   'resource': 'https://fda-submissions.example.com/api/findings',

@@ -46,7 +46,7 @@ index 0000000..345df0d
 +  Sign a text message or prompt using Vouch Identity.
 +  Returns a verifiable token (legacy JWS form).
 +
-+  Note: v1.0 deployments should prefer `signer.sign_credential(intent={
++  Note: v1.0 deployments should prefer `signer.sign(intent={
 +  'action': 'sign_text', 'target': 'message', 'resource': '<uri>'})`,
 +  which returns a Verifiable Credential with a Data Integrity proof.
 +  """

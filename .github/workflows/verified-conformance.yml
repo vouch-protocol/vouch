@@ -93,7 +93,7 @@ jobs:
                   cred, ed25519_public_key=ed_pub, mldsa44_public_key=ml_pub
               )
           else:
-              ok, _ = Verifier.verify_credential(json.dumps(cred), public_key=ed_jwk)
+              ok, _ = Verifier.verify(json.dumps(cred), public_key=ed_jwk)
           print(f"Badge self-verify ({suite}) against published DID:", ok)
           if not ok:
               print("::error::Minted conformance badge does not verify against the published DID."

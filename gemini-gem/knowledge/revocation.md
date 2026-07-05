@@ -71,7 +71,7 @@ credential = build_vouch_credential(
         status_list_index=index,
     ),
 )
-signed_credential = signer.sign_credential(credential)
+signed_credential = signer.sign(credential)
 ```
 
 #### Revoke later
@@ -85,7 +85,7 @@ status_credential = build_status_list_credential(
     issuer_did="did:web:issuer.example",
     status_list=status_list,
 )
-signed_status_credential = signer.sign_credential(status_credential)
+signed_status_credential = signer.sign(status_credential)
 
 # Publish at the URL referenced by the original credential
 # (typically PUT to your CDN / S3 / GitHub Pages)

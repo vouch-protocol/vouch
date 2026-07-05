@@ -97,9 +97,8 @@ We have published 15 PADs to protect our IP.
 
 ### `vouch.signer.Signer`
 *  `__init__(private_key: str, did: str)`: Initialize with Ed25519 JWK.
-*  `sign_credential(intent: dict) -> dict`: **(v1.0, preferred)** Returns a Verifiable Credential with a Data Integrity proof (`eddsa-jcs-2022`). Intent must include `action`, `target`, `resource`.
-*  `sign_credential_hybrid(intent: dict) -> dict`: **(v1.0, optional PQ)** Returns a credential with a `hybrid-eddsa-mldsa44-jcs-2026` proof carrying both Ed25519 and ML-DSA-44 signatures.
-*  `sign(payload: dict) -> str`: **(legacy v0.x)** Returns a JWS Compact Token. Retained for backward compatibility.
+*  `sign(intent: dict) -> dict`: **(v1.0, preferred)** Returns a Verifiable Credential with a Data Integrity proof (`eddsa-jcs-2022`). Intent must include `action`, `target`, `resource`.
+*  `sign_hybrid(intent: dict) -> dict`: **(v1.0, optional PQ)** Returns a credential with a `hybrid-eddsa-mldsa44-jcs-2026` proof carrying both Ed25519 and ML-DSA-44 signatures.
 
 ### `vouch.media.c2pa.MediaSigner`
 *  `sign_image(source_path, output_path)`: Embeds C2PA manifest.
@@ -137,7 +136,6 @@ We have published 15 PADs to protect our IP.
 **Class**: `Signer`
 *  **Default v1.0 format**: Verifiable Credential secured by a Data Integrity proof using the `eddsa-jcs-2022` cryptosuite. Human-readable JSON with the proof attached as a sibling object.
 *  **Hybrid PQ profile (optional)**: `hybrid-eddsa-mldsa44-jcs-2026` carrying Ed25519 + ML-DSA-44 composite signatures.
-*  **Legacy v0.x format**: JWS Compact Serialization (`header.payload.signature`) with `{"alg": "EdDSA", "typ": "vouch+jwt"}`. Retained during the deprecation window.
 *  **Usage**: Used for signing agent intents, usage covenants (PAD-012), and prompt attribution.
 
 ### 🔗 Shortlinks & Verification

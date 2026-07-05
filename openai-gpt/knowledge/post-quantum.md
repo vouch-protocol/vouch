@@ -109,7 +109,7 @@ pip install 'vouch-protocol[pq]'
 from vouch import Signer, build_vouch_credential
 
 signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(build_vouch_credential(...))
+signed = signer.sign_hybrid(build_vouch_credential(...))
 ```
 
 ### TypeScript
@@ -122,7 +122,7 @@ npm install @vouch-protocol-official/sdk @noble/post-quantum
 import { Signer, buildHybridProof, generateMLDSA44KeyPair } from '@vouch-protocol-official/sdk';
 
 const signer = await Signer.fromDidWithHybrid('did:web:agent.example.com');
-const signed = await signer.signCredentialHybrid(credential);
+const signed = await signer.signHybrid(credential);
 ```
 
 ### Go

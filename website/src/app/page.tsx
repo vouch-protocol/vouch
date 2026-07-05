@@ -321,8 +321,8 @@ const signer = new Signer({
   did: identity.did!,
 });
 
-// signCredential takes the intent directly (action, target, resource).
-const signed = await signer.signCredential({
+// sign takes the intent directly (action, target, resource).
+const signed = await signer.sign({
   intent: {
     action: 'submit_claim',
     target: 'claim:HC-001',
@@ -378,9 +378,9 @@ func main() {
 // VouchCore wraps the one Rust core via UniFFI, so a credential
 // verified on iOS matches the exact bytes from every other SDK.
 let keys = try Vouch.generateEd25519()
-let signed = try Vouch.signCredential(credentialJson, keys: keys)
+let signed = try Vouch.sign(credentialJson, keys: keys)
 
-let result = try Vouch.verifyCredential(
+let result = try Vouch.verify(
   signed, publicKey: keys.publicKey, now: "2026-04-26T10:02:00Z")
 print(result)
 `,
@@ -391,7 +391,7 @@ print(result)
                 code: `import com.vouchprotocol.core.Vouch;
 
 String kp = Vouch.generateEd25519();   // {seed_b64, public_b64, multikey, did_key}
-String signed = Vouch.signCredential(
+String signed = Vouch.sign(
     credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 boolean ok = Vouch.verifyProof(signed, publicB64);
 `,
@@ -402,7 +402,7 @@ boolean ok = Vouch.verifyProof(signed, publicB64);
                 code: `using VouchProtocol.Core;
 
 string kp = Vouch.GenerateEd25519();
-string signed = Vouch.SignCredential(
+string signed = Vouch.Sign(
     credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 bool ok = Vouch.VerifyProof(signed, publicB64);
 `,
@@ -425,7 +425,7 @@ if (res) vouch_string_free(res); else vouch_string_free(err);
 await init(); // fetches the .wasm next to the module
 
 const kp = JSON.parse(core.generateEd25519());
-const signed = core.signCredential(JSON.stringify(credential),
+const signed = core.sign(JSON.stringify(credential),
   kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
 const ok = core.verifyProof(signed, kp.public_b64);   // true
 `,

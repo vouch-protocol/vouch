@@ -1,21 +1,9 @@
 /**
  * Vouch Protocol Verifier (TypeScript).
  *
- * Verifies both legacy JWS-format Vouch-Tokens and modern W3C Verifiable
- * Credentials with Data Integrity proofs (eddsa-jcs-2022).
- *
- * Two coexisting verification paths:
- *
- *   1. Legacy JWS: Verifier.verify(token, ...) and
- *    verifier.checkVouch(token). Operates on JWS Compact Serialization
- *    strings produced by Signer.sign().
- *
- *   2. W3C VC: Verifier.verify(credential, ...) and
- *    verifier.checkVouchCredential(credential). Operates on credential
- *    objects produced by Signer.sign() (Specification §8).
- *
- * Existing callers of the legacy methods continue to work unchanged. New
- * callers should prefer the credential methods.
+ * Verifies W3C Verifiable Credentials with Data Integrity proofs
+ * (eddsa-jcs-2022) via Verifier.verify(credential, ...) and
+ * verifier.checkVouchCredential(credential) (Specification §8).
  */
 
 import * as crypto from 'crypto';

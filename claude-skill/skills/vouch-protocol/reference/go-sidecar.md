@@ -177,7 +177,7 @@ s, _ := signer.New(signer.Config{
     PrivateKeyJWK: "...",
 })
 
-cred, err := s.SignCredential(signer.SignCredentialOptions{
+cred, err := s.Sign(signer.SignOptions{
     Intent: map[string]any{
         "action":   "submit_claim",
         "target":   "claim:HC-001",

@@ -145,7 +145,7 @@ ever minted, so a verifier/gate rejects it. `parent=` works on `protect`,
 ## Server side: one-line gate
 
 The production counterpart to `protect()`. Instead of hand-writing header
-parsing + `verify_credential` + 401 in every endpoint, add one dependency:
+parsing + `verify` + 401 in every endpoint, add one dependency:
 
 ```python
 from fastapi import Depends, FastAPI

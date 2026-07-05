@@ -60,7 +60,6 @@ When using Vouch Protocol:
 - **Ed25519 keys**: Default signature path uses EdDSA (Ed25519) per W3C `eddsa-jcs-2022`.
 - **Hybrid post-quantum profile (optional)**: `hybrid-eddsa-mldsa44-jcs-2026` carries Ed25519 + ML-DSA-44 (FIPS 204) composite signatures for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
 - **Credential format (v1.0)**: Verifiable Credentials secured by Data Integrity proofs. JCS canonicalization (RFC 8785) produces a deterministic byte representation before hashing and signing.
-- **Legacy token format (v0.x)**: JWS Compact Serialization. Retained during the deprecation window; new code prefers `Signer.sign_credential()`.
 - **No symmetric keys**: We only support asymmetric cryptography for identity proofs.
 
 ## Threat Model & Assumptions

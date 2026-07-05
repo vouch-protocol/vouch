@@ -37,7 +37,7 @@ def main() -> int:
         return 1
 
     signer = Signer(private_key=private_key, did=did)
-    delegation = signer.sign_credential(
+    delegation = signer.sign(
         intent={
             "action": "delegate",
             "target": CONTRIBUTOR_DID,

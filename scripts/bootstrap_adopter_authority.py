@@ -79,7 +79,7 @@ def sign_delegation(root_private_key: str, root_did: str) -> dict:
         "role": "verified-adopter-issuer",
     }
     valid_from = datetime.now(timezone.utc).replace(microsecond=0)
-    return signer.sign_credential(
+    return signer.sign(
         intent=intent,
         valid_seconds=DELEGATION_VALID_DAYS * 86400,
         valid_from=valid_from,
@@ -95,7 +95,7 @@ def _write_delegation(root_private_key: str, root_did: str) -> int:
         handle.write("\n")
 
     root_pub = Signer(private_key=root_private_key, did=root_did).get_public_key_jwk()
-    ok, _ = Verifier.verify_credential(json.dumps(delegation), public_key=root_pub)
+    ok, _ = Verifier.verify(json.dumps(delegation), public_key=root_pub)
     if not ok:
         print(
             "::error:: delegation did not verify against the root key. "

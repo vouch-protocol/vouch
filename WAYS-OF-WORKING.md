@@ -67,7 +67,7 @@ credential["proof"] = data_integrity.build_proof(
 )
 ```
 
-`Signer.sign_credential(intent)` is the high-level intent path.
+`Signer.sign(intent)` is the high-level intent path.
 
 ## Never
 

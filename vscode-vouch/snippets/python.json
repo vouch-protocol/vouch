@@ -53,7 +53,7 @@
       "    valid_seconds=300,",
       ")",
       "",
-      "signed = signer.sign_credential_hybrid(credential)$0"
+      "signed = signer.sign_hybrid(credential)$0"
     ]
   },
   "Vouch: FastAPI verifier middleware": {
