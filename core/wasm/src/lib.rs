@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 
 use vouch_core::{
     credentials, data_integrity, delegation, hybrid, keys, multikey, pq, robotics_json as rjson,
-    status_list,
+    status_list, threshold_json,
 };
 
 // --------------------------------------------------------------------------
@@ -195,6 +195,67 @@ pub fn verify_chain_time_bound(
         .as_array()
         .ok_or_else(|| JsError::new("chain must be a JSON array"))?;
     delegation::verify_chain_time_bound(arr, now_iso, clock_skew_seconds as i64).map_err(jerr)
+}
+
+// --------------------------------------------------------------------------
+// FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
+// signature is a standard Ed25519 signature, verifiable with ed25519Verify
+// like any other; no new proof type. See vouch_core::threshold for the
+// ceremony and why the full private key is never reconstructed.
+// --------------------------------------------------------------------------
+
+/// Mint a fresh threshold-native Ed25519 identity: maxSigners key shares, any
+/// minSigners of which can sign together. Returns JSON
+/// {shares: [{identifier, key_package}, ...], group_public_key: {verifying_key, public_key_package}}.
+#[wasm_bindgen(js_name = thresholdGenerateKey)]
+pub fn threshold_generate_key(min_signers: u16, max_signers: u16) -> Result<String, JsError> {
+    threshold_json::generate_key(min_signers, max_signers).map_err(jerr)
+}
+
+/// Round 1 for one signer (one entry from thresholdGenerateKey's shares
+/// array). Returns JSON {nonces, commitments}. nonces is SECRET: keep it on
+/// this signer's device only, use it for exactly one thresholdSignShare call,
+/// then discard it.
+#[wasm_bindgen(js_name = thresholdCommit)]
+pub fn threshold_commit(key_share_json: &str) -> Result<String, JsError> {
+    threshold_json::commit(key_share_json).map_err(jerr)
+}
+
+/// Round 2 for one signer. messageB64 is the base64-encoded bytes to sign.
+/// commitmentsJson maps every participating signer's base64 identifier to its
+/// base64 commitment, including this signer's own. Returns the
+/// base64-encoded signature share.
+#[wasm_bindgen(js_name = thresholdSignShare)]
+pub fn threshold_sign_share(
+    message_b64: &str,
+    key_share_json: &str,
+    nonces_b64: &str,
+    commitments_json: &str,
+) -> Result<String, JsError> {
+    let message = b64d(message_b64)?;
+    threshold_json::sign_share(&message, key_share_json, nonces_b64, commitments_json).map_err(jerr)
+}
+
+/// Combine signature shares into the final signature. commitmentsJson and
+/// sharesJson map each signer's base64 identifier to its base64 commitment /
+/// signature share. groupPublicKeyJson is the group_public_key object from
+/// thresholdGenerateKey. Returns the base64-encoded 64-byte Ed25519 signature.
+#[wasm_bindgen(js_name = thresholdAggregate)]
+pub fn threshold_aggregate(
+    message_b64: &str,
+    commitments_json: &str,
+    shares_json: &str,
+    group_public_key_json: &str,
+) -> Result<String, JsError> {
+    let message = b64d(message_b64)?;
+    let sig = threshold_json::aggregate(
+        &message,
+        commitments_json,
+        shares_json,
+        group_public_key_json,
+    )
+    .map_err(jerr)?;
+    Ok(b64e(&sig))
 }
 
 // --------------------------------------------------------------------------
