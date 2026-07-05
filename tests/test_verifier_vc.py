@@ -9,7 +9,7 @@ Covers:
 - Reputation and delegation chain extraction
 - Async verifier mirror
 - did:web resolution fallback to JWK for legacy documents
-- Coexistence: legacy verify() and modern verify_credential() share state
+- Coexistence: legacy verify() and modern verify() share state
 """
 
 from __future__ import annotations
@@ -60,12 +60,12 @@ def _intent() -> dict:
 # ---------------------------------------------------------------------------
 
 
-def test_verify_credential_succeeds_for_valid_credential():
+def test_verify_succeeds_for_valid_credential():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     pub = _ed25519_public_from_signer(signer)
 
-    valid, passport = Verifier.verify_credential(cred, public_key=pub)
+    valid, passport = Verifier.verify(cred, public_key=pub)
     assert valid is True
     assert isinstance(passport, CredentialPassport)
     assert passport.sub == signer.did
@@ -74,31 +74,31 @@ def test_verify_credential_succeeds_for_valid_credential():
     assert passport.credential_id.startswith("urn:uuid:")
 
 
-def test_verify_credential_accepts_multikey_string_as_key():
+def test_verify_accepts_multikey_string_as_key():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     multikey_str = signer.get_public_key_multikey()
 
-    valid, passport = Verifier.verify_credential(cred, public_key=multikey_str)
+    valid, passport = Verifier.verify(cred, public_key=multikey_str)
     assert valid is True
     assert passport is not None
 
 
-def test_verify_credential_accepts_jwk_string_as_key():
+def test_verify_accepts_jwk_string_as_key():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     jwk_str = signer.get_public_key_jwk()
 
-    valid, passport = Verifier.verify_credential(cred, public_key=jwk_str)
+    valid, passport = Verifier.verify(cred, public_key=jwk_str)
     assert valid is True
 
 
-def test_verify_credential_accepts_json_encoded_credential():
+def test_verify_accepts_json_encoded_credential():
     signer = _new_signer()
-    cred_json = signer.sign_credential_json(intent=_intent())
+    cred_json = signer.sign_json(intent=_intent())
     pub = _ed25519_public_from_signer(signer)
 
-    valid, passport = Verifier.verify_credential(cred_json, public_key=pub)
+    valid, passport = Verifier.verify(cred_json, public_key=pub)
     assert valid is True
 
 
@@ -107,45 +107,45 @@ def test_verify_credential_accepts_json_encoded_credential():
 # ---------------------------------------------------------------------------
 
 
-def test_verify_credential_rejects_tampered_intent():
+def test_verify_rejects_tampered_intent():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     cred["credentialSubject"]["intent"]["resource"] = "https://evil.example.com/x"
     pub = _ed25519_public_from_signer(signer)
 
-    valid, passport = Verifier.verify_credential(cred, public_key=pub)
+    valid, passport = Verifier.verify(cred, public_key=pub)
     assert valid is False
     assert passport is None
 
 
-def test_verify_credential_rejects_tampered_issuer():
+def test_verify_rejects_tampered_issuer():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     cred["issuer"] = "did:web:attacker.example.com"
     pub = _ed25519_public_from_signer(signer)
 
-    valid, passport = Verifier.verify_credential(cred, public_key=pub)
+    valid, passport = Verifier.verify(cred, public_key=pub)
     assert valid is False
 
 
-def test_verify_credential_rejects_tampered_proof_value():
+def test_verify_rejects_tampered_proof_value():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     # Flip a character in the proofValue
     pv = cred["proof"]["proofValue"]
     cred["proof"]["proofValue"] = pv[:-2] + ("aA" if pv[-1] != "a" else "bB")
     pub = _ed25519_public_from_signer(signer)
 
-    valid, _ = Verifier.verify_credential(cred, public_key=pub)
+    valid, _ = Verifier.verify(cred, public_key=pub)
     assert valid is False
 
 
-def test_verify_credential_rejects_wrong_public_key():
+def test_verify_rejects_wrong_public_key():
     signer = _new_signer()
     other = _new_signer("did:web:other.example.com")
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
 
-    valid, _ = Verifier.verify_credential(cred, public_key=_ed25519_public_from_signer(other))
+    valid, _ = Verifier.verify(cred, public_key=_ed25519_public_from_signer(other))
     assert valid is False
 
 
@@ -154,34 +154,34 @@ def test_verify_credential_rejects_wrong_public_key():
 # ---------------------------------------------------------------------------
 
 
-def test_verify_credential_rejects_expired_credential():
+def test_verify_rejects_expired_credential():
     signer = _new_signer()
     long_ago = datetime.now(timezone.utc) - timedelta(seconds=600)
-    cred = signer.sign_credential(
+    cred = signer.sign(
         intent=_intent(),
         valid_from=long_ago,
         valid_seconds=10,  # expired 590 seconds ago
     )
     pub = _ed25519_public_from_signer(signer)
 
-    valid, _ = Verifier.verify_credential(cred, public_key=pub, clock_skew_seconds=30)
+    valid, _ = Verifier.verify(cred, public_key=pub, clock_skew_seconds=30)
     assert valid is False
 
 
-def test_verify_credential_rejects_not_yet_valid():
+def test_verify_rejects_not_yet_valid():
     signer = _new_signer()
     future = datetime.now(timezone.utc) + timedelta(seconds=600)
-    cred = signer.sign_credential(intent=_intent(), valid_from=future)
+    cred = signer.sign(intent=_intent(), valid_from=future)
     pub = _ed25519_public_from_signer(signer)
 
-    valid, _ = Verifier.verify_credential(cred, public_key=pub, clock_skew_seconds=30)
+    valid, _ = Verifier.verify(cred, public_key=pub, clock_skew_seconds=30)
     assert valid is False
 
 
-def test_verify_credential_clock_skew_tolerance_applies():
+def test_verify_clock_skew_tolerance_applies():
     signer = _new_signer()
     just_expired = datetime.now(timezone.utc) - timedelta(seconds=320)
-    cred = signer.sign_credential(
+    cred = signer.sign(
         intent=_intent(),
         valid_from=just_expired,
         valid_seconds=300,  # validUntil ~20 seconds in the past
@@ -189,11 +189,11 @@ def test_verify_credential_clock_skew_tolerance_applies():
     pub = _ed25519_public_from_signer(signer)
 
     # 30s skew accepts a 20s-expired credential
-    valid_with_skew, _ = Verifier.verify_credential(cred, public_key=pub, clock_skew_seconds=30)
+    valid_with_skew, _ = Verifier.verify(cred, public_key=pub, clock_skew_seconds=30)
     assert valid_with_skew is True
 
     # 5s skew does not
-    valid_no_skew, _ = Verifier.verify_credential(cred, public_key=pub, clock_skew_seconds=5)
+    valid_no_skew, _ = Verifier.verify(cred, public_key=pub, clock_skew_seconds=5)
     assert valid_no_skew is False
 
 
@@ -202,14 +202,14 @@ def test_verify_credential_clock_skew_tolerance_applies():
 # ---------------------------------------------------------------------------
 
 
-def test_verify_credential_rejects_missing_resource_binding():
+def test_verify_rejects_missing_resource_binding():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     # Strip the resource field after signing - signature still valid but
     # the structural rule says missing resource MUST be rejected at verify.
     cred["credentialSubject"]["intent"].pop("resource")
 
-    valid, _ = Verifier.verify_credential(cred, public_key=None)
+    valid, _ = Verifier.verify(cred, public_key=None)
     # Without a key, only structural+temporal checks run, which include
     # the resource binding rule.
     assert valid is False
@@ -220,28 +220,28 @@ def test_verify_credential_rejects_missing_resource_binding():
 # ---------------------------------------------------------------------------
 
 
-def test_verify_credential_extracts_reputation_score():
+def test_verify_extracts_reputation_score():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent(), reputation_score=87)
+    cred = signer.sign(intent=_intent(), reputation_score=87)
     pub = _ed25519_public_from_signer(signer)
 
-    valid, passport = Verifier.verify_credential(cred, public_key=pub)
+    valid, passport = Verifier.verify(cred, public_key=pub)
     assert valid is True
     assert passport.reputation_score == 87
 
 
-def test_verify_credential_extracts_delegation_chain():
+def test_verify_extracts_delegation_chain():
     parent = _new_signer("did:web:alice.example.com")
     child = _new_signer("did:web:assistant.example.com")
 
-    parent_cred = parent.sign_credential(
+    parent_cred = parent.sign(
         intent={
             "action": "read",
             "target": "users",
             "resource": "https://api.example.com/v1/users",
         }
     )
-    child_cred = child.sign_credential(
+    child_cred = child.sign(
         intent={
             "action": "read",
             "target": "user_42",
@@ -251,7 +251,7 @@ def test_verify_credential_extracts_delegation_chain():
     )
 
     pub_child = _ed25519_public_from_signer(child)
-    valid, passport = Verifier.verify_credential(child_cred, public_key=pub_child)
+    valid, passport = Verifier.verify(child_cred, public_key=pub_child)
     assert valid is True
     assert len(passport.delegation_chain) == 1
     link = passport.delegation_chain[0]
@@ -268,18 +268,11 @@ def test_verify_credential_extracts_delegation_chain():
 # ---------------------------------------------------------------------------
 
 
-def test_legacy_and_modern_verifier_paths_coexist_for_one_signer():
+def test_verify_returns_issuer_for_one_signer():
     signer = _new_signer()
 
-    legacy_token = signer.sign({"action": "ping"})
-    legacy_valid, legacy_passport = Verifier.verify(
-        legacy_token, public_key_jwk=signer.get_public_key_jwk()
-    )
-    assert legacy_valid is True
-    assert legacy_passport.iss == signer.did
-
-    modern_cred = signer.sign_credential(intent=_intent())
-    modern_valid, modern_passport = Verifier.verify_credential(
+    modern_cred = signer.sign(intent=_intent())
+    modern_valid, modern_passport = Verifier.verify(
         modern_cred, public_key=_ed25519_public_from_signer(signer)
     )
     assert modern_valid is True
@@ -345,24 +338,24 @@ def test_did_document_falls_back_to_legacy_jwk():
 
 
 @pytest.mark.asyncio
-async def test_async_verify_credential_succeeds():
+async def test_async_verify_succeeds():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     pub = _ed25519_public_from_signer(signer)
 
     av = AsyncVerifier(allow_did_resolution=False)
-    valid, passport = await av.verify_credential(cred, public_key=pub)
+    valid, passport = await av.verify(cred, public_key=pub)
     assert valid is True
     assert passport.sub == signer.did
 
 
 @pytest.mark.asyncio
-async def test_async_verify_credential_rejects_tampered():
+async def test_async_verify_rejects_tampered():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_intent())
+    cred = signer.sign(intent=_intent())
     cred["credentialSubject"]["intent"]["resource"] = "https://x.example.com/y"
     pub = _ed25519_public_from_signer(signer)
 
     av = AsyncVerifier(allow_did_resolution=False)
-    valid, _ = await av.verify_credential(cred, public_key=pub)
+    valid, _ = await av.verify(cred, public_key=pub)
     assert valid is False

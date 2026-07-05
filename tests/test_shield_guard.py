@@ -43,7 +43,7 @@ def test_guard_signs_and_runs_allowed_tool(env_identity, pubkey, audit_log):
     tools = Shield.guard([charge_invoice], audit_log_path=audit_log)
     cred = tools[0]("42", 99.0)
 
-    ok, passport = Verifier.verify_credential(cred, pubkey)
+    ok, passport = Verifier.verify(cred, pubkey)
     assert ok
     assert passport.intent["action"] == "charge_invoice"
 

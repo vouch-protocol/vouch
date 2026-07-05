@@ -4,7 +4,7 @@ Server-side credential gate - the production counterpart to ``vouch.protect``.
 On the sending side, ``protect`` / ``sign_intent`` make an agent sign every tool
 call. On the receiving side, an API has to verify those credentials and reject
 unsigned or untrusted callers. That used to be hand-written per endpoint: pull a
-header, call ``verify_credential`` with a hard-coded public key, raise 401, and
+header, call ``verify`` with a hard-coded public key, raise 401, and
 (if you cared) check the intent matched the route.
 
 ``CredentialGate`` collapses that to one object. It is framework-agnostic - the

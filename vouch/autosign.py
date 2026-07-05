@@ -24,7 +24,7 @@ first, then the on-disk keystore (``~/.vouch/keys``), then (opt-in) an ephemeral
 key. Configure it once and forget it, exactly like ``vouch git init``.
 
 This is the issuance (signing) half. The verification half already exists:
-``vouch.shield.Shield`` and ``vouch.Verifier.verify_credential`` consume the
+``vouch.shield.Shield`` and ``vouch.Verifier.verify`` consume the
 credentials produced here.
 """
 
@@ -199,7 +199,7 @@ def sign_intent(
         for k, v in extra.items():
             intent.setdefault(k, v)
 
-    credential = resolved.sign_credential(intent, parent_credential=parent)
+    credential = resolved.sign(intent, parent_credential=parent)
     if publish:
         _current_credential.set(credential)
     return credential
@@ -247,7 +247,7 @@ def delegate(
     intent: Dict[str, Any] = {"action": action, "target": target, "resource": resource}
     if to:
         intent["delegatee"] = to
-    return resolved.sign_credential(
+    return resolved.sign(
         intent,
         valid_seconds=valid_seconds,
         reputation_score=reputation_score,

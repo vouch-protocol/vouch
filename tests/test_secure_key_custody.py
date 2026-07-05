@@ -53,7 +53,7 @@ def test_build_proof_accepts_callback(keypair):
     cred["proof"] = proof
     assert len(calls) == 1
     assert proof["proofValue"].startswith("z")
-    ok, _ = Verifier.verify_credential(cred, public_key=keypair.public_key_jwk)
+    ok, _ = Verifier.verify(cred, public_key=keypair.public_key_jwk)
     assert ok
 
 
@@ -72,8 +72,8 @@ def test_signer_from_backend_jwk_public(keypair):
     raw = _raw_private(keypair)
     signer = Signer.from_backend(did=keypair.did, public_key=keypair.public_key_jwk, sign=raw.sign)
     assert signer._raw_priv is None  # the Signer does not hold the key
-    cred = signer.sign_credential(action="read", target="t", resource="https://x/r")
-    ok, p = Verifier.verify_credential(cred, public_key=keypair.public_key_jwk)
+    cred = signer.sign(action="read", target="t", resource="https://x/r")
+    ok, p = Verifier.verify(cred, public_key=keypair.public_key_jwk)
     assert ok
     assert p.issuer == keypair.did
 
@@ -84,18 +84,21 @@ def test_signer_from_backend_multikey_public(keypair):
     signer = Signer.from_backend(
         did=keypair.did, public_key=local.get_public_key_multikey(), sign=raw.sign
     )
-    cred = signer.sign_credential(intent=INTENT)
-    ok, _ = Verifier.verify_credential(cred, public_key=keypair.public_key_jwk)
+    cred = signer.sign(intent=INTENT)
+    ok, _ = Verifier.verify(cred, public_key=keypair.public_key_jwk)
     assert ok
 
 
-def test_backend_signer_blocks_legacy_and_hybrid(keypair):
+def test_backend_signer_signs_vc_but_blocks_hybrid(keypair):
     raw = _raw_private(keypair)
     signer = Signer.from_backend(did=keypair.did, public_key=keypair.public_key_jwk, sign=raw.sign)
+    # A backend signer issues Data Integrity credentials (the modern path).
+    cred = signer.sign(intent={"action": "a", "target": "b", "resource": "c"})
+    assert cred["proof"]["cryptosuite"] == "eddsa-jcs-2022"
+    # Hybrid post-quantum signing needs the raw key, which a backend signer
+    # does not hold, so it is blocked.
     with pytest.raises(NotImplementedError):
-        signer.sign({"action": "x"})
-    with pytest.raises(NotImplementedError):
-        signer.sign_credential_hybrid(action="a", target="b", resource="c")
+        signer.sign_hybrid(action="a", target="b", resource="c")
 
 
 # ---------------------------------------------------------------------------

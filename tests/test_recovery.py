@@ -86,8 +86,8 @@ def test_split_and_recover_identity_signs_identically():
     # The recovered key is the original key: a credential it signs verifies
     # against the ORIGINAL public key.
     signer = Signer(private_key=recovered.private_key_jwk, did=recovered.did)
-    cred = signer.sign_credential(action="read", target="t", resource="https://x/y")
-    ok, _ = Verifier.verify_credential(cred, public_key=keys.public_key_jwk)
+    cred = signer.sign(action="read", target="t", resource="https://x/y")
+    ok, _ = Verifier.verify(cred, public_key=keys.public_key_jwk)
     assert ok
     # The public key material matches (compare the JWK 'x', not the serialized
     # string, which can differ by jwcrypto version).

@@ -10,13 +10,13 @@ Relationship to ``vouch.autosign``:
     ``autosign`` is the in-process, Python-native path: it wraps a tool so
     every call is signed deterministically, before the tool body runs, with
     no LLM cooperation. This MCP server is the out-of-process, cross-language
-    path: any MCP client calls ``sign_action`` / ``verify_credential`` over
+    path: any MCP client calls ``sign_action`` / ``verify`` over
     the wire, and the private key stays in this server's process, never in
     the model's context. Both share one signing primitive: ``sign_intent``.
 
 Tools:
     sign_action        Issue a credential authorizing one action (PQC optional).
-    verify_credential  Verify a credential someone else presented.
+    verify  Verify a credential someone else presented.
     create_session     Issue a trust-decaying session voucher (Heartbeat).
     check_revocation   Check a credential's BitstringStatusList entry.
     get_identity       Return this agent's DID.
@@ -89,7 +89,7 @@ def sign_action(
     resolved_resource = resource or target
     try:
         if post_quantum:
-            credential = signer.sign_credential_hybrid(
+            credential = signer.sign_hybrid(
                 {"action": action, "target": target, "resource": resolved_resource}
             )
         else:
@@ -106,7 +106,7 @@ def sign_action(
 
 
 @mcp.tool()
-def verify_credential(credential_json: str, public_key: Optional[str] = None) -> str:
+def verify(credential_json: str, public_key: Optional[str] = None) -> str:
     """Verify a Vouch Credential that another agent or service presented.
 
     This is the receiving side: given a credential (the JSON another party's
@@ -130,7 +130,7 @@ def verify_credential(credential_json: str, public_key: Optional[str] = None) ->
         return f"REJECTED: not valid JSON ({e})"
 
     try:
-        is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
+        is_valid, passport = Verifier.verify(credential, public_key=public_key)
     except Exception as e:
         return f"REJECTED: verification error ({e})"
 

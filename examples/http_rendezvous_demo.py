@@ -97,7 +97,7 @@ async def main():
 
     # 3. Deliver a sealed Vouch envelope over the resolved route.
     signer = Signer(private_key=agent.private_key_jwk, did="did:web:sender.example.com")
-    credential = signer.sign_credential(
+    credential = signer.sign(
         intent={
             "action": "settle_invoice",
             "target": "invoice-42",

@@ -1,12 +1,27 @@
 """
 Unit tests for the Auditor class.
+
+The Auditor issues Vouch Credentials (eddsa-jcs-2022 Data Integrity) that bind
+an agent's identity to a reputation score and an integrity hash. The agent it
+certifies is carried in intent.target; the reputation lands in
+credentialSubject.reputationScore.
 """
 
-import pytest
+import base64
 import json
+from datetime import datetime
+
+import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from vouch import Auditor, Verifier
-from jwcrypto import jwk
+
+
+def _ed_pub(public_key_jwk: str) -> Ed25519PublicKey:
+    """Ed25519PublicKey from a public JWK JSON string."""
+    x = json.loads(public_key_jwk)["x"]
+    raw = base64.urlsafe_b64decode(x + "=" * (-len(x) % 4))
+    return Ed25519PublicKey.from_public_bytes(raw)
 
 
 class TestAuditorInitialization:
@@ -39,7 +54,7 @@ class TestAuditorIssueVouch:
     """Tests for Auditor.issue_vouch() method."""
 
     def test_issue_vouch_returns_certificate(self, auditor):
-        """issue_vouch() returns dict with certificate."""
+        """issue_vouch() returns a dict holding a Verifiable Credential."""
         result = auditor.issue_vouch(
             {
                 "did": "did:web:test-agent.com",
@@ -49,14 +64,15 @@ class TestAuditorIssueVouch:
         )
 
         assert "certificate" in result
-        assert isinstance(result["certificate"], str)
+        assert isinstance(result["certificate"], dict)
 
-    def test_issue_vouch_valid_jws(self, auditor):
-        """issue_vouch() produces valid JWS token."""
+    def test_issue_vouch_is_data_integrity_vc(self, auditor):
+        """issue_vouch() produces a VC with an eddsa-jcs-2022 proof."""
         result = auditor.issue_vouch({"did": "did:web:test-agent.com"})
 
-        parts = result["certificate"].split(".")
-        assert len(parts) == 3  # header.payload.signature
+        cred = result["certificate"]
+        assert cred["proof"]["cryptosuite"] == "eddsa-jcs-2022"
+        assert cred["credentialSubject"]["intent"]["target"] == "did:web:test-agent.com"
 
     def test_issue_vouch_missing_did(self, auditor):
         """issue_vouch() raises ValueError for missing DID."""
@@ -69,40 +85,35 @@ class TestAuditorIssueVouch:
 
         result = auditor.issue_vouch({"did": "did:web:test-agent.com"})
 
-        # Verify to check the claims
-        is_valid, passport = Verifier.verify(result["certificate"], public_key_jwk=public_key)
+        is_valid, passport = Verifier.verify(result["certificate"], public_key=_ed_pub(public_key))
 
         assert is_valid
-        # Default reputation is 50
-        assert passport.raw_claims["vc"]["reputation_score"] == 50
+        assert passport.reputation_score == 50  # Default
 
     def test_issue_vouch_clamps_reputation(self, auditor, auditor_keypair):
         """issue_vouch() clamps reputation to 0-100 range."""
         _, public_key = auditor_keypair
+        pub = _ed_pub(public_key)
 
-        # Test over 100
         result = auditor.issue_vouch({"did": "did:web:test.com", "reputation_score": 150})
-        _, passport = Verifier.verify(result["certificate"], public_key_jwk=public_key)
-        assert passport.raw_claims["vc"]["reputation_score"] == 100
+        _, passport = Verifier.verify(result["certificate"], public_key=pub)
+        assert passport.reputation_score == 100
 
-        # Test under 0
         result = auditor.issue_vouch({"did": "did:web:test.com", "reputation_score": -50})
-        _, passport = Verifier.verify(result["certificate"], public_key_jwk=public_key)
-        assert passport.raw_claims["vc"]["reputation_score"] == 0
+        _, passport = Verifier.verify(result["certificate"], public_key=pub)
+        assert passport.reputation_score == 0
 
     def test_issue_vouch_custom_expiry(self, auditor, auditor_keypair):
         """issue_vouch() respects custom expiry."""
         _, public_key = auditor_keypair
 
-        result = auditor.issue_vouch(
-            {"did": "did:web:test.com"},
-            expiry_seconds=3600,  # 1 hour
-        )
+        result = auditor.issue_vouch({"did": "did:web:test.com"}, expiry_seconds=3600)
 
-        _, passport = Verifier.verify(result["certificate"], public_key_jwk=public_key)
+        _, passport = Verifier.verify(result["certificate"], public_key=_ed_pub(public_key))
 
-        # exp should be iat + 3600
-        assert passport.exp == passport.iat + 3600
+        vf = datetime.fromisoformat(passport.valid_from.replace("Z", "+00:00"))
+        vu = datetime.fromisoformat(passport.valid_until.replace("Z", "+00:00"))
+        assert (vu - vf).total_seconds() == 3600
 
 
 class TestAuditorVerification:
@@ -120,13 +131,14 @@ class TestAuditorVerification:
             }
         )
 
-        is_valid, passport = Verifier.verify(result["certificate"], public_key_jwk=public_key)
+        is_valid, passport = Verifier.verify(result["certificate"], public_key=_ed_pub(public_key))
 
         assert is_valid is True
-        assert passport.sub == "did:web:test-agent.com"
+        assert passport.iss == auditor.get_issuer_did()
+        assert passport.intent["target"] == "did:web:test-agent.com"
 
     def test_certificate_has_vc_claims(self, auditor, auditor_keypair):
-        """Certificate includes Verifiable Credential claims."""
+        """Certificate binds identity, reputation, and integrity hash."""
         _, public_key = auditor_keypair
 
         result = auditor.issue_vouch(
@@ -137,13 +149,11 @@ class TestAuditorVerification:
             }
         )
 
-        _, passport = Verifier.verify(result["certificate"], public_key_jwk=public_key)
+        _, passport = Verifier.verify(result["certificate"], public_key=_ed_pub(public_key))
 
-        vc = passport.raw_claims.get("vc", {})
-        assert "type" in vc
-        assert "VouchIdentityCredential" in vc["type"]
-        assert vc["reputation_score"] == 85
-        assert vc["integrity_hash"] == "sha256:abc123"
+        assert passport.reputation_score == 85
+        assert passport.intent["integrity_hash"] == "sha256:abc123"
+        assert passport.intent["credential_type"] == "Identity+Reputation"
 
 
 class TestAuditorPublicKey:

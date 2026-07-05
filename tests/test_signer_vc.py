@@ -10,7 +10,7 @@ Covers:
 - Depth limit (§9.4)
 - Verification roundtrip via data_integrity.verify_proof
 - Multikey export, verification-method ID
-- Coexistence: legacy sign() and modern sign_credential() share the same key
+- Coexistence: legacy sign() and modern sign() share the same key
 """
 
 from __future__ import annotations
@@ -49,9 +49,9 @@ def _valid_intent() -> dict:
 # ---------------------------------------------------------------------------
 
 
-def test_sign_credential_returns_w3c_vc_shape():
+def test_sign_returns_w3c_vc_shape():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent())
+    cred = signer.sign(intent=_valid_intent())
 
     assert cred["@context"] == [vc.VC_CONTEXT_V2, vc.VOUCH_CONTEXT_V1]
     assert vc.VC_TYPE in cred["type"]
@@ -61,9 +61,9 @@ def test_sign_credential_returns_w3c_vc_shape():
     assert "validFrom" in cred and "validUntil" in cred
 
 
-def test_sign_credential_subject_carries_intent_and_version():
+def test_sign_subject_carries_intent_and_version():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent())
+    cred = signer.sign(intent=_valid_intent())
 
     subject = cred["credentialSubject"]
     assert subject["id"] == signer.did
@@ -71,9 +71,9 @@ def test_sign_credential_subject_carries_intent_and_version():
     assert subject["intent"] == _valid_intent()
 
 
-def test_sign_credential_attaches_data_integrity_proof():
+def test_sign_attaches_data_integrity_proof():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent())
+    cred = signer.sign(intent=_valid_intent())
 
     proof = cred["proof"]
     assert proof["type"] == data_integrity.PROOF_TYPE
@@ -83,45 +83,45 @@ def test_sign_credential_attaches_data_integrity_proof():
     assert proof["proofValue"].startswith("z")
 
 
-def test_sign_credential_reputation_score_clamped_to_range():
+def test_sign_reputation_score_clamped_to_range():
     signer = _new_signer()
-    cred_high = signer.sign_credential(intent=_valid_intent(), reputation_score=200)
-    cred_low = signer.sign_credential(intent=_valid_intent(), reputation_score=-10)
+    cred_high = signer.sign(intent=_valid_intent(), reputation_score=200)
+    cred_low = signer.sign(intent=_valid_intent(), reputation_score=-10)
 
     assert cred_high["credentialSubject"]["reputationScore"] == 100
     assert cred_low["credentialSubject"]["reputationScore"] == 0
 
 
-def test_sign_credential_validity_window_default():
+def test_sign_validity_window_default():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent())
+    cred = signer.sign(intent=_valid_intent())
     # default_expiry = 300 seconds. validFrom < validUntil.
     assert cred["validFrom"] < cred["validUntil"]
 
 
-def test_sign_credential_validity_window_override():
+def test_sign_validity_window_override():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent(), valid_seconds=60)
+    cred = signer.sign(intent=_valid_intent(), valid_seconds=60)
     assert cred["validFrom"] < cred["validUntil"]
 
 
-def test_sign_credential_rejects_missing_resource():
+def test_sign_rejects_missing_resource():
     signer = _new_signer()
     bad_intent = {"action": "x", "target": "y"}  # no resource
     with pytest.raises(ValueError, match="resource"):
-        signer.sign_credential(intent=bad_intent)
+        signer.sign(intent=bad_intent)
 
 
-def test_sign_credential_rejects_empty_resource():
+def test_sign_rejects_empty_resource():
     signer = _new_signer()
     bad_intent = {"action": "x", "target": "y", "resource": ""}
     with pytest.raises(ValueError, match="resource"):
-        signer.sign_credential(intent=bad_intent)
+        signer.sign(intent=bad_intent)
 
 
-def test_sign_credential_json_returns_serializable_string():
+def test_sign_json_returns_serializable_string():
     signer = _new_signer()
-    encoded = signer.sign_credential_json(intent=_valid_intent())
+    encoded = signer.sign_json(intent=_valid_intent())
     parsed = json.loads(encoded)
     assert parsed["proof"]["cryptosuite"] == data_integrity.CRYPTOSUITE_ID
 
@@ -144,14 +144,14 @@ def _public_key_from_signer(signer: Signer):
 
 def test_verification_roundtrip_succeeds_for_unmodified_credential():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent())
+    cred = signer.sign(intent=_valid_intent())
     pub = _public_key_from_signer(signer)
     assert data_integrity.verify_proof(cred, pub) is True
 
 
 def test_verification_fails_when_intent_is_tampered():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent())
+    cred = signer.sign(intent=_valid_intent())
     cred["credentialSubject"]["intent"]["resource"] = "https://evil.example.com/api"
     pub = _public_key_from_signer(signer)
     assert data_integrity.verify_proof(cred, pub) is False
@@ -159,7 +159,7 @@ def test_verification_fails_when_intent_is_tampered():
 
 def test_verification_fails_when_issuer_is_tampered():
     signer = _new_signer()
-    cred = signer.sign_credential(intent=_valid_intent())
+    cred = signer.sign(intent=_valid_intent())
     cred["issuer"] = "did:web:attacker.example.com"
     pub = _public_key_from_signer(signer)
     assert data_integrity.verify_proof(cred, pub) is False
@@ -174,7 +174,7 @@ def test_delegation_chain_appends_link_from_parent():
     parent = _new_signer("did:web:alice.example.com")
     child = _new_signer("did:web:assistant.example.com")
 
-    parent_cred = parent.sign_credential(
+    parent_cred = parent.sign(
         intent={
             "action": "plan_trip",
             "target": "destination:Paris",
@@ -182,7 +182,7 @@ def test_delegation_chain_appends_link_from_parent():
         }
     )
 
-    child_cred = child.sign_credential(
+    child_cred = child.sign(
         intent={
             "action": "book_flight",
             "target": "flight:AF123",
@@ -201,7 +201,7 @@ def test_delegation_chain_resource_narrowing_violation_raises():
     parent = _new_signer("did:web:alice.example.com")
     child = _new_signer("did:web:rogue.example.com")
 
-    parent_cred = parent.sign_credential(
+    parent_cred = parent.sign(
         intent={
             "action": "read",
             "target": "users",
@@ -211,7 +211,7 @@ def test_delegation_chain_resource_narrowing_violation_raises():
 
     # Child tries to access a different resource entirely. Must be rejected.
     with pytest.raises(ValueError, match="resource-narrowing"):
-        child.sign_credential(
+        child.sign(
             intent={
                 "action": "read",
                 "target": "admin",
@@ -225,7 +225,7 @@ def test_delegation_chain_resource_narrowing_allows_sub_path():
     parent = _new_signer("did:web:alice.example.com")
     child = _new_signer("did:web:assistant.example.com")
 
-    parent_cred = parent.sign_credential(
+    parent_cred = parent.sign(
         intent={
             "action": "read",
             "target": "users",
@@ -234,7 +234,7 @@ def test_delegation_chain_resource_narrowing_allows_sub_path():
     )
 
     # /v1/users/42 is a sub-resource of /v1/users, so this is allowed.
-    grand_cred = child.sign_credential(
+    grand_cred = child.sign(
         intent={
             "action": "read",
             "target": "user_42",
@@ -256,16 +256,16 @@ def test_delegation_chain_depth_limit_enforced():
 
     signers = [_new_signer(f"did:web:agent{i}.example.com") for i in range(7)]
 
-    cred = signers[0].sign_credential(intent=intent_template)
+    cred = signers[0].sign(intent=intent_template)
     # Build chain of length 5 (max allowed)
     for s in signers[1:6]:
-        cred = s.sign_credential(intent=intent_template, parent_credential=cred)
+        cred = s.sign(intent=intent_template, parent_credential=cred)
 
     assert len(cred["credentialSubject"]["delegationChain"]) == 5
 
     # The 6th hop must fail
     with pytest.raises(ValueError, match="max depth"):
-        signers[6].sign_credential(intent=intent_template, parent_credential=cred)
+        signers[6].sign(intent=intent_template, parent_credential=cred)
 
 
 # ---------------------------------------------------------------------------
@@ -294,22 +294,10 @@ def test_verification_method_id_is_canonical():
 # ---------------------------------------------------------------------------
 
 
-def test_legacy_sign_still_returns_jws_compact_string():
-    """Existing callers using signer.sign() must continue to work unchanged."""
+def test_sign_issues_data_integrity_vc():
+    """sign() issues a VC with an eddsa-jcs-2022 Data Integrity proof."""
     signer = _new_signer()
-    legacy_token = signer.sign({"action": "read_email"})
-    # JWS compact has exactly two dots
-    assert legacy_token.count(".") == 2
+    modern_cred = signer.sign(intent=_valid_intent())
 
-
-def test_legacy_and_modern_paths_share_the_same_key():
-    """Both paths should be issuable from the same Signer instance."""
-    signer = _new_signer()
-
-    legacy_token = signer.sign({"action": "x"})
-    modern_cred = signer.sign_credential(intent=_valid_intent())
-
-    # Public key must match across both paths
     assert modern_cred["issuer"] == signer.did
-    assert legacy_token.count(".") == 2
     assert modern_cred["proof"]["cryptosuite"] == data_integrity.CRYPTOSUITE_ID

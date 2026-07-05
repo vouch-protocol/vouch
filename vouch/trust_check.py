@@ -74,7 +74,7 @@ def verify_agent_call(
 
     Args:
       credential: the caller's Vouch credential (dict or JSON string). Its
-        delegation chain, if present, is verified by `verify_credential`.
+        delegation chain, if present, is verified by `verify`.
       public_key: the issuer's Ed25519 public key (Multikey string or key
         object). If None, only structural and temporal checks run, so
         identity_ok cannot be relied on.
@@ -89,11 +89,11 @@ def verify_agent_call(
     """
     reasons: List[str] = []
 
-    structurally_valid, passport = Verifier.verify_credential(
+    structurally_valid, passport = Verifier.verify(
         credential, public_key=public_key, clock_skew_seconds=clock_skew_seconds
     )
     # Identity is only established when a key was supplied AND the proof verified.
-    # With no key, verify_credential runs structural and temporal checks only, so
+    # With no key, verify runs structural and temporal checks only, so
     # it cannot be treated as proof of who signed the credential.
     if public_key is None:
         identity_ok = False
