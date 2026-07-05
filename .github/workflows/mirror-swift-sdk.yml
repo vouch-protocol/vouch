@@ -34,12 +34,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout monorepo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: monorepo
 
       - name: Checkout vouch-swift (target)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: vouch-protocol/vouch-swift
           path: vouch-swift
