@@ -302,6 +302,31 @@ ok = verify_robot_credential(identity, robot_ed25519_public_key,
 A hybrid credential passes only when both signatures validate, so it is at least as
 strong as the classical signature and stays safe once classical signatures do not.
 
-Sections 5.7 to 5.15 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.16 Cross-embodiment identity continuity (`vouch.robotics.embodiment`)
+
+An AI agent (a mind with its own Vouch identity) can run on one robot body today and
+a different body tomorrow. An embodiment credential binds the agent to a body and
+that body's hardware root for a period, signed by the agent's own key.
+`verify_continuity_chain` walks a sequence of embodiments, confirms every one is
+signed by the same agent key and that each `fromBody` matches the previous `body`,
+and returns the current body, so a verifier confirms the same accountable agent
+persisted across bodies. `check_no_fork` confirms no two embodiments place the agent
+in different bodies with overlapping active windows. This is the inverse of the
+ownership custody chain: there one body passes between owners, here one mind passes
+between bodies.
+
+```python
+from vouch.robotics import build_embodiment, verify_continuity_chain, check_no_fork
+
+a = build_embodiment(agent, agent_did=agent_did, body_did="body-a", body_hardware_root="uA", valid_seconds=3600)
+b = build_embodiment(agent, agent_did=agent_did, body_did="body-b", body_hardware_root="uB", from_body="body-a")
+ok, current_body = verify_continuity_chain([a, b], agent_public_key)
+no_fork, _ = check_no_fork([a, b])
+```
+
+The open layer is signed credentials and software verification; managed key custody
+and fleet migration are commercial.
+
+Sections 5.7 to 5.16 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

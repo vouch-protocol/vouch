@@ -683,6 +683,29 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: CROSS-EMBODIMENT CONTINUITY
+  // =====================================================================
+  {
+    id: 'robotics-embodiment',
+    audience: 'Robotics: embodiment',
+    title: 'Cross-embodiment continuity',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can one AI agent move between robot bodies and stay accountable?',
+        a: `Yes. An embodiment credential binds the agent (a mind with its own identity) to a specific body and that body's hardware root for a period, signed by the agent's own key. Linking each embodiment to the previous one forms a continuity chain that \`verify_continuity_chain\` walks to confirm the same accountable agent persisted across bodies, re-binding to each body's hardware root. It is the inverse of the ownership custody chain: there one body passes between owners, here one mind passes between bodies.`,
+        helpLinks: [{ label: 'Cross-embodiment guide', href: '/help/#robotics-embodiment' }],
+        meta: 'Shipped - vouch.robotics.embodiment',
+      },
+      {
+        q: 'How do you stop the same agent running on two bodies at once?',
+        a: `\`check_no_fork\` confirms no two embodiments place the agent in different bodies with overlapping active time windows. A clean handover sets one body's window to end where the next begins, so there is no overlap; two bodies active at the same time is reported as a fork.`,
+        meta: 'Shipped - vouch.robotics.embodiment',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {
