@@ -1,7 +1,7 @@
 """
 A thin, read-friendly wrapper over a Vouch Credential dict.
 
-The dict produced by :meth:`Signer.sign_credential` (and :func:`vouch.sign`) is
+The dict produced by :meth:`Signer.sign` (and :func:`vouch.sign`) is
 the canonical, on-the-wire form. This wrapper does not replace it; it sits on
 top so you can read back what a credential authorizes without digging through
 ``credentialSubject.intent`` by hand, and verify it in one call::

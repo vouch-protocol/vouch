@@ -28,8 +28,8 @@ def test_registered_tool_names():
     tools = asyncio.run(vouch_mcp.mcp.list_tools())
     names = {t.name for t in tools}
     assert {
-        "sign_action",
-        "verify_credential",
+        "sign",
+        "verify",
         "create_session",
         "check_revocation",
         "get_identity",
@@ -47,13 +47,13 @@ def test_sign_and_verify_roundtrip():
 
     from vouch.integrations.mcp import server
 
-    out = server.sign_action("read", "https://api.example.com", "customer:123")
+    out = server.sign("read", "https://api.example.com", "customer:123")
     cred = json.loads(out)
     assert cred["proof"]["cryptosuite"] == "eddsa-jcs-2022"
 
     pub = Ed25519PublicKey.from_public_bytes(base64url_decode(json.loads(kp.public_key_jwk)["x"]))
-    ok, _ = Verifier.verify_credential(cred, public_key=pub)
+    ok, _ = Verifier.verify(cred, public_key=pub)
     assert ok is True
 
-    verdict = server.verify_credential(out, public_key=None)
+    verdict = server.verify(out, public_key=None)
     assert "VERIFIED" in verdict or "REJECTED" in verdict

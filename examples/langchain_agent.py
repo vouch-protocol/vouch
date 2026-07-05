@@ -59,7 +59,7 @@ def main():
         # The call the agent made was signed; verify it server-side.
         cred = current_credential()
         if cred is not None:
-            ok, passport = Verifier.verify_credential(cred)
+            ok, passport = Verifier.verify(cred)
             print(f"\n🔏 Last tool call signed & verifiable: {ok}")
             if ok:
                 print(f"   intent: {passport.intent}")

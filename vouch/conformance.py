@@ -87,20 +87,20 @@ def check_sign_verify() -> CheckResult:
     """eddsa-jcs-2022: a signed credential verifies, a tampered one is rejected."""
     kp = keys.generate_identity("conformance.test")
     signer = Signer(private_key=kp.private_key_jwk, did=kp.did)
-    credential = signer.sign_credential(
+    credential = signer.sign(
         intent={
             "action": "conformance_probe",
             "target": "vector:001",
             "resource": "https://conformance.test/probe",
         }
     )
-    valid, _ = Verifier.verify_credential(credential, public_key=kp.public_key_jwk)
+    valid, _ = Verifier.verify(credential, public_key=kp.public_key_jwk)
     if not valid:
         return CheckResult("sign_verify", Status.FAIL, "a valid credential was rejected")
 
     tampered = json.loads(json.dumps(credential))
     tampered["credentialSubject"]["intent"]["action"] = "tampered"
-    bad_valid, _ = Verifier.verify_credential(tampered, public_key=kp.public_key_jwk)
+    bad_valid, _ = Verifier.verify(tampered, public_key=kp.public_key_jwk)
     if bad_valid:
         return CheckResult("sign_verify", Status.FAIL, "a tampered credential was accepted")
 
@@ -120,13 +120,13 @@ def check_validity_window() -> CheckResult:
         "target": "vector:validity",
         "resource": "https://conformance.test/probe",
     }
-    fresh = signer.sign_credential(intent=intent, valid_seconds=3600)
-    fresh_valid, _ = Verifier.verify_credential(fresh, public_key=kp.public_key_jwk)
+    fresh = signer.sign(intent=intent, valid_seconds=3600)
+    fresh_valid, _ = Verifier.verify(fresh, public_key=kp.public_key_jwk)
     if not fresh_valid:
         return CheckResult("validity_window", Status.FAIL, "a fresh credential was rejected")
 
-    expired = signer.sign_credential(intent=intent, valid_seconds=-3600)
-    expired_valid, _ = Verifier.verify_credential(expired, public_key=kp.public_key_jwk)
+    expired = signer.sign(intent=intent, valid_seconds=-3600)
+    expired_valid, _ = Verifier.verify(expired, public_key=kp.public_key_jwk)
     if expired_valid:
         return CheckResult("validity_window", Status.FAIL, "an expired credential was accepted")
 
@@ -137,7 +137,7 @@ def check_nonce_replay() -> CheckResult:
     """Replay resistance: a credential id seen twice is flagged on the second use."""
     kp = keys.generate_identity("conformance.test")
     signer = Signer(private_key=kp.private_key_jwk, did=kp.did)
-    credential = signer.sign_credential(
+    credential = signer.sign(
         intent={
             "action": "conformance_probe",
             "target": "vector:nonce",
@@ -204,7 +204,7 @@ def check_delegation_narrowing() -> CheckResult:
     """Delegation: a child chains to its parent, and the five-link depth bound is enforced."""
     root = keys.generate_identity("conformance.test")
     root_signer = Signer(private_key=root.private_key_jwk, did=root.did)
-    parent = root_signer.sign_credential(
+    parent = root_signer.sign(
         intent={
             "action": "manage",
             "target": "all_tables",
@@ -213,7 +213,7 @@ def check_delegation_narrowing() -> CheckResult:
     )
     child_id = keys.generate_identity("conformance.test")
     child_signer = Signer(private_key=child_id.private_key_jwk, did=child_id.did)
-    child = child_signer.sign_credential(
+    child = child_signer.sign(
         intent={
             "action": "read",
             "target": "users_table",
@@ -236,7 +236,7 @@ def check_delegation_narrowing() -> CheckResult:
         link_id = keys.generate_identity("conformance.test")
         link_signer = Signer(private_key=link_id.private_key_jwk, did=link_id.did)
         try:
-            current = link_signer.sign_credential(
+            current = link_signer.sign(
                 intent={
                     "action": "read",
                     "target": "users_table",
@@ -260,7 +260,7 @@ def check_sidecar_allow_deny() -> CheckResult:
     """Identity Sidecar: an allowed intent passes the gate, a disallowed one is rejected with a reason."""
     ident = keys.generate_identity("conformance.test")
     signer = Signer(private_key=ident.private_key_jwk, did=ident.did)
-    credential = signer.sign_credential(
+    credential = signer.sign(
         intent={
             "action": "read",
             "target": "data",

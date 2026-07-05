@@ -223,25 +223,32 @@ def cmd_sign(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        # Parse the message
+        # Build the intent to sign. With --json the message is an intent
+        # object; otherwise the plain message becomes the action.
         if args.json:
             try:
-                payload = json.loads(args.message)
+                intent = json.loads(args.message)
             except json.JSONDecodeError as e:
                 print(f"Error: Invalid JSON message: {e}", file=sys.stderr)
                 return 1
         else:
-            # Wrap string message in a payload
-            payload = {"message": args.message}
+            intent = {"action": args.message}
 
-        # Create signer and sign
+        # A Vouch Credential requires action, target, and resource. Fill any
+        # that the caller did not provide with sensible defaults.
+        intent.setdefault("action", "sign")
+        intent.setdefault("target", did)
+        intent.setdefault("resource", intent["action"])
+
+        # Create signer and issue a Verifiable Credential.
         signer = Signer(private_key=private_key, did=did)
-        token = signer.sign(payload)
+        credential = signer.sign(intent=intent)
+        out = json.dumps(credential, separators=(",", ":"))
 
         if args.header:
-            print(f"Vouch-Token: {token}")
+            print(f"Vouch-Credential: {out}")
         else:
-            print(token)
+            print(out)
 
         return 0
 
@@ -254,18 +261,21 @@ def cmd_sign(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    """Verify a Vouch-Token."""
-    token = args.token
+    """Verify a Vouch Credential."""
     public_key = args.key or os.environ.get("VOUCH_PUBLIC_KEY")
 
     try:
+        try:
+            credential = json.loads(args.token)
+        except json.JSONDecodeError as e:
+            print(f"Error: credential is not valid JSON: {e}", file=sys.stderr)
+            return 1
+
         if public_key:
-            valid, passport = Verifier.verify(token, public_key_jwk=public_key)
+            valid, passport = Verifier.verify(credential, public_key=public_key)
         else:
-            # Verify without signature check (structure only)
-            valid, passport = Verifier.verify(token)
-            if valid:
-                print("⚠️  Warning: No public key provided, signature not verified", file=sys.stderr)
+            # Resolve the issuer's key from its DID.
+            valid, passport = Verifier.verify(credential)
 
         if valid and passport:
             if args.json:
@@ -273,17 +283,17 @@ def cmd_verify(args: argparse.Namespace) -> int:
                     "valid": True,
                     "sub": passport.sub,
                     "iss": passport.iss,
-                    "iat": passport.iat,
-                    "exp": passport.exp,
-                    "jti": passport.jti,
-                    "payload": passport.payload,
+                    "valid_from": passport.valid_from,
+                    "valid_until": passport.valid_until,
+                    "credential_id": passport.credential_id,
+                    "intent": passport.intent,
                 }
                 print(json.dumps(result, indent=2))
             else:
                 print("✅ VALID")
                 print(f"   Subject: {passport.sub}")
                 print(f"   Issuer:  {passport.iss}")
-                print(f"   Payload: {json.dumps(passport.payload)}")
+                print(f"   Intent:  {json.dumps(passport.intent)}")
             return 0
         else:
             if args.json:
@@ -293,7 +303,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
             return 1
 
     except Exception as e:
-        print(f"Error verifying token: {e}", file=sys.stderr)
+        print(f"Error verifying credential: {e}", file=sys.stderr)
         return 1
 
 

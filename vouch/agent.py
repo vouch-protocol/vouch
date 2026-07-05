@@ -232,9 +232,9 @@ class Agent:
         parent_credential: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Sign an intent as a Vouch Credential. Same return as
-        :meth:`Signer.sign_credential`.
+        :meth:`Signer.sign`.
         """
-        return self._signer.sign_credential(
+        return self._signer.sign(
             intent,
             action=action,
             target=target,
@@ -263,7 +263,7 @@ class Agent:
         intent: Dict[str, Any] = {"action": action, "target": target, "resource": resource}
         if to:
             intent["delegatee"] = to
-        return self._signer.sign_credential(
+        return self._signer.sign(
             intent,
             valid_seconds=valid_seconds,
             reputation_score=reputation_score,
@@ -287,7 +287,7 @@ class Agent:
         always overrides and forces offline verification.
         """
         if public_key is None and _issuer_of(credential) == self.did:
-            return Verifier.verify_credential(credential, public_key=self.public_key_jwk)
+            return Verifier.verify(credential, public_key=self.public_key_jwk)
         return verify(
             credential,
             public_key=public_key,

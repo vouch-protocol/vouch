@@ -141,9 +141,7 @@ class TestRendezvousChannel:
         assert await channel.reachable(addr) is True
 
         signer = Signer(private_key=kp.private_key_jwk, did="did:web:sender.example.com")
-        cred = signer.sign_credential(
-            intent={"action": "ping", "target": "t", "resource": "https://x/t"}
-        )
+        cred = signer.sign(intent={"action": "ping", "target": "t", "resource": "https://x/t"})
         env = build_envelope(from_did="did:web:sender.example.com", to_did=did, payload=cred)
         reply = await channel.exchange(addr, json.dumps(env.to_wire()).encode("utf-8"))
 

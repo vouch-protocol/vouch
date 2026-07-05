@@ -4,7 +4,7 @@ Shared signing helper for robotics credentials.
 Robotics credentials are custom credential types assembled by hand (a robot
 identity, a kill switch, a passport), so they are signed with the low-level
 `data_integrity.build_proof` primitive, the same path the rest of the SDK uses
-for non-intent credentials, rather than the intent-based `Signer.sign_credential`.
+for non-intent credentials, rather than the intent-based `Signer.sign`.
 """
 
 from __future__ import annotations

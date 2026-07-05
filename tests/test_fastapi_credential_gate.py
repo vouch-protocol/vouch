@@ -3,7 +3,7 @@
 Mirrors the fastapi-test convention used by test_validator_server.py: skip when
 fastapi is not installed (e.g. on CI, which installs only the `dev` extra), run
 otherwise. The test asserts HTTP behavior only; all verification logic lives in
-Verifier.verify_credential.
+Verifier.verify.
 """
 
 import importlib.util
@@ -28,9 +28,9 @@ def _load_example():
     return module
 
 
-def _sign_credential(signer: Signer, **kwargs) -> str:
+def _sign(signer: Signer, **kwargs) -> str:
     """Mint a signed Vouch Credential and return it as the header JSON string."""
-    cred = signer.sign_credential(
+    cred = signer.sign(
         intent={
             "action": "read",
             "target": "inbox",
@@ -66,7 +66,7 @@ def client(identity, monkeypatch):
 def test_signed_request_passes(client, signer, identity):
     resp = client.post(
         "/api/resource",
-        headers={"Vouch-Credential": _sign_credential(signer)},
+        headers={"Vouch-Credential": _sign(signer)},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -91,7 +91,7 @@ def test_wrong_issuer_key_returns_401(client):
     other_signer = Signer(private_key=other.private_key_jwk, did=other.did)
     resp = client.post(
         "/api/resource",
-        headers={"Vouch-Credential": _sign_credential(other_signer)},
+        headers={"Vouch-Credential": _sign(other_signer)},
     )
     assert resp.status_code == 401
 
@@ -101,6 +101,6 @@ def test_expired_credential_returns_401(client, signer):
     past = datetime.now(timezone.utc) - timedelta(hours=1)
     resp = client.post(
         "/api/resource",
-        headers={"Vouch-Credential": _sign_credential(signer, valid_from=past, valid_seconds=60)},
+        headers={"Vouch-Credential": _sign(signer, valid_from=past, valid_seconds=60)},
     )
     assert resp.status_code == 401

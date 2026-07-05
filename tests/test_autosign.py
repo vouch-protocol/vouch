@@ -37,7 +37,7 @@ def pubkey(keypair):
 
 
 def _verify(cred, pubkey):
-    ok, passport = Verifier.verify_credential(cred, pubkey)
+    ok, passport = Verifier.verify(cred, pubkey)
     return ok, passport
 
 
@@ -276,7 +276,7 @@ class TestVerifyOneLiner:
         import vouch
 
         signer = Signer(private_key=keypair.private_key_jwk, did=keypair.did)
-        cred = signer.sign_credential({"action": "a", "target": "t", "resource": "r"})
+        cred = signer.sign({"action": "a", "target": "t", "resource": "r"})
 
         ok, passport = vouch.verify(cred, public_key=pubkey)
         assert ok
@@ -303,7 +303,7 @@ class TestVerifyOneLiner:
         import vouch
 
         signer = Signer(private_key=keypair.private_key_jwk, did=keypair.did)
-        cred = signer.sign_credential({"action": "a", "target": "t", "resource": "r"})
+        cred = signer.sign({"action": "a", "target": "t", "resource": "r"})
         tampered = copy.deepcopy(cred)
         tampered["credentialSubject"]["intent"]["action"] = "STEAL"
 

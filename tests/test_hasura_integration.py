@@ -2,10 +2,10 @@
 Tests for Vouch Hasura Integration.
 """
 
-import pytest
 import json
-import time
-from unittest.mock import Mock, MagicMock
+
+import pytest
+from unittest.mock import MagicMock
 
 from vouch import Signer
 from vouch.integrations.hasura.webhook import HasuraAuthWebhook, RoleMappingConfig
@@ -39,78 +39,70 @@ def webhook(test_keys):
     )
 
 
+def _headers(signer, action, *, resource=None, extra=None, header="Vouch-Credential", **sign_kw):
+    """Sign a credential for `action` and wrap it as a request header."""
+    intent = {"action": action, "target": "hasura", "resource": resource or action}
+    if extra:
+        intent.update(extra)
+    credential = signer.sign(intent=intent, **sign_kw)
+    return {header: json.dumps(credential)}
+
+
 class TestHasuraAuthWebhook:
     """Test cases for HasuraAuthWebhook."""
 
-    def test_missing_token_returns_401(self, webhook):
-        """Missing Vouch-Token should fail."""
+    def test_missing_credential_returns_401(self, webhook):
+        """Missing credential should fail."""
         success, result = webhook.authenticate({})
         assert success is False
-        assert "Missing Vouch-Token" in result["error"]
+        assert "Missing Vouch-Credential" in result["error"]
 
-    def test_valid_token_returns_session_vars(self, webhook, signer):
-        """Valid token should return session variables."""
-        token = signer.sign({"action": "read_users"})
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+    def test_valid_credential_returns_session_vars(self, webhook, signer):
+        """Valid credential should return session variables."""
+        success, result = webhook.authenticate(_headers(signer, "read_users"))
 
         assert success is True
         assert "X-Hasura-Role" in result
-        assert result["X-Hasura-User-Id"] == signer.get_did()
+        assert result["X-Hasura-User-Id"] == signer.did
 
     def test_authorization_header_format(self, webhook, signer):
-        """Authorization: Vouch <token> format should work."""
-        token = signer.sign({"action": "read_users"})
-        headers = {"Authorization": f"Vouch {token}"}
+        """Authorization: Vouch <credential> format should work."""
+        headers = _headers(signer, "read_users")
+        auth = {"Authorization": f"Vouch {headers['Vouch-Credential']}"}
 
-        success, result = webhook.authenticate(headers)
+        success, result = webhook.authenticate(auth)
 
         assert success is True
 
-    def test_expired_token_fails(self, webhook, signer):
-        """Expired token should fail verification."""
-        token = signer.sign({"action": "read"}, expiry_seconds=-60)  # Already expired
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+    def test_expired_credential_fails(self, webhook, signer):
+        """Expired credential should fail verification."""
+        success, result = webhook.authenticate(_headers(signer, "read", valid_seconds=-60))
 
         assert success is False
 
     def test_invalid_signature_fails(self, webhook):
-        """Token with invalid signature should fail."""
-        headers = {"Vouch-Token": "eyJ.invalid.token"}
-
-        success, result = webhook.authenticate(headers)
+        """A malformed credential should fail."""
+        success, result = webhook.authenticate({"Vouch-Credential": "eyJ.invalid.token"})
 
         assert success is False
 
     def test_reputation_score_in_session_vars(self, webhook, signer):
         """Reputation score should be included in session vars."""
-        token = signer.sign({"action": "read"}, reputation_score=85)
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+        success, result = webhook.authenticate(_headers(signer, "read", reputation_score=85))
 
         assert success is True
         assert result.get("X-Hasura-Vouch-Reputation") == "85"
 
     def test_high_reputation_gets_admin_role(self, webhook, signer):
         """High reputation should get agent_admin role."""
-        token = signer.sign({"action": "admin_task"}, reputation_score=90)
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+        success, result = webhook.authenticate(_headers(signer, "admin_task", reputation_score=90))
 
         assert success is True
         assert result["X-Hasura-Role"] == "agent_admin"
 
     def test_low_reputation_gets_reader_role(self, webhook, signer):
         """Low reputation should get agent_reader role."""
-        token = signer.sign({"action": "read"}, reputation_score=35)
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+        success, result = webhook.authenticate(_headers(signer, "read", reputation_score=35))
 
         assert success is True
         assert result["X-Hasura-Role"] == "agent_reader"
@@ -122,23 +114,20 @@ class TestHasuraAuthWebhook:
         webhook = HasuraAuthWebhook(
             trusted_dids={test_keys["did"]: test_keys["public"]},
             role_config=config,
+            allow_did_resolution=False,
         )
 
         signer = Signer(private_key=test_keys["private"], did=test_keys["did"])
-        token = signer.sign({"action": "test"})
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+        success, result = webhook.authenticate(_headers(signer, "test"))
 
         assert success is True
         assert result["X-Hasura-Role"] == "special_agent"
 
     def test_intent_hash_included(self, webhook, signer):
         """Intent hash should be included in session vars."""
-        token = signer.sign({"action": "query_users", "table": "users"})
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+        success, result = webhook.authenticate(
+            _headers(signer, "query_users", extra={"table": "users"})
+        )
 
         assert success is True
         assert "X-Hasura-Vouch-Intent" in result
@@ -146,43 +135,38 @@ class TestHasuraAuthWebhook:
 
     def test_revocation_check(self, test_keys):
         """Revoked DIDs should be rejected."""
-        # Mock Redis that says DID is revoked
         mock_redis = MagicMock()
         mock_redis.get.return_value = "1"
 
         webhook = HasuraAuthWebhook(
             trusted_dids={test_keys["did"]: test_keys["public"]},
             revocation_store=mock_redis,
+            allow_did_resolution=False,
         )
 
         signer = Signer(private_key=test_keys["private"], did=test_keys["did"])
-        token = signer.sign({"action": "test"})
-        headers = {"Vouch-Token": token}
-
-        success, result = webhook.authenticate(headers)
+        success, result = webhook.authenticate(_headers(signer, "test"))
 
         assert success is False
         assert "revoked" in result["error"].lower()
 
     def test_replay_prevention(self, test_keys):
-        """Same token used twice should be rejected."""
+        """Same credential used twice should be rejected."""
         mock_redis = MagicMock()
-        mock_redis.exists.side_effect = [False, True]  # First call: not used, second: used
+        mock_redis.exists.side_effect = [False, True]  # First: not used, second: used
 
         webhook = HasuraAuthWebhook(
             trusted_dids={test_keys["did"]: test_keys["public"]},
             nonce_store=mock_redis,
+            allow_did_resolution=False,
         )
 
         signer = Signer(private_key=test_keys["private"], did=test_keys["did"])
-        token = signer.sign({"action": "test"})
-        headers = {"Vouch-Token": token}
+        headers = _headers(signer, "test")
 
-        # First request should succeed
         success1, _ = webhook.authenticate(headers)
         assert success1 is True
 
-        # Second request (replay) should fail
         success2, result2 = webhook.authenticate(headers)
         assert success2 is False
         assert "replay" in result2["error"].lower()
