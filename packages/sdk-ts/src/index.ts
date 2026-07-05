@@ -383,6 +383,18 @@ export {
 } from './robotics/fusion';
 export type { BuildFusedAttestationOptions } from './robotics/fusion';
 
+// Robot wear and degradation attestation: a signed, hash-linked wear history and
+// a physical scope narrowed for the attested wear level, byte-identical with the
+// Python module.
+export {
+  WEAR_ATTESTATION_TYPE,
+  buildWearAttestation,
+  verifyWearAttestation,
+  verifyWearChain,
+  attenuateForWear,
+} from './robotics/wear';
+export type { BuildWearAttestationOptions } from './robotics/wear';
+
 // Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,

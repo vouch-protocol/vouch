@@ -34,6 +34,8 @@ from vouch.robotics import (
     build_key_rotation,
     build_ownership_transfer,
     build_status_list_entry,
+    build_wear_attestation,
+    attenuate_for_wear,
     check_conformance,
     config_hash,
     fusion_inputs_digest,
@@ -216,6 +218,25 @@ def main():
         captured_at=VALID_FROM,
     )
 
+    # Wear and degradation: a two-link wear history signed by the robot that other
+    # languages verify, and a fixed physical scope narrowed for a wear level of 0.25
+    # (a 0.75 factor, exact in binary floating point) that they reproduce.
+    wear_a = build_wear_attestation(
+        signer, robot_did=ROBOT_DID, wear_level=0.1,
+        metrics={"actuatorWear": 0.1, "cycleCount": 40000}, valid_from=VALID_FROM,
+    )
+    wear_b = build_wear_attestation(
+        signer, robot_did=ROBOT_DID, wear_level=0.3,
+        metrics={"actuatorWear": 0.3, "cycleCount": 120000},
+        prev_proof=wear_a["proof"]["proofValue"], valid_from=VALID_FROM,
+    )
+    wear_input_scope = {
+        "maxForceN": 80.0, "maxSpeedMps": 1.5, "maxSpeedNearHumansMps": 0.25,
+        "allowedZones": ["cell-3"], "shiftWindows": [{"start": "08:00", "end": "18:00"}],
+    }
+    wear_attenuation_level = 0.25
+    expected_attenuated_scope = attenuate_for_wear(wear_input_scope, wear_attenuation_level)
+
     # Conformance: a fixed credential set (the checker reads structure and fields,
     # not proofs, so these are plain credentials) and the deterministic report and
     # digest other languages reproduce.
@@ -277,11 +298,14 @@ def main():
             "(FusedPerceptionAttestation) binding a fused world model to its input "
             "frame hashes and a fusion method, with the input digest and the "
             "fused-output hash reproduced deterministically and the attestation "
-            "verified under the robot key. "
+            "verified under the robot key, and a robot wear history "
+            "(RobotWearAttestation links signed by the robot, each linking to the "
+            "previous one by its proof) that other languages verify, with a physical "
+            "capability scope narrowed for a wear level that they reproduce. "
             "Credential proof values are not pinned because the proof carries a "
             "wall-clock created timestamp."
         ),
-        "version": "1.10",
+        "version": "1.11",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -329,6 +353,10 @@ def main():
         "expected_fusion_inputs_digest": fusion_inputs_digest(fused_input_frame_hashes),
         "expected_fused_output_hash": hash_fused_output(fused_output_bytes),
         "fused_perception_attestation": fused_attestation,
+        "wear_chain": [wear_a, wear_b],
+        "wear_input_scope": wear_input_scope,
+        "wear_attenuation_level": wear_attenuation_level,
+        "expected_attenuated_scope": expected_attenuated_scope,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:

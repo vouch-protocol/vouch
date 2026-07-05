@@ -778,6 +778,29 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: WEAR AND DEGRADATION
+  // =====================================================================
+  {
+    id: 'robotics-wear',
+    audience: 'Robotics: wear',
+    title: 'Wear and degradation',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot wears out over its life. Can it prove its own degradation?',
+        a: `Yes. \`build_wear_attestation\` signs a \`RobotWearAttestation\` carrying a normalized wear level (0 for as-new, 1 for fully worn) and optional detailed metrics like actuator wear, calibration drift, and cycle count, bound to the robot's identity. Linking each attestation to the previous one by its proof forms a hash-linked history \`verify_wear_chain\` walks, so the way a robot degraded over its life is tamper-evident.`,
+        helpLinks: [{ label: 'Wear and degradation guide', href: '/help/#robotics-wear' }],
+        meta: 'Shipped - vouch.robotics.wear',
+      },
+      {
+        q: 'Can a worn robot automatically operate inside tighter limits?',
+        a: `Yes. \`attenuate_for_wear\` derives a physical capability scope whose force and speed caps are scaled down by the wear level, and the result is a valid attenuation of the original scope, so the same attenuation check the rest of Vouch uses accepts it. A robot at 25 percent wear runs on a scope with three-quarters of its original caps, verifiably narrower than the limit it shipped with.`,
+        meta: 'Shipped - vouch.robotics.wear',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

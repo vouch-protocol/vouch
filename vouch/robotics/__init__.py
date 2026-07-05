@@ -23,6 +23,7 @@ robots and embodied agents:
   - custody: physical custody handoff chain for a task or object across actors.
   - access: bounded, revocable robot access to physical infrastructure resources.
   - fusion: signed provenance binding a fused world model to its input frames.
+  - wear: signed wear and degradation attestation with capability auto-attenuation.
 """
 
 from .capability import (
@@ -162,6 +163,13 @@ from .fusion import (
     verify_fused_attestation,
     verify_fusion_inputs,
 )
+from .wear import (
+    WEAR_ATTESTATION_TYPE,
+    attenuate_for_wear,
+    build_wear_attestation,
+    verify_wear_attestation,
+    verify_wear_chain,
+)
 
 __all__ = [
     # identity
@@ -273,6 +281,12 @@ __all__ = [
     "build_fused_attestation",
     "verify_fused_attestation",
     "verify_fusion_inputs",
+    # wear and degradation (self-attested degradation + capability auto-attenuation)
+    "WEAR_ATTESTATION_TYPE",
+    "build_wear_attestation",
+    "verify_wear_attestation",
+    "verify_wear_chain",
+    "attenuate_for_wear",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

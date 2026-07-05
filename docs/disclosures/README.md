@@ -98,6 +98,18 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-088](./PAD-088-auditable-access-use-record.md) | Auditable, Attributable Record of a Robot's Use of Physical Infrastructure | 2026-07-05 | Published |
 | [PAD-089](./PAD-089-fused-sensor-provenance-attestation.md) | Signed Provenance Binding a Robot's Fused World Model to Its Input Frames | 2026-07-05 | Published |
 | [PAD-090](./PAD-090-fused-input-provenance-completeness.md) | Detecting a Dropped or Substituted Input in a Robot's Fused Perception Output | 2026-07-05 | Published |
+| [PAD-091](./PAD-091-robot-wear-degradation-attestation.md) | Self-Attested Robot Wear and Degradation Bound to Identity | 2026-07-05 | Published |
+| [PAD-092](./PAD-092-wear-driven-capability-attenuation.md) | Wear-Driven Automatic Attenuation of a Robot's Physical Capability Scope | 2026-07-05 | Published |
+
+
+## July 5, 2026: Robot Wear and Degradation (PAD-091, PAD-092)
+
+Two disclosures cover a robot accounting for its own wear. PAD-091 has the robot sign its
+own degradation as a normalized wear level bound to its identity and hash-linked over time,
+so its condition history is tamper-evident and portable. PAD-092 derives a physical
+capability scope whose force and speed caps are scaled down by the attested wear level, and
+the result is a valid attenuation of the original, so a worn robot operates inside a
+tighter, verifiable envelope than the limit it shipped with.
 
 
 ## July 5, 2026: Fused-Sensor Provenance (PAD-089, PAD-090)

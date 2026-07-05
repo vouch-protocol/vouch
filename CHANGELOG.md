@@ -60,6 +60,10 @@ The Python reference adds three robotics capabilities on the same
   robot's fused world model to the ordered set of input frame hashes and the fusion
   method that produced it, with an input digest that makes the input set
   tamper-evident and a check of each input against the robot's perception log.
+- `vouch.robotics.wear`: wear and degradation attestation, a robot-signed wear level
+  bound to its identity and hash-linked over time, with a deterministic rule that
+  narrows its physical capability scope as it degrades, so the derated scope stays a
+  valid attenuation of the original.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by

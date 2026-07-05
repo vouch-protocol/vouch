@@ -1029,3 +1029,27 @@ pub fn robotics_verify_fused_attestation(
 pub fn robotics_verify_fusion_inputs(params_json: &str) -> Result<String, JsError> {
     rjson::verify_fusion_inputs(params_json).map_err(jerr)
 }
+
+// Wear and degradation attestation (Phase 5.19).
+#[wasm_bindgen(js_name = roboticsBuildWearAttestation)]
+pub fn robotics_build_wear_attestation(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_wear_attestation(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyWearAttestation)]
+pub fn robotics_verify_wear_attestation(
+    credential_json: &str,
+    public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_wear_attestation(credential_json, &b64d(public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyWearChain)]
+pub fn robotics_verify_wear_chain(params_json: &str, public_b64: &str) -> Result<String, JsError> {
+    rjson::verify_wear_chain(params_json, &b64d(public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsAttenuateForWear)]
+pub fn robotics_attenuate_for_wear(params_json: &str) -> Result<String, JsError> {
+    rjson::attenuate_for_wear(params_json).map_err(jerr)
+}

@@ -211,6 +211,19 @@ Never share user data with external sites.
   frame the robot actually recorded and a manipulated fusion result or a dropped or
   substituted input is detectable. Open layer only; hardware sensor attestation
   and managed sensor-fusion orchestration are commercial. See `robotics.md`.
+- "Can a robot narrow its own authority as it wears out, instead of keeping a
+  static factory limit?" -> Wear and degradation attestation
+  (`vouch.robotics.wear`): a robot signs its own degradation as a normalized wear
+  level (0 as-new to 1 fully worn) with optional metrics (actuator wear,
+  calibration drift, cycle count, fault rate), bound to its identity and hash-linked
+  to the previous attestation so the wear history is tamper-evident
+  (`build_wear_attestation`, `verify_wear_attestation`, `verify_wear_chain`).
+  `attenuate_for_wear` derives a physical capability scope whose numeric caps are
+  scaled down by the wear level, and because it only lowers caps the result is a
+  valid attenuation of the original, so a worn robot operates inside a tighter,
+  verifiable envelope instead of a static factory limit. Open layer only;
+  firmware-level enforcement of the narrowed envelope and managed
+  predictive-maintenance modeling are commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface

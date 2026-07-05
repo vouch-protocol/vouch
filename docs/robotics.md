@@ -400,6 +400,30 @@ inputs_ok, missing = verify_fusion_inputs(att, perception_log.entries())
 The open layer is software-signed provenance reusing the perception frame hashes;
 hardware sensor attestation and managed sensor-fusion orchestration are commercial.
 
-Sections 5.7 to 5.19 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.20 Wear and degradation (`vouch.robotics.wear`)
+
+A robot does not stay as capable as it left the factory: actuators wear, sensors
+drift, and error rates creep up. `build_wear_attestation` signs a
+`RobotWearAttestation` carrying a normalized wear level (0 for as-new, 1 for fully
+worn) and optional metrics, bound to the robot's identity. Each attestation links to
+the previous one by its proof, so `verify_wear_chain` walks a tamper-evident wear
+history. `attenuate_for_wear` derives a physical scope whose numeric caps are scaled
+by (1 - wear level), and the result is a valid attenuation of the original scope, so
+the same attenuation check the rest of Vouch uses carries the derating.
+
+```python
+from vouch.robotics import build_wear_attestation, verify_wear_chain, attenuate_for_wear
+
+w1 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.1)
+w2 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.3, prev_proof=w1["proof"]["proofValue"])
+ok, latest = verify_wear_chain([w1, w2], robot_key)
+narrowed = attenuate_for_wear(full_scope, latest["wearLevel"])
+```
+
+The open layer is the signed wear state and the derived narrowed scope credential;
+firmware-level enforcement of the narrowed envelope and managed predictive-maintenance
+modeling are commercial.
+
+Sections 5.7 to 5.20 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.
