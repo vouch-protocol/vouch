@@ -28,5 +28,10 @@
     "login": "Abhi757575",
     "pr": 183,
     "title": "docs: expand development setup with devcontainer and troubleshooting"
+  },
+  {
+    "login": "ahfoysal",
+    "pr": 283,
+    "title": "Update the examples README index"
   }
 ]
