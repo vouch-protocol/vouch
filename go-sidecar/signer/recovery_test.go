@@ -110,11 +110,11 @@ func TestSplitAndRecoverIdentitySignsIdentically(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New (recovered signer): %v", err)
 	}
-	cred, err := recoveredSigner.SignCredential(SignCredentialOptions{
+	cred, err := recoveredSigner.Sign(SignOptions{
 		Action: "read", Target: "t", Resource: "https://x/y",
 	})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 	ok, err := VerifyDataIntegrityProof(cred, identity.PublicKey)
 	if err != nil {

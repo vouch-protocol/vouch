@@ -26,7 +26,7 @@ type EnrollDeviceOptions struct {
 // EnrollDevice issues a delegation grant from the root signer to a device's
 // DID. The returned grant authorizes DeviceDID to act within the given scope.
 // The device, holding its own key, signs actions with this grant as
-// SignCredentialOptions.ParentCredential, so each action chains back to the
+// SignOptions.ParentCredential, so each action chains back to the
 // root. The root never sees or holds the device's key.
 func EnrollDevice(root *Signer, opts EnrollDeviceOptions) (map[string]any, error) {
 	validSeconds := opts.ValidSeconds
@@ -39,7 +39,7 @@ func EnrollDevice(root *Signer, opts EnrollDeviceOptions) (map[string]any, error
 		"resource":  opts.Resource,
 		"delegatee": opts.DeviceDID,
 	}
-	return root.SignCredential(SignCredentialOptions{
+	return root.Sign(SignOptions{
 		Intent:          intent,
 		ValidSeconds:    validSeconds,
 		ReputationScore: opts.ReputationScore,

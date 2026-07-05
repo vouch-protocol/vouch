@@ -31,12 +31,12 @@ func signedChain(t *testing.T, root, device *Signer, deviceDID string) (map[stri
 	if err != nil {
 		t.Fatalf("EnrollDevice: %v", err)
 	}
-	action, err := device.SignCredential(SignCredentialOptions{
+	action, err := device.Sign(SignOptions{
 		Action: "charge", Target: "api.bank", Resource: "https://api.bank/invoices/42",
 		ParentCredential: grant,
 	})
 	if err != nil {
-		t.Fatalf("SignCredential (device action): %v", err)
+		t.Fatalf("Sign (device action): %v", err)
 	}
 	return grant, action
 }
@@ -91,12 +91,12 @@ func TestWrongDeviceIssuerRejected(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New impostor: %v", err)
 	}
-	action, err := impostorSigner.SignCredential(SignCredentialOptions{
+	action, err := impostorSigner.Sign(SignOptions{
 		Action: "charge", Target: "api.bank", Resource: "https://api.bank/invoices/42",
 		ParentCredential: grant,
 	})
 	if err != nil {
-		t.Fatalf("SignCredential impostor: %v", err)
+		t.Fatalf("Sign impostor: %v", err)
 	}
 
 	result := VerifyDelegatedChain([]map[string]any{grant, action}, VerifyDelegatedChainOptions{
@@ -196,11 +196,11 @@ func TestDidKeyLinkResolvesWithoutTrustMap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnrollDevice: %v", err)
 	}
-	action, err := device.SignCredential(SignCredentialOptions{
+	action, err := device.Sign(SignOptions{
 		Action: "read", Target: "t", Resource: "https://x/y/z", ParentCredential: grant,
 	})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 
 	// Only the root key is supplied; the device link (did:key) resolves offline.

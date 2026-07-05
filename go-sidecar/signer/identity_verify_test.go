@@ -44,11 +44,11 @@ func TestVerifyCredentialWithExplicitKeyAndTimeWindow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	cred, err := s.SignCredential(SignCredentialOptions{
+	cred, err := s.Sign(SignOptions{
 		Action: "read", Target: "t", Resource: "https://x/y",
 	})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 
 	ok, passport, err := VerifyCredential(cred, id.PublicKey, formatISO8601(time.Now()), 30)
@@ -75,11 +75,11 @@ func TestVerifyResolvesDidKeyOffline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	cred, err := s.SignCredential(SignCredentialOptions{
+	cred, err := s.Sign(SignOptions{
 		Action: "write", Target: "t", Resource: "r",
 	})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 
 	ok, passport, err := Verify(cred, nil, 30)
@@ -95,9 +95,9 @@ func TestVerifyRejectsWrongKey(t *testing.T) {
 	a, _ := GenerateIdentity("a.example.com")
 	b, _ := GenerateIdentity("b.example.com")
 	sa, _ := New(Config{DID: a.DID, Ed25519Seed: a.Seed, DefaultExpirySeconds: 300})
-	cred, err := sa.SignCredential(SignCredentialOptions{Action: "read", Target: "t", Resource: "https://x/y"})
+	cred, err := sa.Sign(SignOptions{Action: "read", Target: "t", Resource: "https://x/y"})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 	ok, _, err := VerifyCredential(cred, b.PublicKey, formatISO8601(time.Now()), 30)
 	if err != nil {
