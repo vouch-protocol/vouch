@@ -184,6 +184,47 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ACCOUNTABLE AUTONOMY
+  // =====================================================================
+  {
+    id: 'accountable-autonomy',
+    audience: 'Accountable autonomy',
+    title: 'Bounding and recording what an authorized agent does',
+    items: [
+      {
+        q: 'Identity proves who acted. What stops an authorized agent from doing something harmful?',
+        a: `A misaligned agent can take an action that is inside its authority and still catastrophic. Vouch does not read the agent's mind. It does what institutions have always done with authorized actors: five Python SDK modules make each action state its reason (\`vouch.reasoning\`), slow down the irreversible ones behind a veto (\`vouch.deliberation\`), stay inside an authority that cannot be broadened (\`vouch.caveats\`), come from a decision that is reproducible (\`vouch.provenance\`), and land in a public append-only log (\`vouch.transparency\`). Together they make harm hard to hide even for a misaligned agent.`,
+        helpLinks: [{ label: 'See all four in the browser', href: '/demos/' }],
+        meta: 'Shipped - vouch.reasoning, deliberation, caveats, provenance, transparency',
+      },
+      {
+        q: 'How does an agent prove why it acted, without being able to fake the reason?',
+        a: `\`vouch.reasoning\` (Reasoned Action Proofs) has the agent state its justification before acting, tie each reason to a real artifact by that artifact's hash, and escrow the justification before execution. An auditor can then prove the reasoning was not fabricated (each anchor must resolve and hash-match a real message or delegation), not rewritten after the fact (it must recompute to the committed digest), and committed before the action. It does not make deception impossible; it puts the agent on the record, so a false justification is provable.`,
+        helpLinks: [{ label: 'See it: reasoned action', href: '/demos/#reasoned-action' }],
+      },
+      {
+        q: 'Can I make an agent wait, or let a human veto, before it does something irreversible?',
+        a: `Yes, with \`vouch.deliberation\`. A reversible action runs instantly. An irreversible one (wiring funds, deleting without backup, publishing) must commit and broadcast a signed intent with a challenge window and a set of authorized objectors, wait out the window, and survive any veto before a verifier accepts it. The agent cannot shorten the window (the verifier checks the elapse) and cannot clear its own veto (the veto authority is a separate DID). This gives regulatory human-oversight requirements a machine-checkable hook.`,
+        helpLinks: [{ label: 'See it: the deliberation window', href: '/demos/#deliberation' }],
+      },
+      {
+        q: 'Can a permission carry a live condition that a sub-agent two hops down cannot drop?',
+        a: `Yes, with executable caveats (\`vouch.caveats\`). Beyond narrowing static fields, a delegation link can carry conditions ("only for shipped orders", "under the customer's lifetime spend", "business hours only"). Caveats accumulate down the chain, so a rule the grantor sets binds every descendant, and no holder in between can drop it because the verifier requires the presented chain to root at the grantor. Every verifier must evaluate every accumulated caveat, offline, with no policy server.`,
+        helpLinks: [{ label: 'See it: the delegation envelope', href: '/demos/#caveats' }],
+      },
+      {
+        q: 'Can I prove an agent output came from a specific model and context, not a hallucination?',
+        a: `\`vouch.provenance\` binds an output to a fingerprint of the model weights and a Merkle root over the context it was grounded in, plus the sampler settings. An auditor can re-fetch the sources to reproduce the context root (catching a fabricated or substituted context) and re-run the model on the same seed to byte-compare the output. It does not read the model's mind; it makes the provenance of a decision reproducible and its inputs non-repudiable, and it is the anchor point for zero-knowledge proofs of inference later.`,
+        helpLinks: [{ label: 'See it: the provenance', href: '/demos/#provenance' }],
+      },
+      {
+        q: 'How do I make agent actions publicly auditable so none can be hidden or rewritten?',
+        a: `\`vouch.transparency\` submits consequential actions to an append-only RFC 6962 Merkle log that signs its size and root as a Signed Tree Head. A verifier can demand an inclusion proof that a specific action is in the log, and a monitor can demand a consistency proof that an older tree head is a strict prefix of a newer one. So the log cannot silently omit an action or rewrite history, and comparing tree heads across observers catches a split view. It is the same discipline Certificate Transparency brought to misissuance.`,
+      },
+    ],
+  },
+
+  // =====================================================================
   // CONFORMANCE
   // =====================================================================
   {

@@ -89,6 +89,14 @@ been removed. See `integrations.md`.
   Outcome evidence (`vouch.accountability`): commit the verdict before the
   outcome with `commit_outcome`, settle it later with `attest_outcome`. See
   `outcome-evidence.md`.
+- "How do I bound or record what an already-authorized agent does?" -> The
+  accountable-autonomy runtime: `vouch.reasoning` (state why, cannot fabricate or
+  rewrite), `vouch.deliberation` (irreversible actions wait out a challenge window
+  and can be vetoed), `vouch.caveats` (live conditions that bind every descendant
+  of a delegation and cannot be dropped), `vouch.provenance` (bind an output to the
+  model and context that produced it, reproducible by replay), and
+  `vouch.transparency` (append-only RFC 6962 log with inclusion and consistency
+  proofs). See `accountable-autonomy.md`.
 - "How does agent reputation work, or how do I score an agent?" ->
   Evidence-backed reputation: signed receipts (`vouch.receipts`) aggregated by a
   public deterministic function (`vouch.reputation_aggregate`) over a verified

@@ -258,6 +258,20 @@ attestation = attest_outcome(
 See `reference/outcome-evidence.md`. This is the per-verdict evidence layer
 underneath the reputation engine.
 
+### "How do I bound or record what an already-authorized agent does?"
+
+The accountable-autonomy runtime is five Python SDK modules: `vouch.reasoning`
+(the agent states why before acting and cannot fabricate or rewrite it),
+`vouch.deliberation` (irreversible actions commit an intent, wait out a challenge
+window, and can be vetoed before a verifier accepts them), `vouch.caveats` (live
+conditions on a delegation link that accumulate down the chain and cannot be
+dropped by a descendant), `vouch.provenance` (bind an output to a fingerprint of
+the model weights and a Merkle root over the context, reproducible by replay), and
+`vouch.transparency` (an append-only RFC 6962 log with inclusion and consistency
+proofs so an action cannot be omitted or rewritten). See
+`reference/accountable-autonomy.md`; each has a runnable `examples/*_demo.py` and a
+live section on the interactive demos page.
+
 ### "How do I integrate Vouch with LangChain / CrewAI / MCP?"
 
 Reference implementations under `vouch/integrations/`. See

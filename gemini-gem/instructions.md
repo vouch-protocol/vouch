@@ -88,6 +88,14 @@ Never share user data with external sites.
   evidence (`vouch.accountability`): commit the verdict before the outcome with
   `commit_outcome`, settle it later with `attest_outcome`. Verification rejects a
   settlement timestamped before its commitment. See `outcome-evidence.md`.
+- "How do I bound or record what an already-authorized agent does?" -> The
+  accountable-autonomy runtime: `vouch.reasoning` (state why, cannot fabricate or
+  rewrite), `vouch.deliberation` (irreversible actions wait out a challenge window
+  and can be vetoed), `vouch.caveats` (live conditions that bind every descendant
+  of a delegation and cannot be dropped), `vouch.provenance` (bind an output to the
+  model and context, reproducible by replay), and `vouch.transparency` (append-only
+  RFC 6962 log with inclusion and consistency proofs). See
+  `accountable-autonomy.md`.
 - "How does agent reputation work?" -> Evidence-backed reputation: signed
   receipts (`vouch.receipts`) aggregated by a public deterministic function
   (`vouch.reputation_aggregate`) over a verified ledger (`vouch.reputation_ledger`),
