@@ -48,13 +48,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - uses: actions/setup-node@v6
         with:
           node-version: '20'
+      - name: Build the WASM core (for the optional FROST peer dependency)
+        working-directory: core/wasm
+        run: bash build-npm.sh
       - name: Install and test
         working-directory: packages/sdk-ts
         run: |
           npm install
+          npm install --no-save ../../core/wasm/pkg
           npm test
 
   wasm:

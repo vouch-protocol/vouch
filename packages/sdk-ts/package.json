@@ -85,10 +85,14 @@
   "jose": "^5.2.0"
  },
  "peerDependencies": {
-  "@noble/post-quantum": "^0.4.0"
+  "@noble/post-quantum": "^0.4.0",
+  "@vouch-protocol-official/core-wasm": "^0.1.0"
  },
  "peerDependenciesMeta": {
   "@noble/post-quantum": {
+   "optional": true
+  },
+  "@vouch-protocol-official/core-wasm": {
    "optional": true
   }
  },

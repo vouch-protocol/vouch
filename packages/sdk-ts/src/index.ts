@@ -59,6 +59,16 @@ export {
   recoverIdentity,
 } from './recovery';
 export type { SplitOptions, RecoveredIdentity } from './recovery';
+export {
+  ThresholdError,
+  ThresholdSigner,
+  groupPublicKeyMultikey,
+  generateKey as thresholdGenerateKey,
+  commit as thresholdCommit,
+  signShare as thresholdSignShare,
+  aggregate as thresholdAggregate,
+} from './threshold';
+export type { KeyShare, GroupPublicKey, GenerateKeyResult, Round1 } from './threshold';
 
 export type {
   Passport,
