@@ -27,6 +27,13 @@ jobs:
         run: |
           go build ./...
           go test ./...
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and test FROST threshold signing (cgo, opt-in)
+        working-directory: go-sidecar
+        run: |
+          bash build-native.sh
+          CGO_ENABLED=1 LD_LIBRARY_PATH="$PWD/lib" go build -tags frost ./...
+          CGO_ENABLED=1 LD_LIBRARY_PATH="$PWD/lib" go test -tags frost ./...
 
   rust:
     name: Rust core and facades
