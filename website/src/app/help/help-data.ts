@@ -1778,6 +1778,62 @@ See [PAD-016](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures
   },
 
   // =====================================================================
+  // ACCOUNTABLE AUTONOMY: bound and record what an authorized agent does
+  // =====================================================================
+  {
+    id: 'accountable-autonomy',
+    title: 'Accountable Autonomy',
+    description:
+      'Five modules that bound and record what an already-authorized agent does: reasoned actions, deliberation windows, executable caveats, inference provenance, and an append-only transparency log.',
+    articles: [
+      {
+        id: 'accountable-autonomy-overview',
+        title: 'The Accountable-Autonomy Runtime',
+        summary:
+          'Make an authorized agent state its reason, wait out a veto, stay inside its envelope, prove its output, and land in a public log.',
+        body: `
+Identity and delegation prove who acted and under what authority. They do not, on their own, bound what an already-authorized agent may do, slow down an irreversible action, prove why the agent acted, or make the record public. Five Python SDK modules add exactly that. Each is an ordinary \`eddsa-jcs-2022\` Verifiable Credential, so it verifies across the language SDKs, and each has a runnable example in the repo and a live section on the [interactive demos](/demos/).
+
+## Reasoned Action Proofs
+
+\`vouch.reasoning\` has the agent state its justification before acting, tie each reason to a real artifact by that artifact's hash, and escrow the justification before execution. An auditor proves the reasoning was not fabricated (\`evidence_unresolved\`, \`evidence_hash_mismatch\`), not rewritten (\`justification_digest_mismatch\`), and committed before the action (\`escrow_after_execution\`).
+
+\`\`\`python
+from vouch.reasoning import build_justification, evidence_anchor, sign_reasoned_action, verify_justification
+
+just = build_justification(intent, [evidence_anchor("user asked", ref="msg:1", evidence=user_message)])
+cred = sign_reasoned_action(agent, intent=intent, justification=just)
+ok, subject = verify_reasoned_action(cred, agent_pub)
+good, reason = verify_justification(just, subject, resolver=lookup)
+\`\`\`
+
+See \`examples/reasoned_action_demo.py\` and the [reasoned-action demo](/demos/#reasoned-action).
+
+## Proof of Deliberation
+
+\`vouch.deliberation\` gates irreversible actions. The agent commits and broadcasts a signed intent with a challenge window and named objectors, waits out the window, and survives any veto before a verifier accepts the execute credential. The agent cannot shorten the window (\`challenge_window_not_elapsed\`) or clear its own veto (\`vetoed\`). Reversible actions run with no delay. See \`examples/deliberation_demo.py\` and the [deliberation demo](/demos/#deliberation).
+
+## Executable Caveats
+
+\`vouch.caveats\` attaches live conditions to a delegation link ("only for shipped orders", "under the lifetime spend", "business hours"). Caveats accumulate down the chain and cannot be dropped by a descendant (the verifier requires the chain to root at the grantor, else \`unrooted_capability\`), and every verifier must evaluate every accumulated caveat. A standard caveat library evaluates identically across languages; a custom module-hash caveat is the escape hatch. See \`examples/caveats_demo.py\` and the [caveats demo](/demos/#caveats).
+
+## Inference Provenance
+
+\`vouch.provenance\` binds an output to a fingerprint of the model weights and a Merkle root over the retrieved context, plus the sampler settings. An auditor re-fetches the sources to reproduce the context root (\`context_root_mismatch\` on a substituted context) and re-runs the model on the same seed to byte-compare the output (\`output_mismatch\`, \`weights_mismatch\`). See \`examples/provenance_demo.py\` and the [provenance demo](/demos/#provenance).
+
+## Action Transparency
+
+\`vouch.transparency\` submits consequential actions to an append-only RFC 6962 Merkle log that signs its size and root as a Signed Tree Head. A verifier demands an inclusion proof that an action is in the log (\`inclusion_failed\`), and a monitor demands a consistency proof that an older tree head is a strict prefix of a newer one (\`consistency_failed\`, \`tree_shrank\`), so the log cannot omit or rewrite an action. See \`examples/transparency_demo.py\`.
+
+## How they compose
+
+None of these verify an agent's mind. Together they make harm hard to hide even for a misaligned agent: it must state a reason on the record, wait out a window a human can veto, stay inside an authority that cannot be broadened, against a decision that is reproducible, in front of a public append-only log.
+`,
+      },
+    ],
+  },
+
+  // =====================================================================
   // AI ASSISTANTS: walkthroughs for each surface
   // =====================================================================
   {

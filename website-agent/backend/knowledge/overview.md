@@ -90,3 +90,16 @@ https://github.com/vouch-protocol/vouch
 
 - Discord: https://discord.gg/mMqx5cG9Y
 - Issues: https://github.com/vouch-protocol/vouch/issues
+
+## Accountable-autonomy runtime
+
+Five modules bound and record what an already-authorized agent does, so harm is
+hard to hide even for a misaligned agent: Reasoned Action Proofs
+(`vouch.reasoning`, the agent states why and cannot fabricate or rewrite it),
+Proof of Deliberation (`vouch.deliberation`, irreversible actions wait out a
+challenge window a human can veto), Executable Caveats (`vouch.caveats`, live
+conditions that bind every descendant of a delegation and cannot be dropped),
+Inference Provenance (`vouch.provenance`, the output is bound to the model and
+context that produced it, and is reproducible), and Action Transparency
+(`vouch.transparency`, an append-only RFC 6962 log so an action cannot be
+omitted or rewritten). See `accountable-autonomy.md`.
