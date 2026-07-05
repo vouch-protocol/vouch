@@ -90,6 +90,19 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-080](./PAD-080-post-quantum-default-robot-credentials.md) | Post-Quantum-by-Default Robot Credentials with Backward-Compatible Dual Verification and Software Migration | 2026-07-04 | Published |
 | [PAD-081](./PAD-081-cross-embodiment-identity-continuity.md) | Cross-Embodiment Identity Continuity Across Robot Bodies via a Chain of Hardware-Re-Bound Embodiment Credentials | 2026-07-04 | Published |
 | [PAD-082](./PAD-082-portable-agent-identity-fork-detection.md) | Fork Detection for a Portable Agent Identity via Embodiment Time-Overlap | 2026-07-04 | Published |
+| [PAD-083](./PAD-083-physical-custody-handoff-chain.md) | Physical Custody Handoff Chain Across Human and Robot Actors | 2026-07-05 | Published |
+| [PAD-084](./PAD-084-custody-condition-localization.md) | Localizing a Physical State Change to a Custody Hop via Handoff Condition Attestation | 2026-07-05 | Published |
+
+
+## July 5, 2026: Physical Custody Handoff (PAD-083, PAD-084)
+
+Two disclosures cover the physical handoff of a task or object across human and robot
+actors. PAD-083 is a custody handoff chain: each handoff credential records a receiving
+actor accepting custody from a releasing actor, signed by the receiver, so a chain
+establishes who held the task and a holder-at-time lookup traces a physical-world
+incident to the exact hop. PAD-084 localizes a physical state change (damage, loss, a
+quantity drop) to a specific hop by attesting a condition at each handoff and finding
+the hop where it changed, naming the holder responsible.
 
 
 ## July 4, 2026: Cross-Embodiment Identity Continuity (PAD-081, PAD-082)

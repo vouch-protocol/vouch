@@ -1,6 +1,6 @@
 {
-  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). It also includes Python-signed credentials other languages VERIFY rather than reproduce: a delegation lease, a set of physical-quorum approvals, the lifecycle credentials (ownership transfer, key rotation, decommission), and a hybrid post-quantum robot identity (RobotIdentityCredential under hybrid-eddsa-mldsa44-jcs-2026). It also pins a regulatory conformance report and digest computed from a fixed credential set against a named profile, and an agent embodiment continuity chain (AgentEmbodimentCredential links signed by one agent key across bodies). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
-  "version": "1.7",
+  "description": "Robotics interop vector. Pins the deterministic byte-level computations so other languages reproduce them: the hardware-root binding (RobotIdentityCredential), the config hash (ModelProvenanceAttestation), the motion digest (liveness), the hash-linked safety ledger and its summary (safety_record), the credentialStatus entry (revocation), and the frame hash plus the hash-linked perception log (perception). It also includes Python-signed credentials other languages VERIFY rather than reproduce: a delegation lease, a set of physical-quorum approvals, the lifecycle credentials (ownership transfer, key rotation, decommission), and a hybrid post-quantum robot identity (RobotIdentityCredential under hybrid-eddsa-mldsa44-jcs-2026). It also pins a regulatory conformance report and digest computed from a fixed credential set against a named profile, and an agent embodiment continuity chain (AgentEmbodimentCredential links signed by one agent key across bodies), and a physical custody handoff chain (CustodyHandoffCredential links across human and robot actors). Credential proof values are not pinned because the proof carries a wall-clock created timestamp.",
+  "version": "1.8",
   "robot_public_key_jwk": {
     "kty": "OKP",
     "crv": "Ed25519",
@@ -38,10 +38,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T02:43:12Z",
+      "created": "2026-07-05T03:09:35Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4AjwtuHzLnb9bJFN5sgQqVPz7yxB8t28JX95hv93Wm7WNV6W8vtroLAPWUjMV28JebGLiuCuqP4342EEMrDSxE2F"
+      "proofValue": "z5wvgEfiB8zqzYtDTSvDTyr8Aew2P4VcBjAzfhQtBHaNDcALqqJ56cgzMCpLjmyUCFD6b99vN8SQBqetU9X82hUJr"
     }
   },
   "config": {
@@ -170,10 +170,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T02:43:12Z",
+      "created": "2026-07-05T03:09:35Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z3x9R6GizuxkUyo4XC9KetuwJXcGM7cBu3VkNf1HqxQnMSRjFgPgJxQVBrVq8ecDyXcTKPSSSNKn97RSgXthUZJUW"
+      "proofValue": "zjK2fkWdswdovwXWNnsnCUKfZm41k96L8LUvTvEY4umXncw5VBnA4Bw55Wh4QC83hwi1Q8kQtSa9USGbTvd3Jpyz"
     }
   },
   "quorum_action_id": "vector-action-1",
@@ -198,10 +198,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T02:43:12Z",
+        "created": "2026-07-05T03:09:35Z",
         "verificationMethod": "did:web:approver-1.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z3WwDrvzNSpigNEb5JwR8tKgVusWYvrEPDtoqz4cTacYPHhJuPkzipugc6Hv4ACFueGVoSkrzR2AKjbiWCDUxwxmF"
+        "proofValue": "z4s6XVfMxB89wbEtAnArR9CcGBD1Az5XxYwpHtT6Mib2yWYbNDcVwqMgeNxLxYWdULrDwWjoqgaCxLgaVf6nNM2h3"
       }
     },
     {
@@ -224,10 +224,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T02:43:12Z",
+        "created": "2026-07-05T03:09:35Z",
         "verificationMethod": "did:web:approver-2.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z57srqKrB8Tz7aCUZjjH6nCdCFKfY9vZr7QPv7Jv9iPEjx2cWM2xUopkpXpXXU4s9Pa8pRSuJ9ELF5T6svjvVfV6h"
+        "proofValue": "z5aebHgyNdP9vAS931NVESxuHVStorEDCQ73cBHiHTygQT4x4pitpb4TgdonVyKan4j7vTnKLCqhxfbMvoJQGxqK8"
       }
     }
   ],
@@ -262,10 +262,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T02:43:12Z",
+      "created": "2026-07-05T03:09:35Z",
       "verificationMethod": "did:web:owner-a.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z49gAr9r6W77s9NJt3T9vvyPPGs7QxECA711VhTyuwAsaRJeyR2chQZUArfKtKaVCLAmCm2siTqLrNiu6n8bSmgCe"
+      "proofValue": "z2vKWtiBQjdSzx4FNaZM8qEhoRS71bVkSy3ofHcBGEHT5G4AiZNKaogHCFe2QN7gkUc1dMtKxNARzsXKZiLq5Ci9u"
     }
   },
   "ownership_transfer_owner_key": {
@@ -292,10 +292,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T02:43:12Z",
+      "created": "2026-07-05T03:09:35Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4QwrGCCPM1QDscRoFcDgji2VGqHQHtqpfvPsaWyfxVdUi9qfUVgy9oTsYyj3e3erj2dUcX7AN9waRZECsLaCTM5r"
+      "proofValue": "z36hgfqSRCx7V39q4t4oVwucDq4pHYQmcSrghQssmhMKfNX8YcKyf6HQCCFME7vZMTzLbPpFzpRrQediVDcc3D68P"
     }
   },
   "decommission_credential": {
@@ -318,10 +318,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T02:43:12Z",
+      "created": "2026-07-05T03:09:35Z",
       "verificationMethod": "did:web:authority.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z6hCeZhz4MugZE7rHaVJ6hCaQuoBZgbKGj9R6LKVb7iN1NdzujqAMwShBnV2nowFwH4QisuVUeJ6H1mGkThkzKbr"
+      "proofValue": "z5Qt11cnx28R5zsndZGGCsrfwWn4RcRFMk9afdx7NekEtDH8jKh2yBMPsVfSXkymshyGzxcDgxZyTdt63UJRfuARD"
     }
   },
   "decommission_authority_key": {
@@ -457,13 +457,13 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "hybrid-eddsa-mldsa44-jcs-2026",
-      "created": "2026-07-05T02:43:12Z",
+      "created": "2026-07-05T03:09:35Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "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"
+      "proofValue": "z2hwyT4Yn6BhSythBBnxTZGjFM2r61hvRzDRtNvraR6AbCRfEJrwX5XUeYVLBPZmnHETTYH8XV7mhHV3zzR5bZZBArskJsqhsz2v22oMwaxFn7me8LQCsrPRqKE1zVXHSx9mfvKAj4syL6cPkktRf4UbaF9nkgFPY6PjZzu4W8cXRxSC6unfz4ibRzygGJBxs1qB7D2oGaXsamAGry6Eo74FMyFgJBKnqkyjeVnKbSvUykhuEeYWZAhhHXs7uhiSmtfM5UVafhNr31wiPZbs5qDknLGxogeA5zWjtHUWPrAxu6ciC6SsGPnSep9dhdz8Fuggd77tXygrmtq5Ywn5qmComoSs2suej9WyYzegW2ftKsGPrh39aA9PC4dXnsrv8jbEa2a3sNDCit5VUV3SvRdP8Bn6nHwpKrbAFPhAUtc8KcmvnipSLHgmdvHUD3g4gj2mbqLpoUudDLkBcwWBiTg3AkAuxh8Y2QkdMF1gKQcaPjXtWd5zQ1v2GPxFPeqzt3mnZsg63kuN2LvXRzS3NNxe8U3R12UAq2f3n2ygbxJpPVkqj2Qpmhsu3VfQTs2bexaLzdvhCtUr1T8QL2agXtcMAigDHN7HCoUmrKiobrQRYDqky5bGMgEbM8pTWDKwJEJsvGcTsQRTS3foGecS7oFbKhYoXSYmsARrec7oGJzc5ufE7J3U2Jk3w7xXWMjS47M2c7BGpWpabE6i5JVh8Bnb2LJP1GtK5muyZ4qhtPq5cH9pSyU9YT7xRE6Kdv2pMr63C9GWmEs5VRa766v4cJindQhF4EN3V74gBcNpsCUyfYMwmh1G6S9ZLuHjk3XkH9tprtZyNrLvp97Qou4zPS33DQHr3hs23kpCCpEEp2K9ZR3jsge1LdjhtmvDpm6A1hVirVBbuPCs9DboCJqrWL1Vk5XuADjGfWaCqHZVryUoWKv1eHkpN4881Sc9hHLqtmr4f8zv6BfenYyRZA1dPpRJSN8uxD89NxcZduhtpEXABMr6kDphXXDXtKDzfFk7g9cBmToxRy4sbUYF1zhPFM9swG9iNJtHWny6n8NtvsuNEhKpuA9DU7TsqQBCJXc6WbbMrH8XWUNPyDcQU2De5d8xfipFs8TKyYbmT53Yj7avQ1GnQCbbFbsMkPHgjDvDgrC1G42kuixKd54riyRYefZo3QFJheFas3c3G7xUm8bYEkmC6F4N6s1ptyAKaaMnXriwENVPigDwfmcuNWt8snU3PAiGRvn6ij7Dhhxxa3gWgPKU7JvYynPY6ajNWTenJWyiDC8Ncsq1fExrWUU1Cqiu7RcRFibEEg25oCykXyUYpjbtAury1kdtHvCPWxVgwXrsbDx1F5sts9gjzvn12FD9PoxobryiGvRTLxNrC5HiCLJpe2Y3nAubVCWtvo34yy8Ei7Fcw3L1nvvpPeZyqFSAiVFFw9VcQhbbgtZ8ECwoAVi8Qjv4virTkLQziSCtnfHYNXhkEz2sPTEKkQwDzLySS9W8fqR8Lr4cpGpbuoXLxXLrQxRZihkwA44SB3gNicaNS2CxF8uqBsuyELf4rVbU2bWG3XzjtE4jveN7anoR9dtyqhM5ig9kUnYStr8zBFurvvTm6c88cW5dDJciJqEr6YkWzgLq1YVDxzMZDBPBG4RipVCTq2wqT5zaX5AgawukznAzesZYyPDEQnU6eJNKLHpSfX3VzWi6icqATwfHrFHeTTk9vsQMnNh2hBFRos3eLR61z1vhpMcDZqemUYbxb5rX4DgYLdfLFtCPX5FyquATizzRhz3Cov9pokBmNkSVPgtPmNZPhbzDEKvSgiotoW7MGgFxuVdWvDakYC8RG1GvJpxn8ptJZfpg6vpVaujRYS2invjmCKxzkzqHckoGydBW3MnJxG7Uir8o49AEvY6znhdL7W4Czp6waHvMUpGoUoLTwdZ14eiHYyDJ4HGexMXJmXmaS4g9p45E8MTiDVvnnE2iY3fdfqgaZjLM8sdE7kYBfaNg2ayaWjBsA7q2YiLr9sz1qoyQVtnfszXyH5CbVxPnSwASHZNbUwT1cbAjLcH5uThEpKz6HSncFMUrcb4mfjtzuTCKACoXiLxoemvt99xM9rehPuQrvUTofHTj4buAqwXiihzM6z23wyqUZXCi9VeDdWSsvp3EKfndE9sQZJo2HvqKNh2bq27fQtpQ6pVw17E6fyYht8LGyRvgaLzshtkAT97bHvmBvDLd1TpLfsQjnB4s6e43ZQVPEYTbAB3fzxyQu99oE75Y7pWGADsBZonFUkdGNwjjiHRXUQUrRAW34MC348WtkNddzMFKEpf9PMQ6qEUuz7u1LGUrTBkmyN42VWTdFpjNmAthYeHAPwZRQkFJi32QCm9wbtFAm2ChuYbrWTy6Hy5oM4Tz47ybbGg2PeLQ56s2WCCrWVKQeERKMF6AuzYAcZE1SuXas2jBeGfBFQe2QxwECQx4yFuXn4zpva5LRg7QquZ94yL7yhdCbHXT6hYXeWEepB6aYEpDgjzSonwjB626ZqCnknJvTiY5K3fCs3MmF3jWyirkdmkxrtMNn413KHothnM7t69J8MmDqvtSKZ6QL76zv8fUdHW51CJYiQz31zhJ2dWSVcVv4uwDhqZeo9V49boqc2Tu2SJG2RNK32TvaMmejKq6ZSyMVzSBy9Jeavz6W65VfCjts2VmCN7NskvDwDrAWknEefXrV1DkMoaqkGbFDnC7dfzUL9j5m82C6Rfr719aATabcikUTqRtWGmmKRJ83Thxi6c1ASkCmT5nHWDqeEp12YrjYjRPayyJQ8oZqnWTW5meewkDPotsasj484MDz1aDjHP2mRJ6ixcJbFf1Q4Ba3yZsSvLidU8yucagMgrziDQNnG52w4ed1ED1PGKwKBp9oWczzRhMB7iVFVDasxHCfEaXnfYdKUoARni3P2nCEUhApZut3u5VeECf22KYJGh2CYbfgBVsRHkWzhhKuT3HDwHuWS3FW83ZU1H8jX7u66RZfupogXDEaxxdjj6SLfW1t7T56RUym955A7mxm5DF62jRAAte2cqzgQWLrVFzSgdrboSwqFxhjV8UTp4QiyNP9fY43PCn1bLF9VpXAz2hV9dd5juYe3J9HgZTveBvbDveRcRtZBqKSTnedLycchUpcWnQAPJFn7sgVFWPtKVwCVL7qZSNMmsjUhbF2xHtmS9FQAKoxjjJW9x8K4dftMQyHuPKyXYQpo5xCqNFSaWHg2ezHLo89gY27nFQdQFKYfa2MJ4gr5ezdWqo61ctG9xDZ9DawwJLXSZziQc2c1K74XK2WqU3rBuniorMHiWujrJNSqaE4MWPaz3C2p89hJcoJqToTR4d1xgodxBjEFWfNHZivLXznb9H2SKGdDbZthNDxymhuBFTHUHbMv"
     }
   },
-  "robot_mldsa44_public_multikey": "z4dcNQJeb1M3dc8wXYYPqFGmyp3my367gziRPyUhFa2zoEXdjwj5PYg1zLgbDDocVsWF889T5wMqpm1FTFyfP3wvgM4mPhYohw7EVZZvA9NgfbXDat76KgWX6tRFtnQEnWZtQ4RFBV59i3GUAiG5JVCF6p3YZci6qUVRTDyp1PNksB5XppFfWcoCNfK8kWpDtAhj4a3dKLYsqPPPyaUg4gQBqrFXr8T27rkYELWxDtdo7SW1sB8DLsNmzMTTMRA5si1bHt9BQ1E6gV7wfHNhVDwBBwbSvQKKJPCjKQPXHrxiC3zR4xSVbXuTvTTJGR6iJKmmRWauMRg8Pbw94XaorBVrzgkh5y9XVq913aeA3YkrWdkcQgLpy9MDEYCkNs34VLG2S9wWXobKCbgWdyH2gdBpVSzzUURYZegzifFjrZ5nKP6XmCnErVCUwsAgGHcaQLUuq72oG4tJNS9HE1gvcdGoADBkis4n6YZuzEMDy3Lf13A2q9t6NTJoFTDVgDQtDcCETHKxPcMhe3zV4hK4bf9Xpisf2gJtAAcwW2FhiHYGs4SnWpixGYtkhRmtz1b9XgV4bWiveL5zRtdsWSJkUjoQFk36gHtNir45t6nvBW5183kMa3ueW6KD7vLBNrmi84yrCKTuuCMuYR51WKX412KEFEmJSKMNCzxNgnvFMsHyvi46yCYcvf7tKLNxFsiCHWgzpM9ReDjxxpWmEYciLxWgmgStomzDvEXToxYBaVcaSi1eEyFxbMUAF5Meh9d754unodtRVUAe2h4UvX3eXKeToEFAQUguzBojw4VPwV6zsdWxgQPtMqnpzrRV4svFVD9grH2dMh2d3dfiVyt94R1FGxzA7neAr7YHveiPXcmTFidVUqJHbYJe3iGNicP7WvcAXTZaa9uphwQA9ogK4EQwSmpoZTr65PTPCUSa2NyQj4HMe35vJizCz7p9vkDrNXwMuZngc38CxvQ8uuhbxzoFqBVDjBmQNU75ymeiKLAoTZN3hEWQA261sxim6K3DK98fjwhgVj1P6SxY7o4PgbycaRkML4wUpaoReakqNVmbMCqBm1m3wC7yXQMXRz9nsJ8RCRW49NjWrpjsgGF5fSdH21drVqod67GANhqWBwmY1L57nsMtsh987EA9pCNL1V8hYjgd4QneDY7rtyd4qisCV8RxkDNjYCeViACzYTWMkhEefR2k5kFhPjjGs5TVWnMkpp8MuW9KUvS975kEoimNgoSSqeUDiB4pvENz1vJTEK7MQixHKDQUQHwTSbsPFgG4YUWbKttTjvo2brYkEsp6NY84EM4BdaHjt5f62zdDTziURUAy2qRHi1XaG7E75XwB97waVaaSGCPmCfaUNQbirwaasLBbRxkeUCJ6MQUxifzEA6jJKqBiK4Vqpu7dzPaJRy42hFK4GZQ3qs42C19i1VAg9saEHnso8szMPPjXDc42jFoTm21YV8tCPXTF8dJLwzjwtRoUzQx29vLoABazxP8PyBEPFST7vMf7zEKiPjspsSmbgvYTGCBzLftYSmRFBAqfTWnW33DKoQ6LwV8AEE15BCmdtyFi3noHzNrxXn87owenXDqyXvKw55Qtvyh3Uwy8MAzRwvGNxPpABzeW865iHXzqCT4wVX5zGGNmAtgAF5iJwPVhGMfr7yXTu1WrfeBBTvs5MRd8X4xFU34DmtJCRr6wzJ21v3mqyEbdrYZQbVBcCc7YwY7VGqpFxB3KFyTCjXYx6oqPjj2ENNUX457Q2rminHkjfoYobMg9NSGHXNk4vmtiTa6oz5JauXRa",
+  "robot_mldsa44_public_multikey": "z4dcDDr8pEKVnaGiBiQgGDuRS1LVs9xpcfqTj1Hh4138esSrJrvy1UpabtvjL258eADuYye8d4PhKQfABjfDKCzq5H2AbcVmfgQQ5LAsphYBHGdMRenZD8iM2qmQ6rG5nNiFJZSBMCmTGRdndPPUgZ8sxtFZSuTkZUYKTHi1B6hswqs3fuNKQ9yT8stbcvjpeEkmcmGxg2wfFn3Fx5Z4k8Zoit56dSNQZWqnhnHVAessDo7k4tabtL754phHcdqiW1VVGAB9jZVLQXHGGUbAkeuPaDDhvmdSgvUDYioXWV8hgzVMY9ABFiZZ3sY78AhcpjF3JBReEQdf7wkq73VQfC9jp5Koo5J8TjENAUPUMBTYaevw1FPp2Pwi1B7QMssKWBHzh1DuP7J2rPBktxzHKMjB6A688t5JmUH11cYyGMgBWeqpRf4EDnaRJwNHRu7wm3BPvnF9ho3VJpJVqM6Q4YQcxZrr1scZHB5F2L61XJh5VXi2f8HZEFYFB5TcDKvgyibc7xpHEnygDLbmGVJuHhc985NddnXaJx6nm8WVRnLowfHGgcHP7HGBUGi1wo2ZcD3ZWxwavq9JMVd2ojVPECiZV9HGfqz61vk13SSuDz2GRxjbmvttCoVN5Xu5S48TFJ5LNoRFhXQJd7UMxRnz5SAn8JKPXVnqSjExWysHqH6rAN5VN3CnF9GDnD3bmnCVN7J8BG3xN3NFCdiuSLsZdBpARVt3nUySdgeFHacUEWrjPbuq9JaAY82Fz2c13xiv9xqXVEgGz2tpbZRozwGDPgWv48sHjwBfGh8h1v3xqQ3R1kMXHUWUnKi97ZQM4ioRF6Jc2t7SS2AWH5MLuPPBke7jbRgX1G6e8yBAK2s4tQMpUgxGWqKZAZTeB84AV7WGrSSWzVdFXmmD9KgmRMoo23v9KhQRNmnJX6YCtmzo66GrRXHrQisGWh7HC448qVRTuTPm4TtYvw6uryVZbAjuynfNdyyGU1okMd5k2n5cqLQ9QgzShHGdEvXGzGzY8RaHcR2pR1XArgNJNyAM4N1HGyS5LYaBehprKxU1NeAWbCGFydXtzeuwDWiHiT4BHyuy5LVSHzRPwD76TRMQG4Lc4EzX4Nk3AZdFhNGX78fBpBgwJExSVoh8JHFSkTJZizHmQEUMRK5asVJhYorYRoE1xVsfD4CLZ5mXBuYCj3R9Umd8GkJPVy2n1NgH2ukNrbURBbUT99EcxPm9AcaChE1679d5kdj4BbC2TxPTFs3kuyTvNbUCa1ZdDUBLGTyKhoRGUAydd5pvDf1GvLCbfeza5vGG7aVEwuRExf4WmZsA5n7m6KhtM4kfdvCXTBz2sfdWhts8GRa1ZTvCuc9CmEmjecwofR2gkWFnp1rgrKTxMnd8owdmo7Ec9ztFKpuudwF2vY7JcD6enDrJBj7uyrDjg7RdAwtQaQ5hEYv2Mw3bn7nHm5hXYx1Cy2DYy6PXjSwUx3k2qNqAFfN3FUx5wuDxwTJEJ4FscDz227bQTDkSW1CaAHKLWAGCstDvLh6CBAuC1pX7QXtz7zZ4CYRbVugUejfZHWkovZj4WXJF9gQZpgdTXZdU71D3SgwYwSyondFsdQBbhuWE2yuHMA2LWzSpACNQSSkoo28UegBpw1Eu5RtMbbt1HhH8ZuitWij96QKh7qzdxjokmg7QNnPFucCfVesqWdprnJYykZKVFBV6cYrnJt8w2LHbpDbTehTkq7evANmXN2LHCWa3Wzm79xT4BKvVAspTt73RCYeZ63mHofrdDHqeZGjgEuZk8NuMgZ1mc6Yn",
   "embodiment_chain": [
     {
       "@context": [
@@ -485,10 +485,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T02:43:12Z",
+        "created": "2026-07-05T03:09:35Z",
         "verificationMethod": "did:web:agent.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z31VaqDnSS5uAFHU8JLaufjf1153oqWTRnpRV3ksH97DXpXhToVjwispAq6EVmmkZEywQ2FaBhSvjh5uugcS32cTP"
+        "proofValue": "z24tQ6vNwC1FhS1z6T3L5nd5FRQfkCJxuwFComWkPJinj6squewsEk12a2VdP6J5ZK8Nuu1CKtFQebo5rWTrQFpPi"
       }
     },
     {
@@ -511,10 +511,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T02:43:12Z",
+        "created": "2026-07-05T03:09:35Z",
         "verificationMethod": "did:web:agent.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "zjpaHWiWddakr8SxNGdRSCe4wJohwkphT1Ce4JRL184cVtzoLtUjsuqgDpVqFy1b4G9tfJeWs7TiZaxtSaPasbyh"
+        "proofValue": "z2nyNHXaGE3moxTUuWam1omgNMaFqrc4us3C5jW1nwZsq2ARF62u55eD9FyXB6zkmHjmun2gyC31uXx1BiJmWQzdy"
       }
     }
   ],
@@ -522,5 +522,72 @@
     "kty": "OKP",
     "crv": "Ed25519",
     "x": "iodf_x6zhFFXes1a_uQFRWVo3XyJ4JCGOgVXvHr0nxc"
+  },
+  "custody_chain": [
+    {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://vouch-protocol.com/contexts/v1"
+      ],
+      "type": [
+        "VerifiableCredential",
+        "CustodyHandoffCredential"
+      ],
+      "issuer": "did:web:robot-a.example.com",
+      "validFrom": "2026-01-01T00:00:00Z",
+      "credentialSubject": {
+        "id": "tote-42",
+        "fromActor": "did:web:worker-jane.example.com",
+        "toActor": "did:web:robot-a.example.com",
+        "condition": "intact"
+      },
+      "proof": {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "created": "2026-07-05T03:09:35Z",
+        "verificationMethod": "did:web:robot-a.example.com#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z51bPPGfUiBAsbyhPusMHp7uuLe8N8AfRvkDFvkk5pZHma2Qi5eQvmFTzB5u3T6reqk5L8QpsBpK6kpVWCMP4j5Bn"
+      }
+    },
+    {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://vouch-protocol.com/contexts/v1"
+      ],
+      "type": [
+        "VerifiableCredential",
+        "CustodyHandoffCredential"
+      ],
+      "issuer": "did:web:robot-b.example.com",
+      "validFrom": "2026-01-01T00:10:00Z",
+      "credentialSubject": {
+        "id": "tote-42",
+        "fromActor": "did:web:robot-a.example.com",
+        "toActor": "did:web:robot-b.example.com",
+        "condition": "damaged"
+      },
+      "proof": {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "created": "2026-07-05T03:09:35Z",
+        "verificationMethod": "did:web:robot-b.example.com#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "zk5myKwkbaR7K1PSwru4GRRhRwmXccJvYNmMkEnRHzZVZSYTQfSeGMFowHANugLwAy4RQ7wC5S3nBFoa8EcxWh4Y"
+      }
+    }
+  ],
+  "custody_origin_actor": "did:web:worker-jane.example.com",
+  "custody_actor_keys": {
+    "did:web:robot-a.example.com": {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "x": "6kpsY-KcUgq-9VB7Ey7F-ZVHdq6-vnuSQh7qaRRG0iw"
+    },
+    "did:web:robot-b.example.com": {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "x": "E5j2LG0aRXxRumpLXz29L2n8qTIWIY3ImX5Ba9F9k8o"
+    }
   }
 }

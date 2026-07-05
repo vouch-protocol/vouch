@@ -3440,6 +3440,214 @@ pub fn check_no_fork(embodiments: &[Value]) -> Result<(bool, Option<ForkConflict
     Ok((true, None))
 }
 
+// ---------------------------------------------------------------------------
+// Physical custody handoff (Phase 5.16)
+// ---------------------------------------------------------------------------
+//
+// A physical task or object passes across a chain of actors, human and robot: a
+// person picks an item, hands it to a robot, that robot hands it to another
+// robot, which places it. Each handoff is a signed custody transition, so a
+// physical-world event traces to the exact hop and the actor responsible.
+//
+// A custody handoff credential records that a receiving actor accepted custody
+// of a task or object from a releasing actor, signed by the receiver. Linking
+// each handoff to the previous forms a chain a verifier walks to establish who
+// held the task at any time. A condition attested at each handoff lets a state
+// change be localized to the specific hop whose holder was responsible.
+//
+// This is the open layer: signed handoff credentials, chain verification, a
+// holder-at-time helper, and software condition localization. It reuses the core
+// proof path ([`data_integrity`]) rather than re-deriving any cryptography.
+
+pub const CUSTODY_HANDOFF_TYPE: &str = "CustodyHandoffCredential";
+
+/// Parameters for [`build_handoff`]. The signer is the receiver (`to_actor`), the
+/// party taking responsibility. `condition`, when set, attests the state of the
+/// task or object as received (for example a status, a quantity, or a hash of an
+/// inspection), which lets a later state change be localized to a hop.
+/// `from_actor` and `to_actor` may be human or robot DIDs. `valid_until`, when
+/// set, bounds the handoff's active window (the wrapper derives it from a
+/// `valid_seconds` lifetime added to `handoff_at`, keeping the core's clock
+/// caller-supplied).
+#[derive(Debug, Clone)]
+pub struct BuildHandoff {
+    pub task_id: String,
+    pub from_actor: String,
+    pub to_actor: String,
+    pub condition: Option<String>,
+    pub handoff_at: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed custody handoff: the receiving actor `to_actor` accepts custody
+/// of `task_id` from `from_actor`, signed by the receiver. The issuer is the
+/// receiver, so a party attests its own acceptance of custody.
+pub fn build_handoff(receiver_seed: &[u8], params: &BuildHandoff) -> Result<Value> {
+    if params.task_id.is_empty() || params.from_actor.is_empty() || params.to_actor.is_empty() {
+        return Err(CoreError::Json(
+            "task_id, from_actor, and to_actor are required".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.task_id));
+    subject.insert("fromActor".into(), json!(params.from_actor));
+    subject.insert("toActor".into(), json!(params.to_actor));
+    if let Some(condition) = &params.condition {
+        subject.insert("condition".into(), json!(condition));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", CUSTODY_HANDOFF_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.to_actor));
+    cred.insert("validFrom".into(), json!(params.handoff_at));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.to_actor), &params.handoff_at);
+    data_integrity::sign(&Value::Object(cred), receiver_seed, &opts)
+}
+
+/// Verify a custody handoff: the receiver's proof, that the subject carries both a
+/// `fromActor` and a `toActor`, and that the issuer is the receiving actor (a
+/// party attests its own acceptance of custody). Returns the credentialSubject on
+/// success, `None` if invalid.
+pub fn verify_handoff(credential: &Value, receiver_public_key: &[u8]) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, receiver_public_key, CUSTODY_HANDOFF_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let from_actor = subject.get("fromActor").and_then(|v| v.as_str());
+    let to_actor = subject.get("toActor").and_then(|v| v.as_str());
+    match (from_actor, to_actor) {
+        (Some(f), Some(t)) if !f.is_empty() && !t.is_empty() => {
+            if credential.get("issuer").and_then(|v| v.as_str()) != Some(t) {
+                return Ok(None);
+            }
+        }
+        _ => return Ok(None),
+    }
+    Ok(Some(subject))
+}
+
+/// One actor's public key, looked up by actor DID, for [`verify_handoff_chain`].
+#[derive(Debug, Clone)]
+pub struct ActorKey {
+    pub did: String,
+    pub public_key: Vec<u8>,
+}
+
+/// Verify an ordered list of handoff credentials forms a valid custody chain: each
+/// handoff verifies under its receiver's key, every link's `toActor` matches the
+/// next link's `fromActor`, and (when given) the first `fromActor` is
+/// `origin_actor`. `public_keys` maps an actor DID (human or robot) to its key.
+/// Returns `(ok, current_holder)`.
+pub fn verify_handoff_chain(
+    handoffs: &[Value],
+    public_keys: &[ActorKey],
+    origin_actor: Option<&str>,
+) -> Result<(bool, Option<String>)> {
+    let mut expected_from: Option<String> = origin_actor.map(String::from);
+    let mut current_holder: Option<String> = origin_actor.map(String::from);
+    for handoff in handoffs {
+        let receiver = handoff.get("issuer").and_then(|v| v.as_str()).unwrap_or("");
+        let key = match public_keys.iter().find(|k| k.did == receiver) {
+            Some(k) => k,
+            None => return Ok((false, None)),
+        };
+        let subject = match verify_handoff(handoff, &key.public_key)? {
+            Some(s) => s,
+            None => return Ok((false, None)),
+        };
+        if let Some(expected) = &expected_from {
+            if subject.get("fromActor").and_then(|v| v.as_str()) != Some(expected.as_str()) {
+                return Ok((false, None));
+            }
+        }
+        current_holder = subject
+            .get("toActor")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+        expected_from = current_holder.clone();
+    }
+    Ok((true, current_holder))
+}
+
+/// Return the actor holding the task at ISO time `at`: the receiver (`toActor`) of
+/// the most recent handoff whose `validFrom` is at or before `at`. Returns `None`
+/// if no handoff had occurred yet or `at` is unparseable. `handoffs` is assumed in
+/// chain order.
+pub fn holder_at(handoffs: &[Value], at: &str) -> Option<String> {
+    let when = crate::time::iso_to_epoch_seconds(at).ok()?;
+    let mut holder: Option<String> = None;
+    for handoff in handoffs {
+        let start = handoff
+            .get("validFrom")
+            .and_then(|v| v.as_str())
+            .and_then(|s| crate::time::iso_to_epoch_seconds(s).ok());
+        if let Some(start) = start {
+            if start <= when {
+                holder = handoff
+                    .get("credentialSubject")
+                    .and_then(|s| s.get("toActor"))
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
+            }
+        }
+    }
+    holder
+}
+
+/// A condition change localized to the hop responsible for it, surfaced by
+/// [`locate_condition_change`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConditionChange {
+    pub responsible_holder: Option<String>,
+    pub from_condition: String,
+    pub to_condition: String,
+}
+
+/// Find the first hop where the attested condition differs from the previous
+/// handoff. The holder responsible for the change is the actor who held the task
+/// during it (the previous handoff's receiver). Returns the change, or `None` if
+/// the condition never changed. Handoffs without a condition are skipped for the
+/// comparison.
+pub fn locate_condition_change(handoffs: &[Value]) -> Option<ConditionChange> {
+    let mut prev_condition: Option<String> = None;
+    let mut prev_holder: Option<String> = None;
+    for handoff in handoffs {
+        let subject = handoff.get("credentialSubject");
+        let condition = subject
+            .and_then(|s| s.get("condition"))
+            .and_then(|v| v.as_str());
+        let condition = match condition {
+            Some(c) => c,
+            None => continue,
+        };
+        if let Some(prev) = &prev_condition {
+            if condition != prev {
+                return Some(ConditionChange {
+                    responsible_holder: prev_holder,
+                    from_condition: prev.clone(),
+                    to_condition: condition.to_string(),
+                });
+            }
+        }
+        prev_condition = Some(condition.to_string());
+        prev_holder = subject
+            .and_then(|s| s.get("toActor"))
+            .and_then(|v| v.as_str())
+            .map(String::from);
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5544,5 +5752,208 @@ mod tests {
         let conflict = conflict.expect("a fork names the two conflicting bodies");
         assert_eq!(conflict.body_a, body_a);
         assert_eq!(conflict.body_b, body_b);
+    }
+
+    // Custody handoff (Phase 5.16) -----------------------------------------
+
+    fn actor_keys_from_vector(map: &Value) -> Vec<ActorKey> {
+        map.as_object()
+            .expect("custody_actor_keys object")
+            .iter()
+            .map(|(did, jwk)| ActorKey {
+                did: did.clone(),
+                public_key: jwk_pub(jwk),
+            })
+            .collect()
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed custody chain under
+    // the actor keys from the vector, ending on robot-b, and localizes the
+    // condition change to the hop robot-a was responsible for.
+    #[test]
+    fn verifies_python_custody_interop_vector() {
+        let vector = load_vector();
+        let chain: Vec<Value> = vector["custody_chain"]
+            .as_array()
+            .expect("custody_chain array")
+            .clone();
+        let keys = actor_keys_from_vector(&vector["custody_actor_keys"]);
+        let origin = vector["custody_origin_actor"].as_str().unwrap();
+
+        let (ok, current) = verify_handoff_chain(&chain, &keys, Some(origin)).unwrap();
+        assert!(ok, "the Python custody chain must verify in Rust");
+        assert_eq!(
+            current.as_deref(),
+            Some("did:web:robot-b.example.com"),
+            "the chain ends holding at robot-b"
+        );
+
+        let change = locate_condition_change(&chain).expect("the condition changed");
+        assert_eq!(
+            change.responsible_holder.as_deref(),
+            Some("did:web:robot-a.example.com"),
+            "robot-a held the task while its condition changed"
+        );
+        assert_eq!(change.from_condition, "intact");
+        assert_eq!(change.to_condition, "damaged");
+    }
+
+    #[test]
+    fn handoff_roundtrip_and_receiver_rule() {
+        let robot_seed = [71u8; 32];
+        let other_seed = [72u8; 32];
+        let robot = Ed25519KeyPair::from_seed(&robot_seed);
+        let other = Ed25519KeyPair::from_seed(&other_seed);
+        let worker = "did:web:worker-jane.example.com";
+        let robot_a = "did:web:robot-a.example.com";
+
+        let cred = build_handoff(
+            &robot_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: worker.into(),
+                to_actor: robot_a.into(),
+                condition: Some("intact".into()),
+                handoff_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let subject = verify_handoff(&cred, &robot.public_key())
+            .unwrap()
+            .expect("handoff verifies under the receiver key");
+        assert_eq!(subject["fromActor"], json!(worker));
+        assert_eq!(subject["toActor"], json!(robot_a));
+
+        // The issuer must be the receiver: forge a handoff issued by a different
+        // party over the same subject and re-sign it. It must be rejected even with
+        // a valid proof under the signing key, because a party attests its own
+        // acceptance of custody.
+        let forged = {
+            let mut bare = cred.clone();
+            bare.as_object_mut().unwrap().remove("proof");
+            bare["issuer"] = json!("did:web:impostor.example.com");
+            let opts = BuildProofOptions::new(
+                "did:web:impostor.example.com#key-1".to_string(),
+                "2026-01-01T00:00:00Z",
+            );
+            data_integrity::sign(&bare, &other_seed, &opts).unwrap()
+        };
+        assert!(verify_handoff(&forged, &other.public_key())
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn handoff_chain_links_and_rejects() {
+        let a_seed = [73u8; 32];
+        let b_seed = [74u8; 32];
+        let a = Ed25519KeyPair::from_seed(&a_seed);
+        let b = Ed25519KeyPair::from_seed(&b_seed);
+        let worker = "did:web:worker-jane.example.com";
+        let robot_a = "did:web:robot-a.example.com";
+        let robot_b = "did:web:robot-b.example.com";
+
+        let h1 = build_handoff(
+            &a_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: worker.into(),
+                to_actor: robot_a.into(),
+                condition: Some("intact".into()),
+                handoff_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        let h2 = build_handoff(
+            &b_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: robot_a.into(),
+                to_actor: robot_b.into(),
+                condition: Some("damaged".into()),
+                handoff_at: "2026-01-01T00:10:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let keys = vec![
+            ActorKey {
+                did: robot_a.into(),
+                public_key: a.public_key().to_vec(),
+            },
+            ActorKey {
+                did: robot_b.into(),
+                public_key: b.public_key().to_vec(),
+            },
+        ];
+
+        // A clean two-link chain ends holding at robot-b: the first link's
+        // fromActor is the origin worker and the second link re-binds to robot-a.
+        let (ok, current) =
+            verify_handoff_chain(&[h1.clone(), h2.clone()], &keys, Some(worker)).unwrap();
+        assert!(ok);
+        assert_eq!(current.as_deref(), Some(robot_b));
+
+        // Declaring the wrong origin actor breaks the first link.
+        let (bad_origin, _) =
+            verify_handoff_chain(&[h1.clone(), h2.clone()], &keys, Some(robot_b)).unwrap();
+        assert!(!bad_origin);
+
+        // A broken link (second link's fromActor does not match the first's
+        // toActor) fails the chain.
+        let broken = build_handoff(
+            &b_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: "did:web:robot-x.example.com".into(),
+                to_actor: robot_b.into(),
+                condition: Some("damaged".into()),
+                handoff_at: "2026-01-01T00:10:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        let (bad_link, _) =
+            verify_handoff_chain(&[h1.clone(), broken], &keys, Some(worker)).unwrap();
+        assert!(!bad_link);
+
+        // A missing receiver key for a link fails the chain.
+        let partial = vec![ActorKey {
+            did: robot_a.into(),
+            public_key: a.public_key().to_vec(),
+        }];
+        let (no_key, _) =
+            verify_handoff_chain(&[h1.clone(), h2.clone()], &partial, Some(worker)).unwrap();
+        assert!(!no_key);
+
+        // holder_at reports who held the task at a moment: robot-a right after the
+        // first handoff, robot-b right after the second.
+        assert_eq!(
+            holder_at(&[h1.clone(), h2.clone()], "2026-01-01T00:05:00Z").as_deref(),
+            Some(robot_a)
+        );
+        assert_eq!(
+            holder_at(&[h1.clone(), h2.clone()], "2026-01-01T00:15:00Z").as_deref(),
+            Some(robot_b)
+        );
+
+        // A chain whose condition never changes localizes nothing.
+        let steady = build_handoff(
+            &b_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: robot_a.into(),
+                to_actor: robot_b.into(),
+                condition: Some("intact".into()),
+                handoff_at: "2026-01-01T00:10:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        assert!(locate_condition_change(&[h1, steady]).is_none());
     }
 }

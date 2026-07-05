@@ -1066,3 +1066,99 @@ pub fn check_no_fork(params_json: &str) -> Result<String> {
         .unwrap_or(Value::Null);
     Ok(json!({"ok": ok, "conflict": conflict_json}).to_string())
 }
+
+// ---- physical custody handoff ---------------------------------------------
+
+fn actor_keys(v: &Value) -> Result<Vec<r::ActorKey>> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+    let mut keys: Vec<r::ActorKey> = Vec::new();
+    if let Some(obj) = v.as_object() {
+        for (did, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("publicKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::ActorKey {
+                did: did.clone(),
+                public_key,
+            });
+        }
+    }
+    Ok(keys)
+}
+
+pub fn build_handoff(receiver_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildHandoff {
+        task_id: gs(&p, "taskId"),
+        from_actor: gs(&p, "fromActor"),
+        to_actor: gs(&p, "toActor"),
+        condition: gos(&p, "condition"),
+        handoff_at: gs(&p, "handoffAt"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_handoff(receiver_seed, &params)?.to_string())
+}
+
+pub fn verify_handoff(credential_json: &str, receiver_public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_handoff(
+        &parse(credential_json)?,
+        receiver_public_key,
+    )?))
+}
+
+/// Verify a custody chain. `params_json` is `{handoffs: [...], publicKeys: {did:
+/// keyB64url, ...}, originActor?}` where each `publicKeys` value is the receiver's
+/// Ed25519 public key as a base64url-no-pad string. Returns `{ok, currentHolder}`.
+pub fn verify_handoff_chain(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let handoffs: Vec<Value> = p
+        .get("handoffs")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let keys = actor_keys(p.get("publicKeys").unwrap_or(&Value::Null))?;
+    let origin = gos(&p, "originActor");
+    let (ok, current) = r::verify_handoff_chain(&handoffs, &keys, origin.as_deref())?;
+    Ok(json!({"ok": ok, "currentHolder": current}).to_string())
+}
+
+/// Return the actor holding the task at ISO time `at`. `params_json` is
+/// `{handoffs: [...], at}`. Returns `{holder}` where holder is the actor DID or
+/// null.
+pub fn holder_at(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let handoffs: Vec<Value> = p
+        .get("handoffs")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let at = gs(&p, "at");
+    let holder = r::holder_at(&handoffs, &at);
+    Ok(json!({"holder": holder}).to_string())
+}
+
+/// Localize the first attested condition change. `params_json` is `{handoffs:
+/// [...]}`. Returns `{change}` where change, when present, is `{responsibleHolder,
+/// fromCondition, toCondition}`, else null.
+pub fn locate_condition_change(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let handoffs: Vec<Value> = p
+        .get("handoffs")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let change = r::locate_condition_change(&handoffs)
+        .map(|c| {
+            json!({
+                "responsibleHolder": c.responsible_holder,
+                "fromCondition": c.from_condition,
+                "toCondition": c.to_condition,
+            })
+        })
+        .unwrap_or(Value::Null);
+    Ok(json!({"change": change}).to_string())
+}

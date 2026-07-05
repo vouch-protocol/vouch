@@ -706,6 +706,29 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: PHYSICAL CUSTODY HANDOFF
+  // =====================================================================
+  {
+    id: 'robotics-custody',
+    audience: 'Robotics: custody',
+    title: 'Physical custody handoff',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can I trace who held a physical item across humans and robots?',
+        a: `Yes. Each handoff is a \`CustodyHandoffCredential\` signed by the receiver accepting custody of a task or object from a releasing actor, who may be a person or a robot. Linking each handoff (each receiver becomes the next releaser) forms a chain \`verify_handoff_chain\` walks, and \`holder_at\` returns who held the task at a given time, so a physical-world incident traces to the exact hop and actor.`,
+        helpLinks: [{ label: 'Custody handoff guide', href: '/help/#robotics-custody' }],
+        meta: 'Shipped - vouch.robotics.custody',
+      },
+      {
+        q: 'If an item is damaged in transit, can I tell which hop it happened in?',
+        a: `Yes. Each handoff can attest the condition of the item as received. \`locate_condition_change\` finds the first hop where the condition differs from the previous one and names the holder who was responsible while it changed, so damage or loss localizes to a specific actor rather than the whole route.`,
+        meta: 'Shipped - vouch.robotics.custody',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

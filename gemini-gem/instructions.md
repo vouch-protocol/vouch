@@ -170,6 +170,19 @@ Never share user data with external sites.
   bodies at once. It is the inverse of the ownership custody chain: there one body
   passes between owners, here one mind passes between bodies. Open layer only;
   managed key custody and fleet migration are commercial. See `robotics.md`.
+- "How do I trace who physically held a task or object as it passed from a person
+  to a robot to another robot?" -> Physical custody handoff
+  (`vouch.robotics.custody`): each transfer is a `CustodyHandoffCredential` signed
+  by the receiver, the actor taking responsibility, recording that it accepted
+  custody from a releasing actor (`build_handoff`, `verify_handoff`). Linking each
+  handoff so each `toActor` becomes the next `fromActor` forms a chain
+  `verify_handoff_chain` walks to establish who held it at every hop, `holder_at`
+  returns who held it at a given time, and a condition attested at each handoff
+  lets `locate_condition_change` pin damage or loss to the responsible hop. It is
+  the physical counterpart of the ownership custody chain: there who owns a body
+  over its life, here who is holding a task or object right now as it moves. Open
+  layer only; managed logistics custody orchestration and fleet tracking are
+  commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface

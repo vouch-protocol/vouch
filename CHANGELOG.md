@@ -39,6 +39,9 @@ The Python reference adds three robotics capabilities on the same
 - `vouch.robotics.embodiment`: cross-embodiment identity continuity, an embodiment
   credential binding an agent to a body and its hardware root, a continuity chain
   proving one accountable agent persisted across bodies, and a fork check.
+- `vouch.robotics.custody`: a physical custody handoff chain across human and robot
+  actors, a holder-at-time lookup, and condition localization of a state change to
+  the responsible hop.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by

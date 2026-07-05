@@ -325,6 +325,23 @@ export type {
   CheckNoForkConflict,
 } from './robotics/embodiment';
 
+// Physical custody handoff: signed handoff credentials, chain verification, a
+// holder-at-time helper, and software condition localization, byte-identical
+// with the Python module.
+export {
+  CUSTODY_HANDOFF_TYPE,
+  buildHandoff,
+  verifyHandoff,
+  verifyHandoffChain,
+  holderAt,
+  locateConditionChange,
+} from './robotics/custody';
+export type {
+  BuildHandoffOptions,
+  VerifyHandoffChainOptions,
+  ConditionChange,
+} from './robotics/custody';
+
 // Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,

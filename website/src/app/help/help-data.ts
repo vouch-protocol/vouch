@@ -2616,6 +2616,29 @@ no_fork, _ = check_no_fork([a, b])
 Security boundary: the whole chain is signed by one persistent agent key, so a link signed by any other key breaks the continuity, and re-binding to each body's hardware root ties the mind to real hardware at each step. This is the open layer, signed credentials and software verification; managed key custody and fleet migration are commercial.
 `,
       },
+      {
+        id: 'robotics-custody',
+        title: 'Physical custody handoff',
+        summary: 'Trace a task or object as it passes between human and robot actors, and localize damage to the hop responsible.',
+        body: `
+A physical task or object passes across a chain of actors, human and robot: a person picks an item, hands it to a robot, that robot hands it to another robot. This makes each handoff accountable.
+
+The problem it closes: when a shared physical workflow crosses people and machines, an incident (a lost tote, a damaged item, a mis-delivery) has no cryptographic way to point at the exact hop and actor responsible.
+
+How it works: \`build_handoff\` records that a receiving actor accepted custody of a task from a releasing actor, signed by the receiver, so the party taking responsibility signs for it. Each receiver becomes the next releaser, so \`verify_handoff_chain\` walks the chain and \`holder_at\` returns who held the task at a given time. A condition attested at each handoff lets \`locate_condition_change\` name the hop where a physical state change happened.
+
+\`\`\`python
+from vouch.robotics import build_handoff, verify_handoff_chain, holder_at, locate_condition_change
+
+h1 = build_handoff(robot_a, task_id="tote-42", from_actor=picker_did, to_actor=robot_a_did, condition="intact")
+h2 = build_handoff(robot_b, task_id="tote-42", from_actor=robot_a_did, to_actor=robot_b_did, condition="damaged")
+ok, current_holder = verify_handoff_chain([h1, h2], {robot_a_did: a_key, robot_b_did: b_key})
+change = locate_condition_change([h1, h2])   # responsible holder is robot A
+\`\`\`
+
+Security boundary: each handoff is signed by the receiver, so an actor attests its own acceptance of custody, and the chain is only valid when each receiver is the next releaser. This is the open layer of signed credentials and software verification; managed logistics custody orchestration and fleet tracking are commercial.
+`,
+      },
     ],
   },
 ];
