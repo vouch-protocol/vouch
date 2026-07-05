@@ -32,7 +32,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Build the WASM core
         working-directory: core/wasm
-        run: bash build-npm.sh
+        run: bash build-npm.sh 2.0.0
       - name: Publish core-wasm
         working-directory: core/wasm/pkg
         run: |
