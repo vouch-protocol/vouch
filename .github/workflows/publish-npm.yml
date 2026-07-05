@@ -4,7 +4,8 @@
 #   @vouch-protocol-official/api-client  (sdks/clients/typescript)
 #
 # Trigger: push a tag like `npm-v0.1.0`, or run manually (workflow_dispatch).
-# Required repo secret: NPM_TOKEN (npm automation token).
+# Auth: npm Trusted Publishing (OIDC). Configure a trusted publisher for each
+# package on npmjs.com pointing at this repo and workflow. No token needed.
 name: Publish npm
 
 on:
@@ -15,14 +16,17 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
+      - name: Update npm (trusted publishing needs npm >= 11.5.1)
+        run: npm install -g npm@latest
       - uses: dtolnay/rust-toolchain@stable
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
