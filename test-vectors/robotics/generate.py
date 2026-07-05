@@ -27,6 +27,7 @@ from vouch.robotics import (
     build_decommission,
     build_delegation_lease,
     build_embodiment,
+    build_handoff,
     build_key_rotation,
     build_ownership_transfer,
     build_status_list_entry,
@@ -163,6 +164,22 @@ def main():
         embodied_at=datetime(2026, 1, 1, 1, 0, 0, tzinfo=timezone.utc),
     )
 
+    # Custody: a task moves human picker -> robot A -> robot B, each handoff signed
+    # by the receiver. Robot B receives it damaged, so the condition change localizes
+    # to robot A. Other languages verify the chain and the localization.
+    picker_did = "did:web:worker-jane.example.com"
+    robot_a_signer, robot_a_pub = signer_from_seed(bytes([7] * 32), "did:web:robot-a.example.com")
+    robot_b_signer, robot_b_pub = signer_from_seed(bytes([8] * 32), "did:web:robot-b.example.com")
+    handoff_1 = build_handoff(
+        robot_a_signer, task_id="tote-42", from_actor=picker_did,
+        to_actor="did:web:robot-a.example.com", condition="intact", handoff_at=VALID_FROM,
+    )
+    handoff_2 = build_handoff(
+        robot_b_signer, task_id="tote-42", from_actor="did:web:robot-a.example.com",
+        to_actor="did:web:robot-b.example.com", condition="damaged",
+        handoff_at=datetime(2026, 1, 1, 0, 10, 0, tzinfo=timezone.utc),
+    )
+
     # Conformance: a fixed credential set (the checker reads structure and fields,
     # not proofs, so these are plain credentials) and the deterministic report and
     # digest other languages reproduce.
@@ -215,11 +232,12 @@ def main():
             "pins a regulatory conformance report and digest computed from a fixed "
             "credential set against a named profile, and an agent embodiment "
             "continuity chain (AgentEmbodimentCredential links signed by one agent "
-            "key across bodies). "
+            "key across bodies), and a physical custody handoff chain "
+            "(CustodyHandoffCredential links across human and robot actors). "
             "Credential proof values are not pinned because the proof carries a "
             "wall-clock created timestamp."
         ),
-        "version": "1.7",
+        "version": "1.8",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -253,6 +271,12 @@ def main():
         "robot_mldsa44_public_multikey": robot_mldsa44_public_multikey,
         "embodiment_chain": [embodiment_a, embodiment_b],
         "embodiment_agent_key": agent_pub,
+        "custody_chain": [handoff_1, handoff_2],
+        "custody_origin_actor": picker_did,
+        "custody_actor_keys": {
+            "did:web:robot-a.example.com": robot_a_pub,
+            "did:web:robot-b.example.com": robot_b_pub,
+        },
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
