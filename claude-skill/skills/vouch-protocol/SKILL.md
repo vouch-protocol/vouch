@@ -84,12 +84,11 @@ Then run `vouch` with no arguments for a short menu (sign git commits, or create
 Three-line Python:
 
 ```python
-from vouch import generate_identity, Signer, build_vouch_credential
+from vouch import generate_identity, Signer
 
 keys = generate_identity("agent.example.com")  # returns a KeyPair
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
-credential = build_vouch_credential(
-    issuer_did="did:web:agent.example.com",
+signed = signer.sign(
     intent={
         "action": "submit_claim",
         "target": "claim:HC-001",
@@ -97,7 +96,6 @@ credential = build_vouch_credential(
     },
     valid_seconds=300,
 )
-signed = signer.sign(credential)
 ```
 
 The `signed` dict is a full Verifiable Credential with a Data Integrity
@@ -215,14 +213,13 @@ the BitstringStatusListCredential, and republish. Verifiers fetch the
 list and check the bit.
 
 ```python
-from vouch import StatusList, build_status_list_entry, build_vouch_credential
+from vouch import StatusList, build_status_list_entry
 
 status_list = StatusList(status_list_id="https://issuer.example/status/1")
 index = status_list.allocate_index()
 
 # Attach to credential at issuance
-credential = build_vouch_credential(
-    issuer_did="did:web:issuer.example",
+signed = signer.sign(
     intent={...},
     credential_status=build_status_list_entry(
         status_list_credential="https://issuer.example/status/1",

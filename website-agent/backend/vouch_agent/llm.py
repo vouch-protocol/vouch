@@ -92,7 +92,7 @@ from vouch import Signer
 
 Correct version of the same:
 ```python
-from vouch import Signer, build_vouch_credential, Verifier
+from vouch import Signer, Verifier
 
 signer = Signer.generate(did="did:web:agent.example.com")
 ```
