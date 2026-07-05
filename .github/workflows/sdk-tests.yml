@@ -69,8 +69,12 @@ jobs:
       - name: Install and test
         working-directory: packages/sdk-ts
         run: |
-          npm install
-          npm install --no-save ../../core/wasm/pkg
+          # core-wasm is an optional peer dependency, built locally in the step
+          # above rather than resolved from the registry. --legacy-peer-deps
+          # keeps npm from trying to fetch the optional peer, then the local
+          # build is installed for the tests that exercise it.
+          npm install --legacy-peer-deps
+          npm install --no-save --legacy-peer-deps ../../core/wasm/pkg
           npm test
 
   wasm:
