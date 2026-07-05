@@ -31,10 +31,10 @@ The credential's `intent` is missing one of `action`, `target`, or
 
 ```python
 # Wrong:
-build_vouch_credential(issuer_did="...", intent={"action": "submit"})
+signer.sign(intent={"action": "submit"})
 
 # Right:
-build_vouch_credential(issuer_did="...", intent={
+signer.sign(intent={
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",

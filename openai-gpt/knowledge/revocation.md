@@ -44,7 +44,6 @@ Maintain a single `StatusList` per status purpose (revocation, or optionally sus
 from vouch import (
     Signer, StatusList, FilesystemStatusListStore,
     build_status_list_credential, build_status_list_entry,
-    build_vouch_credential,
 )
 
 # Load or create the status list
@@ -63,15 +62,13 @@ signer = Signer.from_did("did:web:issuer.example")
 index = status_list.allocate_index()
 store.save(status_list)  # persist the cursor
 
-credential = build_vouch_credential(
-    issuer_did="did:web:issuer.example",
+signed_credential = signer.sign(
     intent={"action": "...", "target": "...", "resource": "..."},
     credential_status=build_status_list_entry(
         status_list_credential="https://issuer.example/status/1",
         status_list_index=index,
     ),
 )
-signed_credential = signer.sign(credential)
 ```
 
 #### Revoke later

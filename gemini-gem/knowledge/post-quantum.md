@@ -106,10 +106,14 @@ pip install 'vouch-protocol[pq]'
 ```
 
 ```python
-from vouch import Signer, build_vouch_credential
+from vouch import Signer
 
 signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_hybrid(build_vouch_credential(...))
+signed = signer.sign_hybrid(intent={
+    "action": "submit_claim",
+    "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+})
 ```
 
 ### TypeScript

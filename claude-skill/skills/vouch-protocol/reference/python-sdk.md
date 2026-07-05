@@ -34,17 +34,15 @@ signer = Signer(private_key=stored_private_key_jwk, did="did:web:agent.example.c
 ## Credential issuance
 
 ```python
-from vouch import build_vouch_credential
-
-credential = build_vouch_credential(
-    issuer_did="did:web:agent.example.com",
+# sign() builds and signs in one step. The issuer DID comes from the signer.
+signed = signer.sign(
     intent={
         "action": "submit_claim",     # required
         "target": "claim:HC-001",      # required
         "resource": "https://insurance.example.com/claims/HC-001",  # required
     },
     valid_seconds=300,                 # default 300 (5 minutes)
-    reputation_score=85,               # optional, [0, 100]
+    reputation_score=90,               # optional, issuer's reputation assertion
     delegation_chain=[...],            # optional, list of prior links
     credential_status={                # optional, BitstringStatusList entry
         "id": "...#42",
@@ -54,9 +52,6 @@ credential = build_vouch_credential(
         "statusListCredential": "https://issuer.example/status/1",
     },
 )
-
-# Sign it
-signed = signer.sign(credential)
 # signed is a dict ready to JSON-serialize and send
 ```
 
