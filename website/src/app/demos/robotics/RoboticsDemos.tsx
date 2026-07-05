@@ -5,10 +5,11 @@ import React, { useState } from 'react';
 import styles from './RoboticsDemos.module.css';
 
 /**
- * Interactive demos for the three robotics capabilities shipped alongside this
- * page: infrastructure access (vouch.robotics.access), fused-sensor provenance
- * (vouch.robotics.fusion), and wear and degradation (vouch.robotics.wear). Each
- * mirrors the real credential shapes and the real verification logic, rendered
+ * Interactive demos for four robotics capabilities: infrastructure access
+ * (vouch.robotics.access), fused-sensor provenance (vouch.robotics.fusion), wear
+ * and degradation (vouch.robotics.wear), and bystander consent
+ * (vouch.robotics.consent). Each mirrors the real credential shapes and the real
+ * verification logic, rendered
  * as an on-brand illustration rather than a live signature so it runs with no
  * network call. Burgundy doubles as refuse, a parchment-harmonized green marks
  * allow, and both read on either theme.
@@ -237,6 +238,95 @@ function Wear() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Consent: a bystander token and the robot's evidence, bound to one capture. */
+/* ------------------------------------------------------------------ */
+
+type ConsentScenario = 'explicit' | 'replay' | 'notice' | 'redacted';
+
+const CONSENT_SCENARIOS: Array<{ id: ConsentScenario; label: string }> = [
+  { id: 'explicit', label: 'A bystander consents to this capture' },
+  { id: 'replay', label: 'Reuse that consent for a different capture' },
+  { id: 'notice', label: 'Record under posted notice, no token' },
+  { id: 'redacted', label: 'Redact the capture instead' },
+];
+
+function Consent() {
+  const [scenario, setScenario] = useState<ConsentScenario>('explicit');
+
+  const basis = {
+    explicit: 'explicit-consent',
+    replay: 'explicit-consent',
+    notice: 'posted-notice',
+    redacted: 'redacted',
+  }[scenario];
+
+  const verdict = {
+    explicit: { ok: true, reason: 'verified · token bound to this capture' },
+    replay: { ok: false, reason: 'token is bound to a different capture' },
+    notice: { ok: true, reason: 'verified · posted-notice basis' },
+    redacted: { ok: true, reason: 'verified · redaction applied' },
+  }[scenario];
+
+  const showToken = scenario === 'explicit' || scenario === 'replay';
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          A robot that captures people records the basis it acted on, bound to the capture by its hash and holding only
+          hashes, never an image or anyone&apos;s identity. A bystander signs consent over one capture, so it cannot be
+          replayed to another recording.
+        </p>
+        <div className="eyebrow-faint mb-2">Choose the situation</div>
+        <div className={styles.controls}>
+          {CONSENT_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.radio}${scenario === s.id ? ' ' + styles.on : ''}`}
+              onClick={() => setScenario(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Robot evidence (signed)</div>
+          <div className={styles.mono}>
+            captureHash: {scenario === 'replay' ? 'uCAP-B…' : 'uCAP-A…'}
+            <br />
+            basis: {basis}
+            {scenario === 'redacted' ? (
+              <>
+                <br />
+                redactionHash: uRED…
+              </>
+            ) : null}
+          </div>
+        </div>
+        {showToken ? (
+          <div className={styles.card}>
+            <div className={styles.cardLabel}>Bystander token (signed)</div>
+            <div className={styles.mono}>
+              bystander: did:web:person-1
+              <br />
+              captureHash: uCAP-A… · robot: did:web:robot-a
+            </div>
+          </div>
+        ) : null}
+        <div className={styles.verdict}>
+          <span className={styles.badge} style={{ color: verdict.ok ? ALLOW : DENY, borderColor: verdict.ok ? ALLOW : DENY }}>
+            {verdict.ok ? '✓ VERIFIED' : '✕ REFUSED'}
+          </span>
+          <span className={styles.reason}>{verdict.reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export default function RoboticsDemos() {
   return (
@@ -263,7 +353,7 @@ export default function RoboticsDemos() {
         </div>
       </section>
 
-      <section id="wear" className="scroll-mt-24">
+      <section id="wear" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ III</span>
@@ -271,6 +361,17 @@ export default function RoboticsDemos() {
           </div>
           <p className="eyebrow mb-6">A worn robot narrows its own envelope, verifiably · vouch.robotics.wear</p>
           <Wear />
+        </div>
+      </section>
+
+      <section id="consent" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ IV</span>
+            <h2>Bystander consent</h2>
+          </div>
+          <p className="eyebrow mb-6">Consent is bound to one capture and cannot be replayed · vouch.robotics.consent</p>
+          <Consent />
         </div>
       </section>
     </>
