@@ -32,6 +32,8 @@ jobs:
           - { name: vouch-a2a, dir: "packages/vouch-a2a" }
           - { name: vouch-langgraph, dir: "packages/vouch-langgraph" }
           - { name: vouch-goose, dir: "packages/vouch-goose" }
+          - { name: vouch-mlflow, dir: "packages/vouch-mlflow" }
+          - { name: vouch-safetensors, dir: "packages/vouch-safetensors" }
     name: publish ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v7
