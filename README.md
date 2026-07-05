@@ -4,9 +4,9 @@
  <img src="docs/assets/vouch-wordmark.png" alt="Vouch Protocol" width="400">
 </p>
 
-<sub><em>Vouch Protocol™ — common-law trademark.</em></sub>
+<sub><em>Vouch Protocol™ is a common-law trademark.</em></sub>
 
-<p align="center">The Open Standard for Identity & Provenance of AI Agents</strong>
+<p align="center"><strong>The Open Standard for Identity & Provenance of AI Agents</strong>
 </p>
 
 <p align="center">
