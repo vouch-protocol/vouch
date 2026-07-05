@@ -24,7 +24,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+      # No registry-url: it writes an .npmrc token line that blocks OIDC.
+      # Trusted publishing authenticates through the id-token instead.
       - name: Update npm (trusted publishing needs npm >= 11.5.1)
         run: npm install -g npm@latest
       - uses: dtolnay/rust-toolchain@stable
