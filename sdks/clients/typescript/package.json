@@ -1,6 +1,6 @@
 {
   "name": "@vouch-protocol-official/api-client",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Typed HTTP client for the Vouch Protocol Bridge API (sign, verify, audio), generated from its OpenAPI spec.",
   "author": "Ramprasad Anandam Gaddam",
   "license": "Apache-2.0",
