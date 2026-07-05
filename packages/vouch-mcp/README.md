@@ -102,3 +102,9 @@ discovered and installed like any other MCP server.
 ## License
 
 Apache-2.0.
+
+## MCP registry
+
+This server is listed in the Model Context Protocol registry.
+
+mcp-name: io.github.vouch-protocol/vouch-mcp

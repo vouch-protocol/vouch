@@ -352,6 +352,37 @@ export type {
   ConditionChange,
 } from './robotics/custody';
 
+// Robot-to-infrastructure bounded access: signed grants and requests, an
+// offline authorize decision, and shrink-only attenuation, byte-identical with
+// the Python module.
+export {
+  ACCESS_GRANT_TYPE,
+  ACCESS_REQUEST_TYPE,
+  buildAccessGrant,
+  verifyAccessGrant,
+  buildAccessRequest,
+  authorizeAccess,
+  attenuatesGrant,
+} from './robotics/access';
+export type {
+  BuildAccessGrantOptions,
+  BuildAccessRequestOptions,
+  AuthorizeResult,
+} from './robotics/access';
+
+// Fused-sensor provenance: a signed attestation binding a fused output to its
+// input frame hashes and a fusion method, with a deterministic digest over the
+// ordered inputs, byte-identical with the Python module.
+export {
+  FUSED_PERCEPTION_TYPE,
+  hashFusedOutput,
+  fusionInputsDigest,
+  buildFusedAttestation,
+  verifyFusedAttestation,
+  verifyFusionInputs,
+} from './robotics/fusion';
+export type { BuildFusedAttestationOptions } from './robotics/fusion';
+
 // Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,

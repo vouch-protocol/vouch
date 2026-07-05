@@ -729,6 +729,52 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: INFRASTRUCTURE ACCESS
+  // =====================================================================
+  {
+    id: 'robotics-access',
+    audience: 'Robotics: access',
+    title: 'Infrastructure access',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does a robot open a door or use an elevator without a shared secret?',
+        a: `The infrastructure operator issues an \`InfrastructureAccessGrant\` with \`build_access_grant\`, naming the resource (a door, elevator, charger, or machine), the permitted operations, an optional zone, and a time window, signed by the operator. The robot presents an \`InfrastructureAccessRequest\` for one operation, signed by its own key. The resource runs \`authorize_access\` offline: it allows the operation only when the grant verifies under the operator key and is in window, the request verifies under the robot key, the grant and request name the same robot and resource, and the operation is one the grant permits. No shared secret and no live call to a server.`,
+        helpLinks: [{ label: 'Infrastructure access guide', href: '/help/#robotics-access' }],
+        meta: 'Shipped - vouch.robotics.access',
+      },
+      {
+        q: 'Can I hand a robot a narrower slice of access than I hold?',
+        a: `Yes. \`attenuates_grant\` confirms a sub-grant only narrows what it inherits: the same resource, a subset of the operations, and the same zone. A grant can be passed down the chain and checked at each step so no one widens it, and because the grant and the matching request are both signed, the pair is a tamper-evident, attributable record of exactly what access was used and when.`,
+        meta: 'Shipped - vouch.robotics.access',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: FUSED-SENSOR PROVENANCE
+  // =====================================================================
+  {
+    id: 'robotics-fusion',
+    audience: 'Robotics: fusion',
+    title: 'Fused-sensor provenance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot acts on fused sensor data, not one frame. Can I prove where a fused result came from?',
+        a: `Yes. \`build_fused_attestation\` signs a \`FusedPerceptionAttestation\` that binds the hash of the fused output (a world model, an occupancy grid, or a pose) to the ordered list of input frame hashes and the fusion method that produced it. \`verify_fused_attestation\` checks the robot's proof and reproduces a digest over the listed inputs, so the attestation commits to exactly those inputs and that output, and a manipulated fusion result no longer matches.`,
+        helpLinks: [{ label: 'Fused-sensor provenance guide', href: '/help/#robotics-fusion' }],
+        meta: 'Shipped - vouch.robotics.fusion',
+      },
+      {
+        q: 'Can I tell if a fused result quietly dropped or swapped one of its input frames?',
+        a: `Yes. \`verify_fusion_inputs\` checks every input frame the attestation names against the robot's signed perception log and returns any that were never recorded, so a dropped or substituted fused input is named rather than hidden. Because the input digest is signed, adding, removing, or reordering an input also changes the digest and breaks verification.`,
+        meta: 'Shipped - vouch.robotics.fusion',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

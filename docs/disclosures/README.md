@@ -94,6 +94,31 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-084](./PAD-084-custody-condition-localization.md) | Localizing a Physical State Change to a Custody Hop via Handoff Condition Attestation | 2026-07-05 | Published |
 | [PAD-085](./PAD-085-two-phase-deliberated-execution.md) | Two-Phase Deliberated Execution of Irreversible Agent Actions with Signed Veto Window | 2026-07-05 | Published |
 | [PAD-086](./PAD-086-executable-caveats-delegation-chains.md) | Deterministic Executable Caveats Embedded in Object-Capability Delegation Chains | 2026-07-05 | Published |
+| [PAD-087](./PAD-087-bounded-infrastructure-access-grant.md) | Bounded, Offline-Verifiable Robot Access to Physical Infrastructure With Shrink-Only Attenuation | 2026-07-05 | Published |
+| [PAD-088](./PAD-088-auditable-access-use-record.md) | Auditable, Attributable Record of a Robot's Use of Physical Infrastructure | 2026-07-05 | Published |
+| [PAD-089](./PAD-089-fused-sensor-provenance-attestation.md) | Signed Provenance Binding a Robot's Fused World Model to Its Input Frames | 2026-07-05 | Published |
+| [PAD-090](./PAD-090-fused-input-provenance-completeness.md) | Detecting a Dropped or Substituted Input in a Robot's Fused Perception Output | 2026-07-05 | Published |
+
+
+## July 5, 2026: Fused-Sensor Provenance (PAD-089, PAD-090)
+
+Two disclosures cover the provenance of a robot's fused world model. PAD-089 is a signed
+fused-perception attestation binding the hash of a fused output to the ordered set of
+input frame hashes, a reproducible digest over them, and the fusion method that produced
+it, so a manipulated fusion result no longer matches. PAD-090 reconciles the inputs a
+fused attestation names against the robot's signed perception log and names any that were
+never recorded, so a dropped or substituted fused input is detected.
+
+
+## July 5, 2026: Robot Infrastructure Access (PAD-087, PAD-088)
+
+Two disclosures cover bounded robot access to physical infrastructure like doors,
+elevators, and chargers. PAD-087 is an operator-signed access grant naming a resource,
+its permitted operations, an optional zone, and a time window, which a resource
+authorizes offline against the robot presenting a request, with shrink-only attenuation
+of a sub-grant. PAD-088 pairs the robot-signed request with the operator-signed grant to
+form a tamper-evident, attributable record of which robot used which resource, for which
+operation, and when, independently verifiable without a trusted central log.
 
 
 ## July 5, 2026: Accountable Autonomy for Actions Inside the Envelope (PAD-085, PAD-086)

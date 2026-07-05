@@ -287,6 +287,49 @@ def __getattr__(name):
         from . import reasoning
 
         return getattr(reasoning, name)
+    # Proof of Deliberation (two-phase deliberated execution, PAD-085)
+    elif name in (
+        "DeliberationError",
+        "INTENT_TYPE",
+        "EXECUTE_TYPE",
+        "VETO_TYPE",
+        "CLASS_REVERSIBLE",
+        "CLASS_REVERSIBLE_COSTLY",
+        "CLASS_IRREVERSIBLE_FINANCIAL",
+        "CLASS_IRREVERSIBLE_DESTRUCTIVE",
+        "CLASS_IRREVERSIBLE_EXTERNAL",
+        "action_digest",
+        "requires_window",
+        "commit_intent",
+        "verify_intent",
+        "veto_intent",
+        "execute",
+        "check_execution",
+        "verify_execution",
+    ):
+        from . import deliberation
+
+        return getattr(deliberation, name)
+    # Executable caveats in delegation chains (PAD-086)
+    elif name in (
+        "CaveatError",
+        "CAPABILITY_TYPE",
+        "caveat",
+        "value_ceiling",
+        "running_total_ceiling",
+        "time_window",
+        "allowlist",
+        "flag_true",
+        "incident_gate",
+        "rate_limit",
+        "evaluate_caveat",
+        "build_capability",
+        "chain_caveats",
+        "verify_capability",
+    ):
+        from . import caveats
+
+        return getattr(caveats, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -516,6 +559,37 @@ __all__ = [
     "check_reasoned_action",
     "verify_reasoned_action",
     "verify_justification",
+    # Proof of Deliberation (two-phase deliberated execution)
+    "DeliberationError",
+    "INTENT_TYPE",
+    "EXECUTE_TYPE",
+    "VETO_TYPE",
+    "CLASS_REVERSIBLE",
+    "CLASS_REVERSIBLE_COSTLY",
+    "CLASS_IRREVERSIBLE_FINANCIAL",
+    "CLASS_IRREVERSIBLE_DESTRUCTIVE",
+    "CLASS_IRREVERSIBLE_EXTERNAL",
+    "commit_intent",
+    "verify_intent",
+    "veto_intent",
+    "execute",
+    "check_execution",
+    "verify_execution",
+    # Executable caveats in delegation chains
+    "CaveatError",
+    "CAPABILITY_TYPE",
+    "caveat",
+    "value_ceiling",
+    "running_total_ceiling",
+    "time_window",
+    "allowlist",
+    "flag_true",
+    "incident_gate",
+    "rate_limit",
+    "evaluate_caveat",
+    "build_capability",
+    "chain_caveats",
+    "verify_capability",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",

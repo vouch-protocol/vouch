@@ -892,5 +892,68 @@ pub fn robotics_holder_at(params_json: String) -> Result<String, CoreError> {
 pub fn robotics_locate_condition_change(params_json: String) -> Result<String, CoreError> {
     Ok(rjson::locate_condition_change(&params_json)?)
 }
+pub fn robotics_build_access_grant(
+    operator_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_access_grant(&operator_seed, &params_json)?)
+}
+pub fn robotics_verify_access_grant(
+    credential_json: String,
+    operator_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_access_grant(
+        &credential_json,
+        &operator_public_key,
+    )?)
+}
+pub fn robotics_build_access_request(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_access_request(&robot_seed, &params_json)?)
+}
+pub fn robotics_authorize_access(
+    params_json: String,
+    operator_public_key: Vec<u8>,
+    robot_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::authorize_access(
+        &params_json,
+        &operator_public_key,
+        &robot_public_key,
+    )?)
+}
+pub fn robotics_attenuates_grant(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::attenuates_grant(&params_json)?)
+}
+
+// Fused-sensor provenance (Phase 5.18).
+pub fn robotics_fusion_inputs_digest(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::fusion_inputs_digest(&params_json)?)
+}
+pub fn robotics_hash_fused_output(output: Vec<u8>) -> String {
+    rjson::hash_fused_output(&output)
+}
+pub fn robotics_build_fused_attestation(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_fused_attestation(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_fused_attestation(
+    credential_json: String,
+    public_key: Vec<u8>,
+    fused_output_mb: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_fused_attestation(
+        &credential_json,
+        &public_key,
+        fused_output_mb.as_deref(),
+    )?)
+}
+pub fn robotics_verify_fusion_inputs(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_fusion_inputs(&params_json)?)
+}
 
 uniffi::include_scaffolding!("vouch_core");

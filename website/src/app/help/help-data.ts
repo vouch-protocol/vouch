@@ -2639,6 +2639,51 @@ change = locate_condition_change([h1, h2])   # responsible holder is robot A
 Security boundary: each handoff is signed by the receiver, so an actor attests its own acceptance of custody, and the chain is only valid when each receiver is the next releaser. This is the open layer of signed credentials and software verification; managed logistics custody orchestration and fleet tracking are commercial.
 `,
       },
+      {
+        id: 'robotics-access',
+        title: 'Infrastructure access',
+        summary: 'Give a robot bounded, revocable, offline-verifiable access to physical infrastructure like doors, elevators, and chargers.',
+        body: `
+A robot in a warehouse, hospital, or building needs to open doors, call elevators, dock at chargers, and operate machines. This gives it a bounded, revocable, auditable way to do so.
+
+The problem it closes: physical access today is a shared credential (a badge, a key, a fixed code) that cannot be scoped to one robot, one resource, and one time window, and leaves no attributable record of who did what.
+
+How it works: the operator signs an \`InfrastructureAccessGrant\` with \`build_access_grant\`, naming the resource, the permitted operations, an optional zone, and a time window. The robot signs an \`InfrastructureAccessRequest\` for one operation with \`build_access_request\`. The resource runs \`authorize_access\` offline and allows the operation only when the grant verifies under the operator key and is in window, the request verifies under the robot key, the grant and request name the same robot and resource, and the operation is permitted. \`attenuates_grant\` confirms a sub-grant only narrows what it inherits.
+
+\`\`\`python
+from vouch.robotics import build_access_grant, build_access_request, authorize_access
+
+grant = build_access_grant(operator, robot_did=robot_did, resource="door-3", operations=["open", "close"], zone="cell-3", valid_seconds=3600)
+request = build_access_request(robot, robot_did=robot_did, resource="door-3", operation="open")
+result = authorize_access(grant, request, operator_key, robot_key)   # result.ok is True
+\`\`\`
+
+Security boundary: the grant is signed by the operator and the request by the robot, so the pair is a tamper-evident, attributable record and the decision is made offline at the resource. This is the open layer of signed grants and requests, offline authorization, and shrink-only attenuation; hardware-enforced actuation at the resource and managed fleet access-policy orchestration are commercial.
+`,
+      },
+      {
+        id: 'robotics-fusion',
+        title: 'Fused-sensor provenance',
+        summary: 'Bind a robot\'s fused world model to the exact sensor frames that produced it, so a manipulated fusion result or a dropped input is detectable.',
+        body: `
+A robot rarely acts on a single frame. It fuses camera, lidar, and radar into one world model, an object set, an occupancy grid, or a pose, and acts on that. This binds the fused output to the exact inputs that produced it.
+
+The problem it closes: perception provenance signs individual frames, but the thing a robot acts on is the fusion of many frames. A manipulated fusion result, or a fused output that quietly dropped or swapped an input, has no signed record tying the output back to its true inputs.
+
+How it works: \`build_fused_attestation\` signs a \`FusedPerceptionAttestation\` binding the fused output's hash to the ordered list of input frame hashes, a digest over those inputs, and a fusion method identifier. \`verify_fused_attestation\` checks the proof and reproduces the input digest, so the attestation commits to exactly those inputs and that output. \`verify_fusion_inputs\` checks each named input against the robot's signed perception log and returns any that were never recorded.
+
+\`\`\`python
+from vouch.robotics import build_fused_attestation, verify_fused_attestation, verify_fusion_inputs, hash_frame
+
+inputs = [hash_frame(cam), hash_frame(lidar), hash_frame(radar)]
+att = build_fused_attestation(robot, robot_did=robot_did, fusion_method="occupancy-grid-v1", input_frame_hashes=inputs, fused_output=world_model)
+ok, subject = verify_fused_attestation(att, robot_key, fused_output=world_model)
+inputs_ok, missing = verify_fusion_inputs(att, perception_log.entries())
+\`\`\`
+
+Security boundary: the robot signs the binding of a fused output to its inputs, and the input digest makes the set of inputs tamper-evident. This is the open layer of software-signed provenance reusing the perception frame hashes; hardware sensor attestation and managed sensor-fusion orchestration are commercial.
+`,
+      },
     ],
   },
 ];

@@ -811,6 +811,137 @@ custody orchestration and fleet tracking are commercial.
 
 ---
 
+## 18. Robot-to-infrastructure bounded access
+
+`vouch.robotics.access`
+
+What it is: a way for a robot to open a door, call an elevator, dock at a
+charger, or run a machine on authority an infrastructure operator granted it in
+advance, checked at the resource with no network call. An infrastructure operator
+(a warehouse, a hospital, a building) issues an operator-signed
+`InfrastructureAccessGrant` naming a resource, the operations it permits, an
+optional zone, and a time window. When the robot wants to act, it presents a
+robot-signed `InfrastructureAccessRequest` for one operation on that resource, and
+the resource authorizes it offline.
+
+The problem it closes: a robot moving through a building needs to use fixed
+infrastructure it does not own, and the resource has to decide, on its own,
+whether this robot may perform this operation right now. Answering that with a
+central access server means a network round trip on every door and every charger,
+and a shared secret or a badge clone leaves no attributable record of who did
+what. Robot-to-infrastructure bounded access makes the grant and the request
+cryptographic: the resource checks operator and robot signatures locally, and the
+grant plus the request is a tamper-evident record that attributes the action to
+the exact robot and the exact grant that authorized it.
+
+How it works: `build_access_grant` produces an `InfrastructureAccessGrant` in
+which the operator signs a resource identifier, the permitted operations, an
+optional zone, and a validity window. `build_access_request` produces a
+robot-signed `InfrastructureAccessRequest` naming one operation on one resource at
+a stated time. `authorize_access` runs the offline decision at the resource: the
+grant must be valid and operator-signed, the request valid and robot-signed, the
+requested operation must be one the grant permits, and the moment must fall inside
+the window, so a resource authorizes only what its operator allowed. An operator
+can issue a sub-grant that narrows an existing grant, and `attenuates_grant`
+confirms a sub-grant only ever shrinks the operations, zone, or window it
+inherits, never widens them, so authority attenuates down a chain the same way the
+delegation lease (11) and the physical capability scope (3) attenuate.
+`verify_access_grant` checks a grant on its own.
+
+The API: `build_access_grant`, `verify_access_grant`, `build_access_request`,
+`authorize_access`, and `attenuates_grant`. Credential types:
+`InfrastructureAccessGrant`, `InfrastructureAccessRequest`.
+
+Worked example (Python):
+
+```python
+from vouch.robotics import access
+
+grant = access.build_access_grant(
+    operator_signer, resource="dock-door-7", operations=["open", "close"],
+    zone="bay-3", not_before=t0, not_after=t1,      # operator authorizes the robot
+)
+req = access.build_access_request(
+    robot_signer, resource="dock-door-7", operation="open", at=t0,
+)
+assert access.authorize_access(grant, req, at=t0).ok    # resource decides offline
+assert access.attenuates_grant(sub_grant, grant)        # a sub-grant only narrows
+```
+
+Security boundary: `authorize_access` fails closed on a wrong type, an invalid
+operator or robot proof, an operation the grant does not permit, or a moment
+outside the window, so a resource authorizes only an operation an operator signed
+for and only while the grant is live. `attenuates_grant` fails when a sub-grant
+adds an operation, widens the zone, or extends the window beyond what it inherits,
+so a narrowed grant can never regain authority it was meant to drop. The grant and
+the request together attribute every authorized action to the requesting robot and
+the authorizing grant. This is the open layer; managed access orchestration and
+fleet-wide grant issuance are commercial.
+
+---
+
+## 19. Fused-sensor provenance
+
+`vouch.robotics.fusion`
+
+What it is: a signed record of the provenance of a fused world model, created
+when a robot combines many sensor frames into one output it acts on. Perception
+provenance (10) signs individual frames; a robot fuses many of those frames
+(camera, lidar, radar) into one world model, an object set, an occupancy grid, or
+a pose, and acts on that. A `FusedPerceptionAttestation` binds the fused output's
+hash to an ordered list of the input frame hashes, a digest over those inputs, and
+a fusion method identifier, signed by the robot.
+
+The problem it closes: "did the robot fuse exactly the frames it recorded into
+exactly the output it acted on?" A fused world model is what a robot actually
+plans and moves on, but the fusion step sits between the signed frames and the
+action, so a manipulated fusion result, or a dropped or substituted input, would
+otherwise leave no trace. Fused-sensor provenance makes the fusion step
+cryptographic: the attestation commits to exactly those inputs and that output, and
+each input can be checked against the robot's signed perception log to confirm
+every fused input traces to a frame the robot actually recorded.
+
+How it works: `hash_fused_output` computes the multibase SHA-256 of the raw fused
+output bytes, and `fusion_inputs_digest` computes a digest over the ordered input
+frame hashes. `build_fused_attestation` produces a `FusedPerceptionAttestation` in
+which the robot signs the fused output hash, the ordered input hashes, that input
+digest, and a fusion method identifier. `verify_fused_attestation` reproduces the
+input digest and, with the raw output, its hash, so the attestation commits to
+exactly those inputs and that output. `verify_fusion_inputs` checks each input
+hash against the robot's signed perception log, so every fused input traces to a
+frame the robot actually recorded, and a manipulated fusion result or a dropped or
+substituted input is detectable.
+
+The API: `hash_fused_output`, `fusion_inputs_digest`, `build_fused_attestation`,
+`verify_fused_attestation`, and `verify_fusion_inputs`. Credential type:
+`FusedPerceptionAttestation`.
+
+Worked example (Python):
+
+```python
+from vouch.robotics import fusion
+
+out_hash = fusion.hash_fused_output(world_model_bytes)          # multibase SHA-256
+digest = fusion.fusion_inputs_digest([h_cam, h_lidar, h_radar]) # over ordered inputs
+att = fusion.build_fused_attestation(
+    robot_signer, output_hash=out_hash, input_hashes=[h_cam, h_lidar, h_radar],
+    inputs_digest=digest, method="occupancy-grid-v1",
+)
+assert fusion.verify_fused_attestation(att, robot_signer.public_key(), world_model_bytes).ok
+assert fusion.verify_fusion_inputs(att, log.entries()).ok       # inputs trace to the log
+```
+
+Security boundary: `verify_fused_attestation` reproduces the input digest and the
+output hash, so it fails on a wrong type, an invalid proof, an altered output, or a
+changed or reordered input list, and the attestation therefore commits to exactly
+the inputs and the output it was signed over. `verify_fusion_inputs` fails when a
+fused input has no matching entry in the robot's signed perception log, so a
+dropped or substituted input is detectable and every fused input traces to a frame
+the robot actually recorded. Hardware sensor attestation and managed sensor-fusion
+orchestration are commercial.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -830,10 +961,15 @@ conformance report (14), can sign those robot credentials with a hybrid
 post-quantum proof so an identity issued today still holds once quantum computers
 arrive (15), and carries the same agent identity from one body to the next along a
 signed continuity chain that proves one mind persisted across bodies without ever
-running in two at once (16), and records a signed custody chain as a physical task
+running in two at once (16), records a signed custody chain as a physical task
 or object passes from hand to hand so an incident traces to the exact hop and
-actor who held it (17). Every artifact is the same Verifiable Credential
-format, so one verifier and one trust model cover all seventeen.
+actor who held it (17), and acts on operator-signed grants to open a door or dock
+at a charger, authorized offline at the resource with an attributable record of
+which robot did what (18), and signs the provenance of a fused world model so the
+frames it combined and the output it acted on are exactly what it committed to,
+each fused input tracing back to a frame it recorded (19). Every artifact is the
+same Verifiable Credential format, so one verifier and one trust model cover all
+nineteen.
 
 ## Quick answers
 
@@ -891,10 +1027,24 @@ format, so one verifier and one trust model cover all seventeen.
   chain to show who held it at each hop, `holder_at` returns the holder at a given
   time, and `locate_condition_change` pins damage or loss to the responsible hop
   (17).
+- Can a robot open a door, call an elevator, or dock at a charger it does not own,
+  decided offline at the resource? Yes, robot-to-infrastructure bounded access: an
+  operator signs an `InfrastructureAccessGrant` naming a resource, operations, an
+  optional zone, and a window, the robot presents a signed
+  `InfrastructureAccessRequest`, and `authorize_access` decides at the resource
+  with no network call, while `attenuates_grant` keeps every sub-grant narrowing
+  only (18).
+- Can a robot prove it fused exactly the sensor frames it recorded into the world
+  model it acted on? Yes, fused-sensor provenance: a `FusedPerceptionAttestation`
+  binds the fused output's hash to the ordered input frame hashes and a fusion
+  method, `verify_fused_attestation` reproduces the input digest and the output
+  hash so the attestation commits to exactly those inputs and that output, and
+  `verify_fusion_inputs` traces every fused input back to a frame in the robot's
+  signed perception log (19).
 
 ## Status
 
-All seventeen capabilities are implemented and tested in Python, TypeScript, Go, and
+All nineteen capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the

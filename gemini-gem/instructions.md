@@ -183,6 +183,34 @@ Never share user data with external sites.
   over its life, here who is holding a task or object right now as it moves. Open
   layer only; managed logistics custody orchestration and fleet tracking are
   commercial. See `robotics.md`.
+- "How does a robot open a door, call an elevator, or dock at a charger it does
+  not own, decided offline at the resource?" -> Robot-to-infrastructure bounded
+  access (`vouch.robotics.access`): an infrastructure operator signs an
+  `InfrastructureAccessGrant` naming a resource, the operations it permits, an
+  optional zone, and a time window (`build_access_grant`, `verify_access_grant`),
+  and the robot presents a signed `InfrastructureAccessRequest` for one operation
+  on that resource (`build_access_request`). `authorize_access` decides at the
+  resource with no network call: the grant valid and operator-signed, the request
+  valid and robot-signed, the operation permitted, and the moment inside the
+  window, so a resource authorizes only what its operator allowed, and the grant
+  plus the request is a tamper-evident record attributing the action to the exact
+  robot. `attenuates_grant` confirms a sub-grant only ever narrows the operations,
+  zone, or window it inherits. Open layer only; managed access orchestration and
+  fleet-wide grant issuance are commercial. See `robotics.md`.
+- "How does a robot prove it fused exactly the sensor frames it recorded into the
+  world model it acted on?" -> Fused-sensor provenance
+  (`vouch.robotics.fusion`): a robot fuses many signed frames (camera, lidar,
+  radar) into one world model, an object set, an occupancy grid, or a pose, and
+  a `FusedPerceptionAttestation` binds the fused output's hash to the ordered
+  input frame hashes, a digest over those inputs, and a fusion method identifier,
+  signed by the robot (`hash_fused_output`, `fusion_inputs_digest`,
+  `build_fused_attestation`). `verify_fused_attestation` reproduces the input
+  digest and, with the raw output, its hash, so the attestation commits to exactly
+  those inputs and that output, and `verify_fusion_inputs` checks each input
+  against the robot's signed perception log, so every fused input traces to a
+  frame the robot actually recorded and a manipulated fusion result or a dropped or
+  substituted input is detectable. Open layer only; hardware sensor attestation
+  and managed sensor-fusion orchestration are commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface

@@ -350,6 +350,56 @@ change = locate_condition_change([h1, h2])
 The open layer is signed handoff credentials and software verification; managed
 logistics custody orchestration and fleet tracking are commercial.
 
-Sections 5.7 to 5.17 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.18 Infrastructure access (`vouch.robotics.access`)
+
+A robot in a warehouse, hospital, or building needs to open doors, call elevators,
+dock at chargers, and operate machines. An infrastructure operator signs an
+`InfrastructureAccessGrant` naming the resource, the permitted operations, an
+optional zone, and a time window. The robot signs an `InfrastructureAccessRequest`
+for one operation on one resource. The resource runs `authorize_access` offline and
+allows the operation only when the grant verifies under the operator key and is in
+window, the request verifies under the robot key, the grant and request name the
+same robot and resource, and the operation is permitted. The grant plus the request
+is a tamper-evident, attributable record of the access, and `attenuates_grant`
+confirms a sub-grant only narrows what it inherits.
+
+```python
+from vouch.robotics import build_access_grant, build_access_request, authorize_access
+
+grant = build_access_grant(operator, robot_did=robot_did, resource="door-3", operations=["open", "close"], zone="cell-3", valid_seconds=3600)
+request = build_access_request(robot, robot_did=robot_did, resource="door-3", operation="open")
+result = authorize_access(grant, request, operator_key, robot_key)
+```
+
+The open layer is signed grants and requests, offline authorization, and shrink-only
+attenuation; hardware-enforced actuation at the resource and managed fleet
+access-policy orchestration are commercial.
+
+## 5.19 Fused-sensor provenance (`vouch.robotics.fusion`)
+
+Perception provenance signs individual sensor frames. A robot fuses many frames from
+cameras, lidar, and radar into a single world model, an object set, an occupancy grid,
+or a pose, and acts on that. `build_fused_attestation` signs a
+`FusedPerceptionAttestation` binding the fused output's hash to an ordered list of the
+input frame hashes, a digest over those inputs, and a fusion method identifier.
+`verify_fused_attestation` checks the robot's proof, reproduces the input digest so the
+attestation commits to exactly those inputs, and, given the raw fused output,
+reproduces its hash. `verify_fusion_inputs` checks each named input against the robot's
+signed perception log and returns any that were never recorded, so a manipulated fusion
+result or a dropped or substituted input is detectable.
+
+```python
+from vouch.robotics import build_fused_attestation, verify_fused_attestation, verify_fusion_inputs, hash_frame
+
+inputs = [hash_frame(cam), hash_frame(lidar), hash_frame(radar)]
+att = build_fused_attestation(robot, robot_did=robot_did, fusion_method="occupancy-grid-v1", input_frame_hashes=inputs, fused_output=world_model)
+ok, subject = verify_fused_attestation(att, robot_key, fused_output=world_model)
+inputs_ok, missing = verify_fusion_inputs(att, perception_log.entries())
+```
+
+The open layer is software-signed provenance reusing the perception frame hashes;
+hardware sensor attestation and managed sensor-fusion orchestration are commercial.
+
+Sections 5.7 to 5.19 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

@@ -25,8 +25,7 @@ impl Ed25519KeyPair {
     /// wrapper crate).
     pub fn generate() -> Result<Self> {
         let mut seed = [0u8; ED25519_SEED_LEN];
-        getrandom::getrandom(&mut seed)
-            .map_err(|e| CoreError::Crypto(format!("rng: {e}")))?;
+        getrandom::getrandom(&mut seed).map_err(|e| CoreError::Crypto(format!("rng: {e}")))?;
         Ok(Self::from_seed(&seed))
     }
 
@@ -40,12 +39,11 @@ impl Ed25519KeyPair {
 
     /// Build a key pair from a seed slice, validating its length.
     pub fn from_seed_slice(seed: &[u8]) -> Result<Self> {
-        let arr: [u8; ED25519_SEED_LEN] = seed.try_into().map_err(|_| {
-            CoreError::InvalidKeyLength {
+        let arr: [u8; ED25519_SEED_LEN] =
+            seed.try_into().map_err(|_| CoreError::InvalidKeyLength {
                 expected: ED25519_SEED_LEN,
                 got: seed.len(),
-            }
-        })?;
+            })?;
         Ok(Self::from_seed(&arr))
     }
 
@@ -66,8 +64,7 @@ impl Ed25519KeyPair {
 
     /// The public key as a Multikey string (z-prefixed base58btc).
     pub fn public_multikey(&self) -> String {
-        multikey::encode_ed25519_public(&self.public_key())
-            .expect("public key is always 32 bytes")
+        multikey::encode_ed25519_public(&self.public_key()).expect("public key is always 32 bytes")
     }
 
     /// The did:key form of the public key.
@@ -78,30 +75,37 @@ impl Ed25519KeyPair {
 
 /// Verify a 64-byte Ed25519 signature over a message against a 32-byte public key.
 pub fn verify(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<bool> {
-    let pk: [u8; ED25519_PUBLIC_LEN] = public_key.try_into().map_err(|_| {
-        CoreError::InvalidKeyLength {
-            expected: ED25519_PUBLIC_LEN,
-            got: public_key.len(),
-        }
-    })?;
-    let sig: [u8; ED25519_SIGNATURE_LEN] = signature.try_into().map_err(|_| {
-        CoreError::InvalidSignatureLength {
-            expected: ED25519_SIGNATURE_LEN,
-            got: signature.len(),
-        }
-    })?;
+    let pk: [u8; ED25519_PUBLIC_LEN] =
+        public_key
+            .try_into()
+            .map_err(|_| CoreError::InvalidKeyLength {
+                expected: ED25519_PUBLIC_LEN,
+                got: public_key.len(),
+            })?;
+    let sig: [u8; ED25519_SIGNATURE_LEN] =
+        signature
+            .try_into()
+            .map_err(|_| CoreError::InvalidSignatureLength {
+                expected: ED25519_SIGNATURE_LEN,
+                got: signature.len(),
+            })?;
     let vk = VerifyingKey::from_bytes(&pk)
         .map_err(|e| CoreError::Crypto(format!("bad public key: {e}")))?;
     // verify_strict (not verify): rejects signatures with a non-canonical or
     // small-order R component and small-order public keys, closing Ed25519
     // malleability / multiple-valid-signature avenues that a permissive verifier
     // would accept. Honest, canonically-encoded signatures are unaffected.
-    Ok(vk.verify_strict(message, &Signature::from_bytes(&sig)).is_ok())
+    Ok(vk
+        .verify_strict(message, &Signature::from_bytes(&sig))
+        .is_ok())
 }
 
 /// Encode an Ed25519 public key as a did:key DID.
 pub fn ed25519_to_did_key(public_key: &[u8]) -> Result<String> {
-    Ok(format!("did:key:{}", multikey::encode_ed25519_public(public_key)?))
+    Ok(format!(
+        "did:key:{}",
+        multikey::encode_ed25519_public(public_key)?
+    ))
 }
 
 /// Extract the Ed25519 public key bytes from a did:key DID.

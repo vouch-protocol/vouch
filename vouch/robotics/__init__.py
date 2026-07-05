@@ -21,6 +21,8 @@ robots and embodied agents:
   - pq: hybrid post-quantum signing and backward-compatible verification.
   - embodiment: cross-embodiment identity continuity for an agent across bodies.
   - custody: physical custody handoff chain for a task or object across actors.
+  - access: bounded, revocable robot access to physical infrastructure resources.
+  - fusion: signed provenance binding a fused world model to its input frames.
 """
 
 from .capability import (
@@ -144,6 +146,22 @@ from .custody import (
     verify_handoff,
     verify_handoff_chain,
 )
+from .access import (
+    AuthorizeResult,
+    attenuates_grant,
+    authorize_access,
+    build_access_grant,
+    build_access_request,
+    verify_access_grant,
+)
+from .fusion import (
+    FUSED_PERCEPTION_TYPE,
+    build_fused_attestation,
+    fusion_inputs_digest,
+    hash_fused_output,
+    verify_fused_attestation,
+    verify_fusion_inputs,
+)
 
 __all__ = [
     # identity
@@ -241,6 +259,20 @@ __all__ = [
     "verify_handoff_chain",
     "holder_at",
     "locate_condition_change",
+    # infrastructure access (bounded, revocable robot access to physical resources)
+    "AuthorizeResult",
+    "build_access_grant",
+    "verify_access_grant",
+    "build_access_request",
+    "authorize_access",
+    "attenuates_grant",
+    # fused-sensor provenance (fused world model bound to its input frames)
+    "FUSED_PERCEPTION_TYPE",
+    "hash_fused_output",
+    "fusion_inputs_digest",
+    "build_fused_attestation",
+    "verify_fused_attestation",
+    "verify_fusion_inputs",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
