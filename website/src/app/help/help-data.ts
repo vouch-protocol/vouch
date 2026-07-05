@@ -2684,6 +2684,29 @@ inputs_ok, missing = verify_fusion_inputs(att, perception_log.entries())
 Security boundary: the robot signs the binding of a fused output to its inputs, and the input digest makes the set of inputs tamper-evident. This is the open layer of software-signed provenance reusing the perception frame hashes; hardware sensor attestation and managed sensor-fusion orchestration are commercial.
 `,
       },
+      {
+        id: 'robotics-wear',
+        title: 'Wear and degradation',
+        summary: 'A robot signs its own wear over time and automatically narrows its capability envelope as it degrades.',
+        body: `
+A robot does not stay as capable as it left the factory: actuators wear, joints develop backlash, sensors drift out of calibration, and error rates creep up. This lets a robot attest its own degradation and operate inside a tighter envelope as it ages.
+
+The problem it closes: a robot's physical limits are usually the static caps it shipped with, and there is no signed, verifiable link between how worn a robot is and how much it is still allowed to do.
+
+How it works: \`build_wear_attestation\` signs a \`RobotWearAttestation\` carrying a normalized wear level (0 for as-new, 1 for fully worn) and optional metrics, bound to the robot's identity. Each attestation links to the previous one by its proof, so \`verify_wear_chain\` walks a tamper-evident wear history. \`attenuate_for_wear\` derives a physical scope whose force and speed caps are scaled down by the wear level, and the result is a valid attenuation of the original.
+
+\`\`\`python
+from vouch.robotics import build_wear_attestation, verify_wear_chain, attenuate_for_wear
+
+w1 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.1)
+w2 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.3, prev_proof=w1["proof"]["proofValue"])
+ok, latest = verify_wear_chain([w1, w2], robot_key)
+narrowed = attenuate_for_wear(full_scope, latest["wearLevel"])   # caps scaled to 0.7 of original
+\`\`\`
+
+Security boundary: the robot signs its wear state and derives the narrowed scope credential in software. Firmware-level enforcement of the narrowed envelope and managed predictive-maintenance modeling are commercial.
+`,
+      },
     ],
   },
 ];

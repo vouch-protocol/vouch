@@ -4103,6 +4103,175 @@ pub fn verify_fusion_inputs(credential: &Value, log_entries: &[Value]) -> Fusion
     }
 }
 
+// ---------------------------------------------------------------------------
+// Wear and degradation attestation (Phase 5.19)
+// ---------------------------------------------------------------------------
+//
+// A robot does not stay as capable as it left the factory. Actuators wear, joints
+// develop backlash, sensors drift out of calibration, and error rates creep up.
+// This lets a robot sign its own degradation state, bound to its identity and
+// hash-linked over time so the history is tamper-evident, and derives a narrowed
+// physical capability scope from that state, so a worn robot operates inside a
+// tighter, verifiable envelope instead of trusting the static limit it shipped
+// with.
+//
+// A wear attestation carries a normalized wear level (0 for as-new, 1 for fully
+// worn) and optional detailed metrics, signed by the robot. Linking each
+// attestation to the previous one by its proof value forms a chain a verifier
+// walks to see how the robot degraded over its life. `attenuate_for_wear` derives
+// a physical scope whose numeric caps are scaled down by the wear level, and the
+// result is a valid attenuation of the original scope, so the same attenuation
+// rule the rest of Vouch uses carries the derating.
+//
+// This is the open layer: the robot signs its wear state and derives the narrowed
+// scope credential in software. Firmware-level enforcement of the narrowed
+// envelope and managed predictive-maintenance modeling are out of scope for the
+// open layer.
+
+pub const WEAR_ATTESTATION_TYPE: &str = "RobotWearAttestation";
+
+/// Numeric caps that scale down with wear. Zones and shift windows are preserved
+/// unchanged, so the derived scope stays a valid attenuation of the original.
+const WEAR_DERATED_CAPS: [&str; 3] = ["maxForceN", "maxSpeedMps", "maxSpeedNearHumansMps"];
+
+/// Parameters for [`build_wear_attestation`]. The robot self-issues the credential
+/// with its own Ed25519 seed. `metrics`, when present, is carried through into the
+/// subject unchanged. `prev_proof`, when present, links this attestation to the
+/// previous one, forming a wear history. `attested_at`, when `None`, defaults to
+/// `valid_from`.
+#[derive(Debug, Clone)]
+pub struct BuildWearAttestation {
+    pub robot_did: String,
+    pub wear_level: f64,
+    pub metrics: Option<Value>,
+    pub prev_proof: Option<String>,
+    pub attested_at: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `RobotWearAttestation`: the robot attests its own degradation as
+/// a normalized `wear_level` in `[0, 1]`, optionally with detailed `metrics`. When
+/// `prev_proof` is the proof value of the previous attestation, the new one links
+/// to it, forming a tamper-evident wear history. Signed by the robot.
+pub fn build_wear_attestation(robot_seed: &[u8], params: &BuildWearAttestation) -> Result<Value> {
+    if params.robot_did.is_empty() {
+        return Err(CoreError::Json("robot_did is required".into()));
+    }
+    if params.wear_level < 0.0 || params.wear_level > 1.0 {
+        return Err(CoreError::Json(
+            "wear_level must be between 0.0 and 1.0".into(),
+        ));
+    }
+
+    let attested = params
+        .attested_at
+        .clone()
+        .unwrap_or_else(|| params.valid_from.clone());
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("wearLevel".into(), json!(params.wear_level));
+    subject.insert("attestedAt".into(), json!(attested));
+    if let Some(m) = &params.metrics {
+        subject.insert("metrics".into(), m.clone());
+    }
+    if let Some(prev) = &params.prev_proof {
+        subject.insert("prevProof".into(), json!(prev));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", WEAR_ATTESTATION_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.robot_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.robot_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), robot_seed, &opts)
+}
+
+/// Verify a `RobotWearAttestation`: the robot's proof, that the issuer is the
+/// robot, and that the wear level is in range. Returns the credentialSubject on
+/// success, `None` if invalid.
+pub fn verify_wear_attestation(credential: &Value, public_key: &[u8]) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, public_key, WEAR_ATTESTATION_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    if credential.get("issuer") != subject.get("id") {
+        return Ok(None);
+    }
+    match subject.get("wearLevel").and_then(|v| v.as_f64()) {
+        Some(level) if (0.0..=1.0).contains(&level) => {}
+        _ => return Ok(None),
+    }
+    Ok(Some(subject))
+}
+
+/// Verify an ordered wear history: each attestation verifies under the robot's
+/// key, and each one after the first links to the previous by its proof value.
+/// Returns the latest credentialSubject on success, `None` if any link is invalid.
+pub fn verify_wear_chain(attestations: &[Value], public_key: &[u8]) -> Result<Option<Value>> {
+    if attestations.is_empty() {
+        return Ok(None);
+    }
+    let mut prev_proof: Option<String> = None;
+    let mut latest: Option<Value> = None;
+    for att in attestations {
+        let subject = match verify_wear_attestation(att, public_key)? {
+            Some(s) => s,
+            None => return Ok(None),
+        };
+        if let Some(prev) = &prev_proof {
+            let linked = subject.get("prevProof").and_then(|v| v.as_str());
+            if linked != Some(prev.as_str()) {
+                return Ok(None);
+            }
+        }
+        prev_proof = att
+            .get("proof")
+            .and_then(|p| p.get("proofValue"))
+            .and_then(|v| v.as_str())
+            .map(String::from);
+        latest = Some(subject);
+    }
+    Ok(latest)
+}
+
+/// Derive a physical scope narrowed for the given wear level: each numeric cap is
+/// scaled by `(1 - wear_level)`, and the allowed zones and shift windows are
+/// carried through unchanged. The result is a valid attenuation of `scope` (never
+/// broader on any dimension), so the same attenuation check the rest of Vouch uses
+/// accepts it. A wear level of 0 returns the caps unchanged.
+pub fn attenuate_for_wear(scope: &Value, wear_level: f64) -> Result<Value> {
+    if wear_level < 0.0 || wear_level > 1.0 {
+        return Err(CoreError::Json(
+            "wear_level must be between 0.0 and 1.0".into(),
+        ));
+    }
+    let factor = 1.0 - wear_level;
+    let empty = Map::new();
+    let src = scope.as_object().unwrap_or(&empty);
+    let mut narrowed = Map::new();
+    for (key, value) in src {
+        if WEAR_DERATED_CAPS.contains(&key.as_str()) {
+            if let Some(n) = value.as_f64() {
+                narrowed.insert(key.clone(), json!(n * factor));
+                continue;
+            }
+        }
+        narrowed.insert(key.clone(), value.clone());
+    }
+    Ok(Value::Object(narrowed))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -6473,5 +6642,30 @@ mod tests {
             subject["inputsDigest"].as_str().unwrap(),
             vector["expected_fusion_inputs_digest"].as_str().unwrap()
         );
+    }
+
+    // Wear and degradation attestation (Phase 5.19) ------------------------
+
+    // Cross-language interop: Rust verifies the Python-signed wear history and
+    // reproduces the physical scope narrowed for the pinned wear level.
+    #[test]
+    fn verifies_python_wear_interop_vector() {
+        let vector = load_vector();
+        let robot_pub = jwk_pub(&vector["robot_public_key_jwk"]);
+
+        let chain: Vec<Value> = vector["wear_chain"].as_array().unwrap().clone();
+        let latest = verify_wear_chain(&chain, &robot_pub)
+            .unwrap()
+            .expect("wear chain verifies");
+        assert_eq!(latest["wearLevel"].as_f64().unwrap(), 0.3);
+
+        let scope = vector["wear_input_scope"].clone();
+        let level = vector["wear_attenuation_level"].as_f64().unwrap();
+        let narrowed = attenuate_for_wear(&scope, level).unwrap();
+        assert_eq!(narrowed, vector["expected_attenuated_scope"]);
+        assert_eq!(narrowed["maxForceN"].as_f64().unwrap(), 60.0);
+        assert_eq!(narrowed["maxSpeedMps"].as_f64().unwrap(), 1.125);
+        assert_eq!(narrowed["maxSpeedNearHumansMps"].as_f64().unwrap(), 0.1875);
+        assert!(attenuates(&scope, &narrowed));
     }
 }

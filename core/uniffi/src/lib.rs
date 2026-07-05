@@ -956,4 +956,30 @@ pub fn robotics_verify_fusion_inputs(params_json: String) -> Result<String, Core
     Ok(rjson::verify_fusion_inputs(&params_json)?)
 }
 
+// Wear and degradation attestation (Phase 5.19).
+pub fn robotics_build_wear_attestation(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_wear_attestation(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_wear_attestation(
+    credential_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_wear_attestation(
+        &credential_json,
+        &public_key,
+    )?)
+}
+pub fn robotics_verify_wear_chain(
+    params_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_wear_chain(&params_json, &public_key)?)
+}
+pub fn robotics_attenuate_for_wear(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::attenuate_for_wear(&params_json)?)
+}
+
 uniffi::include_scaffolding!("vouch_core");

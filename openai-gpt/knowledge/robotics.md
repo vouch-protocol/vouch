@@ -942,6 +942,66 @@ orchestration are commercial.
 
 ---
 
+## 20. Wear and degradation attestation
+
+`vouch.robotics.wear`
+
+What it is: a signed record in which a robot attests its own degradation as a
+normalized wear level (0 for as-new, 1 for fully worn), with optional detailed
+metrics (actuator wear, calibration drift, cycle count, fault rate), bound to its
+identity and hash-linked to the previous attestation by its proof so the wear
+history is tamper-evident over time. A deterministic rule, `attenuate_for_wear`,
+derives a physical capability scope whose numeric caps are scaled down by the wear
+level, and the result is a valid attenuation (3) of the original scope.
+
+The problem it closes: "does a robot still operate inside the envelope its
+condition warrants, not the one it shipped with?" A robot's actuators, sensors, and
+calibration drift as it ages, but a static factory limit does not move, so a worn
+robot keeps its original authority even as its safe operating margin shrinks. Wear
+and degradation attestation makes the robot's own condition a signed, tamper-evident
+input to its authority: the wear history cannot be silently rewritten, and the
+narrowed scope is provably a subset of the original.
+
+How it works: `build_wear_attestation` produces a wear attestation in which the
+robot signs its normalized wear level and any detailed metrics, linking to the
+previous attestation by that attestation's proof, so the records form a
+hash-linked chain. `verify_wear_attestation` checks a single attestation's proof
+against the robot's identity, and `verify_wear_chain` walks the linked attestations
+so a rewritten or dropped record is detectable. `attenuate_for_wear` takes the
+original physical capability scope and the wear level and returns a scope whose
+numeric caps are scaled down by that level, and because it only lowers caps the
+result satisfies `attenuates(original, worn)`, so a worn robot runs inside a
+tighter, verifiable envelope derived from its own signed condition.
+
+The API: `build_wear_attestation`, `verify_wear_attestation`, `verify_wear_chain`,
+and `attenuate_for_wear`. Credential type: `WearAttestation`.
+
+Worked example (Python):
+
+```python
+from vouch.robotics import wear
+
+att = wear.build_wear_attestation(
+    robot_signer, wear_level=0.4,
+    metrics={"actuator_wear": 0.5, "calibration_drift": 0.3, "cycle_count": 120000},
+    previous=prior_att,                                     # hash-links to the prior
+)
+assert wear.verify_wear_attestation(att, robot_signer.public_key()).ok
+assert wear.verify_wear_chain([prior_att, att]).ok         # tamper-evident history
+worn_scope = wear.attenuate_for_wear(original_scope, att)  # caps scaled by wear level
+```
+
+Security boundary: `verify_wear_attestation` fails on a wrong type, an invalid
+proof, or an attestation that does not link to the previous one, and
+`verify_wear_chain` fails when a record in the history is rewritten or dropped, so
+the wear history is tamper-evident and bound to the robot's identity.
+`attenuate_for_wear` only scales caps down, so its result is a valid attenuation of
+the original scope and a worn robot operates inside a tighter, verifiable envelope.
+Firmware-level enforcement of the narrowed envelope and managed
+predictive-maintenance modeling are commercial.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -967,9 +1027,11 @@ actor who held it (17), and acts on operator-signed grants to open a door or doc
 at a charger, authorized offline at the resource with an attributable record of
 which robot did what (18), and signs the provenance of a fused world model so the
 frames it combined and the output it acted on are exactly what it committed to,
-each fused input tracing back to a frame it recorded (19). Every artifact is the
-same Verifiable Credential format, so one verifier and one trust model cover all
-nineteen.
+each fused input tracing back to a frame it recorded (19), and attests its own
+wear as a signed, hash-linked history from which a tighter physical capability
+scope is derived, so a worn robot operates inside a narrower verifiable envelope
+than the one it shipped with (20). Every artifact is the same Verifiable
+Credential format, so one verifier and one trust model cover all twenty.
 
 ## Quick answers
 
@@ -1041,10 +1103,17 @@ nineteen.
   hash so the attestation commits to exactly those inputs and that output, and
   `verify_fusion_inputs` traces every fused input back to a frame in the robot's
   signed perception log (19).
+- Can a robot narrow its own authority as it wears out, instead of keeping a static
+  factory limit? Yes, wear and degradation attestation: the robot signs its wear
+  level (0 as-new to 1 fully worn) with optional metrics into a hash-linked
+  history `verify_wear_chain` checks, and `attenuate_for_wear` derives a physical
+  capability scope whose caps are scaled down by that wear level, a valid
+  attenuation of the original so the robot runs inside a tighter verifiable
+  envelope (20).
 
 ## Status
 
-All nineteen capabilities are implemented and tested in Python, TypeScript, Go, and
+All twenty capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the

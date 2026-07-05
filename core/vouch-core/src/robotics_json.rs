@@ -1304,3 +1304,54 @@ pub fn verify_fusion_inputs(params_json: &str) -> Result<String> {
     let res = r::verify_fusion_inputs(&credential, &entries);
     Ok(json!({"ok": res.ok, "missing": res.missing}).to_string())
 }
+
+// ---- wear and degradation attestation -------------------------------------
+
+/// Build a signed wear attestation. `params_json` is `{robotDid, wearLevel,
+/// metrics?, prevProof?, attestedAt?, validFrom, validUntil?}` where `metrics`, if
+/// present, is an object carried through into the subject unchanged.
+pub fn build_wear_attestation(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildWearAttestation {
+        robot_did: gs(&p, "robotDid"),
+        wear_level: gof(&p, "wearLevel").unwrap_or(0.0),
+        metrics: p.get("metrics").filter(|v| !v.is_null()).cloned(),
+        prev_proof: gos(&p, "prevProof"),
+        attested_at: gos(&p, "attestedAt"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_wear_attestation(robot_seed, &params)?.to_string())
+}
+
+/// Verify a wear attestation. Returns the credentialSubject on success, `null` if
+/// invalid.
+pub fn verify_wear_attestation(credential_json: &str, public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_wear_attestation(
+        &parse(credential_json)?,
+        public_key,
+    )?))
+}
+
+/// Verify an ordered wear history. `params_json` is `{attestations: [...]}`.
+/// Returns `{ok, latest}` where `latest`, when `ok`, is the latest
+/// credentialSubject.
+pub fn verify_wear_chain(params_json: &str, public_key: &[u8]) -> Result<String> {
+    let p = parse(params_json)?;
+    let attestations: Vec<Value> = p
+        .get("attestations")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let latest = r::verify_wear_chain(&attestations, public_key)?;
+    Ok(json!({"ok": latest.is_some(), "latest": latest}).to_string())
+}
+
+/// Derive a physical scope narrowed for a wear level. `params_json` is `{scope:
+/// {...}, wearLevel}`. Returns the narrowed scope JSON.
+pub fn attenuate_for_wear(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let scope = p.get("scope").cloned().unwrap_or(Value::Null);
+    let wear_level = gof(&p, "wearLevel").unwrap_or(0.0);
+    Ok(r::attenuate_for_wear(&scope, wear_level)?.to_string())
+}
