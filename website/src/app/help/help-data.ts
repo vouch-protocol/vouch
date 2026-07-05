@@ -828,7 +828,61 @@ recovered = recover_identity([shares[0], shares[2]], did=root.did)
 signer = Signer.from_keypair(recovered)
 \`\`\`
 
-The TypeScript SDK exposes the same helpers with camelCase names. See the runnable example in \`examples/cross_device_identity.py\`.
+Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) exposes the same helpers. See the runnable example in \`examples/cross_device_identity.py\`.
+`,
+      },
+      {
+        id: 'threshold-signing',
+        title: 'Threshold Signing With Multiple Custodians (FROST)',
+        summary: 'Split a signing key among several custodians so any threshold of them can sign together, with the full key never existing whole.',
+        body: `
+## The idea
+
+FROST(Ed25519) threshold signing splits a key among several custodians so that any threshold of them can produce a signature together, without the full private key ever existing whole at any point, not even during signing. The result is a standard Ed25519 signature, so it verifies exactly like any other Vouch credential. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) binds the same audited \`frost-ed25519\` core (the Zcash Foundation's RFC 9591 implementation), so every language produces byte-identical results from one implementation.
+
+This is distinct from root-identity recovery above: recovery reconstructs a key once, for a deliberate restore. Threshold signing never reconstructs the key at all, and is meant for live, repeated signing.
+
+## Generate a threshold identity
+
+A dealer mints \`max_signers\` key shares and a group public key, such that any \`min_signers\` of them can sign together. This mints a fresh threshold-native identity; it does not convert an existing single-key Ed25519 identity into one.
+
+\`\`\`python
+from vouch import threshold
+
+generated = threshold.generate_key(min_signers=2, max_signers=3)
+# generated.shares: distribute one KeyShare to each custodian
+# generated.group_public_key: the identity's public key
+\`\`\`
+
+## Sign with a threshold of custodians
+
+\`ThresholdSigner\` runs the full commit / sign-share / aggregate ceremony in one call, for a coordinator that holds enough shares to sign. Pass it straight to \`Signer.from_backend\` and the rest of the Signer, and every verifier, stays unaware a threshold ceremony produced the signature.
+
+\`\`\`python
+from vouch import Signer, ThresholdSigner
+
+threshold_signer = ThresholdSigner(generated.shares[:2], generated.group_public_key)
+
+signer = Signer.from_backend(
+    did="did:web:agent.example",
+    public_key=generated.group_public_key.public_key_jwk,
+    sign=threshold_signer.sign,
+)
+credential = signer.sign(action="read", target="t", resource="https://x/y")
+\`\`\`
+
+## Verify
+
+Nothing changes on the verifying side. The aggregated signature is a standard Ed25519 signature, so any Vouch verifier checks it exactly like a single-key credential:
+
+\`\`\`python
+from vouch import Verifier
+
+valid, _ = Verifier.verify(credential, public_key=generated.group_public_key.public_key_jwk)
+assert valid
+\`\`\`
+
+A true multi-device ceremony, where custodians never share a coordinator process, calls \`threshold.commit\`, \`threshold.sign_share\`, and \`threshold.aggregate\` directly on each device, passing commitments and shares over the network instead of holding every share in one \`ThresholdSigner\`.
 `,
       },
     ],

@@ -1,6 +1,6 @@
 ---
 name: vouch-protocol
-description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, Go, and more, all over one shared Rust core. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol-official/core-wasm`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions. Also covers outcome evidence: commit-before-outcome verdicts (OutcomeCommitmentCredential) and settlement attestations (OutcomeAttestationCredential) that prove an agent's track record cannot be backdated or cherry-picked.
+description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, Go, and more, all over one shared Rust core. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol-official/core-wasm`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions. Also covers outcome evidence: commit-before-outcome verdicts (OutcomeCommitmentCredential) and settlement attestations (OutcomeAttestationCredential) that prove an agent's track record cannot be backdated or cherry-picked. Also covers cross-device identity (one identity across many devices via per-device keys and delegation, with Shamir recovery shares for the root) and FROST(Ed25519) threshold signing (splitting a key among several custodians so a threshold of them sign together, with the full key never existing whole).
 ---
 
 # Vouch Protocol
@@ -26,6 +26,8 @@ Invoke when the user:
 - Asks how to revoke compromised agent credentials
 - Is debugging cross-language credential verification
 - Wants to prove an agent's track record, commit a verdict before its outcome, or settle a prediction against what actually happened
+- Wants one identity across several devices without copying a private key, or needs to recover a root identity from Shamir shares
+- Needs several custodians to jointly sign one action, or asks about threshold signatures, M-of-N signing keys, or FROST
 
 ## Integration: lead with one line
 
@@ -205,6 +207,33 @@ result = verify_delegated_chain([grant, action],
 
 See `reference/cross-device-identity.md` for enrollment, revocation, and
 recovery.
+
+### "How do I require several custodians to jointly sign one action?"
+
+FROST(Ed25519) threshold signing: split a key among several custodians so
+that any threshold of them can sign together, without the full private key
+ever existing whole, not even during signing. The result is a standard
+Ed25519 signature, so it verifies exactly like any other credential.
+
+```python
+from vouch import Signer, ThresholdSigner, threshold
+
+generated = threshold.generate_key(min_signers=2, max_signers=3)
+threshold_signer = ThresholdSigner(generated.shares[:2], generated.group_public_key)
+
+signer = Signer.from_backend(
+    did="did:web:agent.example",
+    public_key=generated.group_public_key.public_key_jwk,
+    sign=threshold_signer.sign,
+)
+credential = signer.sign(action="read", target="t", resource="https://x/y")
+```
+
+This is distinct from the recovery shares above: recovery reconstructs a
+key once, for a deliberate restore; threshold signing never reconstructs
+the key at all, and is meant for live, repeated signing. Available in every
+SDK (Python, TypeScript, Go, JVM, .NET, C, Swift), all binding the same
+audited `frost-ed25519` core. See `reference/threshold-signing.md`.
 
 ### "How do I revoke a specific credential?"
 
@@ -407,6 +436,8 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/go-sidecar.md` - Go sidecar build, run, deploy
 - `reference/credential-format.md` - VC structure, fields, examples
 - `reference/delegation.md` - Delegation chain construction and verification
+- `reference/cross-device-identity.md` - One identity across many devices: per-device keys, delegation, revocation, Shamir root recovery
+- `reference/threshold-signing.md` - FROST(Ed25519) threshold signing: splitting a key among several custodians
 - `reference/post-quantum.md` - Hybrid cryptosuite, migration guidance
 - `reference/revocation.md` - DID-level and credential-level revocation
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
