@@ -1,7 +1,12 @@
 # Publish the .NET SDK (VouchProtocol.Core) to NuGet.org.
 #
-# Trigger: push a tag like `dotnet-v0.1.0`, or run manually (workflow_dispatch).
-# Required repo secret: NUGET_API_KEY (nuget.org API key).
+# Trigger: push a tag like `dotnet-v2.0.0`, or run manually (workflow_dispatch).
+# Auth: NuGet Trusted Publishing (OIDC). Configure a trusted publisher on
+# nuget.org for this repository and this workflow file. No API key needed.
+#
+# The native core is built once per runtime identifier (Linux, macOS arm64 and
+# x64, Windows) and collected into runtimes/<rid>/native, which dotnet pack
+# bundles so the P/Invoke in Vouch.cs resolves the right binary on each OS.
 name: Publish NuGet
 
 on:
@@ -15,24 +20,67 @@ on:
         default: false
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build-native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, rids: "linux-x64" }
+          - { os: macos-latest, rids: "osx-arm64 osx-x64" }
+          - { os: windows-latest, rids: "win-x64" }
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: "8.0.x"
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Build native libraries
         working-directory: sdks/dotnet/VouchCore
-        run: bash build-native.sh
+        shell: bash
+        run: for rid in ${{ matrix.rids }}; do bash build-native.sh "$rid"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.os }}
+          path: sdks/dotnet/VouchCore/runtimes
+          if-no-files-found: error
+
+  publish:
+    needs: build-native
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+      - name: Collect native libraries into runtimes/
+        uses: actions/download-artifact@v4
+        with:
+          path: sdks/dotnet/VouchCore/runtimes
+          pattern: native-*
+          merge-multiple: true
       - name: Pack
         working-directory: sdks/dotnet/VouchCore
         run: dotnet pack -c Release -o ../../../dist-nuget
+      - name: Verify all runtimes are in the package
+        run: |
+          echo "Collected native libraries:"
+          find sdks/dotnet/VouchCore/runtimes -type f -name "*vouch_core_uniffi*" | sort
+          echo "Native libraries inside the .nupkg:"
+          unzip -l dist-nuget/*.nupkg | grep -E "runtimes/.*/native/" | sort
+          count=$(unzip -l dist-nuget/*.nupkg | grep -cE "runtimes/.*/native/.*vouch_core_uniffi")
+          echo "native library count in package: $count"
+          test "$count" -ge 4 || { echo "expected 4 native libraries, found $count"; exit 1; }
+      - name: Authenticate to NuGet (Trusted Publishing)
+        if: ${{ inputs.dry_run != true }}
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: Vouch_Protocol_Official
       - name: Push to NuGet
         if: ${{ inputs.dry_run != true }}
         run: |
           dotnet nuget push "dist-nuget/*.nupkg" \
-            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
