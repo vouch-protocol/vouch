@@ -23,6 +23,8 @@ from vouch.robotics import (
     PerceptionLog,
     SafetyEventLog,
     SoftwareRootOfTrust,
+    build_access_grant,
+    build_access_request,
     build_action_approval,
     build_decommission,
     build_delegation_lease,
@@ -180,6 +182,24 @@ def main():
         handoff_at=datetime(2026, 1, 1, 0, 10, 0, tzinfo=timezone.utc),
     )
 
+    # Infrastructure access: an operator grants robot A bounded access to a
+    # resource, and robot A presents a request for one operation. Other languages
+    # authorize the request offline against the grant. A long window so the fixture
+    # authorizes at any realistic current time.
+    access_operator, access_operator_pub = signer_from_seed(
+        bytes([9] * 32), "did:web:facility-ops.example.com"
+    )
+    access_robot, access_robot_pub = signer_from_seed(bytes([10] * 32), "did:web:robot-a.example.com")
+    access_grant = build_access_grant(
+        access_operator, robot_did="did:web:robot-a.example.com", resource="door-3",
+        operations=["open", "close"], zone="cell-3",
+        valid_seconds=10 * 365 * 24 * 60 * 60, granted_at=VALID_FROM,
+    )
+    access_request = build_access_request(
+        access_robot, robot_did="did:web:robot-a.example.com", resource="door-3",
+        operation="open", requested_at=VALID_FROM,
+    )
+
     # Conformance: a fixed credential set (the checker reads structure and fields,
     # not proofs, so these are plain credentials) and the deterministic report and
     # digest other languages reproduce.
@@ -233,11 +253,15 @@ def main():
             "credential set against a named profile, and an agent embodiment "
             "continuity chain (AgentEmbodimentCredential links signed by one agent "
             "key across bodies), and a physical custody handoff chain "
-            "(CustodyHandoffCredential links across human and robot actors). "
+            "(CustodyHandoffCredential links across human and robot actors), and a "
+            "bounded infrastructure access grant plus a matching access request "
+            "(InfrastructureAccessGrant signed by an operator, "
+            "InfrastructureAccessRequest signed by a robot) that other languages "
+            "authorize offline. "
             "Credential proof values are not pinned because the proof carries a "
             "wall-clock created timestamp."
         ),
-        "version": "1.8",
+        "version": "1.9",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -277,6 +301,10 @@ def main():
             "did:web:robot-a.example.com": robot_a_pub,
             "did:web:robot-b.example.com": robot_b_pub,
         },
+        "access_grant_credential": access_grant,
+        "access_request_credential": access_request,
+        "access_operator_key": access_operator_pub,
+        "access_robot_key": access_robot_pub,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:

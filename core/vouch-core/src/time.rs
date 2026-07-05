@@ -109,7 +109,10 @@ mod tests {
     fn parses_known_instants() {
         assert_eq!(iso_to_epoch_seconds("1970-01-01T00:00:00Z").unwrap(), 0);
         // 2026-04-26T10:00:00Z
-        assert_eq!(iso_to_epoch_seconds("2026-04-26T10:00:00Z").unwrap(), 1777197600);
+        assert_eq!(
+            iso_to_epoch_seconds("2026-04-26T10:00:00Z").unwrap(),
+            1777197600
+        );
     }
 
     #[test]
@@ -141,6 +144,9 @@ mod tests {
     fn handles_offset_and_fraction() {
         let z = iso_to_epoch_seconds("2026-04-26T10:00:00Z").unwrap();
         assert_eq!(iso_to_epoch_seconds("2026-04-26T10:00:00.250Z").unwrap(), z);
-        assert_eq!(iso_to_epoch_seconds("2026-04-26T12:00:00+02:00").unwrap(), z);
+        assert_eq!(
+            iso_to_epoch_seconds("2026-04-26T12:00:00+02:00").unwrap(),
+            z
+        );
     }
 }

@@ -25,8 +25,8 @@ pub struct MlDsa44KeyPair {
 impl MlDsa44KeyPair {
     /// Generate a fresh key pair using the platform CSPRNG.
     pub fn generate() -> Result<Self> {
-        let (pk, sk) =
-            ml_dsa_44::try_keygen().map_err(|e| CoreError::Crypto(format!("ml-dsa keygen: {e}")))?;
+        let (pk, sk) = ml_dsa_44::try_keygen()
+            .map_err(|e| CoreError::Crypto(format!("ml-dsa keygen: {e}")))?;
         Ok(Self {
             secret_bytes: sk.into_bytes(),
             public_bytes: pk.into_bytes(),
@@ -81,15 +81,19 @@ impl MlDsa44KeyPair {
 /// public key (pure ML-DSA, empty context).
 pub fn verify(public_key: &[u8], message: &[u8], signature: &[u8]) -> Result<bool> {
     let pk_arr: [u8; MLDSA44_PUBLIC_LEN] =
-        public_key.try_into().map_err(|_| CoreError::InvalidKeyLength {
-            expected: MLDSA44_PUBLIC_LEN,
-            got: public_key.len(),
-        })?;
+        public_key
+            .try_into()
+            .map_err(|_| CoreError::InvalidKeyLength {
+                expected: MLDSA44_PUBLIC_LEN,
+                got: public_key.len(),
+            })?;
     let sig_arr: [u8; MLDSA44_SIG_LEN] =
-        signature.try_into().map_err(|_| CoreError::InvalidSignatureLength {
-            expected: MLDSA44_SIG_LEN,
-            got: signature.len(),
-        })?;
+        signature
+            .try_into()
+            .map_err(|_| CoreError::InvalidSignatureLength {
+                expected: MLDSA44_SIG_LEN,
+                got: signature.len(),
+            })?;
     let pk = ml_dsa_44::PublicKey::try_from_bytes(pk_arr)
         .map_err(|e| CoreError::Crypto(format!("bad ml-dsa public key: {e}")))?;
     Ok(pk.verify(message, &sig_arr, &[]))

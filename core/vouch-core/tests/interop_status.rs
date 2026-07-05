@@ -8,7 +8,10 @@
 use serde_json::Value;
 use std::fs;
 
-use vouch_core::status_list::{decode_bitstring, encode_bitstring, get_status, set_status, verify_status, DEFAULT_BITSTRING_LENGTH};
+use vouch_core::status_list::{
+    decode_bitstring, encode_bitstring, get_status, set_status, verify_status,
+    DEFAULT_BITSTRING_LENGTH,
+};
 
 fn vector() -> Value {
     let path = concat!(
@@ -24,7 +27,10 @@ fn decodes_shared_list_and_reports_correct_bits() {
     let v = vector();
     let encoded = v["expected_encoded_list"].as_str().unwrap();
     let bits = decode_bitstring(encoded).unwrap();
-    assert_eq!(bits.len() * 8, v["bitstring_length_bits"].as_u64().unwrap() as usize);
+    assert_eq!(
+        bits.len() * 8,
+        v["bitstring_length_bits"].as_u64().unwrap() as usize
+    );
 
     for idx in v["revoked_indices"].as_array().unwrap() {
         let i = idx.as_u64().unwrap() as usize;

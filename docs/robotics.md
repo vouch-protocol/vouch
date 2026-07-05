@@ -350,6 +350,31 @@ change = locate_condition_change([h1, h2])
 The open layer is signed handoff credentials and software verification; managed
 logistics custody orchestration and fleet tracking are commercial.
 
-Sections 5.7 to 5.17 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.18 Infrastructure access (`vouch.robotics.access`)
+
+A robot in a warehouse, hospital, or building needs to open doors, call elevators,
+dock at chargers, and operate machines. An infrastructure operator signs an
+`InfrastructureAccessGrant` naming the resource, the permitted operations, an
+optional zone, and a time window. The robot signs an `InfrastructureAccessRequest`
+for one operation on one resource. The resource runs `authorize_access` offline and
+allows the operation only when the grant verifies under the operator key and is in
+window, the request verifies under the robot key, the grant and request name the
+same robot and resource, and the operation is permitted. The grant plus the request
+is a tamper-evident, attributable record of the access, and `attenuates_grant`
+confirms a sub-grant only narrows what it inherits.
+
+```python
+from vouch.robotics import build_access_grant, build_access_request, authorize_access
+
+grant = build_access_grant(operator, robot_did=robot_did, resource="door-3", operations=["open", "close"], zone="cell-3", valid_seconds=3600)
+request = build_access_request(robot, robot_did=robot_did, resource="door-3", operation="open")
+result = authorize_access(grant, request, operator_key, robot_key)
+```
+
+The open layer is signed grants and requests, offline authorization, and shrink-only
+attenuation; hardware-enforced actuation at the resource and managed fleet
+access-policy orchestration are commercial.
+
+Sections 5.7 to 5.18 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

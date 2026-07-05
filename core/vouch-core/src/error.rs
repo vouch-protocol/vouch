@@ -29,13 +29,19 @@ impl fmt::Display for CoreError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CoreError::InvalidKeyLength { expected, got } => {
-                write!(f, "invalid key length: expected {expected} bytes, got {got}")
+                write!(
+                    f,
+                    "invalid key length: expected {expected} bytes, got {got}"
+                )
             }
             CoreError::InvalidMultikey(m) => write!(f, "invalid multikey: {m}"),
             CoreError::UnknownMulticodec(m) => write!(f, "unknown multicodec prefix: {m}"),
             CoreError::InvalidDid(m) => write!(f, "invalid did: {m}"),
             CoreError::InvalidSignatureLength { expected, got } => {
-                write!(f, "invalid signature length: expected {expected} bytes, got {got}")
+                write!(
+                    f,
+                    "invalid signature length: expected {expected} bytes, got {got}"
+                )
             }
             CoreError::Crypto(m) => write!(f, "crypto error: {m}"),
             CoreError::Json(m) => write!(f, "json error: {m}"),

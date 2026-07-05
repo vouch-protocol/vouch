@@ -895,3 +895,42 @@ pub fn robotics_holder_at(params_json: &str) -> Result<String, JsError> {
 pub fn robotics_locate_condition_change(params_json: &str) -> Result<String, JsError> {
     rjson::locate_condition_change(params_json).map_err(jerr)
 }
+
+#[wasm_bindgen(js_name = roboticsBuildAccessGrant)]
+pub fn robotics_build_access_grant(
+    operator_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_access_grant(&b64d(operator_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyAccessGrant)]
+pub fn robotics_verify_access_grant(
+    credential_json: &str,
+    operator_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_access_grant(credential_json, &b64d(operator_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildAccessRequest)]
+pub fn robotics_build_access_request(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_access_request(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsAuthorizeAccess)]
+pub fn robotics_authorize_access(
+    params_json: &str,
+    operator_public_b64: &str,
+    robot_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::authorize_access(
+        params_json,
+        &b64d(operator_public_b64)?,
+        &b64d(robot_public_b64)?,
+    )
+    .map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsAttenuatesGrant)]
+pub fn robotics_attenuates_grant(params_json: &str) -> Result<String, JsError> {
+    rjson::attenuates_grant(params_json).map_err(jerr)
+}

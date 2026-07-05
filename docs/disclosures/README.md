@@ -94,6 +94,19 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-084](./PAD-084-custody-condition-localization.md) | Localizing a Physical State Change to a Custody Hop via Handoff Condition Attestation | 2026-07-05 | Published |
 | [PAD-085](./PAD-085-two-phase-deliberated-execution.md) | Two-Phase Deliberated Execution of Irreversible Agent Actions with Signed Veto Window | 2026-07-05 | Published |
 | [PAD-086](./PAD-086-executable-caveats-delegation-chains.md) | Deterministic Executable Caveats Embedded in Object-Capability Delegation Chains | 2026-07-05 | Published |
+| [PAD-087](./PAD-087-bounded-infrastructure-access-grant.md) | Bounded, Offline-Verifiable Robot Access to Physical Infrastructure With Shrink-Only Attenuation | 2026-07-05 | Published |
+| [PAD-088](./PAD-088-auditable-access-use-record.md) | Auditable, Attributable Record of a Robot's Use of Physical Infrastructure | 2026-07-05 | Published |
+
+
+## July 5, 2026: Robot Infrastructure Access (PAD-087, PAD-088)
+
+Two disclosures cover bounded robot access to physical infrastructure like doors,
+elevators, and chargers. PAD-087 is an operator-signed access grant naming a resource,
+its permitted operations, an optional zone, and a time window, which a resource
+authorizes offline against the robot presenting a request, with shrink-only attenuation
+of a sub-grant. PAD-088 pairs the robot-signed request with the operator-signed grant to
+form a tamper-evident, attributable record of which robot used which resource, for which
+operation, and when, independently verifiable without a trusted central log.
 
 
 ## July 5, 2026: Accountable Autonomy for Actions Inside the Envelope (PAD-085, PAD-086)

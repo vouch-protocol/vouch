@@ -342,6 +342,24 @@ export type {
   ConditionChange,
 } from './robotics/custody';
 
+// Robot-to-infrastructure bounded access: signed grants and requests, an
+// offline authorize decision, and shrink-only attenuation, byte-identical with
+// the Python module.
+export {
+  ACCESS_GRANT_TYPE,
+  ACCESS_REQUEST_TYPE,
+  buildAccessGrant,
+  verifyAccessGrant,
+  buildAccessRequest,
+  authorizeAccess,
+  attenuatesGrant,
+} from './robotics/access';
+export type {
+  BuildAccessGrantOptions,
+  BuildAccessRequestOptions,
+  AuthorizeResult,
+} from './robotics/access';
+
 // Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,

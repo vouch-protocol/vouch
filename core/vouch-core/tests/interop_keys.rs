@@ -9,7 +9,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::Value;
 use std::fs;
 
-use vouch_core::keys::{ed25519_to_did_key, did_key_to_ed25519, Ed25519KeyPair};
+use vouch_core::keys::{did_key_to_ed25519, ed25519_to_did_key, Ed25519KeyPair};
 use vouch_core::multikey;
 
 fn hybrid_vector() -> Value {
@@ -25,7 +25,9 @@ fn hybrid_vector() -> Value {
 fn ed25519_seed_to_public_kat() {
     let v = hybrid_vector();
     let seed_b64 = v["ed25519"]["seed_b64"].as_str().expect("seed_b64");
-    let pub_b64 = v["ed25519"]["public_key_b64"].as_str().expect("public_key_b64");
+    let pub_b64 = v["ed25519"]["public_key_b64"]
+        .as_str()
+        .expect("public_key_b64");
 
     let seed = STANDARD.decode(seed_b64).expect("decode seed");
     let kp = Ed25519KeyPair::from_seed_slice(&seed).expect("from seed");
@@ -42,7 +44,9 @@ fn mldsa44_public_key_multikey_roundtrips() {
     // The shared vector carries a real 1312-byte ML-DSA-44 public key; confirm
     // the multikey encode/decode handles it (used by the hybrid PQ profile).
     let v = hybrid_vector();
-    let pub_b64 = v["mldsa44"]["public_key_b64"].as_str().expect("mldsa44 pub");
+    let pub_b64 = v["mldsa44"]["public_key_b64"]
+        .as_str()
+        .expect("mldsa44 pub");
     let raw = STANDARD.decode(pub_b64).expect("decode mldsa pub");
     assert_eq!(raw.len(), 1312, "ML-DSA-44 public key is 1312 bytes");
     let mk = multikey::encode_mldsa44_public(&raw).expect("encode mldsa multikey");
