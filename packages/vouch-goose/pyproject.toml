@@ -11,7 +11,7 @@ requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Ramprasad Gaddam" }]
 keywords = ["goose", "block", "mcp", "vouch", "ai-agents", "verifiable-credentials", "identity"]
-dependencies = ["vouch-protocol[goose]>=1.6.0", "vouch-mcp>=1.6.0"]
+dependencies = ["vouch-protocol>=1.6.0", "vouch-mcp>=1.6.0", "pyyaml>=6.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
