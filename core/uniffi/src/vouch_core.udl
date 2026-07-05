@@ -260,6 +260,18 @@ namespace vouch_core {
     string robotics_holder_at(string params_json);
     [Throws=CoreError]
     string robotics_locate_condition_change(string params_json);
+
+    // Robot-to-infrastructure bounded access (Phase 5.17).
+    [Throws=CoreError]
+    string robotics_build_access_grant(bytes operator_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_access_grant(string credential_json, bytes operator_public_key);
+    [Throws=CoreError]
+    string robotics_build_access_request(bytes robot_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_authorize_access(string params_json, bytes operator_public_key, bytes robot_public_key);
+    [Throws=CoreError]
+    string robotics_attenuates_grant(string params_json);
 };
 
 dictionary Ed25519KeyPair {

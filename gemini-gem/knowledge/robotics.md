@@ -811,6 +811,75 @@ custody orchestration and fleet tracking are commercial.
 
 ---
 
+## 18. Robot-to-infrastructure bounded access
+
+`vouch.robotics.access`
+
+What it is: a way for a robot to open a door, call an elevator, dock at a
+charger, or run a machine on authority an infrastructure operator granted it in
+advance, checked at the resource with no network call. An infrastructure operator
+(a warehouse, a hospital, a building) issues an operator-signed
+`InfrastructureAccessGrant` naming a resource, the operations it permits, an
+optional zone, and a time window. When the robot wants to act, it presents a
+robot-signed `InfrastructureAccessRequest` for one operation on that resource, and
+the resource authorizes it offline.
+
+The problem it closes: a robot moving through a building needs to use fixed
+infrastructure it does not own, and the resource has to decide, on its own,
+whether this robot may perform this operation right now. Answering that with a
+central access server means a network round trip on every door and every charger,
+and a shared secret or a badge clone leaves no attributable record of who did
+what. Robot-to-infrastructure bounded access makes the grant and the request
+cryptographic: the resource checks operator and robot signatures locally, and the
+grant plus the request is a tamper-evident record that attributes the action to
+the exact robot and the exact grant that authorized it.
+
+How it works: `build_access_grant` produces an `InfrastructureAccessGrant` in
+which the operator signs a resource identifier, the permitted operations, an
+optional zone, and a validity window. `build_access_request` produces a
+robot-signed `InfrastructureAccessRequest` naming one operation on one resource at
+a stated time. `authorize_access` runs the offline decision at the resource: the
+grant must be valid and operator-signed, the request valid and robot-signed, the
+requested operation must be one the grant permits, and the moment must fall inside
+the window, so a resource authorizes only what its operator allowed. An operator
+can issue a sub-grant that narrows an existing grant, and `attenuates_grant`
+confirms a sub-grant only ever shrinks the operations, zone, or window it
+inherits, never widens them, so authority attenuates down a chain the same way the
+delegation lease (11) and the physical capability scope (3) attenuate.
+`verify_access_grant` checks a grant on its own.
+
+The API: `build_access_grant`, `verify_access_grant`, `build_access_request`,
+`authorize_access`, and `attenuates_grant`. Credential types:
+`InfrastructureAccessGrant`, `InfrastructureAccessRequest`.
+
+Worked example (Python):
+
+```python
+from vouch.robotics import access
+
+grant = access.build_access_grant(
+    operator_signer, resource="dock-door-7", operations=["open", "close"],
+    zone="bay-3", not_before=t0, not_after=t1,      # operator authorizes the robot
+)
+req = access.build_access_request(
+    robot_signer, resource="dock-door-7", operation="open", at=t0,
+)
+assert access.authorize_access(grant, req, at=t0).ok    # resource decides offline
+assert access.attenuates_grant(sub_grant, grant)        # a sub-grant only narrows
+```
+
+Security boundary: `authorize_access` fails closed on a wrong type, an invalid
+operator or robot proof, an operation the grant does not permit, or a moment
+outside the window, so a resource authorizes only an operation an operator signed
+for and only while the grant is live. `attenuates_grant` fails when a sub-grant
+adds an operation, widens the zone, or extends the window beyond what it inherits,
+so a narrowed grant can never regain authority it was meant to drop. The grant and
+the request together attribute every authorized action to the requesting robot and
+the authorizing grant. This is the open layer; managed access orchestration and
+fleet-wide grant issuance are commercial.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -830,10 +899,12 @@ conformance report (14), can sign those robot credentials with a hybrid
 post-quantum proof so an identity issued today still holds once quantum computers
 arrive (15), and carries the same agent identity from one body to the next along a
 signed continuity chain that proves one mind persisted across bodies without ever
-running in two at once (16), and records a signed custody chain as a physical task
+running in two at once (16), records a signed custody chain as a physical task
 or object passes from hand to hand so an incident traces to the exact hop and
-actor who held it (17). Every artifact is the same Verifiable Credential
-format, so one verifier and one trust model cover all seventeen.
+actor who held it (17), and acts on operator-signed grants to open a door or dock
+at a charger, authorized offline at the resource with an attributable record of
+which robot did what (18). Every artifact is the same Verifiable Credential
+format, so one verifier and one trust model cover all eighteen.
 
 ## Quick answers
 
@@ -891,10 +962,17 @@ format, so one verifier and one trust model cover all seventeen.
   chain to show who held it at each hop, `holder_at` returns the holder at a given
   time, and `locate_condition_change` pins damage or loss to the responsible hop
   (17).
+- Can a robot open a door, call an elevator, or dock at a charger it does not own,
+  decided offline at the resource? Yes, robot-to-infrastructure bounded access: an
+  operator signs an `InfrastructureAccessGrant` naming a resource, operations, an
+  optional zone, and a window, the robot presents a signed
+  `InfrastructureAccessRequest`, and `authorize_access` decides at the resource
+  with no network call, while `attenuates_grant` keeps every sub-grant narrowing
+  only (18).
 
 ## Status
 
-All seventeen capabilities are implemented and tested in Python, TypeScript, Go, and
+All eighteen capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the

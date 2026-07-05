@@ -39,7 +39,9 @@ fn cstr_in_opt(p: *const c_char) -> Result<Option<String>, String> {
 }
 
 fn cstr_out(s: String) -> *mut c_char {
-    CString::new(s).map(|c| c.into_raw()).unwrap_or(ptr::null_mut())
+    CString::new(s)
+        .map(|c| c.into_raw())
+        .unwrap_or(ptr::null_mut())
 }
 
 fn set_err(err_out: *mut *mut c_char, msg: String) {
@@ -57,7 +59,11 @@ fn unb64(s: &str) -> Result<Vec<u8>, String> {
     STANDARD.decode(s).map_err(|e| format!("base64: {e}"))
 }
 fn bool_str(b: bool) -> String {
-    if b { "true".into() } else { "false".into() }
+    if b {
+        "true".into()
+    } else {
+        "false".into()
+    }
 }
 
 /// Run `body`, catching any panic, and marshal the result to a C string. Always
@@ -98,7 +104,10 @@ pub extern "C" fn vouch_version() -> *mut c_char {
 
 /// RFC 8785 canonicalization of a JSON string. NULL on error.
 #[no_mangle]
-pub extern "C" fn vouch_canonicalize(json: *const c_char, err_out: *mut *mut c_char) -> *mut c_char {
+pub extern "C" fn vouch_canonicalize(
+    json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
     guard(err_out, move || {
         let json = cstr_in(json)?;
         core::canonicalize(json).map_err(|e| e.to_string())
@@ -164,7 +173,9 @@ pub extern "C" fn vouch_verify_proof(
     guard(err_out, move || {
         let cred = cstr_in(credential_json)?;
         let pk = unb64(&cstr_in(public_b64)?)?;
-        Ok(bool_str(core::verify_proof(cred, pk).map_err(|e| e.to_string())?))
+        Ok(bool_str(
+            core::verify_proof(cred, pk).map_err(|e| e.to_string())?,
+        ))
     })
 }
 
@@ -199,7 +210,9 @@ pub extern "C" fn vouch_verify_dual(
         let cred = cstr_in(credential_json)?;
         let ed = unb64(&cstr_in(ed25519_public_b64)?)?;
         let ml = unb64(&cstr_in(mldsa_public_b64)?)?;
-        Ok(bool_str(core::verify_dual(cred, ed, ml).map_err(|e| e.to_string())?))
+        Ok(bool_str(
+            core::verify_dual(cred, ed, ml).map_err(|e| e.to_string())?,
+        ))
     })
 }
 
@@ -215,7 +228,9 @@ pub extern "C" fn vouch_verify_composite(
         let cred = cstr_in(credential_json)?;
         let ed = unb64(&cstr_in(ed25519_public_b64)?)?;
         let ml = unb64(&cstr_in(mldsa_public_b64)?)?;
-        Ok(bool_str(core::verify_composite(cred, ed, ml).map_err(|e| e.to_string())?))
+        Ok(bool_str(
+            core::verify_composite(cred, ed, ml).map_err(|e| e.to_string())?,
+        ))
     })
 }
 
@@ -230,7 +245,9 @@ pub extern "C" fn vouch_verify_status(
     guard(err_out, move || {
         let cs = cstr_in(credential_status_json)?;
         let sl = cstr_in(status_list_credential_json)?;
-        Ok(bool_str(core::verify_status(cs, sl).map_err(|e| e.to_string())?))
+        Ok(bool_str(
+            core::verify_status(cs, sl).map_err(|e| e.to_string())?,
+        ))
     })
 }
 
@@ -270,7 +287,8 @@ pub extern "C" fn vouch_verify_chain_time_bound(
         let chain = cstr_in(chain_json)?;
         let now = cstr_in(now_iso)?;
         Ok(bool_str(
-            core::verify_chain_time_bound(chain, now, clock_skew_seconds).map_err(|e| e.to_string())?,
+            core::verify_chain_time_bound(chain, now, clock_skew_seconds)
+                .map_err(|e| e.to_string())?,
         ))
     })
 }
@@ -330,7 +348,8 @@ pub extern "C" fn vouch_threshold_sign_share(
         let key_share = cstr_in(key_share_json)?;
         let nonces = cstr_in(nonces_b64)?;
         let commitments = cstr_in(commitments_json)?;
-        core::threshold_sign_share(message, key_share, nonces, commitments).map_err(|e| e.to_string())
+        core::threshold_sign_share(message, key_share, nonces, commitments)
+            .map_err(|e| e.to_string())
     })
 }
 
@@ -506,7 +525,7 @@ pub extern "C" fn vouch_robotics_check_conformance(
     })
 }
 
-/// Sign a point-in-time conformance attestation over a report. 
+/// Sign a point-in-time conformance attestation over a report.
 /// carries issuerDid/robotDid/report; returns the signed credential JSON.
 #[no_mangle]
 pub extern "C" fn vouch_robotics_build_conformance_attestation(
@@ -517,7 +536,8 @@ pub extern "C" fn vouch_robotics_build_conformance_attestation(
     guard(err_out, move || {
         let seed = unb64(&cstr_in(signer_seed_b64)?)?;
         let params = cstr_in(params_json)?;
-        vouch_core::robotics_json::build_conformance_attestation(&seed, &params).map_err(|e| e.to_string())
+        vouch_core::robotics_json::build_conformance_attestation(&seed, &params)
+            .map_err(|e| e.to_string())
     })
 }
 
@@ -532,7 +552,8 @@ pub extern "C" fn vouch_robotics_verify_conformance_attestation(
     guard(err_out, move || {
         let cred = cstr_in(credential_json)?;
         let pk = unb64(&cstr_in(public_b64)?)?;
-        vouch_core::robotics_json::verify_conformance_attestation(&cred, &pk).map_err(|e| e.to_string())
+        vouch_core::robotics_json::verify_conformance_attestation(&cred, &pk)
+            .map_err(|e| e.to_string())
     })
 }
 

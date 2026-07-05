@@ -729,6 +729,29 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: INFRASTRUCTURE ACCESS
+  // =====================================================================
+  {
+    id: 'robotics-access',
+    audience: 'Robotics: access',
+    title: 'Infrastructure access',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does a robot open a door or use an elevator without a shared secret?',
+        a: `The infrastructure operator issues an \`InfrastructureAccessGrant\` with \`build_access_grant\`, naming the resource (a door, elevator, charger, or machine), the permitted operations, an optional zone, and a time window, signed by the operator. The robot presents an \`InfrastructureAccessRequest\` for one operation, signed by its own key. The resource runs \`authorize_access\` offline: it allows the operation only when the grant verifies under the operator key and is in window, the request verifies under the robot key, the grant and request name the same robot and resource, and the operation is one the grant permits. No shared secret and no live call to a server.`,
+        helpLinks: [{ label: 'Infrastructure access guide', href: '/help/#robotics-access' }],
+        meta: 'Shipped - vouch.robotics.access',
+      },
+      {
+        q: 'Can I hand a robot a narrower slice of access than I hold?',
+        a: `Yes. \`attenuates_grant\` confirms a sub-grant only narrows what it inherits: the same resource, a subset of the operations, and the same zone. A grant can be passed down the chain and checked at each step so no one widens it, and because the grant and the matching request are both signed, the pair is a tamper-evident, attributable record of exactly what access was used and when.`,
+        meta: 'Shipped - vouch.robotics.access',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {

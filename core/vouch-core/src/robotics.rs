@@ -3648,6 +3648,246 @@ pub fn locate_condition_change(handoffs: &[Value]) -> Option<ConditionChange> {
     None
 }
 
+// ---------------------------------------------------------------------------
+// Robot-to-infrastructure bounded access (Phase 5.17)
+// ---------------------------------------------------------------------------
+//
+// A robot in a warehouse, hospital, or building needs to open doors, call
+// elevators, dock at chargers, and operate machines. This gives it a bounded,
+// revocable, auditable way to do so. The infrastructure operator issues an access
+// grant naming a resource, the permitted operations, an optional zone, and a time
+// window, signed by the operator. The robot presents a signed access request for a
+// specific operation on a specific resource, and the resource authorizes it
+// offline: the grant must be valid and operator-signed, the request valid and
+// robot-signed, the operation permitted, and the moment inside the window. The
+// grant plus the request is a tamper-evident, attributable record of the access.
+//
+// This is the open layer: signed grants and requests, an offline authorize
+// decision, shrink-only attenuation, and the audit record. Hardware-enforced
+// actuation in the resource and managed fleet access-policy orchestration are out
+// of scope for the open layer.
+
+pub const ACCESS_GRANT_TYPE: &str = "InfrastructureAccessGrant";
+pub const ACCESS_REQUEST_TYPE: &str = "InfrastructureAccessRequest";
+
+/// Parameters for [`build_access_grant`]. The signer is the operator; the grant
+/// names the robot, the resource, the permitted operations, an optional zone, and
+/// a validity window. `valid_until`, when set, bounds the window (the wrapper
+/// derives it from a `valid_seconds` lifetime added to `granted_at`, keeping the
+/// core's clock caller-supplied).
+#[derive(Debug, Clone)]
+pub struct BuildAccessGrant {
+    pub operator_did: String,
+    pub robot_did: String,
+    pub resource: String,
+    pub operations: Vec<String>,
+    pub zone: Option<String>,
+    pub granted_at: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed access grant: the operator grants `robot_did` permission to
+/// perform `operations` on `resource` (optionally within `zone`) for the window.
+/// Signed by the operator.
+pub fn build_access_grant(operator_seed: &[u8], params: &BuildAccessGrant) -> Result<Value> {
+    if params.robot_did.is_empty() || params.resource.is_empty() {
+        return Err(CoreError::Json(
+            "robot_did and resource are required".into(),
+        ));
+    }
+    if params.operations.is_empty() {
+        return Err(CoreError::Json(
+            "operations must be a non-empty list".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("resource".into(), json!(params.resource));
+    subject.insert("operations".into(), json!(params.operations));
+    if let Some(zone) = &params.zone {
+        subject.insert("zone".into(), json!(zone));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", ACCESS_GRANT_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.operator_did));
+    cred.insert("validFrom".into(), json!(params.granted_at));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.operator_did), &params.granted_at);
+    data_integrity::sign(&Value::Object(cred), operator_seed, &opts)
+}
+
+/// Verify an access grant: the operator's proof, that the subject carries a
+/// `resource` and non-empty `operations`, and that the grant is within its window
+/// at `now_iso` (a `None` clock skips the window check). Returns the
+/// credentialSubject on success, `None` if invalid.
+pub fn verify_access_grant(
+    credential: &Value,
+    operator_public_key: &[u8],
+    now_iso: Option<&str>,
+) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, operator_public_key, ACCESS_GRANT_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let resource = subject.get("resource").and_then(|v| v.as_str());
+    let operations = subject.get("operations").and_then(|v| v.as_array());
+    match (resource, operations) {
+        (Some(r), Some(ops)) if !r.is_empty() && !ops.is_empty() => {}
+        _ => return Ok(None),
+    }
+    if !lease_window_current(credential, now_iso) {
+        return Ok(None);
+    }
+    Ok(Some(subject))
+}
+
+/// Parameters for [`build_access_request`]. The signer is the robot; the request
+/// names the resource and the single operation the robot wants to perform.
+#[derive(Debug, Clone)]
+pub struct BuildAccessRequest {
+    pub robot_did: String,
+    pub resource: String,
+    pub operation: String,
+    pub requested_at: String,
+}
+
+/// Build a signed access request: the robot requests to perform `operation` on
+/// `resource`. Signed by the robot.
+pub fn build_access_request(robot_seed: &[u8], params: &BuildAccessRequest) -> Result<Value> {
+    if params.robot_did.is_empty() || params.resource.is_empty() || params.operation.is_empty() {
+        return Err(CoreError::Json(
+            "robot_did, resource, and operation are required".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("resource".into(), json!(params.resource));
+    subject.insert("operation".into(), json!(params.operation));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", ACCESS_REQUEST_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.robot_did));
+    cred.insert("validFrom".into(), json!(params.requested_at));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.robot_did), &params.requested_at);
+    data_integrity::sign(&Value::Object(cred), robot_seed, &opts)
+}
+
+/// The outcome of an offline access authorization: `ok` plus any reasons it
+/// failed. Surfaced by [`authorize_access`].
+#[derive(Debug, Clone)]
+pub struct AuthorizeResult {
+    pub ok: bool,
+    pub reasons: Vec<String>,
+}
+
+/// Decide, offline, whether to allow the requested access. The grant must verify
+/// under the operator's key and be in window, the request must verify under the
+/// robot's key and be issued by the robot it names, the grant and request must
+/// name the same robot and resource, and the requested operation must be permitted
+/// by the grant. Returns an [`AuthorizeResult`] with the reasons for any refusal.
+pub fn authorize_access(
+    grant: &Value,
+    request: &Value,
+    operator_public_key: &[u8],
+    robot_public_key: &[u8],
+    now_iso: Option<&str>,
+) -> Result<AuthorizeResult> {
+    let mut reasons: Vec<String> = Vec::new();
+
+    let grant_subject = match verify_access_grant(grant, operator_public_key, now_iso)? {
+        Some(s) => s,
+        None => {
+            reasons.push("grant invalid or out of window".into());
+            return Ok(AuthorizeResult { ok: false, reasons });
+        }
+    };
+
+    let req_subject = match verify_typed(request, robot_public_key, ACCESS_REQUEST_TYPE)? {
+        Some(s) => s,
+        None => {
+            reasons.push("request invalid".into());
+            return Ok(AuthorizeResult { ok: false, reasons });
+        }
+    };
+    let req_id = req_subject.get("id").and_then(|v| v.as_str());
+    if request.get("issuer").and_then(|v| v.as_str()) != req_id {
+        reasons.push("request invalid".into());
+        return Ok(AuthorizeResult { ok: false, reasons });
+    }
+
+    if grant_subject.get("id").and_then(|v| v.as_str()) != req_id {
+        reasons.push("grant and request name different robots".into());
+    }
+    if grant_subject.get("resource").and_then(|v| v.as_str())
+        != req_subject.get("resource").and_then(|v| v.as_str())
+    {
+        reasons.push("grant and request name different resources".into());
+    }
+    let operation = req_subject.get("operation").and_then(|v| v.as_str());
+    let permitted = grant_subject
+        .get("operations")
+        .and_then(|v| v.as_array())
+        .map(|ops| operation.is_some() && ops.iter().any(|o| o.as_str() == operation))
+        .unwrap_or(false);
+    if !permitted {
+        reasons.push("operation not permitted by the grant".into());
+    }
+
+    Ok(AuthorizeResult {
+        ok: reasons.is_empty(),
+        reasons,
+    })
+}
+
+/// Return true if `child` is a valid attenuation of `parent`: the same resource, a
+/// subset of the operations, and the same zone (or the parent had no zone). A
+/// sub-grant may only narrow, never widen, the access it inherits.
+pub fn attenuates_grant(parent: &Value, child: &Value) -> bool {
+    let p = parent.get("credentialSubject");
+    let c = child.get("credentialSubject");
+    let p_resource = p.and_then(|s| s.get("resource")).and_then(|v| v.as_str());
+    let c_resource = c.and_then(|s| s.get("resource")).and_then(|v| v.as_str());
+    if p_resource != c_resource {
+        return false;
+    }
+    let p_ops: HashSet<&str> = p
+        .and_then(|s| s.get("operations"))
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|o| o.as_str()).collect())
+        .unwrap_or_default();
+    let c_ops: HashSet<&str> = c
+        .and_then(|s| s.get("operations"))
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|o| o.as_str()).collect())
+        .unwrap_or_default();
+    if !c_ops.is_subset(&p_ops) {
+        return false;
+    }
+    let p_zone = p.and_then(|s| s.get("zone")).and_then(|v| v.as_str());
+    let c_zone = c.and_then(|s| s.get("zone")).and_then(|v| v.as_str());
+    if p_zone.is_some() && c_zone != p_zone {
+        return false;
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5955,5 +6195,32 @@ mod tests {
         )
         .unwrap();
         assert!(locate_condition_change(&[h1, steady]).is_none());
+    }
+
+    // Robot-to-infrastructure bounded access (Phase 5.17) ------------------
+
+    // Cross-language interop: Rust authorizes the Python-signed grant and request
+    // from the vector under the operator and robot keys, offline.
+    #[test]
+    fn authorizes_python_access_interop_vector() {
+        let vector = load_vector();
+        let grant = vector["access_grant_credential"].clone();
+        let request = vector["access_request_credential"].clone();
+        let operator_pub = jwk_pub(&vector["access_operator_key"]);
+        let robot_pub = jwk_pub(&vector["access_robot_key"]);
+
+        let res = authorize_access(
+            &grant,
+            &request,
+            &operator_pub,
+            &robot_pub,
+            Some("2026-01-01T00:05:00Z"),
+        )
+        .unwrap();
+        assert!(
+            res.ok,
+            "the Python grant and request must authorize in Rust"
+        );
+        assert!(res.reasons.is_empty());
     }
 }

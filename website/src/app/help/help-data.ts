@@ -2639,6 +2639,28 @@ change = locate_condition_change([h1, h2])   # responsible holder is robot A
 Security boundary: each handoff is signed by the receiver, so an actor attests its own acceptance of custody, and the chain is only valid when each receiver is the next releaser. This is the open layer of signed credentials and software verification; managed logistics custody orchestration and fleet tracking are commercial.
 `,
       },
+      {
+        id: 'robotics-access',
+        title: 'Infrastructure access',
+        summary: 'Give a robot bounded, revocable, offline-verifiable access to physical infrastructure like doors, elevators, and chargers.',
+        body: `
+A robot in a warehouse, hospital, or building needs to open doors, call elevators, dock at chargers, and operate machines. This gives it a bounded, revocable, auditable way to do so.
+
+The problem it closes: physical access today is a shared credential (a badge, a key, a fixed code) that cannot be scoped to one robot, one resource, and one time window, and leaves no attributable record of who did what.
+
+How it works: the operator signs an \`InfrastructureAccessGrant\` with \`build_access_grant\`, naming the resource, the permitted operations, an optional zone, and a time window. The robot signs an \`InfrastructureAccessRequest\` for one operation with \`build_access_request\`. The resource runs \`authorize_access\` offline and allows the operation only when the grant verifies under the operator key and is in window, the request verifies under the robot key, the grant and request name the same robot and resource, and the operation is permitted. \`attenuates_grant\` confirms a sub-grant only narrows what it inherits.
+
+\`\`\`python
+from vouch.robotics import build_access_grant, build_access_request, authorize_access
+
+grant = build_access_grant(operator, robot_did=robot_did, resource="door-3", operations=["open", "close"], zone="cell-3", valid_seconds=3600)
+request = build_access_request(robot, robot_did=robot_did, resource="door-3", operation="open")
+result = authorize_access(grant, request, operator_key, robot_key)   # result.ok is True
+\`\`\`
+
+Security boundary: the grant is signed by the operator and the request by the robot, so the pair is a tamper-evident, attributable record and the decision is made offline at the resource. This is the open layer of signed grants and requests, offline authorization, and shrink-only attenuation; hardware-enforced actuation at the resource and managed fleet access-policy orchestration are commercial.
+`,
+      },
     ],
   },
 ];

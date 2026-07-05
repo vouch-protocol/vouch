@@ -1162,3 +1162,74 @@ pub fn locate_condition_change(params_json: &str) -> Result<String> {
         .unwrap_or(Value::Null);
     Ok(json!({"change": change}).to_string())
 }
+
+// ---- robot-to-infrastructure bounded access -------------------------------
+
+pub fn build_access_grant(operator_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildAccessGrant {
+        operator_did: gs(&p, "operatorDid"),
+        robot_did: gs(&p, "robotDid"),
+        resource: gs(&p, "resource"),
+        operations: gstrs(&p, "operations"),
+        zone: gos(&p, "zone"),
+        granted_at: gs(&p, "grantedAt"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_access_grant(operator_seed, &params)?.to_string())
+}
+
+/// Verify an access grant. `params_json` is `{grant: {...}, now?}`. Returns the
+/// credentialSubject on success, the JSON literal `null` if invalid.
+pub fn verify_access_grant(credential_json: &str, operator_public_key: &[u8]) -> Result<String> {
+    let p = parse(credential_json)?;
+    let grant = p.get("grant").cloned().unwrap_or(p.clone());
+    let now = gos(&p, "now");
+    Ok(subj(r::verify_access_grant(
+        &grant,
+        operator_public_key,
+        now.as_deref(),
+    )?))
+}
+
+pub fn build_access_request(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildAccessRequest {
+        robot_did: gs(&p, "robotDid"),
+        resource: gs(&p, "resource"),
+        operation: gs(&p, "operation"),
+        requested_at: gs(&p, "requestedAt"),
+    };
+    Ok(r::build_access_request(robot_seed, &params)?.to_string())
+}
+
+/// Decide, offline, whether to allow the requested access. `params_json` is
+/// `{grant: {...}, request: {...}, now?}`. Returns `{ok, reasons}`.
+pub fn authorize_access(
+    params_json: &str,
+    operator_public_key: &[u8],
+    robot_public_key: &[u8],
+) -> Result<String> {
+    let p = parse(params_json)?;
+    let grant = p.get("grant").cloned().unwrap_or(Value::Null);
+    let request = p.get("request").cloned().unwrap_or(Value::Null);
+    let now = gos(&p, "now");
+    let res = r::authorize_access(
+        &grant,
+        &request,
+        operator_public_key,
+        robot_public_key,
+        now.as_deref(),
+    )?;
+    Ok(json!({"ok": res.ok, "reasons": res.reasons}).to_string())
+}
+
+/// Return true if `child` is a valid attenuation of `parent`. `params_json` is
+/// `{parent: {...}, child: {...}}`. Returns `{ok}`.
+pub fn attenuates_grant(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let parent = p.get("parent").cloned().unwrap_or(Value::Null);
+    let child = p.get("child").cloned().unwrap_or(Value::Null);
+    let ok = r::attenuates_grant(&parent, &child);
+    Ok(json!({"ok": ok}).to_string())
+}

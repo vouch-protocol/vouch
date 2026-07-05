@@ -183,6 +183,20 @@ Never share user data with external sites.
   over its life, here who is holding a task or object right now as it moves. Open
   layer only; managed logistics custody orchestration and fleet tracking are
   commercial. See `robotics.md`.
+- "How does a robot open a door, call an elevator, or dock at a charger it does
+  not own, decided offline at the resource?" -> Robot-to-infrastructure bounded
+  access (`vouch.robotics.access`): an infrastructure operator signs an
+  `InfrastructureAccessGrant` naming a resource, the operations it permits, an
+  optional zone, and a time window (`build_access_grant`, `verify_access_grant`),
+  and the robot presents a signed `InfrastructureAccessRequest` for one operation
+  on that resource (`build_access_request`). `authorize_access` decides at the
+  resource with no network call: the grant valid and operator-signed, the request
+  valid and robot-signed, the operation permitted, and the moment inside the
+  window, so a resource authorizes only what its operator allowed, and the grant
+  plus the request is a tamper-evident record attributing the action to the exact
+  robot. `attenuates_grant` confirms a sub-grant only ever narrows the operations,
+  zone, or window it inherits. Open layer only; managed access orchestration and
+  fleet-wide grant issuance are commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface

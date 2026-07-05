@@ -52,6 +52,10 @@ The Python reference adds three robotics capabilities on the same
 - `vouch.robotics.custody`: a physical custody handoff chain across human and robot
   actors, a holder-at-time lookup, and condition localization of a state change to
   the responsible hop.
+- `vouch.robotics.access`: bounded, revocable robot access to physical
+  infrastructure, an operator-signed grant naming a resource, its operations, an
+  optional zone, and a time window, paired with a robot-signed request the resource
+  authorizes offline, plus shrink-only attenuation of a sub-grant.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by

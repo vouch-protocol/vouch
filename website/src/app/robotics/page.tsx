@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, a regulatory conformance profile mapping credentials to safety and AI regulations, post-quantum signing by default for a robot\'s decade-long life, cross-embodiment identity continuity so one accountable agent can move between robot bodies, and a physical custody handoff chain across human and robot actors.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, a regulatory conformance profile mapping credentials to safety and AI regulations, post-quantum signing by default for a robot\'s decade-long life, cross-embodiment identity continuity so one accountable agent can move between robot bodies, a physical custody handoff chain across human and robot actors, and bounded, revocable access to physical infrastructure like doors, elevators, and chargers.',
 };
 
 const CAPABILITIES = [
@@ -109,6 +109,12 @@ const CAPABILITIES = [
         title: 'Physical custody handoff',
         body: 'A task or object passes across a chain of actors, human and robot. Each handoff is a signed record that the receiver accepted custody, so a chain establishes who held the task at any moment and a physical-world incident traces to the exact hop. A condition attested at each handoff localizes damage or loss to the holder responsible for it.',
         module: 'vouch.robotics.custody',
+    },
+    {
+        num: 'xviii.',
+        title: 'Infrastructure access',
+        body: 'A robot in a warehouse, hospital, or building needs to open doors, call elevators, dock at chargers, and operate machines. An operator issues a signed access grant naming a resource, the permitted operations, an optional zone, and a time window. The robot presents a signed request for one operation, and the resource authorizes it offline: valid operator grant, valid robot request, operation permitted, moment in window. The grant and the request together are a tamper-evident, attributable record of the access, and a sub-grant can only narrow what it inherits.',
+        module: 'vouch.robotics.access',
     },
 ];
 

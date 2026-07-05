@@ -80,7 +80,11 @@ pub fn encode_bitstring(bits: &[u8]) -> Result<String> {
         compressed[7] = 0;
         compressed[9] = 0xff;
     }
-    Ok(format!("{}{}", MULTIBASE_BASE64URL_PREFIX, URL_SAFE_NO_PAD.encode(compressed)))
+    Ok(format!(
+        "{}{}",
+        MULTIBASE_BASE64URL_PREFIX,
+        URL_SAFE_NO_PAD.encode(compressed)
+    ))
 }
 
 /// Read bit `index` from a raw bitstring.
@@ -130,7 +134,9 @@ pub fn verify_status(credential_status: &Value, status_list_credential: &Value) 
     let referenced = cs
         .get("statusListCredential")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| CoreError::Json("credentialStatus.statusListCredential is required".into()))?;
+        .ok_or_else(|| {
+            CoreError::Json("credentialStatus.statusListCredential is required".into())
+        })?;
     let actual_id = sl.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     if actual_id != referenced {
         return Err(CoreError::Json(format!(
@@ -178,7 +184,11 @@ pub fn verify_status(credential_status: &Value, status_list_credential: &Value) 
             .as_u64()
             .ok_or_else(|| CoreError::Json("statusListIndex must be non-negative".into()))?
             as usize,
-        _ => return Err(CoreError::Json("credentialStatus.statusListIndex is required".into())),
+        _ => {
+            return Err(CoreError::Json(
+                "credentialStatus.statusListIndex is required".into(),
+            ))
+        }
     };
 
     let bits = decode_bitstring(encoded)?;

@@ -21,6 +21,7 @@ robots and embodied agents:
   - pq: hybrid post-quantum signing and backward-compatible verification.
   - embodiment: cross-embodiment identity continuity for an agent across bodies.
   - custody: physical custody handoff chain for a task or object across actors.
+  - access: bounded, revocable robot access to physical infrastructure resources.
 """
 
 from .capability import (
@@ -144,6 +145,14 @@ from .custody import (
     verify_handoff,
     verify_handoff_chain,
 )
+from .access import (
+    AuthorizeResult,
+    attenuates_grant,
+    authorize_access,
+    build_access_grant,
+    build_access_request,
+    verify_access_grant,
+)
 
 __all__ = [
     # identity
@@ -241,6 +250,13 @@ __all__ = [
     "verify_handoff_chain",
     "holder_at",
     "locate_condition_change",
+    # infrastructure access (bounded, revocable robot access to physical resources)
+    "AuthorizeResult",
+    "build_access_grant",
+    "verify_access_grant",
+    "build_access_request",
+    "authorize_access",
+    "attenuates_grant",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
