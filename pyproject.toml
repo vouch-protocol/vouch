@@ -43,6 +43,8 @@ dependencies = [
 # Framework integrations
 langchain = ["langchain>=0.1.0"]
 crewai = ["crewai>=0.1.0"]
+langgraph = ["langgraph>=0.1.0"]
+goose = ["pyyaml>=6.0"]
 autogen = ["pyautogen>=0.2.0"]
 mcp = ["mcp>=0.1.0"]
 vertex = ["google-cloud-aiplatform>=1.0.0"]
@@ -107,7 +109,7 @@ dev = [
 
 # All optional dependencies
 all = [
-    "vouch-protocol[langchain,crewai,autogen,mcp,vertex,streamlit,server,enterprise,tracing,dev]"
+    "vouch-protocol[langchain,crewai,langgraph,goose,autogen,mcp,vertex,streamlit,server,enterprise,tracing,dev]"
 ]
 
 [project.urls]

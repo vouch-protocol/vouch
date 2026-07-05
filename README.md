@@ -99,8 +99,10 @@ Vouch is not one tool, it is a set of them. Here is the whole map.
 ### Framework integrations (new in v1.6.2)
 Standalone packages that drop Vouch into the agent framework you already use. Each one issues a verifiable credential for a tool call, with optional delegation back to a human principal.
 - **`vouch-langchain`** a LangChain tool that signs each tool call before it leaves the agent.
+- **`vouch-langgraph`** signs LangGraph tool calls and graph nodes, so a signed trail runs across the whole graph.
 - **`vouch-crewai`** a CrewAI tool, with supervisor-to-worker delegation that can only narrow authority, never widen it.
 - **`vouch-a2a`** binds an A2A (Agent2Agent) Agent Card to a Vouch identity, so two agents can verify each other before they collaborate.
+- **`vouch-goose`** registers the Vouch MCP server as an extension for Block's Goose agent, so a Goose session can sign and verify out of the box.
 - **`vouch-mlflow`** signs an MLflow model artifact at registration time, bound to a content digest so any change to the weights breaks the signature.
 - **`vouch-safetensors`** embeds a credential in a `.safetensors` header, complementary to OpenSSF Model Signing, so a model carries who produced it.
 
