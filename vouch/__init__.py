@@ -268,6 +268,25 @@ def __getattr__(name):
         from . import liveness_conformance
 
         return getattr(liveness_conformance, name)
+    # Reasoned Action Proofs (justification bound to the action, PAD-017/071)
+    elif name in (
+        "ReasonedActionError",
+        "REASONED_ACTION_TYPE",
+        "evidence_anchor",
+        "build_justification",
+        "justification_digest",
+        "artifact_digest",
+        "build_escrow_receipt",
+        "verify_escrow_receipt",
+        "LocalEscrow",
+        "sign_reasoned_action",
+        "check_reasoned_action",
+        "verify_reasoned_action",
+        "verify_justification",
+    ):
+        from . import reasoning
+
+        return getattr(reasoning, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -483,6 +502,20 @@ __all__ = [
     "should_revoke",
     "revocation_entry",
     "CONFORMANCE_RECEIPT_TYPE",
+    # Reasoned Action Proofs (justification bound to the action)
+    "ReasonedActionError",
+    "REASONED_ACTION_TYPE",
+    "evidence_anchor",
+    "build_justification",
+    "justification_digest",
+    "artifact_digest",
+    "build_escrow_receipt",
+    "verify_escrow_receipt",
+    "LocalEscrow",
+    "sign_reasoned_action",
+    "check_reasoned_action",
+    "verify_reasoned_action",
+    "verify_justification",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
