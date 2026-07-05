@@ -111,6 +111,48 @@ char *vouch_verify_chain_time_bound(const char *chain_json,
                                     char **err_out);
 
 /**
+ * Mint a fresh threshold-native Ed25519 identity: max_signers key shares, any
+ * min_signers of which can sign together. Returns JSON
+ * {shares: [{identifier, key_package}, ...], group_public_key: {verifying_key, public_key_package}}.
+ */
+char *vouch_threshold_generate_key(uint16_t min_signers,
+                                   uint16_t max_signers,
+                                   char **err_out);
+
+/**
+ * Round 1 for one signer (one entry from generate_key's shares array).
+ * Returns JSON {nonces, commitments}. `nonces` is SECRET: keep it on this
+ * signer's device only, use it for exactly one vouch_threshold_sign_share
+ * call, then discard it.
+ */
+char *vouch_threshold_commit(const char *key_share_json, char **err_out);
+
+/**
+ * Round 2 for one signer. message is the raw bytes to sign (base64).
+ * commitments_json maps every participating signer's base64 identifier to
+ * its base64 commitment, including this signer's own. Returns the
+ * base64-encoded signature share.
+ */
+char *vouch_threshold_sign_share(const char *message_b64,
+                                 const char *key_share_json,
+                                 const char *nonces_b64,
+                                 const char *commitments_json,
+                                 char **err_out);
+
+/**
+ * Combine signature shares into the final signature. commitments_json and
+ * shares_json map each signer's base64 identifier to its base64 commitment /
+ * signature share. group_public_key_json is the group_public_key object from
+ * vouch_threshold_generate_key. Returns the base64-encoded 64-byte Ed25519
+ * signature.
+ */
+char *vouch_threshold_aggregate(const char *message_b64,
+                                const char *commitments_json,
+                                const char *shares_json,
+                                const char *group_public_key_json,
+                                char **err_out);
+
+/**
  * Mint a RobotIdentityCredential.  carries make/model/serial and
  * the hardware root; returns the signed credential JSON.
  */
