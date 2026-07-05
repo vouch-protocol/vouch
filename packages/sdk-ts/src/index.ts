@@ -360,6 +360,19 @@ export type {
   AuthorizeResult,
 } from './robotics/access';
 
+// Fused-sensor provenance: a signed attestation binding a fused output to its
+// input frame hashes and a fusion method, with a deterministic digest over the
+// ordered inputs, byte-identical with the Python module.
+export {
+  FUSED_PERCEPTION_TYPE,
+  hashFusedOutput,
+  fusionInputsDigest,
+  buildFusedAttestation,
+  verifyFusedAttestation,
+  verifyFusionInputs,
+} from './robotics/fusion';
+export type { BuildFusedAttestationOptions } from './robotics/fusion';
+
 // Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,

@@ -1233,3 +1233,74 @@ pub fn attenuates_grant(params_json: &str) -> Result<String> {
     let ok = r::attenuates_grant(&parent, &child);
     Ok(json!({"ok": ok}).to_string())
 }
+
+// ---- fused-sensor provenance ----------------------------------------------
+
+/// Deterministic multibase digest over an ordered list of input frame hashes.
+/// `params_json` is `{inputFrameHashes: [...]}`.
+pub fn fusion_inputs_digest(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    Ok(r::fusion_inputs_digest(&gstrs(&p, "inputFrameHashes"))?)
+}
+
+/// Multibase SHA-256 of a raw fused output.
+pub fn hash_fused_output(output: &[u8]) -> String {
+    r::hash_fused_output(output)
+}
+
+/// Build a signed fused-perception attestation. `params_json` is `{robotDid,
+/// fusionMethod, inputFrameHashes, fusedOutputMb?|fusedOutputHash?, capturedAt?,
+/// validFrom, validUntil?}` where `fusedOutputMb` is a multibase-encoded raw
+/// output.
+pub fn build_fused_attestation(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let fused_output = match gos(&p, "fusedOutputMb") {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(&mb)?),
+        _ => None,
+    };
+    let params = r::BuildFusedAttestation {
+        robot_did: gs(&p, "robotDid"),
+        fusion_method: gs(&p, "fusionMethod"),
+        input_frame_hashes: gstrs(&p, "inputFrameHashes"),
+        fused_output,
+        fused_output_hash: gos(&p, "fusedOutputHash"),
+        captured_at: gos(&p, "capturedAt"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_fused_attestation(robot_seed, &params)?.to_string())
+}
+
+/// Verify a fused-perception attestation. When `fused_output_mb` is a non-empty
+/// multibase string, the raw fused output is decoded and its hash compared to the
+/// attested value. Returns the credentialSubject on success, `null` if invalid.
+pub fn verify_fused_attestation(
+    credential_json: &str,
+    public_key: &[u8],
+    fused_output_mb: Option<&str>,
+) -> Result<String> {
+    let fused_output = match fused_output_mb {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(mb)?),
+        _ => None,
+    };
+    Ok(subj(r::verify_fused_attestation(
+        &parse(credential_json)?,
+        public_key,
+        fused_output.as_deref(),
+    )?))
+}
+
+/// Confirm every input frame the attestation names was recorded in the robot's
+/// perception log. `params_json` is `{credential: {...}, logEntries: [...]}`.
+/// Returns `{ok, missing}`.
+pub fn verify_fusion_inputs(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let credential = p.get("credential").cloned().unwrap_or(Value::Null);
+    let entries = p
+        .get("logEntries")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let res = r::verify_fusion_inputs(&credential, &entries);
+    Ok(json!({"ok": res.ok, "missing": res.missing}).to_string())
+}

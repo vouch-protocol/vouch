@@ -56,6 +56,10 @@ The Python reference adds three robotics capabilities on the same
   infrastructure, an operator-signed grant naming a resource, its operations, an
   optional zone, and a time window, paired with a robot-signed request the resource
   authorizes offline, plus shrink-only attenuation of a sub-grant.
+- `vouch.robotics.fusion`: fused-sensor provenance, a signed attestation binding a
+  robot's fused world model to the ordered set of input frame hashes and the fusion
+  method that produced it, with an input digest that makes the input set
+  tamper-evident and a check of each input against the robot's perception log.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by
