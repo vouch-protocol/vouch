@@ -36,6 +36,12 @@ const PRIMARY: Channel[] = [
     body: 'Long-form guides for quickstarts, deployment, cross-language verification, robotics, and integrations, each with runnable code.',
     cta: { label: 'Open the guides', href: '/help/' },
   },
+  {
+    eyebrow: 'For seeing it work',
+    title: 'Interactive demos',
+    body: 'Run the accountable-autonomy controls in your browser: an agent that must state why before it acts, an irreversible action you can veto during a live challenge window, and a delegation chain whose caveats block an out-of-envelope action two hops down.',
+    cta: { label: 'Open the demos', href: '/demos/' },
+  },
 ];
 
 // The other channels, in order. The standards mailing list comes last.
@@ -122,7 +128,7 @@ export default function SupportPage() {
             <span className="num">§ I</span>
             <h2>Start here</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
             {PRIMARY.map((channel) => (
               <ChannelCard key={channel.title} channel={channel} />
             ))}
