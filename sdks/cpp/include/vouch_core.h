@@ -36,10 +36,10 @@ char *vouch_generate_ed25519(char **err_out);
  * Sign a credential (eddsa-jcs-2022). seed_b64 is the 32-byte Ed25519 seed.
  */
 char *vouch_sign(const char *credential_json,
-                            const char *seed_b64,
-                            const char *verification_method,
-                            const char *created,
-                            char **err_out);
+                 const char *seed_b64,
+                 const char *verification_method,
+                 const char *created,
+                 char **err_out);
 
 /**
  * Build a detached eddsa-jcs-2022 proof object (JSON).
@@ -60,10 +60,10 @@ char *vouch_verify_proof(const char *credential_json, const char *public_b64, ch
  * {proofValid, timeValid, valid}.
  */
 char *vouch_verify(const char *credential_json,
-                              const char *public_b64,
-                              const char *now_iso,
-                              int64_t clock_skew_seconds,
-                              char **err_out);
+                   const char *public_b64,
+                   const char *now_iso,
+                   int64_t clock_skew_seconds,
+                   char **err_out);
 
 /**
  * Verify a dual proof (Ed25519 + ML-DSA-44). Returns "true"/"false".
@@ -151,6 +151,39 @@ char *vouch_threshold_aggregate(const char *message_b64,
                                 const char *shares_json,
                                 const char *group_public_key_json,
                                 char **err_out);
+
+/**
+ * Split a base64-encoded secret into `shares` pieces; any `threshold` of them
+ * reconstruct it. Returns a JSON array of base64-encoded shares.
+ */
+char *vouch_recovery_split_secret(const char *secret_b64,
+                                  uint16_t threshold,
+                                  uint16_t shares,
+                                  char **err_out);
+
+/**
+ * Reconstruct a secret from a JSON array of base64-encoded shares. Returns
+ * the base64-encoded secret. Fewer than the original threshold returns a
+ * wrong value, not an error.
+ */
+char *vouch_recovery_combine_shares(const char *shares_json, char **err_out);
+
+/**
+ * Split a root identity's base64-encoded Ed25519 seed into recovery shares.
+ * Returns a JSON array of base64-encoded shares.
+ */
+char *vouch_recovery_split_identity(const char *seed_b64,
+                                    uint16_t threshold,
+                                    uint16_t shares,
+                                    char **err_out);
+
+/**
+ * Recover a root identity from a JSON array of base64-encoded recovery
+ * shares. Pass an empty string for `did` to derive a did:key from the
+ * recovered public key instead of setting an explicit one. Returns JSON
+ * {did, seed, public_key} (seed and public_key are base64).
+ */
+char *vouch_recovery_recover_identity(const char *shares_json, const char *did, char **err_out);
 
 /**
  * Mint a RobotIdentityCredential.  carries make/model/serial and

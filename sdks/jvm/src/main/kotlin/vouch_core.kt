@@ -883,6 +883,30 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -924,6 +948,14 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_mldsa44_verify(`publicKey`: RustBuffer.ByValue,`message`: RustBuffer.ByValue,`signature`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    fun uniffi_vouch_core_uniffi_fn_func_recovery_combine_shares(`sharesJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_recovery_recover_identity(`sharesJson`: RustBuffer.ByValue,`did`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_recovery_split_identity(`seedB64`: RustBuffer.ByValue,`threshold`: Short,`shares`: Short,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_recovery_split_secret(`secretB64`: RustBuffer.ByValue,`threshold`: Short,`shares`: Short,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_attach_status(`credentialJson`: RustBuffer.ByValue,`signerSeed`: RustBuffer.ByValue,`paramsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_attenuates(`parentJson`: RustBuffer.ByValue,`childJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -941,6 +973,8 @@ internal interface UniffiLib : Library {
     fun uniffi_vouch_core_uniffi_fn_func_robotics_build_conformance_attestation(`signerSeed`: RustBuffer.ByValue,`paramsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_build_decommission(`signerSeed`: RustBuffer.ByValue,`paramsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_robotics_build_embodiment(`agentSeed`: RustBuffer.ByValue,`paramsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_build_heartbeat(`robotSeed`: RustBuffer.ByValue,`paramsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -969,6 +1003,8 @@ internal interface UniffiLib : Library {
     fun uniffi_vouch_core_uniffi_fn_func_robotics_check_action(`scopeJson`: RustBuffer.ByValue,`actionJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_check_conformance(`credentialsJson`: RustBuffer.ByValue,`profileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_robotics_check_no_fork(`paramsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_check_status(`credentialJson`: RustBuffer.ByValue,`statusListCredentialJson`: RustBuffer.ByValue,`statusPurpose`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
@@ -1016,9 +1052,13 @@ internal interface UniffiLib : Library {
     ): Byte
     fun uniffi_vouch_core_uniffi_fn_func_robotics_verify_conformance_attestation(`credentialJson`: RustBuffer.ByValue,`publicKey`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_robotics_verify_continuity_chain(`paramsJson`: RustBuffer.ByValue,`agentPublicKey`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_verify_custody_chain(`paramsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_verify_decommission(`credentialJson`: RustBuffer.ByValue,`publicKey`: RustBuffer.ByValue,`trustedAuthoritiesJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_robotics_verify_embodiment(`credentialJson`: RustBuffer.ByValue,`agentPublicKey`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_robotics_verify_heartbeat(`credentialJson`: RustBuffer.ByValue,`robotPublicKey`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1055,6 +1095,14 @@ internal interface UniffiLib : Library {
     fun uniffi_vouch_core_uniffi_fn_func_sign(`credentialJson`: RustBuffer.ByValue,`seed`: RustBuffer.ByValue,`verificationMethod`: RustBuffer.ByValue,`created`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_sign_dual(`credentialJson`: RustBuffer.ByValue,`ed25519Seed`: RustBuffer.ByValue,`mldsaSecret`: RustBuffer.ByValue,`mldsaPublic`: RustBuffer.ByValue,`ed25519Vm`: RustBuffer.ByValue,`mldsaVm`: RustBuffer.ByValue,`created`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_threshold_aggregate(`message`: RustBuffer.ByValue,`commitmentsJson`: RustBuffer.ByValue,`sharesJson`: RustBuffer.ByValue,`groupPublicKeyJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_threshold_commit(`keyShareJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_threshold_generate_key(`minSigners`: Short,`maxSigners`: Short,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_vouch_core_uniffi_fn_func_threshold_sign_share(`message`: RustBuffer.ByValue,`keyShareJson`: RustBuffer.ByValue,`noncesB64`: RustBuffer.ByValue,`commitmentsJson`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_vouch_core_uniffi_fn_func_verify(`credentialJson`: RustBuffer.ByValue,`publicKey`: RustBuffer.ByValue,`nowIso`: RustBuffer.ByValue,`clockSkewSeconds`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1208,6 +1256,14 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_mldsa44_verify(
     ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_recovery_combine_shares(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_recovery_recover_identity(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_recovery_split_identity(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_recovery_split_secret(
+    ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_attach_status(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_attenuates(
@@ -1225,6 +1281,8 @@ internal interface UniffiLib : Library {
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_build_conformance_attestation(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_build_decommission(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_robotics_build_embodiment(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_build_heartbeat(
     ): Short
@@ -1253,6 +1311,8 @@ internal interface UniffiLib : Library {
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_check_action(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_check_conformance(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_robotics_check_no_fork(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_check_status(
     ): Short
@@ -1300,9 +1360,13 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_verify_conformance_attestation(
     ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_robotics_verify_continuity_chain(
+    ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_verify_custody_chain(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_verify_decommission(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_robotics_verify_embodiment(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_robotics_verify_heartbeat(
     ): Short
@@ -1339,6 +1403,14 @@ internal interface UniffiLib : Library {
     fun uniffi_vouch_core_uniffi_checksum_func_sign(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_sign_dual(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_threshold_aggregate(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_threshold_commit(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_threshold_generate_key(
+    ): Short
+    fun uniffi_vouch_core_uniffi_checksum_func_threshold_sign_share(
     ): Short
     fun uniffi_vouch_core_uniffi_checksum_func_verify(
     ): Short
@@ -1410,6 +1482,18 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_vouch_core_uniffi_checksum_func_mldsa44_verify() != 56375.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_recovery_combine_shares() != 51111.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_recovery_recover_identity() != 63715.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_recovery_split_identity() != 36521.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_recovery_split_secret() != 28685.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_attach_status() != 59495.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1435,6 +1519,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_build_decommission() != 34705.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_build_embodiment() != 40638.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_build_heartbeat() != 17046.toShort()) {
@@ -1477,6 +1564,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_check_conformance() != 38679.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_check_no_fork() != 17618.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_check_status() != 55540.toShort()) {
@@ -1548,10 +1638,16 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_verify_conformance_attestation() != 13223.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_verify_continuity_chain() != 16539.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_verify_custody_chain() != 27600.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_verify_decommission() != 57617.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_verify_embodiment() != 653.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_robotics_verify_heartbeat() != 58554.toShort()) {
@@ -1606,6 +1702,18 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_sign_dual() != 32161.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_threshold_aggregate() != 60222.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_threshold_commit() != 64642.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_threshold_generate_key() != 24504.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_vouch_core_uniffi_checksum_func_threshold_sign_share() != 34204.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_vouch_core_uniffi_checksum_func_verify() != 57533.toShort()) {
@@ -1675,6 +1783,29 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
  * @suppress
  * */
 object NoPointer
+
+/**
+ * @suppress
+ */
+public object FfiConverterUShort: FfiConverter<UShort, Short> {
+    override fun lift(value: Short): UShort {
+        return value.toUShort()
+    }
+
+    override fun read(buf: ByteBuffer): UShort {
+        return lift(buf.getShort())
+    }
+
+    override fun lower(value: UShort): Short {
+        return value.toShort()
+    }
+
+    override fun allocationSize(value: UShort) = 2UL
+
+    override fun write(value: UShort, buf: ByteBuffer) {
+        buf.putShort(value.toShort())
+    }
+}
 
 /**
  * @suppress
@@ -2228,6 +2359,46 @@ public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteA
     }
     
 
+    @Throws(CoreException::class) fun `recoveryCombineShares`(`sharesJson`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_recovery_combine_shares(
+        FfiConverterString.lower(`sharesJson`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `recoveryRecoverIdentity`(`sharesJson`: kotlin.String, `did`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_recovery_recover_identity(
+        FfiConverterString.lower(`sharesJson`),FfiConverterString.lower(`did`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `recoverySplitIdentity`(`seedB64`: kotlin.String, `threshold`: kotlin.UShort, `shares`: kotlin.UShort): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_recovery_split_identity(
+        FfiConverterString.lower(`seedB64`),FfiConverterUShort.lower(`threshold`),FfiConverterUShort.lower(`shares`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `recoverySplitSecret`(`secretB64`: kotlin.String, `threshold`: kotlin.UShort, `shares`: kotlin.UShort): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_recovery_split_secret(
+        FfiConverterString.lower(`secretB64`),FfiConverterUShort.lower(`threshold`),FfiConverterUShort.lower(`shares`),_status)
+}
+    )
+    }
+    
+
     @Throws(CoreException::class) fun `roboticsAttachStatus`(`credentialJson`: kotlin.String, `signerSeed`: kotlin.ByteArray, `paramsJson`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCallWithError(CoreException) { _status ->
@@ -2313,6 +2484,16 @@ public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteA
     uniffiRustCallWithError(CoreException) { _status ->
     UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_robotics_build_decommission(
         FfiConverterByteArray.lower(`signerSeed`),FfiConverterString.lower(`paramsJson`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `roboticsBuildEmbodiment`(`agentSeed`: kotlin.ByteArray, `paramsJson`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_robotics_build_embodiment(
+        FfiConverterByteArray.lower(`agentSeed`),FfiConverterString.lower(`paramsJson`),_status)
 }
     )
     }
@@ -2453,6 +2634,16 @@ public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteA
     uniffiRustCallWithError(CoreException) { _status ->
     UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_robotics_check_conformance(
         FfiConverterString.lower(`credentialsJson`),FfiConverterString.lower(`profileId`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `roboticsCheckNoFork`(`paramsJson`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_robotics_check_no_fork(
+        FfiConverterString.lower(`paramsJson`),_status)
 }
     )
     }
@@ -2686,6 +2877,16 @@ public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteA
     }
     
 
+    @Throws(CoreException::class) fun `roboticsVerifyContinuityChain`(`paramsJson`: kotlin.String, `agentPublicKey`: kotlin.ByteArray): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_robotics_verify_continuity_chain(
+        FfiConverterString.lower(`paramsJson`),FfiConverterByteArray.lower(`agentPublicKey`),_status)
+}
+    )
+    }
+    
+
     @Throws(CoreException::class) fun `roboticsVerifyCustodyChain`(`paramsJson`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCallWithError(CoreException) { _status ->
@@ -2701,6 +2902,16 @@ public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteA
     uniffiRustCallWithError(CoreException) { _status ->
     UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_robotics_verify_decommission(
         FfiConverterString.lower(`credentialJson`),FfiConverterByteArray.lower(`publicKey`),FfiConverterOptionalString.lower(`trustedAuthoritiesJson`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `roboticsVerifyEmbodiment`(`credentialJson`: kotlin.String, `agentPublicKey`: kotlin.ByteArray): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_robotics_verify_embodiment(
+        FfiConverterString.lower(`credentialJson`),FfiConverterByteArray.lower(`agentPublicKey`),_status)
 }
     )
     }
@@ -2881,6 +3092,46 @@ public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteA
     uniffiRustCallWithError(CoreException) { _status ->
     UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_sign_dual(
         FfiConverterString.lower(`credentialJson`),FfiConverterByteArray.lower(`ed25519Seed`),FfiConverterByteArray.lower(`mldsaSecret`),FfiConverterByteArray.lower(`mldsaPublic`),FfiConverterString.lower(`ed25519Vm`),FfiConverterString.lower(`mldsaVm`),FfiConverterString.lower(`created`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `thresholdAggregate`(`message`: kotlin.ByteArray, `commitmentsJson`: kotlin.String, `sharesJson`: kotlin.String, `groupPublicKeyJson`: kotlin.String): kotlin.ByteArray {
+            return FfiConverterByteArray.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_threshold_aggregate(
+        FfiConverterByteArray.lower(`message`),FfiConverterString.lower(`commitmentsJson`),FfiConverterString.lower(`sharesJson`),FfiConverterString.lower(`groupPublicKeyJson`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `thresholdCommit`(`keyShareJson`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_threshold_commit(
+        FfiConverterString.lower(`keyShareJson`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `thresholdGenerateKey`(`minSigners`: kotlin.UShort, `maxSigners`: kotlin.UShort): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_threshold_generate_key(
+        FfiConverterUShort.lower(`minSigners`),FfiConverterUShort.lower(`maxSigners`),_status)
+}
+    )
+    }
+    
+
+    @Throws(CoreException::class) fun `thresholdSignShare`(`message`: kotlin.ByteArray, `keyShareJson`: kotlin.String, `noncesB64`: kotlin.String, `commitmentsJson`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCallWithError(CoreException) { _status ->
+    UniffiLib.INSTANCE.uniffi_vouch_core_uniffi_fn_func_threshold_sign_share(
+        FfiConverterByteArray.lower(`message`),FfiConverterString.lower(`keyShareJson`),FfiConverterString.lower(`noncesB64`),FfiConverterString.lower(`commitmentsJson`),_status)
 }
     )
     }

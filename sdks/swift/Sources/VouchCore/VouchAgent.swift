@@ -23,6 +23,9 @@ public struct VouchAgent {
     private let seed: Data
     private let defaultExpirySeconds: Int64
 
+    /// The raw seed, for same-module ergonomic layers (e.g. ``VouchFleet``).
+    var seedData: Data { seed }
+
     private init(did: String, seed: Data, publicKey: Data, defaultExpirySeconds: Int64) {
         self.did = did
         self.seed = seed
@@ -78,14 +81,7 @@ public struct VouchAgent {
     /// issuer. Returns true only when the proof and the validity window are valid.
     public func verify(_ credentialJson: String) throws -> Bool {
         let issuer = VouchCredentials.Credential(credentialJson).issuer
-        let pub: Data?
-        if issuer == did {
-            pub = publicKey
-        } else if let issuer = issuer, issuer.hasPrefix("did:key:") {
-            pub = try? Vouch.ed25519(fromDidKey: issuer)
-        } else {
-            pub = nil
-        }
+        let pub = issuer == did ? publicKey : VouchAgent.publicKeyForIssuer(issuer)
         guard let publicKey = pub else { return false }
         return try VouchAgent.verifyWith(credentialJson, publicKey: publicKey)
     }
@@ -96,6 +92,13 @@ public struct VouchAgent {
             credentialJson, publicKey: publicKey, now: iso(Date()), clockSkewSeconds: 30
         )
         return result.valid
+    }
+
+    /// Resolve the Ed25519 public key for a did:key issuer. Returns nil for
+    /// non-did:key issuers, which need an explicit key or a DID-document lookup.
+    public static func publicKeyForIssuer(_ issuer: String?) -> Data? {
+        guard let issuer = issuer, issuer.hasPrefix("did:key:") else { return nil }
+        return try? Vouch.ed25519(fromDidKey: issuer)
     }
 
     static func iso(_ date: Date) -> String {
@@ -125,13 +128,35 @@ public enum VouchCredentials {
         validUntil: String,
         credentialId: String
     ) throws -> String {
+        try build(
+            issuerDid: issuerDid, action: action, target: target, resource: resource,
+            delegatee: nil, validFrom: validFrom, validUntil: validUntil, credentialId: credentialId
+        )
+    }
+
+    /// Construct the unsigned credential JSON with an added intent.delegatee
+    /// field, used to grant another DID scoped authority (cross-device
+    /// delegation; see ``VouchFleet``). Pass nil to omit it.
+    public static func build(
+        issuerDid: String,
+        action: String,
+        target: String,
+        resource: String,
+        delegatee: String?,
+        validFrom: String,
+        validUntil: String,
+        credentialId: String
+    ) throws -> String {
         for (name, value) in [("action", action), ("target", target), ("resource", resource)] {
             if value.isEmpty {
                 throw VouchAgentError.invalidIntent(
                     "intent.\(name) is required and must be a non-empty string")
             }
         }
-        let intent: [String: Any] = ["action": action, "target": target, "resource": resource]
+        var intent: [String: Any] = ["action": action, "target": target, "resource": resource]
+        if let delegatee = delegatee, !delegatee.isEmpty {
+            intent["delegatee"] = delegatee
+        }
         let subject: [String: Any] = [
             "id": issuerDid, "vouchVersion": protocolVersion, "intent": intent,
         ]
@@ -163,6 +188,12 @@ public enum VouchCredentials {
         public var action: String? { intentField("action") }
         public var target: String? { intentField("target") }
         public var resource: String? { intentField("resource") }
+
+        /// The delegatee DID, if this credential is a delegation grant, else nil.
+        public var delegatee: String? { intentField("delegatee") }
+
+        public var id: String? { root["id"] as? String }
+        public var validFrom: String? { root["validFrom"] as? String }
         public var validUntil: String? { root["validUntil"] as? String }
 
         public var issuer: String? {

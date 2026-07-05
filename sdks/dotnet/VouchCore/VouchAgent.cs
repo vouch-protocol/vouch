@@ -52,6 +52,9 @@ public sealed class VouchAgent
 
     public string PublicKeyB64 => _publicB64;
 
+    /// <summary>The raw seed, for same-assembly ergonomic layers (e.g. VouchFleet).</summary>
+    internal string SeedB64 => _seedB64;
+
     /// <summary>Sign an intent as a Vouch Credential, returning the signed credential JSON.</summary>
     public string Sign(string action, string target, string resource, int? validSeconds = null)
     {
@@ -146,6 +149,22 @@ public static class VouchCredentials
         string validFrom,
         string validUntil,
         string credentialId)
+        => Build(issuerDid, action, target, resource, null, validFrom, validUntil, credentialId);
+
+    /// <summary>
+    /// Construct the unsigned credential JSON with an added intent.delegatee
+    /// field, used to grant another DID scoped authority (cross-device
+    /// delegation; see <see cref="VouchFleet"/>). Pass null to omit it.
+    /// </summary>
+    public static string Build(
+        string issuerDid,
+        string action,
+        string target,
+        string resource,
+        string? delegatee,
+        string validFrom,
+        string validUntil,
+        string credentialId)
     {
         RequireNonEmpty(nameof(action), action);
         RequireNonEmpty(nameof(target), target);
@@ -157,6 +176,10 @@ public static class VouchCredentials
             ["target"] = target,
             ["resource"] = resource,
         };
+        if (!string.IsNullOrEmpty(delegatee))
+        {
+            intent["delegatee"] = delegatee;
+        }
         var subject = new JsonObject
         {
             ["id"] = issuerDid,
@@ -204,6 +227,9 @@ public static class VouchCredentials
 
         public string? Resource => IntentField("resource");
 
+        /// <summary>The delegatee DID, if this credential is a delegation grant, else null.</summary>
+        public string? Delegatee => IntentField("delegatee");
+
         public string? Issuer
         {
             get
@@ -215,6 +241,12 @@ public static class VouchCredentials
                 return issuer.ValueKind == JsonValueKind.Array ? issuer[0].GetString() : issuer.GetString();
             }
         }
+
+        public string? Id =>
+            _root.TryGetProperty("id", out JsonElement id) ? id.GetString() : null;
+
+        public string? ValidFrom =>
+            _root.TryGetProperty("validFrom", out JsonElement v) ? v.GetString() : null;
 
         public string? ValidUntil =>
             _root.TryGetProperty("validUntil", out JsonElement v) ? v.GetString() : null;

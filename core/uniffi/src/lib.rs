@@ -8,8 +8,8 @@
 use serde_json::Value;
 
 use vouch_core::{
-    credentials, data_integrity, delegation, hybrid, keys, multikey, pq, robotics_json as rjson,
-    status_list, threshold_json,
+    credentials, data_integrity, delegation, hybrid, keys, multikey, pq, recovery_json,
+    robotics_json as rjson, status_list, threshold_json,
 };
 
 // Clean C ABI (cbindgen generates vouch_core.h) for .NET and C/C++ consumers.
@@ -221,6 +221,30 @@ pub fn threshold_aggregate(
         &shares_json,
         &group_public_key_json,
     )?)
+}
+
+pub fn recovery_split_secret(
+    secret_b64: String,
+    threshold: u16,
+    shares: u16,
+) -> Result<String, CoreError> {
+    Ok(recovery_json::split_secret(&secret_b64, threshold, shares)?)
+}
+
+pub fn recovery_combine_shares(shares_json: String) -> Result<String, CoreError> {
+    Ok(recovery_json::combine_shares(&shares_json)?)
+}
+
+pub fn recovery_split_identity(
+    seed_b64: String,
+    threshold: u16,
+    shares: u16,
+) -> Result<String, CoreError> {
+    Ok(recovery_json::split_identity(&seed_b64, threshold, shares)?)
+}
+
+pub fn recovery_recover_identity(shares_json: String, did: String) -> Result<String, CoreError> {
+    Ok(recovery_json::recover_identity(&shares_json, &did)?)
 }
 
 pub fn generate_mldsa44() -> Result<MlDsaKeyPair, CoreError> {

@@ -62,6 +62,18 @@ namespace vouch_core {
     [Throws=CoreError]
     bytes threshold_aggregate(bytes message, string commitments_json, string shares_json, string group_public_key_json);
 
+    // Root-identity recovery by Shamir secret sharing. Distinct from FROST
+    // above: the seed IS reconstructed here, deliberately, for cold recovery
+    // of a root identity, not for hot signing. See vouch_core::recovery.
+    [Throws=CoreError]
+    string recovery_split_secret(string secret_b64, u16 threshold, u16 shares);
+    [Throws=CoreError]
+    string recovery_combine_shares(string shares_json);
+    [Throws=CoreError]
+    string recovery_split_identity(string seed_b64, u16 threshold, u16 shares);
+    [Throws=CoreError]
+    string recovery_recover_identity(string shares_json, string did);
+
     // Post-quantum ML-DSA-44 and dual proofs.
     [Throws=CoreError]
     MlDsaKeyPair generate_mldsa44();
