@@ -681,6 +681,73 @@ managed PQ key custody and fleet-wide PQ migration orchestration are commercial.
 
 ---
 
+## 16. Cross-embodiment identity continuity
+
+`vouch.robotics.embodiment`
+
+What it is: a way for one AI agent, a mind, to run on one robot body today and a
+different body tomorrow while staying the same accountable identity. The agent is
+a policy that holds its own persistent Vouch identity. An
+`AgentEmbodimentCredential` binds that agent identity to a specific body (a
+hardware-rooted robot identity) and that body's hardware root for a period, and
+the agent signs the binding with its own key. Linking each embodiment to the one
+before it (`fromBody`) forms a continuity chain.
+
+The problem it closes: a fleet often runs one policy across many bodies over
+time, a body is retired for maintenance and the mind moves to another, or a
+long-lived agent outlives the machine it started on. Without a continuity record,
+"is this the same accountable agent that acted last week, now in a different
+body?" is answered by a database, and there is no way to prove the mind was not
+quietly forked into two bodies acting at once. This makes the continuity of the
+agent across bodies cryptographic: each move is a signed re-binding to a new
+body's hardware root, and the chain proves one mind persisted rather than several
+copies.
+
+How it works: `build_embodiment` produces an `AgentEmbodimentCredential` in which
+the agent's persistent key signs a binding of the agent identity to a body's
+hardware-rooted robot identity, the body's hardware root, and a validity window,
+with a `fromBody` link to the previous embodiment. `verify_embodiment` checks one
+credential. `verify_continuity_chain` walks the linked chain end to end,
+confirming each link is signed by the same persistent agent key and re-binds to
+each body's hardware root, so the same accountable agent is shown to have
+persisted across bodies. `check_no_fork` confirms the agent was never actively
+embodied in two bodies at once, that no two embodiments have overlapping active
+windows on different bodies. This is the inverse of the ownership custody chain in
+lifecycle (13): there one body passes between owners, and the body is the
+constant; here one mind passes between bodies, and the agent identity is the
+constant that signs every link.
+
+The API: `build_embodiment`, `verify_embodiment`, `verify_continuity_chain`, and
+`check_no_fork`. Credential type: `AgentEmbodimentCredential`.
+
+Worked example (Python):
+
+```python
+from vouch.robotics import embodiment
+
+emb1 = embodiment.build_embodiment(
+    agent_signer, body=body_a_identity,
+    not_before=t0, not_after=t1,             # embodied in body A for this window
+)
+emb2 = embodiment.build_embodiment(
+    agent_signer, body=body_b_identity,
+    not_before=t2, not_after=t3, from_body=emb1,   # mind moves to body B
+)
+assert embodiment.verify_continuity_chain([emb1, emb2]).ok   # same agent across bodies
+assert embodiment.check_no_fork([emb1, emb2]).ok             # never two bodies at once
+```
+
+Security boundary: verification fails closed on a wrong type, an invalid proof, or
+a link signed by a different key than the persistent agent identity, so a chain
+cannot splice in an embodiment signed by anyone but the agent itself.
+`verify_continuity_chain` fails on a broken `fromBody` link, so the chain cannot
+skip or reorder a body. `check_no_fork` fails when two embodiments claim
+overlapping active windows on different bodies, so a forked mind acting in two
+bodies at once is detectable. This is the open layer; managed key custody and
+fleet migration are commercial.
+
+---
+
 ## How they compose
 
 A real deployment chains them: a robot has a hardware-rooted identity (1),
@@ -696,10 +763,12 @@ down a cross-vendor chain (11), gates its highest-consequence actions behind
 a physical quorum (12), carries cryptographically accountable lifecycle
 transitions as it changes owners, rotates keys, and is retired (13), maps its
 credentials to the clauses of a public safety or AI regulation with a signed
-conformance report (14), and can sign those robot credentials with a hybrid
+conformance report (14), can sign those robot credentials with a hybrid
 post-quantum proof so an identity issued today still holds once quantum computers
-arrive (15). Every artifact is the same Verifiable Credential format, so one
-verifier and one trust model cover all fifteen.
+arrive (15), and carries the same agent identity from one body to the next along a
+signed continuity chain that proves one mind persisted across bodies without ever
+running in two at once (16). Every artifact is the same Verifiable Credential
+format, so one verifier and one trust model cover all sixteen.
 
 ## Quick answers
 
@@ -745,10 +814,16 @@ verifier and one trust model cover all fifteen.
   arrive? Yes, robotics post-quantum signing: a hybrid Ed25519 and ML-DSA-44
   proof, with verification that auto-detects classical or hybrid so a fleet
   migrates gradually without breaking credentials already in the field (15).
+- Can one agent run on one robot body today and a different body tomorrow and
+  still be the same accountable identity? Yes, cross-embodiment identity
+  continuity: an embodiment credential binds the agent to a body's hardware root
+  for a window, a continuity chain `verify_continuity_chain` walks proves the same
+  agent persisted across bodies, and `check_no_fork` confirms it was never
+  embodied in two bodies at once (16).
 
 ## Status
 
-All fifteen capabilities are implemented and tested in Python, TypeScript, Go, and
+All sixteen capabilities are implemented and tested in Python, TypeScript, Go, and
 the Rust core, with the Rust core flowing to the Swift, Kotlin/JVM, .NET, C/C++,
 and WebAssembly wrappers. A runnable demo lives in `examples/robotics_demo.py`,
 the canonical write-up in `docs/robotics.md`, and a shared interop vector pins the
