@@ -699,6 +699,8 @@ Hybrid credentials exceed typical HTTP header size limits, so transmit them in t
 
 When a human principal delegates to an agent that delegates to a sub-agent, you need a verifiable audit trail. The delegation chain answers: who authorized this action, and what was the scope at each step?
 
+See it in the browser: the [interactive demos](/demos/#caveats) show a delegation chain whose caveats block an out-of-envelope action two hops down, and an irreversible action you can veto during a challenge window.
+
 ## Three rules
 
 1. Each link is a signed Vouch credential where the **issuer** is the **subject** of the previous link.
