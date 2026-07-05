@@ -20,7 +20,7 @@ pytest packages/vouch-mcp/tests -q
 ```
 
 Expect: 3 passed. They check the package exports, that the FastMCP server has
-`sign_action` / `create_session` / `get_identity` registered, and that the
+`sign` / `create_session` / `get_identity` registered, and that the
 issued credential is `eddsa-jcs-2022` and verifies.
 
 ## 3. Build the distribution
@@ -41,7 +41,7 @@ python -c "from vouch import generate_identity; print(generate_identity().privat
 
 Set that as `VOUCH_PRIVATE_KEY` and a DID as `VOUCH_DID`, then register the
 `vouch-mcp` command as an stdio server in Claude Desktop or Cursor. Confirm the
-three tools appear and that `sign_action` returns a credential.
+tools appear and that `sign` returns a credential.
 
 ## 5. Only after all of the above
 

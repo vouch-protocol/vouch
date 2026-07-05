@@ -10,12 +10,12 @@ Relationship to ``vouch.autosign``:
     ``autosign`` is the in-process, Python-native path: it wraps a tool so
     every call is signed deterministically, before the tool body runs, with
     no LLM cooperation. This MCP server is the out-of-process, cross-language
-    path: any MCP client calls ``sign_action`` / ``verify`` over
+    path: any MCP client calls ``sign`` / ``verify`` over
     the wire, and the private key stays in this server's process, never in
     the model's context. Both share one signing primitive: ``sign_intent``.
 
 Tools:
-    sign_action        Issue a credential authorizing one action (PQC optional).
+    sign        Issue a credential authorizing one action (PQC optional).
     verify  Verify a credential someone else presented.
     create_session     Issue a trust-decaying session voucher (Heartbeat).
     check_revocation   Check a credential's BitstringStatusList entry.
@@ -57,7 +57,7 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-def sign_action(
+def sign(
     action: str,
     target: str,
     resource: Optional[str] = None,
@@ -110,7 +110,7 @@ def verify(credential_json: str, public_key: Optional[str] = None) -> str:
     """Verify a Vouch Credential that another agent or service presented.
 
     This is the receiving side: given a credential (the JSON another party's
-    sign_action produced), confirm the signature, validity window, and intent
+    sign produced), confirm the signature, validity window, and intent
     binding. Any MCP client can call this without installing an SDK.
 
     Args:
