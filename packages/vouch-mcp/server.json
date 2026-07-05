@@ -7,12 +7,12 @@
     "url": "https://github.com/vouch-protocol/vouch",
     "source": "github"
   },
-  "version": "0.2.0",
+  "version": "2.0.0",
   "packages": [
     {
       "registry_type": "pypi",
       "identifier": "vouch-mcp",
-      "version": "0.2.0",
+      "version": "2.0.0",
       "transport": { "type": "stdio" },
       "environment_variables": [
         {

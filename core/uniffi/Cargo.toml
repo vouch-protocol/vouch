@@ -1,6 +1,6 @@
 [package]
 name = "vouch-core-uniffi"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2021"
 authors = ["Ramprasad Anandam Gaddam"]
 description = "Vouch Protocol core: UniFFI bindings (Swift, Kotlin) and C-FFI over the canonical vouch-core crate. One byte-exact implementation for native and mobile SDKs."

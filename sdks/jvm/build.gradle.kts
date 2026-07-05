@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.vouchprotocol"
-version = "0.1.0"
+version = "2.0.0"
 description = "Vouch Protocol JVM SDK (Kotlin + Java) over the canonical Rust core via JNA / UniFFI."
 
 repositories { mavenCentral() }
