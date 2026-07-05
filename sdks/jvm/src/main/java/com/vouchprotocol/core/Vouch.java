@@ -32,6 +32,14 @@ public final class Vouch {
         Pointer vouch_verify_status(String csJson, String slJson, PointerByReference err);
         Pointer vouch_build_delegation_link(String issuer, String subject, String intentJson, String validFrom, String validUntil, String parentProofValue, PointerByReference err);
         Pointer vouch_verify_chain_time_bound(String chainJson, String nowIso, long skew, PointerByReference err);
+        Pointer vouch_threshold_generate_key(short minSigners, short maxSigners, PointerByReference err);
+        Pointer vouch_threshold_commit(String keyShareJson, PointerByReference err);
+        Pointer vouch_threshold_sign_share(String messageB64, String keyShareJson, String noncesB64, String commitmentsJson, PointerByReference err);
+        Pointer vouch_threshold_aggregate(String messageB64, String commitmentsJson, String sharesJson, String groupPublicKeyJson, PointerByReference err);
+        Pointer vouch_recovery_split_secret(String secretB64, short threshold, short shares, PointerByReference err);
+        Pointer vouch_recovery_combine_shares(String sharesJson, PointerByReference err);
+        Pointer vouch_recovery_split_identity(String seedB64, short threshold, short shares, PointerByReference err);
+        Pointer vouch_recovery_recover_identity(String sharesJson, String did, PointerByReference err);
         void vouch_string_free(Pointer s);
     }
 
@@ -134,5 +142,56 @@ public final class Vouch {
     public static boolean verifyChainTimeBound(String chainJson, String nowIso, long clockSkewSeconds) {
         PointerByReference err = new PointerByReference();
         return asBool(take(LIB.vouch_verify_chain_time_bound(chainJson, nowIso, clockSkewSeconds, err), err));
+    }
+
+    // -- FROST(Ed25519) threshold signing (RFC 9591) --------------------------
+    // The aggregated signature is a standard Ed25519 signature, verifiable with
+    // verify()/verifyProof() like any other; no new proof type. See
+    // vouch_core::threshold for the ceremony and why the full private key is
+    // never reconstructed. Prefer VouchThreshold for the ergonomic layer.
+
+    public static String thresholdGenerateKey(int minSigners, int maxSigners) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_threshold_generate_key((short) minSigners, (short) maxSigners, err), err);
+    }
+
+    public static String thresholdCommit(String keyShareJson) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_threshold_commit(keyShareJson, err), err);
+    }
+
+    public static String thresholdSignShare(String messageB64, String keyShareJson, String noncesB64, String commitmentsJson) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_threshold_sign_share(messageB64, keyShareJson, noncesB64, commitmentsJson, err), err);
+    }
+
+    public static String thresholdAggregate(String messageB64, String commitmentsJson, String sharesJson, String groupPublicKeyJson) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_threshold_aggregate(messageB64, commitmentsJson, sharesJson, groupPublicKeyJson, err), err);
+    }
+
+    // -- Root-identity recovery by Shamir secret sharing -----------------------
+    // Distinct from FROST above: the seed IS reconstructed here, deliberately,
+    // for cold recovery of a root identity, not for hot signing. See
+    // vouch_core::recovery. Prefer VouchRecovery for the ergonomic layer.
+
+    public static String recoverySplitSecret(String secretB64, int threshold, int shares) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_recovery_split_secret(secretB64, (short) threshold, (short) shares, err), err);
+    }
+
+    public static String recoveryCombineShares(String sharesJson) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_recovery_combine_shares(sharesJson, err), err);
+    }
+
+    public static String recoverySplitIdentity(String seedB64, int threshold, int shares) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_recovery_split_identity(seedB64, (short) threshold, (short) shares, err), err);
+    }
+
+    public static String recoveryRecoverIdentity(String sharesJson, String did) {
+        PointerByReference err = new PointerByReference();
+        return take(LIB.vouch_recovery_recover_identity(sharesJson, did, err), err);
     }
 }

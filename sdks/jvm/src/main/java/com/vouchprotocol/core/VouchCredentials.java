@@ -32,6 +32,24 @@ public final class VouchCredentials {
             String validFrom,
             String validUntil,
             String credentialId) {
+        return build(issuerDid, action, target, resource, null, validFrom, validUntil, credentialId);
+    }
+
+    /**
+     * Construct the unsigned credential JSON with an added intent.delegatee
+     * field, used to grant another DID scoped authority (cross-device
+     * delegation; see {@link VouchFleet}). Pass null to omit it, equivalent to
+     * {@link #build(String, String, String, String, String, String, String)}.
+     */
+    public static String build(
+            String issuerDid,
+            String action,
+            String target,
+            String resource,
+            String delegatee,
+            String validFrom,
+            String validUntil,
+            String credentialId) {
         requireNonEmpty("action", action);
         requireNonEmpty("target", target);
         requireNonEmpty("resource", resource);
@@ -48,8 +66,11 @@ public final class VouchCredentials {
                 .append(",\"vouchVersion\":").append(str(PROTOCOL_VERSION))
                 .append(",\"intent\":{\"action\":").append(str(action))
                 .append(",\"target\":").append(str(target))
-                .append(",\"resource\":").append(str(resource))
-                .append("}}}");
+                .append(",\"resource\":").append(str(resource));
+        if (delegatee != null && !delegatee.isEmpty()) {
+            sb.append(",\"delegatee\":").append(str(delegatee));
+        }
+        sb.append("}}}");
         return sb.toString();
     }
 
@@ -120,8 +141,21 @@ public final class VouchCredentials {
             return intentField("resource");
         }
 
+        /** The delegatee DID, if this credential is a delegation grant, else null. */
+        public String delegatee() {
+            return intentField("delegatee");
+        }
+
         public String issuer() {
             return optional("issuer");
+        }
+
+        public String id() {
+            return optional("id");
+        }
+
+        public String validFrom() {
+            return optional("validFrom");
         }
 
         public String validUntil() {

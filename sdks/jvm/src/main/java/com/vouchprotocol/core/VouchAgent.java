@@ -72,6 +72,11 @@ public final class VouchAgent {
         return publicB64;
     }
 
+    /** Package-private: the raw seed, for same-package ergonomic layers (e.g. VouchFleet). */
+    String seedB64() {
+        return seedB64;
+    }
+
     /** Sign an intent as a Vouch Credential, returning the signed credential JSON. */
     public String sign(String action, String target, String resource) {
         return sign(action, target, resource, defaultExpirySeconds);
