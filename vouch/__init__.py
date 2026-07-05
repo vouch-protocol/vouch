@@ -310,6 +310,26 @@ def __getattr__(name):
         from . import deliberation
 
         return getattr(deliberation, name)
+    # Executable caveats in delegation chains (PAD-086)
+    elif name in (
+        "CaveatError",
+        "CAPABILITY_TYPE",
+        "caveat",
+        "value_ceiling",
+        "running_total_ceiling",
+        "time_window",
+        "allowlist",
+        "flag_true",
+        "incident_gate",
+        "rate_limit",
+        "evaluate_caveat",
+        "build_capability",
+        "chain_caveats",
+        "verify_capability",
+    ):
+        from . import caveats
+
+        return getattr(caveats, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -555,6 +575,21 @@ __all__ = [
     "execute",
     "check_execution",
     "verify_execution",
+    # Executable caveats in delegation chains
+    "CaveatError",
+    "CAPABILITY_TYPE",
+    "caveat",
+    "value_ceiling",
+    "running_total_ceiling",
+    "time_window",
+    "allowlist",
+    "flag_true",
+    "incident_gate",
+    "rate_limit",
+    "evaluate_caveat",
+    "build_capability",
+    "chain_caveats",
+    "verify_capability",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
