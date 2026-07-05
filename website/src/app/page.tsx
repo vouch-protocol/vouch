@@ -151,7 +151,7 @@ export default function HomePage() {
         <div className="container-wide py-20 md:py-28">
           <div className="eyebrow mb-6">SDKs on every platform &middot; standards-aligned</div>
           <h1 className="font-serif font-semibold text-ink leading-[1.05] tracking-tight mb-6 max-w-[920px] text-[clamp(2.5rem,5.2vw,4rem)]">
-            Cryptographic identity &amp; accountability for autonomous AI agents.
+            Cryptographic identity &amp; accountability for autonomous AI agents and robots.
           </h1>
           <p className="drop-cap text-[1.2rem] leading-snug text-ink-soft max-w-prose mb-8">
             The Vouch Protocol is an open standard specification for establishing continuous state
@@ -159,7 +159,9 @@ export default function HomePage() {
             identity and delegation specifications. Built on Verifiable Credentials, Data Integrity
             proofs, and Decentralized Identifiers, with one byte-exact core and SDKs for every major
             platform: web, mobile, JVM, .NET, and native, plus the Python, TypeScript, and Go references.
-            Agents can be reached by who they are, not where they are.
+            The same credentials extend to robots and embodied agents, with hardware-rooted identity,
+            enforceable physical limits, and a tamper-evident black box. Agents can be reached by who
+            they are, not where they are.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/faq/" className="btn-primary">Read the FAQ</Link>
