@@ -92,6 +92,36 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-082](./PAD-082-portable-agent-identity-fork-detection.md) | Fork Detection for a Portable Agent Identity via Embodiment Time-Overlap | 2026-07-04 | Published |
 | [PAD-083](./PAD-083-physical-custody-handoff-chain.md) | Physical Custody Handoff Chain Across Human and Robot Actors | 2026-07-05 | Published |
 | [PAD-084](./PAD-084-custody-condition-localization.md) | Localizing a Physical State Change to a Custody Hop via Handoff Condition Attestation | 2026-07-05 | Published |
+| [PAD-085](./PAD-085-two-phase-deliberated-execution.md) | Two-Phase Deliberated Execution of Irreversible Agent Actions with Signed Veto Window | 2026-07-05 | Published |
+| [PAD-086](./PAD-086-executable-caveats-delegation-chains.md) | Deterministic Executable Caveats Embedded in Object-Capability Delegation Chains | 2026-07-05 | Published |
+
+
+## July 5, 2026: Accountable Autonomy for Actions Inside the Envelope (PAD-085, PAD-086)
+
+Two disclosures that move accountability past the point where an action is merely
+authorized, toward controlling what an already-authorized agent may do.
+
+- **PAD-085** gates an agent's consequential, irreversible actions behind a
+  two-phase deliberated sequence: a signed intent is committed and broadcast with
+  a challenge window and a named set of objectors, the window must provably elapse
+  (by signed timestamp or a Verifiable Delay Function), and any authorized party
+  may block execution with a separately-signed veto bound to the committed intent.
+  Reversible actions pay no delay. It is a preventive control, acting before an
+  irreversible effect rather than auditing it afterward, and it gives regulatory
+  human-oversight mandates a machine-checkable hook.
+- **PAD-086** attaches deterministic, fuel-bounded executable caveats to the links
+  of an object-capability delegation chain. Caveats accumulate down the chain and
+  cannot be removed by any descendant, every verifier is obligated to evaluate
+  each accumulated caveat against a proposed action, and the pinned, side-effect-
+  free runtime keeps evaluation offline and byte-identical across implementations.
+  It turns the static delegation envelope into live, portable conditional
+  authority ("only for shipped orders," "only during an incident") while
+  preserving the object-capability invariant that delegation only ever attenuates.
+
+Both build on the same `eddsa-jcs-2022` credentials and JCS canonicalization as
+the rest of Vouch, so they verify across the language SDKs and compose with the
+delegation, reasoning, and commit-before-outcome primitives (PAD-002, PAD-017,
+PAD-047, PAD-071).
 
 
 ## July 5, 2026: Physical Custody Handoff (PAD-083, PAD-084)
