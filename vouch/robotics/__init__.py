@@ -19,6 +19,7 @@ robots and embodied agents:
   - perception: signed, tamper-evident provenance for captured sensor frames.
   - conformance: machine-checkable mapping from credentials to safety regulations.
   - pq: hybrid post-quantum signing and backward-compatible verification.
+  - embodiment: cross-embodiment identity continuity for an agent across bodies.
 """
 
 from .capability import (
@@ -129,6 +130,12 @@ from .pq import (
     verify_pq,
     verify_robot_credential,
 )
+from .embodiment import (
+    build_embodiment,
+    check_no_fork,
+    verify_continuity_chain,
+    verify_embodiment,
+)
 
 __all__ = [
     # identity
@@ -215,6 +222,11 @@ __all__ = [
     "verify_pq",
     "verify_robot_credential",
     "migrate_to_pq",
+    # embodiment (cross-embodiment identity continuity + fork detection)
+    "build_embodiment",
+    "verify_embodiment",
+    "verify_continuity_chain",
+    "check_no_fork",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
