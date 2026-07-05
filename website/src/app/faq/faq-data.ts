@@ -52,6 +52,7 @@ export const FAQ_SECTIONS: FAQSection[] = [
         a: `Vouch is a digital signature layer for AI agents. When your agent does something on your behalf (sends an email, transfers money, files a claim, queries a database), Vouch lets it cryptographically sign that action so anyone, anywhere, can later prove who did what and with whose permission.
 
 Think of it as a tamper-proof receipt for every move an autonomous AI makes. The receipt is human-readable, cryptographically signed, and works across whatever framework you use to build agents (LangChain, CrewAI, MCP, anything).`,
+        helpLinks: [{ label: 'See it: an agent that must state why', href: '/demos/#reasoned-action' }],
       },
       {
         q: 'What problem does it solve?',
@@ -60,6 +61,7 @@ Think of it as a tamper-proof receipt for every move an autonomous AI makes. The
 The tools we built for humans (API keys, login sessions, OAuth tokens) were not designed for this. They prove someone has access. They don't prove what the agent intended to do, who delegated the action down to it, or whether the agent is still behaving correctly.
 
 Vouch fixes this by turning every agent action into a signed receipt. Identity, intent, target, and the chain of permissions are all cryptographically bound together. If your CFO asks "did our agent really wire that money?", you can prove it in seconds, with math, not log files.`,
+        helpLinks: [{ label: 'See it: veto an irreversible action before it runs', href: '/demos/#deliberation' }],
       },
       {
         q: 'How is this different from OAuth, API keys, or JWTs?',
