@@ -26,6 +26,7 @@ from vouch.robotics import (
     build_action_approval,
     build_decommission,
     build_delegation_lease,
+    build_embodiment,
     build_key_rotation,
     build_ownership_transfer,
     build_status_list_entry,
@@ -149,6 +150,19 @@ def main():
         final_disposition="recycled", decommissioned_at=VALID_FROM,
     )
 
+    # Embodiment: an agent (mind) with a fixed key moves body-a -> body-b, every
+    # link signed by the same agent key. Other languages verify the continuity chain.
+    agent_signer, agent_pub = signer_from_seed(bytes([6] * 32), "did:web:agent.example.com")
+    embodiment_a = build_embodiment(
+        agent_signer, agent_did="did:web:agent.example.com", body_did="did:web:body-a.example.com",
+        body_hardware_root="uROOTA", embodied_at=VALID_FROM, valid_seconds=3600,
+    )
+    embodiment_b = build_embodiment(
+        agent_signer, agent_did="did:web:agent.example.com", body_did="did:web:body-b.example.com",
+        body_hardware_root="uROOTB", from_body="did:web:body-a.example.com",
+        embodied_at=datetime(2026, 1, 1, 1, 0, 0, tzinfo=timezone.utc),
+    )
+
     # Conformance: a fixed credential set (the checker reads structure and fields,
     # not proofs, so these are plain credentials) and the deterministic report and
     # digest other languages reproduce.
@@ -199,11 +213,13 @@ def main():
             "decommission), and a hybrid post-quantum robot identity "
             "(RobotIdentityCredential under hybrid-eddsa-mldsa44-jcs-2026). It also "
             "pins a regulatory conformance report and digest computed from a fixed "
-            "credential set against a named profile. "
+            "credential set against a named profile, and an agent embodiment "
+            "continuity chain (AgentEmbodimentCredential links signed by one agent "
+            "key across bodies). "
             "Credential proof values are not pinned because the proof carries a "
             "wall-clock created timestamp."
         ),
-        "version": "1.6",
+        "version": "1.7",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -235,6 +251,8 @@ def main():
         "expected_conformance_report_digest": report_digest(conformance_report),
         "pq_robot_identity_credential": pq_identity,
         "robot_mldsa44_public_multikey": robot_mldsa44_public_multikey,
+        "embodiment_chain": [embodiment_a, embodiment_b],
+        "embodiment_agent_key": agent_pub,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
