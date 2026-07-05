@@ -19,14 +19,35 @@ Usage:
 import os
 import time
 import json
+import base64
 import logging
 import hashlib
+from datetime import datetime
 from typing import Dict, Optional, Any, Tuple
 from dataclasses import dataclass, field
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from vouch import Verifier
 
 logger = logging.getLogger(__name__)
+
+
+def _jwk_to_ed25519_public(public_key_jwk: str) -> Ed25519PublicKey:
+    """Ed25519PublicKey from a public JWK JSON string."""
+    x = json.loads(public_key_jwk)["x"]
+    raw = base64.urlsafe_b64decode(x + "=" * (-len(x) % 4))
+    return Ed25519PublicKey.from_public_bytes(raw)
+
+
+def _credential_expiry_ts(passport) -> int:
+    """Unix timestamp of the credential's validUntil, or 0 if absent."""
+    if not getattr(passport, "valid_until", None):
+        return 0
+    try:
+        return int(datetime.fromisoformat(passport.valid_until.replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return 0
 
 
 @dataclass
@@ -83,11 +104,11 @@ class HasuraAuthWebhook:
             nonce_store: Optional Redis client for replay attack prevention.
             revocation_store: Optional Redis client for key revocation checks.
         """
-        self.verifier = Verifier(
-            trusted_roots=trusted_dids or {},
-            allow_did_resolution=allow_did_resolution,
-            clock_skew_seconds=clock_skew_seconds,
-        )
+        self._trusted_keys: Dict[str, Ed25519PublicKey] = {}
+        for did, key in (trusted_dids or {}).items():
+            self._trusted_keys[did] = _jwk_to_ed25519_public(key)
+        self._allow_resolution = allow_did_resolution
+        self._clock_skew = clock_skew_seconds
         self.role_config = role_config or RoleMappingConfig()
         self.nonce_store = nonce_store
         self.revocation_store = revocation_store
@@ -97,8 +118,8 @@ class HasuraAuthWebhook:
         if env_trusted:
             try:
                 for did, key in json.loads(env_trusted).items():
-                    self.verifier.add_trusted_root(did, key)
-            except json.JSONDecodeError:
+                    self._trusted_keys[did] = _jwk_to_ed25519_public(key)
+            except (json.JSONDecodeError, ValueError):
                 logger.warning("Invalid VOUCH_TRUSTED_DIDS JSON")
 
     def authenticate(self, headers: Dict[str, str]) -> Tuple[bool, Dict[str, Any]]:
@@ -113,27 +134,40 @@ class HasuraAuthWebhook:
             On success: (True, {"X-Hasura-Role": ..., "X-Hasura-User-Id": ...})
             On failure: (False, {"error": "..."})
         """
-        # Extract token from headers
-        token = headers.get("Vouch-Token") or headers.get("vouch-token")
-
-        # Also check Authorization header
-        if not token:
+        # Extract the credential from headers.
+        raw = headers.get("Vouch-Credential") or headers.get("vouch-credential")
+        if not raw:
+            raw = headers.get("Vouch-Token") or headers.get("vouch-token")
+        if not raw:
             auth = headers.get("Authorization") or headers.get("authorization")
             if auth and auth.startswith("Vouch "):
-                token = auth[6:]
+                raw = auth[6:]
 
-        if not token:
-            return False, {"error": "Missing Vouch-Token header"}
+        if not raw:
+            return False, {"error": "Missing Vouch-Credential header"}
 
-        # Verify the token
         try:
-            valid, passport = self.verifier.check_vouch(token)
+            credential = json.loads(raw) if isinstance(raw, str) else raw
+        except (json.JSONDecodeError, TypeError):
+            return False, {"error": "Credential is not valid JSON"}
+
+        # Resolve the verification key: a trusted root for the issuer, else fall
+        # back to did:web resolution when allowed.
+        issuer = credential.get("issuer") or credential.get("credentialSubject", {}).get("id", "")
+        public_key = self._trusted_keys.get(issuer)
+        if public_key is None and not self._allow_resolution:
+            return False, {"error": "Issuer is not a trusted DID"}
+
+        try:
+            valid, passport = Verifier.verify(
+                credential, public_key=public_key, clock_skew_seconds=self._clock_skew
+            )
         except Exception as e:
-            logger.warning(f"Token verification error: {e}")
-            return False, {"error": "Token verification failed"}
+            logger.warning(f"Credential verification error: {e}")
+            return False, {"error": "Credential verification failed"}
 
         if not valid or not passport:
-            return False, {"error": "Invalid token signature"}
+            return False, {"error": "Invalid credential signature"}
 
         # Check revocation (if configured)
         if self.revocation_store:
@@ -148,12 +182,12 @@ class HasuraAuthWebhook:
         # Check replay (if configured)
         if self.nonce_store:
             try:
-                nonce_key = f"vouch:nonce:{passport.jti}"
+                nonce_key = f"vouch:nonce:{passport.credential_id}"
                 if self.nonce_store.exists(nonce_key):
-                    logger.warning(f"Replay attack detected: {passport.jti}")
+                    logger.warning(f"Replay attack detected: {passport.credential_id}")
                     return False, {"error": "Token replay detected"}
                 # Mark as used with TTL
-                ttl = max(passport.exp - int(time.time()) + 60, 60)
+                ttl = max(_credential_expiry_ts(passport) - int(time.time()) + 60, 60)
                 self.nonce_store.setex(nonce_key, ttl, "1")
             except Exception as e:
                 logger.warning(f"Nonce tracking failed: {e}")
@@ -181,13 +215,13 @@ class HasuraAuthWebhook:
         if passport.delegation_chain:
             session_vars["X-Hasura-Vouch-Delegation-Depth"] = str(len(passport.delegation_chain))
             # Root issuer is first in chain
-            root_issuer = passport.delegation_chain[0].iss
+            root_issuer = passport.delegation_chain[0].issuer
             session_vars["X-Hasura-Vouch-Root-Issuer"] = root_issuer
 
         # Add intent hash for audit
-        if passport.payload:
+        if passport.intent:
             intent_hash = hashlib.sha256(
-                json.dumps(passport.payload, sort_keys=True).encode()
+                json.dumps(passport.intent, sort_keys=True).encode()
             ).hexdigest()[:16]
             session_vars["X-Hasura-Vouch-Intent"] = intent_hash
 

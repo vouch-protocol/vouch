@@ -62,7 +62,7 @@ async def main():
     print(f"Web-only peer:    {web_only_peer}")
 
     # -- Sign an accountable intent --------------------------------------
-    credential = signer.sign_credential(
+    credential = signer.sign(
         intent={
             "action": "settle_invoice",
             "target": "invoice-42",

@@ -26,9 +26,7 @@ def signer(issuer):
 
 @pytest.fixture
 def credential(signer):
-    return signer.sign_credential(
-        {"action": "charge", "target": "api.bank.example.com", "resource": "inv/42"}
-    )
+    return signer.sign({"action": "charge", "target": "api.bank.example.com", "resource": "inv/42"})
 
 
 class TestCredentialGateCore:
@@ -56,13 +54,13 @@ class TestCredentialGateCore:
 
         # An issuer not in the allowlist is rejected (offline, no resolution).
         other = generate_identity(domain="evil.example.com")
-        evil = Signer(private_key=other.private_key_jwk, did=other.did).sign_credential(
+        evil = Signer(private_key=other.private_key_jwk, did=other.did).sign(
             {"action": "x", "target": "t", "resource": "r"}
         )
         assert gate.check(evil).ok is False
 
     def test_tamper_rejected(self, issuer, signer):
-        cred = signer.sign_credential({"action": "a", "target": "t", "resource": "r"})
+        cred = signer.sign({"action": "a", "target": "t", "resource": "r"})
         cred["credentialSubject"]["intent"]["action"] = "STEAL"
         gate = CredentialGate(public_key=issuer.public_key_jwk)
         assert gate.check(cred).ok is False
@@ -123,6 +121,6 @@ class TestVouchGateFastAPI:
         assert client.post("/charge").status_code == 401
 
     def test_policy_violation_is_403(self, client, signer):
-        bad = signer.sign_credential({"action": "refund", "target": "t", "resource": "r"})
+        bad = signer.sign({"action": "refund", "target": "t", "resource": "r"})
         resp = client.post("/charge", headers={"Vouch-Credential": json.dumps(bad)})
         assert resp.status_code == 403

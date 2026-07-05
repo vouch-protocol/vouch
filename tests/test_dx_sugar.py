@@ -3,7 +3,7 @@ Tests for the additive developer-experience sugar:
 
   1. vouch.Agent              - one object holding identity + signer
   2. vouch.sign / vouch.verify - top-level one-liners
-  3. Signer.sign_credential(action=, target=, resource=) named-arg intent
+  3. Signer.sign(action=, target=, resource=) named-arg intent
   4. vouch.verify default DID resolution, including did:key (offline)
   5. CredentialPassport accessors + vouch.Credential wrapper
   6. vouch.require_signed / vouch.guard_mcp / vouch.guard_tools
@@ -42,8 +42,8 @@ INTENT = {"action": "read", "target": "did:web:files", "resource": "https://file
 
 def test_from_keypair_matches_manual_construction(keypair):
     s1 = Signer.from_keypair(keypair)
-    cred = s1.sign_credential(intent=INTENT)
-    ok, passport = Verifier.verify_credential(cred, public_key=keypair.public_key_jwk)
+    cred = s1.sign(intent=INTENT)
+    ok, passport = Verifier.verify(cred, public_key=keypair.public_key_jwk)
     assert ok
     assert passport.iss == keypair.did
 
@@ -55,22 +55,20 @@ def test_from_keypair_requires_did():
 
 
 # ---------------------------------------------------------------------------
-# Item 3: named-argument intent on sign_credential
+# Item 3: named-argument intent on sign
 # ---------------------------------------------------------------------------
 
 
 def test_named_args_equivalent_to_intent_dict(signer, keypair):
-    by_dict = signer.sign_credential(intent=INTENT)
-    by_named = signer.sign_credential(
-        action="read", target="did:web:files", resource="https://files/x"
-    )
+    by_dict = signer.sign(intent=INTENT)
+    by_named = signer.sign(action="read", target="did:web:files", resource="https://files/x")
     assert by_dict["credentialSubject"]["intent"] == by_named["credentialSubject"]["intent"]
-    ok, _ = Verifier.verify_credential(by_named, public_key=keypair.public_key_jwk)
+    ok, _ = Verifier.verify(by_named, public_key=keypair.public_key_jwk)
     assert ok
 
 
 def test_named_args_override_intent_dict(signer):
-    cred = signer.sign_credential(intent=INTENT, resource="https://files/override")
+    cred = signer.sign(intent=INTENT, resource="https://files/override")
     intent = cred["credentialSubject"]["intent"]
     assert intent["resource"] == "https://files/override"
     assert intent["action"] == "read"
@@ -78,12 +76,12 @@ def test_named_args_override_intent_dict(signer):
 
 def test_missing_required_intent_field_raises(signer):
     with pytest.raises(ValueError):
-        signer.sign_credential(action="read")  # no target/resource
+        signer.sign(action="read")  # no target/resource
 
 
 def test_intent_dict_is_not_mutated(signer):
     original = dict(INTENT)
-    signer.sign_credential(intent=INTENT, action="write")
+    signer.sign(intent=INTENT, action="write")
     assert INTENT == original  # named arg did not leak back into the caller dict
 
 
@@ -102,7 +100,7 @@ def test_top_level_sign_and_verify(keypair):
 
 def test_top_level_sign_matches_signer_output(keypair):
     via_helper = sign(keypair, intent=INTENT)
-    via_signer = Signer.from_keypair(keypair).sign_credential(intent=INTENT)
+    via_signer = Signer.from_keypair(keypair).sign(intent=INTENT)
     # Same structure (ids/proofs differ); the intent and issuer must match.
     assert via_helper["credentialSubject"]["intent"] == via_signer["credentialSubject"]["intent"]
     assert via_helper["issuer"] == via_signer["issuer"]
@@ -160,7 +158,7 @@ def test_agent_load_roundtrip():
 def test_agent_from_keypair(keypair):
     agent = Agent.from_keypair(keypair)
     signed = agent.sign(intent=INTENT)
-    ok, _ = Verifier.verify_credential(signed, public_key=keypair.public_key_jwk)
+    ok, _ = Verifier.verify(signed, public_key=keypair.public_key_jwk)
     assert ok
 
 
@@ -240,11 +238,9 @@ def test_passport_accessors(keypair):
 def test_passport_is_expired_true(keypair):
     expired = Signer(
         private_key=keypair.private_key_jwk, did=keypair.did, default_expiry_seconds=-60
-    ).sign_credential(intent=INTENT)
+    ).sign(intent=INTENT)
     # Structural verification with skew large enough to still parse a passport.
-    ok, p = Verifier.verify_credential(
-        expired, public_key=keypair.public_key_jwk, clock_skew_seconds=3600
-    )
+    ok, p = Verifier.verify(expired, public_key=keypair.public_key_jwk, clock_skew_seconds=3600)
     assert ok
     assert p.is_expired is True
 

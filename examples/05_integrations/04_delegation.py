@@ -57,7 +57,7 @@ chain = cred["credentialSubject"]["delegationChain"]
 print("\nAgent acted. Its credential carries a delegation chain:")
 print(f"  {chain[0]['issuer']}  ->  {chain[0]['subject']}")
 
-ok, passport = Verifier.verify_credential(cred, agent.public_key_jwk)
+ok, passport = Verifier.verify(cred, agent.public_key_jwk)
 print(f"\nVerifies: {ok} | agent intent: {passport.intent['resource']}")
 print("The verifier can see the action was authorized by the principal,")
 print("and that the agent stayed within the 'invoices' grant.")

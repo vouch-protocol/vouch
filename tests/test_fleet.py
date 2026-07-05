@@ -111,7 +111,7 @@ def test_resource_widening_rejected():
         target="api.bank",
         resource="https://api.bank/invoices",
     )
-    # Device tries to act outside the granted resource. sign_credential enforces
+    # Device tries to act outside the granted resource. sign enforces
     # narrowing at issue time, so signing itself raises.
     with pytest.raises(ValueError):
         device.sign(

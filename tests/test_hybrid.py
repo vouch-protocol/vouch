@@ -113,13 +113,13 @@ def test_build_and_verify_hybrid_direct():
 
 
 # ---------------------------------------------------------------------------
-# Signer.sign_credential_hybrid
+# Signer.sign_hybrid
 # ---------------------------------------------------------------------------
 
 
-def test_sign_credential_hybrid_shape():
+def test_sign_hybrid_shape():
     signer = _new_signer()
-    cred = signer.sign_credential_hybrid(intent=_intent())
+    cred = signer.sign_hybrid(intent=_intent())
 
     proof = cred["proof"]
     assert proof["type"] == data_integrity.PROOF_TYPE
@@ -129,9 +129,9 @@ def test_sign_credential_hybrid_shape():
     assert proof["proofValue"].startswith("z")
 
 
-def test_sign_credential_hybrid_proof_value_size():
+def test_sign_hybrid_proof_value_size():
     signer = _new_signer()
-    cred = signer.sign_credential_hybrid(intent=_intent())
+    cred = signer.sign_hybrid(intent=_intent())
     pv = cred["proof"]["proofValue"]
     decoded = multikey._b58decode(pv[1:])
     assert len(decoded) == data_integrity_hybrid.HYBRID_SIGNATURE_SIZE
@@ -152,7 +152,7 @@ def test_signer_exposes_mldsa44_multikey():
 
 def test_verify_hybrid_valid_credential():
     signer = _new_signer()
-    cred = signer.sign_credential_hybrid(intent=_intent())
+    cred = signer.sign_hybrid(intent=_intent())
 
     ok = data_integrity_hybrid.verify_hybrid_proof(
         cred,
@@ -164,7 +164,7 @@ def test_verify_hybrid_valid_credential():
 
 def test_verify_hybrid_rejects_tampered_intent():
     signer = _new_signer()
-    cred = signer.sign_credential_hybrid(intent=_intent())
+    cred = signer.sign_hybrid(intent=_intent())
     cred["credentialSubject"]["intent"]["resource"] = "https://evil.example.com/x"
 
     ok = data_integrity_hybrid.verify_hybrid_proof(
@@ -178,7 +178,7 @@ def test_verify_hybrid_rejects_tampered_intent():
 def test_verify_hybrid_rejects_wrong_ed25519_key():
     signer = _new_signer()
     other = _new_signer("did:web:other.example.com")
-    cred = signer.sign_credential_hybrid(intent=_intent())
+    cred = signer.sign_hybrid(intent=_intent())
 
     ok = data_integrity_hybrid.verify_hybrid_proof(
         cred,
@@ -191,7 +191,7 @@ def test_verify_hybrid_rejects_wrong_ed25519_key():
 def test_verify_hybrid_rejects_wrong_mldsa44_key():
     signer = _new_signer()
     other = _new_signer("did:web:other.example.com")
-    cred = signer.sign_credential_hybrid(intent=_intent())
+    cred = signer.sign_hybrid(intent=_intent())
 
     ok = data_integrity_hybrid.verify_hybrid_proof(
         cred,
@@ -209,10 +209,10 @@ def test_verify_hybrid_rejects_wrong_mldsa44_key():
 def test_hybrid_and_eddsa_jcs_paths_coexist():
     signer = _new_signer()
 
-    cred_ed = signer.sign_credential(intent=_intent())
+    cred_ed = signer.sign(intent=_intent())
     assert data_integrity.verify_proof(cred_ed, _ed25519_public_from_signer(signer)) is True
 
-    cred_hyb = signer.sign_credential_hybrid(intent=_intent())
+    cred_hyb = signer.sign_hybrid(intent=_intent())
     assert (
         data_integrity_hybrid.verify_hybrid_proof(
             cred_hyb,
@@ -226,7 +226,7 @@ def test_hybrid_and_eddsa_jcs_paths_coexist():
 def test_eddsa_jcs_verifier_rejects_hybrid_cryptosuite():
     """The eddsa-jcs-2022 verifier MUST refuse the hybrid cryptosuite identifier."""
     signer = _new_signer()
-    cred_hyb = signer.sign_credential_hybrid(intent=_intent())
+    cred_hyb = signer.sign_hybrid(intent=_intent())
 
     with pytest.raises(ValueError, match="cryptosuite"):
         data_integrity.verify_proof(cred_hyb, _ed25519_public_from_signer(signer))
@@ -270,7 +270,7 @@ def test_hybrid_verification_method_pair(input_vm, expected_ed, expected_mldsa):
 
 def test_hybrid_credential_serializes_and_verifies():
     signer = _new_signer()
-    cred = signer.sign_credential_hybrid(intent=_intent())
+    cred = signer.sign_hybrid(intent=_intent())
     text = json.dumps(cred)
     parsed = json.loads(text)
 

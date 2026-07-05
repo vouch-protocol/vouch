@@ -110,7 +110,7 @@ print("\n--- Server-side verification ---")
 if credential is None:
     print("No credential - no identity was resolved.")
 else:
-    ok, passport = Verifier.verify_credential(credential, identity.public_key_jwk)
+    ok, passport = Verifier.verify(credential, identity.public_key_jwk)
     print(f"Valid?  {ok}")
     if ok:
         print(f"Issuer: {passport.iss}")

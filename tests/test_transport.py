@@ -37,7 +37,7 @@ from vouch.transport.envelope import ENVELOPE_VERSION
 def _signed_credential(domain: str = "agent.example.com"):
     kp = generate_identity(domain=domain)
     signer = Signer(private_key=kp.private_key_jwk, did=kp.did)
-    cred = signer.sign_credential(
+    cred = signer.sign(
         intent={
             "action": "settle_invoice",
             "target": "invoice-42",

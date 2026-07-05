@@ -182,7 +182,7 @@ def build_envelope(
     Convenience constructor for a Vouch envelope.
 
     ``payload`` should be an already-signed Vouch credential, typically the
-    dict returned by ``Signer.sign_credential(...)``. It is stored by reference
+    dict returned by ``Signer.sign(...)``. It is stored by reference
     and never mutated, so its Data Integrity proof remains valid.
     """
     return VouchEnvelope(

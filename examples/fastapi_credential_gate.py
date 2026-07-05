@@ -2,7 +2,7 @@
 FastAPI Credential Gate - reject unsigned agent requests in one line.
 
 Before, every protected endpoint hand-wrote the same boilerplate: read a header,
-call ``Verifier.verify_credential`` with a hard-coded public key, raise 401,
+call ``Verifier.verify`` with a hard-coded public key, raise 401,
 maybe check the intent. ``VouchGate`` collapses that to a single dependency.
 
 Run & verify:
@@ -11,7 +11,7 @@ Run & verify:
        import json
        ident = generate_identity(domain="example.com")
        print("PUBKEY:", ident.public_key_jwk)
-       cred = Signer(private_key=ident.private_key_jwk, did=ident.did).sign_credential(
+       cred = Signer(private_key=ident.private_key_jwk, did=ident.did).sign(
            intent={"action": "read", "target": "inbox",
                    "resource": "https://example.com/api/inbox"})
        print("CRED:", json.dumps(cred))

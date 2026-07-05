@@ -81,7 +81,7 @@ def enroll_device(
         "resource": resource,
         "delegatee": device_did,
     }
-    return signer.sign_credential(
+    return signer.sign(
         intent,
         valid_seconds=valid_seconds,
         reputation_score=reputation_score,
