@@ -1,10 +1,12 @@
-# Publish the Python packages to PyPI:
-#   vouch-protocol     (root pyproject.toml)
-#   vouch-api-client   (sdks/clients/python)
-#   vouch-sdk          (packages/sdk-py)
+# Publish the Python packages to PyPI using trusted publishing (OIDC).
 #
-# Trigger: push a tag like `py-v0.1.0`, or run manually (workflow_dispatch).
-# Required repo secret: PYPI_API_TOKEN (PyPI API token, scoped or account-wide).
+# No API token is stored anywhere. GitHub Actions authenticates to PyPI over
+# OIDC, and each project must list this repo and workflow as a trusted
+# publisher in its PyPI settings (Manage project -> Publishing).
+#
+# Trigger: push a tag like `py-v2.0.1`, or run manually (workflow_dispatch).
+# skip-existing means already-published versions are left alone, so a run
+# publishes only the packages whose version was bumped.
 name: Publish PyPI
 
 on:
@@ -12,25 +14,37 @@ on:
     tags: ["py-v*"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for PyPI trusted publishing (OIDC)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: vouch-protocol, dir: "." }
+          - { name: vouch-api-client, dir: "sdks/clients/python" }
+          - { name: vouch-mcp, dir: "packages/vouch-mcp" }
+          - { name: vouch-a2a, dir: "packages/vouch-a2a" }
+          - { name: vouch-langgraph, dir: "packages/vouch-langgraph" }
+          - { name: vouch-goose, dir: "packages/vouch-goose" }
+    name: publish ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install build tooling
-        run: python -m pip install --upgrade build twine
-      - name: Build and upload each package
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Build ${{ matrix.name }}
         run: |
-          set -e
-          for dir in . sdks/clients/python packages/sdk-py; do
-            echo "==> building $dir"
-            rm -rf "$dir/dist"
-            python -m build "$dir"
-            twine upload --skip-existing "$dir/dist/"*
-          done
+          python -m pip install --upgrade build
+          rm -rf "${{ matrix.dir }}/dist"
+          python -m build "${{ matrix.dir }}"
+      - name: Publish ${{ matrix.name }} to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ matrix.dir }}/dist
+          skip-existing: true
