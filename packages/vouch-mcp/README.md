@@ -23,7 +23,7 @@ Vouch gives you two front doors onto one signing primitive:
   LLM cooperation. Best when your agent is Python and you want zero-effort,
   can't-forget signing.
 - **`vouch-mcp`** (this package): the out-of-process, cross-language path. Any
-  MCP client in any language calls `sign_action` / `verify_credential` over the
+  MCP client in any language calls `sign` / `verify` over the
   wire, and the key is isolated in the server process. Best for non-Python
   agents, key isolation, or exposing verification as a shared service.
 
@@ -81,13 +81,13 @@ VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
 
 | Tool | What it does |
 |---|---|
-| `sign_action(action, target, resource, post_quantum=False)` | Issue a credential authorizing one action, bound to that exact resource. Set `post_quantum=True` for the `hybrid-eddsa-mldsa44-jcs-2026` profile. |
-| `verify_credential(credential_json, public_key=None)` | Verify a credential another agent or service presented. Any MCP client can verify without installing an SDK. |
+| `sign(action, target, resource, post_quantum=False)` | Issue a credential authorizing one action, bound to that exact resource. Set `post_quantum=True` for the `hybrid-eddsa-mldsa44-jcs-2026` profile. |
+| `verify(credential_json, public_key=None)` | Verify a credential another agent or service presented. Any MCP client can verify without installing an SDK. |
 | `create_session(purpose, valid_seconds, decay_lambda, initial_trust)` | Issue a trust-decaying session voucher (Heartbeat Protocol). |
 | `check_revocation(credential_json)` | Check a credential's `BitstringStatusList` entry: `ACTIVE`, `REVOKED`, or not individually revocable. |
 | `get_identity()` | Return the agent's DID. |
 
-## Why `verify_credential` matters
+## Why `verify` matters
 
 Signing proves *you* acted. Verifying is how *everyone else* benefits: any
 MCP-capable agent, in any framework, can confirm another agent's credential with

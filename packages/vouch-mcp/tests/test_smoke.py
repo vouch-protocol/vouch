@@ -28,7 +28,7 @@ def test_registered_tool_names():
     tools = asyncio.run(vouch_mcp.mcp.list_tools())
     names = {t.name for t in tools}
     assert {
-        "sign_action",
+        "sign",
         "verify",
         "create_session",
         "check_revocation",
@@ -47,7 +47,7 @@ def test_sign_and_verify_roundtrip():
 
     from vouch.integrations.mcp import server
 
-    out = server.sign_action("read", "https://api.example.com", "customer:123")
+    out = server.sign("read", "https://api.example.com", "customer:123")
     cred = json.loads(out)
     assert cred["proof"]["cryptosuite"] == "eddsa-jcs-2022"
 
