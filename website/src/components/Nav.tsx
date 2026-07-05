@@ -16,6 +16,7 @@ const LINKS = [
 
 // Secondary destinations, folded into a "More" dropdown so the nav centre stays lean.
 const MORE = [
+    { href: '/demos/', label: 'Demos' },
     { href: '/blog/', label: 'Blog' },
     { href: '/agent-trust-index/', label: 'Index' },
     { href: '/conformance/', label: 'Conformance' },

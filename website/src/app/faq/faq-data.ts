@@ -155,7 +155,10 @@ The credential format for these renewals ships today (it is called SessionVouche
         q: 'What is a delegation chain?',
         a: `A chain of permission slips that tracks "who let whom do what." Imagine you tell your assistant "please book my flight." Your assistant tells an AI travel agent "please find flights." The travel agent tells a payment agent "please charge this card." Three steps, three permission grants.
 
-A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.`,
+A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.
+
+Beyond narrowing static fields, a link can carry executable caveats: live conditions ("only for shipped orders", "under the customer's lifetime spend", "business hours only") that accumulate down the chain and that no downstream holder can drop. Try it in the interactive demo, where a rule the CEO sets still blocks an agent two hops away.`,
+        helpLinks: [{ label: 'See it: the delegation-envelope demo', href: '/demos/#caveats' }],
       },
       {
         q: 'Can Vouch prove an agent has a track record it cannot fake?',
