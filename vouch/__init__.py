@@ -287,6 +287,29 @@ def __getattr__(name):
         from . import reasoning
 
         return getattr(reasoning, name)
+    # Proof of Deliberation (two-phase deliberated execution, PAD-085)
+    elif name in (
+        "DeliberationError",
+        "INTENT_TYPE",
+        "EXECUTE_TYPE",
+        "VETO_TYPE",
+        "CLASS_REVERSIBLE",
+        "CLASS_REVERSIBLE_COSTLY",
+        "CLASS_IRREVERSIBLE_FINANCIAL",
+        "CLASS_IRREVERSIBLE_DESTRUCTIVE",
+        "CLASS_IRREVERSIBLE_EXTERNAL",
+        "action_digest",
+        "requires_window",
+        "commit_intent",
+        "verify_intent",
+        "veto_intent",
+        "execute",
+        "check_execution",
+        "verify_execution",
+    ):
+        from . import deliberation
+
+        return getattr(deliberation, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -516,6 +539,22 @@ __all__ = [
     "check_reasoned_action",
     "verify_reasoned_action",
     "verify_justification",
+    # Proof of Deliberation (two-phase deliberated execution)
+    "DeliberationError",
+    "INTENT_TYPE",
+    "EXECUTE_TYPE",
+    "VETO_TYPE",
+    "CLASS_REVERSIBLE",
+    "CLASS_REVERSIBLE_COSTLY",
+    "CLASS_IRREVERSIBLE_FINANCIAL",
+    "CLASS_IRREVERSIBLE_DESTRUCTIVE",
+    "CLASS_IRREVERSIBLE_EXTERNAL",
+    "commit_intent",
+    "verify_intent",
+    "veto_intent",
+    "execute",
+    "check_execution",
+    "verify_execution",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
