@@ -5,9 +5,19 @@ All notable changes to Vouch Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-07-05
+
+### Changed (BREAKING)
+
+- Renamed the credential API to `sign` / `verify` across every SDK and the Rust core. `Signer.sign_credential` is now `Signer.sign`, `Verifier.verify_credential` is now `Verifier.verify`, and `sign_credential_hybrid` is now `sign_hybrid`. The same rename applies in the TypeScript, Swift, JVM, .NET, C++, and Go SDKs, and in the C ABI (`vouch_sign_credential` becomes `vouch_sign`, `vouch_verify_credential` becomes `vouch_verify`).
+
+### Removed (BREAKING)
+
+- Removed the legacy v0.x JWS credential path (`Signer.sign()` returning a JWS token, and the JWS `Verifier.verify()` / `check_vouch()`). Credentials are W3C Verifiable Credentials with `eddsa-jcs-2022` Data Integrity proofs.
 
 ### Added
+
+- `vouch-mcp`: a Model Context Protocol server that lets any MCP client issue and verify Vouch Credentials (`sign`, `verify`, `create_session`, `check_revocation`, `get_identity`), over stdio or Streamable HTTP, with an optional post-quantum profile.
 
 #### Robotics: living trust, revocation, and accountable safety record
 
