@@ -995,8 +995,29 @@ result = verify_delegated_chain([grant, action],
                                 trusted_roots={root.did: root.public_key_jwk})
 \`\`\`
 
-Lose a device and you revoke it with a \`DeviceRegistry\`; lose the root and you rebuild it from a threshold of Shamir shares with \`split_identity\` and \`recover_identity\`. The TypeScript SDK exposes the same helpers.`,
+Lose a device and you revoke it with a \`DeviceRegistry\`; lose the root and you rebuild it from a threshold of Shamir shares with \`split_identity\` and \`recover_identity\`. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) exposes the same helpers.`,
         meta: 'Cross-device identity',
+      },
+      {
+        q: 'Can several people jointly sign one action without any of them holding the full key?',
+        a: `Yes, with FROST(Ed25519) threshold signing. A key is split among several custodians so that any threshold of them can sign together, and the full private key never exists whole at any point, not even during signing. The result is a standard Ed25519 signature, so it verifies exactly like any other credential.
+
+\`\`\`python
+from vouch import Signer, ThresholdSigner, threshold
+
+generated = threshold.generate_key(min_signers=2, max_signers=3)
+threshold_signer = ThresholdSigner(generated.shares[:2], generated.group_public_key)
+
+signer = Signer.from_backend(
+    did="did:web:agent.example",
+    public_key=generated.group_public_key.public_key_jwk,
+    sign=threshold_signer.sign,
+)
+credential = signer.sign(action="read", target="t", resource="https://x/y")
+\`\`\`
+
+This is distinct from the recovery shares above: recovery reconstructs a key once, for a deliberate restore; threshold signing never reconstructs it at all, and is meant for live, repeated signing. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) binds the same audited \`frost-ed25519\` core (the Zcash Foundation's RFC 9591 implementation), so every language produces byte-identical results.`,
+        meta: 'FROST threshold signing',
       },
       {
         q: 'How do I make a credential revocable later?',

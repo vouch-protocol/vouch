@@ -79,6 +79,23 @@ been removed. See `integrations.md`.
 - "DID-level revocation or BitstringStatusList?" -> Both. DID-level for
   key compromise; BitstringStatusList for surgical per-credential
   retraction. Most production deployments run both.
+- "How do I use one identity across many devices?" -> Cross-device
+  identity: each device mints its own key locally, and a root identity
+  delegates scoped, time-bound authority to that device's DID
+  (`enroll_device`, `verify_delegated_chain`). Lose a device and revoke it
+  with a `DeviceRegistry`; lose the root and rebuild it from a threshold of
+  Shamir shares (`split_identity`, `recover_identity`). See
+  `cross-device-identity.md`.
+- "How do I require several custodians to jointly sign one action?" ->
+  FROST(Ed25519) threshold signing: split a key among several custodians so
+  a threshold of them sign together, with the full private key never
+  existing whole, not even during signing (`generate_key`, `commit`,
+  `sign_share`, `aggregate`, or the one-call `ThresholdSigner`). The result
+  is a standard Ed25519 signature and plugs into `Signer.from_backend`.
+  Distinct from Shamir recovery above: recovery reconstructs a key once,
+  for a deliberate restore; threshold signing never reconstructs it.
+  Available in every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift). See
+  `threshold-signing.md`.
 - "How do I test or certify that my implementation is conformant?" -> The
   Vouch conformance levels L1 to L3 and the self-test runner (`python -m
   vouch.conformance`), with a hosted verifier that mints a re-checkable badge
