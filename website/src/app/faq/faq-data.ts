@@ -220,6 +220,7 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
       {
         q: 'How do I make agent actions publicly auditable so none can be hidden or rewritten?',
         a: `\`vouch.transparency\` submits consequential actions to an append-only RFC 6962 Merkle log that signs its size and root as a Signed Tree Head. A verifier can demand an inclusion proof that a specific action is in the log, and a monitor can demand a consistency proof that an older tree head is a strict prefix of a newer one. So the log cannot silently omit an action or rewrite history, and comparing tree heads across observers catches a split view. It is the same discipline Certificate Transparency brought to misissuance.`,
+        helpLinks: [{ label: 'See it: the transparency log', href: '/demos/#transparency' }],
       },
     ],
   },

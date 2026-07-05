@@ -303,6 +303,51 @@ function Provenance() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Section V - Action transparency (vouch.transparency)                */
+/* ------------------------------------------------------------------ */
+
+function Transparency() {
+  const [mode, setMode] = useState<'sound' | 'omit' | 'rewrite'>('sound');
+  const verdicts = {
+    sound: { ok: true, reason: 'inclusion proof holds and the new tree head extends the old', label: 'VERIFIED' },
+    omit: { ok: false, reason: 'inclusion_failed · this action is not in the log the tree head commits to', label: 'CAUGHT' },
+    rewrite: { ok: false, reason: 'consistency_failed · the log rewrote an entry it had already committed', label: 'CAUGHT' },
+  } as const;
+  const v = verdicts[mode];
+  return (
+    <div className="grid md:grid-cols-2 gap-8 items-start">
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          Consequential actions land in an append-only Merkle log that signs its size and root. A verifier demands an
+          <b className="text-ink"> inclusion proof</b> that an action is in the log, and a monitor demands a
+          <b className="text-ink"> consistency proof</b> that a newer tree head extends the older one, so nothing can be
+          omitted or rewritten.
+        </p>
+        <div className="eyebrow-faint mb-2">Try it as the monitor</div>
+        <div className="flex flex-col gap-2">
+          <button className={`demo-radio${mode === 'sound' ? ' on' : ''}`} onClick={() => setMode('sound')}>Check the log honestly</button>
+          <button className={`demo-radio${mode === 'omit' ? ' on' : ''}`} onClick={() => setMode('omit')}>Claim an action that was never logged</button>
+          <button className={`demo-radio${mode === 'rewrite' ? ' on' : ''}`} onClick={() => setMode('rewrite')}>The log rewrites an old entry</button>
+        </div>
+      </div>
+      <div>
+        <div className="demo-ledger" style={{ minHeight: '150px' }}>
+          <div className="demo-line"><span className="k">#0</span> transfer_funds · usd:5000 {mode === 'rewrite' ? '→ usd:50 ✗' : '✓'}</div>
+          <div className="demo-line"><span className="k">#1</span> publish · blog ✓</div>
+          <div className="demo-line"><span className="k">#2</span> delete · db:staging-3 ✓</div>
+          <div className="demo-line"><span className="k">STH</span> size 3 · root {mode === 'rewrite' ? 'uePe… recomputes ✗' : 'uePe… signed ✓'}</div>
+          {mode === 'omit' && <div className="demo-line"><span className="k">claim</span> exfiltrate · not in tree ✗</div>}
+        </div>
+        <div className="demo-verdict mt-4" style={{ borderColor: v.ok ? ALLOW : DENY }}>
+          <span className="demo-badge" style={{ color: v.ok ? ALLOW : DENY, borderColor: v.ok ? ALLOW : DENY }}>{v.label}</span>
+          <span className="font-mono text-[0.85rem] text-ink-soft">{v.reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export default function DemosClient() {
   return (
@@ -340,7 +385,7 @@ export default function DemosClient() {
         </div>
       </section>
 
-      <section id="provenance" className="scroll-mt-24">
+      <section id="provenance" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ IV</span>
@@ -348,6 +393,17 @@ export default function DemosClient() {
           </div>
           <p className="eyebrow mb-6">Prove the output came from this model on this context · vouch.provenance</p>
           <Provenance />
+        </div>
+      </section>
+
+      <section id="transparency" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ V</span>
+            <h2>The transparency log</h2>
+          </div>
+          <p className="eyebrow mb-6">An action can&apos;t be hidden or rewritten · vouch.transparency</p>
+          <Transparency />
         </div>
       </section>
     </>
