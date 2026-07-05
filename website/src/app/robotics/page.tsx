@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, a regulatory conformance profile mapping credentials to safety and AI regulations, post-quantum signing by default for a robot\'s decade-long life, cross-embodiment identity continuity so one accountable agent can move between robot bodies, a physical custody handoff chain across human and robot actors, bounded, revocable access to physical infrastructure like doors, elevators, and chargers, fused-sensor provenance that binds a robot\'s fused world model to the exact sensor frames that produced it, and self-attested wear that narrows a robot\'s capability envelope as it degrades.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, a regulatory conformance profile mapping credentials to safety and AI regulations, post-quantum signing by default for a robot\'s decade-long life, cross-embodiment identity continuity so one accountable agent can move between robot bodies, a physical custody handoff chain across human and robot actors, bounded, revocable access to physical infrastructure like doors, elevators, and chargers, fused-sensor provenance that binds a robot\'s fused world model to the exact sensor frames that produced it, self-attested wear that narrows a robot\'s capability envelope as it degrades, and privacy-preserving bystander-consent evidence that binds the basis for a capture to the capture itself.',
 };
 
 const CAPABILITIES = [
@@ -127,6 +127,12 @@ const CAPABILITIES = [
         title: 'Wear and degradation',
         body: 'A robot does not stay as capable as it left the factory: actuators wear, sensors drift, error rates creep up. It signs its own degradation as a wear level bound to its identity, hash-linked over time so the history is tamper-evident. A deterministic rule derives a physical scope whose force and speed caps are scaled down by the wear level, and the result is a valid attenuation of the original, so a worn robot operates inside a tighter, verifiable envelope instead of the static limit it shipped with.',
         module: 'vouch.robotics.wear',
+    },
+    {
+        num: 'xxi.',
+        title: 'Bystander consent',
+        body: 'A robot in a shared or public space captures people incidentally. It records the basis on which a capture was permitted, bound to the specific capture by its hash and to its own identity, holding only hashes and never an image or anyone\'s identifying data. A bystander can sign a consent token bound to that one capture, so their consent verifies only against the recording it was given for and cannot be replayed to another. The robot signs evidence tying the capture to a consent basis, explicit token, posted notice, legitimate interest, or a redaction it applied.',
+        module: 'vouch.robotics.consent',
     },
 ];
 

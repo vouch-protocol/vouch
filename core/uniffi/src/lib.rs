@@ -982,4 +982,39 @@ pub fn robotics_attenuate_for_wear(params_json: String) -> Result<String, CoreEr
     Ok(rjson::attenuate_for_wear(&params_json)?)
 }
 
+// Bystander-consent evidence (Phase 5.20).
+pub fn robotics_hash_capture(capture: Vec<u8>) -> String {
+    rjson::hash_capture(&capture)
+}
+pub fn robotics_build_consent_token(
+    bystander_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_consent_token(&bystander_seed, &params_json)?)
+}
+pub fn robotics_verify_consent_token(
+    params_json: String,
+    bystander_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_consent_token(
+        &params_json,
+        &bystander_public_key,
+    )?)
+}
+pub fn robotics_build_consent_evidence(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_consent_evidence(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_consent_evidence(
+    params_json: String,
+    robot_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_consent_evidence(
+        &params_json,
+        &robot_public_key,
+    )?)
+}
+
 uniffi::include_scaffolding!("vouch_core");

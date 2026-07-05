@@ -100,6 +100,19 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-090](./PAD-090-fused-input-provenance-completeness.md) | Detecting a Dropped or Substituted Input in a Robot's Fused Perception Output | 2026-07-05 | Published |
 | [PAD-091](./PAD-091-robot-wear-degradation-attestation.md) | Self-Attested Robot Wear and Degradation Bound to Identity | 2026-07-05 | Published |
 | [PAD-092](./PAD-092-wear-driven-capability-attenuation.md) | Wear-Driven Automatic Attenuation of a Robot's Physical Capability Scope | 2026-07-05 | Published |
+| [PAD-093](./PAD-093-bystander-consent-evidence.md) | Privacy-Preserving Bystander-Consent Evidence for Robot Capture | 2026-07-06 | Published |
+| [PAD-094](./PAD-094-capture-bound-consent-token.md) | Capture-Bound Bystander Consent Token That Cannot Be Replayed | 2026-07-06 | Published |
+
+
+## July 6, 2026: Bystander Consent for Robot Capture (PAD-093, PAD-094)
+
+Two disclosures cover a robot recording people accountably without retaining anyone's
+identity. PAD-093 is a privacy-preserving bystander-consent evidence credential that
+binds the basis for a capture (an explicit token, posted notice, a legitimate interest,
+or an applied redaction) to the capture by its hash and to the robot's identity, storing
+only hashes. PAD-094 is a bystander-signed consent token bound to a single capture and
+robot, so consent given for one recording cannot be replayed to justify another, and the
+evidence commits to its tokens by proof value rather than by identity.
 
 
 ## July 5, 2026: Robot Wear and Degradation (PAD-091, PAD-092)

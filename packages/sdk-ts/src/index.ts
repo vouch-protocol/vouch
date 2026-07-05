@@ -395,6 +395,25 @@ export {
 } from './robotics/wear';
 export type { BuildWearAttestationOptions } from './robotics/wear';
 
+// Bystander-consent evidence: a bystander-signed consent token bound to one
+// capture and one robot, and a robot-signed evidence credential binding a
+// capture hash to a consent basis and the tokens that cover it, byte-identical
+// with the Python module.
+export {
+  CONSENT_EVIDENCE_TYPE,
+  CONSENT_TOKEN_TYPE,
+  CONSENT_BASES,
+  hashCapture,
+  buildConsentToken,
+  verifyConsentToken,
+  buildConsentEvidence,
+  verifyConsentEvidence,
+} from './robotics/consent';
+export type {
+  BuildConsentTokenOptions,
+  BuildConsentEvidenceOptions,
+} from './robotics/consent';
+
 // Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,

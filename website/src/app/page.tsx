@@ -43,7 +43,7 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
     num: 'vii.',
     title: 'Robots & Embodied Agents',
     body: 'A robot identity rooted in a TPM or secure element, physical limits enforced as cryptographic capability, and a kill-switch only an attested authority can trigger. One accountable identity carries across robot bodies, custody hands off cleanly between human and robot actors, and access to doors and chargers stays bounded and revocable, all in a tamper-evident record and post-quantum by default for a decade-long service life.',
-    spec: 'Twenty robotics capabilities',
+    spec: 'Twenty-one robotics capabilities',
     href: '/robotics/',
   },
   {

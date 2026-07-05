@@ -4272,6 +4272,296 @@ pub fn attenuate_for_wear(scope: &Value, wear_level: f64) -> Result<Value> {
     Ok(Value::Object(narrowed))
 }
 
+// ---------------------------------------------------------------------------
+// Bystander-consent evidence (Phase 5.20)
+// ---------------------------------------------------------------------------
+//
+// A robot working in a shared or public space captures people incidentally
+// through its cameras and microphones. This lets the robot record, at capture
+// time, the basis on which a capture was permitted, bound to the specific capture
+// and to the robot's identity, and lets a bystander (or their device) sign a
+// consent token bound to that one capture. Only hashes and a consent basis are
+// stored, never an image or a bystander's identifying data, so the evidence is
+// verifiable without retaining anyone's biometrics.
+//
+// A bystander consent token is signed by the bystander over the hash of the
+// capture and the robot's DID, so it verifies only against the capture it was
+// given for and cannot be replayed to a different recording. A bystander-consent
+// evidence credential is signed by the robot, binding the capture hash to a
+// consent basis (an explicit token, posted notice, a legitimate interest, or a
+// redaction that was applied) and, when the basis is explicit consent, to the
+// tokens that cover it.
+//
+// This is the open layer: the cryptographic binding of a consent basis to a
+// capture, and its verification, holding only hashes. On-device biometric
+// detection and redaction, and managed consent-registry orchestration, are out of
+// scope for the open layer.
+
+pub const CONSENT_EVIDENCE_TYPE: &str = "BystanderConsentEvidence";
+pub const CONSENT_TOKEN_TYPE: &str = "BystanderConsentToken";
+
+/// Accepted consent bases: the interoperable set a verifier can rely on.
+/// Implementers MAY use additional values.
+pub const CONSENT_BASES: [&str; 4] = [
+    "explicit-consent",
+    "posted-notice",
+    "legitimate-interest",
+    "redacted",
+];
+
+/// Multibase (base64url) SHA-256 of a raw capture. Only the hash travels in the
+/// token and the evidence; the capture stays wherever the deployment keeps it.
+pub fn hash_capture(capture: &[u8]) -> String {
+    mb64(&Sha256::digest(capture))
+}
+
+/// Parameters for [`build_consent_token`]. The signer is the bystander; the token
+/// binds their consent to one capture (named by `capture_hash`) by one robot
+/// (`robot_did`). `valid_until`, when set, bounds the window (the wrapper derives
+/// it from a `valid_seconds` lifetime added to `granted_at`, keeping the core's
+/// clock caller-supplied). `scope`, when set, records what the consent covers.
+#[derive(Debug, Clone)]
+pub struct BuildConsentToken {
+    pub bystander_did: String,
+    pub capture_hash: String,
+    pub robot_did: String,
+    pub scope: Option<String>,
+    pub granted_at: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed `BystanderConsentToken`: a bystander grants consent for a
+/// specific capture (named by `capture_hash`) by a specific robot (`robot_did`),
+/// signed by the bystander. Binding the token to the capture hash means it cannot
+/// be replayed to a different recording. Signed by the bystander.
+pub fn build_consent_token(bystander_seed: &[u8], params: &BuildConsentToken) -> Result<Value> {
+    if params.bystander_did.is_empty()
+        || params.capture_hash.is_empty()
+        || params.robot_did.is_empty()
+    {
+        return Err(CoreError::Json(
+            "bystander_did, capture_hash, and robot_did are required".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.bystander_did));
+    subject.insert("captureHash".into(), json!(params.capture_hash));
+    subject.insert("robotDid".into(), json!(params.robot_did));
+    if let Some(scope) = &params.scope {
+        subject.insert("scope".into(), json!(scope));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", CONSENT_TOKEN_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.bystander_did));
+    cred.insert("validFrom".into(), json!(params.granted_at));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(
+        format!("{}#key-1", params.bystander_did),
+        &params.granted_at,
+    );
+    data_integrity::sign(&Value::Object(cred), bystander_seed, &opts)
+}
+
+/// Verify a `BystanderConsentToken`: the bystander's proof, that the issuer is the
+/// bystander, that the token is bound to this capture and this robot, and that it
+/// is within its window at `now_iso` (a `None` clock skips the window check).
+/// Returns the credentialSubject on success, `None` if invalid.
+pub fn verify_consent_token(
+    token: &Value,
+    bystander_public_key: &[u8],
+    capture_hash: &str,
+    robot_did: &str,
+    now_iso: Option<&str>,
+) -> Result<Option<Value>> {
+    let subject = match verify_typed(token, bystander_public_key, CONSENT_TOKEN_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    if token.get("issuer") != subject.get("id") {
+        return Ok(None);
+    }
+    if subject.get("captureHash").and_then(|v| v.as_str()) != Some(capture_hash)
+        || subject.get("robotDid").and_then(|v| v.as_str()) != Some(robot_did)
+    {
+        return Ok(None);
+    }
+    if !lease_window_current(token, now_iso) {
+        return Ok(None);
+    }
+    Ok(Some(subject))
+}
+
+/// Parameters for [`build_consent_evidence`]. The signer is the robot; the
+/// evidence records that a capture (named by `capture_hash`) was permitted on
+/// `basis`, one of [`CONSENT_BASES`]. `consent_tokens`, when the basis is explicit
+/// consent, are the bystander tokens that cover it, committed by their proof value.
+/// `redaction_hash`, when set, records that a redacted output was produced.
+/// `valid_until`, when set, bounds the window.
+#[derive(Debug, Clone)]
+pub struct BuildConsentEvidence {
+    pub robot_did: String,
+    pub capture_hash: String,
+    pub basis: String,
+    pub consent_tokens: Vec<Value>,
+    pub redaction_hash: Option<String>,
+    pub valid_from: String,
+    pub valid_until: Option<String>,
+}
+
+/// A privacy-preserving reference to a token: its proof value. Never embeds a
+/// bystander's identifying data.
+fn consent_token_ref(token: &Value) -> Result<String> {
+    token
+        .get("proof")
+        .and_then(|p| p.get("proofValue"))
+        .and_then(|v| v.as_str())
+        .map(String::from)
+        .ok_or_else(|| CoreError::Json("consent token is missing a proof value".into()))
+}
+
+/// Build a signed `BystanderConsentEvidence` credential: the robot records that a
+/// capture (named by `capture_hash`) was permitted on `basis`, one of
+/// [`CONSENT_BASES`]. When the basis is explicit consent, the `consent_tokens` are
+/// the bystander tokens that cover it, and the evidence commits to them by their
+/// proof value (never embedding a bystander's identifying data). Signed by the
+/// robot.
+pub fn build_consent_evidence(robot_seed: &[u8], params: &BuildConsentEvidence) -> Result<Value> {
+    if params.robot_did.is_empty() || params.capture_hash.is_empty() {
+        return Err(CoreError::Json(
+            "robot_did and capture_hash are required".into(),
+        ));
+    }
+    if !CONSENT_BASES.contains(&params.basis.as_str()) {
+        return Err(CoreError::Json(format!(
+            "basis must be one of {:?}, got {:?}",
+            CONSENT_BASES, params.basis
+        )));
+    }
+    if params.basis == "explicit-consent" && params.consent_tokens.is_empty() {
+        return Err(CoreError::Json(
+            "explicit-consent basis requires at least one consent token".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.robot_did));
+    subject.insert("captureHash".into(), json!(params.capture_hash));
+    subject.insert("basis".into(), json!(params.basis));
+    if !params.consent_tokens.is_empty() {
+        let mut refs = Vec::with_capacity(params.consent_tokens.len());
+        for t in &params.consent_tokens {
+            refs.push(consent_token_ref(t)?);
+        }
+        subject.insert("consentTokenRefs".into(), json!(refs));
+    }
+    if let Some(rh) = &params.redaction_hash {
+        subject.insert("redactionHash".into(), json!(rh));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", CONSENT_EVIDENCE_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.robot_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.robot_did), &params.valid_from);
+    data_integrity::sign(&Value::Object(cred), robot_seed, &opts)
+}
+
+/// One bystander's public key, looked up by bystander DID, for
+/// [`verify_consent_evidence`].
+#[derive(Debug, Clone)]
+pub struct BystanderKey {
+    pub did: String,
+    pub public_key: Vec<u8>,
+}
+
+/// Verify a `BystanderConsentEvidence` credential: the robot's proof, that the
+/// issuer is the robot, and that the basis is accepted. When `capture` is supplied,
+/// its hash must reproduce the attested capture hash. When `consent_tokens` and
+/// `bystander_keys` are supplied, every token must verify, be bound to this capture
+/// and this robot, and match a committed reference, and an explicit-consent
+/// evidence must carry at least one token. Returns the credentialSubject on
+/// success, `None` if invalid.
+pub fn verify_consent_evidence(
+    evidence: &Value,
+    robot_public_key: &[u8],
+    capture: Option<&[u8]>,
+    consent_tokens: Option<&[Value]>,
+    bystander_keys: Option<&[BystanderKey]>,
+    now_iso: Option<&str>,
+) -> Result<Option<Value>> {
+    let subject = match verify_typed(evidence, robot_public_key, CONSENT_EVIDENCE_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    if evidence.get("issuer") != subject.get("id") {
+        return Ok(None);
+    }
+    let basis = subject.get("basis").and_then(|v| v.as_str());
+    match basis {
+        Some(b) if CONSENT_BASES.contains(&b) => {}
+        _ => return Ok(None),
+    }
+    let capture_hash = match subject.get("captureHash").and_then(|v| v.as_str()) {
+        Some(h) if !h.is_empty() => h,
+        _ => return Ok(None),
+    };
+
+    if let Some(c) = capture {
+        if hash_capture(c) != capture_hash {
+            return Ok(None);
+        }
+    }
+
+    let refs: HashSet<&str> = subject
+        .get("consentTokenRefs")
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|r| r.as_str()).collect())
+        .unwrap_or_default();
+    if basis == Some("explicit-consent") && refs.is_empty() {
+        return Ok(None);
+    }
+
+    if let (Some(tokens), Some(keys)) = (consent_tokens, bystander_keys) {
+        let robot_did = subject.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        for token in tokens {
+            let issuer = token.get("issuer").and_then(|v| v.as_str());
+            let key = match issuer.and_then(|i| keys.iter().find(|k| k.did == i)) {
+                Some(k) => &k.public_key,
+                None => return Ok(None),
+            };
+            let tok_ok =
+                verify_consent_token(token, key, capture_hash, robot_did, now_iso)?.is_some();
+            let committed = consent_token_ref(token)
+                .map(|r| refs.contains(r.as_str()))
+                .unwrap_or(false);
+            if !tok_ok || !committed {
+                return Ok(None);
+            }
+        }
+    }
+
+    Ok(Some(subject))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -6667,5 +6957,55 @@ mod tests {
         assert_eq!(narrowed["maxSpeedMps"].as_f64().unwrap(), 1.125);
         assert_eq!(narrowed["maxSpeedNearHumansMps"].as_f64().unwrap(), 0.1875);
         assert!(attenuates(&scope, &narrowed));
+    }
+
+    // Bystander-consent evidence (Phase 5.20) ------------------------------
+
+    // Cross-language interop: Rust reproduces the capture hash Python pinned,
+    // verifies the bystander-signed token is bound to that capture, and verifies
+    // the robot-signed evidence with the token and the bystander key.
+    #[test]
+    fn verifies_python_consent_interop_vector() {
+        let vector = load_vector();
+        let robot_pub = jwk_pub(&vector["robot_public_key_jwk"]);
+        let bystander_pub = jwk_pub(&vector["consent_bystander_key"]);
+
+        let capture = b"bystander-frame-0";
+        let capture_hash = hash_capture(capture);
+        assert_eq!(
+            capture_hash,
+            vector["expected_consent_capture_hash"].as_str().unwrap()
+        );
+
+        let token = vector["consent_token_credential"].clone();
+        let robot_did = token["credentialSubject"]["robotDid"].as_str().unwrap();
+        let tok_subject = verify_consent_token(
+            &token,
+            &bystander_pub,
+            &capture_hash,
+            robot_did,
+            Some("2026-01-01T00:05:00Z"),
+        )
+        .unwrap()
+        .expect("consent token verifies bound to the capture");
+        assert_eq!(tok_subject["captureHash"].as_str().unwrap(), capture_hash);
+
+        let evidence = vector["consent_evidence_credential"].clone();
+        let bystander_did = token["issuer"].as_str().unwrap();
+        let keys = [BystanderKey {
+            did: bystander_did.to_string(),
+            public_key: bystander_pub.clone(),
+        }];
+        let ev_subject = verify_consent_evidence(
+            &evidence,
+            &robot_pub,
+            Some(capture),
+            Some(&[token.clone()]),
+            Some(&keys),
+            Some("2026-01-01T00:05:00Z"),
+        )
+        .unwrap()
+        .expect("consent evidence verifies with token and bystander key");
+        assert_eq!(ev_subject["basis"].as_str().unwrap(), "explicit-consent");
     }
 }

@@ -1053,3 +1053,37 @@ pub fn robotics_verify_wear_chain(params_json: &str, public_b64: &str) -> Result
 pub fn robotics_attenuate_for_wear(params_json: &str) -> Result<String, JsError> {
     rjson::attenuate_for_wear(params_json).map_err(jerr)
 }
+
+// Bystander-consent evidence (Phase 5.20).
+#[wasm_bindgen(js_name = roboticsHashCapture)]
+pub fn robotics_hash_capture(capture_b64: &str) -> Result<String, JsError> {
+    Ok(rjson::hash_capture(&b64d(capture_b64)?))
+}
+#[wasm_bindgen(js_name = roboticsBuildConsentToken)]
+pub fn robotics_build_consent_token(
+    bystander_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_consent_token(&b64d(bystander_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyConsentToken)]
+pub fn robotics_verify_consent_token(
+    params_json: &str,
+    bystander_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_consent_token(params_json, &b64d(bystander_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildConsentEvidence)]
+pub fn robotics_build_consent_evidence(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_consent_evidence(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyConsentEvidence)]
+pub fn robotics_verify_consent_evidence(
+    params_json: &str,
+    robot_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_consent_evidence(params_json, &b64d(robot_public_b64)?).map_err(jerr)
+}

@@ -33,12 +33,15 @@ from vouch.robotics import (
     build_handoff,
     build_key_rotation,
     build_ownership_transfer,
+    build_consent_evidence,
+    build_consent_token,
     build_status_list_entry,
     build_wear_attestation,
     attenuate_for_wear,
     check_conformance,
     config_hash,
     fusion_inputs_digest,
+    hash_capture,
     hash_frame,
     hash_fused_output,
     mint_robot_identity,
@@ -237,6 +240,24 @@ def main():
     wear_attenuation_level = 0.25
     expected_attenuated_scope = attenuate_for_wear(wear_input_scope, wear_attenuation_level)
 
+    # Bystander consent: a bystander signs a consent token bound to a fixed capture
+    # hash and this robot, and the robot signs a consent evidence committing that
+    # token under the explicit-consent basis. Other languages reproduce the capture
+    # hash and verify both the token (bound to the capture) and the evidence.
+    consent_bystander, consent_bystander_pub = signer_from_seed(
+        bytes([11] * 32), "did:web:person-1.example.com"
+    )
+    consent_capture_hash = hash_capture(b"bystander-frame-0")
+    consent_token = build_consent_token(
+        consent_bystander, bystander_did="did:web:person-1.example.com",
+        capture_hash=consent_capture_hash, robot_did=ROBOT_DID,
+        valid_seconds=10 * 365 * 24 * 60 * 60, granted_at=VALID_FROM,
+    )
+    consent_evidence = build_consent_evidence(
+        signer, robot_did=ROBOT_DID, capture_hash=consent_capture_hash,
+        basis="explicit-consent", consent_tokens=[consent_token], valid_from=VALID_FROM,
+    )
+
     # Conformance: a fixed credential set (the checker reads structure and fields,
     # not proofs, so these are plain credentials) and the deterministic report and
     # digest other languages reproduce.
@@ -301,11 +322,15 @@ def main():
             "verified under the robot key, and a robot wear history "
             "(RobotWearAttestation links signed by the robot, each linking to the "
             "previous one by its proof) that other languages verify, with a physical "
-            "capability scope narrowed for a wear level that they reproduce. "
+            "capability scope narrowed for a wear level that they reproduce, and a "
+            "bystander-consent pair (a BystanderConsentToken signed by a bystander "
+            "and bound to a capture hash and this robot, plus a "
+            "BystanderConsentEvidence signed by the robot under the explicit-consent "
+            "basis) that other languages verify against the reproduced capture hash. "
             "Credential proof values are not pinned because the proof carries a "
             "wall-clock created timestamp."
         ),
-        "version": "1.11",
+        "version": "1.12",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -357,6 +382,10 @@ def main():
         "wear_input_scope": wear_input_scope,
         "wear_attenuation_level": wear_attenuation_level,
         "expected_attenuated_scope": expected_attenuated_scope,
+        "expected_consent_capture_hash": consent_capture_hash,
+        "consent_token_credential": consent_token,
+        "consent_evidence_credential": consent_evidence,
+        "consent_bystander_key": consent_bystander_pub,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
