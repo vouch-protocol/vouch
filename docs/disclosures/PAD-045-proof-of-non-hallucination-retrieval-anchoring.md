@@ -278,6 +278,20 @@ hallucination accountability is foundational to AI agent trust and
 must be available as a public good rather than a vendor-locked
 feature.
 
+## 7. Reference Implementation
+
+As of July 2026, this mechanism ships in the open-source Vouch SDK as
+part of `vouch.provenance`. The `context_root` function computes the
+Merkle root over the retrieved chunks of §3.1, and
+`sign_inference_provenance` binds the output hash to that root inside a
+single signed credential, realizing the retrieval-commit and
+output-binding phases of §3.1 and §3.2. On the verifier side,
+`verify_context` re-derives the root from the supplied chunks and
+`check_replay` confirms the output and context the agent committed to,
+providing the Level 1 reconciliation of §3.3. The flow runs live under
+the provenance section at https://vouch-protocol.com/demos and maps to
+`examples/provenance_demo.py` in the repository.
+
 ---
 
 *Published as prior art to ensure that retrieval-anchored
