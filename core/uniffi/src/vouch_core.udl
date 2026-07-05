@@ -236,6 +236,18 @@ namespace vouch_core {
     string robotics_verify_continuity_chain(string params_json, bytes agent_public_key);
     [Throws=CoreError]
     string robotics_check_no_fork(string params_json);
+
+    // Physical custody handoff (Phase 5.16).
+    [Throws=CoreError]
+    string robotics_build_handoff(bytes receiver_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_handoff(string credential_json, bytes receiver_public_key);
+    [Throws=CoreError]
+    string robotics_verify_handoff_chain(string params_json);
+    [Throws=CoreError]
+    string robotics_holder_at(string params_json);
+    [Throws=CoreError]
+    string robotics_locate_condition_change(string params_json);
 };
 
 dictionary Ed25519KeyPair {

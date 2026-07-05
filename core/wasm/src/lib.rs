@@ -868,3 +868,30 @@ pub fn robotics_verify_continuity_chain(
 pub fn robotics_check_no_fork(params_json: &str) -> Result<String, JsError> {
     rjson::check_no_fork(params_json).map_err(jerr)
 }
+
+#[wasm_bindgen(js_name = roboticsBuildHandoff)]
+pub fn robotics_build_handoff(
+    receiver_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_handoff(&b64d(receiver_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyHandoff)]
+pub fn robotics_verify_handoff(
+    credential_json: &str,
+    receiver_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_handoff(credential_json, &b64d(receiver_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyHandoffChain)]
+pub fn robotics_verify_handoff_chain(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_handoff_chain(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsHolderAt)]
+pub fn robotics_holder_at(params_json: &str) -> Result<String, JsError> {
+    rjson::holder_at(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsLocateConditionChange)]
+pub fn robotics_locate_condition_change(params_json: &str) -> Result<String, JsError> {
+    rjson::locate_condition_change(params_json).map_err(jerr)
+}

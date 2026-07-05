@@ -844,5 +844,29 @@ pub fn robotics_verify_continuity_chain(
 pub fn robotics_check_no_fork(params_json: String) -> Result<String, CoreError> {
     Ok(rjson::check_no_fork(&params_json)?)
 }
+pub fn robotics_build_handoff(
+    receiver_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_handoff(&receiver_seed, &params_json)?)
+}
+pub fn robotics_verify_handoff(
+    credential_json: String,
+    receiver_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_handoff(
+        &credential_json,
+        &receiver_public_key,
+    )?)
+}
+pub fn robotics_verify_handoff_chain(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_handoff_chain(&params_json)?)
+}
+pub fn robotics_holder_at(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::holder_at(&params_json)?)
+}
+pub fn robotics_locate_condition_change(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::locate_condition_change(&params_json)?)
+}
 
 uniffi::include_scaffolding!("vouch_core");
