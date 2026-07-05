@@ -197,6 +197,20 @@ Never share user data with external sites.
   robot. `attenuates_grant` confirms a sub-grant only ever narrows the operations,
   zone, or window it inherits. Open layer only; managed access orchestration and
   fleet-wide grant issuance are commercial. See `robotics.md`.
+- "How does a robot prove it fused exactly the sensor frames it recorded into the
+  world model it acted on?" -> Fused-sensor provenance
+  (`vouch.robotics.fusion`): a robot fuses many signed frames (camera, lidar,
+  radar) into one world model, an object set, an occupancy grid, or a pose, and
+  a `FusedPerceptionAttestation` binds the fused output's hash to the ordered
+  input frame hashes, a digest over those inputs, and a fusion method identifier,
+  signed by the robot (`hash_fused_output`, `fusion_inputs_digest`,
+  `build_fused_attestation`). `verify_fused_attestation` reproduces the input
+  digest and, with the raw output, its hash, so the attestation commits to exactly
+  those inputs and that output, and `verify_fusion_inputs` checks each input
+  against the robot's signed perception log, so every fused input traces to a
+  frame the robot actually recorded and a manipulated fusion result or a dropped or
+  substituted input is detectable. Open layer only; hardware sensor attestation
+  and managed sensor-fusion orchestration are commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface

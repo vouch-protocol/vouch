@@ -272,6 +272,17 @@ namespace vouch_core {
     string robotics_authorize_access(string params_json, bytes operator_public_key, bytes robot_public_key);
     [Throws=CoreError]
     string robotics_attenuates_grant(string params_json);
+
+    // Fused-sensor provenance (Phase 5.18).
+    [Throws=CoreError]
+    string robotics_fusion_inputs_digest(string params_json);
+    string robotics_hash_fused_output(bytes output);
+    [Throws=CoreError]
+    string robotics_build_fused_attestation(bytes robot_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_fused_attestation(string credential_json, bytes public_key, string? fused_output_mb);
+    [Throws=CoreError]
+    string robotics_verify_fusion_inputs(string params_json);
 };
 
 dictionary Ed25519KeyPair {

@@ -29,13 +29,16 @@ from vouch.robotics import (
     build_decommission,
     build_delegation_lease,
     build_embodiment,
+    build_fused_attestation,
     build_handoff,
     build_key_rotation,
     build_ownership_transfer,
     build_status_list_entry,
     check_conformance,
     config_hash,
+    fusion_inputs_digest,
     hash_frame,
+    hash_fused_output,
     mint_robot_identity,
     report_digest,
     sign_pq,
@@ -200,6 +203,19 @@ def main():
         operation="open", requested_at=VALID_FROM,
     )
 
+    # Fused-sensor provenance: a fused world model bound to a fixed set of input
+    # frame hashes and a fusion method, signed by the robot. Other languages
+    # reproduce the input digest and the fused-output hash, and verify the
+    # attestation under the robot key.
+    fused_input_frames = [b"cam-front-0", b"lidar-top-0", b"radar-0"]
+    fused_input_frame_hashes = [hash_frame(f) for f in fused_input_frames]
+    fused_output_bytes = b"world-model-0"
+    fused_attestation = build_fused_attestation(
+        signer, robot_did=ROBOT_DID, fusion_method="occupancy-grid-v1",
+        input_frame_hashes=fused_input_frame_hashes, fused_output=fused_output_bytes,
+        captured_at=VALID_FROM,
+    )
+
     # Conformance: a fixed credential set (the checker reads structure and fields,
     # not proofs, so these are plain credentials) and the deterministic report and
     # digest other languages reproduce.
@@ -257,11 +273,15 @@ def main():
             "bounded infrastructure access grant plus a matching access request "
             "(InfrastructureAccessGrant signed by an operator, "
             "InfrastructureAccessRequest signed by a robot) that other languages "
-            "authorize offline. "
+            "authorize offline, and a fused-sensor provenance attestation "
+            "(FusedPerceptionAttestation) binding a fused world model to its input "
+            "frame hashes and a fusion method, with the input digest and the "
+            "fused-output hash reproduced deterministically and the attestation "
+            "verified under the robot key. "
             "Credential proof values are not pinned because the proof carries a "
             "wall-clock created timestamp."
         ),
-        "version": "1.9",
+        "version": "1.10",
         "robot_public_key_jwk": public_jwk,
         "robot_identity_credential": identity,
         "config": config,
@@ -305,6 +325,10 @@ def main():
         "access_request_credential": access_request,
         "access_operator_key": access_operator_pub,
         "access_robot_key": access_robot_pub,
+        "fused_input_frame_hashes": fused_input_frame_hashes,
+        "expected_fusion_inputs_digest": fusion_inputs_digest(fused_input_frame_hashes),
+        "expected_fused_output_hash": hash_fused_output(fused_output_bytes),
+        "fused_perception_attestation": fused_attestation,
     }
     path = os.path.join(os.path.dirname(__file__), "vector.json")
     with open(path, "w", encoding="utf-8") as f:
