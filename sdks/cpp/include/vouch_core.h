@@ -35,7 +35,7 @@ char *vouch_generate_ed25519(char **err_out);
 /**
  * Sign a credential (eddsa-jcs-2022). seed_b64 is the 32-byte Ed25519 seed.
  */
-char *vouch_sign_credential(const char *credential_json,
+char *vouch_sign(const char *credential_json,
                             const char *seed_b64,
                             const char *verification_method,
                             const char *created,
@@ -59,7 +59,7 @@ char *vouch_verify_proof(const char *credential_json, const char *public_b64, ch
  * Verify a credential's proof and validity window. Returns JSON
  * {proofValid, timeValid, valid}.
  */
-char *vouch_verify_credential(const char *credential_json,
+char *vouch_verify(const char *credential_json,
                               const char *public_b64,
                               const char *now_iso,
                               int64_t clock_skew_seconds,

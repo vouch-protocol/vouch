@@ -34,13 +34,13 @@ namespace vouch_core {
     [Throws=CoreError]
     string build_proof(string credential_json, bytes seed, string verification_method, string created);
     [Throws=CoreError]
-    string sign_credential(string credential_json, bytes seed, string verification_method, string created);
+    string sign(string credential_json, bytes seed, string verification_method, string created);
     [Throws=CoreError]
     boolean verify_proof(string credential_json, bytes public_key);
 
     // Credential verification with validity window.
     [Throws=CoreError]
-    VerifyResult verify_credential(string credential_json, bytes public_key, string now_iso, i64 clock_skew_seconds);
+    VerifyResult verify(string credential_json, bytes public_key, string now_iso, i64 clock_skew_seconds);
 
     // Delegation: build a link and validate a chain's time-bound rule.
     [Throws=CoreError]

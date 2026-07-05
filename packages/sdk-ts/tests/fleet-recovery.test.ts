@@ -156,8 +156,8 @@ describe('recovery: Shamir', () => {
     // The recovered key is the original: a credential it signs verifies against
     // the ORIGINAL public key.
     const signer = new Signer({ privateKey: recovered.privateKeyJwk, did: keys.did! });
-    const cred = await signer.signCredential({ action: 'read', target: 't', resource: 'https://x/y' });
-    const { isValid } = await Verifier.verifyCredential(cred, keys.publicKeyJwk);
+    const cred = await signer.sign({ action: 'read', target: 't', resource: 'https://x/y' });
+    const { isValid } = await Verifier.verify(cred, keys.publicKeyJwk);
     expect(isValid).toBe(true);
   });
 

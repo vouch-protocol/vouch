@@ -23,10 +23,10 @@ public static class Vouch
     [DllImport(Lib)] private static extern IntPtr vouch_version();
     [DllImport(Lib)] private static extern IntPtr vouch_canonicalize([MarshalAs(UnmanagedType.LPUTF8Str)] string json, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_generate_ed25519(out IntPtr err);
-    [DllImport(Lib)] private static extern IntPtr vouch_sign_credential([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string seedB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string vm, [MarshalAs(UnmanagedType.LPUTF8Str)] string created, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_sign([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string seedB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string vm, [MarshalAs(UnmanagedType.LPUTF8Str)] string created, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_build_proof([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string seedB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string vm, [MarshalAs(UnmanagedType.LPUTF8Str)] string created, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_verify_proof([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string pubB64, out IntPtr err);
-    [DllImport(Lib)] private static extern IntPtr vouch_verify_credential([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string pubB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string nowIso, long skew, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_verify([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string pubB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string nowIso, long skew, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_verify_dual([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string edPubB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string mldsaPubB64, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_verify_composite([MarshalAs(UnmanagedType.LPUTF8Str)] string cred, [MarshalAs(UnmanagedType.LPUTF8Str)] string edPubB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string mldsaPubB64, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_verify_status([MarshalAs(UnmanagedType.LPUTF8Str)] string csJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string slJson, out IntPtr err);
@@ -66,8 +66,8 @@ public static class Vouch
         => Take(vouch_generate_ed25519(out var err), err);
 
     /// <summary>Sign a credential (eddsa-jcs-2022), returning the credential with a proof attached.</summary>
-    public static string SignCredential(string credentialJson, string seedB64, string verificationMethod, string created)
-        => Take(vouch_sign_credential(credentialJson, seedB64, verificationMethod, created, out var err), err);
+    public static string Sign(string credentialJson, string seedB64, string verificationMethod, string created)
+        => Take(vouch_sign(credentialJson, seedB64, verificationMethod, created, out var err), err);
 
     /// <summary>Build a detached eddsa-jcs-2022 proof object (JSON).</summary>
     public static string BuildProof(string credentialJson, string seedB64, string verificationMethod, string created)
@@ -78,8 +78,8 @@ public static class Vouch
         => AsBool(Take(vouch_verify_proof(credentialJson, publicB64, out var err), err));
 
     /// <summary>Verify proof + validity window, as JSON {proofValid, timeValid, valid}.</summary>
-    public static string VerifyCredential(string credentialJson, string publicB64, string nowIso, long clockSkewSeconds = 30)
-        => Take(vouch_verify_credential(credentialJson, publicB64, nowIso, clockSkewSeconds, out var err), err);
+    public static string Verify(string credentialJson, string publicB64, string nowIso, long clockSkewSeconds = 30)
+        => Take(vouch_verify(credentialJson, publicB64, nowIso, clockSkewSeconds, out var err), err);
 
     /// <summary>Verify a dual proof (Ed25519 + ML-DSA-44).</summary>
     public static bool VerifyDual(string credentialJson, string ed25519PublicB64, string mldsaPublicB64)

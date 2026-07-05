@@ -118,8 +118,8 @@ pub fn build_proof(
     Ok(proof.to_string())
 }
 
-#[wasm_bindgen(js_name = signCredential)]
-pub fn sign_credential(
+#[wasm_bindgen(js_name = sign)]
+pub fn sign(
     credential_json: &str,
     seed_b64: &str,
     verification_method: &str,
@@ -140,14 +140,14 @@ pub fn verify_proof(credential_json: &str, public_b64: &str) -> Result<bool, JsE
 // Credentials + verification (with temporal window)
 // --------------------------------------------------------------------------
 
-#[wasm_bindgen(js_name = verifyCredential)]
-pub fn verify_credential(
+#[wasm_bindgen(js_name = verify)]
+pub fn verify(
     credential_json: &str,
     public_b64: &str,
     now_iso: &str,
     clock_skew_seconds: i32,
 ) -> Result<String, JsError> {
-    let r = credentials::verify_credential(
+    let r = credentials::verify(
         &parse(credential_json)?,
         &b64d(public_b64)?,
         now_iso,

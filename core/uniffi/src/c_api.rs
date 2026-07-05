@@ -120,7 +120,7 @@ pub extern "C" fn vouch_generate_ed25519(err_out: *mut *mut c_char) -> *mut c_ch
 
 /// Sign a credential (eddsa-jcs-2022). seed_b64 is the 32-byte Ed25519 seed.
 #[no_mangle]
-pub extern "C" fn vouch_sign_credential(
+pub extern "C" fn vouch_sign(
     credential_json: *const c_char,
     seed_b64: *const c_char,
     verification_method: *const c_char,
@@ -132,7 +132,7 @@ pub extern "C" fn vouch_sign_credential(
         let seed = unb64(&cstr_in(seed_b64)?)?;
         let vm = cstr_in(verification_method)?;
         let created = cstr_in(created)?;
-        core::sign_credential(cred, seed, vm, created).map_err(|e| e.to_string())
+        core::sign(cred, seed, vm, created).map_err(|e| e.to_string())
     })
 }
 
@@ -171,7 +171,7 @@ pub extern "C" fn vouch_verify_proof(
 /// Verify a credential's proof and validity window. Returns JSON
 /// {proofValid, timeValid, valid}.
 #[no_mangle]
-pub extern "C" fn vouch_verify_credential(
+pub extern "C" fn vouch_verify(
     credential_json: *const c_char,
     public_b64: *const c_char,
     now_iso: *const c_char,
@@ -182,7 +182,7 @@ pub extern "C" fn vouch_verify_credential(
         let cred = cstr_in(credential_json)?;
         let pk = unb64(&cstr_in(public_b64)?)?;
         let now = cstr_in(now_iso)?;
-        let r = core::verify_credential(cred, pk, now, clock_skew_seconds).map_err(|e| e.to_string())?;
+        let r = core::verify(cred, pk, now, clock_skew_seconds).map_err(|e| e.to_string())?;
         Ok(serde_json::json!({"proofValid": r.proof_valid, "timeValid": r.time_valid, "valid": r.valid}).to_string())
     })
 }

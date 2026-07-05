@@ -22,21 +22,21 @@ final class VouchCoreTests: XCTestCase {
         XCTAssertEqual(try Vouch.ed25519(fromDidKey: kp.didKey), kp.publicKey)
     }
 
-    func testSignAndVerifyCredential() throws {
+    func testSignAndVerify() throws {
         let kp = try Vouch.generateEd25519()
-        let signed = try Vouch.signCredential(
+        let signed = try Vouch.sign(
             sampleCredential,
             seed: kp.seed,
             verificationMethod: kp.didKey + "#key-1",
             created: "2026-04-26T10:00:00Z"
         )
         XCTAssertTrue(try Vouch.verifyProof(signed, publicKey: kp.publicKey))
-        let result = try Vouch.verifyCredential(
+        let result = try Vouch.verify(
             signed, publicKey: kp.publicKey, now: "2026-04-26T10:02:00Z"
         )
         XCTAssertTrue(result.valid)
         // Expired window.
-        let expired = try Vouch.verifyCredential(
+        let expired = try Vouch.verify(
             signed, publicKey: kp.publicKey, now: "2026-04-26T11:00:00Z"
         )
         XCTAssertTrue(expired.proofValid)

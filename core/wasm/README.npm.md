@@ -37,7 +37,7 @@ import init, * as core from '@vouch-protocol-official/core-wasm';
 await init(); // fetches the .wasm next to the module
 
 const kp = JSON.parse(core.generateEd25519());
-const signed = core.signCredential(
+const signed = core.sign(
   JSON.stringify(myCredential),
   kp.seed_b64,
   kp.did_key + '#key-1',
@@ -88,8 +88,8 @@ input. Highlights:
 - `encodeEd25519Multikey(public_b64) -> string`, `decodeMultikey(mk) -> {algorithm, raw_b64}`
 - `didKeyFromEd25519(public_b64) -> string`, `ed25519FromDidKey(did) -> string`
 - `buildProof(credentialJson, seed_b64, verificationMethod, createdIso) -> proofJson`
-- `signCredential(...)`, `verifyProof(credentialJson, public_b64) -> bool`
-- `verifyCredential(credentialJson, public_b64, nowIso, clockSkewSeconds) -> {proofValid, timeValid, valid}`
+- `sign(...)`, `verifyProof(credentialJson, public_b64) -> bool`
+- `verify(credentialJson, public_b64, nowIso, clockSkewSeconds) -> {proofValid, timeValid, valid}`
 - `verifyChainTimeBound(chainJson, nowIso, clockSkewSeconds) -> bool`
 - `generateMldsa44() -> {secret_b64, public_b64}`, `mldsa44Sign(...)`, `mldsa44Verify(...)`
 - `signDual(...)`, `verifyDual(...)`, `verifyComposite(...)`
