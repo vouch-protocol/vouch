@@ -359,6 +359,73 @@ pub extern "C" fn vouch_threshold_aggregate(
 }
 
 // ---------------------------------------------------------------------------
+// Root-identity recovery by Shamir secret sharing. Distinct from FROST above:
+// the seed IS reconstructed here, deliberately, for cold recovery of a root
+// identity, not for hot signing. See vouch_core::recovery.
+// ---------------------------------------------------------------------------
+
+/// Split a base64-encoded secret into `shares` pieces; any `threshold` of them
+/// reconstruct it. Returns a JSON array of base64-encoded shares.
+#[no_mangle]
+pub extern "C" fn vouch_recovery_split_secret(
+    secret_b64: *const c_char,
+    threshold: u16,
+    shares: u16,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let secret = cstr_in(secret_b64)?;
+        core::recovery_split_secret(secret, threshold, shares).map_err(|e| e.to_string())
+    })
+}
+
+/// Reconstruct a secret from a JSON array of base64-encoded shares. Returns
+/// the base64-encoded secret. Fewer than the original threshold returns a
+/// wrong value, not an error.
+#[no_mangle]
+pub extern "C" fn vouch_recovery_combine_shares(
+    shares_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let shares = cstr_in(shares_json)?;
+        core::recovery_combine_shares(shares).map_err(|e| e.to_string())
+    })
+}
+
+/// Split a root identity's base64-encoded Ed25519 seed into recovery shares.
+/// Returns a JSON array of base64-encoded shares.
+#[no_mangle]
+pub extern "C" fn vouch_recovery_split_identity(
+    seed_b64: *const c_char,
+    threshold: u16,
+    shares: u16,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let seed = cstr_in(seed_b64)?;
+        core::recovery_split_identity(seed, threshold, shares).map_err(|e| e.to_string())
+    })
+}
+
+/// Recover a root identity from a JSON array of base64-encoded recovery
+/// shares. Pass an empty string for `did` to derive a did:key from the
+/// recovered public key instead of setting an explicit one. Returns JSON
+/// {did, seed, public_key} (seed and public_key are base64).
+#[no_mangle]
+pub extern "C" fn vouch_recovery_recover_identity(
+    shares_json: *const c_char,
+    did: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let shares = cstr_in(shares_json)?;
+        let did = cstr_in(did)?;
+        core::recovery_recover_identity(shares, did).map_err(|e| e.to_string())
+    })
+}
+
+// ---------------------------------------------------------------------------
 // Robotics: a curated set of the robot-credential operations, for C/C++/.NET/JVM/Swift.
 // JSON in, JSON out; keys are base64. Same shapes as the Python, TypeScript, Go,
 // and Rust reference implementations.
