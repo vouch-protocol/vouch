@@ -330,6 +330,21 @@ def __getattr__(name):
         from . import caveats
 
         return getattr(caveats, name)
+    # Inference provenance (bind an output to its model and context, PAD-043/045)
+    elif name in (
+        "ProvenanceError",
+        "PROVENANCE_TYPE",
+        "output_digest",
+        "context_root",
+        "weights_hash",
+        "sign_inference_provenance",
+        "verify_inference_provenance",
+        "verify_context",
+        "check_replay",
+    ):
+        from . import provenance
+
+        return getattr(provenance, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -590,6 +605,16 @@ __all__ = [
     "build_capability",
     "chain_caveats",
     "verify_capability",
+    # Inference provenance (bind an output to its model and context)
+    "ProvenanceError",
+    "PROVENANCE_TYPE",
+    "output_digest",
+    "context_root",
+    "weights_hash",
+    "sign_inference_provenance",
+    "verify_inference_provenance",
+    "verify_context",
+    "check_replay",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
