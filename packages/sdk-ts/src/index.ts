@@ -309,6 +309,22 @@ export type {
   BuildConformanceAttestationOptions,
 } from './robotics/conformance';
 
+// Cross-embodiment identity continuity: signed embodiment credentials,
+// continuity-chain verification, and software fork detection, byte-identical
+// with the Python module.
+export {
+  EMBODIMENT_TYPE,
+  buildEmbodiment,
+  verifyEmbodiment,
+  verifyContinuityChain,
+  checkNoFork,
+} from './robotics/embodiment';
+export type {
+  BuildEmbodimentOptions,
+  VerifyContinuityChainOptions,
+  CheckNoForkConflict,
+} from './robotics/embodiment';
+
 // Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,
