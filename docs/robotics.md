@@ -327,6 +327,29 @@ no_fork, _ = check_no_fork([a, b])
 The open layer is signed credentials and software verification; managed key custody
 and fleet migration are commercial.
 
-Sections 5.7 to 5.16 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.17 Physical custody handoff (`vouch.robotics.custody`)
+
+A physical task or object passes across a chain of actors, human and robot. A
+`CustodyHandoffCredential` records that a receiving actor accepted custody of the
+task from a releasing actor, signed by the receiver. `verify_handoff_chain` walks a
+sequence of handoffs (each receiver becomes the next releaser) and returns the
+current holder, and `holder_at` returns who held the task at a given time, so a
+physical-world incident traces to the exact hop and actor. A condition attested at
+each handoff lets `locate_condition_change` localize a physical state change to the
+holder responsible for it.
+
+```python
+from vouch.robotics import build_handoff, verify_handoff_chain, holder_at, locate_condition_change
+
+h1 = build_handoff(robot_a, task_id="tote-42", from_actor=picker_did, to_actor=robot_a_did, condition="intact")
+h2 = build_handoff(robot_b, task_id="tote-42", from_actor=robot_a_did, to_actor=robot_b_did, condition="damaged")
+ok, current_holder = verify_handoff_chain([h1, h2], {robot_a_did: a_key, robot_b_did: b_key})
+change = locate_condition_change([h1, h2])
+```
+
+The open layer is signed handoff credentials and software verification; managed
+logistics custody orchestration and fleet tracking are commercial.
+
+Sections 5.7 to 5.17 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.
