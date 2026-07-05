@@ -24,13 +24,13 @@ jobs:
         working-directory: core/vouch-core
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            cargo publish --dry-run
+            cargo publish --dry-run --allow-dirty
           else
-            cargo publish --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+            cargo publish --allow-dirty --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
           fi
       - name: Publish vouch-core-uniffi
         if: ${{ inputs.dry_run != true }}
         working-directory: core/uniffi
         # vouch-core-uniffi depends on vouch-core, so it publishes second.
         # cargo waits for the just-published vouch-core to appear in the index.
-        run: cargo publish --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+        run: cargo publish --allow-dirty --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
