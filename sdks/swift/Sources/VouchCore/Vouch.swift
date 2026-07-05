@@ -39,13 +39,13 @@ public enum Vouch {
     // MARK: Data Integrity (eddsa-jcs-2022)
 
     /// Sign a credential, returning the credential JSON with a `proof` attached.
-    public static func signCredential(
+    public static func sign(
         _ credentialJson: String,
         seed: Data,
         verificationMethod: String,
         created: String
     ) throws -> String {
-        try VouchCore.signCredential(
+        try VouchCore.sign(
             credentialJson: credentialJson,
             seed: seed,
             verificationMethod: verificationMethod,
@@ -58,13 +58,13 @@ public enum Vouch {
     }
 
     /// Verify the proof and the validity window. `clockSkewSeconds` tolerates drift.
-    public static func verifyCredential(
+    public static func verify(
         _ credentialJson: String,
         publicKey: Data,
         now: String,
         clockSkewSeconds: Int64 = 30
     ) throws -> VerifyResult {
-        try VouchCore.verifyCredential(
+        try VouchCore.verify(
             credentialJson: credentialJson,
             publicKey: publicKey,
             nowIso: now,

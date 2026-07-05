@@ -82,14 +82,14 @@ from vouch import Signer
 
 # Principal grants to the agent.
 principal_signer = Signer(private_key=principal_priv_jwk, did="did:web:cfo.example.com")
-delegation_to_agent = principal_signer.sign_credential(
+delegation_to_agent = principal_signer.sign(
     intent={"action": "*", "target": "*", "resource": "orders"},
     valid_seconds=86400,  # 24h
 )
 
 # Agent narrows and re-delegates to a sub-agent.
 agent_signer = Signer(private_key=agent_priv_jwk, did="did:web:agent.example.com")
-delegation_to_sub = agent_signer.sign_credential(
+delegation_to_sub = agent_signer.sign(
     intent={"action": "submit_claim", "target": "*", "resource": "orders/HC-001"},
     parent_credential=delegation_to_agent,
     valid_seconds=3600,
@@ -97,7 +97,7 @@ delegation_to_sub = agent_signer.sign_credential(
 
 # Sub-agent signs the action under the chain.
 sub_signer = Signer(private_key=sub_priv_jwk, did="did:web:sub.example.com")
-action = sub_signer.sign_credential(
+action = sub_signer.sign(
     intent={"action": "submit_claim", "target": "claim:HC-001", "resource": "orders/HC-001"},
     parent_credential=delegation_to_sub,
     valid_seconds=300,

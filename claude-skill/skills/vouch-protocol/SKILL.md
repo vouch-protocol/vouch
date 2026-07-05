@@ -97,7 +97,7 @@ credential = build_vouch_credential(
     },
     valid_seconds=300,
 )
-signed = signer.sign_credential(credential)
+signed = signer.sign(credential)
 ```
 
 The `signed` dict is a full Verifiable Credential with a Data Integrity
@@ -111,8 +111,8 @@ TypeScript and Go equivalents in `reference/typescript-sdk.md` and
 ```python
 from vouch import Verifier
 
-# verify_credential returns a (is_valid, passport) tuple
-is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
+# verify returns a (is_valid, passport) tuple
+is_valid, passport = Verifier.verify(signed, public_key=keys.public_key_jwk)
 if is_valid:
     print(f"Verified: {passport.subject_did} did {passport.intent}")
 else:
@@ -135,7 +135,7 @@ Then:
 
 ```python
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
-signed = signer.sign_credential_hybrid(intent={
+signed = signer.sign_hybrid(intent={
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
@@ -268,7 +268,7 @@ Reference implementations under `vouch/integrations/`. See
 
 ### "How do I give a robot a verifiable identity, or enforce physical limits?"
 
-Vouch ships fourteen robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
+Vouch ships seventeen robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
 and the Rust core that flows to Swift, Kotlin/JVM, .NET, C/C++, and WASM):
 hardware-rooted identity (`mint_robot_identity` / `verify_robot_identity`, bound
 to a TPM or secure element), model and config provenance
@@ -309,7 +309,18 @@ deterministic, signable conformance report), and robotics post-quantum signing
 with `HYBRID_CRYPTOSUITE`, a hybrid Ed25519 and ML-DSA-44 proof so a robot
 identity signed today stays safe over a ten to twenty year service life, with
 verification that auto-detects classical or hybrid so a fleet migrates gradually
-without breaking credentials already in the field). Same
+without breaking credentials already in the field), and cross-embodiment identity
+continuity (`build_embodiment` / `verify_embodiment` / `verify_continuity_chain` /
+`check_no_fork`, so one agent identity, a mind, runs on one robot body today and a
+different body tomorrow: an `AgentEmbodimentCredential` binds the agent to a
+body's hardware root for a window, the continuity chain proves the same
+accountable agent persisted across bodies, and `check_no_fork` confirms it was
+never embodied in two bodies at once), and physical custody handoff
+(`build_handoff` / `verify_handoff` / `verify_handoff_chain` / `holder_at` /
+`locate_condition_change`, a receiver-signed `CustodyHandoffCredential` recording
+that an actor accepted custody of a task or object from another, so a chain of
+handoffs from a person to a robot to another robot establishes who held it at each
+hop and pins damage or loss to the responsible hop). Same
 Verifiable Credentials as the rest of Vouch, so they verify in every language. A
 curated robotics surface (verify a robot credential, mint and verify identity,
 conformance, passport, action check, and PQ sign) is also callable from the C,
@@ -327,7 +338,7 @@ languages. See `reference/robotics.md`.
 - **User wants continuous trust** -> Heartbeat Protocol with validator quorum (Python only today).
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
 - **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
-- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived), a delegation lease (a short-lived scope-bounded grant a robot verifies and acts on entirely offline, attenuating down a cross-vendor chain), a physical quorum (a cryptographic two-person rule authorizing a high-consequence action only when M of N attested approvers have each signed it), robot lifecycle (signed ownership transfers forming a chain of custody, a key rotation history, and a decommission credential a verifier honors by refusing to trust a retired robot), regulatory conformance (machine-checkable reference profiles for ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300 that map the robot's credentials to the clauses of a regulation and produce a deterministic report an authority can sign as a conformance attestation), and robotics post-quantum signing (a hybrid Ed25519 and ML-DSA-44 proof for robot credentials, backward-compatible verification that auto-detects classical or hybrid, and a software re-sign to migrate fielded credentials, so an identity signed today stays safe across a ten to twenty year service life).
+- **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived), a delegation lease (a short-lived scope-bounded grant a robot verifies and acts on entirely offline, attenuating down a cross-vendor chain), a physical quorum (a cryptographic two-person rule authorizing a high-consequence action only when M of N attested approvers have each signed it), robot lifecycle (signed ownership transfers forming a chain of custody, a key rotation history, and a decommission credential a verifier honors by refusing to trust a retired robot), regulatory conformance (machine-checkable reference profiles for ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300 that map the robot's credentials to the clauses of a regulation and produce a deterministic report an authority can sign as a conformance attestation), and robotics post-quantum signing (a hybrid Ed25519 and ML-DSA-44 proof for robot credentials, backward-compatible verification that auto-detects classical or hybrid, and a software re-sign to migrate fielded credentials, so an identity signed today stays safe across a ten to twenty year service life), and cross-embodiment identity continuity (one agent identity, a mind, runs on one robot body today and a different body tomorrow: an `AgentEmbodimentCredential` binds the agent to a body's hardware root for a window, `verify_continuity_chain` walks the linked embodiments to prove the same accountable agent persisted across bodies, and `check_no_fork` confirms it was never embodied in two bodies at once), and physical custody handoff (a receiver-signed `CustodyHandoffCredential` recording that an actor accepted custody of a task or object from another, so a chain of handoffs from a person to a robot to another robot establishes who held it at each hop, `holder_at` returns who held it at a given time, and `locate_condition_change` pins damage or loss to the responsible hop; open layer only, managed logistics custody orchestration and fleet tracking are commercial).
 - **User wants to test, certify, or prove that an implementation, SDK, or port is conformant** -> the conformance levels L1 to L3 and the self-test runner (`python -m vouch.conformance`), with a hosted verifier that mints a re-checkable badge coming. See `reference/conformance.md`.
 
 ## Reference files
@@ -344,7 +355,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/state-verifiability.md` - Heartbeat, validator quorum, behavioral attestation
 - `reference/outcome-evidence.md` - Commit-before-outcome verdicts, settlement, track record
 - `reference/reputation-evidence.md` - Evidence-backed reputation: receipts, aggregation, ledger, policy, threshold proofs, disputes
-- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record, perception provenance, delegation lease, physical quorum, lifecycle (ownership transfer, key rotation, decommission), regulatory conformance (ISO 10218, ISO/TS 15066, EU Machinery Regulation, EU AI Act, UL 3300 profiles plus signed conformance attestation), post-quantum signing (hybrid Ed25519 and ML-DSA-44 for robot credentials)
+- `reference/robotics.md` - Robot identity, provenance, physical scope, handshake, black box and kill switch, passport, liveness heartbeat, revocation, safety record, perception provenance, delegation lease, physical quorum, lifecycle (ownership transfer, key rotation, decommission), regulatory conformance (ISO 10218, ISO/TS 15066, EU Machinery Regulation, EU AI Act, UL 3300 profiles plus signed conformance attestation), post-quantum signing (hybrid Ed25519 and ML-DSA-44 for robot credentials), cross-embodiment identity continuity (one agent identity across successive robot bodies, with a continuity chain and a no-fork check), physical custody handoff (a receiver-signed chain of who held a task or object as it passes from person to robot to robot, with holder-at-time and condition-change localization)
 - `reference/integrations.md` - LangChain, CrewAI, MCP, AutoGen, Vertex AI patterns
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
 - `reference/conformance.md` - Implementation conformance levels (L1-L3), the self-test runner, and the verified re-checkable badge
@@ -365,7 +376,7 @@ When you see these in a user's code, mention the issue:
 - **Private key inside the LLM context window**: violates the Identity
   Sidecar principle. Recommend they move signing to a sidecar process.
 - **Using JWS Compact Serialization for new code**: the legacy v0.x path.
-  v1.0+ uses Data Integrity proofs. Recommend `sign_credential` over `sign`.
+  v1.0+ uses Data Integrity proofs. Recommend `sign` over `sign`.
 - **No `resource` in intent**: the protocol requires intent to bind to a
   specific resource. A credential without one is rejected by verifiers.
 - **Delegation chain depth > 5**: enforced limit. Restructure to fewer hops.

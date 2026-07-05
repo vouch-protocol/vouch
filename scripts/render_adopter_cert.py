@@ -162,7 +162,7 @@ def render(cred: dict, slug: str) -> str:
         '      <div class="terminal"><span class="comment"># Fetch the issuer DID document</span>\n'
         f'<span class="prompt">$</span> curl {ADOPTERS_URL}did.json\n\n'
         '<span class="comment"># Verify the credential proof against it</span>\n'
-        '<span class="prompt">&gt;&gt;&gt;</span> Verifier.verify_credential(cred, public_key)  # True</div>'
+        '<span class="prompt">&gt;&gt;&gt;</span> Verifier.verify(cred, public_key)  # True</div>'
     )
     sections.append(section("Verify locally", terminal, cls="no-print"))
     sections_html = "\n  \n".join(sections)

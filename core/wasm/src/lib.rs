@@ -118,8 +118,8 @@ pub fn build_proof(
     Ok(proof.to_string())
 }
 
-#[wasm_bindgen(js_name = signCredential)]
-pub fn sign_credential(
+#[wasm_bindgen(js_name = sign)]
+pub fn sign(
     credential_json: &str,
     seed_b64: &str,
     verification_method: &str,
@@ -140,14 +140,14 @@ pub fn verify_proof(credential_json: &str, public_b64: &str) -> Result<bool, JsE
 // Credentials + verification (with temporal window)
 // --------------------------------------------------------------------------
 
-#[wasm_bindgen(js_name = verifyCredential)]
-pub fn verify_credential(
+#[wasm_bindgen(js_name = verify)]
+pub fn verify(
     credential_json: &str,
     public_b64: &str,
     now_iso: &str,
     clock_skew_seconds: i32,
 ) -> Result<String, JsError> {
-    let r = credentials::verify_credential(
+    let r = credentials::verify(
         &parse(credential_json)?,
         &b64d(public_b64)?,
         now_iso,
@@ -841,4 +841,57 @@ pub fn robotics_migrate_to_pq(
         created,
     )
     .map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsBuildEmbodiment)]
+pub fn robotics_build_embodiment(
+    agent_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_embodiment(&b64d(agent_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyEmbodiment)]
+pub fn robotics_verify_embodiment(
+    credential_json: &str,
+    agent_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_embodiment(credential_json, &b64d(agent_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyContinuityChain)]
+pub fn robotics_verify_continuity_chain(
+    params_json: &str,
+    agent_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_continuity_chain(params_json, &b64d(agent_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsCheckNoFork)]
+pub fn robotics_check_no_fork(params_json: &str) -> Result<String, JsError> {
+    rjson::check_no_fork(params_json).map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsBuildHandoff)]
+pub fn robotics_build_handoff(
+    receiver_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_handoff(&b64d(receiver_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyHandoff)]
+pub fn robotics_verify_handoff(
+    credential_json: &str,
+    receiver_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_handoff(credential_json, &b64d(receiver_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyHandoffChain)]
+pub fn robotics_verify_handoff_chain(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_handoff_chain(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsHolderAt)]
+pub fn robotics_holder_at(params_json: &str) -> Result<String, JsError> {
+    rjson::holder_at(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsLocateConditionChange)]
+pub fn robotics_locate_condition_change(params_json: &str) -> Result<String, JsError> {
+    rjson::locate_condition_change(params_json).map_err(jerr)
 }

@@ -81,12 +81,12 @@ def mint_credential(
         # so the signer does not generate a fresh random one per run.
         signer._mldsa44_secret = mldsa_secret
         signer._mldsa44_public = mldsa_public
-        return signer.sign_credential_hybrid(
+        return signer.sign_hybrid(
             intent=intent,
             valid_seconds=valid_days * 86400,
             parent_credential=parent_credential,
         )
-    return signer.sign_credential(
+    return signer.sign(
         intent=intent,
         valid_seconds=valid_days * 86400,
         parent_credential=parent_credential,

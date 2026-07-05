@@ -61,7 +61,7 @@ public sealed class VouchAgent
         string credentialId = "urn:uuid:" + Guid.NewGuid();
         string unsigned = VouchCredentials.Build(
             _did, action, target, resource, validFrom, validUntil, credentialId);
-        return Vouch.SignCredential(unsigned, _seedB64, _did + "#key-1", validFrom);
+        return Vouch.Sign(unsigned, _seedB64, _did + "#key-1", validFrom);
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public sealed class VouchAgent
     /// <summary>Verify a credential against an explicit public key (base64).</summary>
     public static bool VerifyWith(string credentialJson, string publicB64)
     {
-        string result = Vouch.VerifyCredential(credentialJson, publicB64, Iso(DateTimeOffset.UtcNow), 30);
+        string result = Vouch.Verify(credentialJson, publicB64, Iso(DateTimeOffset.UtcNow), 30);
         return result.Contains("\"valid\":true");
     }
 

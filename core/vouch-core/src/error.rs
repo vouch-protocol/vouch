@@ -20,6 +20,9 @@ pub enum CoreError {
     Crypto(String),
     /// JSON was malformed or had an unexpected shape.
     Json(String),
+    /// A FROST threshold-signing operation failed (bad share, wrong
+    /// participant count, mismatched commitments).
+    Threshold(String),
 }
 
 impl fmt::Display for CoreError {
@@ -36,6 +39,7 @@ impl fmt::Display for CoreError {
             }
             CoreError::Crypto(m) => write!(f, "crypto error: {m}"),
             CoreError::Json(m) => write!(f, "json error: {m}"),
+            CoreError::Threshold(m) => write!(f, "threshold signing error: {m}"),
         }
     }
 }

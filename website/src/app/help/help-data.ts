@@ -95,8 +95,8 @@ That round-trip is the entire credential layer: keypair, signed action, verified
 The legacy JWS form above stays for backward compatibility. New code should prefer the W3C Verifiable Credential form with a Data Integrity proof (\`eddsa-jcs-2022\`):
 
 \`\`\`python
-# sign_credential takes the intent directly (action, target, resource required).
-signed = signer.sign_credential(
+# sign takes the intent directly (action, target, resource required).
+signed = signer.sign(
     intent={
         "action": "submit_claim",
         "target": "claim:HC-001",
@@ -117,11 +117,11 @@ verifier = Verifier(
     trusted_roots={identity.did: identity.public_key_jwk},
     allow_did_resolution=False,
 )
-result = asyncio.run(verifier.verify_credential(signed))
+result = asyncio.run(verifier.verify(signed))
 print(result.valid, result.reasons)
 \`\`\`
 
-For the hybrid post-quantum profile, swap \`sign_credential\` for \`sign_credential_hybrid\`. The required \`pqcrypto\` library is already bundled with \`vouch-protocol\`, so nothing else to install. Everything else stays the same.
+For the hybrid post-quantum profile, swap \`sign\` for \`sign_hybrid\`. The required \`pqcrypto\` library is already bundled with \`vouch-protocol\`, so nothing else to install. Everything else stays the same.
 
 ## Step 3 - When you are ready to publish
 
@@ -187,8 +187,8 @@ async function main() {
     did: identity.did!,
   });
 
-  // signCredential takes the intent directly (action, target, resource).
-  const signed = await signer.signCredential({
+  // sign takes the intent directly (action, target, resource).
+  const signed = await signer.sign({
     intent: {
       action: 'submit_claim',
       target: 'claim:HC-001',
@@ -204,7 +204,7 @@ async function main() {
     trustedRoots: { [identity.did!]: identity.publicKeyJwk },
     allowDidResolution: false,
   });
-  const result = await verifier.verifyCredential(signed);
+  const result = await verifier.verify(signed);
   console.log('valid:', result.valid, 'reasons:', result.reasons);
 }
 
@@ -224,7 +224,7 @@ Then drop \`trustedRoots\` and \`allowDidResolution\`:
 
 \`\`\`ts
 const verifier = new Verifier();              // resolves did:web over HTTPS
-const result = await verifier.verifyCredential(signed);
+const result = await verifier.verify(signed);
 \`\`\`
 
 ## Cross-language interop
@@ -358,10 +358,10 @@ let canon = try Vouch.canonicalize(#"{"b":1,"a":2}"#)   // {"a":2,"b":1}
 let ok = try Vouch.verifyProof(signedCredentialJson, publicKey: publicKey)
 
 // Proof plus validity window in one call.
-let result = try Vouch.verifyCredential(signedCredentialJson, publicKey: publicKey, now: "2026-04-26T10:02:00Z")
+let result = try Vouch.verify(signedCredentialJson, publicKey: publicKey, now: "2026-04-26T10:02:00Z")
 \`\`\`
 
-\`Vouch.generateEd25519()\` returns a key pair and \`Vouch.signCredential(...)\` attaches the proof. VouchCore is a thin layer over the canonical Rust core via UniFFI, so a credential verified on iOS matches the exact bytes from every other SDK.
+\`Vouch.generateEd25519()\` returns a key pair and \`Vouch.sign(...)\` attaches the proof. VouchCore is a thin layer over the canonical Rust core via UniFFI, so a credential verified on iOS matches the exact bytes from every other SDK.
 `,
       },
       {
@@ -387,7 +387,7 @@ import com.vouchprotocol.core.Vouch;
 
 String canon = Vouch.canonicalize("{\\"b\\":1,\\"a\\":2}");   // {"a":2,"b":1}
 String kp = Vouch.generateEd25519();                       // {seed_b64, public_b64, multikey, did_key}
-String signed = Vouch.signCredential(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+String signed = Vouch.sign(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 boolean ok = Vouch.verifyProof(signed, publicB64);
 \`\`\`
 
@@ -416,7 +416,7 @@ using VouchProtocol.Core;
 
 string canon = Vouch.Canonicalize("{\\"b\\":1,\\"a\\":2}");   // {"a":2,"b":1}
 string kp = Vouch.GenerateEd25519();
-string signed = Vouch.SignCredential(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+string signed = Vouch.Sign(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 bool ok = Vouch.VerifyProof(signed, publicB64);
 \`\`\`
 
@@ -454,7 +454,7 @@ char *res = vouch_verify_proof(signed_credential_json, public_key_b64, &err);  /
 if (res) vouch_string_free(res); else vouch_string_free(err);
 \`\`\`
 
-The header also exposes \`vouch_sign_credential\`, \`vouch_verify_credential\`, delegation, dual-proof ML-DSA-44 verify, and BitstringStatusList revocation. A credential verified from C matches the exact bytes of every other SDK.
+The header also exposes \`vouch_sign\`, \`vouch_verify\`, delegation, dual-proof ML-DSA-44 verify, and BitstringStatusList revocation. A credential verified from C matches the exact bytes of every other SDK.
 `,
       },
       {
@@ -478,7 +478,7 @@ await init(); // fetches the .wasm next to the module
 
 core.canonicalize('{"b":1,"a":2}');   // {"a":2,"b":1}
 const kp = JSON.parse(core.generateEd25519());
-const signed = core.signCredential(JSON.stringify(myCredential), kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
+const signed = core.sign(JSON.stringify(myCredential), kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
 const ok = core.verifyProof(signed, kp.public_b64);   // true
 \`\`\`
 
@@ -606,7 +606,7 @@ from vouch import Signer, generate_identity
 
 keys = generate_identity("agent.example.com")
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
-signed = signer.sign_credential_hybrid(intent={
+signed = signer.sign_hybrid(intent={
     "action": "submit_claim", "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
 })
@@ -618,7 +618,7 @@ TypeScript:
 import { Signer } from '@vouch-protocol-official/sdk';
 
 const signer = await Signer.fromDidWithHybrid('did:web:agent.example.com');
-const signed = await signer.signCredentialHybrid(credential);
+const signed = await signer.signHybrid(credential);
 \`\`\`
 
 Go sidecar: pass \`--hybrid\` when starting the daemon.
@@ -717,20 +717,20 @@ agent = Signer(private_key=agent_priv_jwk, did="did:web:agent.example.com")
 sub_agent = Signer(private_key=sub_agent_priv_jwk, did="did:web:sub-agent.example.com")
 
 # Principal delegates broad authority to the agent.
-principal_link = principal.sign_credential(
+principal_link = principal.sign(
   intent={"action": "*", "target": "*", "resource": "claims"},
   valid_seconds=3600,
 )
 
 # Agent narrows and re-delegates to the sub-agent.
-agent_link = agent.sign_credential(
+agent_link = agent.sign(
   intent={"action": "read", "target": "claim:HC-001", "resource": "claims/HC-001"},
   valid_seconds=300,
   parent_credential=principal_link,
 )
 
 # Sub-agent signs its actual action under the chain.
-action = sub_agent.sign_credential(
+action = sub_agent.sign(
   intent={"action": "read", "target": "claim:HC-001", "resource": "claims/HC-001"},
   valid_seconds=60,
   parent_credential=agent_link,
@@ -1161,8 +1161,8 @@ signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 index = status_list.allocate_index()
 store.save(status_list) # persist the new cursor
 
-# Pass the status entry to sign_credential so the proof covers it.
-signed_credential = signer.sign_credential(
+# Pass the status entry to sign so the proof covers it.
+signed_credential = signer.sign(
   intent={"action": "submit_claim", "target": "claim:HC-001",
       "resource": "https://insurance.example/claims/HC-001"},
   credential_status=build_status_list_entry(
@@ -1180,7 +1180,7 @@ status_credential = build_status_list_credential(
   issuer_did="did:web:issuer.example",
   status_list=status_list,
 )
-signed_status_credential = signer.sign_credential(status_credential)
+signed_status_credential = signer.sign(status_credential)
 \`\`\`
 
 ## Verifier flow
@@ -1258,7 +1258,7 @@ entry, _ := signer.BuildStatusListEntry(signer.BuildStatusListEntryOptions{
   StatusListIndex:   idx,
 })
 
-// Pass via SignCredentialOptions.CredentialStatus to Signer.SignCredential.
+// Pass via SignOptions.CredentialStatus to Signer.Sign.
 \`\`\`
 
 TypeScript and Go callers fetch the published status credential using their platform's HTTP client (\`fetch()\` / \`net/http.Get()\`) and call \`verifyStatus\` / \`VerifyStatus\` with the result.
@@ -2591,6 +2591,52 @@ string report = VouchRobotics.CheckConformance(credentialsJson, "eu-ai-act-high-
 \`\`\`
 
 Output is byte-identical to the reference SDKs, so a robot credential produced in one language verifies in every other. The producer-side operations (handshakes, the black box, physical quorum, the liveness heartbeat) stay in the reference SDKs; a wrapper application that needs one of those calls a reference SDK or a service built on it.
+`,
+      },
+      {
+        id: 'robotics-embodiment',
+        title: 'Cross-embodiment identity continuity',
+        summary: 'Let one accountable AI agent move between robot bodies with a verifiable continuity chain, and detect a fork if it is ever in two bodies at once.',
+        body: `
+An AI agent, a mind with its own Vouch identity, can run on one robot body today and a different body tomorrow. This makes that continuous and accountable.
+
+The problem it closes: as agent minds get decoupled from bodies, there is no cryptographic way to prove that the accountable agent on body B is the same one that was on body A, or to stop the same mind running on two bodies at once.
+
+How it works: \`build_embodiment\` binds the agent to a body and that body's hardware root for a period, signed by the agent's own key. Each embodiment names the body it left (\`fromBody\`), so \`verify_continuity_chain\` walks the links, confirms every one is signed by the same agent key, and returns the current body. \`check_no_fork\` confirms no two embodiments place the agent in different bodies with overlapping active windows. It is the inverse of the ownership custody chain: there one body passes between owners, here one mind passes between bodies.
+
+\`\`\`python
+from vouch.robotics import build_embodiment, verify_continuity_chain, check_no_fork
+
+a = build_embodiment(agent, agent_did=agent_did, body_did="body-a", body_hardware_root="uA", valid_seconds=3600)
+b = build_embodiment(agent, agent_did=agent_did, body_did="body-b", body_hardware_root="uB", from_body="body-a")
+ok, current_body = verify_continuity_chain([a, b], agent_public_key)
+no_fork, _ = check_no_fork([a, b])
+\`\`\`
+
+Security boundary: the whole chain is signed by one persistent agent key, so a link signed by any other key breaks the continuity, and re-binding to each body's hardware root ties the mind to real hardware at each step. This is the open layer, signed credentials and software verification; managed key custody and fleet migration are commercial.
+`,
+      },
+      {
+        id: 'robotics-custody',
+        title: 'Physical custody handoff',
+        summary: 'Trace a task or object as it passes between human and robot actors, and localize damage to the hop responsible.',
+        body: `
+A physical task or object passes across a chain of actors, human and robot: a person picks an item, hands it to a robot, that robot hands it to another robot. This makes each handoff accountable.
+
+The problem it closes: when a shared physical workflow crosses people and machines, an incident (a lost tote, a damaged item, a mis-delivery) has no cryptographic way to point at the exact hop and actor responsible.
+
+How it works: \`build_handoff\` records that a receiving actor accepted custody of a task from a releasing actor, signed by the receiver, so the party taking responsibility signs for it. Each receiver becomes the next releaser, so \`verify_handoff_chain\` walks the chain and \`holder_at\` returns who held the task at a given time. A condition attested at each handoff lets \`locate_condition_change\` name the hop where a physical state change happened.
+
+\`\`\`python
+from vouch.robotics import build_handoff, verify_handoff_chain, holder_at, locate_condition_change
+
+h1 = build_handoff(robot_a, task_id="tote-42", from_actor=picker_did, to_actor=robot_a_did, condition="intact")
+h2 = build_handoff(robot_b, task_id="tote-42", from_actor=robot_a_did, to_actor=robot_b_did, condition="damaged")
+ok, current_holder = verify_handoff_chain([h1, h2], {robot_a_did: a_key, robot_b_did: b_key})
+change = locate_condition_change([h1, h2])   # responsible holder is robot A
+\`\`\`
+
+Security boundary: each handoff is signed by the receiver, so an actor attests its own acceptance of custody, and the chain is only valid when each receiver is the next releaser. This is the open layer of signed credentials and software verification; managed logistics custody orchestration and fleet tracking are commercial.
 `,
       },
     ],

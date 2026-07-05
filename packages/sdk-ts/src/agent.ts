@@ -29,7 +29,7 @@ import {
   StoredIdentity,
 } from './keystore';
 import { Signer, generateIdentity } from './signer';
-import type { CredentialVerificationResult, SignCredentialOptions } from './types';
+import type { CredentialVerificationResult, SignOptions } from './types';
 import type { VouchCredential } from './vc';
 import { Verifier, verify } from './verifier';
 
@@ -163,8 +163,8 @@ export class Agent {
   }
 
   /** Sign an intent as a Vouch Credential. */
-  async sign(opts: SignCredentialOptions): Promise<VouchCredential> {
-    return this.signerInstance.signCredential(opts);
+  async sign(opts: SignOptions): Promise<VouchCredential> {
+    return this.signerInstance.sign(opts);
   }
 
   /** Issue a delegation grant from this agent (the principal side). */
@@ -182,7 +182,7 @@ export class Agent {
       resource: opts.resource,
     };
     if (opts.to) intent.delegatee = opts.to;
-    return this.signerInstance.signCredential({
+    return this.signerInstance.sign({
       intent: intent as never,
       validSeconds: opts.validSeconds,
       reputationScore: opts.reputationScore,
@@ -199,7 +199,7 @@ export class Agent {
   ): Promise<CredentialVerificationResult> {
     const skew = opts?.clockSkewSeconds ?? 30;
     if (opts?.publicKey === undefined && issuerOf(credential) === this.did) {
-      return Verifier.verifyCredential(credential, this.identity.publicKeyJwk, skew);
+      return Verifier.verify(credential, this.identity.publicKeyJwk, skew);
     }
     return verify(credential, opts?.publicKey, { clockSkewSeconds: skew });
   }

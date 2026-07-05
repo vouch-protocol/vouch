@@ -46,7 +46,7 @@ export async function enrollDevice(
   opts: EnrollDeviceOptions
 ): Promise<VouchCredential> {
   const signer = rootSigner(root);
-  return signer.signCredential({
+  return signer.sign({
     intent: {
       action: opts.action,
       target: opts.target,

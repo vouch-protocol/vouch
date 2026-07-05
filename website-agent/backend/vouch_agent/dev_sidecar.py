@@ -76,7 +76,7 @@ async def sign(req: SignRequest) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=f"intent.{key} is required")
     signer: Signer = _state["signer"]
     try:
-        credential = signer.sign_credential(
+        credential = signer.sign(
             intent=intent,
             valid_seconds=req.valid_seconds,
         )

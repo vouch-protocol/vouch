@@ -34,7 +34,7 @@ const signer = new Signer({
   did: keys.did!,
 });
 
-const credential = await signer.signCredential({
+const credential = await signer.sign({
   intent: {
     action: 'read_database',
     target: 'users_table',
@@ -43,7 +43,7 @@ const credential = await signer.signCredential({
 });
 
 // Verify on the receiving side
-const result = await Verifier.verifyCredential(credential, keys.publicKeyJwk);
+const result = await Verifier.verify(credential, keys.publicKeyJwk);
 if (result.isValid) {
   console.log('Verified agent:', result.passport!.iss);
   console.log('Authorized intent:', result.passport!.intent);

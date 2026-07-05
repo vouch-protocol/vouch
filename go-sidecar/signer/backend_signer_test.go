@@ -29,13 +29,13 @@ func TestNewBackendSignsAndVerifies(t *testing.T) {
 		t.Fatalf("NewBackend: %v", err)
 	}
 
-	cred, err := s.SignCredential(SignCredentialOptions{
+	cred, err := s.Sign(SignOptions{
 		Action:   "read",
 		Target:   "t",
 		Resource: "https://api.example.com/v1/users",
 	})
 	if err != nil {
-		t.Fatalf("SignCredential: %v", err)
+		t.Fatalf("Sign: %v", err)
 	}
 	if calls != 1 {
 		t.Fatalf("expected the sign callback to be used once, got %d", calls)
@@ -77,10 +77,10 @@ func TestBackendSignerBlocksCompositeAndHybrid(t *testing.T) {
 		t.Fatalf("NewBackend: %v", err)
 	}
 
-	if _, err := s.Sign(SignRequest{}); err == nil {
+	if _, err := s.SignToken(SignRequest{}); err == nil {
 		t.Fatal("expected composite Sign to be blocked for a backend Signer")
 	}
-	if _, err := s.SignCredentialHybrid(SignCredentialOptions{
+	if _, err := s.SignHybrid(SignOptions{
 		Action: "a", Target: "b", Resource: "c",
 	}); err == nil {
 		t.Fatal("expected hybrid to be blocked for a backend Signer")

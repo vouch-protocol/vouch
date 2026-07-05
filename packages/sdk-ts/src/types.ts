@@ -38,7 +38,7 @@ export interface VerificationResult {
 /**
  * Verified Verifiable Credential under Vouch Protocol v1.0.
  *
- * Returned by `Verifier.verifyCredential()` and
+ * Returned by `Verifier.verify()` and
  * `Verifier.checkVouchCredential()`. Parallel to the legacy `Passport`,
  * new code should prefer this type.
  */
@@ -118,7 +118,7 @@ export interface JWKKey {
 /**
  * Options for issuing a Vouch Credential (modern path).
  */
-export interface SignCredentialOptions {
+export interface SignOptions {
   /**
    * Intent payload. MUST contain action, target, resource once merged with the
    * named fields below. Pass the whole intent here, or use the

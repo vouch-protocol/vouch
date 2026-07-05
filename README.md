@@ -69,7 +69,7 @@ Vouch Protocol v1.0 aligns directly with the open standard:
 - **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`) as an optional add-on for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
 - **Three-way cross-implementation interop** verified across Python, TypeScript, and Go.
 
-The legacy v0.x JWS API (`Signer.sign()`, `Verifier.verify()`) continues to work unchanged for a deprecation window. New code should prefer `Signer.sign_credential()` and `Verifier.verify_credential()`. See the Specification at [vouch-protocol.com/specs/SPEC/](https://vouch-protocol.com/specs/SPEC/) for the full specification.
+Credentials are issued with `Signer.sign()` and checked with `Verifier.verify()`. See the Specification at [vouch-protocol.com/specs/SPEC/](https://vouch-protocol.com/specs/SPEC/) for the full specification.
 
 ---
 
@@ -110,7 +110,7 @@ The standalone **`vouch-mcp`** package above ships alongside these in v1.6.2.
 Python, TypeScript, and Go are the full reference implementations. A Rust core with idiomatic Swift, JVM (Java and Kotlin), .NET, and C wrappers shares one codebase, so every language produces byte-identical output, verified against shared test vectors. A WebAssembly build is included for the browser and the edge. See the table further down for status per language.
 
 ### Robots and embodied agents
-A robot is an agent with a body, so identity and accountability matter even more once it can cause physical harm. The `vouch.robotics` module ships six capabilities on the same `eddsa-jcs-2022` credentials as the rest of Vouch: hardware-rooted identity (bound to a TPM or secure element, so it cannot be cloned to other hardware), model and config provenance (re-signable on every OTA update), physical capability scope (force, speed, a tighter cap near humans, allowed zones, and shift windows, checked before each actuation, with narrow-only delegation), a robot-to-robot trust handshake, an encrypted tamper-evident black box with a verifiable kill switch, and a scannable offline passport. All six are implemented in Python, TypeScript, Go, and the Rust core, which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers, so a robotics credential signed in one language verifies in every other. Nine further capabilities round out the set: a living-trust heartbeat (a signed per-interval motion summary whose trust decays unless it is renewed in-envelope), two-level credential revocation (per-credential status lists and whole-DID kill), an accountable safety record (a tamper-evident incident ledger summarized into a portable signed record), signed perception provenance (each captured sensor frame's hash bound to the robot's key and hash-linked, so a robot can prove what its sensors saw and a substituted frame is detectable), an offline delegation lease (a short-lived, scope-bounded grant a disconnected robot verifies and acts on with no network call, nesting across vendors), a physical quorum (a cryptographic two-person rule requiring M of N attested approvers for a high-consequence action), lifecycle credentials (ownership transfer that chains into a verifiable chain of custody, key rotation that forms a key history, and a signed decommission that retires the robot), a regulatory conformance profile (a machine-checkable mapping from a robot's credentials to the clauses of ISO 10218 and 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300, with a deterministic checker and a signed conformance attestation), and post-quantum signing by default (robot credentials sign with the hybrid classical-plus-ML-DSA-44 cryptosuite, with backward-compatible verification, so a robot stays unforgeable across its decade-long life), implemented across the same languages and pinned by the shared interop vector. See [docs/robotics.md](docs/robotics.md) and the defensive disclosures PAD-064 through PAD-070 and PAD-076 through PAD-080.
+A robot is an agent with a body, so identity and accountability matter even more once it can cause physical harm. The `vouch.robotics` module ships six capabilities on the same `eddsa-jcs-2022` credentials as the rest of Vouch: hardware-rooted identity (bound to a TPM or secure element, so it cannot be cloned to other hardware), model and config provenance (re-signable on every OTA update), physical capability scope (force, speed, a tighter cap near humans, allowed zones, and shift windows, checked before each actuation, with narrow-only delegation), a robot-to-robot trust handshake, an encrypted tamper-evident black box with a verifiable kill switch, and a scannable offline passport. All six are implemented in Python, TypeScript, Go, and the Rust core, which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers, so a robotics credential signed in one language verifies in every other. Eleven further capabilities round out the set: a living-trust heartbeat (a signed per-interval motion summary whose trust decays unless it is renewed in-envelope), two-level credential revocation (per-credential status lists and whole-DID kill), an accountable safety record (a tamper-evident incident ledger summarized into a portable signed record), signed perception provenance (each captured sensor frame's hash bound to the robot's key and hash-linked, so a robot can prove what its sensors saw and a substituted frame is detectable), an offline delegation lease (a short-lived, scope-bounded grant a disconnected robot verifies and acts on with no network call, nesting across vendors), a physical quorum (a cryptographic two-person rule requiring M of N attested approvers for a high-consequence action), lifecycle credentials (ownership transfer that chains into a verifiable chain of custody, key rotation that forms a key history, and a signed decommission that retires the robot), a regulatory conformance profile (a machine-checkable mapping from a robot's credentials to the clauses of ISO 10218 and 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300, with a deterministic checker and a signed conformance attestation), post-quantum signing by default (robot credentials sign with the hybrid classical-plus-ML-DSA-44 cryptosuite, with backward-compatible verification, so a robot stays unforgeable across its decade-long life), and cross-embodiment identity continuity (an agent identity that moves between robot bodies, with an embodiment credential re-binding to each body's hardware root and a continuity chain that proves the same accountable agent persisted, plus a fork check), and a physical custody handoff chain (a signed record of who accepted custody of a task or object at each hop across human and robot actors, so an incident traces to the exact hop and an attested condition localizes damage to the holder responsible), implemented across the same languages and pinned by the shared interop vector. See [docs/robotics.md](docs/robotics.md) and the defensive disclosures PAD-064 through PAD-070 and PAD-076 through PAD-084.
 
 ### Inside your AI tools
 - **Claude Skill**, **OpenAI Custom GPT**, and **Gemini Gem** packages that teach your AI assistant how to add Vouch to your code, running on your own AI subscription.
@@ -160,7 +160,6 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 - **Human-readable JSON** (proof attaches as a sibling object, no Base64-wrapped opaque payload)
 - **Framework-agnostic** (works with MCP, LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI)
 - **Cross-language interop** (Python, TypeScript, Go, byte-identical canonical form)
-- **Backward-compatible** (legacy v0.x JWS API still supported during deprecation window)
 - **Open source** (Apache 2.0 license, CC0 prior-art portfolio)
 
 **Think of it as:**
@@ -182,9 +181,9 @@ flowchart LR
   V{"✅ Verified"}
 
   P -->|"Delegation VC"| A
-  A -->|"sign_credential(intent)"| C
+  A -->|"sign(intent)"| C
   C -->|"HTTP body<br/>application/vc+vouch"| API
-  API -->|"verify_credential()"| V
+  API -->|"verify()"| V
 ```
 
 **4 Simple Steps:**
@@ -266,19 +265,13 @@ signer = Signer(
   did=os.environ['VOUCH_DID']
 )
 
-credential = signer.sign_credential(intent={
+credential = signer.sign(intent={
   'action': 'read_database',
   'target': 'users_table',
   'resource': 'https://api.example.com/v1/users',
 })
 # Send credential as the JSON body of the API request, content-type
-# application/vc+vouch  (legacy: application/vouch+credential+json)
-```
-
-**Legacy v0.x path (JWS, still supported):**
-```python
-token = signer.sign({'action': 'read_database', 'target': 'users'})
-# Include token in Vouch-Token header
+# application/vc+vouch
 ```
 
 ### 4. Verify (API Side)
@@ -295,7 +288,7 @@ async def protected_route(request: Request):
   credential = await request.json()
   public_key = '{"kty":"OKP", ...}' # Resolved from did:web or trusted root
 
-  is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
+  is_valid, passport = Verifier.verify(credential, public_key=public_key)
   if not is_valid:
     raise HTTPException(status_code=401, detail="Untrusted Agent")
 
@@ -304,18 +297,6 @@ async def protected_route(request: Request):
     "agent": passport.sub,
     "intent": passport.intent,
   }
-```
-
-**Legacy v0.x path:**
-```python
-from vouch import Verifier
-
-@app.post("/api/legacy")
-def legacy_route(vouch_token: str = Header(alias="Vouch-Token")):
-  is_valid, passport = Verifier.verify(vouch_token, public_key_jwk=public_key)
-  if not is_valid:
-    raise HTTPException(status_code=401, detail="Untrusted Agent")
-  return {"status": "Verified", "agent": passport.sub}
 ```
 
 **That's it.** A few lines to sign, a few to verify, on either path.
@@ -353,7 +334,7 @@ Works with all major AI frameworks out-of-the-box:
 
 ```python
 # Optional v1.0 profile, requires `pip install pqcrypto`
-credential = signer.sign_credential_hybrid(intent={
+credential = signer.sign_hybrid(intent={
   'action': 'submit_clinical_finding',
   'target': 'trial:NCT00000001',
   'resource': 'https://fda-submissions.example.com/api/findings',

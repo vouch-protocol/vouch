@@ -3237,6 +3237,417 @@ pub fn migrate_to_pq(
     sign_pq(credential, ed25519_seed, mldsa, created)
 }
 
+// ---------------------------------------------------------------------------
+// Cross-embodiment identity continuity (Phase 5.15)
+// ---------------------------------------------------------------------------
+//
+// An AI agent (a policy with its own Vouch identity) can run on one robot body
+// today and a different body tomorrow. An embodiment credential binds the agent
+// identity to a specific body (a hardware-rooted robot identity) and that body's
+// hardware root for a period, signed by the agent's own persistent key. Linking
+// each embodiment to the previous forms a continuity chain a verifier walks to
+// confirm the same accountable agent persisted across bodies, re-binding to each
+// body's hardware root as it moved. A fork check confirms the agent was never
+// actively embodied in two bodies at once.
+//
+// This is the inverse of the ownership custody chain: there one body passes
+// between owners; here one mind passes between bodies, and the constant that
+// signs every link is the agent identity itself.
+//
+// This is the open layer: plain signed embodiment credentials, continuity-chain
+// verification, and software fork detection. It reuses the core proof path
+// ([`data_integrity`]) rather than re-deriving any cryptography.
+
+pub const EMBODIMENT_TYPE: &str = "AgentEmbodimentCredential";
+
+/// Parameters for [`build_embodiment`]. The signer is the agent's own persistent
+/// key; `agent_did` is both issuer and subject id, so the whole continuity chain
+/// is signed by one accountable identity. `from_body`, when set, links this
+/// embodiment to the body the agent left, forming the chain. `valid_until`, when
+/// set, bounds the active window (used by [`check_no_fork`]).
+#[derive(Debug, Clone)]
+pub struct BuildEmbodiment {
+    pub agent_did: String,
+    pub body_did: String,
+    pub body_hardware_root: String,
+    pub from_body: Option<String>,
+    pub embodied_at: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed embodiment credential: the agent `agent_did` authorizes running
+/// on `body_did`, re-binding to that body's hardware root `body_hardware_root`.
+/// Signed by the agent's own persistent key. `from_body` links this embodiment to
+/// the body the agent left.
+pub fn build_embodiment(agent_seed: &[u8], params: &BuildEmbodiment) -> Result<Value> {
+    if params.agent_did.is_empty()
+        || params.body_did.is_empty()
+        || params.body_hardware_root.is_empty()
+    {
+        return Err(CoreError::Json(
+            "agent_did, body_did, and body_hardware_root are required".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.agent_did));
+    subject.insert("body".into(), json!(params.body_did));
+    subject.insert("bodyHardwareRoot".into(), json!(params.body_hardware_root));
+    if let Some(from_body) = &params.from_body {
+        subject.insert("fromBody".into(), json!(from_body));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", EMBODIMENT_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.agent_did));
+    cred.insert("validFrom".into(), json!(params.embodied_at));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.agent_did), &params.embodied_at);
+    data_integrity::sign(&Value::Object(cred), agent_seed, &opts)
+}
+
+/// Verify an embodiment credential: the agent's proof, that the issuer is the
+/// agent itself (a mind authorizes its own embodiment), and that the subject
+/// carries a `body` and a `bodyHardwareRoot`. Returns the credentialSubject on
+/// success, `None` if invalid.
+pub fn verify_embodiment(credential: &Value, agent_public_key: &[u8]) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, agent_public_key, EMBODIMENT_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let has_body = subject
+        .get("body")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    let has_root = subject
+        .get("bodyHardwareRoot")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    if !has_body || !has_root {
+        return Ok(None);
+    }
+    let subject_id = subject.get("id").and_then(|v| v.as_str());
+    if credential.get("issuer").and_then(|v| v.as_str()) != subject_id {
+        return Ok(None);
+    }
+    Ok(Some(subject))
+}
+
+/// Verify an ordered list of embodiment credentials forms a valid continuity chain
+/// for one agent: every link verifies under the SAME agent key (the persistent
+/// mind), each link's `fromBody` matches the previous link's `body`, and (when
+/// given) the first `fromBody` is `origin_body`. Returns `(ok, current_body)`.
+pub fn verify_continuity_chain(
+    embodiments: &[Value],
+    agent_public_key: &[u8],
+    origin_body: Option<&str>,
+) -> Result<(bool, Option<String>)> {
+    let mut expected_from: Option<String> = origin_body.map(String::from);
+    let mut current_body: Option<String> = origin_body.map(String::from);
+    for embodiment in embodiments {
+        let subject = match verify_embodiment(embodiment, agent_public_key)? {
+            Some(s) => s,
+            None => return Ok((false, None)),
+        };
+        if let Some(expected) = &expected_from {
+            if subject.get("fromBody").and_then(|v| v.as_str()) != Some(expected.as_str()) {
+                return Ok((false, None));
+            }
+        }
+        current_body = subject
+            .get("body")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+        expected_from = current_body.clone();
+    }
+    Ok((true, current_body))
+}
+
+/// Two conflicting bodies surfaced by [`check_no_fork`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForkConflict {
+    pub body_a: String,
+    pub body_b: String,
+}
+
+/// Half-open intervals [start, end); a missing end is open-ended (+infinity). A
+/// clean handover sets one window's end to the next window's start, which does not
+/// overlap.
+fn windows_overlap(start_a: i64, end_a: Option<i64>, start_b: i64, end_b: Option<i64>) -> bool {
+    let a_before_b = end_a.map(|e| e <= start_b).unwrap_or(false);
+    let b_before_a = end_b.map(|e| e <= start_a).unwrap_or(false);
+    !(a_before_b || b_before_a)
+}
+
+/// Confirm no two embodiments place the agent in different bodies with overlapping
+/// active windows. Each embodiment is active from `validFrom` to `validUntil` (a
+/// missing `validUntil` is treated as open-ended). Two embodiments on different
+/// bodies whose windows overlap are a fork. Returns `(ok, conflict)` where
+/// conflict, when present, names the two conflicting bodies.
+pub fn check_no_fork(embodiments: &[Value]) -> Result<(bool, Option<ForkConflict>)> {
+    let mut windows: Vec<(String, i64, Option<i64>)> = Vec::with_capacity(embodiments.len());
+    for embodiment in embodiments {
+        let subject = embodiment
+            .get("credentialSubject")
+            .and_then(|s| s.as_object());
+        let body = subject
+            .and_then(|s| s.get("body"))
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty());
+        let start = embodiment
+            .get("validFrom")
+            .and_then(|v| v.as_str())
+            .and_then(|s| crate::time::iso_to_epoch_seconds(s).ok());
+        let (body, start) = match (body, start) {
+            (Some(b), Some(s)) => (b.to_string(), s),
+            _ => return Ok((false, None)),
+        };
+        let end = embodiment
+            .get("validUntil")
+            .and_then(|v| v.as_str())
+            .and_then(|s| crate::time::iso_to_epoch_seconds(s).ok());
+        windows.push((body, start, end));
+    }
+
+    for i in 0..windows.len() {
+        let (body_i, start_i, end_i) = &windows[i];
+        for window_j in windows.iter().skip(i + 1) {
+            let (body_j, start_j, end_j) = window_j;
+            if body_i == body_j {
+                continue;
+            }
+            if windows_overlap(*start_i, *end_i, *start_j, *end_j) {
+                return Ok((
+                    false,
+                    Some(ForkConflict {
+                        body_a: body_i.clone(),
+                        body_b: body_j.clone(),
+                    }),
+                ));
+            }
+        }
+    }
+    Ok((true, None))
+}
+
+// ---------------------------------------------------------------------------
+// Physical custody handoff (Phase 5.16)
+// ---------------------------------------------------------------------------
+//
+// A physical task or object passes across a chain of actors, human and robot: a
+// person picks an item, hands it to a robot, that robot hands it to another
+// robot, which places it. Each handoff is a signed custody transition, so a
+// physical-world event traces to the exact hop and the actor responsible.
+//
+// A custody handoff credential records that a receiving actor accepted custody
+// of a task or object from a releasing actor, signed by the receiver. Linking
+// each handoff to the previous forms a chain a verifier walks to establish who
+// held the task at any time. A condition attested at each handoff lets a state
+// change be localized to the specific hop whose holder was responsible.
+//
+// This is the open layer: signed handoff credentials, chain verification, a
+// holder-at-time helper, and software condition localization. It reuses the core
+// proof path ([`data_integrity`]) rather than re-deriving any cryptography.
+
+pub const CUSTODY_HANDOFF_TYPE: &str = "CustodyHandoffCredential";
+
+/// Parameters for [`build_handoff`]. The signer is the receiver (`to_actor`), the
+/// party taking responsibility. `condition`, when set, attests the state of the
+/// task or object as received (for example a status, a quantity, or a hash of an
+/// inspection), which lets a later state change be localized to a hop.
+/// `from_actor` and `to_actor` may be human or robot DIDs. `valid_until`, when
+/// set, bounds the handoff's active window (the wrapper derives it from a
+/// `valid_seconds` lifetime added to `handoff_at`, keeping the core's clock
+/// caller-supplied).
+#[derive(Debug, Clone)]
+pub struct BuildHandoff {
+    pub task_id: String,
+    pub from_actor: String,
+    pub to_actor: String,
+    pub condition: Option<String>,
+    pub handoff_at: String,
+    pub valid_until: Option<String>,
+}
+
+/// Build a signed custody handoff: the receiving actor `to_actor` accepts custody
+/// of `task_id` from `from_actor`, signed by the receiver. The issuer is the
+/// receiver, so a party attests its own acceptance of custody.
+pub fn build_handoff(receiver_seed: &[u8], params: &BuildHandoff) -> Result<Value> {
+    if params.task_id.is_empty() || params.from_actor.is_empty() || params.to_actor.is_empty() {
+        return Err(CoreError::Json(
+            "task_id, from_actor, and to_actor are required".into(),
+        ));
+    }
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(params.task_id));
+    subject.insert("fromActor".into(), json!(params.from_actor));
+    subject.insert("toActor".into(), json!(params.to_actor));
+    if let Some(condition) = &params.condition {
+        subject.insert("condition".into(), json!(condition));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", CUSTODY_HANDOFF_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(params.to_actor));
+    cred.insert("validFrom".into(), json!(params.handoff_at));
+    if let Some(vu) = &params.valid_until {
+        cred.insert("validUntil".into(), json!(vu));
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{}#key-1", params.to_actor), &params.handoff_at);
+    data_integrity::sign(&Value::Object(cred), receiver_seed, &opts)
+}
+
+/// Verify a custody handoff: the receiver's proof, that the subject carries both a
+/// `fromActor` and a `toActor`, and that the issuer is the receiving actor (a
+/// party attests its own acceptance of custody). Returns the credentialSubject on
+/// success, `None` if invalid.
+pub fn verify_handoff(credential: &Value, receiver_public_key: &[u8]) -> Result<Option<Value>> {
+    let subject = match verify_typed(credential, receiver_public_key, CUSTODY_HANDOFF_TYPE)? {
+        Some(s) => s,
+        None => return Ok(None),
+    };
+    let from_actor = subject.get("fromActor").and_then(|v| v.as_str());
+    let to_actor = subject.get("toActor").and_then(|v| v.as_str());
+    match (from_actor, to_actor) {
+        (Some(f), Some(t)) if !f.is_empty() && !t.is_empty() => {
+            if credential.get("issuer").and_then(|v| v.as_str()) != Some(t) {
+                return Ok(None);
+            }
+        }
+        _ => return Ok(None),
+    }
+    Ok(Some(subject))
+}
+
+/// One actor's public key, looked up by actor DID, for [`verify_handoff_chain`].
+#[derive(Debug, Clone)]
+pub struct ActorKey {
+    pub did: String,
+    pub public_key: Vec<u8>,
+}
+
+/// Verify an ordered list of handoff credentials forms a valid custody chain: each
+/// handoff verifies under its receiver's key, every link's `toActor` matches the
+/// next link's `fromActor`, and (when given) the first `fromActor` is
+/// `origin_actor`. `public_keys` maps an actor DID (human or robot) to its key.
+/// Returns `(ok, current_holder)`.
+pub fn verify_handoff_chain(
+    handoffs: &[Value],
+    public_keys: &[ActorKey],
+    origin_actor: Option<&str>,
+) -> Result<(bool, Option<String>)> {
+    let mut expected_from: Option<String> = origin_actor.map(String::from);
+    let mut current_holder: Option<String> = origin_actor.map(String::from);
+    for handoff in handoffs {
+        let receiver = handoff.get("issuer").and_then(|v| v.as_str()).unwrap_or("");
+        let key = match public_keys.iter().find(|k| k.did == receiver) {
+            Some(k) => k,
+            None => return Ok((false, None)),
+        };
+        let subject = match verify_handoff(handoff, &key.public_key)? {
+            Some(s) => s,
+            None => return Ok((false, None)),
+        };
+        if let Some(expected) = &expected_from {
+            if subject.get("fromActor").and_then(|v| v.as_str()) != Some(expected.as_str()) {
+                return Ok((false, None));
+            }
+        }
+        current_holder = subject
+            .get("toActor")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+        expected_from = current_holder.clone();
+    }
+    Ok((true, current_holder))
+}
+
+/// Return the actor holding the task at ISO time `at`: the receiver (`toActor`) of
+/// the most recent handoff whose `validFrom` is at or before `at`. Returns `None`
+/// if no handoff had occurred yet or `at` is unparseable. `handoffs` is assumed in
+/// chain order.
+pub fn holder_at(handoffs: &[Value], at: &str) -> Option<String> {
+    let when = crate::time::iso_to_epoch_seconds(at).ok()?;
+    let mut holder: Option<String> = None;
+    for handoff in handoffs {
+        let start = handoff
+            .get("validFrom")
+            .and_then(|v| v.as_str())
+            .and_then(|s| crate::time::iso_to_epoch_seconds(s).ok());
+        if let Some(start) = start {
+            if start <= when {
+                holder = handoff
+                    .get("credentialSubject")
+                    .and_then(|s| s.get("toActor"))
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
+            }
+        }
+    }
+    holder
+}
+
+/// A condition change localized to the hop responsible for it, surfaced by
+/// [`locate_condition_change`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConditionChange {
+    pub responsible_holder: Option<String>,
+    pub from_condition: String,
+    pub to_condition: String,
+}
+
+/// Find the first hop where the attested condition differs from the previous
+/// handoff. The holder responsible for the change is the actor who held the task
+/// during it (the previous handoff's receiver). Returns the change, or `None` if
+/// the condition never changed. Handoffs without a condition are skipped for the
+/// comparison.
+pub fn locate_condition_change(handoffs: &[Value]) -> Option<ConditionChange> {
+    let mut prev_condition: Option<String> = None;
+    let mut prev_holder: Option<String> = None;
+    for handoff in handoffs {
+        let subject = handoff.get("credentialSubject");
+        let condition = subject
+            .and_then(|s| s.get("condition"))
+            .and_then(|v| v.as_str());
+        let condition = match condition {
+            Some(c) => c,
+            None => continue,
+        };
+        if let Some(prev) = &prev_condition {
+            if condition != prev {
+                return Some(ConditionChange {
+                    responsible_holder: prev_holder,
+                    from_condition: prev.clone(),
+                    to_condition: condition.to_string(),
+                });
+            }
+        }
+        prev_condition = Some(condition.to_string());
+        prev_holder = subject
+            .and_then(|s| s.get("toActor"))
+            .and_then(|v| v.as_str())
+            .map(String::from);
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5120,5 +5531,429 @@ mod tests {
         assert!(
             verify_robot_credential(&migrated, &kp.public_key(), Some(&ml.public_key())).unwrap()
         );
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed embodiment continuity
+    // chain under the one agent key from the vector, ending on body-b, with no fork.
+    #[test]
+    fn verifies_python_embodiment_interop_vector() {
+        let vector = load_vector();
+        let agent_pub = jwk_pub(&vector["embodiment_agent_key"]);
+        let chain: Vec<Value> = vector["embodiment_chain"]
+            .as_array()
+            .expect("embodiment_chain array")
+            .clone();
+
+        let (ok, current) = verify_continuity_chain(&chain, &agent_pub, None).unwrap();
+        assert!(ok, "the Python embodiment chain must verify in Rust");
+        assert_eq!(
+            current.as_deref(),
+            Some("did:web:body-b.example.com"),
+            "the chain ends on body-b"
+        );
+
+        let (no_fork, conflict) = check_no_fork(&chain).unwrap();
+        assert!(no_fork, "the Python embodiment chain has no fork");
+        assert!(conflict.is_none());
+    }
+
+    #[test]
+    fn embodiment_roundtrip_and_issuer_rule() {
+        let agent_seed = [61u8; 32];
+        let other_seed = [62u8; 32];
+        let agent = Ed25519KeyPair::from_seed(&agent_seed);
+        let other = Ed25519KeyPair::from_seed(&other_seed);
+        let agent_did = "did:web:agent.example.com";
+        let body_a = "did:web:body-a.example.com";
+
+        let cred = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_a.into(),
+                body_hardware_root: "uROOTA".into(),
+                from_body: None,
+                embodied_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let subject = verify_embodiment(&cred, &agent.public_key())
+            .unwrap()
+            .expect("embodiment verifies under the agent key");
+        assert_eq!(subject["body"], json!(body_a));
+        assert_eq!(subject["bodyHardwareRoot"], json!("uROOTA"));
+
+        // The issuer must equal the subject id: forge a credential issued by an
+        // impostor over an unchanged subject (still the agent) and re-sign it. It
+        // must be rejected even with a valid proof under the signing key, because a
+        // mind only authorizes its own embodiment.
+        let forged = {
+            let mut bare = cred.clone();
+            bare.as_object_mut().unwrap().remove("proof");
+            bare["issuer"] = json!("did:web:impostor.example.com");
+            let opts = BuildProofOptions::new(
+                "did:web:impostor.example.com#key-1".to_string(),
+                "2026-01-01T00:00:00Z",
+            );
+            data_integrity::sign(&bare, &other_seed, &opts).unwrap()
+        };
+        assert!(verify_embodiment(&forged, &other.public_key())
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn continuity_chain_links_and_rejects() {
+        let agent_seed = [61u8; 32];
+        let stranger_seed = [63u8; 32];
+        let agent = Ed25519KeyPair::from_seed(&agent_seed);
+        let stranger = Ed25519KeyPair::from_seed(&stranger_seed);
+        let agent_did = "did:web:agent.example.com";
+        let body_a = "did:web:body-a.example.com";
+        let body_b = "did:web:body-b.example.com";
+
+        let e1 = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_a.into(),
+                body_hardware_root: "uROOTA".into(),
+                from_body: None,
+                embodied_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: Some("2026-01-01T01:00:00Z".into()),
+            },
+        )
+        .unwrap();
+        let e2 = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_b.into(),
+                body_hardware_root: "uROOTB".into(),
+                from_body: Some(body_a.into()),
+                embodied_at: "2026-01-01T01:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        // A clean two-link chain ends at body-b: the first link opens on body-a
+        // and the second link's fromBody re-binds to it.
+        let (ok, current) =
+            verify_continuity_chain(&[e1.clone(), e2.clone()], &agent.public_key(), None).unwrap();
+        assert!(ok);
+        assert_eq!(current.as_deref(), Some(body_b));
+
+        // Declaring the wrong origin body breaks the first link, since the first
+        // link's fromBody must match the origin when given.
+        let (bad_origin, _) =
+            verify_continuity_chain(&[e1.clone(), e2.clone()], &agent.public_key(), Some(body_b))
+                .unwrap();
+        assert!(!bad_origin);
+
+        // A broken link (second link's fromBody does not match the first's body)
+        // fails the chain.
+        let broken = build_embodiment(
+            &agent_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_b.into(),
+                body_hardware_root: "uROOTB".into(),
+                from_body: Some("did:web:body-x.example.com".into()),
+                embodied_at: "2026-01-01T01:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        let (bad_link, _) =
+            verify_continuity_chain(&[e1.clone(), broken], &agent.public_key(), None).unwrap();
+        assert!(!bad_link);
+
+        // Every link must verify under the SAME agent key: a link signed by a
+        // different key breaks the chain (a mind is one persistent identity).
+        let e2_stranger = build_embodiment(
+            &stranger_seed,
+            &BuildEmbodiment {
+                agent_did: agent_did.into(),
+                body_did: body_b.into(),
+                body_hardware_root: "uROOTB".into(),
+                from_body: Some(body_a.into()),
+                embodied_at: "2026-01-01T01:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        assert!(verify_embodiment(&e2_stranger, &stranger.public_key())
+            .unwrap()
+            .is_some());
+        let (mixed_keys, _) =
+            verify_continuity_chain(&[e1, e2_stranger], &agent.public_key(), None).unwrap();
+        assert!(!mixed_keys);
+    }
+
+    #[test]
+    fn fork_detection_flags_overlapping_bodies() {
+        let agent_seed = [61u8; 32];
+        let agent_did = "did:web:agent.example.com";
+        let body_a = "did:web:body-a.example.com";
+        let body_b = "did:web:body-b.example.com";
+
+        let build = |body: &str, root: &str, from: &str, until: &str| {
+            build_embodiment(
+                &agent_seed,
+                &BuildEmbodiment {
+                    agent_did: agent_did.into(),
+                    body_did: body.into(),
+                    body_hardware_root: root.into(),
+                    from_body: None,
+                    embodied_at: from.into(),
+                    valid_until: Some(until.into()),
+                },
+            )
+            .unwrap()
+        };
+
+        // A clean handover: body-a's window ends exactly where body-b's begins.
+        // Half-open intervals do not overlap, so this is not a fork.
+        let clean_a = build(
+            body_a,
+            "uROOTA",
+            "2026-01-01T00:00:00Z",
+            "2026-01-01T01:00:00Z",
+        );
+        let clean_b = build(
+            body_b,
+            "uROOTB",
+            "2026-01-01T01:00:00Z",
+            "2026-01-01T02:00:00Z",
+        );
+        let (clean, conflict) = check_no_fork(&[clean_a, clean_b]).unwrap();
+        assert!(clean);
+        assert!(conflict.is_none());
+
+        // Overlapping windows on different bodies are a fork; the conflict names
+        // both bodies.
+        let fork_a = build(
+            body_a,
+            "uROOTA",
+            "2026-01-01T00:00:00Z",
+            "2026-01-01T02:00:00Z",
+        );
+        let fork_b = build(
+            body_b,
+            "uROOTB",
+            "2026-01-01T01:00:00Z",
+            "2026-01-01T03:00:00Z",
+        );
+        let (forked, conflict) = check_no_fork(&[fork_a, fork_b]).unwrap();
+        assert!(!forked);
+        let conflict = conflict.expect("a fork names the two conflicting bodies");
+        assert_eq!(conflict.body_a, body_a);
+        assert_eq!(conflict.body_b, body_b);
+    }
+
+    // Custody handoff (Phase 5.16) -----------------------------------------
+
+    fn actor_keys_from_vector(map: &Value) -> Vec<ActorKey> {
+        map.as_object()
+            .expect("custody_actor_keys object")
+            .iter()
+            .map(|(did, jwk)| ActorKey {
+                did: did.clone(),
+                public_key: jwk_pub(jwk),
+            })
+            .collect()
+    }
+
+    // Cross-language interop: Rust verifies the Python-signed custody chain under
+    // the actor keys from the vector, ending on robot-b, and localizes the
+    // condition change to the hop robot-a was responsible for.
+    #[test]
+    fn verifies_python_custody_interop_vector() {
+        let vector = load_vector();
+        let chain: Vec<Value> = vector["custody_chain"]
+            .as_array()
+            .expect("custody_chain array")
+            .clone();
+        let keys = actor_keys_from_vector(&vector["custody_actor_keys"]);
+        let origin = vector["custody_origin_actor"].as_str().unwrap();
+
+        let (ok, current) = verify_handoff_chain(&chain, &keys, Some(origin)).unwrap();
+        assert!(ok, "the Python custody chain must verify in Rust");
+        assert_eq!(
+            current.as_deref(),
+            Some("did:web:robot-b.example.com"),
+            "the chain ends holding at robot-b"
+        );
+
+        let change = locate_condition_change(&chain).expect("the condition changed");
+        assert_eq!(
+            change.responsible_holder.as_deref(),
+            Some("did:web:robot-a.example.com"),
+            "robot-a held the task while its condition changed"
+        );
+        assert_eq!(change.from_condition, "intact");
+        assert_eq!(change.to_condition, "damaged");
+    }
+
+    #[test]
+    fn handoff_roundtrip_and_receiver_rule() {
+        let robot_seed = [71u8; 32];
+        let other_seed = [72u8; 32];
+        let robot = Ed25519KeyPair::from_seed(&robot_seed);
+        let other = Ed25519KeyPair::from_seed(&other_seed);
+        let worker = "did:web:worker-jane.example.com";
+        let robot_a = "did:web:robot-a.example.com";
+
+        let cred = build_handoff(
+            &robot_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: worker.into(),
+                to_actor: robot_a.into(),
+                condition: Some("intact".into()),
+                handoff_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let subject = verify_handoff(&cred, &robot.public_key())
+            .unwrap()
+            .expect("handoff verifies under the receiver key");
+        assert_eq!(subject["fromActor"], json!(worker));
+        assert_eq!(subject["toActor"], json!(robot_a));
+
+        // The issuer must be the receiver: forge a handoff issued by a different
+        // party over the same subject and re-sign it. It must be rejected even with
+        // a valid proof under the signing key, because a party attests its own
+        // acceptance of custody.
+        let forged = {
+            let mut bare = cred.clone();
+            bare.as_object_mut().unwrap().remove("proof");
+            bare["issuer"] = json!("did:web:impostor.example.com");
+            let opts = BuildProofOptions::new(
+                "did:web:impostor.example.com#key-1".to_string(),
+                "2026-01-01T00:00:00Z",
+            );
+            data_integrity::sign(&bare, &other_seed, &opts).unwrap()
+        };
+        assert!(verify_handoff(&forged, &other.public_key())
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn handoff_chain_links_and_rejects() {
+        let a_seed = [73u8; 32];
+        let b_seed = [74u8; 32];
+        let a = Ed25519KeyPair::from_seed(&a_seed);
+        let b = Ed25519KeyPair::from_seed(&b_seed);
+        let worker = "did:web:worker-jane.example.com";
+        let robot_a = "did:web:robot-a.example.com";
+        let robot_b = "did:web:robot-b.example.com";
+
+        let h1 = build_handoff(
+            &a_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: worker.into(),
+                to_actor: robot_a.into(),
+                condition: Some("intact".into()),
+                handoff_at: "2026-01-01T00:00:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        let h2 = build_handoff(
+            &b_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: robot_a.into(),
+                to_actor: robot_b.into(),
+                condition: Some("damaged".into()),
+                handoff_at: "2026-01-01T00:10:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+
+        let keys = vec![
+            ActorKey {
+                did: robot_a.into(),
+                public_key: a.public_key().to_vec(),
+            },
+            ActorKey {
+                did: robot_b.into(),
+                public_key: b.public_key().to_vec(),
+            },
+        ];
+
+        // A clean two-link chain ends holding at robot-b: the first link's
+        // fromActor is the origin worker and the second link re-binds to robot-a.
+        let (ok, current) =
+            verify_handoff_chain(&[h1.clone(), h2.clone()], &keys, Some(worker)).unwrap();
+        assert!(ok);
+        assert_eq!(current.as_deref(), Some(robot_b));
+
+        // Declaring the wrong origin actor breaks the first link.
+        let (bad_origin, _) =
+            verify_handoff_chain(&[h1.clone(), h2.clone()], &keys, Some(robot_b)).unwrap();
+        assert!(!bad_origin);
+
+        // A broken link (second link's fromActor does not match the first's
+        // toActor) fails the chain.
+        let broken = build_handoff(
+            &b_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: "did:web:robot-x.example.com".into(),
+                to_actor: robot_b.into(),
+                condition: Some("damaged".into()),
+                handoff_at: "2026-01-01T00:10:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        let (bad_link, _) =
+            verify_handoff_chain(&[h1.clone(), broken], &keys, Some(worker)).unwrap();
+        assert!(!bad_link);
+
+        // A missing receiver key for a link fails the chain.
+        let partial = vec![ActorKey {
+            did: robot_a.into(),
+            public_key: a.public_key().to_vec(),
+        }];
+        let (no_key, _) =
+            verify_handoff_chain(&[h1.clone(), h2.clone()], &partial, Some(worker)).unwrap();
+        assert!(!no_key);
+
+        // holder_at reports who held the task at a moment: robot-a right after the
+        // first handoff, robot-b right after the second.
+        assert_eq!(
+            holder_at(&[h1.clone(), h2.clone()], "2026-01-01T00:05:00Z").as_deref(),
+            Some(robot_a)
+        );
+        assert_eq!(
+            holder_at(&[h1.clone(), h2.clone()], "2026-01-01T00:15:00Z").as_deref(),
+            Some(robot_b)
+        );
+
+        // A chain whose condition never changes localizes nothing.
+        let steady = build_handoff(
+            &b_seed,
+            &BuildHandoff {
+                task_id: "tote-42".into(),
+                from_actor: robot_a.into(),
+                to_actor: robot_b.into(),
+                condition: Some("intact".into()),
+                handoff_at: "2026-01-01T00:10:00Z".into(),
+                valid_until: None,
+            },
+        )
+        .unwrap();
+        assert!(locate_condition_change(&[h1, steady]).is_none());
     }
 }

@@ -97,7 +97,7 @@ jobs:
           cred = open("credential.json").read()
           doc = json.load(open("website/public/adopters/did.json"))
           pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
-          ok, _ = Verifier.verify_credential(cred, public_key=pub)
+          ok, _ = Verifier.verify(cred, public_key=pub)
           print("Certificate self-verify against published DID:", ok)
           if not ok:
               print("::error::Minted certificate does not verify against the published adopter DID."

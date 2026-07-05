@@ -74,13 +74,13 @@ describe('Multikey ML-DSA-44', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Signer.signCredentialHybrid
+// Signer.signHybrid
 // ---------------------------------------------------------------------------
 
-describe('Signer.signCredentialHybrid', () => {
+describe('Signer.signHybrid', () => {
   test('produces a hybrid cryptosuite proof', async () => {
     const { signer } = await newSigner();
-    const cred = await signer.signCredentialHybrid({ intent: intent() });
+    const cred = await signer.signHybrid({ intent: intent() });
 
     expect(cred['@context']).toEqual([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]);
     expect(cred.type).toContain(VC_TYPE);
@@ -110,7 +110,7 @@ describe('Signer.signCredentialHybrid', () => {
 describe('verifyHybridProof', () => {
   test('accepts a valid credential signed with the same signer', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const cred = await signer.signCredentialHybrid({ intent: intent() });
+    const cred = await signer.signHybrid({ intent: intent() });
 
     const ed25519Pub = publicKeyObject(publicKeyJwk);
     const mldsa44Pub = signer.publicKeyMLDSA44();
@@ -125,7 +125,7 @@ describe('verifyHybridProof', () => {
 
   test('rejects a tampered intent.resource', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const cred = await signer.signCredentialHybrid({ intent: intent() });
+    const cred = await signer.signHybrid({ intent: intent() });
     cred.credentialSubject.intent.resource = 'https://evil.example.com/x';
 
     const ed25519Pub = publicKeyObject(publicKeyJwk);
@@ -142,7 +142,7 @@ describe('verifyHybridProof', () => {
   test('rejects a wrong Ed25519 public key', async () => {
     const { signer } = await newSigner();
     const other = await newSigner('did:web:other.example.com');
-    const cred = await signer.signCredentialHybrid({ intent: intent() });
+    const cred = await signer.signHybrid({ intent: intent() });
 
     const wrongEd = publicKeyObject(other.publicKeyJwk);
     const mldsa44Pub = signer.publicKeyMLDSA44();
@@ -158,7 +158,7 @@ describe('verifyHybridProof', () => {
   test('rejects a wrong ML-DSA-44 public key', async () => {
     const { signer, publicKeyJwk } = await newSigner();
     const other = await newSigner('did:web:other.example.com');
-    const cred = await signer.signCredentialHybrid({ intent: intent() });
+    const cred = await signer.signHybrid({ intent: intent() });
 
     const ed25519Pub = publicKeyObject(publicKeyJwk);
     const wrongMld = await other.signer.publicKeyMLDSA44();
@@ -180,14 +180,14 @@ describe('Hybrid and eddsa-jcs-2022 paths coexist', () => {
   test('both paths work on the same signer', async () => {
     const { signer, publicKeyJwk } = await newSigner();
 
-    const credEd = await signer.signCredential({ intent: intent() });
-    const ed = await Verifier.verifyCredential(
+    const credEd = await signer.sign({ intent: intent() });
+    const ed = await Verifier.verify(
       credEd,
       publicKeyObject(publicKeyJwk)
     );
     expect(ed.isValid).toBe(true);
 
-    const credHyb = await signer.signCredentialHybrid({ intent: intent() });
+    const credHyb = await signer.signHybrid({ intent: intent() });
     const ok = verifyHybridProof(
       credHyb as unknown as Record<string, unknown>,
       publicKeyObject(publicKeyJwk),
@@ -198,10 +198,10 @@ describe('Hybrid and eddsa-jcs-2022 paths coexist', () => {
 
   test('eddsa-jcs-2022 verifier rejects hybrid cryptosuite identifier', async () => {
     const { signer, publicKeyJwk } = await newSigner();
-    const credHyb = await signer.signCredentialHybrid({ intent: intent() });
+    const credHyb = await signer.signHybrid({ intent: intent() });
 
     // Standard eddsa-jcs-2022 verifier should not accept hybrid proofs.
-    const result = await Verifier.verifyCredential(
+    const result = await Verifier.verify(
       credHyb,
       publicKeyObject(publicKeyJwk)
     );

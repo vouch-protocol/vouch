@@ -70,7 +70,7 @@ export function buildSession(core, implementation, nowIso) {
   // the implementation must report it invalid.
   const vk = JSON.parse(core.generateEd25519());
   const expired = credentialSkeleton(vk.did_key, intent, "2000-01-01T00:00:00Z", "2000-01-02T00:00:00Z");
-  const expiredSigned = core.signCredential(
+  const expiredSigned = core.sign(
     JSON.stringify(expired), vk.seed_b64, `${vk.did_key}#key-1`, "2000-01-01T00:00:00Z"
   );
   challenges.push({
@@ -85,7 +85,7 @@ export function buildSession(core, implementation, nowIso) {
   // must flag the second presentation as a replay.
   const nk = JSON.parse(core.generateEd25519());
   const fresh = credentialSkeleton(nk.did_key, intent, nowIso, "2100-01-01T00:00:00Z");
-  const freshSigned = core.signCredential(
+  const freshSigned = core.sign(
     JSON.stringify(fresh), nk.seed_b64, `${nk.did_key}#key-1`, nowIso
   );
   challenges.push({
@@ -176,7 +176,7 @@ export function buildConformanceCredential({ implementation, level, issuerDid, n
 
 export function mint(core, credential, issuerSeedB64, verificationMethod, createdIso) {
   return JSON.parse(
-    core.signCredential(JSON.stringify(credential), issuerSeedB64, verificationMethod, createdIso)
+    core.sign(JSON.stringify(credential), issuerSeedB64, verificationMethod, createdIso)
   );
 }
 

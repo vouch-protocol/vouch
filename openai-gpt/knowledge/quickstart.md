@@ -65,15 +65,15 @@ from vouch import generate_identity, Signer, Verifier
 keys = generate_identity("agent.example.com")  # returns a KeyPair
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
-# sign_credential takes the intent directly (action, target, resource required).
-signed = signer.sign_credential(intent={
+# sign takes the intent directly (action, target, resource required).
+signed = signer.sign(intent={
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
 })
 
-# verify_credential returns a (is_valid, passport) tuple.
-is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
+# verify returns a (is_valid, passport) tuple.
+is_valid, passport = Verifier.verify(signed, public_key=keys.public_key_jwk)
 assert is_valid
 ```
 
@@ -89,8 +89,8 @@ import { Signer, Verifier, generateIdentity } from '@vouch-protocol-official/sdk
 const keys = await generateIdentity('agent.example.com');
 const signer = new Signer({ privateKey: keys.privateKeyJwk, did: keys.did });
 
-// signCredential takes an options object whose required field is `intent`.
-const signed = await signer.signCredential({
+// sign takes an options object whose required field is `intent`.
+const signed = await signer.sign({
     intent: {
         action: 'submit_claim',
         target: 'claim:HC-001',
@@ -98,8 +98,8 @@ const signed = await signer.signCredential({
     },
 });
 
-// verifyCredential returns { isValid, passport, error }.
-const result = await Verifier.verifyCredential(signed);
+// verify returns { isValid, passport, error }.
+const result = await Verifier.verify(signed);
 console.assert(result.isValid);
 ```
 

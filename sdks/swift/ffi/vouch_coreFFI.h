@@ -639,14 +639,19 @@ RustBuffer uniffi_vouch_core_uniffi_fn_func_robotics_verify_safety_log(RustBuffe
 RustBuffer uniffi_vouch_core_uniffi_fn_func_robotics_verify_safety_record(RustBuffer credential_json, RustBuffer public_key, RustCallStatus *_Nonnull out_status
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_SIGN_CREDENTIAL
-#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_SIGN_CREDENTIAL
-RustBuffer uniffi_vouch_core_uniffi_fn_func_sign_credential(RustBuffer credential_json, RustBuffer seed, RustBuffer verification_method, RustBuffer created, RustCallStatus *_Nonnull out_status
+#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_SIGN
+RustBuffer uniffi_vouch_core_uniffi_fn_func_sign(RustBuffer credential_json, RustBuffer seed, RustBuffer verification_method, RustBuffer created, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_SIGN_DUAL
 #define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_SIGN_DUAL
 RustBuffer uniffi_vouch_core_uniffi_fn_func_sign_dual(RustBuffer credential_json, RustBuffer ed25519_seed, RustBuffer mldsa_secret, RustBuffer mldsa_public, RustBuffer ed25519_vm, RustBuffer mldsa_vm, RustBuffer created, RustCallStatus *_Nonnull out_status
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY
+#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY
+RustBuffer uniffi_vouch_core_uniffi_fn_func_verify(RustBuffer credential_json, RustBuffer public_key, RustBuffer now_iso, int64_t clock_skew_seconds, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY_CHAIN_TIME_BOUND
@@ -657,11 +662,6 @@ int8_t uniffi_vouch_core_uniffi_fn_func_verify_chain_time_bound(RustBuffer chain
 #ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY_COMPOSITE
 #define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY_COMPOSITE
 int8_t uniffi_vouch_core_uniffi_fn_func_verify_composite(RustBuffer credential_json, RustBuffer ed25519_public, RustBuffer mldsa_public, RustCallStatus *_Nonnull out_status
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY_CREDENTIAL
-#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY_CREDENTIAL
-RustBuffer uniffi_vouch_core_uniffi_fn_func_verify_credential(RustBuffer credential_json, RustBuffer public_key, RustBuffer now_iso, int64_t clock_skew_seconds, RustCallStatus *_Nonnull out_status
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_FN_FUNC_VERIFY_DUAL
@@ -1427,15 +1427,21 @@ uint16_t uniffi_vouch_core_uniffi_checksum_func_robotics_verify_safety_record(vo
     
 );
 #endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_SIGN_CREDENTIAL
-#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_SIGN_CREDENTIAL
-uint16_t uniffi_vouch_core_uniffi_checksum_func_sign_credential(void
+#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_SIGN
+#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_SIGN
+uint16_t uniffi_vouch_core_uniffi_checksum_func_sign(void
     
 );
 #endif
 #ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_SIGN_DUAL
 #define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_SIGN_DUAL
 uint16_t uniffi_vouch_core_uniffi_checksum_func_sign_dual(void
+    
+);
+#endif
+#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_VERIFY
+#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_VERIFY
+uint16_t uniffi_vouch_core_uniffi_checksum_func_verify(void
     
 );
 #endif
@@ -1448,12 +1454,6 @@ uint16_t uniffi_vouch_core_uniffi_checksum_func_verify_chain_time_bound(void
 #ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_VERIFY_COMPOSITE
 #define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_VERIFY_COMPOSITE
 uint16_t uniffi_vouch_core_uniffi_checksum_func_verify_composite(void
-    
-);
-#endif
-#ifndef UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_VERIFY_CREDENTIAL
-#define UNIFFI_FFIDEF_UNIFFI_VOUCH_CORE_UNIFFI_CHECKSUM_FUNC_VERIFY_CREDENTIAL
-uint16_t uniffi_vouch_core_uniffi_checksum_func_verify_credential(void
     
 );
 #endif

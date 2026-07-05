@@ -56,7 +56,7 @@ credential = build_vouch_credential(
 )
 
 # Sign it
-signed = signer.sign_credential(credential)
+signed = signer.sign(credential)
 # signed is a dict ready to JSON-serialize and send
 ```
 
@@ -64,7 +64,7 @@ signed = signer.sign_credential(credential)
 
 ```python
 signer_pq = Signer(private_key=keys.private_key_jwk, did=keys.did)
-signed_pq = signer_pq.sign_credential_hybrid(intent={
+signed_pq = signer_pq.sign_hybrid(intent={
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
@@ -77,8 +77,8 @@ signed_pq = signer_pq.sign_credential_hybrid(intent={
 ```python
 from vouch import Verifier
 
-# verify_credential returns a (is_valid, passport) tuple
-is_valid, passport = Verifier.verify_credential(signed, public_key=keys.public_key_jwk)
+# verify returns a (is_valid, passport) tuple
+is_valid, passport = Verifier.verify(signed, public_key=keys.public_key_jwk)
 
 if is_valid:
     p = passport
@@ -95,7 +95,7 @@ from vouch import AsyncVerifier
 
 async def main():
     verifier = AsyncVerifier()
-    is_valid, passport = await verifier.verify_credential(signed)
+    is_valid, passport = await verifier.verify(signed)
 ```
 
 ## Session Vouchers (Heartbeat Protocol)
@@ -206,7 +206,7 @@ status_credential = build_status_list_credential(
     issuer_did="did:web:issuer.example",
     status_list=status_list,
 )
-signed_status_credential = signer.sign_credential(status_credential)
+signed_status_credential = signer.sign(status_credential)
 # publish at the stable URL
 
 # Verifier side

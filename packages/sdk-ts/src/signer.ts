@@ -1,19 +1,10 @@
 /**
  * Vouch Protocol Signer (TypeScript).
  *
- * Two issuance modes coexist during the migration from JWS to W3C Data
- * Integrity (Specification §3.1):
- *
- *   1. Legacy JWS Compact Serialization (v0.x): Signer.sign().
- *    Retained for backward compatibility while integrations migrate.
- *
- *   2. Verifiable Credentials with Data Integrity proofs
- *    (eddsa-jcs-2022, v1.0): Signer.signCredential().
- *    The standards-aligned form aligned with the CG Report.
- *
- * Both modes share the same Ed25519 signing key. Existing callers using
- * Signer.sign() continue to work unchanged. New callers should prefer
- * signCredential().
+ * Issues Verifiable Credentials with W3C Data Integrity proofs
+ * (eddsa-jcs-2022, Specification §3.1) via Signer.sign(). The post-quantum
+ * hybrid profile (hybrid-eddsa-mldsa44-jcs-2026) is available via
+ * Signer.signHybrid().
  */
 
 import * as crypto from 'crypto';
@@ -30,7 +21,7 @@ import {
   encodeMLDSA44Public,
 } from './multikey';
 import type {
-  SignCredentialOptions,
+  SignOptions,
   SignerConfig,
   JWKKey,
 } from './types';
@@ -54,7 +45,7 @@ const MAX_CHAIN_DEPTH = 5;
  * const token = await signer.sign({ action: 'read_database' });
  *
  * // Modern VC + Data Integrity:
- * const cred = await signer.signCredential({
+ * const cred = await signer.sign({
  *  intent: {
  *   action: 'read_database',
  *   target: 'users_table',
@@ -227,7 +218,7 @@ export class Signer {
    *
    * For custom credential types (for example robotics credentials) that the
    * caller assembles by hand rather than from an intent. Mirrors the signing
-   * step of `signCredential`. Returns the credential with its `proof` set.
+   * step of `sign`. Returns the credential with its `proof` set.
    */
   async attachProof(
     credential: Record<string, unknown>
@@ -258,49 +249,8 @@ export class Signer {
     return { ...credential, proof };
   }
 
-  // ------------------------------------------------------------------
-  // Legacy JWS path. Behavior preserved verbatim.
-  // ------------------------------------------------------------------
-
   /**
-   * Sign a payload and return a JWS compact token (legacy v0.x format).
-   *
-   * Retained for backward compatibility. New code should prefer
-   * `signCredential`.
-   */
-  async sign(
-    payload: Record<string, unknown>,
-    expirySeconds?: number
-  ): Promise<string> {
-    if (this.signFunc) {
-      throw new Error(
-        'The legacy JWS sign() needs the private key in this process and is not ' +
-        'available for a backend Signer (fromBackend); use signCredential'
-      );
-    }
-    const key = await this.keyPromise;
-    const now = Math.floor(Date.now() / 1000);
-    const exp = now + (expirySeconds ?? this.defaultExpiry);
-
-    const claims = {
-      jti: crypto.randomUUID(),
-      iss: this.did,
-      sub: this.did,
-      iat: now,
-      nbf: now,
-      exp: exp,
-      vouch: {
-        payload: payload,
-      },
-    };
-
-    return await new jose.SignJWT(claims)
-      .setProtectedHeader({ alg: 'EdDSA', typ: 'JWT', kid: this.did })
-      .sign(key);
-  }
-
-  /**
-   * Get the public key in JWK format (legacy DID Documents).
+   * Get the public key in JWK format (for DID Documents).
    */
   async getPublicKeyJwk(): Promise<string> {
     if (this.backendPublicKeyJwk) return this.backendPublicKeyJwk;
@@ -321,7 +271,7 @@ export class Signer {
    * Returns a credential dict that can be JSON-serialized and transmitted
    * in an HTTP body or header.
    */
-  async signCredential(opts: SignCredentialOptions): Promise<VouchCredential> {
+  async sign(opts: SignOptions): Promise<VouchCredential> {
     const intent = mergeIntent(opts);
     let chain: DelegationLink[] | undefined = opts.delegationChain;
     if (opts.parentCredential) {
@@ -363,10 +313,10 @@ export class Signer {
   }
 
   /**
-   * JSON-serialized form of `signCredential` for HTTP transport.
+   * JSON-serialized form of `sign` for HTTP transport.
    */
-  async signCredentialJson(opts: SignCredentialOptions): Promise<string> {
-    const cred = await this.signCredential(opts);
+  async signJson(opts: SignOptions): Promise<string> {
+    const cred = await this.sign(opts);
     return JSON.stringify(cred);
   }
 
@@ -381,10 +331,10 @@ export class Signer {
    * the eddsa-jcs-2022 default. Callers using this profile SHOULD
    * transmit credentials in the HTTP request body.
    */
-  async signCredentialHybrid(opts: SignCredentialOptions): Promise<VouchCredential> {
+  async signHybrid(opts: SignOptions): Promise<VouchCredential> {
     if (this.signFunc) {
       throw new Error(
-        'signCredentialHybrid is not supported for a backend Signer (fromBackend); ' +
+        'signHybrid is not supported for a backend Signer (fromBackend); ' +
         'use the eddsa-jcs-2022 path or hold the key locally'
       );
     }
@@ -533,9 +483,9 @@ export async function generateIdentity(domain?: string): Promise<{
  */
 export async function sign(
   keypair: { privateKeyJwk: string; did: string | null },
-  opts: SignCredentialOptions
+  opts: SignOptions
 ): Promise<VouchCredential> {
-  return Signer.fromKeypair(keypair).signCredential(opts);
+  return Signer.fromKeypair(keypair).sign(opts);
 }
 
 // ---------------------------------------------------------------------------
@@ -543,7 +493,7 @@ export async function sign(
 // ---------------------------------------------------------------------------
 
 /** Combine a dict intent with the named action/target/resource shortcuts. */
-function mergeIntent(opts: SignCredentialOptions): Intent {
+function mergeIntent(opts: SignOptions): Intent {
   const merged: Record<string, unknown> = { ...(opts.intent ?? {}) };
   if (opts.action !== undefined) merged.action = opts.action;
   if (opts.target !== undefined) merged.target = opts.target;

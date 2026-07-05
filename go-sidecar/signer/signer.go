@@ -264,10 +264,10 @@ type compositeJWS struct {
 	Signature compositeSignature `json:"signature"`
 }
 
-// Sign produces a Vouch Token. If req.Sensitive is true and a valid
+// SignToken produces a Vouch Token. If req.Sensitive is true and a valid
 // recipient ML-KEM public key is provided, the composite JWS is wrapped
 // inside an ML-KEM-768 / AES-256-GCM JWE vault.
-func (s *Signer) Sign(req SignRequest) ([]byte, error) {
+func (s *Signer) SignToken(req SignRequest) ([]byte, error) {
 	if s.signFunc != nil {
 		return nil, errors.New("vouch: the composite JWS Sign needs the raw key and is not available for a backend Signer")
 	}

@@ -28,13 +28,13 @@ public class VouchTests
         var pub = kp.RootElement.GetProperty("public_b64").GetString()!;
         Assert.StartsWith("did:key:z6Mk", kp.RootElement.GetProperty("did_key").GetString());
 
-        var signed = Vouch.SignCredential(Cred, seed, "did:web:a#key-1", "2026-04-26T10:00:00Z");
+        var signed = Vouch.Sign(Cred, seed, "did:web:a#key-1", "2026-04-26T10:00:00Z");
         Assert.True(Vouch.VerifyProof(signed, pub));
 
-        using var ok = JsonDocument.Parse(Vouch.VerifyCredential(signed, pub, "2026-04-26T10:02:00Z"));
+        using var ok = JsonDocument.Parse(Vouch.Verify(signed, pub, "2026-04-26T10:02:00Z"));
         Assert.True(ok.RootElement.GetProperty("valid").GetBoolean());
 
-        using var expired = JsonDocument.Parse(Vouch.VerifyCredential(signed, pub, "2026-04-26T11:00:00Z"));
+        using var expired = JsonDocument.Parse(Vouch.Verify(signed, pub, "2026-04-26T11:00:00Z"));
         Assert.False(expired.RootElement.GetProperty("valid").GetBoolean());
     }
 

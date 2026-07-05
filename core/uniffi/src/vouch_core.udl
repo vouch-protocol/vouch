@@ -34,19 +34,33 @@ namespace vouch_core {
     [Throws=CoreError]
     string build_proof(string credential_json, bytes seed, string verification_method, string created);
     [Throws=CoreError]
-    string sign_credential(string credential_json, bytes seed, string verification_method, string created);
+    string sign(string credential_json, bytes seed, string verification_method, string created);
     [Throws=CoreError]
     boolean verify_proof(string credential_json, bytes public_key);
 
     // Credential verification with validity window.
     [Throws=CoreError]
-    VerifyResult verify_credential(string credential_json, bytes public_key, string now_iso, i64 clock_skew_seconds);
+    VerifyResult verify(string credential_json, bytes public_key, string now_iso, i64 clock_skew_seconds);
 
     // Delegation: build a link and validate a chain's time-bound rule.
     [Throws=CoreError]
     string build_delegation_link(string issuer, string subject, string intent_json, string? valid_from, string? valid_until, string? parent_proof_value);
     [Throws=CoreError]
     boolean verify_chain_time_bound(string chain_json, string now_iso, i64 clock_skew_seconds);
+
+    // FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
+    // signature is a standard Ed25519 signature, verifiable with
+    // ed25519_verify like any other; no new proof type. See
+    // vouch_core::threshold for the ceremony and the never-reconstructed
+    // guarantee.
+    [Throws=CoreError]
+    string threshold_generate_key(u16 min_signers, u16 max_signers);
+    [Throws=CoreError]
+    string threshold_commit(string key_share_json);
+    [Throws=CoreError]
+    string threshold_sign_share(bytes message, string key_share_json, string nonces_b64, string commitments_json);
+    [Throws=CoreError]
+    bytes threshold_aggregate(bytes message, string commitments_json, string shares_json, string group_public_key_json);
 
     // Post-quantum ML-DSA-44 and dual proofs.
     [Throws=CoreError]
@@ -212,6 +226,28 @@ namespace vouch_core {
     boolean robotics_verify_robot_credential(string credential_json, bytes ed25519_public, bytes? mldsa44_public);
     [Throws=CoreError]
     string robotics_migrate_to_pq(string credential_json, bytes ed25519_seed, bytes mldsa_secret, bytes mldsa_public, string created);
+
+    // Cross-embodiment identity continuity (Phase 5.15).
+    [Throws=CoreError]
+    string robotics_build_embodiment(bytes agent_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_embodiment(string credential_json, bytes agent_public_key);
+    [Throws=CoreError]
+    string robotics_verify_continuity_chain(string params_json, bytes agent_public_key);
+    [Throws=CoreError]
+    string robotics_check_no_fork(string params_json);
+
+    // Physical custody handoff (Phase 5.16).
+    [Throws=CoreError]
+    string robotics_build_handoff(bytes receiver_seed, string params_json);
+    [Throws=CoreError]
+    string robotics_verify_handoff(string credential_json, bytes receiver_public_key);
+    [Throws=CoreError]
+    string robotics_verify_handoff_chain(string params_json);
+    [Throws=CoreError]
+    string robotics_holder_at(string params_json);
+    [Throws=CoreError]
+    string robotics_locate_condition_change(string params_json);
 };
 
 dictionary Ed25519KeyPair {

@@ -1,7 +1,7 @@
 /**
  * A thin, read-friendly wrapper over a Vouch Credential object.
  *
- * The object produced by `signCredential` (and `sign`) is the canonical, on-the
+ * The object produced by `sign` (and `sign`) is the canonical, on-the
  * -wire form. This wrapper sits on top so you can read back what a credential
  * authorizes without digging through `credentialSubject.intent` by hand, and
  * verify it in one call. It is sugar only: `toObject()` returns the same object

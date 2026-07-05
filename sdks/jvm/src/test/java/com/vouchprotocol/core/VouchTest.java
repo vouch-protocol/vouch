@@ -37,10 +37,10 @@ class VouchTest {
         String kp = Vouch.generateEd25519();
         String seed = field(kp, "seed_b64");
         String pub = field(kp, "public_b64");
-        String signed = Vouch.signCredential(CRED, seed, "did:web:a#key-1", "2026-04-26T10:00:00Z");
+        String signed = Vouch.sign(CRED, seed, "did:web:a#key-1", "2026-04-26T10:00:00Z");
         assertTrue(Vouch.verifyProof(signed, pub));
-        assertTrue(Vouch.verifyCredential(signed, pub, "2026-04-26T10:02:00Z", 30).contains("\"valid\":true"));
-        assertFalse(Vouch.verifyCredential(signed, pub, "2026-04-26T11:00:00Z", 30).contains("\"valid\":true"));
+        assertTrue(Vouch.verify(signed, pub, "2026-04-26T10:02:00Z", 30).contains("\"valid\":true"));
+        assertFalse(Vouch.verify(signed, pub, "2026-04-26T11:00:00Z", 30).contains("\"valid\":true"));
     }
 
     @Test

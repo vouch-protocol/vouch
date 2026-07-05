@@ -87,7 +87,7 @@ from vouch.transport import TransportManager, build_envelope
 
 kp = generate_identity(domain="agent.example.com")
 signer = Signer(private_key=kp.private_key_jwk, did=kp.did)
-credential = signer.sign_credential(intent={
+credential = signer.sign(intent={
     "action": "settle_invoice",
     "target": "invoice-42",
     "resource": "https://api.example.com/invoices/42",

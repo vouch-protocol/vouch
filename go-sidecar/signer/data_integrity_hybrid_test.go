@@ -70,9 +70,9 @@ func TestSignerExposesMLDSA44Multikey(t *testing.T) {
 // Hybrid issuance
 // ---------------------------------------------------------------------------
 
-func TestSignCredentialHybridShape(t *testing.T) {
+func TestSignHybridShape(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, err := s.SignCredentialHybrid(SignCredentialOptions{Intent: validIntent()})
+	cred, err := s.SignHybrid(SignOptions{Intent: validIntent()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestSignCredentialHybridShape(t *testing.T) {
 
 func TestVerifyHybridValidCredential(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, err := s.SignCredentialHybrid(SignCredentialOptions{Intent: validIntent()})
+	cred, err := s.SignHybrid(SignOptions{Intent: validIntent()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestVerifyHybridValidCredential(t *testing.T) {
 
 func TestVerifyHybridRejectsTamperedIntent(t *testing.T) {
 	s := newTestSigner(t, "")
-	cred, _ := s.SignCredentialHybrid(SignCredentialOptions{Intent: validIntent()})
+	cred, _ := s.SignHybrid(SignOptions{Intent: validIntent()})
 
 	subject := cred["credentialSubject"].(map[string]any)
 	intent := subject["intent"].(map[string]any)
@@ -136,7 +136,7 @@ func TestVerifyHybridRejectsTamperedIntent(t *testing.T) {
 func TestVerifyHybridRejectsWrongEd25519Key(t *testing.T) {
 	s := newTestSigner(t, "")
 	other := newTestSigner(t, "did:web:other.example.com")
-	cred, _ := s.SignCredentialHybrid(SignCredentialOptions{Intent: validIntent()})
+	cred, _ := s.SignHybrid(SignOptions{Intent: validIntent()})
 
 	ok, _ := VerifyHybridDataIntegrityProof(
 		cred, other.PublicKeyEd25519(), s.PublicKeyMLDSA44(),
@@ -149,7 +149,7 @@ func TestVerifyHybridRejectsWrongEd25519Key(t *testing.T) {
 func TestVerifyHybridRejectsWrongMLDSAKey(t *testing.T) {
 	s := newTestSigner(t, "")
 	other := newTestSigner(t, "did:web:other.example.com")
-	cred, _ := s.SignCredentialHybrid(SignCredentialOptions{Intent: validIntent()})
+	cred, _ := s.SignHybrid(SignOptions{Intent: validIntent()})
 
 	ok, _ := VerifyHybridDataIntegrityProof(
 		cred, s.PublicKeyEd25519(), other.PublicKeyMLDSA44(),
@@ -167,7 +167,7 @@ func TestHybridAndEddsaJcsCoexist(t *testing.T) {
 	s := newTestSigner(t, "")
 
 	// Modern eddsa-jcs-2022 path still works.
-	credEd, err := s.SignCredential(SignCredentialOptions{Intent: validIntent()})
+	credEd, err := s.Sign(SignOptions{Intent: validIntent()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func TestHybridAndEddsaJcsCoexist(t *testing.T) {
 	}
 
 	// Hybrid path also works on the same signer.
-	credHyb, err := s.SignCredentialHybrid(SignCredentialOptions{Intent: validIntent()})
+	credHyb, err := s.SignHybrid(SignOptions{Intent: validIntent()})
 	if err != nil {
 		t.Fatal(err)
 	}

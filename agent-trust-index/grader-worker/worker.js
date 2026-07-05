@@ -160,7 +160,7 @@ function fixIts(s) {
     );
   if (!s.pq_ready)
     fixes.push(
-      "Add a post-quantum key (ML-DSA-44) alongside your Ed25519 key and sign with `sign_credential_hybrid`."
+      "Add a post-quantum key (ML-DSA-44) alongside your Ed25519 key and sign with `sign_hybrid`."
     );
   if (!s.has_revocation)
     fixes.push(

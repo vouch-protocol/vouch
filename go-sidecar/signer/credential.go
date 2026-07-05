@@ -4,7 +4,7 @@
 // This file extends Signer with a credential-issuance path that coexists
 // with the legacy composite-JWS path in signer.go. Both paths share the
 // same Ed25519 signing key. Existing callers using Signer.Sign() continue
-// to work unchanged. New callers should prefer SignCredential().
+// to work unchanged. New callers should prefer Sign().
 
 package signer
 
@@ -21,8 +21,8 @@ import (
 
 const maxDelegationDepth = 5
 
-// SignCredentialOptions configures Signer.SignCredential.
-type SignCredentialOptions struct {
+// SignOptions configures Signer.Sign.
+type SignOptions struct {
 	// Intent is the action being authorized. Must contain action, target,
 	// resource (Specification §5.4.1). The intent can also be supplied via the
 	// Action/Target/Resource fields below; when both are set, the named fields
@@ -64,10 +64,10 @@ type SignCredentialOptions struct {
 	CredentialStatus map[string]any
 }
 
-// SignCredential issues a Verifiable Credential with a Data Integrity
+// Sign issues a Verifiable Credential with a Data Integrity
 // proof using the eddsa-jcs-2022 cryptosuite (Specification §5, §7.1).
 // Returns the credential as a map suitable for JSON serialization.
-func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, error) {
+func (s *Signer) Sign(opts SignOptions) (map[string]any, error) {
 	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain
 	if opts.ParentCredential != nil {
@@ -112,10 +112,10 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 	return cred, nil
 }
 
-// SignCredentialJSON returns the credential as a JSON-serialized byte slice
+// SignJSON returns the credential as a JSON-serialized byte slice
 // suitable for transmission over HTTP.
-func (s *Signer) SignCredentialJSON(opts SignCredentialOptions) ([]byte, error) {
-	cred, err := s.SignCredential(opts)
+func (s *Signer) SignJSON(opts SignOptions) ([]byte, error) {
+	cred, err := s.Sign(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (s *Signer) DID() string {
 // AttachProof attaches an eddsa-jcs-2022 Data Integrity proof to a pre-built
 // credential map, for custom credential types (for example robotics
 // credentials) the caller assembles directly rather than from an intent.
-// Mirrors the signing step of SignCredential; returns the credential with its
+// Mirrors the signing step of Sign; returns the credential with its
 // "proof" set.
 func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) {
 	proof, err := BuildDataIntegrityProof(credential, BuildProofOptions{
@@ -201,7 +201,7 @@ func (s *Signer) AttachHybridProof(credential map[string]any) (map[string]any, e
 	return credential, nil
 }
 
-// SignCredentialHybrid issues a Vouch Credential under the hybrid
+// SignHybrid issues a Vouch Credential under the hybrid
 // post-quantum profile (Specification §13.2). The credential carries a
 // hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof containing both an
 // Ed25519 signature and an ML-DSA-44 signature over the same canonical form.
@@ -210,12 +210,12 @@ func (s *Signer) AttachHybridProof(credential map[string]any) (map[string]any, e
 // Note: this profile produces credentials roughly 2.5 KB larger than the
 // eddsa-jcs-2022 default. Implementations using this profile SHOULD
 // transmit credentials in the HTTP request body (§5.6).
-func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]any, error) {
+func (s *Signer) SignHybrid(opts SignOptions) (map[string]any, error) {
 	if s.signFunc != nil {
 		// The hybrid profile needs both an Ed25519 and an ML-DSA-44 signature.
 		// A backend Signer only exposes the Ed25519 callback, so this path is
 		// not available there.
-		return nil, errors.New("vouch: SignCredentialHybrid is not supported for a backend Signer")
+		return nil, errors.New("vouch: SignHybrid is not supported for a backend Signer")
 	}
 	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain

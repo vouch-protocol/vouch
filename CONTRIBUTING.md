@@ -193,7 +193,7 @@ Types:
 ### Example Code Style
 
 ```python
-def verify_credential(
+def verify(
   credential: dict[str, Any] | str,
   public_key: Ed25519PublicKey | str,
 ) -> tuple[bool, Optional[CredentialPassport]]:
@@ -209,20 +209,6 @@ def verify_credential(
   """
   ...
 
-
-def verify_token(token: str, public_key: str) -> tuple[bool, Optional[Passport]]:
-  """
-  Verify a legacy v0.x Vouch-Token (JWS Compact). Retained for backward
-  compatibility during the deprecation window.
-
-  Args:
-    token: The JWS compact serialized token.
-    public_key: JWK JSON string of the public key.
-
-  Returns:
-    Tuple of (is_valid, Passport or None).
-  """
-  ...
 ```
 
 ## DCO Sign-Off

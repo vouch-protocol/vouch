@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use vouch_core::{
     credentials, data_integrity, delegation, hybrid, keys, multikey, pq, robotics_json as rjson,
-    status_list,
+    status_list, threshold_json,
 };
 
 // Clean C ABI (cbindgen generates vouch_core.h) for .NET and C/C++ consumers.
@@ -114,7 +114,7 @@ pub fn build_proof(
     Ok(data_integrity::build_proof(&parse(&credential_json)?, &seed, &opts)?.to_string())
 }
 
-pub fn sign_credential(
+pub fn sign(
     credential_json: String,
     seed: Vec<u8>,
     verification_method: String,
@@ -131,13 +131,13 @@ pub fn verify_proof(credential_json: String, public_key: Vec<u8>) -> Result<bool
     )?)
 }
 
-pub fn verify_credential(
+pub fn verify(
     credential_json: String,
     public_key: Vec<u8>,
     now_iso: String,
     clock_skew_seconds: i64,
 ) -> Result<VerifyResult, CoreError> {
-    let r = credentials::verify_credential(
+    let r = credentials::verify(
         &parse(&credential_json)?,
         &public_key,
         &now_iso,
@@ -185,6 +185,42 @@ pub fn build_delegation_link(
         parent_proof_value,
     };
     Ok(delegation::build_delegation_link(&input).to_string())
+}
+
+pub fn threshold_generate_key(min_signers: u16, max_signers: u16) -> Result<String, CoreError> {
+    Ok(threshold_json::generate_key(min_signers, max_signers)?)
+}
+
+pub fn threshold_commit(key_share_json: String) -> Result<String, CoreError> {
+    Ok(threshold_json::commit(&key_share_json)?)
+}
+
+pub fn threshold_sign_share(
+    message: Vec<u8>,
+    key_share_json: String,
+    nonces_b64: String,
+    commitments_json: String,
+) -> Result<String, CoreError> {
+    Ok(threshold_json::sign_share(
+        &message,
+        &key_share_json,
+        &nonces_b64,
+        &commitments_json,
+    )?)
+}
+
+pub fn threshold_aggregate(
+    message: Vec<u8>,
+    commitments_json: String,
+    shares_json: String,
+    group_public_key_json: String,
+) -> Result<Vec<u8>, CoreError> {
+    Ok(threshold_json::aggregate(
+        &message,
+        &commitments_json,
+        &shares_json,
+        &group_public_key_json,
+    )?)
 }
 
 pub fn generate_mldsa44() -> Result<MlDsaKeyPair, CoreError> {
@@ -780,6 +816,57 @@ pub fn robotics_migrate_to_pq(
         &mldsa_public,
         &created,
     )?)
+}
+pub fn robotics_build_embodiment(
+    agent_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_embodiment(&agent_seed, &params_json)?)
+}
+pub fn robotics_verify_embodiment(
+    credential_json: String,
+    agent_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_embodiment(
+        &credential_json,
+        &agent_public_key,
+    )?)
+}
+pub fn robotics_verify_continuity_chain(
+    params_json: String,
+    agent_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_continuity_chain(
+        &params_json,
+        &agent_public_key,
+    )?)
+}
+pub fn robotics_check_no_fork(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::check_no_fork(&params_json)?)
+}
+pub fn robotics_build_handoff(
+    receiver_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_handoff(&receiver_seed, &params_json)?)
+}
+pub fn robotics_verify_handoff(
+    credential_json: String,
+    receiver_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_handoff(
+        &credential_json,
+        &receiver_public_key,
+    )?)
+}
+pub fn robotics_verify_handoff_chain(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_handoff_chain(&params_json)?)
+}
+pub fn robotics_holder_at(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::holder_at(&params_json)?)
+}
+pub fn robotics_locate_condition_change(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::locate_condition_change(&params_json)?)
 }
 
 uniffi::include_scaffolding!("vouch_core");

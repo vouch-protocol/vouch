@@ -4,7 +4,7 @@ Cryptographically sign your AI agent's actions. Works with Claude Desktop, Curso
 
 > **v1.0 note.** The examples below use the legacy `Vouch-Token` HTTP
 > header form (JWS Compact). New deployments should prefer the VC +
-> Data Integrity path: `signer.sign_credential(intent={...})` returns a
+> Data Integrity path: `signer.sign(intent={...})` returns a
 > credential that travels in the request body with content-type
 > `application/vc+vouch` (the prior `application/vouch+credential+json`
 > form is retained as a transitional alias). See the

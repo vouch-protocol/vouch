@@ -58,9 +58,9 @@ public final class VouchSmoke {
                 + "\"issuer\":\"did:web:a\",\"validFrom\":\"2026-04-26T10:00:00Z\","
                 + "\"validUntil\":\"2026-04-26T10:05:00Z\",\"credentialSubject\":{\"id\":\"did:web:a\","
                 + "\"vouchVersion\":\"1.0\",\"intent\":{\"action\":\"read\",\"target\":\"t\",\"resource\":\"https://x/y\"}}}";
-        String signed = Vouch.signCredential(cred, seed, "did:web:a#key-1", "2026-04-26T10:00:00Z");
+        String signed = Vouch.sign(cred, seed, "did:web:a#key-1", "2026-04-26T10:00:00Z");
         ok("sign + verify proof", Vouch.verifyProof(signed, pub));
-        ok("verify within window", Vouch.verifyCredential(signed, pub, "2026-04-26T10:02:00Z", 30).contains("\"valid\":true"));
+        ok("verify within window", Vouch.verify(signed, pub, "2026-04-26T10:02:00Z", 30).contains("\"valid\":true"));
 
         // Cross-implementation: verify the shared vector and reproduce its proofValue.
         String vpath = args.length > 0 ? args[0]

@@ -160,6 +160,31 @@ been removed. See `integrations.md`.
   field; `verify_pq` verifies a hybrid proof, `is_pq` reports whether a credential
   is hybrid-signed, and `migrate_to_pq` re-signs a fielded robot's classical
   credential under PQ. See `robotics.md`.
+- "How does one AI agent run on one robot body today and a different body
+  tomorrow while staying the same accountable identity?" -> Cross-embodiment
+  identity continuity (`vouch.robotics.embodiment`): the agent, a mind holding its
+  own persistent Vouch identity, signs an `AgentEmbodimentCredential` binding
+  itself to a body's hardware-rooted identity and hardware root for a window, with
+  a `fromBody` link to the previous embodiment (`build_embodiment`,
+  `verify_embodiment`). `verify_continuity_chain` walks the linked chain to confirm
+  the same agent key persisted across bodies, re-binding to each body's hardware
+  root, and `check_no_fork` confirms the agent was never actively embodied in two
+  bodies at once. It is the inverse of the ownership custody chain: there one body
+  passes between owners, here one mind passes between bodies. Open layer only;
+  managed key custody and fleet migration are commercial. See `robotics.md`.
+- "How do I trace who physically held a task or object as it passed from a person
+  to a robot to another robot?" -> Physical custody handoff
+  (`vouch.robotics.custody`): each transfer is a `CustodyHandoffCredential` signed
+  by the receiver, the actor taking responsibility, recording that it accepted
+  custody from a releasing actor (`build_handoff`, `verify_handoff`). Linking each
+  handoff so each `toActor` becomes the next `fromActor` forms a chain
+  `verify_handoff_chain` walks to establish who held it at every hop, `holder_at`
+  returns who held it at a given time, and a condition attested at each handoff
+  lets `locate_condition_change` pin damage or loss to the responsible hop. It is
+  the physical counterpart of the ownership custody chain: there who owns a body
+  over its life, here who is holding a task or object right now as it moves. Open
+  layer only; managed logistics custody orchestration and fleet tracking are
+  commercial. See `robotics.md`.
 - "Can I verify a robot credential from .NET, Java, Swift, or C++?" -> Yes. The
   reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface,
   and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface
@@ -172,10 +197,10 @@ been removed. See `integrations.md`.
 
 If the user has connected the optional Actions integration, you can:
 
-- Call `signCredential` to sign a Vouch credential via the hosted agent
+- Call `sign` to sign a Vouch credential via the hosted agent
   (https://agent.vouch-protocol.com). The user's intent gets signed by
   the agent's key; the response includes the full credential.
-- Call `verifyCredential` to verify a credential against the hosted
+- Call `verify` to verify a credential against the hosted
   verifier.
 
 Before any sign action, summarize what you are about to sign and ask
