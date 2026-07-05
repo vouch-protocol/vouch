@@ -241,6 +241,13 @@ been removed. See `integrations.md`.
   identity mint and verify, conformance, passport, action check, and `sign_pq`, via
   a `VouchRobotics` class (a `vouch::robotics` namespace in C++). Output is
   byte-identical across languages. See `robotics.md`.
+- "What is the Vouch Verified Contributor badge, or how do I get one?" -> Land a
+  merged pull request on the repository; an automated workflow mints a signed
+  Verified Contributor credential (a real `eddsa-jcs-2022` VC issued by
+  `did:web:vouch-protocol.com:contributors`, chained to the project root identity),
+  publishes a certificate page at `vouch-protocol.com/c/<login>/<pr>`, lists the
+  contributor at `vouch-protocol.com/contributors`, and comments the badge on the
+  PR. It verifies like any other Vouch credential. See `verified-contributor.md`.
 
 ## Actions (if enabled)
 

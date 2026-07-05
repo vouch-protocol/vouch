@@ -1793,6 +1793,28 @@ Rule of thumb: if your auditor will ask about the sidecar, run the Go one. For e
   },
 
   // =====================================================================
+  // COMMUNITY AND CONTRIBUTING
+  // =====================================================================
+  {
+    id: 'community',
+    audience: 'Community & Contributing',
+    title: 'Contributing and the Verified Contributor badge',
+    items: [
+      {
+        q: 'How do I become a Vouch Verified Contributor?',
+        a: `Land a merged pull request on the [repository](https://github.com/vouch-protocol/vouch). When it merges, an automated workflow mints a signed Vouch Verified Contributor credential for you, publishes a certificate page at \`vouch-protocol.com/c/<your-handle>/<pr>\`, adds you to the [contributors page](https://vouch-protocol.com/contributors), and posts a comment on your pull request with the badge and the full credential.
+
+New to the project? Start with a [good first issue](https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). The badge is offered, never required.`,
+        helpLinks: [{ label: 'Become a Vouch Verified Contributor', href: '/help/#verified-contributor' }],
+      },
+      {
+        q: 'Is the contributor badge a real credential or an image?',
+        a: `It is a real Verifiable Credential, signed with the same \`eddsa-jcs-2022\` cryptosuite every Vouch SDK uses. It is issued by \`did:web:vouch-protocol.com:contributors\` and chained back to the project root identity \`did:web:vouch-protocol.com\`, so anyone can verify it with the Vouch verifier or an SDK. The subject is the author of the merged commits, so credit stays correct even when a maintainer relays a contribution for someone else.`,
+      },
+    ],
+  },
+
+  // =====================================================================
   // USING THIS SITE
   // =====================================================================
   {

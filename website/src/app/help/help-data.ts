@@ -2769,4 +2769,48 @@ Security boundary: the robot signs its wear state and derives the narrowed scope
       },
     ],
   },
+  {
+    id: 'community',
+    title: 'Community',
+    description: 'Contribute to the protocol and earn a signed Vouch Verified Contributor credential.',
+    articles: [
+      {
+        id: 'verified-contributor',
+        title: 'Become a Vouch Verified Contributor',
+        summary: 'Land a merged pull request and receive a real, signed Verified Contributor credential, published to a certificate page and the contributors list.',
+        body: `
+## What it is
+
+When you land a merged pull request on the [repository](https://github.com/vouch-protocol/vouch), an automated workflow mints a **Vouch Verified Contributor** credential for you. It is a real Verifiable Credential, not a decorative image: the project signs it with its own protocol.
+
+## What you receive
+
+- A certificate page at \`vouch-protocol.com/c/<your-handle>/<pr>\`.
+- A listing on the [contributors page](https://vouch-protocol.com/contributors).
+- A comment on your pull request with the badge, a copy-paste snippet, and the full credential inline.
+
+## The credential
+
+- Signed with the \`eddsa-jcs-2022\` cryptosuite, the same default format every Vouch SDK produces.
+- Issued by \`did:web:vouch-protocol.com:contributors\`, chained back to the project root identity \`did:web:vouch-protocol.com\`.
+- The subject is the author of the merged commits, so credit stays correct even when a maintainer relays a contribution for someone else.
+
+## Verify it
+
+Because it is a normal Vouch credential, anyone can verify it with the SDK or the hosted verifier:
+
+\`\`\`python
+from vouch import Verifier
+
+is_valid, passport = Verifier.verify_credential(credential, public_key=issuer_public_jwk)
+print(is_valid, passport.subject_did)
+\`\`\`
+
+## Getting started
+
+New to the project? Pick up a [good first issue](https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). The badge is offered, never required.
+`,
+      },
+    ],
+  },
 ];
