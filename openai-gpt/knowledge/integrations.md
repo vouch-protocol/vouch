@@ -71,6 +71,20 @@ tools = protect([search, send_email])
 autosign()  # patches langchain_core.tools.tool (falls back to langchain.tools.tool)
 ```
 
+## LangGraph
+
+```python
+from vouch.integrations.langgraph import protect, sign_node
+
+# LangGraph tools are LangChain tools: wrap the tools for a ToolNode or create_react_agent.
+tools = protect([search, send_email])
+
+# Sign each graph node so the whole graph carries a signed trail.
+@sign_node
+def plan(state):
+    ...
+```
+
 ## AutoGen
 
 AutoGen has no global tool decorator, but it registers tools through a
@@ -251,6 +265,16 @@ vouch-mcp
 
 The server exposes tools to the connected model to mint a credential, return the
 configured DID, and create a short-lived session token.
+
+## Goose
+
+Block's Goose loads its tools from MCP servers. Vouch ships one (vouch-mcp), so
+register it as a Goose extension.
+
+```bash
+pip install vouch-goose
+vouch-goose            # writes the extension into ~/.config/goose/config.yaml
+```
 
 ## Browser and mobile
 
