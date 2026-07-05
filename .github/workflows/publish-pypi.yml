@@ -28,7 +28,6 @@ jobs:
         include:
           - { name: vouch-protocol, dir: "." }
           - { name: vouch-api-client, dir: "sdks/clients/python" }
-          - { name: vouch-sdk, dir: "packages/sdk-py" }
           - { name: vouch-mcp, dir: "packages/vouch-mcp" }
           - { name: vouch-a2a, dir: "packages/vouch-a2a" }
           - { name: vouch-langgraph, dir: "packages/vouch-langgraph" }
