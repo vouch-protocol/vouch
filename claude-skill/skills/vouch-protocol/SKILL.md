@@ -365,6 +365,16 @@ C++, .NET, JVM, and Swift wrappers through a `VouchRobotics` class (a
 `vouch::robotics` namespace in C++), for verifying and integrating from those
 languages. See `reference/robotics.md`.
 
+### "What is the Vouch Verified Contributor badge, and how do I get one?"
+
+Land a merged pull request on the repository and an automated workflow mints you a
+signed Vouch Verified Contributor credential: a real `eddsa-jcs-2022` Verifiable
+Credential issued by `did:web:vouch-protocol.com:contributors` and chained to the
+project root identity `did:web:vouch-protocol.com`. It publishes a certificate page
+at `vouch-protocol.com/c/<login>/<pr>`, lists the contributor at
+`vouch-protocol.com/contributors`, and comments the badge on the PR. It verifies
+like any other Vouch credential. See `reference/verified-contributor.md`.
+
 ## Decision rules
 
 - **User is just signing one credential** -> Python signer, three lines.
@@ -397,6 +407,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/sidecar.md` - Identity Sidecar architecture and deployment
 - `reference/conformance.md` - Implementation conformance levels (L1-L3), the self-test runner, and the verified re-checkable badge
 - `reference/troubleshooting.md` - Common errors and fixes
+- `reference/verified-contributor.md` - The Vouch Verified Contributor credential earned on a merged PR, and how to verify it
 
 ## What this skill does NOT do
 
