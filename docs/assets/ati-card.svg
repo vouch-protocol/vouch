@@ -2,9 +2,9 @@
   <rect width="1200" height="630" fill="#FAF7EE"/>
   <rect x="0" y="0" width="14" height="630" fill="#7C2D3A"/>
   <text x="80" y="120" font-family="'DejaVu Sans Mono', 'Courier New', monospace" font-size="26" letter-spacing="6" fill="#7C2D3A">THE AGENT TRUST INDEX</text>
-  <text x="76" y="320" font-family="Georgia, 'Times New Roman', serif" font-size="200" font-weight="700" fill="#0F172A">98.7%</text>
+  <text x="76" y="320" font-family="Georgia, 'Times New Roman', serif" font-size="200" font-weight="700" fill="#0F172A">98.8%</text>
   <text x="80" y="404" font-family="Georgia, 'Times New Roman', serif" font-size="52" fill="#0F172A">of AI agents cannot prove who they are.</text>
-  <text x="80" y="470" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#334155" font-style="italic">Only 177 of 14,155 public agents can.</text>
-  <text x="80" y="566" font-family="'DejaVu Sans Mono', 'Courier New', monospace" font-size="24" letter-spacing="2" fill="#64748B">AS OF 29 JUNE 2026  ·  PUBLIC MCP REGISTRY</text>
+  <text x="80" y="470" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#334155" font-style="italic">Only 181 of 15,183 public agents can.</text>
+  <text x="80" y="566" font-family="'DejaVu Sans Mono', 'Courier New', monospace" font-size="24" letter-spacing="2" fill="#64748B">AS OF 6 JULY 2026  ·  PUBLIC MCP REGISTRY</text>
   <text x="1120" y="566" text-anchor="end" font-family="'DejaVu Sans Mono', 'Courier New', monospace" font-size="26" letter-spacing="2" fill="#7C2D3A">VOUCH-PROTOCOL.COM</text>
 </svg>

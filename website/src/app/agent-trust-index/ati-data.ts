@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 14155,
-  "verifiable": 177,
-  "cannot": 13978,
+  "total": 15183,
+  "verifiable": 181,
+  "cannot": 15002,
   "gradeA": 77,
-  "pctVerifiable": 1.3,
-  "pctCannot": 98.7,
+  "pctVerifiable": 1.2,
+  "pctCannot": 98.8,
   "pctCard": 0.8,
-  "pctRev": 0.6,
+  "pctRev": 0.5,
   "pctPq": 0.0,
-  "cardCount": 119,
-  "revCount": 79,
+  "cardCount": 129,
+  "revCount": 81,
   "pqCount": 0,
-  "generated": "29 June 2026"
+  "generated": "6 July 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -679,6 +679,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.ai2fin/ai2fin-tax-mcp",
+    "domains": "taxmcp.ai2fin.com",
+    "method": "did:web",
+    "did": "did:web:taxmcp.ai2fin.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.anots/directory",
     "domains": "api.anots.com",
     "method": "did:web",
@@ -743,6 +751,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.dxbdata/dxb-data",
+    "domains": "dxbdata.io",
+    "method": "did:web",
+    "did": "did:web:dxbdata.io"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.eventify/mcp-server",
     "domains": "amcp.eventify.io",
     "method": "did:web",
@@ -787,6 +803,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.waysway.com",
     "method": "did:web",
     "did": "did:web:api.waysway.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.astuto-ai/onelens-mcp",
+    "domains": "mcp.onelens.cloud",
+    "method": "did:web",
+    "did": "did:web:mcp.onelens.cloud"
   },
   {
     "grade": "C",
@@ -1435,5 +1459,13 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "mcp.0.space",
     "method": "did:web",
     "did": "did:web:mcp.0.space"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "tech.tessa/tessa-mcp-server",
+    "domains": "aiagent.tessa.tech",
+    "method": "did:web",
+    "did": "did:web:aiagent.tessa.tech"
   }
 ];
