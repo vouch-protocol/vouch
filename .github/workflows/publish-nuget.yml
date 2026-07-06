@@ -36,7 +36,7 @@ jobs:
         working-directory: sdks/dotnet/VouchCore
         shell: bash
         run: for rid in ${{ matrix.rids }}; do bash build-native.sh "$rid"; done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: native-${{ matrix.os }}
           path: sdks/dotnet/VouchCore/runtimes
