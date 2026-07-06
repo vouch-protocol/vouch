@@ -293,6 +293,39 @@ export default function ConformancePage() {
                 </section>
 
                 <section className="mt-12 border-t border-rule pt-12">
+                    <p className="eyebrow text-burgundy mb-2">Coming soon</p>
+                    <h2 className="font-serif text-[1.5rem] font-semibold mb-3">Test your implementation</h2>
+                    <p className="text-ink leading-relaxed max-w-prose mb-6">
+                        Run the conformance test in your own CI with a GitHub Action. It asks Vouch for a fresh
+                        set of challenges, answers them with your implementation, and submits the transcript.
+                        Vouch re-checks every response server-side, so the result is real and bound to your exact
+                        repo and commit, with no self-declaration.
+                    </p>
+                    <pre className="bg-ink text-parchment font-mono text-[0.78rem] leading-relaxed p-5 overflow-x-auto max-w-3xl">{`# .github/workflows/conformance.yml
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: vouch-protocol/vouch/conformance-action@main
+        id: vouch
+      - run: echo "Level \${{ steps.vouch.outputs.level }} - \${{ steps.vouch.outputs.badge_url }}"`}</pre>
+                    <div className="grid md:grid-cols-3 gap-6 mt-8 max-w-3xl">
+                        <div>
+                            <p className="eyebrow-faint mb-2">i.</p>
+                            <p className="text-ink-soft text-[0.95rem] leading-relaxed">Add the Action to your CI. It installs your implementation and requests a fresh challenge set.</p>
+                        </div>
+                        <div>
+                            <p className="eyebrow-faint mb-2">ii.</p>
+                            <p className="text-ink-soft text-[0.95rem] leading-relaxed">Your implementation answers the challenges. Vouch re-checks each one with the canonical core, so a pass cannot be faked.</p>
+                        </div>
+                        <div>
+                            <p className="eyebrow-faint mb-2">iii.</p>
+                            <p className="text-ink-soft text-[0.95rem] leading-relaxed">You get your level, L1 to L3, and a signed, re-checkable badge, exposed as Action outputs.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mt-12 border-t border-rule pt-12">
                     <p className="eyebrow text-burgundy mb-2">Also coming</p>
                     <h2 className="font-serif text-[1.5rem] font-semibold mb-3">Robotics Conformant, a profile of its own</h2>
                     <p className="text-ink leading-relaxed max-w-prose mb-6">
