@@ -24,6 +24,13 @@ public static class VouchRobotics
     [DllImport(Lib)] private static extern IntPtr vouch_robotics_verify_conformance_attestation([MarshalAs(UnmanagedType.LPUTF8Str)] string credentialJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string publicB64, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_robotics_sign_pq([MarshalAs(UnmanagedType.LPUTF8Str)] string credentialJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string ed25519SeedB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string mldsaSecretB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string mldsaPublicB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string createdIso, out IntPtr err);
     [DllImport(Lib)] private static extern IntPtr vouch_robotics_verify_robot_credential([MarshalAs(UnmanagedType.LPUTF8Str)] string credentialJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string ed25519PublicB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string? mldsa44PublicB64, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_robotics_authorize_access([MarshalAs(UnmanagedType.LPUTF8Str)] string paramsJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string operatorPublicB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string robotPublicB64, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_robotics_verify_fused_attestation([MarshalAs(UnmanagedType.LPUTF8Str)] string credentialJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string publicB64, [MarshalAs(UnmanagedType.LPUTF8Str)] string? fusedOutputMb, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_robotics_verify_wear_attestation([MarshalAs(UnmanagedType.LPUTF8Str)] string credentialJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string publicB64, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_robotics_attenuate_for_wear([MarshalAs(UnmanagedType.LPUTF8Str)] string paramsJson, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_robotics_verify_consent_evidence([MarshalAs(UnmanagedType.LPUTF8Str)] string paramsJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string robotPublicB64, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_robotics_verify_continuity_chain([MarshalAs(UnmanagedType.LPUTF8Str)] string paramsJson, [MarshalAs(UnmanagedType.LPUTF8Str)] string agentPublicB64, out IntPtr err);
+    [DllImport(Lib)] private static extern IntPtr vouch_robotics_verify_handoff_chain([MarshalAs(UnmanagedType.LPUTF8Str)] string paramsJson, out IntPtr err);
 
     private static string Take(IntPtr result, IntPtr err)
     {
@@ -75,4 +82,32 @@ public static class VouchRobotics
     /// <summary>Verify a robot credential carrying a classical or a hybrid proof, auto-detected. Pass the ML-DSA-44 public key (base64) for a hybrid credential, or null for a classical one.</summary>
     public static bool VerifyRobotCredential(string credentialJson, string ed25519PublicB64, string? mldsa44PublicB64 = null)
         => AsBool(Take(vouch_robotics_verify_robot_credential(credentialJson, ed25519PublicB64, mldsa44PublicB64, out var err), err));
+
+    /// <summary>Authorize an infrastructure access request offline against an operator grant. paramsJson carries {grant, request, now?}. Pass the operator and robot public keys (base64). Returns JSON {ok, reasons}.</summary>
+    public static string AuthorizeAccess(string paramsJson, string operatorPublicB64, string robotPublicB64)
+        => Take(vouch_robotics_authorize_access(paramsJson, operatorPublicB64, robotPublicB64, out var err), err);
+
+    /// <summary>Verify a fused-sensor provenance attestation. Pass the robot public key (base64) and, optionally, the raw fused output as multibase (or null) to reproduce its hash. Returns the credentialSubject JSON or "null".</summary>
+    public static string VerifyFusedAttestation(string credentialJson, string publicB64, string? fusedOutputMb = null)
+        => Take(vouch_robotics_verify_fused_attestation(credentialJson, publicB64, fusedOutputMb, out var err), err);
+
+    /// <summary>Verify a robot wear attestation. Pass the robot public key (base64). Returns the credentialSubject JSON or "null".</summary>
+    public static string VerifyWearAttestation(string credentialJson, string publicB64)
+        => Take(vouch_robotics_verify_wear_attestation(credentialJson, publicB64, out var err), err);
+
+    /// <summary>Derive a physical capability scope narrowed for a wear level. paramsJson carries {scope, wearLevel}. Returns the narrowed scope JSON.</summary>
+    public static string AttenuateForWear(string paramsJson)
+        => Take(vouch_robotics_attenuate_for_wear(paramsJson, out var err), err);
+
+    /// <summary>Verify bystander-consent evidence. paramsJson carries {evidence, captureMb?, consentTokens?, bystanderKeys?, now?}. Pass the robot public key (base64). Returns the credentialSubject JSON or "null".</summary>
+    public static string VerifyConsentEvidence(string paramsJson, string robotPublicB64)
+        => Take(vouch_robotics_verify_consent_evidence(paramsJson, robotPublicB64, out var err), err);
+
+    /// <summary>Verify a cross-embodiment continuity chain. paramsJson carries {embodiments, originBody?}. Pass the agent public key (base64). Returns JSON {ok, currentBody}.</summary>
+    public static string VerifyContinuityChain(string paramsJson, string agentPublicB64)
+        => Take(vouch_robotics_verify_continuity_chain(paramsJson, agentPublicB64, out var err), err);
+
+    /// <summary>Verify a physical custody handoff chain. paramsJson carries {handoffs, publicKeys, originActor?} where publicKeys maps a receiver DID to its base64url-no-pad Ed25519 public key. Returns JSON {ok, currentHolder}.</summary>
+    public static string VerifyHandoffChain(string paramsJson)
+        => Take(vouch_robotics_verify_handoff_chain(paramsJson, out var err), err);
 }

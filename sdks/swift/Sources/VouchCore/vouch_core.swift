@@ -1087,11 +1087,34 @@ public func roboticsAttachStatus(credentialJson: String, signerSeed: Data, param
     )
 })
 }
+public func roboticsAttenuateForWear(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_attenuate_for_wear(
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
 public func roboticsAttenuates(parentJson: String, childJson: String)throws  -> Bool {
     return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_attenuates(
         FfiConverterString.lower(parentJson),
         FfiConverterString.lower(childJson),$0
+    )
+})
+}
+public func roboticsAttenuatesGrant(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_attenuates_grant(
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsAuthorizeAccess(paramsJson: String, operatorPublicKey: Data, robotPublicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_authorize_access(
+        FfiConverterString.lower(paramsJson),
+        FfiConverterData.lower(operatorPublicKey),
+        FfiConverterData.lower(robotPublicKey),$0
     )
 })
 }
@@ -1126,6 +1149,22 @@ public func roboticsBuildAccept(signerSeed: Data, helloJson: String, helloPublic
     )
 })
 }
+public func roboticsBuildAccessGrant(operatorSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_access_grant(
+        FfiConverterData.lower(operatorSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsBuildAccessRequest(robotSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_access_request(
+        FfiConverterData.lower(robotSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
 public func roboticsBuildActionApproval(approverSeed: Data, paramsJson: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_build_action_approval(
@@ -1152,6 +1191,22 @@ public func roboticsBuildConformanceAttestation(signerSeed: Data, paramsJson: St
     )
 })
 }
+public func roboticsBuildConsentEvidence(robotSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_consent_evidence(
+        FfiConverterData.lower(robotSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsBuildConsentToken(bystanderSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_consent_token(
+        FfiConverterData.lower(bystanderSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
 public func roboticsBuildDecommission(signerSeed: Data, paramsJson: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_build_decommission(
@@ -1164,6 +1219,22 @@ public func roboticsBuildEmbodiment(agentSeed: Data, paramsJson: String)throws  
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_build_embodiment(
         FfiConverterData.lower(agentSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsBuildFusedAttestation(robotSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_fused_attestation(
+        FfiConverterData.lower(robotSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsBuildHandoff(receiverSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_handoff(
+        FfiConverterData.lower(receiverSeed),
         FfiConverterString.lower(paramsJson),$0
     )
 })
@@ -1266,6 +1337,14 @@ public func roboticsBuildStatusEntry(statusListCredential: String, statusListInd
     )
 })
 }
+public func roboticsBuildWearAttestation(robotSeed: Data, paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_build_wear_attestation(
+        FfiConverterData.lower(robotSeed),
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
 public func roboticsCheckAction(scopeJson: String, actionJson: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_check_action(
@@ -1319,9 +1398,23 @@ public func roboticsEncodePassport(passportJson: String)throws  -> String {
     )
 })
 }
+public func roboticsFusionInputsDigest(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_fusion_inputs_digest(
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
 public func roboticsGenesisPrevHash() -> String {
     return try!  FfiConverterString.lift(try! rustCall() {
     uniffi_vouch_core_uniffi_fn_func_robotics_genesis_prev_hash($0
+    )
+})
+}
+public func roboticsHashCapture(capture: Data) -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_vouch_core_uniffi_fn_func_robotics_hash_capture(
+        FfiConverterData.lower(capture),$0
     )
 })
 }
@@ -1329,6 +1422,20 @@ public func roboticsHashFrame(frame: Data) -> String {
     return try!  FfiConverterString.lift(try! rustCall() {
     uniffi_vouch_core_uniffi_fn_func_robotics_hash_frame(
         FfiConverterData.lower(frame),$0
+    )
+})
+}
+public func roboticsHashFusedOutput(output: Data) -> String {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_vouch_core_uniffi_fn_func_robotics_hash_fused_output(
+        FfiConverterData.lower(output),$0
+    )
+})
+}
+public func roboticsHolderAt(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_holder_at(
+        FfiConverterString.lower(paramsJson),$0
     )
 })
 }
@@ -1352,6 +1459,13 @@ public func roboticsIsPq(credentialJson: String)throws  -> Bool {
 public func roboticsLeasePermits(paramsJson: String)throws  -> Bool {
     return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_lease_permits(
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsLocateConditionChange(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_locate_condition_change(
         FfiConverterString.lower(paramsJson),$0
     )
 })
@@ -1439,6 +1553,14 @@ public func roboticsVerifyAccept(acceptJson: String, acceptPublicKey: Data, expe
     )
 })
 }
+public func roboticsVerifyAccessGrant(credentialJson: String, operatorPublicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_access_grant(
+        FfiConverterString.lower(credentialJson),
+        FfiConverterData.lower(operatorPublicKey),$0
+    )
+})
+}
 public func roboticsVerifyActionAuthorization(paramsJson: String)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_verify_action_authorization(
@@ -1472,6 +1594,22 @@ public func roboticsVerifyConformanceAttestation(credentialJson: String, publicK
     )
 })
 }
+public func roboticsVerifyConsentEvidence(paramsJson: String, robotPublicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_consent_evidence(
+        FfiConverterString.lower(paramsJson),
+        FfiConverterData.lower(robotPublicKey),$0
+    )
+})
+}
+public func roboticsVerifyConsentToken(paramsJson: String, bystanderPublicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_consent_token(
+        FfiConverterString.lower(paramsJson),
+        FfiConverterData.lower(bystanderPublicKey),$0
+    )
+})
+}
 public func roboticsVerifyContinuityChain(paramsJson: String, agentPublicKey: Data)throws  -> String {
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_verify_continuity_chain(
@@ -1501,6 +1639,37 @@ public func roboticsVerifyEmbodiment(credentialJson: String, agentPublicKey: Dat
     uniffi_vouch_core_uniffi_fn_func_robotics_verify_embodiment(
         FfiConverterString.lower(credentialJson),
         FfiConverterData.lower(agentPublicKey),$0
+    )
+})
+}
+public func roboticsVerifyFusedAttestation(credentialJson: String, publicKey: Data, fusedOutputMb: String?)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_fused_attestation(
+        FfiConverterString.lower(credentialJson),
+        FfiConverterData.lower(publicKey),
+        FfiConverterOptionString.lower(fusedOutputMb),$0
+    )
+})
+}
+public func roboticsVerifyFusionInputs(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_fusion_inputs(
+        FfiConverterString.lower(paramsJson),$0
+    )
+})
+}
+public func roboticsVerifyHandoff(credentialJson: String, receiverPublicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_handoff(
+        FfiConverterString.lower(credentialJson),
+        FfiConverterData.lower(receiverPublicKey),$0
+    )
+})
+}
+public func roboticsVerifyHandoffChain(paramsJson: String)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_handoff_chain(
+        FfiConverterString.lower(paramsJson),$0
     )
 })
 }
@@ -1636,6 +1805,22 @@ public func roboticsVerifySafetyRecord(credentialJson: String, publicKey: Data)t
     return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
     uniffi_vouch_core_uniffi_fn_func_robotics_verify_safety_record(
         FfiConverterString.lower(credentialJson),
+        FfiConverterData.lower(publicKey),$0
+    )
+})
+}
+public func roboticsVerifyWearAttestation(credentialJson: String, publicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_wear_attestation(
+        FfiConverterString.lower(credentialJson),
+        FfiConverterData.lower(publicKey),$0
+    )
+})
+}
+public func roboticsVerifyWearChain(paramsJson: String, publicKey: Data)throws  -> String {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreError.lift) {
+    uniffi_vouch_core_uniffi_fn_func_robotics_verify_wear_chain(
+        FfiConverterString.lower(paramsJson),
         FfiConverterData.lower(publicKey),$0
     )
 })
@@ -1827,7 +2012,16 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_attach_status() != 59495) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_attenuate_for_wear() != 51601) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_attenuates() != 30616) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_attenuates_grant() != 55724) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_authorize_access() != 24764) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_blackbox_append() != 6780) {
@@ -1839,6 +2033,12 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_accept() != 24792) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_access_grant() != 8154) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_access_request() != 57897) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_action_approval() != 38269) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1848,10 +2048,22 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_conformance_attestation() != 44855) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_consent_evidence() != 51529) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_consent_token() != 23095) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_decommission() != 34705) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_embodiment() != 40638) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_fused_attestation() != 30349) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_handoff() != 16752) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_heartbeat() != 17046) {
@@ -1890,6 +2102,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_status_entry() != 13915) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_build_wear_attestation() != 34144) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_check_action() != 30585) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1911,10 +2126,22 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_encode_passport() != 61075) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_fusion_inputs_digest() != 36123) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_genesis_prev_hash() != 14480) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_hash_capture() != 1965) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_hash_frame() != 64256) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_hash_fused_output() != 44956) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_holder_at() != 22350) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_is_live() != 21644) {
@@ -1924,6 +2151,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_lease_permits() != 32712) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_locate_condition_change() != 61694) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_migrate_to_pq() != 42474) {
@@ -1956,6 +2186,9 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_accept() != 18861) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_access_grant() != 16176) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_action_authorization() != 24255) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1968,6 +2201,12 @@ private var initializationResult: InitializationResult = {
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_conformance_attestation() != 13223) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_consent_evidence() != 14572) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_consent_token() != 38338) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_continuity_chain() != 16539) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1978,6 +2217,18 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_embodiment() != 653) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_fused_attestation() != 1445) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_fusion_inputs() != 3386) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_handoff() != 21082) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_handoff_chain() != 55486) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_heartbeat() != 58554) {
@@ -2026,6 +2277,12 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_safety_record() != 3427) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_wear_attestation() != 55346) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_vouch_core_uniffi_checksum_func_robotics_verify_wear_chain() != 9411) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_vouch_core_uniffi_checksum_func_sign() != 119) {

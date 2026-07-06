@@ -394,6 +394,78 @@ inline bool verify_robot_credential(const std::string& credential_json,
   return result == "true";
 }
 
+// Authorize an infrastructure access request offline against an operator grant.
+// params_json carries {grant, request, now?}. Pass the operator and robot public
+// keys (base64). Returns the authorize result JSON {ok, reasons}.
+inline std::string authorize_access(const std::string& params_json,
+                                    const std::string& operator_public_b64,
+                                    const std::string& robot_public_b64) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_authorize_access(params_json.c_str(), operator_public_b64.c_str(),
+                                      robot_public_b64.c_str(), &err),
+      err);
+}
+
+// Verify a fused-sensor provenance attestation. Pass the robot public key
+// (base64) and, optionally, the raw fused output as multibase to reproduce its
+// hash (leave empty to skip that check). Returns the subject JSON or "null".
+inline std::string verify_fused_attestation(const std::string& credential_json,
+                                            const std::string& public_b64,
+                                            const std::string& fused_output_mb = "") {
+  char* err = nullptr;
+  const char* fused = fused_output_mb.empty() ? nullptr : fused_output_mb.c_str();
+  return detail::take(
+      vouch_robotics_verify_fused_attestation(credential_json.c_str(), public_b64.c_str(),
+                                              fused, &err),
+      err);
+}
+
+// Verify a robot wear attestation. Pass the robot public key (base64). Returns
+// the subject JSON or "null".
+inline std::string verify_wear_attestation(const std::string& credential_json,
+                                           const std::string& public_b64) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_verify_wear_attestation(credential_json.c_str(), public_b64.c_str(), &err),
+      err);
+}
+
+// Derive a physical capability scope narrowed for a wear level. params_json
+// carries {scope, wearLevel}. Returns the narrowed scope JSON.
+inline std::string attenuate_for_wear(const std::string& params_json) {
+  char* err = nullptr;
+  return detail::take(vouch_robotics_attenuate_for_wear(params_json.c_str(), &err), err);
+}
+
+// Verify bystander-consent evidence. params_json carries {evidence, captureMb?,
+// consentTokens?, bystanderKeys?, now?}. Pass the robot public key (base64).
+// Returns the subject JSON or "null".
+inline std::string verify_consent_evidence(const std::string& params_json,
+                                           const std::string& robot_public_b64) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_verify_consent_evidence(params_json.c_str(), robot_public_b64.c_str(), &err),
+      err);
+}
+
+// Verify a cross-embodiment continuity chain. params_json carries the chain and
+// options. Pass the agent public key (base64). Returns the result JSON.
+inline std::string verify_continuity_chain(const std::string& params_json,
+                                           const std::string& agent_public_b64) {
+  char* err = nullptr;
+  return detail::take(
+      vouch_robotics_verify_continuity_chain(params_json.c_str(), agent_public_b64.c_str(), &err),
+      err);
+}
+
+// Verify a physical custody handoff chain. params_json carries the chain, the
+// actor keys, and options. Returns the result JSON.
+inline std::string verify_handoff_chain(const std::string& params_json) {
+  char* err = nullptr;
+  return detail::take(vouch_robotics_verify_handoff_chain(params_json.c_str(), &err), err);
+}
+
 }  // namespace robotics
 
 }  // namespace vouch

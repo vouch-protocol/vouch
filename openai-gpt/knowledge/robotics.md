@@ -1234,6 +1234,14 @@ verifies and integrates with:
 - `verify_passport` for an offline passport scan.
 - `check_action` to enforce a physical capability scope.
 - `sign_pq` to attach a hybrid post-quantum proof.
+- `authorize_access` to decide an infrastructure access request offline against an
+  operator grant.
+- `verify_fused_attestation` for fused-sensor provenance, and
+  `verify_continuity_chain` for cross-embodiment identity continuity.
+- `verify_wear_attestation` with `attenuate_for_wear` for wear and the narrowed
+  capability scope.
+- `verify_consent_evidence` for bystander-consent evidence.
+- `verify_handoff_chain` for a physical custody chain.
 
 Output is byte-identical to the reference SDKs, so a robot credential produced in
 one language verifies in every other. The producer-side operations (handshakes,

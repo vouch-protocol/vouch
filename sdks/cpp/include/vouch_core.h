@@ -223,7 +223,7 @@ char *vouch_robotics_check_conformance(const char *credentials_json,
                                        char **err_out);
 
 /**
- * Sign a point-in-time conformance attestation over a report. 
+ * Sign a point-in-time conformance attestation over a report.
  * carries issuerDid/robotDid/report; returns the signed credential JSON.
  */
 char *vouch_robotics_build_conformance_attestation(const char *signer_seed_b64,
@@ -258,6 +258,63 @@ char *vouch_robotics_verify_robot_credential(const char *credential_json,
                                              const char *ed25519_public_b64,
                                              const char *mldsa44_public_b64,
                                              char **err_out);
+
+/**
+ * Authorize an infrastructure access request offline against an operator grant.
+ * params_json carries {grant, request, now?}. Pass the operator and robot public
+ * keys (base64). Returns the authorize result JSON {ok, reasons}.
+ */
+char *vouch_robotics_authorize_access(const char *params_json,
+                                      const char *operator_public_b64,
+                                      const char *robot_public_b64,
+                                      char **err_out);
+
+/**
+ * Verify a fused-sensor provenance attestation. Pass the robot public key
+ * (base64) and, optionally, the raw fused output as multibase (or NULL) to
+ * reproduce its hash. Returns the subject JSON or "null".
+ */
+char *vouch_robotics_verify_fused_attestation(const char *credential_json,
+                                              const char *public_b64,
+                                              const char *fused_output_mb,
+                                              char **err_out);
+
+/**
+ * Verify a robot wear attestation. Pass the robot public key (base64). Returns
+ * the subject JSON or "null".
+ */
+char *vouch_robotics_verify_wear_attestation(const char *credential_json,
+                                             const char *public_b64,
+                                             char **err_out);
+
+/**
+ * Derive a physical capability scope narrowed for a wear level. params_json
+ * carries {scope, wearLevel}. Returns the narrowed scope JSON.
+ */
+char *vouch_robotics_attenuate_for_wear(const char *params_json, char **err_out);
+
+/**
+ * Verify bystander-consent evidence. params_json carries {evidence, capture?,
+ * consentTokens?, bystanderKeys?, now?}. Pass the robot public key (base64).
+ * Returns the subject JSON or "null".
+ */
+char *vouch_robotics_verify_consent_evidence(const char *params_json,
+                                             const char *robot_public_b64,
+                                             char **err_out);
+
+/**
+ * Verify a cross-embodiment continuity chain. params_json carries the chain and
+ * options. Pass the agent public key (base64). Returns the result JSON.
+ */
+char *vouch_robotics_verify_continuity_chain(const char *params_json,
+                                             const char *agent_public_b64,
+                                             char **err_out);
+
+/**
+ * Verify a physical custody handoff chain. params_json carries the chain, the
+ * actor keys, and options. Returns the result JSON.
+ */
+char *vouch_robotics_verify_handoff_chain(const char *params_json, char **err_out);
 
 #ifdef __cplusplus
 }  // extern "C"
