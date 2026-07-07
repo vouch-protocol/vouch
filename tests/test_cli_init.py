@@ -6,12 +6,37 @@ prompting, persist it to the keystore, and print the one-line wiring hint - so a
 developer goes from nothing to "every tool call is signed" in a single command.
 """
 
+import subprocess
+import sys
 import types
 
 import pytest
 
 from vouch import cli
 from vouch.keys import KeyManager
+
+
+def test_cli_help_lists_top_level_and_init_options():
+    root = subprocess.run(
+        [sys.executable, "-m", "vouch.cli", "--help"],
+        capture_output=True,
+        text=True,
+    )
+    assert root.returncode == 0
+    assert "Vouch Protocol CLI" in root.stdout
+    for command in ["init", "sign", "verify", "git", "media", "scan"]:
+        assert command in root.stdout
+
+    init = subprocess.run(
+        [sys.executable, "-m", "vouch.cli", "init", "--help"],
+        capture_output=True,
+        text=True,
+    )
+    assert init.returncode == 0
+    assert "usage: vouch init" in init.stdout
+    assert "--domain" in init.stdout
+    assert "--env" in init.stdout
+    assert "--yes" in init.stdout
 
 
 @pytest.fixture
