@@ -38,5 +38,10 @@
     "login": "ahfoysal",
     "pr": 316,
     "title": "docs: list all runnable examples"
+  },
+  {
+    "login": "ahfoysal",
+    "pr": 320,
+    "title": "test: add CLI help smoke coverage"
   }
 ]
