@@ -454,6 +454,29 @@ export type {
   StatusListStateDict,
 } from './status-list';
 
+// Root of Trust for Machine Identity (Specification §18): Vouch Protocol as the
+// trust anchor for AI agent and robot identity, byte-identical with the Python
+// module.
+export {
+  ROOT_OF_TRUST_TYPE,
+  RECOGNIZED_ISSUER_TYPE,
+  AGENT_IDENTITY_TYPE,
+  ACTION_ISSUE_AGENT_IDENTITY,
+  ACTION_ISSUE_ROBOT_IDENTITY,
+  buildRootOfTrust,
+  buildRecognizedIssuer,
+  buildAgentIdentity,
+  verifyIdentityChain,
+  registerRecognizedIssuer,
+} from './root-of-trust';
+export type {
+  IdentityChainResult,
+  BuildRootOfTrustOptions,
+  BuildRecognizedIssuerOptions,
+  BuildAgentIdentityOptions,
+  VerifyIdentityChainOptions,
+} from './root-of-trust';
+
 // ---------------------------------------------------------------------------
 // Daemon Client
 // ---------------------------------------------------------------------------

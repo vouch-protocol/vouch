@@ -221,12 +221,13 @@ export class Signer {
    * step of `sign`. Returns the credential with its `proof` set.
    */
   async attachProof(
-    credential: Record<string, unknown>
+    credential: Record<string, unknown>,
+    opts?: { created?: Date }
   ): Promise<Record<string, unknown>> {
-    const privateKey = await this.rawPrivateKeyPromise;
+    const signOpts = await this.proofSignOptions();
     const proof = buildProof(credential, {
-      privateKey,
-      verificationMethod: this.verificationMethodId(),
+      ...signOpts,
+      created: opts?.created,
     });
     return { ...credential, proof };
   }
