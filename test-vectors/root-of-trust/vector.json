@@ -1,10 +1,13 @@
 {
-  "description": "Vouch Protocol Root of Trust interop vector. Built from fixed Ed25519 seeds and a fixed timestamp. Every SDK must reproduce identical proofValues and verify the chain (agent identity anchored to the root).",
+  "description": "Vouch Protocol Root of Trust interop vector. Built from fixed Ed25519 seeds and a fixed timestamp. Every SDK must reproduce identical proofValues and verify the chain (agent identity anchored to the root). It also includes a robot-identity binding: a recognized manufacturer issues an authority robot identity for a hardware-rooted robot, anchored to the same root, which every SDK verifies with verifyRobotIdentityChain confirming both recognized-manufacturer provenance and hardware-rooting.",
   "trustedRoot": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
   "seeds": {
     "root": "0x01 x32",
     "issuer": "0x02 x32",
-    "agent": "0x03 x32"
+    "agent": "0x03 x32",
+    "manufacturer": "0x04 x32",
+    "robot": "0x05 x32",
+    "hardwareRoot": "0x06 x32"
   },
   "rootOfTrust": {
     "@context": [
@@ -98,9 +101,117 @@
       "proofValue": "z4L1zia38bYfefbR3Jmg2XjTLqDksGAgKjN4JyntsEju2WnfShMcvRuPW3wuTfKQmZ2h8kBsrq8ARB6qHrxJoLfuh"
     }
   },
+  "robotRecognizedIssuer": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:44444444-4444-4444-4444-444444444444",
+    "type": [
+      "VerifiableCredential",
+      "RecognizedIssuerCredential"
+    ],
+    "issuer": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "validUntil": "2125-12-08T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:key:z6Mkt6316e2PN3mZdB6N9CrzomJYUd1s5yBZi1XYHmwT9TUP",
+      "recognizedActions": [
+        "issueRobotIdentity"
+      ],
+      "recognizedIn": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX"
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-01-01T00:00:00Z",
+      "verificationMethod": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z2a2UhJ9W77mcBzXiDTBgVTLsTsNcyL63TiARfQrPzPbPftagwGdtggbVfF8MhrPZXhexesEjjhm7GQAdom82ujaH"
+    }
+  },
+  "robotHardwareCredential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "RobotIdentityCredential"
+    ],
+    "issuer": "did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2",
+      "make": "Acme Robotics",
+      "model": "AR-7",
+      "serial": "SN-000123",
+      "hardwareRoot": {
+        "kind": "TPM",
+        "publicKeyMultibase": "z6Mkon22vwz9JoNpGDxCrGZRgeNFTdRTwXYYN3fvAhA3K19x",
+        "attestation": "uCV-7C3LZ1kPBs2tWGa_dr3E9uWQe32ehOVSq-xggfZaa90sY4a5stsWU2_COSYZGb6u7A7EmNvgXs1muqr3nCg"
+      },
+      "lifecycle": [
+        {
+          "event": "commissioned",
+          "timestamp": "2026-01-01T00:00:00Z"
+        }
+      ]
+    },
+    "validUntil": "2125-12-08T00:00:00Z",
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-01-01T00:00:00Z",
+      "verificationMethod": "did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z4g543y6WHMLRYgYMTg9fajJsDKjyqSmquk5fLYqMkaR6LcRFAH8rknXHhCqBp8uBNoznG5QLdHrGVvgK6mz6cQpz"
+    }
+  },
+  "robotAuthorityIdentity": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:55555555-5555-5555-5555-555555555555",
+    "type": [
+      "VerifiableCredential",
+      "AgentIdentityCredential"
+    ],
+    "issuer": "did:key:z6Mkt6316e2PN3mZdB6N9CrzomJYUd1s5yBZi1XYHmwT9TUP",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "validUntil": "2125-12-08T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2",
+      "identity": {
+        "make": "Acme Robotics",
+        "model": "AR-7",
+        "serial": "SN-000123",
+        "kind": "robot",
+        "hardwareKey": "z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2"
+      }
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-01-01T00:00:00Z",
+      "verificationMethod": "did:key:z6Mkt6316e2PN3mZdB6N9CrzomJYUd1s5yBZi1XYHmwT9TUP#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z4uxgZy346TvNg3mL8swG2xRj2MGAHyLEZB4RBTLtoizVaazzwK3puYdFExc5qqhEtN595L1hM4B1k7M9TuyUr2t2"
+    }
+  },
+  "robotPublicKey": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "bnoc3Smwt4_ROvTFWY_v9O8qlxZuPKby5Pv8zYBQW_E"
+  },
   "expected": {
     "verifyIdentityChain": true,
     "agentDid": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
-    "issuerDid": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH"
+    "issuerDid": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH",
+    "verifyRobotIdentityChain": true,
+    "robotDid": "did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2",
+    "robotIssuerDid": "did:key:z6Mkt6316e2PN3mZdB6N9CrzomJYUd1s5yBZi1XYHmwT9TUP",
+    "hardwareRooted": true
   }
 }

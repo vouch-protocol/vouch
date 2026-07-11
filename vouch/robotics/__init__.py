@@ -25,6 +25,7 @@ robots and embodied agents:
   - fusion: signed provenance binding a fused world model to its input frames.
   - wear: signed wear and degradation attestation with capability auto-attenuation.
   - consent: bystander-consent evidence binding a consent basis to a robot capture.
+  - root_identity: bind a hardware-rooted robot to a recognized manufacturer under a pinned root.
 """
 
 from .capability import (
@@ -181,6 +182,12 @@ from .consent import (
     verify_consent_evidence,
     verify_consent_token,
 )
+from .root_identity import (
+    ACTION_ISSUE_ROBOT_IDENTITY,
+    RobotIdentityChainResult,
+    build_robot_identity,
+    verify_robot_identity_chain,
+)
 
 __all__ = [
     # identity
@@ -307,6 +314,11 @@ __all__ = [
     "verify_consent_token",
     "build_consent_evidence",
     "verify_consent_evidence",
+    # root-of-trust robot identity (hardware-rooted robot bound to a recognized manufacturer)
+    "ACTION_ISSUE_ROBOT_IDENTITY",
+    "RobotIdentityChainResult",
+    "build_robot_identity",
+    "verify_robot_identity_chain",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
