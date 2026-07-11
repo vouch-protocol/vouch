@@ -1,4 +1,4 @@
-"""Vouch MCP Server integration (built on the official MCP SDK / FastMCP)."""
+"""Vouch MCP Server integration (built on the official MCP Python SDK)."""
 
 from .server import main, mcp
 
