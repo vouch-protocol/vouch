@@ -18,7 +18,6 @@ pub mod multikey;
 pub mod pq;
 pub mod recovery;
 pub mod recovery_json;
-pub mod root_of_trust;
 pub mod robotics;
 pub mod robotics_json;
 pub mod status_list;
