@@ -64,6 +64,14 @@ from .recovery import (
 
 # Audio signing
 from .audio import AudioSigner, SignedAudioResult
+from .root_of_trust import (
+    IdentityChainResult,
+    build_agent_identity,
+    build_recognized_issuer,
+    build_root_of_trust,
+    generate_did_key_identity,
+    verify_identity_chain,
+)
 
 
 # Enterprise features (lazy imports to avoid requiring optional deps)
@@ -466,6 +474,13 @@ __all__ = [
     "VerificationError",
     "DelegationLink",
     "Auditor",
+    # Root of Trust for machine identity
+    "build_root_of_trust",
+    "build_recognized_issuer",
+    "build_agent_identity",
+    "verify_identity_chain",
+    "generate_did_key_identity",
+    "IdentityChainResult",
     # Key management
     "generate_identity",
     "KeyPair",
