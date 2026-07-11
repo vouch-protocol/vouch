@@ -71,6 +71,7 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-059](./PAD-059-vouch-amnesia-attestation-bridge.md) | Method for Cryptographically Anchoring Deterministic Pre-Push Policy Decisions of an AI Coding Assistant Workspace to W3C Verifiable Credentials with Optional Hybrid Post-Quantum Signatures | 2026-05-14 | Published |
 | [PAD-060](./PAD-060-single-use-audited-override-of-egress-block.md) | Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use | 2026-05-14 | Published |
 | [PAD-061](./PAD-061-per-region-human-ai-code-attribution.md) | Per-Region Authorship Attribution for Mixed Human and AI Source Code via Edit-Channel Capture and Independently-Keyed Signatures | 2026-06-10 | Published |
+| [PAD-062](./PAD-062-self-contained-agent-passport.md) | Self-Contained, Offline-Verifiable Agent Passport Stapled Into Transport Metadata | 2026-07-12 | Published |
 | [PAD-064](./PAD-064-hardware-rooted-robot-identity.md) | Hardware-Rooted Verifiable Robot Identity and Lifecycle Credential | 2026-06-14 | Published |
 | [PAD-065](./PAD-065-model-config-provenance-attestation.md) | Re-Signable Model-and-Config Provenance Attestation for Embodied Agents | 2026-06-14 | Published |
 | [PAD-066](./PAD-066-physical-capability-scope-attenuation.md) | Physical Capability Scope as Cryptographically Enforceable Attenuation | 2026-06-14 | Published |
