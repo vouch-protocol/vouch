@@ -63,6 +63,11 @@ AGENT_IDENTITY_TYPE = "AgentIdentityCredential"
 ACTION_ISSUE_AGENT_IDENTITY = "issueAgentIdentity"
 ACTION_ISSUE_ROBOT_IDENTITY = "issueRobotIdentity"
 
+# The three trust-layer credential types. A single credential must carry exactly
+# one of these, otherwise one signed object could be replayed into a different
+# slot of the chain (type confusion).
+_TRUST_TYPES = frozenset({ROOT_OF_TRUST_TYPE, RECOGNIZED_ISSUER_TYPE, AGENT_IDENTITY_TYPE})
+
 # Default validity windows. Roots are long lived; issuer and identity
 # credentials rotate more often. All are overridable per call.
 _ROOT_VALID_SECONDS = 10 * 365 * 24 * 3600
@@ -316,11 +321,14 @@ def verify_identity_chain(
     if _issuer_of(recognized_issuer_credential) != trusted_root:
         return IdentityChainResult(ok=False, reason="recognized_issuer_not_from_root")
 
-    rec_subject = recognized_issuer_credential.get("credentialSubject") or {}
+    rec_subject = recognized_issuer_credential.get("credentialSubject")
+    if not isinstance(rec_subject, dict):
+        return IdentityChainResult(ok=False, reason="recognized_issuer_bad_subject")
     recognized_did = rec_subject.get("id")
     if not recognized_did:
         return IdentityChainResult(ok=False, reason="recognized_issuer_no_subject")
-    if required_action not in (rec_subject.get("recognizedActions") or []):
+    actions = rec_subject.get("recognizedActions")
+    if not isinstance(actions, list) or required_action not in actions:
         return IdentityChainResult(ok=False, reason="issuer_not_recognized_for_action")
     if is_revoked is not None and is_revoked(recognized_issuer_credential):
         return IdentityChainResult(ok=False, reason="recognized_issuer_revoked")
@@ -336,7 +344,9 @@ def verify_identity_chain(
     if is_revoked is not None and is_revoked(identity_credential):
         return IdentityChainResult(ok=False, reason="identity_revoked")
 
-    id_subject = identity_credential.get("credentialSubject") or {}
+    id_subject = identity_credential.get("credentialSubject")
+    if not isinstance(id_subject, dict):
+        return IdentityChainResult(ok=False, reason="identity_bad_subject")
     agent_did = id_subject.get("id")
     if not agent_did:
         return IdentityChainResult(ok=False, reason="identity_no_subject")
@@ -349,7 +359,9 @@ def verify_identity_chain(
         )
         if not ok:
             return IdentityChainResult(ok=False, reason=f"root_{reason}")
-        root_sub = root_credential.get("credentialSubject") or {}
+        root_sub = root_credential.get("credentialSubject")
+        if not isinstance(root_sub, dict):
+            return IdentityChainResult(ok=False, reason="root_bad_subject")
         if _issuer_of(root_credential) != trusted_root or root_sub.get("id") != trusted_root:
             return IdentityChainResult(ok=False, reason="root_not_self_issued")
 
@@ -464,6 +476,10 @@ def _verify_trust_credential(
     types = credential.get("type")
     if not isinstance(types, list) or expected_type not in types:
         return False, "wrong_type"
+    # Exactly one trust-layer type, so the credential cannot double as another
+    # link in the chain.
+    if len(_TRUST_TYPES.intersection(types)) != 1:
+        return False, "ambiguous_type"
 
     issuer = _issuer_of(credential)
     if not issuer:

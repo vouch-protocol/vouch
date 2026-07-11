@@ -16,6 +16,7 @@ from vouch.vc import VC_CONTEXT_V2, VOUCH_CONTEXT_V1, VC_TYPE
 from vouch.root_of_trust import (
     ACTION_ISSUE_AGENT_IDENTITY,
     ACTION_ISSUE_ROBOT_IDENTITY,
+    AGENT_IDENTITY_TYPE,
     RECOGNIZED_ISSUER_TYPE,
     _sign,
     build_agent_identity,
@@ -275,6 +276,111 @@ def test_root_credential_self_consistency_checked(chain):
     # Editing the subject also breaks the self-issued proof; either reason is a
     # correct rejection of a non-self-issued root.
     assert result.reason in ("root_proof_invalid", "root_not_self_issued")
+
+
+# ---------------------------------------------------------------------------
+# Hardening: malformed inputs, type confusion, key confusion
+# ---------------------------------------------------------------------------
+
+
+def _signed_recognition(
+    root,
+    issuer,
+    *,
+    subject=None,
+    actions=None,
+    types=None,
+    valid_from="2020-01-01T00:00:00Z",
+    valid_until="2100-01-01T00:00:00Z",
+):
+    """Root-sign a recognition with arbitrary (possibly malformed) fields."""
+    if subject is None:
+        subject = {
+            "id": issuer.did,
+            "recognizedActions": [ACTION_ISSUE_AGENT_IDENTITY] if actions is None else actions,
+            "recognizedIn": root.did,
+        }
+    cred = {
+        "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
+        "id": "urn:uuid:hardening-test",
+        "type": [VC_TYPE, RECOGNIZED_ISSUER_TYPE] if types is None else types,
+        "issuer": root.did,
+        "validFrom": valid_from,
+        "validUntil": valid_until,
+        "credentialSubject": subject,
+    }
+    return _sign(root, cred)
+
+
+def test_credential_subject_as_list_does_not_crash(chain):
+    """A signed credential whose credentialSubject is an array rejects cleanly."""
+    forged = _signed_recognition(chain["root"], chain["issuer"], subject=[{"id": "x"}])
+    result = verify_identity_chain(chain["identity"], forged, trusted_root=chain["root"].did)
+    assert not result.ok
+    assert result.reason == "recognized_issuer_bad_subject"
+
+
+def test_recognized_actions_as_string_does_not_substring_match(chain):
+    """recognizedActions must be a list; a string cannot substring-match past the check."""
+    forged = _signed_recognition(
+        chain["root"], chain["issuer"], actions="issueAgentIdentityAndMore"
+    )
+    result = verify_identity_chain(chain["identity"], forged, trusted_root=chain["root"].did)
+    assert not result.ok
+    assert result.reason == "issuer_not_recognized_for_action"
+
+
+def test_ambiguous_multi_type_rejected(chain):
+    """A credential carrying two trust types cannot be replayed across slots."""
+    forged = _signed_recognition(
+        chain["root"],
+        chain["issuer"],
+        types=[VC_TYPE, RECOGNIZED_ISSUER_TYPE, AGENT_IDENTITY_TYPE],
+    )
+    result = verify_identity_chain(chain["identity"], forged, trusted_root=chain["root"].did)
+    assert not result.ok
+    assert result.reason == "recognized_issuer_ambiguous_type"
+
+
+def test_not_yet_valid_recognition_rejected(chain):
+    """A recognition whose validFrom is in the future is rejected."""
+    forged = _signed_recognition(
+        chain["root"],
+        chain["issuer"],
+        valid_from="2099-01-01T00:00:00Z",
+        valid_until="2100-01-01T00:00:00Z",
+    )
+    result = verify_identity_chain(chain["identity"], forged, trusted_root=chain["root"].did)
+    assert not result.ok
+    assert result.reason == "recognized_issuer_not_yet_valid"
+
+
+def test_cross_issuer_key_confusion_rejected(chain):
+    """An identity claiming issuer X but signed by key Y is rejected (vm mismatch)."""
+    issuer_x = chain["issuer"]
+    signer_y = _signer()
+    cred = {
+        "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
+        "id": "urn:uuid:key-confusion",
+        "type": [VC_TYPE, AGENT_IDENTITY_TYPE],
+        "issuer": issuer_x.did,  # claims to be issued by X
+        "validFrom": "2020-01-01T00:00:00Z",
+        "validUntil": "2100-01-01T00:00:00Z",
+        "credentialSubject": {"id": chain["agent"].did, "identity": {"owner": "x"}},
+    }
+    forged = _sign(signer_y, cred)  # but signed by Y, so vm points at Y
+    result = verify_identity_chain(forged, chain["recognition"], trusted_root=chain["root"].did)
+    assert not result.ok
+    assert result.reason == "identity_vm_mismatch"
+
+
+def test_hybrid_shaped_proof_array_rejected(chain):
+    """A proof supplied as an array (hybrid shape) is not accepted here."""
+    forged = copy.deepcopy(chain["identity"])
+    forged["proof"] = [forged["proof"]]
+    result = verify_identity_chain(forged, chain["recognition"], trusted_root=chain["root"].did)
+    assert not result.ok
+    assert result.reason == "identity_no_proof"
 
 
 # ---------------------------------------------------------------------------
