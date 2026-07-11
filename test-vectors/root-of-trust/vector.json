@@ -1,0 +1,106 @@
+{
+  "description": "Vouch Protocol Root of Trust interop vector. Built from fixed Ed25519 seeds and a fixed timestamp. Every SDK must reproduce identical proofValues and verify the chain (agent identity anchored to the root).",
+  "trustedRoot": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+  "seeds": {
+    "root": "0x01 x32",
+    "issuer": "0x02 x32",
+    "agent": "0x03 x32"
+  },
+  "rootOfTrust": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:11111111-1111-1111-1111-111111111111",
+    "type": [
+      "VerifiableCredential",
+      "VouchRootOfTrust"
+    ],
+    "issuer": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "validUntil": "2125-12-08T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+      "vouchVersion": "1.0",
+      "rootOfTrust": {
+        "name": "Vouch Machine Identity Root",
+        "scope": [
+          "ai-agent",
+          "robot"
+        ]
+      }
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-01-01T00:00:00Z",
+      "verificationMethod": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z4xeJ2LF1WN5y7sXPA7zqHvVgYCXmekbuXUpYB7Mp9JePkbQTgzXWj4zp1cuyJ55ghqnmRXpaESbwxnYW2LaNsQSe"
+    }
+  },
+  "recognizedIssuer": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:22222222-2222-2222-2222-222222222222",
+    "type": [
+      "VerifiableCredential",
+      "RecognizedIssuerCredential"
+    ],
+    "issuer": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "validUntil": "2125-12-08T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH",
+      "recognizedActions": [
+        "issueAgentIdentity"
+      ],
+      "recognizedIn": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX"
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-01-01T00:00:00Z",
+      "verificationMethod": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z2FSh4dJ8y7eDwFiVuWrSmreNw2uQ1osLejSg8Qnm2Jg4rpMoDy2Vp998ndstsntB6iWcfif9kzuohmtXvGcKmxAV"
+    }
+  },
+  "agentIdentity": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:33333333-3333-3333-3333-333333333333",
+    "type": [
+      "VerifiableCredential",
+      "AgentIdentityCredential"
+    ],
+    "issuer": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH",
+    "validFrom": "2026-01-01T00:00:00Z",
+    "validUntil": "2125-12-08T00:00:00Z",
+    "credentialSubject": {
+      "id": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+      "identity": {
+        "owner": "Acme",
+        "model": "gpt-x",
+        "capabilityClass": "shopping"
+      }
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-01-01T00:00:00Z",
+      "verificationMethod": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z4L1zia38bYfefbR3Jmg2XjTLqDksGAgKjN4JyntsEju2WnfShMcvRuPW3wuTfKQmZ2h8kBsrq8ARB6qHrxJoLfuh"
+    }
+  },
+  "expected": {
+    "verifyIdentityChain": true,
+    "agentDid": "did:key:z6MkvRXNYcE7MMduynWTgeKbDaT1iijDSC8pZqXZc8rHPrf2",
+    "issuerDid": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH"
+  }
+}

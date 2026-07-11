@@ -130,6 +130,8 @@ def build_root_of_trust(
     name: str,
     scope: Optional[List[str]] = None,
     valid_seconds: int = _ROOT_VALID_SECONDS,
+    valid_from: Optional[datetime] = None,
+    created: Optional[datetime] = None,
     credential_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Self-issue the Vouch Root of Trust credential.
@@ -161,8 +163,9 @@ def build_root_of_trust(
         issuer=root_did,
         subject=subject,
         valid_seconds=valid_seconds,
+        valid_from=valid_from,
     )
-    return _sign(root_signer, credential)
+    return _sign(root_signer, credential, created=created)
 
 
 def build_recognized_issuer(
@@ -171,6 +174,8 @@ def build_recognized_issuer(
     issuer_did: str,
     recognized_actions: Optional[List[str]] = None,
     valid_seconds: int = _ISSUER_VALID_SECONDS,
+    valid_from: Optional[datetime] = None,
+    created: Optional[datetime] = None,
     credential_status: Optional[Dict[str, Any]] = None,
     credential_id: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -205,9 +210,10 @@ def build_recognized_issuer(
         issuer=root_did,
         subject=subject,
         valid_seconds=valid_seconds,
+        valid_from=valid_from,
         credential_status=credential_status,
     )
-    return _sign(root_signer, credential)
+    return _sign(root_signer, credential, created=created)
 
 
 def build_agent_identity(
@@ -216,6 +222,8 @@ def build_agent_identity(
     subject_did: str,
     attributes: Dict[str, Any],
     valid_seconds: int = _IDENTITY_VALID_SECONDS,
+    valid_from: Optional[datetime] = None,
+    created: Optional[datetime] = None,
     credential_status: Optional[Dict[str, Any]] = None,
     credential_id: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -249,9 +257,10 @@ def build_agent_identity(
         issuer=issuer_signer.did,
         subject=subject,
         valid_seconds=valid_seconds,
+        valid_from=valid_from,
         credential_status=credential_status,
     )
-    return _sign(issuer_signer, credential)
+    return _sign(issuer_signer, credential, created=created)
 
 
 # ---------------------------------------------------------------------------
@@ -417,10 +426,11 @@ def _envelope(
     issuer: str,
     subject: Dict[str, Any],
     valid_seconds: int,
+    valid_from: Optional[datetime] = None,
     credential_status: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the unsigned VC envelope shared by all three credential types."""
-    issued_at = datetime.now(timezone.utc)
+    issued_at = (valid_from or datetime.now(timezone.utc)).astimezone(timezone.utc)
     expires_at = issued_at + timedelta(seconds=valid_seconds)
     credential: Dict[str, Any] = {
         "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
@@ -436,11 +446,14 @@ def _envelope(
     return credential
 
 
-def _sign(signer: Signer, credential: Dict[str, Any]) -> Dict[str, Any]:
+def _sign(
+    signer: Signer, credential: Dict[str, Any], *, created: Optional[datetime] = None
+) -> Dict[str, Any]:
     """Attach an eddsa-jcs-2022 Data Integrity proof using ``signer``'s key.
 
     Handles both in-process signers (raw Ed25519 key) and backend signers (a
-    sign-callback whose key lives outside the process).
+    sign-callback whose key lives outside the process). ``created`` overrides
+    the proof timestamp, which is used to produce reproducible test vectors.
     """
     if getattr(signer, "_raw_priv", None) is not None:
         key = signer._raw_priv
@@ -450,7 +463,7 @@ def _sign(signer: Signer, credential: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("signer cannot sign: no private key or sign callback available")
     credential = dict(credential)
     credential["proof"] = data_integrity.build_proof(
-        credential, key, signer.verification_method_id()
+        credential, key, signer.verification_method_id(), created=created
     )
     return credential
 

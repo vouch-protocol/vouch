@@ -230,7 +230,8 @@ Codes are **stable and append-only**. Once published, a code's meaning does not 
 ### 6.3 Authority-issued identity credential
 - [x] Identity credential type where issuer differs from subject, binding an agent key to attributes (`build_agent_identity`)
 - [x] Revocation hook (`credentialStatus` passthrough plus `is_revoked` at verify time)
-- [ ] Interop vectors across Python / TypeScript / Go
+- [x] Canonical interop vector and Python runner (`test-vectors/root-of-trust/`)
+- [ ] TypeScript and Go interop runners (consume the same vector)
 
 ### 6.4 Verifier chain
 - [x] End-to-end verification: action → authority-issued identity → recognized issuer → Vouch root (`verify_identity_chain`)
