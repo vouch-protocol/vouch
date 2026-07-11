@@ -29,6 +29,7 @@ robots and embodied agents:
   - odd: operating-domain conformance, a robot attests it stayed in its certified domain.
   - swarm: multi-robot swarm membership and collective-action attribution.
   - handover: safe robot-to-human handover with an envelope attestation and receipt.
+  - root_identity: bind a hardware-rooted robot to a recognized manufacturer under a pinned root.
 """
 
 from .capability import (
@@ -221,6 +222,12 @@ from .handover import (
     verify_handover_ack,
     verify_human_handover,
 )
+from .root_identity import (
+    ACTION_ISSUE_ROBOT_IDENTITY,
+    RobotIdentityChainResult,
+    build_robot_identity,
+    verify_robot_identity_chain,
+)
 
 __all__ = [
     # identity
@@ -379,6 +386,11 @@ __all__ = [
     "verify_human_handover",
     "build_handover_ack",
     "verify_handover_ack",
+    # root-of-trust robot identity (hardware-rooted robot bound to a recognized manufacturer)
+    "ACTION_ISSUE_ROBOT_IDENTITY",
+    "RobotIdentityChainResult",
+    "build_robot_identity",
+    "verify_robot_identity_chain",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
