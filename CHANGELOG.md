@@ -72,6 +72,24 @@ Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by
 the robotics interop vector.
 
+#### Robotics: control, operating domain, swarm, and human handover
+
+The Python reference adds four forward-looking robotics capabilities, each with an
+interactive website demo and defensive disclosures:
+
+- `vouch.robotics.teleop`: accountable teleoperation handoff, a signed chain of
+  control-authority transfers between an autonomous policy and human teleoperators,
+  with a controller-at-time lookup and a control-continuity check.
+- `vouch.robotics.odd`: operating-domain conformance, an operator-certified operating
+  domain and a robot-signed attestation that it stayed inside it, with a deterministic
+  in-domain check.
+- `vouch.robotics.swarm`: multi-robot swarm accountability, verifiable swarm membership
+  and attribution of a collective action to its admitted members.
+- `vouch.robotics.handover`: safe robot-to-human handover, a signed handover with the
+  force and speed envelope at the release and a recipient acknowledgement bound to it.
+
+Disclosed as PAD-095 through PAD-102. Cross-language ports follow.
+
 ## [1.6.3] - 2026-06-15
 
 ### Added

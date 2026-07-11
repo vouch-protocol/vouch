@@ -5,14 +5,15 @@ import React, { useState } from 'react';
 import styles from './RoboticsDemos.module.css';
 
 /**
- * Interactive demos for four robotics capabilities: infrastructure access
+ * Interactive demos for eight robotics capabilities: infrastructure access
  * (vouch.robotics.access), fused-sensor provenance (vouch.robotics.fusion), wear
- * and degradation (vouch.robotics.wear), and bystander consent
- * (vouch.robotics.consent). Each mirrors the real credential shapes and the real
- * verification logic, rendered
- * as an on-brand illustration rather than a live signature so it runs with no
- * network call. Burgundy doubles as refuse, a parchment-harmonized green marks
- * allow, and both read on either theme.
+ * and degradation (vouch.robotics.wear), bystander consent (vouch.robotics.consent),
+ * teleoperation handoff (vouch.robotics.teleop), operating-domain conformance
+ * (vouch.robotics.odd), swarm accountability (vouch.robotics.swarm), and safe human
+ * handover (vouch.robotics.handover). Each mirrors the real credential shapes and the
+ * real verification logic, rendered as an on-brand illustration rather than a live
+ * signature so it runs with no network call. Burgundy doubles as refuse, a
+ * parchment-harmonized green marks allow, and both read on either theme.
  */
 
 const ALLOW = '#3f7d55';
@@ -327,6 +328,243 @@ function Consent() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Teleop: who or what was in control, across handoffs.                */
+/* ------------------------------------------------------------------ */
+
+type TeleopScenario = 'takeover' | 'return' | 'gap';
+
+const TELEOP_SCENARIOS: Array<{ id: TeleopScenario; label: string }> = [
+  { id: 'takeover', label: 'Autonomy hands control to operator Jane' },
+  { id: 'return', label: 'Jane hands control back to autonomy' },
+  { id: 'gap', label: 'Autonomy reclaims control while Jane still holds it' },
+];
+
+function Teleop() {
+  const [scenario, setScenario] = useState<TeleopScenario>('takeover');
+
+  const view = {
+    takeover: { at: 'operator-jane', mode: 'teleoperated', ok: true, reason: 'continuous, single-held' },
+    return: { at: 'autopilot', mode: 'autonomous', ok: true, reason: 'continuous, single-held' },
+    gap: { at: 'autopilot', mode: 'autonomous', ok: false, reason: 'gap and overlap at the seam' },
+  }[scenario];
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          Control of a robot passes between an autonomous policy and human teleoperators. Each transfer is signed by the
+          party taking control, so the chain answers who or what was in control at any moment, and a continuity check
+          catches a seam where no one, or everyone, held it.
+        </p>
+        <div className="eyebrow-faint mb-2">Choose what happens</div>
+        <div className={styles.controls}>
+          {TELEOP_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.radio}${scenario === s.id ? ' ' + styles.on : ''}`}
+              onClick={() => setScenario(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Control handoff (signed by receiver)</div>
+          <div className={styles.mono}>
+            robot: did:web:robot-a
+            <br />
+            in control at t+05:00: {view.at} · mode: {view.mode}
+          </div>
+        </div>
+        <div className={styles.verdict}>
+          <span className={styles.badge} style={{ color: view.ok ? ALLOW : DENY, borderColor: view.ok ? ALLOW : DENY }}>
+            {view.ok ? '✓ CONTINUOUS' : '✕ DISCONTINUITY'}
+          </span>
+          <span className={styles.reason}>{view.reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* ODD: did the robot stay inside its certified operating domain.      */
+/* ------------------------------------------------------------------ */
+
+type OddScenario = 'inside' | 'speed' | 'zone' | 'weather';
+
+const ODD_SCENARIOS: Array<{ id: OddScenario; label: string }> = [
+  { id: 'inside', label: 'Ran at 2.4 m/s in yard-north, clear and midday' },
+  { id: 'speed', label: 'Ran at 4.5 m/s (over the speed regime)' },
+  { id: 'zone', label: 'Strayed into the street (outside the geofence)' },
+  { id: 'weather', label: 'Ran with visibility below the rated minimum' },
+];
+
+function Odd() {
+  const [scenario, setScenario] = useState<OddScenario>('inside');
+
+  const verdict = {
+    inside: { ok: true, reason: 'in domain' },
+    speed: { ok: false, reason: 'speed_out_of_domain: 4.5 > 3.0' },
+    zone: { ok: false, reason: 'zone_out_of_domain: [street]' },
+    weather: { ok: false, reason: 'condition_out_of_domain: minVisibilityM' },
+  }[scenario];
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          An operator certifies the robot's operating domain: the zones, a speed regime, weather bounds, and the hours it
+          is rated for. The robot signs what it observed each interval, and a deterministic check confirms it stayed in
+          domain, or names the dimension it left on.
+        </p>
+        <div className="eyebrow-faint mb-2">Choose what the robot observed</div>
+        <div className={styles.controls}>
+          {ODD_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.radio}${scenario === s.id ? ' ' + styles.on : ''}`}
+              onClick={() => setScenario(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Certified operating domain (operator-signed)</div>
+          <div className={styles.mono}>
+            zones: [yard-north, yard-south] · maxSpeed: 3.0 m/s
+            <br />
+            conditions: minVisibilityM 50 · hours: 06:00 to 20:00
+          </div>
+        </div>
+        <div className={styles.verdict}>
+          <span className={styles.badge} style={{ color: verdict.ok ? ALLOW : DENY, borderColor: verdict.ok ? ALLOW : DENY }}>
+            {verdict.ok ? '✓ IN DOMAIN' : '✕ OUT OF DOMAIN'}
+          </span>
+          <span className={styles.reason}>{verdict.reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Swarm: a collective action attributed to admitted members.          */
+/* ------------------------------------------------------------------ */
+
+type SwarmScenario = 'members' | 'nonmember';
+
+const SWARM_SCENARIOS: Array<{ id: SwarmScenario; label: string }> = [
+  { id: 'members', label: 'Robots A and B (both admitted) lift a beam' },
+  { id: 'nonmember', label: 'The action names robot Z, who was never admitted' },
+];
+
+function Swarm() {
+  const [scenario, setScenario] = useState<SwarmScenario>('members');
+
+  const verdict = {
+    members: { ok: true, reason: 'every participant is an admitted member' },
+    nonmember: { ok: false, reason: 'unverified participant: did:web:robot-z' },
+  }[scenario];
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          A coordinator admits robots to a swarm with signed memberships. When the swarm takes an action together, the
+          coordinator attributes it to the participants, and each one is checked against a membership, so a collective
+          action ties only to admitted members.
+        </p>
+        <div className="eyebrow-faint mb-2">Choose who took part</div>
+        <div className={styles.controls}>
+          {SWARM_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.radio}${scenario === s.id ? ' ' + styles.on : ''}`}
+              onClick={() => setScenario(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Collective action (coordinator-signed)</div>
+          <div className={styles.mono}>
+            swarm: swarm-42 · action: lift-beam
+            <br />
+            participants: {scenario === 'nonmember' ? '[robot-a, robot-z]' : '[robot-a, robot-b]'}
+          </div>
+        </div>
+        <div className={styles.verdict}>
+          <span className={styles.badge} style={{ color: verdict.ok ? ALLOW : DENY, borderColor: verdict.ok ? ALLOW : DENY }}>
+            {verdict.ok ? '✓ ATTRIBUTED' : '✕ FLAGGED'}
+          </span>
+          <span className={styles.reason}>{verdict.reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Handover: robot-to-human release inside the near-human envelope.     */
+/* ------------------------------------------------------------------ */
+
+function Handover() {
+  const [force, setForce] = useState(18);
+  const [speed, setSpeed] = useState(15);
+  const maxForce = 40;
+  const maxSpeed = 25; // hundredths of m/s, so 0.25 m/s
+  const inEnvelope = force <= maxForce && speed <= maxSpeed;
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          Handing an object to a person puts a human hand inside the robot's envelope at the instant of release. The
+          robot signs the force and speed at that moment, checked against the near-human safety scope, and the recipient
+          can sign a receipt bound to the one handover.
+        </p>
+        <div className="eyebrow-faint mb-2">Set the release conditions</div>
+        <div className={styles.sliderRow}>
+          <input type="range" min={5} max={90} value={force} onChange={(e) => setForce(Number(e.target.value))} className={styles.slider} aria-label="force" />
+          <span className={styles.wearVal}>{force} N</span>
+        </div>
+        <div className={styles.sliderRow}>
+          <input type="range" min={5} max={90} value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className={styles.slider} aria-label="speed" />
+          <span className={styles.wearVal}>{(speed / 100).toFixed(2)} m/s</span>
+        </div>
+      </div>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Handover (robot-signed) + receipt (recipient-signed)</div>
+          <div className={styles.mono}>
+            robot: did:web:robot-a → recipient: did:web:person-1
+            <br />
+            object: tote-7 · force: {force} N · speed: {(speed / 100).toFixed(2)} m/s
+            <br />
+            near-human scope: maxForce 40 N · maxSpeed 0.25 m/s
+          </div>
+        </div>
+        <div className={styles.verdict}>
+          <span className={styles.badge} style={{ color: inEnvelope ? ALLOW : DENY, borderColor: inEnvelope ? ALLOW : DENY }}>
+            {inEnvelope ? '✓ IN ENVELOPE' : '✕ OUT OF ENVELOPE'}
+          </span>
+          <span className={styles.reason}>{inEnvelope ? 'released safely, receipt binds to this handover' : 'force or speed exceeds the near-human limit'}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export default function RoboticsDemos() {
   return (
@@ -364,7 +602,7 @@ export default function RoboticsDemos() {
         </div>
       </section>
 
-      <section id="consent" className="scroll-mt-24">
+      <section id="consent" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ IV</span>
@@ -372,6 +610,50 @@ export default function RoboticsDemos() {
           </div>
           <p className="eyebrow mb-6">Consent is bound to one capture and cannot be replayed · vouch.robotics.consent</p>
           <Consent />
+        </div>
+      </section>
+
+      <section id="teleop" className="border-b border-rule scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ V</span>
+            <h2>Teleoperation handoff</h2>
+          </div>
+          <p className="eyebrow mb-6">Who or what was in control of a robot at any moment · vouch.robotics.teleop</p>
+          <Teleop />
+        </div>
+      </section>
+
+      <section id="odd" className="border-b border-rule scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ VI</span>
+            <h2>Operating-domain conformance</h2>
+          </div>
+          <p className="eyebrow mb-6">A robot proves it stayed inside its certified domain · vouch.robotics.odd</p>
+          <Odd />
+        </div>
+      </section>
+
+      <section id="swarm" className="border-b border-rule scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ VII</span>
+            <h2>Swarm accountability</h2>
+          </div>
+          <p className="eyebrow mb-6">A collective action ties to the members that performed it · vouch.robotics.swarm</p>
+          <Swarm />
+        </div>
+      </section>
+
+      <section id="handover" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ VIII</span>
+            <h2>Safe human handover</h2>
+          </div>
+          <p className="eyebrow mb-6">A robot-to-human release, inside the near-human envelope · vouch.robotics.handover</p>
+          <Handover />
         </div>
       </section>
     </>
