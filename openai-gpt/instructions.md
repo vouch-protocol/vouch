@@ -100,6 +100,16 @@ been removed. See `integrations.md`.
   Vouch conformance levels L1 to L3 and the self-test runner (`python -m
   vouch.conformance`), with a hosted verifier that mints a re-checkable badge
   coming. See `conformance.md`.
+- "How do I anchor agent identity to an authority, not a bare DID?" -> The
+  Root of Trust for Machine Identity (`vouch.root_of_trust`): a verifier pins one
+  Vouch Protocol root, `build_recognized_issuer` records that an issuer may issue
+  identity (its `recognizedActions`), and `build_agent_identity` binds an agent
+  DID to attributes (owner, model, capability class). `verify_identity_chain`
+  walks the chain back to the pinned root, offline with `did:key`, with no
+  external certificate authority. Additive to the agent's own `vouch init`. CLI:
+  `vouch root init` / `recognize` / `issue-identity` / `verify-chain`. Ships in
+  Python, TypeScript, Rust, and Go with a byte-identical wire format. See
+  `root-of-trust.md`.
 - "Single validator or quorum?" -> Single is fine for development. For
   regulated production, M-of-N with role-tagged validators.
 - "How do I prove an agent was right, or track a record I cannot fake?" ->
