@@ -25,6 +25,10 @@ robots and embodied agents:
   - fusion: signed provenance binding a fused world model to its input frames.
   - wear: signed wear and degradation attestation with capability auto-attenuation.
   - consent: bystander-consent evidence binding a consent basis to a robot capture.
+  - teleop: accountable teleoperation handoff, who or what was in control of a robot.
+  - odd: operating-domain conformance, a robot attests it stayed in its certified domain.
+  - swarm: multi-robot swarm membership and collective-action attribution.
+  - handover: safe robot-to-human handover with an envelope attestation and receipt.
 """
 
 from .capability import (
@@ -181,6 +185,42 @@ from .consent import (
     verify_consent_evidence,
     verify_consent_token,
 )
+from .teleop import (
+    CONTROL_HANDOFF_TYPE,
+    CONTROL_MODES,
+    ControlContinuity,
+    build_control_handoff,
+    check_control_continuity,
+    controller_at,
+    verify_control_chain,
+    verify_control_handoff,
+)
+from .odd import (
+    ODD_CONFORMANCE_TYPE,
+    OPERATING_DOMAIN_TYPE,
+    ODDResult,
+    build_odd_conformance,
+    build_odd_credential,
+    check_in_domain,
+    verify_odd_conformance,
+    verify_odd_credential,
+)
+from .swarm import (
+    COLLECTIVE_ACTION_TYPE,
+    SWARM_MEMBERSHIP_TYPE,
+    build_collective_action,
+    build_swarm_membership,
+    verify_collective_action,
+    verify_swarm_membership,
+)
+from .handover import (
+    HANDOVER_ACK_TYPE,
+    HUMAN_HANDOVER_TYPE,
+    build_handover_ack,
+    build_human_handover,
+    verify_handover_ack,
+    verify_human_handover,
+)
 
 __all__ = [
     # identity
@@ -307,6 +347,38 @@ __all__ = [
     "verify_consent_token",
     "build_consent_evidence",
     "verify_consent_evidence",
+    # teleoperation handoff (who or what controlled a robot, autonomy vs human)
+    "CONTROL_HANDOFF_TYPE",
+    "CONTROL_MODES",
+    "ControlContinuity",
+    "build_control_handoff",
+    "verify_control_handoff",
+    "verify_control_chain",
+    "controller_at",
+    "check_control_continuity",
+    # operating-domain conformance (robot attests it stayed in its certified ODD)
+    "OPERATING_DOMAIN_TYPE",
+    "ODD_CONFORMANCE_TYPE",
+    "ODDResult",
+    "build_odd_credential",
+    "verify_odd_credential",
+    "check_in_domain",
+    "build_odd_conformance",
+    "verify_odd_conformance",
+    # swarm accountability (membership + collective-action attribution)
+    "SWARM_MEMBERSHIP_TYPE",
+    "COLLECTIVE_ACTION_TYPE",
+    "build_swarm_membership",
+    "verify_swarm_membership",
+    "build_collective_action",
+    "verify_collective_action",
+    # human handover (robot-to-human release with envelope attestation + receipt)
+    "HUMAN_HANDOVER_TYPE",
+    "HANDOVER_ACK_TYPE",
+    "build_human_handover",
+    "verify_human_handover",
+    "build_handover_ack",
+    "verify_handover_ack",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

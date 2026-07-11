@@ -102,6 +102,26 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-092](./PAD-092-wear-driven-capability-attenuation.md) | Wear-Driven Automatic Attenuation of a Robot's Physical Capability Scope | 2026-07-05 | Published |
 | [PAD-093](./PAD-093-bystander-consent-evidence.md) | Privacy-Preserving Bystander-Consent Evidence for Robot Capture | 2026-07-06 | Published |
 | [PAD-094](./PAD-094-capture-bound-consent-token.md) | Capture-Bound Bystander Consent Token That Cannot Be Replayed | 2026-07-06 | Published |
+| [PAD-095](./PAD-095-control-authority-handoff-chain.md) | Accountable Control-Authority Handoff Chain Between Autonomy and Human Teleoperators | 2026-07-06 | Published |
+| [PAD-096](./PAD-096-control-continuity-gap-overlap.md) | Detecting an Unattributed-Control Gap or a Dual-Control Overlap in a Robot's Control Timeline | 2026-07-06 | Published |
+| [PAD-097](./PAD-097-operating-domain-conformance.md) | Operator-Certified Operating Domain and Robot-Attested In-Domain Conformance | 2026-07-06 | Published |
+| [PAD-098](./PAD-098-in-domain-predicate.md) | Deterministic Multi-Dimensional In-Domain Check for a Robot's Operating Parameters | 2026-07-06 | Published |
+| [PAD-099](./PAD-099-verifiable-swarm-membership.md) | Verifiable Swarm Membership for a Multi-Robot Group | 2026-07-06 | Published |
+| [PAD-100](./PAD-100-collective-action-attribution.md) | Attribution of a Multi-Robot Collective Action to Its Participating Members | 2026-07-06 | Published |
+| [PAD-101](./PAD-101-human-handover-envelope.md) | Robot-to-Human Handover Credential With a Safety-Envelope Attestation at the Release | 2026-07-06 | Published |
+| [PAD-102](./PAD-102-handover-acknowledgement.md) | Recipient Acknowledgement Bound to a Specific Robot-to-Human Handover | 2026-07-06 | Published |
+
+
+## July 6, 2026: Robotics Forward-Looking, Second Wave (PAD-095 to PAD-102)
+
+Four capabilities extend accountability to how robots are controlled, where they operate,
+how they act as a group, and how they hand objects to people. PAD-095 and PAD-096 make the
+transfer of control between autonomy and human teleoperators accountable, with a continuity
+check that catches a moment with no controller or two. PAD-097 and PAD-098 bind a robot to
+its certified operating domain and check, deterministically, whether it stayed inside it.
+PAD-099 and PAD-100 make swarm membership verifiable and attribute a collective action to its
+admitted members. PAD-101 and PAD-102 record a robot-to-human handover with the safety
+envelope at the release and a recipient receipt bound to that one handover.
 
 
 ## July 6, 2026: Bystander Consent for Robot Capture (PAD-093, PAD-094)
