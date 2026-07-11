@@ -939,8 +939,8 @@ The verifier policy is local to the verifier and is not embedded in the credenti
 
 The conformance level of the dual-proof profile is expected to evolve in step with external post-quantum migration milestones (NIST CNSA 2.0 phased adoption, NSM-10 obligations, CNSSP-15 timelines), rather than fixed Vouch-internal dates:
 
-- **This revision:** `eddsa-jcs-2022` is the default conformance cryptosuite. Pairing it with an additional `mldsa44-jcs-2026` Data Integrity proof on the same credential is OPTIONAL (MAY).
-- **As CNSA 2.0 phase-in advances and regulator guidance matures:** the dual-proof profile is expected to be RECOMMENDED (SHOULD) for deployments in regulated sectors.
+- **This revision:** `eddsa-jcs-2022` is the default conformance cryptosuite. Pairing it with an additional `mldsa44-jcs-2026` Data Integrity proof on the same credential is RECOMMENDED (SHOULD) for deployments in regulated sectors and for credentials whose verification lifetime extends beyond applicable classical-signature deprecation horizons. It remains OPTIONAL (MAY) for other deployments.
+- **Basis for the current level:** the external milestones this ladder is indexed to have begun to materialize. United States Executive Order 14412 (June 22, 2026) sets December 31, 2031 as the deadline for post-quantum digital signatures on federal high-impact systems, and its implementing guidance (OMB M-26-15, June 2026) endorses hybrid classical-plus-post-quantum architectures and crypto-agility. The EU coordinated post-quantum roadmap calls for national transition roadmaps and pilots by December 31, 2026. The W3C Verifiable Credentials Working Group published the First Public Working Draft of Quantum-Resistant Cryptosuites v1.0 on June 16, 2026, standardizing ML-DSA-44 Data Integrity cryptosuites compatible with the proof-set approach used here.
 - **As classical-only signatures reach end-of-life under those policies:** a dual-proof or pure-PQ profile is expected to be REQUIRED (MUST) for new deployments.
 
 Implementers operating in regulated sectors are advised to align dual-proof adoption with the post-quantum migration schedule applicable to them.
