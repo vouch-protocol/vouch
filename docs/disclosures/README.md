@@ -110,6 +110,17 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-100](./PAD-100-collective-action-attribution.md) | Attribution of a Multi-Robot Collective Action to Its Participating Members | 2026-07-06 | Published |
 | [PAD-101](./PAD-101-human-handover-envelope.md) | Robot-to-Human Handover Credential With a Safety-Envelope Attestation at the Release | 2026-07-06 | Published |
 | [PAD-102](./PAD-102-handover-acknowledgement.md) | Recipient Acknowledgement Bound to a Specific Robot-to-Human Handover | 2026-07-06 | Published |
+| [PAD-103](./PAD-103-root-anchored-hardware-rooted-robot-identity.md) | Root-Anchored, Hardware-Rooted Robot Identity Binding | 2026-07-12 | Published |
+
+
+## July 12, 2026: Root-Anchored Hardware-Rooted Robot Identity (PAD-103)
+
+PAD-103 composes the recognized-issuer authority layer with the hardware-rooted robot
+identity format so a verifier pinning one root confirms, in a single offline check, both
+that a robot comes from a recognized manufacturer and that its identity key is bound to a
+hardware root. The manufacturer's authority identity references the robot's
+hardware-rooted key, and verification requires the vouched key to equal the
+hardware-attested key, so provenance and hardware-rooting cannot be presented apart.
 
 
 ## July 6, 2026: Robotics Forward-Looking, Second Wave (PAD-095 to PAD-102)

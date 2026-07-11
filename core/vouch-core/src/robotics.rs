@@ -22,6 +22,7 @@ use crate::data_integrity::{self, BuildProofOptions};
 use crate::error::{CoreError, Result};
 use crate::keys;
 use crate::pq::{MlDsa44KeyPair, MLDSA44_PUBLIC_LEN};
+use crate::root_of_trust::{self, ACTION_ISSUE_ROBOT_IDENTITY};
 use crate::{hybrid, jcs, multikey};
 
 use aes_gcm::aead::Aead;
@@ -182,6 +183,198 @@ pub fn verify_robot_identity(credential: &Value, robot_public_key: &[u8]) -> Res
         return Ok(None);
     }
     Ok(Some(Value::Object(subject.clone())))
+}
+
+// ---------------------------------------------------------------------------
+// Root of Trust for robot identity (Phase 5.1, authority binding)
+// ---------------------------------------------------------------------------
+//
+// Byte-exact port of the Python reference `vouch/robotics/root_identity.py`.
+//
+// The Root of Trust for Machine Identity lets one pinned Vouch root recognize
+// issuers, and a recognized issuer bind a subject DID to attributes, verified
+// offline against that one pinned root. This extends it to robots. A recognized
+// manufacturer (an issuer the root granted the `issueRobotIdentity` action)
+// issues an identity that binds a robot's DID and its hardware-rooted key to
+// attributes such as make, model, serial, and owner. The robot separately holds
+// a hardware-attested `RobotIdentityCredential` proving its key is bound to a
+// secure element.
+//
+// [`verify_robot_identity_chain`] closes the loop: from one pinned root a
+// verifier confirms both that the robot is a legitimate robot from a recognized
+// manufacturer (the authority chain via [`root_of_trust::verify_identity_chain`])
+// and that the key the manufacturer vouched for is genuinely hardware-rooted (the
+// secure-element attestation via [`verify_robot_identity`]), and that the two
+// name the same robot and the same key. It follows the anchor-once model and the
+// reason-code style of the underlying root_of_trust.
+
+/// Outcome of [`verify_robot_identity_chain`].
+///
+/// `ok` is true only if the authority chain verified against the pinned root AND
+/// the vouched key is hardware-rooted for the same robot. On failure `reason`
+/// carries a structured code matching the Python reference exactly.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RobotIdentityChainResult {
+    pub ok: bool,
+    pub reason: Option<String>,
+    pub robot_did: Option<String>,
+    pub issuer_did: Option<String>,
+    pub root_did: Option<String>,
+    pub attributes: Option<Value>,
+    pub hardware_rooted: bool,
+}
+
+impl RobotIdentityChainResult {
+    /// A failure result carrying the reason code and the pinned root that was in
+    /// force when the check failed.
+    fn fail(reason: impl Into<String>, root_did: &str) -> Self {
+        Self {
+            ok: false,
+            reason: Some(reason.into()),
+            robot_did: None,
+            issuer_did: None,
+            root_did: Some(root_did.to_string()),
+            attributes: None,
+            hardware_rooted: false,
+        }
+    }
+}
+
+/// Issue an authority robot identity: a recognized manufacturer binds `robot_did`,
+/// its hardware-rooted key (`hardware_key_multibase`, the robot's Ed25519 key as a
+/// multikey), and identity `attributes` (make, model, serial, owner). The
+/// manufacturer (derived from `issuer_seed`) must be a recognized issuer for the
+/// `issueRobotIdentity` action.
+///
+/// The credential is an `AgentIdentityCredential` so the shared identity-chain
+/// verification applies, with a `kind` of "robot" and the hardware key carried in
+/// the bound identity attributes.
+#[allow(clippy::too_many_arguments)]
+pub fn build_robot_identity(
+    issuer_seed: &[u8],
+    robot_did: &str,
+    hardware_key_multibase: &str,
+    attributes: &Value,
+    valid_seconds: i64,
+    valid_from: &str,
+    created: &str,
+    credential_status: Option<Value>,
+    credential_id: &str,
+) -> Result<Value> {
+    if robot_did.is_empty() {
+        return Err(CoreError::Json("robot_did is required".into()));
+    }
+    if hardware_key_multibase.is_empty() {
+        return Err(CoreError::Json("hardware_key_multibase is required".into()));
+    }
+    let bound = match attributes.as_object() {
+        Some(o) if !o.is_empty() => {
+            let mut m = o.clone();
+            m.insert("kind".into(), json!("robot"));
+            m.insert("hardwareKey".into(), json!(hardware_key_multibase));
+            Value::Object(m)
+        }
+        _ => {
+            return Err(CoreError::Json(
+                "attributes must be a non-empty object".into(),
+            ))
+        }
+    };
+    root_of_trust::build_agent_identity(
+        issuer_seed,
+        robot_did,
+        &bound,
+        valid_seconds,
+        valid_from,
+        created,
+        credential_status,
+        credential_id,
+    )
+}
+
+/// Verify a robot's identity against a single pinned Vouch root, confirming both
+/// provenance and hardware-rooting.
+///
+/// From `trusted_root`, the pinned root DID:
+///
+///   1. The authority chain: the recognized manufacturer must be recognized by
+///      the pinned root for the `issueRobotIdentity` action, and the authority
+///      identity must be signed by that manufacturer (shared identity-chain verify).
+///   2. The vouched key: the authority identity must carry a hardware key.
+///   3. The hardware root: the robot's own `RobotIdentityCredential` must verify
+///      under `robot_public_key` and its secure-element attestation, name the same
+///      robot, and its key must equal the key the manufacturer vouched for.
+///
+/// `robot_public_key` is the robot's raw 32-byte Ed25519 public key. `now_iso` is
+/// the current instant used for the temporal window; `clock_skew_seconds` is the
+/// allowed drift. Reason codes on failure match the Python reference exactly.
+#[allow(clippy::too_many_arguments)]
+pub fn verify_robot_identity_chain(
+    authority_identity: &Value,
+    recognized_issuer_credential: &Value,
+    robot_hardware_credential: &Value,
+    trusted_root: &str,
+    robot_public_key: &[u8],
+    root_credential: Option<&Value>,
+    now_iso: &str,
+    clock_skew_seconds: i64,
+) -> RobotIdentityChainResult {
+    let chain = root_of_trust::verify_identity_chain(
+        authority_identity,
+        recognized_issuer_credential,
+        trusted_root,
+        root_credential,
+        None,
+        ACTION_ISSUE_ROBOT_IDENTITY,
+        now_iso,
+        clock_skew_seconds,
+    );
+    if !chain.ok {
+        return RobotIdentityChainResult {
+            ok: false,
+            reason: chain.reason,
+            robot_did: None,
+            issuer_did: None,
+            root_did: Some(trusted_root.to_string()),
+            attributes: None,
+            hardware_rooted: false,
+        };
+    }
+
+    let attributes = match &chain.attributes {
+        Some(v @ Value::Object(_)) => v.clone(),
+        _ => json!({}),
+    };
+    let hardware_key = match attributes.get("hardwareKey").and_then(|v| v.as_str()) {
+        Some(s) if !s.is_empty() => s.to_string(),
+        _ => return RobotIdentityChainResult::fail("identity_no_hardware_key", trusted_root),
+    };
+
+    let hw_subject = match verify_robot_identity(robot_hardware_credential, robot_public_key) {
+        Ok(Some(s)) => s,
+        _ => return RobotIdentityChainResult::fail("hardware_root_invalid", trusted_root),
+    };
+    if hw_subject.get("id").and_then(|v| v.as_str()) != chain.agent_did.as_deref() {
+        return RobotIdentityChainResult::fail("hardware_subject_mismatch", trusted_root);
+    }
+
+    let robot_key_mb = match multikey::encode_ed25519_public(robot_public_key) {
+        Ok(mb) => mb,
+        Err(_) => return RobotIdentityChainResult::fail("hardware_key_unresolvable", trusted_root),
+    };
+    if robot_key_mb != hardware_key {
+        return RobotIdentityChainResult::fail("hardware_key_mismatch", trusted_root);
+    }
+
+    RobotIdentityChainResult {
+        ok: true,
+        reason: None,
+        robot_did: chain.agent_did,
+        issuer_did: chain.issuer_did,
+        root_did: Some(trusted_root.to_string()),
+        attributes: Some(attributes),
+        hardware_rooted: true,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -7007,5 +7200,149 @@ mod tests {
         .unwrap()
         .expect("consent evidence verifies with token and bystander key");
         assert_eq!(ev_subject["basis"].as_str().unwrap(), "explicit-consent");
+    }
+}
+
+#[cfg(test)]
+mod robot_root_identity_tests {
+    use super::*;
+    use crate::keys::Ed25519KeyPair;
+    use std::path::PathBuf;
+
+    const NOW: &str = "2026-07-01T00:00:00Z";
+    const VALID_FROM: &str = "2026-01-01T00:00:00Z";
+    const CREATED: &str = "2026-01-01T00:00:00Z";
+    const VALID_SECONDS: i64 = 100 * 365 * 24 * 3600;
+    // Matches the manufacturer seed recorded in the interop vector (0x04 x32).
+    const MANUFACTURER_SEED: [u8; 32] = [0x04; 32];
+    const FORGED_ID: &str = "urn:uuid:66666666-6666-6666-6666-666666666666";
+
+    fn load_vector() -> Value {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../test-vectors/root-of-trust/vector.json");
+        let text = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("read vector {}: {e}", path.display()));
+        serde_json::from_str(&text).expect("vector is valid JSON")
+    }
+
+    fn robot_pub(vector: &Value) -> Vec<u8> {
+        let x = vector["robotPublicKey"]["x"].as_str().unwrap();
+        URL_SAFE_NO_PAD.decode(x).unwrap()
+    }
+
+    fn stray_multikey(seed: &[u8]) -> String {
+        let kp = Ed25519KeyPair::from_seed_slice(seed).unwrap();
+        multikey::encode_ed25519_public(&kp.public_key()).unwrap()
+    }
+
+    fn stray_did(seed: &[u8]) -> String {
+        Ed25519KeyPair::from_seed_slice(seed).unwrap().did_key()
+    }
+
+    fn robot_attributes() -> Value {
+        json!({ "make": "Acme Robotics", "model": "AR-7", "serial": "SN-000123" })
+    }
+
+    // The committed Python-minted robot chain must verify in Rust: recognized
+    // manufacturer provenance plus hardware-rooting.
+    #[test]
+    fn verifies_python_robot_identity_interop_vector() {
+        let v = load_vector();
+        let root = v["trustedRoot"].as_str().unwrap();
+        let r = verify_robot_identity_chain(
+            &v["robotAuthorityIdentity"],
+            &v["robotRecognizedIssuer"],
+            &v["robotHardwareCredential"],
+            root,
+            &robot_pub(&v),
+            Some(&v["rootOfTrust"]),
+            NOW,
+            30,
+        );
+        assert!(r.ok, "robot chain must verify: {:?}", r.reason);
+        assert!(r.hardware_rooted);
+        assert_eq!(r.robot_did.as_deref(), v["expected"]["robotDid"].as_str());
+        assert_eq!(
+            r.issuer_did.as_deref(),
+            v["expected"]["robotIssuerDid"].as_str()
+        );
+        assert_eq!(r.root_did.as_deref(), Some(root));
+        assert_eq!(
+            v["expected"]["verifyRobotIdentityChain"].as_bool(),
+            Some(true)
+        );
+    }
+
+    // Adversarial: pinning a different root breaks the recognition anchor.
+    #[test]
+    fn wrong_pinned_root_rejected() {
+        let v = load_vector();
+        let other_root = stray_did(&[0x09; 32]);
+        let r = verify_robot_identity_chain(
+            &v["robotAuthorityIdentity"],
+            &v["robotRecognizedIssuer"],
+            &v["robotHardwareCredential"],
+            &other_root,
+            &robot_pub(&v),
+            None,
+            NOW,
+            30,
+        );
+        assert!(!r.ok);
+        assert_eq!(r.reason.as_deref(), Some("recognized_issuer_not_from_root"));
+    }
+
+    // Adversarial: the manufacturer vouched a key that is not the robot's real
+    // key. Provenance holds but the hardware key does not match.
+    #[test]
+    fn manufacturer_vouched_a_different_key() {
+        let v = load_vector();
+        let root = v["trustedRoot"].as_str().unwrap();
+        let robot_did = v["expected"]["robotDid"].as_str().unwrap();
+        let forged = build_robot_identity(
+            &MANUFACTURER_SEED,
+            robot_did,
+            &stray_multikey(&[0x09; 32]),
+            &robot_attributes(),
+            VALID_SECONDS,
+            VALID_FROM,
+            CREATED,
+            None,
+            FORGED_ID,
+        )
+        .unwrap();
+        let r = verify_robot_identity_chain(
+            &forged,
+            &v["robotRecognizedIssuer"],
+            &v["robotHardwareCredential"],
+            root,
+            &robot_pub(&v),
+            Some(&v["rootOfTrust"]),
+            NOW,
+            30,
+        );
+        assert!(!r.ok);
+        assert_eq!(r.reason.as_deref(), Some("hardware_key_mismatch"));
+    }
+
+    // Adversarial: an impostor key is presented for the hardware credential, so
+    // the secure-element attestation no longer verifies.
+    #[test]
+    fn impostor_key_fails_hardware_root() {
+        let v = load_vector();
+        let root = v["trustedRoot"].as_str().unwrap();
+        let impostor = Ed25519KeyPair::from_seed(&[0x09; 32]).public_key();
+        let r = verify_robot_identity_chain(
+            &v["robotAuthorityIdentity"],
+            &v["robotRecognizedIssuer"],
+            &v["robotHardwareCredential"],
+            root,
+            &impostor,
+            Some(&v["rootOfTrust"]),
+            NOW,
+            30,
+        );
+        assert!(!r.ok);
+        assert_eq!(r.reason.as_deref(), Some("hardware_root_invalid"));
     }
 }

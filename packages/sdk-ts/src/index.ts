@@ -477,6 +477,19 @@ export type {
   VerifyIdentityChainOptions,
 } from './root-of-trust';
 
+// Root of Trust for robot identity: bind a hardware-rooted robot to a
+// recognized manufacturer, anchored to one pinned Vouch root, matching the
+// Python `vouch.robotics.root_identity` module.
+export {
+  buildRobotIdentity,
+  verifyRobotIdentityChain,
+} from './robotics/root-identity';
+export type {
+  RobotIdentityChainResult,
+  BuildRobotIdentityOptions,
+  VerifyRobotIdentityChainOptions,
+} from './robotics/root-identity';
+
 // ---------------------------------------------------------------------------
 // Daemon Client
 // ---------------------------------------------------------------------------
