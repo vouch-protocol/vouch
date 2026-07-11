@@ -250,6 +250,54 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROOT OF TRUST FOR MACHINE IDENTITY
+  // =====================================================================
+  {
+    id: 'root-of-trust',
+    audience: 'Root of trust',
+    title: 'Anchoring agent identity to an authority you pin',
+    items: [
+      {
+        q: 'What is the Root of Trust for Machine Identity?',
+        a: `It is an optional authority layer. A verifier pins one Vouch Protocol root, the root recognizes issuers, and a recognized issuer vouches for an agent's identity. A verifier then confirms any agent by walking a short chain back to the single root it already trusts.
+
+Your agent's own \`vouch init\` identity is unchanged. This layer is additive: reach for it when a verifier wants identities backed by a named authority rather than self-asserted alone.`,
+        meta: 'Spec section 18',
+      },
+      {
+        q: 'Why would I need it if my agent already has a DID?',
+        a: `A self-issued credential anchors to whatever the agent claims about itself: a domain with \`did:web\`, or a public key with \`did:key\`. That proves the same key signed the credential, but it does not say who stands behind the agent, what model it runs, or who owns it.
+
+The Root of Trust layer closes that gap. A recognized issuer binds the agent's DID to real attributes (owner, model, capability class), and the recognition traces back to a root the verifier pinned in advance. There is no external certificate authority and no central per-agent lookup.`,
+      },
+      {
+        q: 'What are the three credential types?',
+        a: `1. **Root of Trust credential** (\`VouchRootOfTrust\`), self-issued by the root so it describes itself.
+2. **Recognized-issuer credential** (\`RecognizedIssuerCredential\`), issued by the root, naming an issuer, its \`recognizedActions\` (like \`issueAgentIdentity\` or \`issueRobotIdentity\`), and a \`recognizedIn\` pointer back to the root.
+3. **Agent identity credential** (\`AgentIdentityCredential\`), issued by a recognized issuer (issuer differs from subject), binding an agent DID to attributes.
+
+All three are ordinary Verifiable Credentials with the same \`eddsa-jcs-2022\` proof used everywhere else in Vouch Protocol.`,
+      },
+      {
+        q: 'How does verification work, and can it run offline?',
+        a: `\`verify_identity_chain\` walks the chain: the recognized-issuer credential must be signed by the pinned root and grant the required action, the identity credential must be signed by that recognized issuer, and an optional action credential must be signed by the agent the identity describes. Everything anchors at the one root DID the verifier trusts up front.
+
+When the root, issuer, and agent all use \`did:key\`, the whole chain verifies with no network, since each \`did:key\` carries its public key in the identifier. For \`did:web\` issuers you can resolve keys over the network or pin them ahead of time.`,
+      },
+      {
+        q: 'How do I revoke a recognition or an identity?',
+        a: `Both the recognized-issuer credential and the agent identity credential carry an optional \`credentialStatus\` (BitstringStatusList). Revoke a recognized issuer to withdraw its authority to vouch for new agents; revoke a single identity to retire one agent without touching the issuer. The verifier checks the status during the walk and rejects a revoked link.`,
+      },
+      {
+        q: 'Who runs the root? Is there a central one?',
+        a: `There is no privileged central root. Anyone can run \`vouch root init\` to stand up their own root, recognize their own issuers, and publish the root DID for verifiers to pin. An enterprise runs one for its fleet, a marketplace for the agents it lists, a robotics vendor for the machines it ships. Verifiers choose which roots to trust.
+
+The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch root issue-identity\`, and \`vouch root verify-chain\`. The layer ships in Python, TypeScript, Rust, and Go with a byte-identical wire format, so a chain can span languages and still verify.`,
+      },
+    ],
+  },
+
+  // =====================================================================
   // EMBODIED AGENTS (ROBOTICS)
   // =====================================================================
   {

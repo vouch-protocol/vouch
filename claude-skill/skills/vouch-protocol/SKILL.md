@@ -1,6 +1,6 @@
 ---
 name: vouch-protocol
-description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, Go, and more, all over one shared Rust core. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol-official/core-wasm`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions. Also covers outcome evidence: commit-before-outcome verdicts (OutcomeCommitmentCredential) and settlement attestations (OutcomeAttestationCredential) that prove an agent's track record cannot be backdated or cherry-picked. Also covers cross-device identity (one identity across many devices via per-device keys and delegation, with Shamir recovery shares for the root) and FROST(Ed25519) threshold signing (splitting a key among several custodians so a threshold of them sign together, with the full key never existing whole).
+description: Help developers integrate Vouch Protocol (cryptographic identity for AI agents) into Python, TypeScript, Go, and more, all over one shared Rust core. Use this skill when the user mentions vouch-protocol package, signing AI agent actions, agent DIDs (did:web / did:key), Verifiable Credentials for agents, Data Integrity proofs, eddsa-jcs-2022 cryptosuite, hybrid-eddsa-mldsa44-jcs-2026 post-quantum profile, Heartbeat Protocol, Identity Sidecar pattern, BitstringStatusList revocation, validator quorum, or asks how to make AI agents cryptographically accountable. Triggers also include `pip install vouch-protocol`, `npm install @vouch-protocol-official/core-wasm`, `go install vouch-sidecar`, and references to agent identity, signed tool calls, or non-repudiation for AI actions. Also covers outcome evidence: commit-before-outcome verdicts (OutcomeCommitmentCredential) and settlement attestations (OutcomeAttestationCredential) that prove an agent's track record cannot be backdated or cherry-picked. Also covers cross-device identity (one identity across many devices via per-device keys and delegation, with Shamir recovery shares for the root) and FROST(Ed25519) threshold signing (splitting a key among several custodians so a threshold of them sign together, with the full key never existing whole). Also covers the Root of Trust for Machine Identity: an optional authority layer where a verifier pins one Vouch Protocol root, the root issues a RecognizedIssuerCredential naming an issuer and its recognizedActions, and a recognized issuer issues an AgentIdentityCredential binding an agent DID to attributes; triggers include Root of Trust, recognized issuer, authority-issued identity, VouchRootOfTrust, verify_identity_chain, and the `vouch root init` / `recognize` / `issue-identity` / `verify-chain` CLI.
 ---
 
 # Vouch Protocol
@@ -28,6 +28,7 @@ Invoke when the user:
 - Wants to prove an agent's track record, commit a verdict before its outcome, or settle a prediction against what actually happened
 - Wants one identity across several devices without copying a private key, or needs to recover a root identity from Shamir shares
 - Needs several custodians to jointly sign one action, or asks about threshold signatures, M-of-N signing keys, or FROST
+- Wants to anchor agent identity to an authority, mentions a Root of Trust, a recognized issuer, an authority-issued identity, `verify_identity_chain`, or the `vouch root` CLI
 
 ## Integration: lead with one line
 
@@ -312,6 +313,45 @@ Reference implementations under `vouch/integrations/`. See
 - Goose: `pip install vouch-goose`, then run `vouch-goose` to register the Vouch
   MCP server as a Goose extension.
 
+### "How do I anchor an agent's identity to an authority instead of a bare DID?"
+
+Use the Root of Trust for Machine Identity, an optional authority layer. A
+verifier pins one Vouch Protocol root, the root recognizes issuers, and a
+recognized issuer binds an agent's DID to attributes. The verifier confirms any
+agent by walking a short chain back to the single root it trusts, with no
+external certificate authority and no central per-agent lookup.
+
+```python
+from vouch.root_of_trust import (
+    generate_did_key_identity, build_root_of_trust,
+    build_recognized_issuer, build_agent_identity, verify_identity_chain,
+)
+from vouch import Signer
+
+root = Signer.from_keypair(generate_did_key_identity())
+root_cred = build_root_of_trust(root, name="Example Machine Identity Root")
+
+issuer = Signer.from_keypair(generate_did_key_identity())
+recognized = build_recognized_issuer(root, issuer_did=issuer.did,
+                                     recognized_actions=["issueAgentIdentity"])
+
+agent = generate_did_key_identity()
+identity = build_agent_identity(issuer, subject_did=agent.did,
+    attributes={"owner": "Example Inc.", "model": "claims-assistant-2",
+                "capabilityClass": "financial-read"})
+
+result = verify_identity_chain(identity, recognized, trusted_root=root.did,
+                               root_credential=root_cred)
+assert result.ok  # result.agent_did, result.issuer_did, result.root_did, result.attributes
+```
+
+With `did:key` identities the whole chain verifies offline. Both the
+recognition and the identity accept a `credentialStatus` for revocation. The
+CLI mirrors this: `vouch root init`, `vouch root recognize`, `vouch root
+issue-identity`, `vouch root verify-chain`. The agent's own `vouch init` is
+unchanged; this is additive. It ships in Python, TypeScript, Rust, and Go with
+a byte-identical wire format. See `reference/root-of-trust.md`.
+
 ### "How do I give a robot a verifiable identity, or enforce physical limits?"
 
 Vouch ships twenty-one robotics capabilities in `vouch.robotics` (and in TypeScript, Go,
@@ -425,6 +465,7 @@ like any other Vouch credential. See `reference/verified-contributor.md`.
 - **User cares about audit trail** -> all of the above, plus the reputation engine for behaviour tracking.
 - **User wants a track record that cannot be backdated or cherry-picked** -> outcome evidence (`vouch.accountability`): commit the verdict before the outcome, settle it later with a neutral settler.
 - **User is building a robot or embodied agent** -> the `vouch.robotics` capabilities: hardware-rooted identity, model and config provenance, physical capability scope, robot-to-robot handshake, encrypted black box with kill switch, a scannable passport, a liveness heartbeat (fresh plus in-envelope, so a robot stays trusted only while renewed), robot credential revocation (per-credential and whole-DID), an accountable safety record (a portable tamper-evident incident ledger), perception provenance (a hash-linked log of signed sensor-frame records, so a verifier holding a frame can confirm what the robot perceived), a delegation lease (a short-lived scope-bounded grant a robot verifies and acts on entirely offline, attenuating down a cross-vendor chain), a physical quorum (a cryptographic two-person rule authorizing a high-consequence action only when M of N attested approvers have each signed it), robot lifecycle (signed ownership transfers forming a chain of custody, a key rotation history, and a decommission credential a verifier honors by refusing to trust a retired robot), regulatory conformance (machine-checkable reference profiles for ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300 that map the robot's credentials to the clauses of a regulation and produce a deterministic report an authority can sign as a conformance attestation), and robotics post-quantum signing (a hybrid Ed25519 and ML-DSA-44 proof for robot credentials, backward-compatible verification that auto-detects classical or hybrid, and a software re-sign to migrate fielded credentials, so an identity signed today stays safe across a ten to twenty year service life), and cross-embodiment identity continuity (one agent identity, a mind, runs on one robot body today and a different body tomorrow: an `AgentEmbodimentCredential` binds the agent to a body's hardware root for a window, `verify_continuity_chain` walks the linked embodiments to prove the same accountable agent persisted across bodies, and `check_no_fork` confirms it was never embodied in two bodies at once), and physical custody handoff (a receiver-signed `CustodyHandoffCredential` recording that an actor accepted custody of a task or object from another, so a chain of handoffs from a person to a robot to another robot establishes who held it at each hop, `holder_at` returns who held it at a given time, and `locate_condition_change` pins damage or loss to the responsible hop; open layer only, managed logistics custody orchestration and fleet tracking are commercial), and robot-to-infrastructure bounded access (an operator signs an `InfrastructureAccessGrant` naming a resource, permitted operations, an optional zone, and a time window, a robot presents a signed `InfrastructureAccessRequest` for one operation, and `authorize_access` decides at the resource offline while `attenuates_grant` keeps every sub-grant narrowing only, so a robot opens a door, calls an elevator, or docks at a charger it does not own with no network call and an attributable record of which robot did what; open layer only, managed access orchestration and fleet-wide grant issuance are commercial), and fused-sensor provenance (a robot fuses many signed sensor frames into one world model, an object set, an occupancy grid, or a pose, and a `FusedPerceptionAttestation` binds the fused output's hash to the ordered input frame hashes, a digest over those inputs, and a fusion method; `verify_fused_attestation` reproduces the input digest and the output hash so the attestation commits to exactly those inputs and that output, and `verify_fusion_inputs` traces every fused input back to a frame in the robot's signed perception log, so a manipulated fusion result or a dropped or substituted input is detectable; open layer only, hardware sensor attestation and managed sensor-fusion orchestration are commercial), and wear and degradation attestation (a robot signs its own degradation as a normalized wear level, 0 as-new to 1 fully worn, with optional metrics (actuator wear, calibration drift, cycle count, fault rate), hash-linked to the previous attestation so the wear history is tamper-evident, and `attenuate_for_wear` derives a physical capability scope whose numeric caps are scaled down by the wear level, a valid attenuation of the original so a worn robot operates inside a tighter verifiable envelope; open layer only, firmware-level enforcement of the narrowed envelope and managed predictive-maintenance modeling are commercial), and bystander-consent evidence (a robot working in a shared or public space captures people incidentally, and it records at capture time the basis on which a capture was permitted, bound to the specific capture by its hash, reusing the perception capture hash, and to the robot's identity, holding only hashes and never an image or a bystander's identifying data; a bystander or their device signs a `BystanderConsentToken` bound to that one capture hash and the robot so consent verifies only against the capture it was given for and cannot be replayed, and the robot signs a `BystanderConsentEvidence` credential binding the capture to a basis from `CONSENT_BASES`, explicit consent, posted notice, legitimate interest, or redacted, and, for explicit consent, to the tokens that cover it by their proof value; `hash_capture`, `build_consent_token`, `verify_consent_token`, `build_consent_evidence`, and `verify_consent_evidence` build and check these, so consent is provable, bound to one capture, and stored without retaining anyone's biometrics; open layer only, on-device biometric detection and redaction, and managed consent-registry orchestration, are commercial).
+- **User wants agent identity backed by an authority, not a bare self-asserted DID** -> the Root of Trust for Machine Identity (`vouch.root_of_trust`): pin one root, recognize issuers, and have a recognized issuer bind an agent DID to attributes; `verify_identity_chain` walks the chain back to the pinned root, offline with `did:key`. Additive to the agent's own `vouch init`. See `reference/root-of-trust.md`.
 - **User wants to test, certify, or prove that an implementation, SDK, or port is conformant** -> the conformance levels L1 to L3 and the self-test runner (`python -m vouch.conformance`), with a hosted verifier that mints a re-checkable badge coming. See `reference/conformance.md`.
 
 ## Reference files
@@ -436,6 +477,7 @@ For depth on any topic, read the relevant file under `reference/`:
 - `reference/go-sidecar.md` - Go sidecar build, run, deploy
 - `reference/credential-format.md` - VC structure, fields, examples
 - `reference/delegation.md` - Delegation chain construction and verification
+- `reference/root-of-trust.md` - Root of Trust for Machine Identity: pin one root, recognize issuers, bind agent identity to attributes, and verify the chain offline
 - `reference/cross-device-identity.md` - One identity across many devices: per-device keys, delegation, revocation, Shamir root recovery
 - `reference/threshold-signing.md` - FROST(Ed25519) threshold signing: splitting a key among several custodians
 - `reference/post-quantum.md` - Hybrid cryptosuite, migration guidance

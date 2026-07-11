@@ -889,6 +889,90 @@ assert valid
 A true multi-device ceremony, where custodians never share a coordinator process, calls \`threshold.commit\`, \`threshold.sign_share\`, and \`threshold.aggregate\` directly on each device, passing commitments and shares over the network instead of holding every share in one \`ThresholdSigner\`.
 `,
       },
+      {
+        id: 'root-of-trust',
+        title: 'Anchoring Identity to a Root of Trust',
+        summary: 'Make Vouch Protocol the authority for agent identity: pin one root, recognize issuers, and verify any agent by walking a short chain back to the root.',
+        body: `
+## Why a root of trust
+
+A self-issued Vouch Protocol credential anchors to whatever the agent claims about itself: a domain with \`did:web\`, or a public key with \`did:key\`. That proves the same key signed, but it does not say who stands behind the agent, what model it runs, or who owns it.
+
+The Root of Trust layer adds that authority. A verifier pins one root up front. The root recognizes issuers. A recognized issuer binds an agent's DID to real attributes. A verifier then confirms any agent by walking a short chain back to the single root it already trusts, with no external certificate authority and no central per-agent lookup.
+
+Your agent's own \`vouch init\` identity is unchanged. This is an additive layer; reach for it when a verifier wants identities backed by a named authority.
+
+## The three credentials
+
+All three are ordinary Verifiable Credentials with the same \`eddsa-jcs-2022\` proof used everywhere else in Vouch Protocol.
+
+1. **Root of Trust** (\`VouchRootOfTrust\`): self-issued by the root, so it describes itself. The verifier pins the root DID.
+2. **Recognized-issuer** (\`RecognizedIssuerCredential\`): issued by the root. Names an issuer, its \`recognizedActions\` (\`issueAgentIdentity\`, \`issueRobotIdentity\`), and a \`recognizedIn\` pointer back to the root.
+3. **Agent identity** (\`AgentIdentityCredential\`): issued by a recognized issuer, where the issuer differs from the subject. Binds the agent's DID to attributes (owner, model, capability class).
+
+## Build a chain in Python
+
+\`\`\`python
+from vouch.root_of_trust import (
+  generate_did_key_identity, build_root_of_trust,
+  build_recognized_issuer, build_agent_identity, verify_identity_chain,
+)
+from vouch import Signer
+
+# Stand up a root (self-issued).
+root_keys = generate_did_key_identity()
+root = Signer.from_keypair(root_keys)
+root_cred = build_root_of_trust(root, name="Example Machine Identity Root")
+
+# The root recognizes an issuer.
+issuer_keys = generate_did_key_identity()
+issuer = Signer.from_keypair(issuer_keys)
+recognized = build_recognized_issuer(
+  root, issuer_did=issuer.did, recognized_actions=["issueAgentIdentity"],
+)
+
+# The recognized issuer vouches for an agent's identity.
+agent_keys = generate_did_key_identity()
+identity = build_agent_identity(
+  issuer, subject_did=agent_keys.did,
+  attributes={"owner": "Example Inc.", "model": "claims-assistant-2",
+              "capabilityClass": "financial-read"},
+)
+\`\`\`
+
+## Verify against the pinned root
+
+\`\`\`python
+result = verify_identity_chain(
+  identity, recognized,
+  trusted_root=root.did,        # the ONE DID this verifier trusts
+  root_credential=root_cred,    # optional self-consistency check
+)
+assert result.ok
+print(result.agent_did, result.issuer_did, result.root_did)
+print(result.attributes)
+\`\`\`
+
+The walk confirms the recognition is signed by the pinned root and grants the required action, then that the identity is signed by that recognized issuer. Pass an \`action_credential\` too and it also confirms the agent signed its own action. On failure the result carries a structured reason showing which link broke.
+
+## Offline and revocation
+
+When the root, issuer, and agent all use \`did:key\`, the whole chain verifies with no network, since each \`did:key\` carries its public key in the identifier. For \`did:web\` issuers, resolve keys over the network or pin them ahead of time.
+
+Both the recognized-issuer and identity credentials accept an optional \`credentialStatus\` (BitstringStatusList). Revoke a recognized issuer to withdraw its authority to vouch for new agents; revoke a single identity to retire one agent. The verifier checks the status during the walk.
+
+## From the command line
+
+Four subcommands drive the lifecycle:
+
+- \`vouch root init\` self-issues a root and mints its key.
+- \`vouch root recognize\` issues a recognized-issuer credential.
+- \`vouch root issue-identity\` issues an agent identity as a recognized issuer.
+- \`vouch root verify-chain\` walks an agent identity back to a pinned root.
+
+Anyone can run \`vouch root init\` and publish the root DID for verifiers to pin. The layer ships in Python, TypeScript, Rust, and Go with a byte-identical wire format, so a chain can span languages and still verify.
+`,
+      },
     ],
   },
 
