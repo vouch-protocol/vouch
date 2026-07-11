@@ -112,6 +112,25 @@ A shared interop vector (`test-vectors/robotics/vector.json`) pins the hardware-
 binding and the config hash, so a robotics credential signed in any language
 verifies in every other.
 
+#### Root-anchored hardware-rooted robot identity (PAD-103)
+
+The robotics layer binds the hardware-rooted robot identity to the Root of Trust for
+Machine Identity, so a verifier pinning one root confirms in a single offline check both
+that a robot comes from a recognized manufacturer and that its identity key is
+hardware-rooted:
+
+- **`build_robot_identity`**: a manufacturer recognized by the pinned root to issue robot
+  identities issues an authority identity whose subject references the robot's
+  hardware-rooted key.
+- **`verify_robot_identity_chain`**: anchors the manufacturer's recognition to the pinned
+  root, verifies the robot's hardware attestation, and confirms the key the manufacturer
+  vouched for is the exact key the hardware attested, with the same anchor-once model and
+  reason-code style as the recognized-issuer authority layer.
+
+Implemented in Python (`vouch.robotics.root_identity`), TypeScript, Go, and the Rust
+core, with the root-anchored robot identity added to the Root of Trust interop vector
+(`test-vectors/root-of-trust/vector.json`).
+
 #### State Verifiability runtime (Specification §11, §15)
 
 First-class implementation of the State Verifiability layer the spec

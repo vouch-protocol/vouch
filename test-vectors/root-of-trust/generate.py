@@ -127,8 +127,10 @@ def build_vectors() -> dict:
         created=FIXED_TIME,
         credential_id="urn:uuid:55555555-5555-5555-5555-555555555555",
     )
-    robot_pub_raw = Ed25519PrivateKey.from_private_bytes(ROBOT_SEED).public_key().public_bytes(
-        Encoding.Raw, PublicFormat.Raw
+    robot_pub_raw = (
+        Ed25519PrivateKey.from_private_bytes(ROBOT_SEED)
+        .public_key()
+        .public_bytes(Encoding.Raw, PublicFormat.Raw)
     )
     robot_public_jwk = {"kty": "OKP", "crv": "Ed25519", "x": _b64url(robot_pub_raw)}
 

@@ -102,6 +102,17 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-092](./PAD-092-wear-driven-capability-attenuation.md) | Wear-Driven Automatic Attenuation of a Robot's Physical Capability Scope | 2026-07-05 | Published |
 | [PAD-093](./PAD-093-bystander-consent-evidence.md) | Privacy-Preserving Bystander-Consent Evidence for Robot Capture | 2026-07-06 | Published |
 | [PAD-094](./PAD-094-capture-bound-consent-token.md) | Capture-Bound Bystander Consent Token That Cannot Be Replayed | 2026-07-06 | Published |
+| [PAD-103](./PAD-103-root-anchored-hardware-rooted-robot-identity.md) | Root-Anchored, Hardware-Rooted Robot Identity Binding | 2026-07-12 | Published |
+
+
+## July 12, 2026: Root-Anchored Hardware-Rooted Robot Identity (PAD-103)
+
+PAD-103 composes the recognized-issuer authority layer with the hardware-rooted robot
+identity format so a verifier pinning one root confirms, in a single offline check, both
+that a robot comes from a recognized manufacturer and that its identity key is bound to a
+hardware root. The manufacturer's authority identity references the robot's
+hardware-rooted key, and verification requires the vouched key to equal the
+hardware-attested key, so provenance and hardware-rooting cannot be presented apart.
 
 
 ## July 6, 2026: Bystander Consent for Robot Capture (PAD-093, PAD-094)
