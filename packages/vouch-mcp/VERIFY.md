@@ -19,7 +19,7 @@ pip install pytest
 pytest packages/vouch-mcp/tests -q
 ```
 
-Expect: 3 passed. They check the package exports, that the FastMCP server has
+Expect: 3 passed. They check the package exports, that the MCP server has
 `sign` / `create_session` / `get_identity` registered, and that the
 issued credential is `eddsa-jcs-2022` and verifies.
 

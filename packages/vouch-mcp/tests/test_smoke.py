@@ -1,8 +1,9 @@
 """Smoke tests for the vouch-mcp package.
 
-These prove the package imports, the server object is the official FastMCP
-type with the expected tools registered, and the server's signing path
-produces a credential that verifies.
+These prove the package imports, the server object is the official SDK's
+high-level server type with the expected tools registered, and the server's
+signing path produces a credential that verifies. They pass against both
+mcp 1.x (FastMCP) and mcp 2.x (MCPServer, the 2026-07-28 protocol revision).
 """
 
 import asyncio
@@ -19,7 +20,9 @@ def test_package_exports():
     import vouch_mcp
 
     assert callable(vouch_mcp.main)
-    assert type(vouch_mcp.mcp).__name__ == "FastMCP"
+    # mcp 1.x names the high-level server class FastMCP; mcp 2.x (the
+    # 2026-07-28 protocol revision) renamed it MCPServer.
+    assert type(vouch_mcp.mcp).__name__ in ("FastMCP", "MCPServer")
 
 
 def test_registered_tool_names():

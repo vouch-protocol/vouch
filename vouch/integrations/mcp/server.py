@@ -1,9 +1,16 @@
 """
 Vouch Protocol MCP Server.
 
-A Model Context Protocol server, built on the official MCP Python SDK
-(FastMCP), that lets MCP-compatible clients (Claude Desktop, Cursor, agent
+A Model Context Protocol server, built on the official MCP Python SDK,
+that lets MCP-compatible clients (Claude Desktop, Cursor, agent
 frameworks in any language) both *issue* and *verify* Vouch Credentials.
+
+Works with both major lines of the official SDK: mcp 1.x (protocol
+revisions up to 2025-11-25, FastMCP class) and mcp 2.x (the stateless
+2026-07-28 revision, MCPServer class). All tools here are stateless
+request/response functions, and session vouchers are explicit signed
+handles the client passes back in, which is exactly the state model the
+2026-07-28 revision prescribes.
 
 Relationship to ``vouch.autosign``:
 
@@ -35,25 +42,41 @@ import json
 import os
 from typing import Optional
 
+# The official MCP Python SDK renamed its high-level server class for the
+# 2026-07-28 protocol revision: mcp>=2.0 ships ``mcp.server.MCPServer``
+# (stateless core, no initialize handshake, server/discover), while mcp 1.x
+# ships ``mcp.server.fastmcp.FastMCP``. The tool decorator API is identical,
+# so we support both and let the installed SDK determine the protocol
+# revisions spoken on the wire.
 try:
-    from mcp.server.fastmcp import FastMCP
-except ImportError as exc:  # pragma: no cover
-    raise SystemExit(
-        "The Vouch MCP server requires the MCP SDK. Install it with:\n"
-        "    pip install 'vouch-protocol[mcp]'\n"
-        "or\n"
-        "    pip install mcp\n"
-        f"(import error: {exc})"
-    )
+    from mcp.server import MCPServer as _ServerClass  # mcp >= 2.0
+
+    _MCP_SDK_V2 = True
+except ImportError:
+    try:
+        from mcp.server.fastmcp import FastMCP as _ServerClass  # mcp 1.x
+
+        _MCP_SDK_V2 = False
+    except ImportError as exc:  # pragma: no cover
+        raise SystemExit(
+            "The Vouch MCP server requires the MCP SDK. Install it with:\n"
+            "    pip install 'vouch-protocol[mcp]'\n"
+            "or\n"
+            "    pip install mcp\n"
+            f"(import error: {exc})"
+        )
 
 from vouch.autosign import resolve_signer, sign_intent
 
 
-mcp = FastMCP(
-    "vouch",
-    host=os.getenv("VOUCH_MCP_HOST", "127.0.0.1"),
-    port=int(os.getenv("VOUCH_MCP_PORT", "8080")),
-)
+_HOST = os.getenv("VOUCH_MCP_HOST", "127.0.0.1")
+_PORT = int(os.getenv("VOUCH_MCP_PORT", "8080"))
+
+if _MCP_SDK_V2:
+    # mcp>=2.0 takes host/port per transport at run() time, not here.
+    mcp = _ServerClass("vouch")
+else:
+    mcp = _ServerClass("vouch", host=_HOST, port=_PORT)
 
 
 @mcp.tool()
@@ -252,13 +275,21 @@ def main() -> None:
 
     - 'stdio' (default): for local clients like Claude Desktop and Cursor.
     - 'http' / 'streamable-http': for remote / hosted deployments.
-    - 'sse': legacy Server-Sent Events transport.
+    - 'sse': the HTTP+SSE transport, deprecated by the MCP specification;
+      kept for existing clients during the deprecation window. Use
+      Streamable HTTP for anything new.
     """
     transport = os.getenv("VOUCH_MCP_TRANSPORT", "stdio").lower().replace("_", "-")
     if transport in ("http", "streamable-http"):
-        mcp.run(transport="streamable-http")
+        if _MCP_SDK_V2:
+            mcp.run(transport="streamable-http", host=_HOST, port=_PORT)
+        else:
+            mcp.run(transport="streamable-http")
     elif transport == "sse":
-        mcp.run(transport="sse")
+        if _MCP_SDK_V2:
+            mcp.run(transport="sse", host=_HOST, port=_PORT)
+        else:
+            mcp.run(transport="sse")
     else:
         mcp.run()
 

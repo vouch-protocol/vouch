@@ -46,7 +46,9 @@ crewai = ["crewai>=0.1.0"]
 langgraph = ["langgraph>=0.1.0"]
 goose = ["pyyaml>=6.0"]
 autogen = ["pyautogen>=0.2.0"]
-mcp = ["mcp>=0.1.0"]
+# mcp 1.2 is the first release with the FastMCP high-level API; the server
+# also supports mcp 2.x (the 2026-07-28 stateless protocol revision).
+mcp = ["mcp>=1.2.0"]
 vertex = ["google-cloud-aiplatform>=1.0.0"]
 streamlit = ["streamlit>=1.0.0"]
 
