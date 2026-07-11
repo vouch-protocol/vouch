@@ -30,13 +30,13 @@ jobs:
           - { os: windows-latest, rids: "win-x64" }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Build native libraries
         working-directory: sdks/dotnet/VouchCore
         shell: bash
         run: for rid in ${{ matrix.rids }}; do bash build-native.sh "$rid"; done
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.os }}
           path: sdks/dotnet/VouchCore/runtimes
@@ -49,12 +49,12 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "8.0.x"
       - name: Collect native libraries into runtimes/
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           path: sdks/dotnet/VouchCore/runtimes
           pattern: native-*

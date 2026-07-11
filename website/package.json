@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "copy-wasm": "node scripts/copy-wasm.mjs",
+    "predev": "npm run copy-wasm",
     "dev": "next dev",
+    "prebuild": "npm run copy-wasm",
     "build": "next build",
+    "prestart": "npm run copy-wasm",
     "start": "next start",
     "lint": "next lint",
     "export-to-docs": "next build && cp -r out/. ../docs/ && echo 'Exported to ../docs/. Commit and push to deploy via GH Pages. CI handles this automatically on push to main.'"
   },
   "dependencies": {
+    "@vouch-protocol-official/core-wasm": "2.0.0",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18"

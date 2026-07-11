@@ -44,6 +44,11 @@ export default function DemosPage() {
               {' '}<code className="font-mono text-[0.85em]">examples/caveats_demo.py</code>. See the{' '}
               <a href="/help/" className="prose-link">guides</a> for the full walkthrough.
             </p>
+            <p className="text-ink-soft text-[0.95rem] leading-relaxed mt-3">
+              <strong className="text-ink">More live crypto.</strong> The{' '}
+              <a href="/demos/root-of-trust/" className="prose-link">Root of Trust demo</a> signs and verifies a machine
+              identity chain in your browser, pinning one root DID.
+            </p>
           </div>
         </div>
       </section>
