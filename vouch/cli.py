@@ -585,6 +585,157 @@ def cmd_root_verify_chain(args: argparse.Namespace) -> int:
     return 1
 
 
+# ---------------------------------------------------------------------------
+# One-command enroll and root-anchored verify (`vouch agent ...`)
+#
+# `vouch agent enroll` is the local self-host path: the operator holds the
+# recognized issuer key, attests an agent DID, and writes a portable identity
+# bundle. `vouch agent verify` pins a root DID and checks a bundle offline. A
+# hosted issuer service (where a provider signs attestations for you) is a
+# separate path and is not what these commands do.
+# ---------------------------------------------------------------------------
+
+
+def cmd_agent_enroll(args: argparse.Namespace) -> int:
+    """Enroll an agent and write a portable identity bundle.
+
+    Loads or mints the agent identity, has the recognized issuer attest it, then
+    packages the identity plus the issuer recognition into one bundle a verifier
+    can check against a pinned root. The issuer is always a parameter (the
+    operator's own recognized issuer key), never a hardcoded authority.
+    """
+    from vouch.root_of_trust import (
+        build_agent_identity,
+        build_identity_bundle,
+        generate_did_key_identity,
+    )
+
+    # 1. Determine the agent DID. If none was supplied, mint a fresh did:key
+    #    agent identity, save it to the keystore, and print its DID.
+    agent_did = args.agent_did
+    if not agent_did:
+        try:
+            agent_keys = generate_did_key_identity()
+        except Exception as e:
+            print(f"Error generating agent identity: {e}", file=sys.stderr)
+            return 1
+
+        km = KeyManager()
+        non_interactive = getattr(args, "yes", False) or not sys.stdin.isatty()
+        if non_interactive:
+            passphrase = None
+        else:
+            passphrase = getpass.getpass(
+                f"Enter passphrase for {agent_keys.did} (leave empty for no encryption): "
+            )
+            confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+            if passphrase != confirm:
+                print("Error: passphrases do not match", file=sys.stderr)
+                return 1
+
+        try:
+            km.save_identity(agent_keys, passphrase if passphrase else None)
+        except Exception as e:
+            print(f"Error saving agent identity: {e}", file=sys.stderr)
+            return 1
+
+        agent_did = agent_keys.did
+        print(f"Generated agent identity: {agent_did}")
+        if not passphrase:
+            print("Warning: agent key saved in plain text. Use a passphrase to encrypt it.")
+
+    # 2. Parse the identity attributes to bind (owner, model, and so on).
+    attributes = {}
+    for item in args.attr or []:
+        if "=" not in item:
+            print(f"Error: --attr must be KEY=VALUE, got {item!r}", file=sys.stderr)
+            return 1
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if not key:
+            print(f"Error: --attr key is empty in {item!r}", file=sys.stderr)
+            return 1
+        attributes[key] = value
+    if not attributes:
+        print("Error: at least one --attr KEY=VALUE is required", file=sys.stderr)
+        return 1
+
+    # 3. Load the recognized issuer signer. This is a parameter (the operator's
+    #    own issuer key from the keystore), never a fixed authority.
+    signer = _load_stored_signer(args.issuer_did)
+    if signer is None:
+        return 1
+
+    # 4. Load the recognition that proves this issuer is recognized by a root,
+    #    so the bundle is verifiable against that root.
+    recognition = _read_json_file(args.recognition)
+    if recognition is None:
+        return 1
+
+    action_credential = None
+    if args.action:
+        action_credential = _read_json_file(args.action)
+        if action_credential is None:
+            return 1
+
+    # 5. Attest the agent identity and package the bundle.
+    try:
+        identity = build_agent_identity(signer, subject_did=agent_did, attributes=attributes)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    bundle = build_identity_bundle(
+        identity=identity,
+        recognition=recognition,
+        action=action_credential,
+    )
+
+    out_path = args.out or "identity-bundle.json"
+    if not _write_json_file(bundle, out_path):
+        return 1
+
+    print("Agent enrolled")
+    print(f"Agent DID:  {agent_did}")
+    print(f"Issuer DID: {signer.did}")
+    print(f"Bundle:     {out_path}")
+    return 0
+
+
+def cmd_agent_verify(args: argparse.Namespace) -> int:
+    """Verify a portable identity bundle against a pinned root DID."""
+    from vouch.root_of_trust import verify_bundle
+
+    root = args.root or os.environ.get("VOUCH_TRUSTED_ROOT")
+    if not root:
+        print(
+            "Error: a root DID is required. Pass --root or set VOUCH_TRUSTED_ROOT.",
+            file=sys.stderr,
+        )
+        return 1
+
+    bundle = _read_json_file(args.bundle)
+    if bundle is None:
+        return 1
+
+    result = verify_bundle(
+        bundle,
+        trusted_root=root,
+        required_action=args.action_required,
+    )
+
+    if result.ok:
+        print("Identity bundle verified")
+        print(f"Agent DID:  {result.agent_did}")
+        print(f"Issuer DID: {result.issuer_did}")
+        print(f"Root DID:   {result.root_did}")
+        print(f"Attributes: {json.dumps(result.attributes)}")
+        return 0
+
+    print(f"Identity bundle rejected: {result.reason}", file=sys.stderr)
+    return 1
+
+
 def _export_vouch_key_to_ssh() -> tuple[str, str]:
     """Export Vouch identity to SSH key format.
 
@@ -1853,6 +2004,77 @@ def main(argv: "list[str] | None" = None) -> int:
         help="Action the issuer must be recognized for (default: issueAgentIdentity)",
     )
 
+    # agent command group (one-command enroll and root-anchored verify)
+    p_agent = subparsers.add_parser(
+        "agent",
+        help="Enroll an agent and verify its portable identity bundle",
+    )
+    agent_subparsers = p_agent.add_subparsers(dest="agent_command", help="Agent commands")
+
+    # agent enroll
+    p_agent_enroll = agent_subparsers.add_parser(
+        "enroll",
+        help="Attest an agent and write a portable identity bundle",
+        description=(
+            "Local self-host path: the operator holds the recognized issuer key, "
+            "attests an agent identity, and writes a portable bundle a verifier "
+            "can check against a pinned root. A hosted issuer service, where a "
+            "provider signs attestations for you, is a separate path."
+        ),
+    )
+    p_agent_enroll.add_argument(
+        "--agent-did",
+        dest="agent_did",
+        help="DID of the agent to attest (default: generate a fresh did:key agent identity)",
+    )
+    p_agent_enroll.add_argument(
+        "--issuer-did",
+        dest="issuer_did",
+        help="DID of the recognized issuer to sign with (default: the stored issuer)",
+    )
+    p_agent_enroll.add_argument(
+        "--attr",
+        action="append",
+        metavar="KEY=VALUE",
+        help="Identity attribute to bind (repeatable), e.g. --attr owner=Acme",
+    )
+    p_agent_enroll.add_argument(
+        "--recognition",
+        required=True,
+        help="Path to the recognized-issuer credential proving the issuer is recognized by a root",
+    )
+    p_agent_enroll.add_argument(
+        "--action",
+        help="Optional path to an agent action credential to include in the bundle",
+    )
+    p_agent_enroll.add_argument(
+        "--out",
+        help="Path to write the identity bundle (default: identity-bundle.json)",
+    )
+    p_agent_enroll.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Non-interactive: save a generated agent key without prompting for a passphrase",
+    )
+
+    # agent verify
+    p_agent_verify = agent_subparsers.add_parser(
+        "verify",
+        help="Verify a portable identity bundle against a pinned root DID",
+    )
+    p_agent_verify.add_argument("--bundle", required=True, help="Path to the identity bundle JSON")
+    p_agent_verify.add_argument(
+        "--root",
+        help="The root DID the verifier pins (default: the VOUCH_TRUSTED_ROOT env var)",
+    )
+    p_agent_verify.add_argument(
+        "--action-required",
+        dest="action_required",
+        default="issueAgentIdentity",
+        help="Action the issuer must be recognized for (default: issueAgentIdentity)",
+    )
+
     # scan command (PAD-058 detection stage; OSS leak scanner)
     p_scan = subparsers.add_parser(
         "scan",
@@ -1988,6 +2210,14 @@ def main(argv: "list[str] | None" = None) -> int:
             return cmd_root_verify_chain(args)
         else:
             p_root.print_help()
+            return 0
+    elif args.command == "agent":
+        if args.agent_command == "enroll":
+            return cmd_agent_enroll(args)
+        elif args.agent_command == "verify":
+            return cmd_agent_verify(args)
+        else:
+            p_agent.print_help()
             return 0
     elif args.command == "scan":
         return cmd_scan(args)
