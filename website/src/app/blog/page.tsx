@@ -25,7 +25,7 @@ export default function BlogIndex() {
             <section>
                 <div className="container-wide py-16">
                     <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
-                        {BLOG_POSTS.map((post) => (
+                        {[...BLOG_POSTS].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((post) => (
                             <li key={post.slug} className="feature-card">
                                 <div className="eyebrow-faint mb-3">{post.date}{post.readingTime ? ` · ${post.readingTime}` : ''}</div>
                                 <h2 className="font-serif font-semibold text-[1.2rem] mb-3 leading-snug">
