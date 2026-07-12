@@ -1087,3 +1087,20 @@ pub fn robotics_verify_consent_evidence(
 ) -> Result<String, JsError> {
     rjson::verify_consent_evidence(params_json, &b64d(robot_public_b64)?).map_err(jerr)
 }
+
+#[wasm_bindgen(js_name = roboticsBuildSafetyEvidence)]
+pub fn robotics_build_safety_evidence(
+    signer_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_safety_evidence(&b64d(signer_seed_b64)?, params_json).map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsVerifySafetyEvidence)]
+pub fn robotics_verify_safety_evidence(
+    credential_json: &str,
+    robot_public_b64: &str,
+    entries_json: &str,
+) -> Result<String, JsError> {
+    rjson::verify_safety_evidence(credential_json, &b64d(robot_public_b64)?, entries_json).map_err(jerr)
+}
