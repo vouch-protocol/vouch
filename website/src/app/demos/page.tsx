@@ -47,7 +47,9 @@ export default function DemosPage() {
             <p className="text-ink-soft text-[0.95rem] leading-relaxed mt-3">
               <strong className="text-ink">More live crypto.</strong> The{' '}
               <a href="/demos/root-of-trust/" className="prose-link">Root of Trust demo</a> signs and verifies a machine
-              identity chain in your browser, pinning one root DID.
+              identity chain in your browser, pinning one root DID. The{' '}
+              <a href="/demos/transparency/" className="prose-link">AI transparency marking demo</a> signs a
+              machine-readable disclosure of an output's AI origin and verifies it live.
             </p>
           </div>
         </div>
