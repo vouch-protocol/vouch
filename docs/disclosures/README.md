@@ -114,6 +114,17 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-102](./PAD-102-handover-acknowledgement.md) | Recipient Acknowledgement Bound to a Specific Robot-to-Human Handover | 2026-07-06 | Published |
 | [PAD-103](./PAD-103-root-anchored-hardware-rooted-robot-identity.md) | Root-Anchored, Hardware-Rooted Robot Identity Binding | 2026-07-12 | Published |
 | [PAD-104](./PAD-104-per-tool-call-continuous-trust-authorization.md) | Per-Tool-Call Continuous-Trust Authorization with Resource-Bound Delegation | 2026-07-12 | Published |
+| [PAD-105](./PAD-105-safety-island-evidence-record.md) | Signed Tamper-Evident Safety-Evidence Record Bound to a Robot's Identity and Certified Stack | 2026-07-12 | Published |
+
+
+## July 12, 2026: Safety-Island Evidence Record (PAD-105)
+
+PAD-105 seals the event stream from a robot's functional-safety subsystem into an
+encrypted, hash-linked log, then has the robot sign a credential fixing the log's chain
+head and entry count and binding them to its identity and to the certified safety-stack
+elements it ran on. A verifier confirms the record is unaltered, untruncated, attributable
+to that robot, and tied to the certified configuration, all without the log's
+confidentiality key. It is the evidence layer beneath a design-time safety certification.
 
 
 ## July 12, 2026: Root-Anchored Hardware-Rooted Robot Identity (PAD-103)

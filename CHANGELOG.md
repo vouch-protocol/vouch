@@ -149,7 +149,7 @@ Implemented in Python (`vouch.robotics.root_identity`), TypeScript, Go, and the 
 core, with the root-anchored robot identity added to the Root of Trust interop vector
 (`test-vectors/root-of-trust/vector.json`).
 
-#### Halos safety-evidence recorder (NVIDIA Halos integration)
+#### Halos safety-evidence recorder (NVIDIA Halos integration, PAD-105)
 
 An evidence layer for a robot running an NVIDIA Halos-certified stack. Halos certifies
 that the stack is safe and secure by design; this records what a specific robot actually
