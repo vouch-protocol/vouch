@@ -30,6 +30,7 @@ robots and embodied agents:
   - swarm: multi-robot swarm membership and collective-action attribution.
   - handover: safe robot-to-human handover with an envelope attestation and receipt.
   - root_identity: bind a hardware-rooted robot to a recognized manufacturer under a pinned root.
+  - halos: signed, tamper-evident safety-evidence record for an NVIDIA Halos-certified stack.
 """
 
 from .capability import (
@@ -228,6 +229,14 @@ from .root_identity import (
     build_robot_identity,
     verify_robot_identity_chain,
 )
+from .halos import (
+    HALOS_EVENT_SOURCES,
+    HALOS_SAFETY_EVIDENCE_TYPE,
+    HalosError,
+    SafetyEventRecorder,
+    build_safety_evidence,
+    verify_safety_evidence,
+)
 
 __all__ = [
     # identity
@@ -391,6 +400,13 @@ __all__ = [
     "RobotIdentityChainResult",
     "build_robot_identity",
     "verify_robot_identity_chain",
+    # halos safety evidence (signed tamper-evident record for a Halos-certified stack)
+    "HALOS_SAFETY_EVIDENCE_TYPE",
+    "HALOS_EVENT_SOURCES",
+    "HalosError",
+    "SafetyEventRecorder",
+    "build_safety_evidence",
+    "verify_safety_evidence",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",
