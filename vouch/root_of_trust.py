@@ -52,12 +52,21 @@ __all__ = [
     "build_agent_identity",
     "verify_identity_chain",
     "register_recognized_issuer",
+    "IDENTITY_BUNDLE_TYPE",
+    "build_identity_bundle",
+    "verify_bundle",
 ]
 
 # Credential type identifiers (the second entry in each `type` array).
 ROOT_OF_TRUST_TYPE = "VouchRootOfTrust"
 RECOGNIZED_ISSUER_TYPE = "RecognizedIssuerCredential"
 AGENT_IDENTITY_TYPE = "AgentIdentityCredential"
+
+# Type tag for the portable identity bundle produced by
+# :func:`build_identity_bundle`. A bundle packages the credentials a verifier
+# needs to check an agent against a pinned root, so an operator can hand off a
+# single file and the receiver verifies it offline.
+IDENTITY_BUNDLE_TYPE = "VouchIdentityBundle"
 
 # Actions an issuer can be recognized to perform.
 ACTION_ISSUE_AGENT_IDENTITY = "issueAgentIdentity"
@@ -396,6 +405,108 @@ def verify_identity_chain(
         root_did=trusted_root,
         attributes=attributes,
         action=action_passport,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Portable identity bundle
+# ---------------------------------------------------------------------------
+
+
+def build_identity_bundle(
+    *,
+    identity: Dict[str, Any],
+    recognition: Dict[str, Any],
+    action: Optional[Dict[str, Any]] = None,
+    root: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Package a verifiable identity into one portable bundle.
+
+    A bundle staples the pieces a verifier needs together so an operator can
+    hand off a single file. The receiver pins a root DID and calls
+    :func:`verify_bundle`, with no central lookup and no network for
+    ``did:key`` identities.
+
+    Args:
+      identity: The authority-issued agent identity credential.
+      recognition: The recognized-issuer credential that proves the identity's
+        issuer is recognized by a root. Required so the bundle is verifiable.
+      action: Optional agent action credential to carry alongside the identity.
+      root: Optional Root of Trust credential, so the bundle is self-describing
+        about the anchor it chains to.
+
+    Returns:
+      A JSON-serializable bundle dict. Optional keys are omitted when None.
+    """
+    bundle: Dict[str, Any] = {
+        "type": IDENTITY_BUNDLE_TYPE,
+        "vouchVersion": "1.0",
+        "identity": identity,
+        "recognizedIssuer": recognition,
+    }
+    if action is not None:
+        bundle["action"] = action
+    if root is not None:
+        bundle["root"] = root
+    return bundle
+
+
+def verify_bundle(
+    bundle: Dict[str, Any],
+    *,
+    trusted_root: str,
+    required_action: str = ACTION_ISSUE_AGENT_IDENTITY,
+    allow_did_resolution: bool = False,
+    trusted_roots: Optional[Dict[str, str]] = None,
+    clock_skew_seconds: int = 30,
+    is_revoked: Optional[Callable[[Dict[str, Any]], bool]] = None,
+) -> IdentityChainResult:
+    """Verify a portable identity bundle against a pinned root.
+
+    Reads the credentials out of the bundle and delegates to
+    :func:`verify_identity_chain`, so verifying a bundle verifies the agent
+    identity against the pinned root as well as any bundled action. A malformed
+    bundle returns a clean rejection with reason ``bad_bundle``.
+
+    Args:
+      bundle: A bundle produced by :func:`build_identity_bundle`.
+      trusted_root: The root DID the verifier pins as its trust anchor.
+      required_action: Action the issuer must be recognized for. Defaults to
+        ``issueAgentIdentity``.
+      allow_did_resolution: Allow network ``did:web`` resolution. Defaults False.
+      trusted_roots: Optional map of DID -> public JWK JSON for offline pinning.
+      clock_skew_seconds: Allowed clock drift for temporal checks.
+      is_revoked: Optional callable that returns True if a credential is revoked.
+
+    Returns:
+      An :class:`IdentityChainResult`.
+    """
+    if not isinstance(bundle, dict) or bundle.get("type") != IDENTITY_BUNDLE_TYPE:
+        return IdentityChainResult(ok=False, reason="bad_bundle")
+
+    identity = bundle.get("identity")
+    recognition = bundle.get("recognizedIssuer")
+    if not isinstance(identity, dict) or not isinstance(recognition, dict):
+        return IdentityChainResult(ok=False, reason="bad_bundle")
+
+    action = bundle.get("action")
+    if action is not None and not isinstance(action, dict):
+        return IdentityChainResult(ok=False, reason="bad_bundle")
+    root = bundle.get("root")
+    if root is not None and not isinstance(root, dict):
+        return IdentityChainResult(ok=False, reason="bad_bundle")
+
+    return verify_identity_chain(
+        identity,
+        recognition,
+        trusted_root=trusted_root,
+        action_credential=action,
+        root_credential=root,
+        required_action=required_action,
+        allow_did_resolution=allow_did_resolution,
+        trusted_roots=trusted_roots,
+        clock_skew_seconds=clock_skew_seconds,
+        is_revoked=is_revoked,
     )
 
 

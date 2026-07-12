@@ -67,9 +67,11 @@ from .audio import AudioSigner, SignedAudioResult
 from .root_of_trust import (
     IdentityChainResult,
     build_agent_identity,
+    build_identity_bundle,
     build_recognized_issuer,
     build_root_of_trust,
     generate_did_key_identity,
+    verify_bundle,
     verify_identity_chain,
 )
 
@@ -479,6 +481,8 @@ __all__ = [
     "build_recognized_issuer",
     "build_agent_identity",
     "verify_identity_chain",
+    "build_identity_bundle",
+    "verify_bundle",
     "generate_did_key_identity",
     "IdentityChainResult",
     # Key management
