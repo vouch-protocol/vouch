@@ -13,6 +13,24 @@ robots and embodied agents:
   - liveness: robot heartbeat with safety-envelope conformance and trust decay.
   - revocation: whole-DID kill and surgical per-credential revocation.
   - safety_record: incident/near-miss ledger + portable safety-record credential.
+  - lease: short-lived, offline-verifiable delegation lease (open cross-vendor chain).
+  - physical_quorum: M-of-N approvals for high-consequence physical actions.
+  - lifecycle: ownership transfer, key rotation, and decommissioning.
+  - perception: signed, tamper-evident provenance for captured sensor frames.
+  - conformance: machine-checkable mapping from credentials to safety regulations.
+  - pq: hybrid post-quantum signing and backward-compatible verification.
+  - embodiment: cross-embodiment identity continuity for an agent across bodies.
+  - custody: physical custody handoff chain for a task or object across actors.
+  - access: bounded, revocable robot access to physical infrastructure resources.
+  - fusion: signed provenance binding a fused world model to its input frames.
+  - wear: signed wear and degradation attestation with capability auto-attenuation.
+  - consent: bystander-consent evidence binding a consent basis to a robot capture.
+  - teleop: accountable teleoperation handoff, who or what was in control of a robot.
+  - odd: operating-domain conformance, a robot attests it stayed in its certified domain.
+  - swarm: multi-robot swarm membership and collective-action attribution.
+  - handover: safe robot-to-human handover with an envelope attestation and receipt.
+  - root_identity: bind a hardware-rooted robot to a recognized manufacturer under a pinned root.
+  - halos: signed, tamper-evident safety-evidence record for an NVIDIA Halos-certified stack.
 """
 
 from .capability import (
@@ -80,6 +98,145 @@ from .safety_record import (
     verify_safety_log,
     verify_safety_record,
 )
+from .perception import (
+    MODALITIES,
+    PerceptionLog,
+    build_perception_attestation,
+    hash_frame,
+    verify_perception_attestation,
+    verify_perception_log,
+)
+from .lease import (
+    build_delegation_lease,
+    lease_permits,
+    verify_delegation_lease,
+)
+from .physical_quorum import (
+    build_action_approval,
+    verify_action_authorization,
+)
+from .lifecycle import (
+    build_decommission,
+    build_key_rotation,
+    build_ownership_transfer,
+    verify_custody_chain,
+    verify_decommission,
+    verify_key_history,
+    verify_key_rotation,
+    verify_ownership_transfer,
+)
+from .conformance import (
+    PROFILES,
+    build_conformance_attestation,
+    check_conformance,
+    profile,
+    report_digest,
+    verify_conformance_attestation,
+)
+from .pq import (
+    HYBRID_CRYPTOSUITE,
+    is_pq,
+    migrate_to_pq,
+    sign_pq,
+    verify_pq,
+    verify_robot_credential,
+)
+from .embodiment import (
+    build_embodiment,
+    check_no_fork,
+    verify_continuity_chain,
+    verify_embodiment,
+)
+from .custody import (
+    build_handoff,
+    holder_at,
+    locate_condition_change,
+    verify_handoff,
+    verify_handoff_chain,
+)
+from .access import (
+    AuthorizeResult,
+    attenuates_grant,
+    authorize_access,
+    build_access_grant,
+    build_access_request,
+    verify_access_grant,
+)
+from .fusion import (
+    FUSED_PERCEPTION_TYPE,
+    build_fused_attestation,
+    fusion_inputs_digest,
+    hash_fused_output,
+    verify_fused_attestation,
+    verify_fusion_inputs,
+)
+from .wear import (
+    WEAR_ATTESTATION_TYPE,
+    attenuate_for_wear,
+    build_wear_attestation,
+    verify_wear_attestation,
+    verify_wear_chain,
+)
+from .consent import (
+    CONSENT_BASES,
+    CONSENT_EVIDENCE_TYPE,
+    CONSENT_TOKEN_TYPE,
+    build_consent_evidence,
+    build_consent_token,
+    hash_capture,
+    verify_consent_evidence,
+    verify_consent_token,
+)
+from .teleop import (
+    CONTROL_HANDOFF_TYPE,
+    CONTROL_MODES,
+    ControlContinuity,
+    build_control_handoff,
+    check_control_continuity,
+    controller_at,
+    verify_control_chain,
+    verify_control_handoff,
+)
+from .odd import (
+    ODD_CONFORMANCE_TYPE,
+    OPERATING_DOMAIN_TYPE,
+    ODDResult,
+    build_odd_conformance,
+    build_odd_credential,
+    check_in_domain,
+    verify_odd_conformance,
+    verify_odd_credential,
+)
+from .swarm import (
+    COLLECTIVE_ACTION_TYPE,
+    SWARM_MEMBERSHIP_TYPE,
+    build_collective_action,
+    build_swarm_membership,
+    verify_collective_action,
+    verify_swarm_membership,
+)
+from .handover import (
+    HANDOVER_ACK_TYPE,
+    HUMAN_HANDOVER_TYPE,
+    build_handover_ack,
+    build_human_handover,
+    verify_handover_ack,
+    verify_human_handover,
+)
+from .root_identity import (
+    ACTION_ISSUE_ROBOT_IDENTITY,
+    RobotIdentityChainResult,
+    build_robot_identity,
+    verify_robot_identity_chain,
+)
+from .halos import (
+    HALOS_EVENT_SOURCES,
+    HALOS_SAFETY_EVIDENCE_TYPE,
+    HalosError,
+    SafetyEventRecorder,
+    build_safety_evidence,
+    verify_safety_evidence,
+)
 
 __all__ = [
     # identity
@@ -129,6 +286,127 @@ __all__ = [
     "check_credential_status",
     "build_status_list_credential",
     "build_status_list_entry",
+    # perception provenance (signed sensor-frame provenance)
+    "hash_frame",
+    "PerceptionLog",
+    "verify_perception_log",
+    "build_perception_attestation",
+    "verify_perception_attestation",
+    "MODALITIES",
+    # delegation lease (offline-verifiable, nesting cross-vendor chain)
+    "build_delegation_lease",
+    "verify_delegation_lease",
+    "lease_permits",
+    # physical quorum (M-of-N approvals for high-consequence actions)
+    "build_action_approval",
+    "verify_action_authorization",
+    # lifecycle (ownership transfer, key rotation, decommissioning)
+    "build_ownership_transfer",
+    "verify_ownership_transfer",
+    "verify_custody_chain",
+    "build_key_rotation",
+    "verify_key_rotation",
+    "verify_key_history",
+    "build_decommission",
+    "verify_decommission",
+    # conformance (credentials mapped to safety and AI regulations)
+    "PROFILES",
+    "profile",
+    "check_conformance",
+    "report_digest",
+    "build_conformance_attestation",
+    "verify_conformance_attestation",
+    # post-quantum (hybrid signing + backward-compatible verification)
+    "HYBRID_CRYPTOSUITE",
+    "sign_pq",
+    "is_pq",
+    "verify_pq",
+    "verify_robot_credential",
+    "migrate_to_pq",
+    # embodiment (cross-embodiment identity continuity + fork detection)
+    "build_embodiment",
+    "verify_embodiment",
+    "verify_continuity_chain",
+    "check_no_fork",
+    # custody handoff (physical task/object across human and robot actors)
+    "build_handoff",
+    "verify_handoff",
+    "verify_handoff_chain",
+    "holder_at",
+    "locate_condition_change",
+    # infrastructure access (bounded, revocable robot access to physical resources)
+    "AuthorizeResult",
+    "build_access_grant",
+    "verify_access_grant",
+    "build_access_request",
+    "authorize_access",
+    "attenuates_grant",
+    # fused-sensor provenance (fused world model bound to its input frames)
+    "FUSED_PERCEPTION_TYPE",
+    "hash_fused_output",
+    "fusion_inputs_digest",
+    "build_fused_attestation",
+    "verify_fused_attestation",
+    "verify_fusion_inputs",
+    # wear and degradation (self-attested degradation + capability auto-attenuation)
+    "WEAR_ATTESTATION_TYPE",
+    "build_wear_attestation",
+    "verify_wear_attestation",
+    "verify_wear_chain",
+    "attenuate_for_wear",
+    # bystander consent (consent basis bound to a robot capture, privacy-preserving)
+    "CONSENT_EVIDENCE_TYPE",
+    "CONSENT_TOKEN_TYPE",
+    "CONSENT_BASES",
+    "hash_capture",
+    "build_consent_token",
+    "verify_consent_token",
+    "build_consent_evidence",
+    "verify_consent_evidence",
+    # teleoperation handoff (who or what controlled a robot, autonomy vs human)
+    "CONTROL_HANDOFF_TYPE",
+    "CONTROL_MODES",
+    "ControlContinuity",
+    "build_control_handoff",
+    "verify_control_handoff",
+    "verify_control_chain",
+    "controller_at",
+    "check_control_continuity",
+    # operating-domain conformance (robot attests it stayed in its certified ODD)
+    "OPERATING_DOMAIN_TYPE",
+    "ODD_CONFORMANCE_TYPE",
+    "ODDResult",
+    "build_odd_credential",
+    "verify_odd_credential",
+    "check_in_domain",
+    "build_odd_conformance",
+    "verify_odd_conformance",
+    # swarm accountability (membership + collective-action attribution)
+    "SWARM_MEMBERSHIP_TYPE",
+    "COLLECTIVE_ACTION_TYPE",
+    "build_swarm_membership",
+    "verify_swarm_membership",
+    "build_collective_action",
+    "verify_collective_action",
+    # human handover (robot-to-human release with envelope attestation + receipt)
+    "HUMAN_HANDOVER_TYPE",
+    "HANDOVER_ACK_TYPE",
+    "build_human_handover",
+    "verify_human_handover",
+    "build_handover_ack",
+    "verify_handover_ack",
+    # root-of-trust robot identity (hardware-rooted robot bound to a recognized manufacturer)
+    "ACTION_ISSUE_ROBOT_IDENTITY",
+    "RobotIdentityChainResult",
+    "build_robot_identity",
+    "verify_robot_identity_chain",
+    # halos safety evidence (signed tamper-evident record for a Halos-certified stack)
+    "HALOS_SAFETY_EVIDENCE_TYPE",
+    "HALOS_EVENT_SOURCES",
+    "HalosError",
+    "SafetyEventRecorder",
+    "build_safety_evidence",
+    "verify_safety_evidence",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

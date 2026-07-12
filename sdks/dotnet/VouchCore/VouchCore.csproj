@@ -9,7 +9,7 @@
     <AssemblyName>VouchProtocol.Core</AssemblyName>
 
     <PackageId>VouchProtocol.Core</PackageId>
-    <Version>0.1.0</Version>
+    <Version>2.0.0</Version>
     <Authors>Ramprasad Anandam Gaddam</Authors>
     <Company>Vouch Protocol</Company>
     <Product>Vouch Protocol Core</Product>

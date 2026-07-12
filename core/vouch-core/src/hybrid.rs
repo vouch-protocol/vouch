@@ -47,7 +47,10 @@ fn mldsa_unsigned_proof(verification_method: &str, created: &str) -> Map<String,
         "verificationMethod".into(),
         Value::String(verification_method.into()),
     );
-    p.insert("proofPurpose".into(), Value::String("assertionMethod".into()));
+    p.insert(
+        "proofPurpose".into(),
+        Value::String("assertionMethod".into()),
+    );
     p
 }
 
@@ -148,6 +151,79 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
     Ok(ed_ok && ml_ok)
 }
 
+fn composite_unsigned_proof(verification_method: &str, created: &str) -> Map<String, Value> {
+    let mut p = Map::new();
+    p.insert("type".into(), Value::String(PROOF_TYPE.into()));
+    p.insert(
+        "cryptosuite".into(),
+        Value::String(HYBRID_COMPOSITE_CRYPTOSUITE_ID.into()),
+    );
+    p.insert("created".into(), Value::String(created.into()));
+    p.insert(
+        "verificationMethod".into(),
+        Value::String(verification_method.into()),
+    );
+    p.insert(
+        "proofPurpose".into(),
+        Value::String("assertionMethod".into()),
+    );
+    p
+}
+
+/// Build a v1.6.x composite hybrid proof (a single proof whose proofValue is
+/// base58btc(ed25519_sig || mldsa44_sig)) for `credential`. Both signatures are
+/// computed over the same digest: SHA-256 of the JCS-canonical credential with
+/// the unsigned proof attached. Returns the proof object (the caller attaches it,
+/// or use [`sign_composite`]).
+pub fn build_composite(
+    credential: &Value,
+    ed25519_seed: &[u8],
+    mldsa: &MlDsa44KeyPair,
+    verification_method: &str,
+    created: &str,
+) -> Result<Value> {
+    let base = strip_proof(credential)?;
+    let mut proof = composite_unsigned_proof(verification_method, created);
+    let digest = proof_digest(&base, &proof)?;
+
+    let kp = Ed25519KeyPair::from_seed_slice(ed25519_seed)?;
+    let ed_sig = kp.sign(&digest);
+    let ml_sig = mldsa.sign(&digest)?;
+
+    let mut combined = Vec::with_capacity(ED25519_SIG_LEN + ml_sig.len());
+    combined.extend_from_slice(&ed_sig);
+    combined.extend_from_slice(&ml_sig);
+    proof.insert(
+        "proofValue".into(),
+        Value::String(format!("z{}", bs58::encode(combined).into_string())),
+    );
+    Ok(Value::Object(proof))
+}
+
+/// Build a composite hybrid proof and attach it to the credential under `proof`,
+/// replacing any existing proof.
+pub fn sign_composite(
+    credential: &Value,
+    ed25519_seed: &[u8],
+    mldsa: &MlDsa44KeyPair,
+    verification_method: &str,
+    created: &str,
+) -> Result<Value> {
+    let proof = build_composite(
+        credential,
+        ed25519_seed,
+        mldsa,
+        verification_method,
+        created,
+    )?;
+    let mut signed = strip_proof(credential)?;
+    signed
+        .as_object_mut()
+        .unwrap()
+        .insert("proof".into(), proof);
+    Ok(signed)
+}
+
 /// Verify a v1.6.x composite hybrid proof (single proof, concatenated
 /// proofValue). Both embedded signatures MUST validate.
 pub fn verify_composite(
@@ -182,7 +258,10 @@ pub fn verify_composite(
     let base = strip_proof(credential)?;
     let digest = proof_digest(&base, &unsigned)?;
 
-    Ok(keys::verify(ed25519_public, &digest, ed_sig)? && pq::verify(mldsa_public, &digest, ml_sig)?)
+    Ok(
+        keys::verify(ed25519_public, &digest, ed_sig)?
+            && pq::verify(mldsa_public, &digest, ml_sig)?,
+    )
 }
 
 /// Convenience: derive the Ed25519 public key for a dual self-check.

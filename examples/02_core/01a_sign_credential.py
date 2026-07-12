@@ -4,8 +4,8 @@ Example: Sign a Vouch Credential (v1.6+, VC + Data Integrity).
 This is the modern issuance path. The credential travels in the HTTP
 request body with content-type application/vc+vouch (Vouch Protocol
 v1.6.1+; the prior application/vouch+credential+json form is retained
-as a transitional alias) and verifies via Verifier.verify_credential()
-(see 02a_verify_credential.py).
+as a transitional alias) and verifies via Verifier.verify()
+(see 02a_verify.py).
 
 The credential is human-readable JSON. The Data Integrity proof attaches
 as a sibling object, no JOSE, no Base64-wrapped opaque payload.
@@ -38,7 +38,7 @@ def main() -> None:
     }
 
     # 3. Issue the credential. Returns a dict you can JSON-serialize.
-    credential = signer.sign_credential(
+    credential = signer.sign(
         intent=intent,
         valid_seconds=300,  # 5-minute validity, default
         reputation_score=87,  # Optional, [0, 100]
@@ -65,7 +65,7 @@ def main() -> None:
     #
     # The verifier extracts the credential from the body, validates the
     # Data Integrity proof, checks temporal claims, and returns a
-    # CredentialPassport. See 02a_verify_credential.py.
+    # CredentialPassport. See 02a_verify.py.
 
 
 if __name__ == "__main__":

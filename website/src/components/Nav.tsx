@@ -16,10 +16,12 @@ const LINKS = [
 
 // Secondary destinations, folded into a "More" dropdown so the nav centre stays lean.
 const MORE = [
+    { href: '/demos/', label: 'Demos' },
     { href: '/blog/', label: 'Blog' },
     { href: '/agent-trust-index/', label: 'Index' },
     { href: '/conformance/', label: 'Conformance' },
     { href: '/contributors/', label: 'Contributors' },
+    { href: '/about/', label: 'About' },
 ];
 
 const navLinkClass = (active: boolean) =>
@@ -105,6 +107,11 @@ function MoreMenu() {
 export default function Nav() {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
+    // The OS switcher only drives OSCodeBlock, which appears only on the FAQ and
+    // Help pages. Hide it elsewhere so it does not show where it has nothing to toggle.
+    const showOSSwitcher = ['/faq', '/help'].some(
+        (r) => pathname === r || (pathname?.startsWith(r + '/') ?? false),
+    );
 
     return (
         <nav className="sticky top-0 z-40 bg-parchment/95 backdrop-blur supports-[backdrop-filter]:bg-parchment/80 border-b border-rule">
@@ -121,7 +128,7 @@ export default function Nav() {
                         </Link>
                     ))}
                     <MoreMenu />
-                    <OSSwitcher />
+                    {showOSSwitcher && <OSSwitcher />}
                     <ThemeToggle />
                     <a
                         href="https://github.com/vouch-protocol/vouch"
@@ -169,10 +176,12 @@ export default function Nav() {
                         >
                             GitHub
                         </a>
-                        <div className="pt-3 flex flex-col gap-2">
-                            <span className="font-mono uppercase text-[0.6rem] tracking-[0.14em] text-ink-faint">Commands for</span>
-                            <OSSwitcher />
-                        </div>
+                        {showOSSwitcher && (
+                            <div className="pt-3 flex flex-col gap-2">
+                                <span className="font-mono uppercase text-[0.6rem] tracking-[0.14em] text-ink-faint">Commands for</span>
+                                <OSSwitcher />
+                            </div>
+                        )}
                         <div className="pt-2"><ThemeToggle /></div>
                     </div>
                 </div>

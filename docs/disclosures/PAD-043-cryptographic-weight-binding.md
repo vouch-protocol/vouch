@@ -223,6 +223,20 @@ gatekeeping. If model-intrinsic identity were a closed standard, the
 open-source AI community would build a parallel, fragmenting the
 ecosystem.
 
+## 7. Reference Implementation
+
+As of July 2026, the weight-binding credential layer of this mechanism
+ships in the open-source Vouch SDK as `vouch.provenance`. The
+`weights_hash` function computes the model's weight fingerprint, and
+`sign_inference_provenance` records that fingerprint inside a signed
+inference credential, so every output carries the hash of the exact
+model that produced it. On the verifier side, `check_replay` recomputes
+the weight hash from the model in hand and rejects the credential when
+it does not match the value the agent committed to, realizing the
+inference-time detection of §3.4. The behavior runs live under the
+provenance section at https://vouch-protocol.com/demos and maps to
+`examples/provenance_demo.py` in the repository.
+
 ---
 
 *Published as prior art to ensure that the binding between an AI

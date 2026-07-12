@@ -39,13 +39,13 @@ public enum Vouch {
     // MARK: Data Integrity (eddsa-jcs-2022)
 
     /// Sign a credential, returning the credential JSON with a `proof` attached.
-    public static func signCredential(
+    public static func sign(
         _ credentialJson: String,
         seed: Data,
         verificationMethod: String,
         created: String
     ) throws -> String {
-        try VouchCore.signCredential(
+        try VouchCore.sign(
             credentialJson: credentialJson,
             seed: seed,
             verificationMethod: verificationMethod,
@@ -58,13 +58,13 @@ public enum Vouch {
     }
 
     /// Verify the proof and the validity window. `clockSkewSeconds` tolerates drift.
-    public static func verifyCredential(
+    public static func verify(
         _ credentialJson: String,
         publicKey: Data,
         now: String,
         clockSkewSeconds: Int64 = 30
     ) throws -> VerifyResult {
-        try VouchCore.verifyCredential(
+        try VouchCore.verify(
             credentialJson: credentialJson,
             publicKey: publicKey,
             nowIso: now,
@@ -123,5 +123,53 @@ public enum Vouch {
         try VouchCore.verifyChainTimeBound(
             chainJson: chainJson, nowIso: now, clockSkewSeconds: clockSkewSeconds
         )
+    }
+
+    // MARK: FROST(Ed25519) threshold signing (RFC 9591)
+    //
+    // The aggregated signature is a standard Ed25519 signature, verifiable
+    // with verify(_:publicKey:message:signature:) like any other; no new
+    // proof type. See vouch_core::threshold for the ceremony and why the full
+    // private key is never reconstructed.
+
+    public static func thresholdGenerateKey(minSigners: UInt16, maxSigners: UInt16) throws -> String {
+        try VouchCore.thresholdGenerateKey(minSigners: minSigners, maxSigners: maxSigners)
+    }
+    public static func thresholdCommit(_ keyShareJson: String) throws -> String {
+        try VouchCore.thresholdCommit(keyShareJson: keyShareJson)
+    }
+    public static func thresholdSignShare(
+        message: Data, keyShareJson: String, noncesB64: String, commitmentsJson: String
+    ) throws -> String {
+        try VouchCore.thresholdSignShare(
+            message: message, keyShareJson: keyShareJson, noncesB64: noncesB64, commitmentsJson: commitmentsJson
+        )
+    }
+    public static func thresholdAggregate(
+        message: Data, commitmentsJson: String, sharesJson: String, groupPublicKeyJson: String
+    ) throws -> Data {
+        try VouchCore.thresholdAggregate(
+            message: message, commitmentsJson: commitmentsJson, sharesJson: sharesJson,
+            groupPublicKeyJson: groupPublicKeyJson
+        )
+    }
+
+    // MARK: Root-identity recovery by Shamir secret sharing
+    //
+    // Distinct from FROST above: the seed IS reconstructed here, deliberately,
+    // for cold recovery of a root identity, not for hot signing. See
+    // vouch_core::recovery.
+
+    public static func recoverySplitSecret(_ secretB64: String, threshold: UInt16, shares: UInt16) throws -> String {
+        try VouchCore.recoverySplitSecret(secretB64: secretB64, threshold: threshold, shares: shares)
+    }
+    public static func recoveryCombineShares(_ sharesJson: String) throws -> String {
+        try VouchCore.recoveryCombineShares(sharesJson: sharesJson)
+    }
+    public static func recoverySplitIdentity(_ seedB64: String, threshold: UInt16, shares: UInt16) throws -> String {
+        try VouchCore.recoverySplitIdentity(seedB64: seedB64, threshold: threshold, shares: shares)
+    }
+    public static func recoveryRecoverIdentity(_ sharesJson: String, did: String) throws -> String {
+        try VouchCore.recoveryRecoverIdentity(sharesJson: sharesJson, did: did)
     }
 }

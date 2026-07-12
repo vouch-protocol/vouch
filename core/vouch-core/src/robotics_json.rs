@@ -353,6 +353,51 @@ pub fn verify_killswitch_credential(
     )?))
 }
 
+// ---- halos safety evidence ------------------------------------------------
+
+/// Seal a robot's Halos safety-event record into a signed
+/// `HalosSafetyEvidenceCredential`. `params_json` carries `{halosStack, window:
+/// {from, to}, blackboxHead, entryCount, robotIdentity?, validSeconds?, validFrom,
+/// created}`. The robot DID is derived from `signer_seed`.
+pub fn build_safety_evidence(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let window = p.get("window").cloned().unwrap_or(Value::Null);
+    let params = r::BuildSafetyEvidence {
+        halos_stack: p.get("halosStack").cloned().unwrap_or(Value::Null),
+        window_from: gs(&window, "from"),
+        window_to: gs(&window, "to"),
+        blackbox_head: gs(&p, "blackboxHead"),
+        entry_count: p.get("entryCount").and_then(|v| v.as_u64()).unwrap_or(0),
+        robot_identity: gos(&p, "robotIdentity"),
+        valid_seconds: p.get("validSeconds").and_then(|v| v.as_i64()),
+        valid_from: gs(&p, "validFrom"),
+        created: gs(&p, "created"),
+    };
+    Ok(r::build_safety_evidence(signer_seed, &params)?.to_string())
+}
+
+/// Verify a Halos safety-evidence credential. `entries_json` is the black-box
+/// entries as a JSON array, or `""`/`"null"` for none. Returns `{ok, subject}`
+/// where `subject` is the credentialSubject or the JSON literal `null`.
+pub fn verify_safety_evidence(
+    credential_json: &str,
+    robot_pub: &[u8],
+    entries_json: &str,
+) -> Result<String> {
+    let credential = parse(credential_json)?;
+    let entries = opt_obj(Some(entries_json))?;
+    let entries_slice = match &entries {
+        Some(v) => Some(
+            v.as_array()
+                .ok_or_else(|| CoreError::Json("entries must be a JSON array".into()))?
+                .as_slice(),
+        ),
+        None => None,
+    };
+    let (ok, subject) = r::verify_safety_evidence(&credential, robot_pub, entries_slice)?;
+    Ok(json!({"ok": ok, "subject": subject.unwrap_or(Value::Null)}).to_string())
+}
+
 // ---- passport -------------------------------------------------------------
 
 pub fn build_passport(signer_seed: &[u8], params_json: &str) -> Result<String> {
@@ -561,5 +606,893 @@ pub fn verify_safety_record(credential_json: &str, public_key: &[u8]) -> Result<
     Ok(subj(r::verify_safety_record(
         &parse(credential_json)?,
         public_key,
+    )?))
+}
+
+// ---- perception provenance ------------------------------------------------
+
+/// Multibase SHA-256 of a raw sensor frame.
+pub fn hash_frame(frame: &[u8]) -> String {
+    r::hash_frame(frame)
+}
+
+/// Append one frame-provenance record to a log and return `{entry, head}`. The
+/// chain is stateless across calls: pass the previous head as `prevHash` (or the
+/// genesis). `params_json` is `{sensorId, modality, frameHash|frame_mb,
+/// timestamp, prevHash}` where `frame_mb` is a multibase-encoded raw frame.
+pub fn perception_record_entry(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let prev = gs(&p, "prevHash");
+    let mut log = r::PerceptionLog::new(Some(&prev));
+    let frame = match gos(&p, "frameMb") {
+        Some(mb) => Some(r::unmb64(&mb)?),
+        None => None,
+    };
+    let entry = log.record(
+        &gs(&p, "sensorId"),
+        &gs(&p, "modality"),
+        frame.as_deref(),
+        p.get("frameHash").and_then(|v| v.as_str()),
+        &gs(&p, "timestamp"),
+    )?;
+    Ok(json!({"entry": entry, "head": log.head()}).to_string())
+}
+
+pub fn verify_perception_log(
+    entries_json: &str,
+    genesis_prev_hash: Option<&str>,
+) -> Result<String> {
+    let entries = parse(entries_json)?;
+    let arr = entries
+        .as_array()
+        .ok_or_else(|| CoreError::Json("entries must be a JSON array".into()))?;
+    let res = r::verify_perception_log(arr, genesis_prev_hash);
+    Ok(json!({"ok": res.ok, "reason": res.reason}).to_string())
+}
+
+pub fn build_perception_attestation(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildPerception {
+        robot_did: gs(&p, "robotDid"),
+        sensor_id: gs(&p, "sensorId"),
+        modality: gs(&p, "modality"),
+        frame_hash: gs(&p, "frameHash"),
+        captured_at: gos(&p, "capturedAt"),
+        log_head: gos(&p, "logHead"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_perception_attestation(robot_seed, &params)?.to_string())
+}
+
+/// Verify a perception attestation. When `frame_mb` is a non-empty multibase
+/// string, the raw frame is decoded and its hash compared to the attested value.
+pub fn verify_perception_attestation(
+    credential_json: &str,
+    public_key: &[u8],
+    frame_mb: Option<&str>,
+) -> Result<String> {
+    let frame = match frame_mb {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(mb)?),
+        _ => None,
+    };
+    Ok(subj(r::verify_perception_attestation(
+        &parse(credential_json)?,
+        public_key,
+        frame.as_deref(),
+    )?))
+}
+
+// ---- delegation lease -----------------------------------------------------
+
+pub fn build_delegation_lease(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildDelegationLease {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        lease_id: gs(&p, "leaseId"),
+        scope: p.get("scope").cloned().unwrap_or(Value::Null),
+        parent_lease_id: gos(&p, "parentLeaseId"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gs(&p, "validUntil"),
+    };
+    Ok(r::build_delegation_lease(signer_seed, &params)?.to_string())
+}
+
+pub fn verify_delegation_lease(
+    credential_json: &str,
+    public_key: &[u8],
+    now_iso: Option<&str>,
+    parent_scope_json: Option<&str>,
+) -> Result<String> {
+    let now = match now_iso {
+        Some(n) if !n.is_empty() && n != "null" => Some(n),
+        _ => None,
+    };
+    let parent = opt_obj(parent_scope_json)?;
+    Ok(subj(r::verify_delegation_lease(
+        &parse(credential_json)?,
+        public_key,
+        now,
+        parent.as_ref(),
+    )?))
+}
+
+/// Decide whether a verified lease subject permits a proposed action.
+/// `params_json` is `{subject, action, credential?, now?}` where `action` is the
+/// same shape as [`check_physical_action`]'s action object.
+pub fn lease_permits(params_json: &str) -> Result<bool> {
+    let p = parse(params_json)?;
+    let subject = p.get("subject").cloned().unwrap_or(Value::Null);
+    let a = p.get("action").cloned().unwrap_or(Value::Null);
+    let action = r::PhysicalAction {
+        force_n: gof(&a, "forceN"),
+        speed_mps: gof(&a, "speedMps"),
+        near_humans: a
+            .get("nearHumans")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        zone: gos(&a, "zone"),
+        time_hm: gos(&a, "timeHm"),
+    };
+    let credential = p.get("credential").filter(|v| !v.is_null()).cloned();
+    let now = gos(&p, "now");
+    Ok(r::lease_permits(
+        &subject,
+        &action,
+        credential.as_ref(),
+        now.as_deref(),
+    ))
+}
+
+// ---- physical quorum ------------------------------------------------------
+
+pub fn build_action_approval(approver_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildActionApproval {
+        approver_did: gs(&p, "approverDid"),
+        action_id: gs(&p, "actionId"),
+        robot_did: gs(&p, "robotDid"),
+        decision: gos(&p, "decision").unwrap_or_else(|| r::APPROVE.to_string()),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_action_approval(approver_seed, &params)?.to_string())
+}
+
+/// Verify a quorum authorization. `params_json` is `{approvals: [...], actionId,
+/// robotDid, approverKeys: {did: keyB64url, ...}, threshold, approverSet?: [...],
+/// now?}`. Each `approverKeys` value is the approver's Ed25519 public key as a
+/// base64url-no-pad string (the same encoding as a JWK `x`). Returns
+/// `{authorized, approvers: [...]}`.
+pub fn verify_action_authorization(params_json: &str) -> Result<String> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+
+    let p = parse(params_json)?;
+    let approvals: Vec<Value> = p
+        .get("approvals")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let action_id = gs(&p, "actionId");
+    let robot_did = gs(&p, "robotDid");
+    let threshold = p.get("threshold").and_then(|v| v.as_i64()).unwrap_or(0);
+
+    let mut keys: Vec<r::ApproverKey> = Vec::new();
+    if let Some(obj) = p.get("approverKeys").and_then(|v| v.as_object()) {
+        for (did, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("approverKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::ApproverKey {
+                did: did.clone(),
+                public_key,
+            });
+        }
+    }
+
+    let approver_set: Option<HashSet<String>> = p
+        .get("approverSet")
+        .filter(|v| !v.is_null())
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|e| e.as_str().map(String::from))
+                .collect()
+        });
+    let now = gos(&p, "now");
+
+    let (authorized, approvers) = r::verify_action_authorization(
+        &approvals,
+        &action_id,
+        &robot_did,
+        &keys,
+        threshold,
+        approver_set.as_ref(),
+        now.as_deref(),
+    )?;
+    Ok(json!({"authorized": authorized, "approvers": approvers}).to_string())
+}
+
+// ---- robot lifecycle ------------------------------------------------------
+
+fn owner_keys(v: &Value) -> Result<Vec<r::OwnerKey>> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+    let mut keys: Vec<r::OwnerKey> = Vec::new();
+    if let Some(obj) = v.as_object() {
+        for (did, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("publicKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::OwnerKey {
+                did: did.clone(),
+                public_key,
+            });
+        }
+    }
+    Ok(keys)
+}
+
+fn key_entries(v: &Value) -> Result<Vec<r::KeyEntry>> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+    let mut keys: Vec<r::KeyEntry> = Vec::new();
+    if let Some(obj) = v.as_object() {
+        for (multibase, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("publicKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::KeyEntry {
+                multibase: multibase.clone(),
+                public_key,
+            });
+        }
+    }
+    Ok(keys)
+}
+
+pub fn build_ownership_transfer(current_owner_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildOwnershipTransfer {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        to_owner: gs(&p, "toOwner"),
+        from_owner: gos(&p, "fromOwner"),
+        prev_transfer_id: gos(&p, "prevTransferId"),
+        valid_from: gs(&p, "validFrom"),
+    };
+    Ok(r::build_ownership_transfer(current_owner_seed, &params)?.to_string())
+}
+
+pub fn verify_ownership_transfer(credential_json: &str, public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_ownership_transfer(
+        &parse(credential_json)?,
+        public_key,
+    )?))
+}
+
+/// Verify a chain of custody. `params_json` is `{transfers: [...], publicKeys:
+/// {did: keyB64url, ...}, originOwner?}` where each `publicKeys` value is the
+/// owner's Ed25519 public key as a base64url-no-pad string. Returns `{ok,
+/// currentOwner}`.
+pub fn verify_custody_chain(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let transfers: Vec<Value> = p
+        .get("transfers")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let keys = owner_keys(p.get("publicKeys").unwrap_or(&Value::Null))?;
+    let origin = gos(&p, "originOwner");
+    let (ok, current) = r::verify_custody_chain(&transfers, &keys, origin.as_deref())?;
+    Ok(json!({"ok": ok, "currentOwner": current}).to_string())
+}
+
+pub fn build_key_rotation(old_key_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildKeyRotation {
+        robot_did: gs(&p, "robotDid"),
+        new_key_multibase: gs(&p, "newKey"),
+        reason: gos(&p, "reason"),
+        valid_from: gs(&p, "validFrom"),
+    };
+    Ok(r::build_key_rotation(old_key_seed, &params)?.to_string())
+}
+
+pub fn verify_key_rotation(credential_json: &str, old_public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_key_rotation(
+        &parse(credential_json)?,
+        old_public_key,
+    )?))
+}
+
+/// Verify a key history. `params_json` is `{rotations: [...], originKey,
+/// publicKeys: {keyMultibase: keyB64url, ...}}` where each `publicKeys` value is
+/// the Ed25519 public key as a base64url-no-pad string keyed by its multibase.
+/// Returns `{ok, currentKey}`.
+pub fn verify_key_history(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let rotations: Vec<Value> = p
+        .get("rotations")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let origin_key = gs(&p, "originKey");
+    let keys = key_entries(p.get("publicKeys").unwrap_or(&Value::Null))?;
+    let (ok, current) = r::verify_key_history(&rotations, &origin_key, &keys)?;
+    Ok(json!({"ok": ok, "currentKey": current}).to_string())
+}
+
+pub fn build_decommission(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildDecommission {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        reason: gs(&p, "reason"),
+        final_disposition: gos(&p, "finalDisposition"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_decommission(signer_seed, &params)?.to_string())
+}
+
+pub fn verify_decommission(
+    credential_json: &str,
+    public_key: &[u8],
+    trusted_authorities_json: Option<&str>,
+) -> Result<String> {
+    let trusted: Option<HashSet<String>> = opt_obj(trusted_authorities_json)?.map(|v| {
+        v.as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|e| e.as_str().map(String::from))
+                    .collect()
+            })
+            .unwrap_or_default()
+    });
+    Ok(subj(r::verify_decommission(
+        &parse(credential_json)?,
+        public_key,
+        trusted.as_ref(),
+    )?))
+}
+
+// ---- regulatory conformance -----------------------------------------------
+
+/// Check a credential set against a named profile and return the report.
+/// `credentials_json` is a JSON array of credentials.
+pub fn check_conformance(credentials_json: &str, profile_id: &str) -> Result<String> {
+    let credentials = parse(credentials_json)?;
+    let arr = credentials
+        .as_array()
+        .ok_or_else(|| CoreError::Json("credentials must be a JSON array".into()))?;
+    Ok(r::check_conformance(arr, profile_id)?.to_string())
+}
+
+/// Multibase SHA-256 of the JCS-canonical report.
+pub fn report_digest(report_json: &str) -> Result<String> {
+    Ok(r::report_digest(&parse(report_json)?))
+}
+
+/// Build a signed `RobotConformanceAttestation`. `params_json` is `{issuerDid,
+/// robotDid, report, validFrom, validUntil?}` where `report` comes from
+/// [`check_conformance`].
+pub fn build_conformance_attestation(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildConformanceAttestation {
+        issuer_did: gs(&p, "issuerDid"),
+        robot_did: gs(&p, "robotDid"),
+        report: p.get("report").cloned().unwrap_or(Value::Null),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_conformance_attestation(signer_seed, &params)?.to_string())
+}
+
+pub fn verify_conformance_attestation(credential_json: &str, public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_conformance_attestation(
+        &parse(credential_json)?,
+        public_key,
+    )?))
+}
+
+// ---- post-quantum robot credentials --------------------------------------
+
+pub fn sign_pq(
+    credential_json: &str,
+    ed25519_seed: &[u8],
+    mldsa_secret: &[u8],
+    mldsa_public: &[u8],
+    created: &str,
+) -> Result<String> {
+    let ml = crate::pq::MlDsa44KeyPair::from_bytes(mldsa_secret, mldsa_public)?;
+    Ok(r::sign_pq(&parse(credential_json)?, ed25519_seed, &ml, created)?.to_string())
+}
+
+pub fn is_pq(credential_json: &str) -> Result<bool> {
+    Ok(r::is_pq(&parse(credential_json)?))
+}
+
+/// Verify a hybrid robot credential. `mldsa44_public` is raw 1312-byte bytes or
+/// an ML-DSA-44 Multikey string carried as UTF-8 bytes.
+pub fn verify_pq(
+    credential_json: &str,
+    ed25519_public: &[u8],
+    mldsa44_public: &[u8],
+) -> Result<bool> {
+    let resolved = r::resolve_mldsa44_public(mldsa44_public)?;
+    r::verify_pq(&parse(credential_json)?, ed25519_public, &resolved)
+}
+
+/// Dual verify auto-detected from the proof. `mldsa44_public`, when present, is
+/// raw 1312-byte bytes or an ML-DSA-44 Multikey string carried as UTF-8 bytes; a
+/// hybrid credential requires it, a classical credential ignores it.
+pub fn verify_robot_credential(
+    credential_json: &str,
+    ed25519_public: &[u8],
+    mldsa44_public: Option<&[u8]>,
+) -> Result<bool> {
+    r::verify_robot_credential(&parse(credential_json)?, ed25519_public, mldsa44_public)
+}
+
+pub fn migrate_to_pq(
+    credential_json: &str,
+    ed25519_seed: &[u8],
+    mldsa_secret: &[u8],
+    mldsa_public: &[u8],
+    created: &str,
+) -> Result<String> {
+    let ml = crate::pq::MlDsa44KeyPair::from_bytes(mldsa_secret, mldsa_public)?;
+    Ok(r::migrate_to_pq(&parse(credential_json)?, ed25519_seed, &ml, created)?.to_string())
+}
+
+// ---- cross-embodiment identity continuity ---------------------------------
+
+pub fn build_embodiment(agent_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildEmbodiment {
+        agent_did: gs(&p, "agentDid"),
+        body_did: gs(&p, "body"),
+        body_hardware_root: gs(&p, "bodyHardwareRoot"),
+        from_body: gos(&p, "fromBody"),
+        embodied_at: gs(&p, "embodiedAt"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_embodiment(agent_seed, &params)?.to_string())
+}
+
+pub fn verify_embodiment(credential_json: &str, agent_public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_embodiment(
+        &parse(credential_json)?,
+        agent_public_key,
+    )?))
+}
+
+/// Verify a continuity chain under one agent key. `params_json` is `{embodiments:
+/// [...], originBody?}`; `agent_public_key` is the agent's Ed25519 public key.
+/// Returns `{ok, currentBody}`.
+pub fn verify_continuity_chain(params_json: &str, agent_public_key: &[u8]) -> Result<String> {
+    let p = parse(params_json)?;
+    let embodiments: Vec<Value> = p
+        .get("embodiments")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let origin = gos(&p, "originBody");
+    let (ok, current) =
+        r::verify_continuity_chain(&embodiments, agent_public_key, origin.as_deref())?;
+    Ok(json!({"ok": ok, "currentBody": current}).to_string())
+}
+
+/// Check that no two embodiments place the agent in different bodies with
+/// overlapping active windows. `params_json` is `{embodiments: [...]}`. Returns
+/// `{ok, conflict}` where conflict, when present, is `{bodyA, bodyB}`.
+pub fn check_no_fork(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let embodiments: Vec<Value> = p
+        .get("embodiments")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let (ok, conflict) = r::check_no_fork(&embodiments)?;
+    let conflict_json = conflict
+        .map(|c| json!({"bodyA": c.body_a, "bodyB": c.body_b}))
+        .unwrap_or(Value::Null);
+    Ok(json!({"ok": ok, "conflict": conflict_json}).to_string())
+}
+
+// ---- physical custody handoff ---------------------------------------------
+
+fn actor_keys(v: &Value) -> Result<Vec<r::ActorKey>> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine;
+    let mut keys: Vec<r::ActorKey> = Vec::new();
+    if let Some(obj) = v.as_object() {
+        for (did, key) in obj {
+            let b64 = key
+                .as_str()
+                .ok_or_else(|| CoreError::Json("publicKeys values must be base64url".into()))?;
+            let public_key = URL_SAFE_NO_PAD
+                .decode(b64)
+                .map_err(|e| CoreError::Json(format!("bad base64url: {e}")))?;
+            keys.push(r::ActorKey {
+                did: did.clone(),
+                public_key,
+            });
+        }
+    }
+    Ok(keys)
+}
+
+pub fn build_handoff(receiver_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildHandoff {
+        task_id: gs(&p, "taskId"),
+        from_actor: gs(&p, "fromActor"),
+        to_actor: gs(&p, "toActor"),
+        condition: gos(&p, "condition"),
+        handoff_at: gs(&p, "handoffAt"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_handoff(receiver_seed, &params)?.to_string())
+}
+
+pub fn verify_handoff(credential_json: &str, receiver_public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_handoff(
+        &parse(credential_json)?,
+        receiver_public_key,
+    )?))
+}
+
+/// Verify a custody chain. `params_json` is `{handoffs: [...], publicKeys: {did:
+/// keyB64url, ...}, originActor?}` where each `publicKeys` value is the receiver's
+/// Ed25519 public key as a base64url-no-pad string. Returns `{ok, currentHolder}`.
+pub fn verify_handoff_chain(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let handoffs: Vec<Value> = p
+        .get("handoffs")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let keys = actor_keys(p.get("publicKeys").unwrap_or(&Value::Null))?;
+    let origin = gos(&p, "originActor");
+    let (ok, current) = r::verify_handoff_chain(&handoffs, &keys, origin.as_deref())?;
+    Ok(json!({"ok": ok, "currentHolder": current}).to_string())
+}
+
+/// Return the actor holding the task at ISO time `at`. `params_json` is
+/// `{handoffs: [...], at}`. Returns `{holder}` where holder is the actor DID or
+/// null.
+pub fn holder_at(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let handoffs: Vec<Value> = p
+        .get("handoffs")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let at = gs(&p, "at");
+    let holder = r::holder_at(&handoffs, &at);
+    Ok(json!({"holder": holder}).to_string())
+}
+
+/// Localize the first attested condition change. `params_json` is `{handoffs:
+/// [...]}`. Returns `{change}` where change, when present, is `{responsibleHolder,
+/// fromCondition, toCondition}`, else null.
+pub fn locate_condition_change(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let handoffs: Vec<Value> = p
+        .get("handoffs")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let change = r::locate_condition_change(&handoffs)
+        .map(|c| {
+            json!({
+                "responsibleHolder": c.responsible_holder,
+                "fromCondition": c.from_condition,
+                "toCondition": c.to_condition,
+            })
+        })
+        .unwrap_or(Value::Null);
+    Ok(json!({"change": change}).to_string())
+}
+
+// ---- robot-to-infrastructure bounded access -------------------------------
+
+pub fn build_access_grant(operator_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildAccessGrant {
+        operator_did: gs(&p, "operatorDid"),
+        robot_did: gs(&p, "robotDid"),
+        resource: gs(&p, "resource"),
+        operations: gstrs(&p, "operations"),
+        zone: gos(&p, "zone"),
+        granted_at: gs(&p, "grantedAt"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_access_grant(operator_seed, &params)?.to_string())
+}
+
+/// Verify an access grant. `params_json` is `{grant: {...}, now?}`. Returns the
+/// credentialSubject on success, the JSON literal `null` if invalid.
+pub fn verify_access_grant(credential_json: &str, operator_public_key: &[u8]) -> Result<String> {
+    let p = parse(credential_json)?;
+    let grant = p.get("grant").cloned().unwrap_or(p.clone());
+    let now = gos(&p, "now");
+    Ok(subj(r::verify_access_grant(
+        &grant,
+        operator_public_key,
+        now.as_deref(),
+    )?))
+}
+
+pub fn build_access_request(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildAccessRequest {
+        robot_did: gs(&p, "robotDid"),
+        resource: gs(&p, "resource"),
+        operation: gs(&p, "operation"),
+        requested_at: gs(&p, "requestedAt"),
+    };
+    Ok(r::build_access_request(robot_seed, &params)?.to_string())
+}
+
+/// Decide, offline, whether to allow the requested access. `params_json` is
+/// `{grant: {...}, request: {...}, now?}`. Returns `{ok, reasons}`.
+pub fn authorize_access(
+    params_json: &str,
+    operator_public_key: &[u8],
+    robot_public_key: &[u8],
+) -> Result<String> {
+    let p = parse(params_json)?;
+    let grant = p.get("grant").cloned().unwrap_or(Value::Null);
+    let request = p.get("request").cloned().unwrap_or(Value::Null);
+    let now = gos(&p, "now");
+    let res = r::authorize_access(
+        &grant,
+        &request,
+        operator_public_key,
+        robot_public_key,
+        now.as_deref(),
+    )?;
+    Ok(json!({"ok": res.ok, "reasons": res.reasons}).to_string())
+}
+
+/// Return true if `child` is a valid attenuation of `parent`. `params_json` is
+/// `{parent: {...}, child: {...}}`. Returns `{ok}`.
+pub fn attenuates_grant(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let parent = p.get("parent").cloned().unwrap_or(Value::Null);
+    let child = p.get("child").cloned().unwrap_or(Value::Null);
+    let ok = r::attenuates_grant(&parent, &child);
+    Ok(json!({"ok": ok}).to_string())
+}
+
+// ---- fused-sensor provenance ----------------------------------------------
+
+/// Deterministic multibase digest over an ordered list of input frame hashes.
+/// `params_json` is `{inputFrameHashes: [...]}`.
+pub fn fusion_inputs_digest(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    Ok(r::fusion_inputs_digest(&gstrs(&p, "inputFrameHashes"))?)
+}
+
+/// Multibase SHA-256 of a raw fused output.
+pub fn hash_fused_output(output: &[u8]) -> String {
+    r::hash_fused_output(output)
+}
+
+/// Build a signed fused-perception attestation. `params_json` is `{robotDid,
+/// fusionMethod, inputFrameHashes, fusedOutputMb?|fusedOutputHash?, capturedAt?,
+/// validFrom, validUntil?}` where `fusedOutputMb` is a multibase-encoded raw
+/// output.
+pub fn build_fused_attestation(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let fused_output = match gos(&p, "fusedOutputMb") {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(&mb)?),
+        _ => None,
+    };
+    let params = r::BuildFusedAttestation {
+        robot_did: gs(&p, "robotDid"),
+        fusion_method: gs(&p, "fusionMethod"),
+        input_frame_hashes: gstrs(&p, "inputFrameHashes"),
+        fused_output,
+        fused_output_hash: gos(&p, "fusedOutputHash"),
+        captured_at: gos(&p, "capturedAt"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_fused_attestation(robot_seed, &params)?.to_string())
+}
+
+/// Verify a fused-perception attestation. When `fused_output_mb` is a non-empty
+/// multibase string, the raw fused output is decoded and its hash compared to the
+/// attested value. Returns the credentialSubject on success, `null` if invalid.
+pub fn verify_fused_attestation(
+    credential_json: &str,
+    public_key: &[u8],
+    fused_output_mb: Option<&str>,
+) -> Result<String> {
+    let fused_output = match fused_output_mb {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(mb)?),
+        _ => None,
+    };
+    Ok(subj(r::verify_fused_attestation(
+        &parse(credential_json)?,
+        public_key,
+        fused_output.as_deref(),
+    )?))
+}
+
+/// Confirm every input frame the attestation names was recorded in the robot's
+/// perception log. `params_json` is `{credential: {...}, logEntries: [...]}`.
+/// Returns `{ok, missing}`.
+pub fn verify_fusion_inputs(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let credential = p.get("credential").cloned().unwrap_or(Value::Null);
+    let entries = p
+        .get("logEntries")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let res = r::verify_fusion_inputs(&credential, &entries);
+    Ok(json!({"ok": res.ok, "missing": res.missing}).to_string())
+}
+
+// ---- wear and degradation attestation -------------------------------------
+
+/// Build a signed wear attestation. `params_json` is `{robotDid, wearLevel,
+/// metrics?, prevProof?, attestedAt?, validFrom, validUntil?}` where `metrics`, if
+/// present, is an object carried through into the subject unchanged.
+pub fn build_wear_attestation(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildWearAttestation {
+        robot_did: gs(&p, "robotDid"),
+        wear_level: gof(&p, "wearLevel").unwrap_or(0.0),
+        metrics: p.get("metrics").filter(|v| !v.is_null()).cloned(),
+        prev_proof: gos(&p, "prevProof"),
+        attested_at: gos(&p, "attestedAt"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_wear_attestation(robot_seed, &params)?.to_string())
+}
+
+/// Verify a wear attestation. Returns the credentialSubject on success, `null` if
+/// invalid.
+pub fn verify_wear_attestation(credential_json: &str, public_key: &[u8]) -> Result<String> {
+    Ok(subj(r::verify_wear_attestation(
+        &parse(credential_json)?,
+        public_key,
+    )?))
+}
+
+/// Verify an ordered wear history. `params_json` is `{attestations: [...]}`.
+/// Returns `{ok, latest}` where `latest`, when `ok`, is the latest
+/// credentialSubject.
+pub fn verify_wear_chain(params_json: &str, public_key: &[u8]) -> Result<String> {
+    let p = parse(params_json)?;
+    let attestations: Vec<Value> = p
+        .get("attestations")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let latest = r::verify_wear_chain(&attestations, public_key)?;
+    Ok(json!({"ok": latest.is_some(), "latest": latest}).to_string())
+}
+
+/// Derive a physical scope narrowed for a wear level. `params_json` is `{scope:
+/// {...}, wearLevel}`. Returns the narrowed scope JSON.
+pub fn attenuate_for_wear(params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let scope = p.get("scope").cloned().unwrap_or(Value::Null);
+    let wear_level = gof(&p, "wearLevel").unwrap_or(0.0);
+    Ok(r::attenuate_for_wear(&scope, wear_level)?.to_string())
+}
+
+// ---- bystander-consent evidence -------------------------------------------
+
+/// Multibase SHA-256 of a raw capture.
+pub fn hash_capture(capture: &[u8]) -> String {
+    r::hash_capture(capture)
+}
+
+/// Build a signed bystander consent token. `params_json` is `{bystanderDid,
+/// captureHash, robotDid, scope?, grantedAt, validUntil?}`.
+pub fn build_consent_token(bystander_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let params = r::BuildConsentToken {
+        bystander_did: gs(&p, "bystanderDid"),
+        capture_hash: gs(&p, "captureHash"),
+        robot_did: gs(&p, "robotDid"),
+        scope: gos(&p, "scope"),
+        granted_at: gs(&p, "grantedAt"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_consent_token(bystander_seed, &params)?.to_string())
+}
+
+/// Verify a bystander consent token bound to a capture and a robot. `params_json`
+/// is `{token: {...}, captureHash, robotDid, now?}`. Returns the credentialSubject
+/// on success, `null` if invalid.
+pub fn verify_consent_token(params_json: &str, bystander_public_key: &[u8]) -> Result<String> {
+    let p = parse(params_json)?;
+    let token = p.get("token").cloned().unwrap_or(Value::Null);
+    Ok(subj(r::verify_consent_token(
+        &token,
+        bystander_public_key,
+        &gs(&p, "captureHash"),
+        &gs(&p, "robotDid"),
+        gos(&p, "now").as_deref(),
+    )?))
+}
+
+/// Build a signed bystander-consent evidence credential. `params_json` is
+/// `{robotDid, captureHash, basis, consentTokens?, redactionHash?, validFrom,
+/// validUntil?}` where `consentTokens` is a list of signed token credentials.
+pub fn build_consent_evidence(robot_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let consent_tokens = p
+        .get("consentTokens")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let params = r::BuildConsentEvidence {
+        robot_did: gs(&p, "robotDid"),
+        capture_hash: gs(&p, "captureHash"),
+        basis: gs(&p, "basis"),
+        consent_tokens,
+        redaction_hash: gos(&p, "redactionHash"),
+        valid_from: gs(&p, "validFrom"),
+        valid_until: gos(&p, "validUntil"),
+    };
+    Ok(r::build_consent_evidence(robot_seed, &params)?.to_string())
+}
+
+/// Verify a bystander-consent evidence credential. `params_json` is `{evidence:
+/// {...}, captureMb?, consentTokens?, bystanderKeys?, now?}` where `captureMb` is
+/// the multibase-encoded raw capture and `bystanderKeys` maps a bystander DID to
+/// its multibase public key. Returns the credentialSubject on success, `null` if
+/// invalid.
+pub fn verify_consent_evidence(params_json: &str, robot_public_key: &[u8]) -> Result<String> {
+    let p = parse(params_json)?;
+    let evidence = p.get("evidence").cloned().unwrap_or(Value::Null);
+    let capture = match gos(&p, "captureMb") {
+        Some(mb) if !mb.is_empty() => Some(r::unmb64(&mb)?),
+        _ => None,
+    };
+    let consent_tokens = p.get("consentTokens").and_then(|v| v.as_array()).cloned();
+    let bystander_keys = match p.get("bystanderKeys").and_then(|v| v.as_object()) {
+        Some(map) => {
+            let mut keys = Vec::with_capacity(map.len());
+            for (did, mb) in map {
+                let mb = mb.as_str().unwrap_or("");
+                keys.push(r::BystanderKey {
+                    did: did.clone(),
+                    public_key: r::unmb64(mb)?,
+                });
+            }
+            Some(keys)
+        }
+        None => None,
+    };
+    Ok(subj(r::verify_consent_evidence(
+        &evidence,
+        robot_public_key,
+        capture.as_deref(),
+        consent_tokens.as_deref(),
+        bystander_keys.as_deref(),
+        gos(&p, "now").as_deref(),
     )?))
 }

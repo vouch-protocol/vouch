@@ -124,178 +124,6 @@ class AsyncVerifier:
             await self._http_client.aclose()
             self._http_client = None
 
-    async def verify(
-        self, token: str, public_key_jwk: Optional[str] = None, check_nonce: bool = True
-    ) -> Tuple[bool, Optional[Passport]]:
-        """
-        Verify a Vouch-Token asynchronously.
-
-        Args:
-          token: The JWS compact serialized Vouch-Token.
-          public_key_jwk: JWK JSON string of the public key.
-          check_nonce: Whether to check/track nonce for replay prevention.
-
-        Returns:
-          Tuple of (is_valid, Passport or None)
-        """
-        self._stats["verifications"] += 1
-
-        if not token:
-            self._stats["failures"] += 1
-            return False, None
-
-        try:
-            # Parse the JWS
-            jws_token = jws.JWS()
-            jws_token.deserialize(token)
-
-            # Extract payload
-            payload_bytes = jws_token.objects.get("payload", b"")
-            if isinstance(payload_bytes, str):
-                payload_bytes = payload_bytes.encode("utf-8")
-
-            claims = json.loads(payload_bytes.decode("utf-8"))
-
-            # Verify signature if public key provided
-            if public_key_jwk:
-                key = jwk.JWK.from_json(public_key_jwk)
-                jws_token.verify(key)
-
-            # Validate timestamps
-            now = int(time.time())
-
-            exp = claims.get("exp", 0)
-            if exp and now > exp + self._clock_skew:
-                logger.debug(f"Token expired: exp={exp}, now={now}")
-                self._stats["failures"] += 1
-                return False, None
-
-            nbf = claims.get("nbf", 0)
-            if nbf and now < nbf - self._clock_skew:
-                logger.debug(f"Token not yet valid: nbf={nbf}, now={now}")
-                self._stats["failures"] += 1
-                return False, None
-
-            # Check nonce for replay
-            jti = claims.get("jti", "")
-            if check_nonce and self._nonce_tracker and jti:
-                if await self._nonce_tracker.is_used(jti):
-                    logger.warning(f"Replay attack blocked: jti={jti}")
-                    self._stats["replays_blocked"] += 1
-                    self._stats["failures"] += 1
-                    return False, None
-
-                # Mark nonce as used
-                await self._nonce_tracker.mark_used(jti, exp)
-
-            # Build passport
-            vouch_data = claims.get("vouch", {})
-            intent_payload = vouch_data.get("payload", {})
-
-            passport = Passport(
-                sub=claims.get("sub", ""),
-                iss=claims.get("iss", ""),
-                iat=claims.get("iat", 0),
-                exp=exp,
-                jti=jti,
-                payload=intent_payload,
-                raw_claims=claims,
-            )
-
-            self._stats["successes"] += 1
-            return True, passport
-
-        except JWException as e:
-            logger.debug(f"JWS verification failed: {e}")
-            self._stats["failures"] += 1
-            return False, None
-        except json.JSONDecodeError as e:
-            logger.debug(f"Invalid JSON in token: {e}")
-            self._stats["failures"] += 1
-            return False, None
-        except Exception as e:
-            logger.debug(f"Verification error: {e}")
-            self._stats["failures"] += 1
-            return False, None
-
-    async def check_vouch(
-        self, token: str, check_nonce: bool = True
-    ) -> Tuple[bool, Optional[Passport]]:
-        """
-        Verify a token using trusted roots, cache, or DID resolution.
-
-        Args:
-          token: The JWS compact serialized Vouch-Token.
-          check_nonce: Whether to check nonce for replay prevention.
-
-        Returns:
-          Tuple of (is_valid, Passport or None)
-        """
-        if not token:
-            return False, None
-
-        try:
-            # Parse to get issuer
-            jws_token = jws.JWS()
-            jws_token.deserialize(token)
-
-            payload_bytes = jws_token.objects.get("payload", b"")
-            if isinstance(payload_bytes, str):
-                payload_bytes = payload_bytes.encode("utf-8")
-
-            claims = json.loads(payload_bytes.decode("utf-8"))
-            issuer_did = claims.get("iss", "")
-
-            # Get public key
-            public_key = await self._get_public_key(issuer_did)
-            if not public_key:
-                logger.warning(f"Could not resolve public key for: {issuer_did}")
-                return False, None
-
-            return await self.verify(token, public_key_jwk=public_key, check_nonce=check_nonce)
-
-        except Exception as e:
-            logger.debug(f"check_vouch error: {e}")
-            return False, None
-
-    async def verify_batch(
-        self,
-        tokens: List[str],
-        public_key_jwk: Optional[str] = None,
-        check_nonce: bool = True,
-        max_concurrent: int = 50,
-    ) -> List[VerificationResult]:
-        """
-        Verify multiple tokens concurrently.
-
-        Args:
-          tokens: List of tokens to verify.
-          public_key_jwk: Optional public key for all tokens.
-          check_nonce: Whether to check nonces.
-          max_concurrent: Maximum concurrent verifications.
-
-        Returns:
-          List of VerificationResult objects.
-        """
-        semaphore = asyncio.Semaphore(max_concurrent)
-
-        async def verify_one(index: int, token: str) -> VerificationResult:
-            async with semaphore:
-                try:
-                    valid, passport = await self.verify(
-                        token, public_key_jwk=public_key_jwk, check_nonce=check_nonce
-                    )
-                    return VerificationResult(token_index=index, is_valid=valid, passport=passport)
-                except Exception as e:
-                    return VerificationResult(
-                        token_index=index, is_valid=False, passport=None, error=str(e)
-                    )
-
-        tasks = [verify_one(i, token) for i, token in enumerate(tokens)]
-        results = await asyncio.gather(*tasks)
-
-        return list(results)
-
     async def _get_public_key(self, did: str) -> Optional[str]:
         """Get public key from trusted roots, cache, or DID resolution."""
 
@@ -381,20 +209,20 @@ class AsyncVerifier:
     # Modern path: Verifiable Credentials with Data Integrity proofs
     # ------------------------------------------------------------------
 
-    async def verify_credential(
+    async def verify(
         self,
         credential,
         public_key=None,
     ) -> Tuple[bool, Optional[CredentialPassport]]:
         """
         Verify a W3C Vouch Credential. The cryptographic check is delegated to
-        the synchronous `Verifier.verify_credential`, since Ed25519 verification
+        the synchronous `Verifier.verify`, since Ed25519 verification
         is fast and CPU-bound (offloading to a thread adds more overhead than
         it saves). DID resolution is async.
 
-        See `Verifier.verify_credential` for argument semantics.
+        See `Verifier.verify` for argument semantics.
         """
-        return Verifier.verify_credential(
+        return Verifier.verify(
             credential,
             public_key=public_key,
             clock_skew_seconds=self._clock_skew,
@@ -430,7 +258,7 @@ class AsyncVerifier:
                 logger.warning(f"Could not resolve Multikey for: {issuer_did}")
                 return False, None
 
-            return Verifier.verify_credential(
+            return Verifier.verify(
                 cred,
                 public_key=public_key,
                 clock_skew_seconds=self._clock_skew,

@@ -67,11 +67,35 @@ def setup_logging(verbose: bool = False) -> None:
     logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
 
+def _print_agent_quickstart(keys, file=None) -> None:
+    """Print the one-liner to wire this identity into an agent.
+
+    Once an identity is saved (here) or exported, ``vouch.protect`` resolves it
+    automatically - so making an agent sign every tool call is a single line.
+    """
+    file = file or sys.stdout  # resolve at call time, not import time
+    print("\n🚀 You're set up. Sign every tool call with one line:\n", file=file)
+    print("    from vouch import protect", file=file)
+    print("    agent.tools = protect([your_tool, another_tool])", file=file)
+    print(
+        "\n   (identity is resolved automatically from your keystore - no wiring needed)",
+        file=file,
+    )
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     """Generate a new Ed25519 keypair for agent identity."""
     try:
         # Build DID
-        domain = args.domain if args.domain else "example.com"
+        if args.domain:
+            domain = args.domain
+        else:
+            domain = "example.com"
+            print(
+                "No domain specified, using 'example.com'."
+                " Pass --domain your.domain to set a real domain.",
+                file=sys.stderr,
+            )
 
         # Generate keys
         keys = generate_identity(domain)
@@ -81,6 +105,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(f"export VOUCH_DID='{keys.did}'")
             print(f"export VOUCH_PRIVATE_KEY='{keys.private_key_jwk}'")
             print(f"# Public Key (for vouch.json): {keys.public_key_jwk}", file=sys.stderr)
+            _print_agent_quickstart(keys, file=sys.stderr)
         else:
             print("🔑 NEW AGENT IDENTITY GENERATED\n")
             print(f"DID: {keys.did}")
@@ -88,16 +113,21 @@ def cmd_init(args: argparse.Namespace) -> int:
             # Key Storage
             km = KeyManager()
 
-            # Prompt for passphrase
-            print("\n🔐 Secure Storage")
-            passphrase = getpass.getpass(
-                f"Enter passphrase for {keys.did} (leave empty for no encryption): "
-            )
-            confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+            # Non-interactive when --yes is passed or stdin is not a TTY (CI,
+            # pipes), so `vouch init` never hangs waiting for a passphrase.
+            non_interactive = args.yes or not sys.stdin.isatty()
 
-            if passphrase != confirm:
-                print("❌ Error: Passphrases do not match", file=sys.stderr)
-                return 1
+            if non_interactive:
+                passphrase = None
+            else:
+                print("\n🔐 Secure Storage")
+                passphrase = getpass.getpass(
+                    f"Enter passphrase for {keys.did} (leave empty for no encryption): "
+                )
+                confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+                if passphrase != confirm:
+                    print("❌ Error: Passphrases do not match", file=sys.stderr)
+                    return 1
 
             try:
                 km.save_identity(keys, passphrase if passphrase else None)
@@ -110,6 +140,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
             print("\n--- PUBLIC KEY (Put this in vouch.json) ---")
             print(keys.public_key_jwk)
+            _print_agent_quickstart(keys)
 
         return 0
 
@@ -192,25 +223,32 @@ def cmd_sign(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        # Parse the message
+        # Build the intent to sign. With --json the message is an intent
+        # object; otherwise the plain message becomes the action.
         if args.json:
             try:
-                payload = json.loads(args.message)
+                intent = json.loads(args.message)
             except json.JSONDecodeError as e:
                 print(f"Error: Invalid JSON message: {e}", file=sys.stderr)
                 return 1
         else:
-            # Wrap string message in a payload
-            payload = {"message": args.message}
+            intent = {"action": args.message}
 
-        # Create signer and sign
+        # A Vouch Credential requires action, target, and resource. Fill any
+        # that the caller did not provide with sensible defaults.
+        intent.setdefault("action", "sign")
+        intent.setdefault("target", did)
+        intent.setdefault("resource", intent["action"])
+
+        # Create signer and issue a Verifiable Credential.
         signer = Signer(private_key=private_key, did=did)
-        token = signer.sign(payload)
+        credential = signer.sign(intent=intent)
+        out = json.dumps(credential, separators=(",", ":"))
 
         if args.header:
-            print(f"Vouch-Token: {token}")
+            print(f"Vouch-Credential: {out}")
         else:
-            print(token)
+            print(out)
 
         return 0
 
@@ -223,18 +261,21 @@ def cmd_sign(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    """Verify a Vouch-Token."""
-    token = args.token
+    """Verify a Vouch Credential."""
     public_key = args.key or os.environ.get("VOUCH_PUBLIC_KEY")
 
     try:
+        try:
+            credential = json.loads(args.token)
+        except json.JSONDecodeError as e:
+            print(f"Error: credential is not valid JSON: {e}", file=sys.stderr)
+            return 1
+
         if public_key:
-            valid, passport = Verifier.verify(token, public_key_jwk=public_key)
+            valid, passport = Verifier.verify(credential, public_key=public_key)
         else:
-            # Verify without signature check (structure only)
-            valid, passport = Verifier.verify(token)
-            if valid:
-                print("⚠️  Warning: No public key provided, signature not verified", file=sys.stderr)
+            # Resolve the issuer's key from its DID.
+            valid, passport = Verifier.verify(credential)
 
         if valid and passport:
             if args.json:
@@ -242,17 +283,17 @@ def cmd_verify(args: argparse.Namespace) -> int:
                     "valid": True,
                     "sub": passport.sub,
                     "iss": passport.iss,
-                    "iat": passport.iat,
-                    "exp": passport.exp,
-                    "jti": passport.jti,
-                    "payload": passport.payload,
+                    "valid_from": passport.valid_from,
+                    "valid_until": passport.valid_until,
+                    "credential_id": passport.credential_id,
+                    "intent": passport.intent,
                 }
                 print(json.dumps(result, indent=2))
             else:
                 print("✅ VALID")
                 print(f"   Subject: {passport.sub}")
                 print(f"   Issuer:  {passport.iss}")
-                print(f"   Payload: {json.dumps(passport.payload)}")
+                print(f"   Intent:  {json.dumps(passport.intent)}")
             return 0
         else:
             if args.json:
@@ -262,8 +303,437 @@ def cmd_verify(args: argparse.Namespace) -> int:
             return 1
 
     except Exception as e:
-        print(f"Error verifying token: {e}", file=sys.stderr)
+        print(f"Error verifying credential: {e}", file=sys.stderr)
         return 1
+
+
+# ---------------------------------------------------------------------------
+# Root of Trust for Machine Identity (`vouch root ...`)
+#
+# Stand up a self-hostable trust anchor for AI agent and robot identity. Anyone
+# runs `vouch root init` to create their own root, `vouch root recognize` to
+# name an issuer that may attest identities, `vouch root issue-identity` to bind
+# an agent DID to real attributes, and `vouch root verify-chain` to check an
+# agent against a pinned root fully offline.
+# ---------------------------------------------------------------------------
+
+
+def _load_stored_signer(target_did):
+    """Load a stored identity as a Signer, prompting for a passphrase if needed.
+
+    Mirrors the keystore selection in ``cmd_sign``: pick ``target_did`` if
+    given, else the single stored identity, else prompt from a numbered list.
+    Returns a :class:`Signer`, or None on error (message already printed).
+    """
+    km = KeyManager()
+    identities = km.list_identities()
+    if not identities:
+        print(
+            "Error: No identity found. Run 'vouch root init' to create a root first.",
+            file=sys.stderr,
+        )
+        return None
+
+    selected_did = target_did
+    if not selected_did:
+        if len(identities) == 1:
+            selected_did = identities[0]["did"]
+        else:
+            print("Multiple identities found:")
+            for i, ident in enumerate(identities):
+                print(f"{i + 1}. {ident['did']}")
+            try:
+                choice = int(input("Select identity (number): ")) - 1
+                selected_did = identities[choice]["did"]
+            except (ValueError, IndexError):
+                print("Invalid selection", file=sys.stderr)
+                return None
+
+    try:
+        try:
+            keys = km.load_identity(selected_did, None)
+        except ValueError as e:
+            if "Password required" in str(e) or "Decryption" in str(e):
+                passphrase = getpass.getpass(f"Enter passphrase for {selected_did}: ")
+                keys = km.load_identity(selected_did, passphrase)
+            else:
+                raise
+    except Exception as e:
+        print(f"Error loading identity: {e}", file=sys.stderr)
+        return None
+
+    return Signer.from_keypair(keys)
+
+
+def _write_json_file(obj, path) -> bool:
+    """Write ``obj`` as pretty JSON to ``path``. Returns True on success."""
+    try:
+        with open(path, "w") as f:
+            json.dump(obj, f, indent=2)
+        return True
+    except OSError as e:
+        print(f"Error writing {path}: {e}", file=sys.stderr)
+        return False
+
+
+def _read_json_file(path):
+    """Load and parse a JSON file. Returns the object, or None on error."""
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"Error reading {path}: {e}", file=sys.stderr)
+        return None
+
+
+def cmd_root_init(args: argparse.Namespace) -> int:
+    """Create a Vouch root identity and write its self-issued Root of Trust credential."""
+    from vouch.root_of_trust import build_root_of_trust, generate_did_key_identity
+
+    try:
+        if args.domain:
+            keys = generate_identity(args.domain)
+        else:
+            keys = generate_did_key_identity()
+    except Exception as e:
+        print(f"Error generating root identity: {e}", file=sys.stderr)
+        return 1
+
+    print("Vouch root of trust created")
+    print(f"Root DID: {keys.did}")
+
+    km = KeyManager()
+
+    # Non-interactive when --yes is passed or stdin is not a TTY (CI, pipes), so
+    # the command never hangs waiting for a passphrase.
+    non_interactive = getattr(args, "yes", False) or not sys.stdin.isatty()
+    if non_interactive:
+        passphrase = None
+    else:
+        print("\nSecure storage")
+        passphrase = getpass.getpass(
+            f"Enter passphrase for {keys.did} (leave empty for no encryption): "
+        )
+        confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+        if passphrase != confirm:
+            print("Error: passphrases do not match", file=sys.stderr)
+            return 1
+
+    try:
+        km.save_identity(keys, passphrase if passphrase else None)
+        print(f"Root identity saved to: {km._get_filename(keys.did)}")
+        if not passphrase:
+            print("Warning: root key saved in plain text. Use a passphrase to encrypt it.")
+    except Exception as e:
+        print(f"Error saving root identity: {e}", file=sys.stderr)
+        return 1
+
+    signer = Signer.from_keypair(keys)
+    try:
+        credential = build_root_of_trust(
+            signer,
+            name=args.name,
+            scope=args.scope or None,
+        )
+    except Exception as e:
+        print(f"Error building Root of Trust credential: {e}", file=sys.stderr)
+        return 1
+
+    out_path = args.out or "root-of-trust.json"
+    if not _write_json_file(credential, out_path):
+        return 1
+    print(f"Root of Trust credential written to: {out_path}")
+
+    if args.reference:
+        print(
+            "\nReference root notice:\n"
+            "  This is a self-hosted reference root for testing and evaluation.\n"
+            "  It is not a vetted production authority. Verifiers must pin this\n"
+            f"  root DID out of band before trusting it:\n    {keys.did}"
+        )
+
+    return 0
+
+
+def cmd_root_recognize(args: argparse.Namespace) -> int:
+    """Sign a recognized-issuer credential from the root."""
+    from vouch.root_of_trust import build_recognized_issuer
+
+    if not args.issuer:
+        print("Error: --issuer DID is required", file=sys.stderr)
+        return 1
+
+    signer = _load_stored_signer(args.root_did)
+    if signer is None:
+        return 1
+
+    actions = None
+    if args.actions:
+        actions = [a.strip() for a in args.actions.split(",") if a.strip()]
+
+    try:
+        credential = build_recognized_issuer(
+            signer,
+            issuer_did=args.issuer,
+            recognized_actions=actions,
+        )
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    out_path = args.out or "recognition.json"
+    if not _write_json_file(credential, out_path):
+        return 1
+
+    print("Recognized-issuer credential created")
+    print(f"Root DID:   {signer.did}")
+    print(f"Issuer DID: {args.issuer}")
+    print(f"Written to: {out_path}")
+    return 0
+
+
+def cmd_root_issue_identity(args: argparse.Namespace) -> int:
+    """Sign an agent identity credential from a recognized issuer."""
+    from vouch.root_of_trust import build_agent_identity
+
+    if not args.subject:
+        print("Error: --subject DID is required", file=sys.stderr)
+        return 1
+
+    attributes = {}
+    for item in args.attr or []:
+        if "=" not in item:
+            print(f"Error: --attr must be KEY=VALUE, got {item!r}", file=sys.stderr)
+            return 1
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if not key:
+            print(f"Error: --attr key is empty in {item!r}", file=sys.stderr)
+            return 1
+        attributes[key] = value
+    if not attributes:
+        print("Error: at least one --attr KEY=VALUE is required", file=sys.stderr)
+        return 1
+
+    signer = _load_stored_signer(args.issuer_did)
+    if signer is None:
+        return 1
+
+    try:
+        credential = build_agent_identity(
+            signer,
+            subject_did=args.subject,
+            attributes=attributes,
+        )
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    out_path = args.out or "identity.json"
+    if not _write_json_file(credential, out_path):
+        return 1
+
+    print("Agent identity credential created")
+    print(f"Issuer DID:  {signer.did}")
+    print(f"Subject DID: {args.subject}")
+    print(f"Attributes:  {json.dumps(attributes)}")
+    print(f"Written to:  {out_path}")
+    return 0
+
+
+def cmd_root_verify_chain(args: argparse.Namespace) -> int:
+    """Verify an agent identity against a pinned Vouch root DID."""
+    from vouch.root_of_trust import verify_identity_chain
+
+    identity = _read_json_file(args.identity)
+    if identity is None:
+        return 1
+    recognition = _read_json_file(args.recognition)
+    if recognition is None:
+        return 1
+
+    action_credential = None
+    if args.action:
+        action_credential = _read_json_file(args.action)
+        if action_credential is None:
+            return 1
+
+    root_credential = None
+    if args.root_cred:
+        root_credential = _read_json_file(args.root_cred)
+        if root_credential is None:
+            return 1
+
+    result = verify_identity_chain(
+        identity,
+        recognition,
+        trusted_root=args.root,
+        action_credential=action_credential,
+        root_credential=root_credential,
+        required_action=args.action_required,
+    )
+
+    if result.ok:
+        print("Identity chain verified")
+        print(f"Agent DID:  {result.agent_did}")
+        print(f"Issuer DID: {result.issuer_did}")
+        print(f"Root DID:   {result.root_did}")
+        print(f"Attributes: {json.dumps(result.attributes)}")
+        return 0
+
+    print(f"Identity chain rejected: {result.reason}", file=sys.stderr)
+    return 1
+
+
+# ---------------------------------------------------------------------------
+# One-command enroll and root-anchored verify (`vouch agent ...`)
+#
+# `vouch agent enroll` is the local self-host path: the operator holds the
+# recognized issuer key, attests an agent DID, and writes a portable identity
+# bundle. `vouch agent verify` pins a root DID and checks a bundle offline. A
+# hosted issuer service (where a provider signs attestations for you) is a
+# separate path and is not what these commands do.
+# ---------------------------------------------------------------------------
+
+
+def cmd_agent_enroll(args: argparse.Namespace) -> int:
+    """Enroll an agent and write a portable identity bundle.
+
+    Loads or mints the agent identity, has the recognized issuer attest it, then
+    packages the identity plus the issuer recognition into one bundle a verifier
+    can check against a pinned root. The issuer is always a parameter (the
+    operator's own recognized issuer key), never a hardcoded authority.
+    """
+    from vouch.root_of_trust import (
+        build_agent_identity,
+        build_identity_bundle,
+        generate_did_key_identity,
+    )
+
+    # 1. Determine the agent DID. If none was supplied, mint a fresh did:key
+    #    agent identity, save it to the keystore, and print its DID.
+    agent_did = args.agent_did
+    if not agent_did:
+        try:
+            agent_keys = generate_did_key_identity()
+        except Exception as e:
+            print(f"Error generating agent identity: {e}", file=sys.stderr)
+            return 1
+
+        km = KeyManager()
+        non_interactive = getattr(args, "yes", False) or not sys.stdin.isatty()
+        if non_interactive:
+            passphrase = None
+        else:
+            passphrase = getpass.getpass(
+                f"Enter passphrase for {agent_keys.did} (leave empty for no encryption): "
+            )
+            confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+            if passphrase != confirm:
+                print("Error: passphrases do not match", file=sys.stderr)
+                return 1
+
+        try:
+            km.save_identity(agent_keys, passphrase if passphrase else None)
+        except Exception as e:
+            print(f"Error saving agent identity: {e}", file=sys.stderr)
+            return 1
+
+        agent_did = agent_keys.did
+        print(f"Generated agent identity: {agent_did}")
+        if not passphrase:
+            print("Warning: agent key saved in plain text. Use a passphrase to encrypt it.")
+
+    # 2. Parse the identity attributes to bind (owner, model, and so on).
+    attributes = {}
+    for item in args.attr or []:
+        if "=" not in item:
+            print(f"Error: --attr must be KEY=VALUE, got {item!r}", file=sys.stderr)
+            return 1
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if not key:
+            print(f"Error: --attr key is empty in {item!r}", file=sys.stderr)
+            return 1
+        attributes[key] = value
+    if not attributes:
+        print("Error: at least one --attr KEY=VALUE is required", file=sys.stderr)
+        return 1
+
+    # 3. Load the recognized issuer signer. This is a parameter (the operator's
+    #    own issuer key from the keystore), never a fixed authority.
+    signer = _load_stored_signer(args.issuer_did)
+    if signer is None:
+        return 1
+
+    # 4. Load the recognition that proves this issuer is recognized by a root,
+    #    so the bundle is verifiable against that root.
+    recognition = _read_json_file(args.recognition)
+    if recognition is None:
+        return 1
+
+    action_credential = None
+    if args.action:
+        action_credential = _read_json_file(args.action)
+        if action_credential is None:
+            return 1
+
+    # 5. Attest the agent identity and package the bundle.
+    try:
+        identity = build_agent_identity(signer, subject_did=agent_did, attributes=attributes)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    bundle = build_identity_bundle(
+        identity=identity,
+        recognition=recognition,
+        action=action_credential,
+    )
+
+    out_path = args.out or "identity-bundle.json"
+    if not _write_json_file(bundle, out_path):
+        return 1
+
+    print("Agent enrolled")
+    print(f"Agent DID:  {agent_did}")
+    print(f"Issuer DID: {signer.did}")
+    print(f"Bundle:     {out_path}")
+    return 0
+
+
+def cmd_agent_verify(args: argparse.Namespace) -> int:
+    """Verify a portable identity bundle against a pinned root DID."""
+    from vouch.root_of_trust import verify_bundle
+
+    root = args.root or os.environ.get("VOUCH_TRUSTED_ROOT")
+    if not root:
+        print(
+            "Error: a root DID is required. Pass --root or set VOUCH_TRUSTED_ROOT.",
+            file=sys.stderr,
+        )
+        return 1
+
+    bundle = _read_json_file(args.bundle)
+    if bundle is None:
+        return 1
+
+    result = verify_bundle(
+        bundle,
+        trusted_root=root,
+        required_action=args.action_required,
+    )
+
+    if result.ok:
+        print("Identity bundle verified")
+        print(f"Agent DID:  {result.agent_did}")
+        print(f"Issuer DID: {result.issuer_did}")
+        print(f"Root DID:   {result.root_did}")
+        print(f"Attributes: {json.dumps(result.attributes)}")
+        return 0
+
+    print(f"Identity bundle rejected: {result.reason}", file=sys.stderr)
+    return 1
 
 
 def _export_vouch_key_to_ssh() -> tuple[str, str]:
@@ -1304,8 +1774,36 @@ def cmd_scan(args) -> int:
     return 0
 
 
-def main() -> int:
-    """Main entry point for the CLI."""
+def _guided_start() -> "list[str] | None":
+    """Interactive picker shown when ``vouch`` is run with no subcommand.
+
+    Turns a first-time user with no idea which command to run into a single
+    choice. Returns the argv for the chosen action (fed back through the same
+    parser), or ``None`` to exit.
+    """
+    print("Vouch Protocol\n")
+    print("What would you like to do?\n")
+    print("  1) Sign my git commits        (verified badge on GitHub)")
+    print("  2) Give my agent an identity  (a DID and a keypair)")
+    print("  3) Full guided setup          (identity, allow-list, verifier, heartbeat)")
+    print("  4) Quit\n")
+    mapping = {"1": ["git", "init"], "2": ["init"], "3": ["onboard"]}
+    while True:
+        choice = input("Choose 1-4 [1]: ").strip() or "1"
+        if choice in mapping:
+            return mapping[choice]
+        if choice == "4" or choice.lower() in {"q", "quit", "exit"}:
+            return None
+        print("  Please enter 1, 2, 3, or 4.")
+
+
+def main(argv: "list[str] | None" = None) -> int:
+    """Main entry point for the CLI.
+
+    ``argv`` defaults to ``sys.argv[1:]`` when None, and may be passed
+    explicitly (e.g. from tests) to drive the CLI without touching the process
+    arguments.
+    """
     parser = argparse.ArgumentParser(
         prog="vouch", description="Vouch Protocol CLI - Identity & Reputation for AI Agents"
     )
@@ -1317,6 +1815,12 @@ def main() -> int:
     p_init = subparsers.add_parser("init", help="Generate a new agent identity")
     p_init.add_argument("--domain", help="Domain for the DID (e.g., example.com)")
     p_init.add_argument("--env", action="store_true", help="Output as environment variables")
+    p_init.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Non-interactive: save the identity without prompting for a passphrase",
+    )
 
     # sign command
     p_sign = subparsers.add_parser("sign", help="Sign a message or payload")
@@ -1392,6 +1896,183 @@ def main() -> int:
     p_media_verify.add_argument("--json", action="store_true", help="Output as JSON")
     p_media_verify.add_argument(
         "--c2pa", action="store_true", help="Verify C2PA manifest instead of Vouch signature"
+    )
+
+    # root subcommand group (Root of Trust for Machine Identity)
+    p_root = subparsers.add_parser(
+        "root",
+        help="Root of Trust for machine identity (self-hostable trust anchor)",
+    )
+    root_subparsers = p_root.add_subparsers(dest="root_command", help="Root of trust commands")
+
+    # root init
+    p_root_init = root_subparsers.add_parser(
+        "init", help="Create a root identity and write its Root of Trust credential"
+    )
+    p_root_init.add_argument(
+        "--name",
+        default="Vouch Machine Identity Root",
+        help="Human-readable name for the root",
+    )
+    p_root_init.add_argument(
+        "--scope",
+        nargs="+",
+        help="What the root anchors (default: ai-agent robot)",
+    )
+    p_root_init.add_argument(
+        "--domain",
+        help="Create a did:web root for this domain instead of a did:key root",
+    )
+    p_root_init.add_argument(
+        "--out", help="Path to write the Root of Trust credential (default: root-of-trust.json)"
+    )
+    p_root_init.add_argument(
+        "--reference",
+        action="store_true",
+        help="Print a notice that this is a self-hosted reference root for testing",
+    )
+    p_root_init.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Non-interactive: save the root without prompting for a passphrase",
+    )
+
+    # root recognize
+    p_root_recognize = root_subparsers.add_parser(
+        "recognize", help="Recognize an issuer that may attest agent or robot identity"
+    )
+    p_root_recognize.add_argument("--issuer", required=True, help="DID of the issuer to recognize")
+    p_root_recognize.add_argument(
+        "--actions",
+        help="Comma-separated actions to grant (default: issueAgentIdentity)",
+    )
+    p_root_recognize.add_argument(
+        "--root-did",
+        dest="root_did",
+        help="DID of the root to sign with (default: the stored root)",
+    )
+    p_root_recognize.add_argument(
+        "--out", help="Path to write the recognition credential (default: recognition.json)"
+    )
+
+    # root issue-identity
+    p_root_issue = root_subparsers.add_parser(
+        "issue-identity", help="Issue an agent identity credential from a recognized issuer"
+    )
+    p_root_issue.add_argument("--subject", required=True, help="DID of the agent being identified")
+    p_root_issue.add_argument(
+        "--attr",
+        action="append",
+        metavar="KEY=VALUE",
+        help="Identity attribute to bind (repeatable), e.g. --attr owner=Acme",
+    )
+    p_root_issue.add_argument(
+        "--issuer-did",
+        dest="issuer_did",
+        help="DID of the recognized issuer to sign with (default: the stored issuer)",
+    )
+    p_root_issue.add_argument(
+        "--out", help="Path to write the identity credential (default: identity.json)"
+    )
+
+    # root verify-chain
+    p_root_verify = root_subparsers.add_parser(
+        "verify-chain", help="Verify an agent identity against a pinned root DID"
+    )
+    p_root_verify.add_argument(
+        "--identity", required=True, help="Path to the agent identity credential JSON"
+    )
+    p_root_verify.add_argument(
+        "--recognition", required=True, help="Path to the recognized-issuer credential JSON"
+    )
+    p_root_verify.add_argument(
+        "--root", required=True, help="The root DID the verifier pins as its trust anchor"
+    )
+    p_root_verify.add_argument(
+        "--action", help="Optional path to an agent action credential to bind to the identity"
+    )
+    p_root_verify.add_argument(
+        "--root-cred",
+        dest="root_cred",
+        help="Optional path to the Root of Trust credential to check for self-consistency",
+    )
+    p_root_verify.add_argument(
+        "--action-required",
+        dest="action_required",
+        default="issueAgentIdentity",
+        help="Action the issuer must be recognized for (default: issueAgentIdentity)",
+    )
+
+    # agent command group (one-command enroll and root-anchored verify)
+    p_agent = subparsers.add_parser(
+        "agent",
+        help="Enroll an agent and verify its portable identity bundle",
+    )
+    agent_subparsers = p_agent.add_subparsers(dest="agent_command", help="Agent commands")
+
+    # agent enroll
+    p_agent_enroll = agent_subparsers.add_parser(
+        "enroll",
+        help="Attest an agent and write a portable identity bundle",
+        description=(
+            "Local self-host path: the operator holds the recognized issuer key, "
+            "attests an agent identity, and writes a portable bundle a verifier "
+            "can check against a pinned root. A hosted issuer service, where a "
+            "provider signs attestations for you, is a separate path."
+        ),
+    )
+    p_agent_enroll.add_argument(
+        "--agent-did",
+        dest="agent_did",
+        help="DID of the agent to attest (default: generate a fresh did:key agent identity)",
+    )
+    p_agent_enroll.add_argument(
+        "--issuer-did",
+        dest="issuer_did",
+        help="DID of the recognized issuer to sign with (default: the stored issuer)",
+    )
+    p_agent_enroll.add_argument(
+        "--attr",
+        action="append",
+        metavar="KEY=VALUE",
+        help="Identity attribute to bind (repeatable), e.g. --attr owner=Acme",
+    )
+    p_agent_enroll.add_argument(
+        "--recognition",
+        required=True,
+        help="Path to the recognized-issuer credential proving the issuer is recognized by a root",
+    )
+    p_agent_enroll.add_argument(
+        "--action",
+        help="Optional path to an agent action credential to include in the bundle",
+    )
+    p_agent_enroll.add_argument(
+        "--out",
+        help="Path to write the identity bundle (default: identity-bundle.json)",
+    )
+    p_agent_enroll.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Non-interactive: save a generated agent key without prompting for a passphrase",
+    )
+
+    # agent verify
+    p_agent_verify = agent_subparsers.add_parser(
+        "verify",
+        help="Verify a portable identity bundle against a pinned root DID",
+    )
+    p_agent_verify.add_argument("--bundle", required=True, help="Path to the identity bundle JSON")
+    p_agent_verify.add_argument(
+        "--root",
+        help="The root DID the verifier pins (default: the VOUCH_TRUSTED_ROOT env var)",
+    )
+    p_agent_verify.add_argument(
+        "--action-required",
+        dest="action_required",
+        default="issueAgentIdentity",
+        help="Action the issuer must be recognized for (default: issueAgentIdentity)",
     )
 
     # scan command (PAD-058 detection stage; OSS leak scanner)
@@ -1471,15 +2152,28 @@ def main() -> int:
         help="Do not prompt, use presets and defaults only",
     )
     p_onboard.add_argument(
+        "--quick",
+        action="store_true",
+        help="Zero-question setup: accept every recommended default and generate a working config in one command",
+    )
+    p_onboard.add_argument(
         "--dry-run",
         dest="dry_run",
         action="store_true",
         help="Show what would be written without creating files",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     setup_logging(args.verbose if hasattr(args, "verbose") else False)
+
+    # Bare `vouch` at an interactive terminal: offer a short menu instead of a
+    # wall of help. Piped/non-TTY runs keep the old behaviour (print help).
+    if args.command is None and sys.stdin.isatty() and sys.stdout.isatty():
+        chosen = _guided_start()
+        if chosen is None:
+            return 0
+        args = parser.parse_args(chosen)
 
     if args.command == "init":
         return cmd_init(args)
@@ -1504,6 +2198,26 @@ def main() -> int:
             return cmd_media_verify(args)
         else:
             p_media.print_help()
+            return 0
+    elif args.command == "root":
+        if args.root_command == "init":
+            return cmd_root_init(args)
+        elif args.root_command == "recognize":
+            return cmd_root_recognize(args)
+        elif args.root_command == "issue-identity":
+            return cmd_root_issue_identity(args)
+        elif args.root_command == "verify-chain":
+            return cmd_root_verify_chain(args)
+        else:
+            p_root.print_help()
+            return 0
+    elif args.command == "agent":
+        if args.agent_command == "enroll":
+            return cmd_agent_enroll(args)
+        elif args.agent_command == "verify":
+            return cmd_agent_verify(args)
+        else:
+            p_agent.print_help()
             return 0
     elif args.command == "scan":
         return cmd_scan(args)

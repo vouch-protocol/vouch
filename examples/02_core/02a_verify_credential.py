@@ -1,7 +1,7 @@
 """
 Example: Verify a Vouch Credential (v1.6+, VC + Data Integrity).
 
-Mirrors 01a_sign_credential.py for the verifier side. Demonstrates:
+Mirrors 01a_sign.py for the verifier side. Demonstrates:
 1. Full verification with a Node-style public key (Ed25519PublicKey).
 2. Tamper detection.
 3. Extraction of the CredentialPassport (issuer, intent, validity).
@@ -35,7 +35,7 @@ def main() -> None:
     public_key = public_key_from_jwk(keypair["public_key_jwk"])
 
     # Issue a credential.
-    credential = signer.sign_credential(
+    credential = signer.sign(
         intent={
             "action": "read_patient_record",
             "target": "patient:12345",
@@ -46,7 +46,7 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Case 1: Valid credential -> verification succeeds, returns Passport.
     # ------------------------------------------------------------------
-    is_valid, passport = Verifier.verify_credential(credential, public_key=public_key)
+    is_valid, passport = Verifier.verify(credential, public_key=public_key)
 
     print(f"Case 1 (untampered): valid={is_valid}")
     if passport:
@@ -63,7 +63,7 @@ def main() -> None:
     tampered = json.loads(json.dumps(credential))  # deep copy
     tampered["credentialSubject"]["intent"]["resource"] = "https://attacker.example.com/api/users"
 
-    is_valid, passport = Verifier.verify_credential(tampered, public_key=public_key)
+    is_valid, passport = Verifier.verify(tampered, public_key=public_key)
     print(f"\nCase 2 (tampered):  valid={is_valid}")
     print(
         " The proof binds the entire credential including the resource URL."
@@ -73,11 +73,11 @@ def main() -> None:
 
     # ------------------------------------------------------------------
     # Case 3: Multikey-format public key also works.
-    # The same verify_credential() accepts: Ed25519PublicKey, a
+    # The same verify() accepts: Ed25519PublicKey, a
     # multibase-encoded Multikey string, a JWK string, or a JWK dict.
     # ------------------------------------------------------------------
     multikey = signer.get_public_key_multikey()
-    is_valid, _ = Verifier.verify_credential(credential, public_key=multikey)
+    is_valid, _ = Verifier.verify(credential, public_key=multikey)
     print(f"\nCase 3 (Multikey):  valid={is_valid}")
     print(f" Multikey:  {multikey[:20]}... (z-prefixed base58btc)")
 

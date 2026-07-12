@@ -186,6 +186,269 @@ ok, _ = verify_safety_log(log.entries())             # tamper-evident
 record = build_safety_record(authority_signer, robot_did=robot, summary=log.summarize())
 ```
 
-Sections 5.7 to 5.9 are implemented in Python, TypeScript, Go, and the Rust core
+## 5.10 Perception provenance (`vouch.robotics.perception`)
+
+A robot signs the provenance of each captured sensor frame at capture: a record
+binding the frame's hash, the sensor id, the modality (camera, lidar, radar,
+depth, audio, thermal), the capture time, and the robot's DID. Records hash-link
+into an append-only `PerceptionLog`, so the sequence of what the robot perceived
+is tamper-evident, and a `PerceptionProvenanceCredential` attests a frame (or a
+segment, via the log head). Only frame hashes are stored, never the raw frames; a
+verifier holding the frame recomputes its hash to confirm it.
+
+```python
+from vouch.robotics import PerceptionLog, build_perception_attestation, hash_frame
+
+log = PerceptionLog()
+entry = log.record(sensor_id="cam-front", modality="camera", frame=frame_bytes)
+att = build_perception_attestation(robot_signer, robot_did=robot, sensor_id="cam-front",
+                                   modality="camera", frame_hash=entry["frameHash"],
+                                   log_head=log.head())
+```
+
+## 5.11 Offline delegation lease (`vouch.robotics.lease`)
+
+A short-lived, scope-bounded grant of authority a robot can verify and act on
+entirely offline, for places with no connectivity. An authority issues a
+`DelegationLeaseCredential` bounding the robot's physical capability scope
+(including zones) for a fixed window; the robot verifies the signature, that the
+window is current, and that a proposed action fits the scope, with no network
+call. Leases nest, each sub-grant only narrowing the one above, which forms the
+open cross-vendor chain.
+
+```python
+from vouch.robotics import build_delegation_lease, verify_delegation_lease, lease_permits
+
+lease = build_delegation_lease(authority_signer, robot_did=robot, lease_id="shift-42",
+                               scope={"maxForceN": 80.0, "allowedZones": ["cell-3"]},
+                               valid_seconds=3600)
+ok, subject = verify_delegation_lease(lease, authority_signer.public_key())   # offline
+```
+
+## 5.12 Physical quorum (`vouch.robotics.physical_quorum`)
+
+A cryptographic two-person rule: a high-consequence physical action is authorized
+only when at least M of an attested set of N approvers have each signed an
+approval over the same action. `verify_action_authorization` counts the distinct
+valid approvers, so one approver cannot reach the threshold by signing twice.
+
+```python
+from vouch.robotics import build_action_approval, verify_action_authorization
+
+approvals = [build_action_approval(a, action_id="weld-7", robot_did=robot) for a in approvers]
+authorized, who = verify_action_authorization(approvals, action_id="weld-7", robot_did=robot,
+                                              approver_keys=approver_keys, threshold=2)
+```
+
+## 5.13 Lifecycle and decommissioning (`vouch.robotics.lifecycle`)
+
+A robot outlives its first owner, so its transitions are made cryptographically
+accountable. The current owner signs an ownership transfer to a new owner, and
+linking each transfer forms a chain of custody (`verify_custody_chain`). The
+robot's current key authorizes a successor, forming a key history
+(`verify_key_history`), for a routine rotation or after a compromise. An owner or
+authority signs a decommission credential retiring the robot, after which a
+verifier should refuse to trust it.
+
+```python
+from vouch.robotics import build_ownership_transfer, build_key_rotation, build_decommission
+
+transfer = build_ownership_transfer(seller_signer, robot_did=robot, to_owner=buyer_did)
+rotation = build_key_rotation(robot_signer, robot_did=robot, new_key_multibase=new_key)
+retired = build_decommission(authority_signer, robot_did=robot, reason="end of service life",
+                            final_disposition="recycled")
+```
+
+## 5.14 Regulatory conformance (`vouch.robotics.conformance`)
+
+A conformance profile is a machine-checkable mapping from a robot's credentials to
+the clauses of a public safety or AI regulation. Built-in reference profiles cover
+ISO 10218-1/-2, ISO/TS 15066, the EU Machinery Regulation 2023/1230, the EU AI Act
+high-risk requirements, and UL 3300. `check_conformance` walks a profile and
+reports, per requirement, whether the presented credentials satisfy it, citing the
+clause. An assessing party signs a point-in-time attestation over that report.
+
+```python
+from vouch.robotics import check_conformance, build_conformance_attestation
+
+report = check_conformance([identity, provenance, scope, safety_record], "eu-ai-act-high-risk")
+attestation = build_conformance_attestation(assessor, robot_did=robot, report=report)
+```
+
+The report is deterministic, so every language reproduces it from the same
+credentials, and the attestation binds the embedded report by digest. The profiles
+are a reference crosswalk, not legal advice; a deployment confirms each mapping
+against the current regulation text for its market.
+
+## 5.15 Post-quantum signing (`vouch.robotics.pq`)
+
+A robot fielded today runs for ten to twenty years, longer than classical Ed25519
+is expected to stay safe, so robot credentials sign with the hybrid post-quantum
+cryptosuite `hybrid-eddsa-mldsa44-jcs-2026` (a classical Ed25519 signature
+alongside an ML-DSA-44 signature). `verify_robot_credential` verifies a credential
+whether it carries a classical or a hybrid proof, detected from the credential, so
+a fleet moves to post-quantum without breaking the credentials already in the
+field. `migrate_to_pq` re-signs a fielded robot's classical credential under a
+post-quantum key.
+
+```python
+from vouch.robotics import sign_pq, verify_robot_credential, mint_robot_identity
+
+identity = sign_pq(mint_robot_identity(robot, root, make="Acme", model="AR-7", serial="SN-1"), robot)
+ok = verify_robot_credential(identity, robot_ed25519_public_key,
+                             mldsa44_public_key=robot.public_key_mldsa44_multikey())
+```
+
+A hybrid credential passes only when both signatures validate, so it is at least as
+strong as the classical signature and stays safe once classical signatures do not.
+
+## 5.16 Cross-embodiment identity continuity (`vouch.robotics.embodiment`)
+
+An AI agent (a mind with its own Vouch identity) can run on one robot body today and
+a different body tomorrow. An embodiment credential binds the agent to a body and
+that body's hardware root for a period, signed by the agent's own key.
+`verify_continuity_chain` walks a sequence of embodiments, confirms every one is
+signed by the same agent key and that each `fromBody` matches the previous `body`,
+and returns the current body, so a verifier confirms the same accountable agent
+persisted across bodies. `check_no_fork` confirms no two embodiments place the agent
+in different bodies with overlapping active windows. This is the inverse of the
+ownership custody chain: there one body passes between owners, here one mind passes
+between bodies.
+
+```python
+from vouch.robotics import build_embodiment, verify_continuity_chain, check_no_fork
+
+a = build_embodiment(agent, agent_did=agent_did, body_did="body-a", body_hardware_root="uA", valid_seconds=3600)
+b = build_embodiment(agent, agent_did=agent_did, body_did="body-b", body_hardware_root="uB", from_body="body-a")
+ok, current_body = verify_continuity_chain([a, b], agent_public_key)
+no_fork, _ = check_no_fork([a, b])
+```
+
+The open layer is signed credentials and software verification; managed key custody
+and fleet migration are commercial.
+
+## 5.17 Physical custody handoff (`vouch.robotics.custody`)
+
+A physical task or object passes across a chain of actors, human and robot. A
+`CustodyHandoffCredential` records that a receiving actor accepted custody of the
+task from a releasing actor, signed by the receiver. `verify_handoff_chain` walks a
+sequence of handoffs (each receiver becomes the next releaser) and returns the
+current holder, and `holder_at` returns who held the task at a given time, so a
+physical-world incident traces to the exact hop and actor. A condition attested at
+each handoff lets `locate_condition_change` localize a physical state change to the
+holder responsible for it.
+
+```python
+from vouch.robotics import build_handoff, verify_handoff_chain, holder_at, locate_condition_change
+
+h1 = build_handoff(robot_a, task_id="tote-42", from_actor=picker_did, to_actor=robot_a_did, condition="intact")
+h2 = build_handoff(robot_b, task_id="tote-42", from_actor=robot_a_did, to_actor=robot_b_did, condition="damaged")
+ok, current_holder = verify_handoff_chain([h1, h2], {robot_a_did: a_key, robot_b_did: b_key})
+change = locate_condition_change([h1, h2])
+```
+
+The open layer is signed handoff credentials and software verification; managed
+logistics custody orchestration and fleet tracking are commercial.
+
+## 5.18 Infrastructure access (`vouch.robotics.access`)
+
+A robot in a warehouse, hospital, or building needs to open doors, call elevators,
+dock at chargers, and operate machines. An infrastructure operator signs an
+`InfrastructureAccessGrant` naming the resource, the permitted operations, an
+optional zone, and a time window. The robot signs an `InfrastructureAccessRequest`
+for one operation on one resource. The resource runs `authorize_access` offline and
+allows the operation only when the grant verifies under the operator key and is in
+window, the request verifies under the robot key, the grant and request name the
+same robot and resource, and the operation is permitted. The grant plus the request
+is a tamper-evident, attributable record of the access, and `attenuates_grant`
+confirms a sub-grant only narrows what it inherits.
+
+```python
+from vouch.robotics import build_access_grant, build_access_request, authorize_access
+
+grant = build_access_grant(operator, robot_did=robot_did, resource="door-3", operations=["open", "close"], zone="cell-3", valid_seconds=3600)
+request = build_access_request(robot, robot_did=robot_did, resource="door-3", operation="open")
+result = authorize_access(grant, request, operator_key, robot_key)
+```
+
+The open layer is signed grants and requests, offline authorization, and shrink-only
+attenuation; hardware-enforced actuation at the resource and managed fleet
+access-policy orchestration are commercial.
+
+## 5.19 Fused-sensor provenance (`vouch.robotics.fusion`)
+
+Perception provenance signs individual sensor frames. A robot fuses many frames from
+cameras, lidar, and radar into a single world model, an object set, an occupancy grid,
+or a pose, and acts on that. `build_fused_attestation` signs a
+`FusedPerceptionAttestation` binding the fused output's hash to an ordered list of the
+input frame hashes, a digest over those inputs, and a fusion method identifier.
+`verify_fused_attestation` checks the robot's proof, reproduces the input digest so the
+attestation commits to exactly those inputs, and, given the raw fused output,
+reproduces its hash. `verify_fusion_inputs` checks each named input against the robot's
+signed perception log and returns any that were never recorded, so a manipulated fusion
+result or a dropped or substituted input is detectable.
+
+```python
+from vouch.robotics import build_fused_attestation, verify_fused_attestation, verify_fusion_inputs, hash_frame
+
+inputs = [hash_frame(cam), hash_frame(lidar), hash_frame(radar)]
+att = build_fused_attestation(robot, robot_did=robot_did, fusion_method="occupancy-grid-v1", input_frame_hashes=inputs, fused_output=world_model)
+ok, subject = verify_fused_attestation(att, robot_key, fused_output=world_model)
+inputs_ok, missing = verify_fusion_inputs(att, perception_log.entries())
+```
+
+The open layer is software-signed provenance reusing the perception frame hashes;
+hardware sensor attestation and managed sensor-fusion orchestration are commercial.
+
+## 5.20 Wear and degradation (`vouch.robotics.wear`)
+
+A robot does not stay as capable as it left the factory: actuators wear, sensors
+drift, and error rates creep up. `build_wear_attestation` signs a
+`RobotWearAttestation` carrying a normalized wear level (0 for as-new, 1 for fully
+worn) and optional metrics, bound to the robot's identity. Each attestation links to
+the previous one by its proof, so `verify_wear_chain` walks a tamper-evident wear
+history. `attenuate_for_wear` derives a physical scope whose numeric caps are scaled
+by (1 - wear level), and the result is a valid attenuation of the original scope, so
+the same attenuation check the rest of Vouch uses carries the derating.
+
+```python
+from vouch.robotics import build_wear_attestation, verify_wear_chain, attenuate_for_wear
+
+w1 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.1)
+w2 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.3, prev_proof=w1["proof"]["proofValue"])
+ok, latest = verify_wear_chain([w1, w2], robot_key)
+narrowed = attenuate_for_wear(full_scope, latest["wearLevel"])
+```
+
+The open layer is the signed wear state and the derived narrowed scope credential;
+firmware-level enforcement of the narrowed envelope and managed predictive-maintenance
+modeling are commercial.
+
+## 5.21 Bystander consent (`vouch.robotics.consent`)
+
+A robot in a shared or public space captures people incidentally. `build_consent_token`
+has a bystander sign over the hash of one capture and the robot's DID, so
+`verify_consent_token` accepts it only for that capture and that robot and it cannot be
+replayed to another recording. `build_consent_evidence` has the robot bind the capture
+hash to a consent basis, one of `CONSENT_BASES` (explicit-consent, posted-notice,
+legitimate-interest, or redacted), and for explicit consent it commits to the covering
+tokens by their proof value. `verify_consent_evidence` checks the robot's proof, that the
+basis is accepted, and, when given the raw capture, that its hash matches. Only hashes
+and the basis are stored, never an image or a bystander's identifying data.
+
+```python
+from vouch.robotics import hash_capture, build_consent_token, build_consent_evidence, verify_consent_evidence
+
+ch = hash_capture(frame)
+token = build_consent_token(person, bystander_did=person_did, capture_hash=ch, robot_did=robot_did, valid_seconds=3600)
+ev = build_consent_evidence(robot, robot_did=robot_did, capture_hash=ch, basis="explicit-consent", consent_tokens=[token])
+ok, subject = verify_consent_evidence(ev, robot_key, capture=frame, consent_tokens=[token], bystander_keys={person_did: person_key})
+```
+
+The open layer is the cryptographic binding of a consent basis to a capture and its
+verification, holding only hashes; on-device biometric detection and redaction, and
+managed consent-registry orchestration, are commercial.
+
+Sections 5.7 to 5.21 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.

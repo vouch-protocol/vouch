@@ -1,9 +1,48 @@
-# FAQ Draft (NOT PUBLISHED — awaiting your approval)
+# FAQ Draft (NOT PUBLISHED - awaiting your approval)
 
 Proposed FAQ entries for the website's `faq-data.ts`. Show the user this
 file before merging into the live FAQ. Each entry is in the same shape
 as existing entries (q + a fields). Sections are grouped roughly by
 the live FAQ's existing categories.
+
+---
+
+## Integrating Vouch into an agent (one line)
+
+**Q: What is the fastest way to add Vouch to my agent?**
+A: One line. Run `vouch init --yes` once to provision an identity, then wrap
+your tools: `from vouch import protect` and `agent.tools = protect([tool_a,
+tool_b])`. Every tool call is then signed in Python before it runs. There is no
+prompt to write and nothing for the model to remember, and identity is resolved
+automatically so agent code needs no key plumbing.
+
+**Q: Do I have to sign each action manually or tell the model to sign?**
+A: No. That was the old pattern and it was fragile, because it depended on the
+model choosing to call a signing tool. `protect([...])` (and `@signed`, and
+`<framework>.autosign()` for CrewAI, LangChain, AutoGPT, and AutoGen) signs
+deterministically in code.
+
+**Q: How do I verify on the receiving side?**
+A: `vouch.verify(credential)` in one line (it auto-resolves the issuer key), or
+for a web service add the FastAPI `VouchGate` dependency, which rejects unsigned
+or wrong-intent callers before your handler runs.
+
+**Q: How do I let a human or supervisor delegate to an agent?**
+A: `grant = vouch.delegate(action=..., target=..., resource=..., to=agent_did,
+signer=principal_signer)`, then `agent.tools = vouch.protect([tool], parent=grant)`.
+The protocol enforces that the agent can only narrow the granted authority,
+never widen it.
+
+**Q: How do I use one identity across my devices without copying my private key?**
+A: Each device mints its own key locally, and your root identity delegates
+scoped authority to that device: `grant = vouch.enroll_device(root,
+device_did=device.did, action=..., target=..., resource=...)`. The device signs
+with its own key (`device.sign(..., parent_credential=grant)`), and a verifier
+ties it back to the root with `vouch.verify_delegated_chain([grant, action],
+trusted_roots={root.did: root.public_key_jwk})`. Lose a device and you revoke it
+with a `DeviceRegistry`; lose the root and you rebuild it from Shamir shares with
+`vouch.split_identity` and `vouch.recover_identity`. The private key never
+travels between devices.
 
 ---
 
@@ -40,7 +79,7 @@ to the Go sidecar.
 **Q: How do I pick between Python and TypeScript for the lightweight
 tier?**
 A: Pick whichever runtime your existing application uses. There is no
-protocol-level difference — both pass the same contract test suite.
+protocol-level difference - both pass the same contract test suite.
 
 **Q: Can I run all three side by side?**
 A: Yes, but you should not. They serve the same role. Run one, decide
@@ -52,7 +91,7 @@ shape, same `eddsa-jcs-2022` cryptosuite, same JCS canonicalization).
 A cross-language contract test suite enforces this on every release.
 
 **Q: Can the sidecar run as a serverless function (Lambda, Cloud Run)?**
-A: Yes for the Go sidecar — it's a static binary and starts in
+A: Yes for the Go sidecar - it's a static binary and starts in
 milliseconds. The Python and TS sidecars work as serverless too but
 their cold-start latency makes them less suited to high-frequency
 signing. For agent workloads (one credential per minute), any of them
@@ -220,7 +259,7 @@ see it.
 **Q: Can I run the GPT without ChatGPT Plus?**
 A: Custom GPTs require ChatGPT Plus, Team, or Enterprise. The Vouch
 content also works as plain instructions you paste into a free ChatGPT
-session — you lose the Knowledge file feature but get the same
+session - you lose the Knowledge file feature but get the same
 guidance.
 
 **Q: Can I keep the GPT private to my team?**
@@ -334,6 +373,47 @@ intents outside the sidecar's allow-list.
 A: Open an issue at https://github.com/vouch-protocol/vouch/issues with
 the credential id (from the audit log) if you have it. We will
 investigate within five business days.
+
+---
+
+## Reaching agents by identity (transport)
+
+**Q: How does an agent reach another agent that has no domain or IP?**
+A: By its DID. The transport layer (`vouch.transport`) addresses a peer by
+identity, not location. The agent publishes a signed record that binds its DID
+to its current endpoint, and a sender resolves the DID to that endpoint and
+verifies the agent itself asserted the route. This ships today over plain HTTPS
+through a rendezvous, and falls back to standard DNS and HTTPS (`did:web`) for
+any peer that has a domain. The agent dispatches to a DID and does not care
+which path the bytes take.
+
+**Q: Do I need UDNA, or a special network, to be reached by identity?**
+A: No. The identity-first resolver runs on commodity HTTPS today, so you do not
+wait on any overlay. Vouch builds on UDNA (Universal DID-Native Addressing) as a
+general identity-native substrate when one is present, and tracks the W3C UDNA
+Community Group so the two interoperate as UDNA's baseline lands. The UDNA SDK is
+an optional extra (`pip install vouch-protocol[udna]`); without it, dispatch
+falls through to the rendezvous or HTTP, so your code runs unchanged.
+
+**Q: If the rendezvous is a single server, is it a single point of trust?**
+A: No. The rendezvous is untrusted. It stores and serves signed route records
+but never has to be believed: the sender re-verifies every record's signature
+itself and checks the record's DID against the one it asked for. A malicious or
+compromised rendezvous can withhold a record or serve a stale one, but it cannot
+forge a route or point you at a different identity, because it does not hold the
+agent's key.
+
+**Q: Are my credentials safe if the message switches from UDNA to HTTP?**
+A: Yes. The message is a `VouchEnvelope` that carries the signed credential, its
+liability attestations, and provenance unchanged, with a content digest checked
+on receipt. The signature is what protects integrity and authenticity, so the
+trust properties hold whichever transport delivers the bytes.
+
+**Q: Is the UDNA channel encrypted?**
+A: Not yet in the reference SDK. The `udna_sdk` v1.0.x handshake authenticates
+the peer but does not provide channel confidentiality, so Vouch does not rely on
+it for secrecy. For confidential payloads, encrypt at the application layer
+before sealing. See `docs/udna-upstream-proposal.md`.
 
 ---
 

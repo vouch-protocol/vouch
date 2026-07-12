@@ -132,11 +132,13 @@ def mint_robot_identity(
     lifecycle: Optional[List[Dict[str, Any]]] = None,
     valid_seconds: Optional[int] = None,
     valid_from: Optional[datetime] = None,
+    created: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """
     Mint a hardware-attested RobotIdentityCredential. The robot self-issues the
     credential with its Vouch key (`robot_signer`); the hardware root signs a
     binding over the robot DID and key, embedded as `hardwareRoot.attestation`.
+    `created` overrides the proof timestamp for reproducible test vectors.
     """
     robot_did = robot_signer.get_did()
     robot_key_mb = robot_signer.get_public_key_multikey()
@@ -170,7 +172,7 @@ def mint_robot_identity(
     }
     if valid_seconds is not None:
         credential["validUntil"] = _iso(issued + timedelta(seconds=valid_seconds))
-    return attach_proof(credential, robot_signer)
+    return attach_proof(credential, robot_signer, created=created)
 
 
 def verify_robot_identity(

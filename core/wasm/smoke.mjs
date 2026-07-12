@@ -34,8 +34,8 @@ const proof = JSON.parse(core.buildProof(JSON.stringify(eddsa.unsigned_credentia
 ok('reproduces shared proofValue', proof.proofValue === eddsa.proofValue);
 
 // Temporal verify
-const vr = JSON.parse(core.verifyCredential(JSON.stringify(eddsa.signed_credential), pub, '2026-04-26T10:02:00Z', 30));
-ok('verifyCredential within window', vr.valid === true);
+const vr = JSON.parse(core.verify(JSON.stringify(eddsa.signed_credential), pub, '2026-04-26T10:02:00Z', 30));
+ok('verify within window', vr.valid === true);
 
 // Dual proof (ML-DSA keys from the hybrid vector, no RNG)
 const signedDual = core.signDual(JSON.stringify(eddsa.unsigned_credential), seed,
@@ -59,6 +59,27 @@ const dl2 = core.buildDelegationLink('did:web:b', 'did:web:c', dIntent, '2026-04
 const dChain = '[' + dl1 + ',' + dl2 + ']';
 ok('delegation chain time-bound valid', core.verifyChainTimeBound(dChain, '2026-04-26T10:30:00Z', 30) === true);
 ok('delegation chain outside window rejected', core.verifyChainTimeBound(dChain, '2026-04-26T13:00:00Z', 30) === false);
+
+// FROST(Ed25519) threshold signing: 2-of-3 ceremony. aggregate() self-verifies
+// inside the core before it returns, so a successful, non-throwing call is
+// itself the proof that the resulting signature is valid.
+const generated = JSON.parse(core.thresholdGenerateKey(2, 3));
+ok('threshold_generate_key produces 3 shares', generated.shares.length === 3);
+
+const [share0, share1] = generated.shares;
+const round1A = JSON.parse(core.thresholdCommit(JSON.stringify(share0)));
+const round1B = JSON.parse(core.thresholdCommit(JSON.stringify(share1)));
+const commitmentsJson = JSON.stringify({
+  [share0.identifier]: round1A.commitments,
+  [share1.identifier]: round1B.commitments,
+});
+const thresholdMessage = Buffer.from('charge api.bank invoices/42').toString('base64');
+const sigShare0 = core.thresholdSignShare(thresholdMessage, JSON.stringify(share0), round1A.nonces, commitmentsJson);
+const sigShare1 = core.thresholdSignShare(thresholdMessage, JSON.stringify(share1), round1B.nonces, commitmentsJson);
+const sharesJson = JSON.stringify({ [share0.identifier]: sigShare0, [share1.identifier]: sigShare1 });
+const signatureB64 = core.thresholdAggregate(
+  thresholdMessage, commitmentsJson, sharesJson, JSON.stringify(generated.group_public_key));
+ok('threshold_aggregate produces a self-verified 64-byte signature', Buffer.from(signatureB64, 'base64').length === 64);
 
 console.log(`\nTOTAL: ${pass} pass, ${fail} fail`);
 process.exit(fail ? 1 : 0);

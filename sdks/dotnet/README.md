@@ -10,6 +10,7 @@ the exact same bytes as every other Vouch SDK. Apache-2.0.
 - Data Integrity proofs (`eddsa-jcs-2022`): sign + verify, with validity-window checks
 - Post-quantum dual-proof and composite verification
 - BitstringStatusList revocation checks
+- Robotics (`VouchRobotics`): verify a robot credential (classical or hybrid post-quantum, auto-detected), mint and verify identity, regulatory conformance, passport, and physical action checks
 
 ## Build
 
@@ -33,9 +34,9 @@ var seed = kp.RootElement.GetProperty("seed_b64").GetString()!;
 var pub  = kp.RootElement.GetProperty("public_b64").GetString()!;
 var did  = kp.RootElement.GetProperty("did_key").GetString()!;
 
-var signed = Vouch.SignCredential(credentialJson, seed, did + "#key-1", "2026-04-26T10:00:00Z");
+var signed = Vouch.Sign(credentialJson, seed, did + "#key-1", "2026-04-26T10:00:00Z");
 bool ok = Vouch.VerifyProof(signed, pub);
-var result = Vouch.VerifyCredential(signed, pub, nowIso);  // JSON {proofValid, timeValid, valid}
+var result = Vouch.Verify(signed, pub, nowIso);  // JSON {proofValid, timeValid, valid}
 ```
 
 Binary values are base64 strings; credentials and proofs are JSON strings.

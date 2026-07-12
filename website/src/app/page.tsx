@@ -42,8 +42,8 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
   {
     num: 'vii.',
     title: 'Robots & Embodied Agents',
-    body: 'A robot identity rooted in a TPM or secure element, signed model and safety-policy provenance, physical limits enforced as cryptographic capability, a living-trust heartbeat that decays unless the robot keeps proving it stayed in-envelope, two-level credential revocation, a kill-switch only an attested authority can trigger, a tamper-evident safety record that travels with the robot, and a scannable QR/NFC passport.',
-    spec: 'Nine robotics capabilities',
+    body: 'A robot identity rooted in a TPM or secure element, physical limits enforced as cryptographic capability, and a kill-switch only an attested authority can trigger. One accountable identity carries across robot bodies, custody hands off cleanly between human and robot actors, and access to doors and chargers stays bounded and revocable, all in a tamper-evident record and post-quantum by default for a decade-long service life.',
+    spec: 'Twenty-one robotics capabilities',
     href: '/robotics/',
   },
   {
@@ -63,6 +63,19 @@ const FEATURES: Array<{ num: string; title: string; body: string; spec: string; 
     title: 'Evidence-Backed Reputation',
     body: 'Reputation as a verifiable aggregate of signed receipts, the relying party attesting an action, a settled outcome, an authority recording a penalty, computed by a public deterministic function and keyed to the agent DID. A consumer recomputes the score from the receipts rather than trusting a server, with multi-dimensional scores, decay, threshold proofs that reveal nothing but the threshold, and disputes that exclude bad receipts.',
     spec: 'Reputation',
+  },
+  {
+    num: 'xi.',
+    title: 'Reach AI Agents by Identity',
+    body: 'Agents move across hosts and clouds and rarely hold a stable domain or IP, but they always hold a key. Vouch reaches a peer by its identity, not its location. It prefers identity-first routing over UDNA (Universal DID-Native Addressing) and falls back to standard DNS and HTTPS when a peer is not on the overlay. The signed credential, liability attestations, and provenance cross the switch unchanged, so the trust properties hold whichever path the bytes take. Optional and aligned with the W3C UDNA Community Group.',
+    spec: 'Hybrid Transport',
+  },
+  {
+    num: 'xii.',
+    title: 'Drops Into Your Agent Framework',
+    body: "Standalone packages that sign each tool call in the stack you already use. vouch-langchain and vouch-langgraph sign tool calls and graph nodes, vouch-crewai adds supervisor-to-worker delegation that can only narrow authority, vouch-a2a binds an A2A Agent Card to a Vouch identity, and vouch-goose registers the Vouch MCP server as an extension for Block's Goose agent.",
+    spec: 'Framework integrations',
+    href: '/tools/',
   },
 ];
 
@@ -145,7 +158,7 @@ export default function HomePage() {
         <div className="container-wide py-20 md:py-28">
           <div className="eyebrow mb-6">SDKs on every platform &middot; standards-aligned</div>
           <h1 className="font-serif font-semibold text-ink leading-[1.05] tracking-tight mb-6 max-w-[920px] text-[clamp(2.5rem,5.2vw,4rem)]">
-            Cryptographic identity &amp; accountability for autonomous AI agents.
+            Cryptographic identity &amp; accountability for autonomous AI agents and robots.
           </h1>
           <p className="drop-cap text-[1.2rem] leading-snug text-ink-soft max-w-prose mb-8">
             The Vouch Protocol is an open standard specification for establishing continuous state
@@ -153,6 +166,10 @@ export default function HomePage() {
             identity and delegation specifications. Built on Verifiable Credentials, Data Integrity
             proofs, and Decentralized Identifiers, with one byte-exact core and SDKs for every major
             platform: web, mobile, JVM, .NET, and native, plus the Python, TypeScript, and Go references.
+            The same credentials extend to robots and embodied agents, with hardware-rooted identity,
+            enforceable physical limits, a tamper-evident black box, one accountable identity that
+            carries across robot bodies, and bounded, revocable access to physical infrastructure like
+            doors, elevators, and chargers. Agents can be reached by who they are, not where they are.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <Link href="/faq/" className="btn-primary">Read the FAQ</Link>
@@ -277,38 +294,36 @@ export default function HomePage() {
             <h2>A quick taste</h2>
           </div>
           <p className="text-ink-soft max-w-prose mb-8 leading-relaxed">
-            Sign a Vouch Credential and read back its proof. The same credential verifies
-            byte-identically across every SDK, so pick your language.
+            One line makes an agent sign every tool call. The Python reference SDK wraps
+            your tools with <code>protect([...])</code> and verifies with{' '}
+            <code>vouch.verify(...)</code>, and the same credential verifies byte-identically
+            across every SDK, so pick your language.
           </p>
           <LangCodeBlock
             variants={[
               {
                 label: 'Python',
                 language: 'python',
-                code: `from vouch import Signer, build_vouch_credential
+                code: `# One line makes an agent sign every tool call.
+# Run \`vouch init --yes\` once; identity is resolved automatically.
+from vouch import protect, verify, current_credential
 
-signer = Signer.from_did("did:web:agent.example.com")
+def submit_claim(claim_id, amount):
+    return charge_api(claim_id, amount)
 
-credential = build_vouch_credential(
-  subject_did="did:web:agent.example.com",
-  intent={
-    "action": "submit_claim",
-    "target": "claim:HC-001",
-    "resource": "https://insurance.example.com/claims/HC-001",
-  },
-  reputation_score=92,
-  valid_seconds=300,
-)
+# The one line: every call is signed in Python before it runs.
+agent_tools = protect([submit_claim])
+agent_tools[0]("HC-001", 250)
 
-signed = signer.sign_credential(credential)
-print(signed["proof"]["proofValue"])  # z-base58-encoded Ed25519 signature
+# Verify on the receiving side, also one line.
+ok, passport = verify(current_credential())
+print(ok, passport.intent["action"])  # True submit_claim
 `,
               },
               {
                 label: 'TypeScript',
                 language: 'typescript',
-                code: `import { Signer, generateIdentity, buildVouchCredential }
-  from '@vouch-protocol-official/sdk';
+                code: `import { Signer, generateIdentity } from '@vouch-protocol-official/sdk';
 
 const identity = await generateIdentity('agent.example.com');
 const signer = new Signer({
@@ -316,8 +331,8 @@ const signer = new Signer({
   did: identity.did!,
 });
 
-const credential = buildVouchCredential({
-  subjectDid: identity.did!,
+// sign takes the intent directly (action, target, resource).
+const signed = await signer.sign({
   intent: {
     action: 'submit_claim',
     target: 'claim:HC-001',
@@ -326,7 +341,6 @@ const credential = buildVouchCredential({
   validSeconds: 300,
 });
 
-const signed = await signer.signCredential(credential);
 console.log(signed.proof.proofValue); // z-base58-encoded Ed25519 signature
 `,
               },
@@ -374,9 +388,9 @@ func main() {
 // VouchCore wraps the one Rust core via UniFFI, so a credential
 // verified on iOS matches the exact bytes from every other SDK.
 let keys = try Vouch.generateEd25519()
-let signed = try Vouch.signCredential(credentialJson, keys: keys)
+let signed = try Vouch.sign(credentialJson, keys: keys)
 
-let result = try Vouch.verifyCredential(
+let result = try Vouch.verify(
   signed, publicKey: keys.publicKey, now: "2026-04-26T10:02:00Z")
 print(result)
 `,
@@ -387,7 +401,7 @@ print(result)
                 code: `import com.vouchprotocol.core.Vouch;
 
 String kp = Vouch.generateEd25519();   // {seed_b64, public_b64, multikey, did_key}
-String signed = Vouch.signCredential(
+String signed = Vouch.sign(
     credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 boolean ok = Vouch.verifyProof(signed, publicB64);
 `,
@@ -398,7 +412,7 @@ boolean ok = Vouch.verifyProof(signed, publicB64);
                 code: `using VouchProtocol.Core;
 
 string kp = Vouch.GenerateEd25519();
-string signed = Vouch.SignCredential(
+string signed = Vouch.Sign(
     credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 bool ok = Vouch.VerifyProof(signed, publicB64);
 `,
@@ -421,7 +435,7 @@ if (res) vouch_string_free(res); else vouch_string_free(err);
 await init(); // fetches the .wasm next to the module
 
 const kp = JSON.parse(core.generateEd25519());
-const signed = core.signCredential(JSON.stringify(credential),
+const signed = core.sign(JSON.stringify(credential),
   kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
 const ok = core.verifyProof(signed, kp.public_b64);   // true
 `,

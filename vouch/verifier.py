@@ -1,20 +1,10 @@
 """
 Vouch Protocol Verifier.
 
-Verifies both legacy JWS-format Vouch-Tokens and modern W3C Verifiable
-Credentials with Data Integrity proofs (eddsa-jcs-2022).
-
-Two coexisting verification paths:
-
-  1. Legacy JWS: `Verifier.verify(token, ...)` and `Verifier.check_vouch(token)`.
-    Operates on JWS Compact Serialization strings produced by `Signer.sign()`.
-
-  2. W3C VC: `Verifier.verify_credential(credential, ...)` and
-    `Verifier.check_vouch_credential(credential)`. Operates on credential
-    dicts produced by `Signer.sign_credential()` (see Specification §8).
-
-Existing callers of the legacy methods continue to work unchanged. New callers
-should prefer the credential methods.
+Verifies W3C Verifiable Credentials with Data Integrity proofs
+(eddsa-jcs-2022) via ``Verifier.verify(credential, ...)`` and
+``Verifier.check_vouch_credential(credential)`` (see Specification §8). The
+issuer key is supplied directly or resolved from the issuer's did:web document.
 """
 
 import json
@@ -113,7 +103,7 @@ class CredentialPassport:
     """
     Verified Verifiable Credential issued under Vouch Protocol v1.0.
 
-    Returned by `Verifier.verify_credential()` and
+    Returned by `Verifier.verify()` and
     `Verifier.check_vouch_credential()`. Parallel to the legacy `Passport`
     dataclass; new code should prefer this type.
 
@@ -139,21 +129,51 @@ class CredentialPassport:
     reputation_score: Optional[int] = None
     delegation_chain: List[CredentialDelegationLink] = field(default_factory=list)
 
+    # Convenience accessors so callers can read what was authorized without
+    # reaching into `intent` or `raw_credential` by hand.
+
+    @property
+    def action(self) -> Optional[str]:
+        """The intent action that was signed, if present."""
+        return (self.intent or {}).get("action")
+
+    @property
+    def target(self) -> Optional[str]:
+        """The intent target that was signed, if present."""
+        return (self.intent or {}).get("target")
+
+    @property
+    def resource(self) -> Optional[str]:
+        """The intent resource that was signed, if present."""
+        return (self.intent or {}).get("resource")
+
+    @property
+    def issuer(self) -> str:
+        """The issuer DID. Alias for :attr:`iss`."""
+        return self.iss
+
+    @property
+    def is_expired(self) -> bool:
+        """True if the credential's validity window has passed.
+
+        Independent of the clock skew applied during verification: this is a
+        plain "is it past validUntil now" check for display and policy logic.
+        """
+        expires = _parse_iso8601(self.valid_until)
+        if expires is None:
+            return False
+        return datetime.now(timezone.utc) > expires
+
 
 class Verifier:
     """
-    Verifies Vouch-Tokens using Ed25519 public keys.
+    Verifies Vouch Credentials using Ed25519 public keys.
 
-    The Verifier validates JWS signatures, checks timestamps/expiration,
-    and can fetch public keys from DID documents.
+    Validates the Data Integrity proof, the validity window, and the intent,
+    and can resolve the issuer's public key from its did:web document.
 
     Example:
-      # Static verification with provided public key
-      >>> valid, passport = Verifier.verify(token, public_key_jwk='{"kty":"OKP",...}')
-
-      # Instance-based verification with trusted roots
-      >>> verifier = Verifier(trusted_roots={'did:web:agent.com': public_key_jwk})
-      >>> valid, passport = verifier.check_vouch(token)
+      >>> valid, passport = Verifier.verify(credential, public_key=issuer_key)
     """
 
     # Cache for resolved DID public keys
@@ -187,149 +207,6 @@ class Verifier:
                     self._trusted_roots[did] = jwk.JWK.from_json(key_json)
                 except Exception as e:
                     logger.warning(f"Invalid key for {did}: {e}")
-
-    @staticmethod
-    def verify(
-        token: str, public_key_jwk: Optional[str] = None, clock_skew_seconds: int = 30
-    ) -> Tuple[bool, Optional[Passport]]:
-        """
-        Statically verify a Vouch-Token.
-
-        Args:
-          token: The JWS compact serialized Vouch-Token.
-          public_key_jwk: JWK JSON string of the public key. If not provided,
-                  verification will only check structure, not signature.
-          clock_skew_seconds: Allowed clock drift for timestamps.
-
-        Returns:
-          Tuple of (is_valid, Passport or None)
-        """
-        if not token:
-            return False, None
-
-        try:
-            # Parse the JWS
-            jws_token = jws.JWS()
-            jws_token.deserialize(token)
-
-            # Get the payload (without verification first, to extract claims)
-            # This is safe because we verify the signature below
-            payload_bytes = jws_token.objects.get("payload", b"")
-            if isinstance(payload_bytes, str):
-                payload_bytes = payload_bytes.encode("utf-8")
-
-            claims = json.loads(payload_bytes.decode("utf-8"))
-
-            # Verify signature if public key provided
-            if public_key_jwk:
-                key = jwk.JWK.from_json(public_key_jwk)
-                jws_token.verify(key)
-
-            # Validate timestamps
-            now = int(time.time())
-
-            exp = claims.get("exp", 0)
-            if exp and now > exp + clock_skew_seconds:
-                logger.debug(f"Token expired: exp={exp}, now={now}")
-                return False, None
-
-            nbf = claims.get("nbf", 0)
-            if nbf and now < nbf - clock_skew_seconds:
-                logger.debug(f"Token not yet valid: nbf={nbf}, now={now}")
-                return False, None
-
-            iat = claims.get("iat", 0)
-            if iat and now < iat - clock_skew_seconds:
-                logger.debug(f"Token issued in future: iat={iat}, now={now}")
-                return False, None
-
-            # Extract vouch-specific payload
-            vouch_data = claims.get("vouch", {})
-            intent_payload = vouch_data.get("payload", {})
-            reputation_score = vouch_data.get("reputation_score")
-
-            # Extract delegation chain if present
-            delegation_chain = []
-            raw_chain = vouch_data.get("delegation_chain", [])
-            for link_data in raw_chain:
-                try:
-                    delegation_chain.append(
-                        DelegationLink(
-                            iss=link_data.get("iss", ""),
-                            sub=link_data.get("sub", ""),
-                            intent=link_data.get("intent", ""),
-                            iat=link_data.get("iat", 0),
-                            signature=link_data.get("sig", ""),
-                        )
-                    )
-                except Exception as e:
-                    logger.debug(f"Invalid delegation link: {e}")
-
-            passport = Passport(
-                sub=claims.get("sub", ""),
-                iss=claims.get("iss", ""),
-                iat=iat,
-                exp=exp,
-                jti=claims.get("jti", ""),
-                payload=intent_payload,
-                raw_claims=claims,
-                reputation_score=reputation_score,
-                delegation_chain=delegation_chain,
-            )
-
-            return True, passport
-
-        except JWException as e:
-            logger.debug(f"JWS verification failed: {e}")
-            return False, None
-        except json.JSONDecodeError as e:
-            logger.debug(f"Invalid JSON in token: {e}")
-            return False, None
-        except Exception as e:
-            logger.debug(f"Verification error: {e}")
-            return False, None
-
-    def check_vouch(self, token: str) -> Tuple[bool, Optional[Passport]]:
-        """
-        Verify a token using trusted roots or DID resolution.
-
-        Args:
-          token: The JWS compact serialized Vouch-Token.
-
-        Returns:
-          Tuple of (is_valid, Passport or None)
-        """
-        if not token:
-            return False, None
-
-        try:
-            # First, decode without verification to get the issuer
-            jws_token = jws.JWS()
-            jws_token.deserialize(token)
-
-            payload_bytes = jws_token.objects.get("payload", b"")
-            if isinstance(payload_bytes, str):
-                payload_bytes = payload_bytes.encode("utf-8")
-
-            claims = json.loads(payload_bytes.decode("utf-8"))
-            issuer_did = claims.get("iss", "")
-
-            # Get the public key
-            public_key = self._get_public_key(issuer_did)
-            if not public_key:
-                logger.warning(f"Could not resolve public key for: {issuer_did}")
-                return False, None
-
-            # Verify with the resolved key
-            return Verifier.verify(
-                token,
-                public_key_jwk=public_key.export_public(),
-                clock_skew_seconds=self._clock_skew,
-            )
-
-        except Exception as e:
-            logger.debug(f"check_vouch error: {e}")
-            return False, None
 
     def _get_public_key(self, did: str) -> Optional[jwk.JWK]:
         """Get public key from trusted roots or resolve from DID."""
@@ -424,7 +301,7 @@ class Verifier:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def verify_credential(
+    def verify(
         credential: Union[Dict[str, Any], str],
         public_key: Optional[Union[Ed25519PublicKey, str]] = None,
         clock_skew_seconds: int = 30,
@@ -603,7 +480,7 @@ class Verifier:
                 logger.warning(f"Could not resolve Multikey/JWK for: {issuer_did}")
                 return False, None
 
-            return Verifier.verify_credential(
+            return Verifier.verify(
                 cred,
                 public_key=public_key,
                 clock_skew_seconds=self._clock_skew,
@@ -630,6 +507,12 @@ class Verifier:
             except Exception:  # pragma: no cover
                 pass
 
+        # did:key is self-certifying: the public key is encoded in the DID
+        # itself, so it resolves offline with no network and is allowed even
+        # when allow_did_resolution is False.
+        if did.startswith("did:key:"):
+            return _resolve_did_key(did)
+
         if not (self._allow_resolution and did.startswith("did:web:")):
             return None
 
@@ -642,8 +525,78 @@ class Verifier:
 
 
 # ---------------------------------------------------------------------------
+# One-line verification (the receiving-side counterpart to vouch.protect)
+# ---------------------------------------------------------------------------
+
+# A cached resolver-enabled Verifier so the convenience helper does not rebuild
+# (and re-warm DID caches) on every call.
+_DEFAULT_VERIFIER: Optional["Verifier"] = None
+
+
+def verify(
+    credential: Optional[Union[Dict[str, Any], str]] = None,
+    public_key: Optional[Union[Ed25519PublicKey, str]] = None,
+    *,
+    allow_did_resolution: bool = True,
+) -> Tuple[bool, Optional[CredentialPassport]]:
+    """Verify a Vouch Credential in one line.
+
+    The receiving-side counterpart to ``vouch.protect`` / ``vouch.sign_intent``::
+
+        ok, passport = vouch.verify(credential)
+
+    Args:
+      credential: a Vouch Credential dict or JSON string. If ``None``, verifies
+        the credential most recently signed in this execution context
+        (``vouch.current_credential()``) - handy right after a protected call.
+      public_key: an optional Multikey/JWK/``Ed25519PublicKey`` for OFFLINE
+        verification. If omitted, the issuer's key is resolved automatically
+        from trusted roots or ``did:web``.
+      allow_did_resolution: set ``False`` to forbid network DID resolution
+        (offline-only). Ignored when ``public_key`` is supplied.
+
+    Returns:
+      ``(is_valid, CredentialPassport | None)``.
+    """
+    if credential is None:
+        # Lazy import avoids a hard dependency cycle at module load time.
+        from vouch.autosign import current_credential
+
+        credential = current_credential()
+        if credential is None:
+            return False, None
+
+    # Offline path: a key was handed to us, no resolution needed.
+    if public_key is not None:
+        return Verifier.verify(credential, public_key=public_key)
+
+    # Auto-resolving path: reuse a cached resolver-enabled Verifier.
+    global _DEFAULT_VERIFIER
+    if _DEFAULT_VERIFIER is None or _DEFAULT_VERIFIER._allow_resolution != allow_did_resolution:
+        _DEFAULT_VERIFIER = Verifier(allow_did_resolution=allow_did_resolution)
+    return _DEFAULT_VERIFIER.check_vouch_credential(credential)
+
+
+# ---------------------------------------------------------------------------
 # Module-private helpers
 # ---------------------------------------------------------------------------
+
+
+def _resolve_did_key(did: str) -> Optional[Ed25519PublicKey]:
+    """Decode the Ed25519 public key embedded in a ``did:key`` identifier.
+
+    ``did:key:z6Mk...`` carries the multicodec-tagged public key in the DID
+    string, so there is no network resolution. Returns None for non-Ed25519
+    did:key values or malformed input.
+    """
+    try:
+        mk = did.split("did:key:", 1)[1]
+        alg, raw = multikey.decode(mk)
+        if alg == "Ed25519":
+            return Ed25519PublicKey.from_public_bytes(raw)
+    except (IndexError, ValueError):
+        return None
+    return None
 
 
 def _coerce_ed25519_public_key(

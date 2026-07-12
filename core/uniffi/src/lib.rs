@@ -8,8 +8,8 @@
 use serde_json::Value;
 
 use vouch_core::{
-    credentials, data_integrity, delegation, hybrid, keys, multikey, pq, robotics_json as rjson,
-    status_list,
+    credentials, data_integrity, delegation, hybrid, keys, multikey, pq, recovery_json,
+    robotics_json as rjson, status_list, threshold_json,
 };
 
 // Clean C ABI (cbindgen generates vouch_core.h) for .NET and C/C++ consumers.
@@ -114,7 +114,7 @@ pub fn build_proof(
     Ok(data_integrity::build_proof(&parse(&credential_json)?, &seed, &opts)?.to_string())
 }
 
-pub fn sign_credential(
+pub fn sign(
     credential_json: String,
     seed: Vec<u8>,
     verification_method: String,
@@ -131,13 +131,13 @@ pub fn verify_proof(credential_json: String, public_key: Vec<u8>) -> Result<bool
     )?)
 }
 
-pub fn verify_credential(
+pub fn verify(
     credential_json: String,
     public_key: Vec<u8>,
     now_iso: String,
     clock_skew_seconds: i64,
 ) -> Result<VerifyResult, CoreError> {
-    let r = credentials::verify_credential(
+    let r = credentials::verify(
         &parse(&credential_json)?,
         &public_key,
         &now_iso,
@@ -185,6 +185,66 @@ pub fn build_delegation_link(
         parent_proof_value,
     };
     Ok(delegation::build_delegation_link(&input).to_string())
+}
+
+pub fn threshold_generate_key(min_signers: u16, max_signers: u16) -> Result<String, CoreError> {
+    Ok(threshold_json::generate_key(min_signers, max_signers)?)
+}
+
+pub fn threshold_commit(key_share_json: String) -> Result<String, CoreError> {
+    Ok(threshold_json::commit(&key_share_json)?)
+}
+
+pub fn threshold_sign_share(
+    message: Vec<u8>,
+    key_share_json: String,
+    nonces_b64: String,
+    commitments_json: String,
+) -> Result<String, CoreError> {
+    Ok(threshold_json::sign_share(
+        &message,
+        &key_share_json,
+        &nonces_b64,
+        &commitments_json,
+    )?)
+}
+
+pub fn threshold_aggregate(
+    message: Vec<u8>,
+    commitments_json: String,
+    shares_json: String,
+    group_public_key_json: String,
+) -> Result<Vec<u8>, CoreError> {
+    Ok(threshold_json::aggregate(
+        &message,
+        &commitments_json,
+        &shares_json,
+        &group_public_key_json,
+    )?)
+}
+
+pub fn recovery_split_secret(
+    secret_b64: String,
+    threshold: u16,
+    shares: u16,
+) -> Result<String, CoreError> {
+    Ok(recovery_json::split_secret(&secret_b64, threshold, shares)?)
+}
+
+pub fn recovery_combine_shares(shares_json: String) -> Result<String, CoreError> {
+    Ok(recovery_json::combine_shares(&shares_json)?)
+}
+
+pub fn recovery_split_identity(
+    seed_b64: String,
+    threshold: u16,
+    shares: u16,
+) -> Result<String, CoreError> {
+    Ok(recovery_json::split_identity(&seed_b64, threshold, shares)?)
+}
+
+pub fn recovery_recover_identity(shares_json: String, did: String) -> Result<String, CoreError> {
+    Ok(recovery_json::recover_identity(&shares_json, &did)?)
 }
 
 pub fn generate_mldsa44() -> Result<MlDsaKeyPair, CoreError> {
@@ -574,6 +634,387 @@ pub fn robotics_verify_safety_record(
     public_key: Vec<u8>,
 ) -> Result<String, CoreError> {
     Ok(rjson::verify_safety_record(&credential_json, &public_key)?)
+}
+
+// Perception provenance (Phase 5.10).
+pub fn robotics_hash_frame(frame: Vec<u8>) -> String {
+    rjson::hash_frame(&frame)
+}
+pub fn robotics_perception_record(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::perception_record_entry(&params_json)?)
+}
+pub fn robotics_verify_perception_log(
+    entries_json: String,
+    genesis_prev_hash: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_perception_log(
+        &entries_json,
+        genesis_prev_hash.as_deref(),
+    )?)
+}
+pub fn robotics_build_perception(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_perception_attestation(
+        &robot_seed,
+        &params_json,
+    )?)
+}
+pub fn robotics_verify_perception(
+    credential_json: String,
+    public_key: Vec<u8>,
+    frame_mb: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_perception_attestation(
+        &credential_json,
+        &public_key,
+        frame_mb.as_deref(),
+    )?)
+}
+pub fn robotics_build_lease(
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_delegation_lease(&signer_seed, &params_json)?)
+}
+pub fn robotics_verify_lease(
+    credential_json: String,
+    public_key: Vec<u8>,
+    now_iso: Option<String>,
+    parent_scope_json: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_delegation_lease(
+        &credential_json,
+        &public_key,
+        now_iso.as_deref(),
+        parent_scope_json.as_deref(),
+    )?)
+}
+pub fn robotics_lease_permits(params_json: String) -> Result<bool, CoreError> {
+    Ok(rjson::lease_permits(&params_json)?)
+}
+pub fn robotics_build_action_approval(
+    approver_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_action_approval(&approver_seed, &params_json)?)
+}
+pub fn robotics_verify_action_authorization(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_action_authorization(&params_json)?)
+}
+pub fn robotics_build_ownership_transfer(
+    current_owner_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_ownership_transfer(
+        &current_owner_seed,
+        &params_json,
+    )?)
+}
+pub fn robotics_verify_ownership_transfer(
+    credential_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_ownership_transfer(
+        &credential_json,
+        &public_key,
+    )?)
+}
+pub fn robotics_verify_custody_chain(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_custody_chain(&params_json)?)
+}
+pub fn robotics_build_key_rotation(
+    old_key_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_key_rotation(&old_key_seed, &params_json)?)
+}
+pub fn robotics_verify_key_rotation(
+    credential_json: String,
+    old_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_key_rotation(
+        &credential_json,
+        &old_public_key,
+    )?)
+}
+pub fn robotics_verify_key_history(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_key_history(&params_json)?)
+}
+pub fn robotics_build_decommission(
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_decommission(&signer_seed, &params_json)?)
+}
+pub fn robotics_verify_decommission(
+    credential_json: String,
+    public_key: Vec<u8>,
+    trusted_authorities_json: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_decommission(
+        &credential_json,
+        &public_key,
+        trusted_authorities_json.as_deref(),
+    )?)
+}
+pub fn robotics_check_conformance(
+    credentials_json: String,
+    profile_id: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::check_conformance(&credentials_json, &profile_id)?)
+}
+pub fn robotics_report_digest(report_json: String) -> Result<String, CoreError> {
+    Ok(rjson::report_digest(&report_json)?)
+}
+pub fn robotics_build_conformance_attestation(
+    signer_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_conformance_attestation(
+        &signer_seed,
+        &params_json,
+    )?)
+}
+pub fn robotics_verify_conformance_attestation(
+    credential_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_conformance_attestation(
+        &credential_json,
+        &public_key,
+    )?)
+}
+pub fn robotics_sign_pq(
+    credential_json: String,
+    ed25519_seed: Vec<u8>,
+    mldsa_secret: Vec<u8>,
+    mldsa_public: Vec<u8>,
+    created: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::sign_pq(
+        &credential_json,
+        &ed25519_seed,
+        &mldsa_secret,
+        &mldsa_public,
+        &created,
+    )?)
+}
+pub fn robotics_is_pq(credential_json: String) -> Result<bool, CoreError> {
+    Ok(rjson::is_pq(&credential_json)?)
+}
+pub fn robotics_verify_pq(
+    credential_json: String,
+    ed25519_public: Vec<u8>,
+    mldsa44_public: Vec<u8>,
+) -> Result<bool, CoreError> {
+    Ok(rjson::verify_pq(
+        &credential_json,
+        &ed25519_public,
+        &mldsa44_public,
+    )?)
+}
+pub fn robotics_verify_robot_credential(
+    credential_json: String,
+    ed25519_public: Vec<u8>,
+    mldsa44_public: Option<Vec<u8>>,
+) -> Result<bool, CoreError> {
+    Ok(rjson::verify_robot_credential(
+        &credential_json,
+        &ed25519_public,
+        mldsa44_public.as_deref(),
+    )?)
+}
+pub fn robotics_migrate_to_pq(
+    credential_json: String,
+    ed25519_seed: Vec<u8>,
+    mldsa_secret: Vec<u8>,
+    mldsa_public: Vec<u8>,
+    created: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::migrate_to_pq(
+        &credential_json,
+        &ed25519_seed,
+        &mldsa_secret,
+        &mldsa_public,
+        &created,
+    )?)
+}
+pub fn robotics_build_embodiment(
+    agent_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_embodiment(&agent_seed, &params_json)?)
+}
+pub fn robotics_verify_embodiment(
+    credential_json: String,
+    agent_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_embodiment(
+        &credential_json,
+        &agent_public_key,
+    )?)
+}
+pub fn robotics_verify_continuity_chain(
+    params_json: String,
+    agent_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_continuity_chain(
+        &params_json,
+        &agent_public_key,
+    )?)
+}
+pub fn robotics_check_no_fork(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::check_no_fork(&params_json)?)
+}
+pub fn robotics_build_handoff(
+    receiver_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_handoff(&receiver_seed, &params_json)?)
+}
+pub fn robotics_verify_handoff(
+    credential_json: String,
+    receiver_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_handoff(
+        &credential_json,
+        &receiver_public_key,
+    )?)
+}
+pub fn robotics_verify_handoff_chain(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_handoff_chain(&params_json)?)
+}
+pub fn robotics_holder_at(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::holder_at(&params_json)?)
+}
+pub fn robotics_locate_condition_change(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::locate_condition_change(&params_json)?)
+}
+pub fn robotics_build_access_grant(
+    operator_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_access_grant(&operator_seed, &params_json)?)
+}
+pub fn robotics_verify_access_grant(
+    credential_json: String,
+    operator_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_access_grant(
+        &credential_json,
+        &operator_public_key,
+    )?)
+}
+pub fn robotics_build_access_request(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_access_request(&robot_seed, &params_json)?)
+}
+pub fn robotics_authorize_access(
+    params_json: String,
+    operator_public_key: Vec<u8>,
+    robot_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::authorize_access(
+        &params_json,
+        &operator_public_key,
+        &robot_public_key,
+    )?)
+}
+pub fn robotics_attenuates_grant(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::attenuates_grant(&params_json)?)
+}
+
+// Fused-sensor provenance (Phase 5.18).
+pub fn robotics_fusion_inputs_digest(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::fusion_inputs_digest(&params_json)?)
+}
+pub fn robotics_hash_fused_output(output: Vec<u8>) -> String {
+    rjson::hash_fused_output(&output)
+}
+pub fn robotics_build_fused_attestation(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_fused_attestation(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_fused_attestation(
+    credential_json: String,
+    public_key: Vec<u8>,
+    fused_output_mb: Option<String>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_fused_attestation(
+        &credential_json,
+        &public_key,
+        fused_output_mb.as_deref(),
+    )?)
+}
+pub fn robotics_verify_fusion_inputs(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::verify_fusion_inputs(&params_json)?)
+}
+
+// Wear and degradation attestation (Phase 5.19).
+pub fn robotics_build_wear_attestation(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_wear_attestation(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_wear_attestation(
+    credential_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_wear_attestation(
+        &credential_json,
+        &public_key,
+    )?)
+}
+pub fn robotics_verify_wear_chain(
+    params_json: String,
+    public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_wear_chain(&params_json, &public_key)?)
+}
+pub fn robotics_attenuate_for_wear(params_json: String) -> Result<String, CoreError> {
+    Ok(rjson::attenuate_for_wear(&params_json)?)
+}
+
+// Bystander-consent evidence (Phase 5.20).
+pub fn robotics_hash_capture(capture: Vec<u8>) -> String {
+    rjson::hash_capture(&capture)
+}
+pub fn robotics_build_consent_token(
+    bystander_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_consent_token(&bystander_seed, &params_json)?)
+}
+pub fn robotics_verify_consent_token(
+    params_json: String,
+    bystander_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_consent_token(
+        &params_json,
+        &bystander_public_key,
+    )?)
+}
+pub fn robotics_build_consent_evidence(
+    robot_seed: Vec<u8>,
+    params_json: String,
+) -> Result<String, CoreError> {
+    Ok(rjson::build_consent_evidence(&robot_seed, &params_json)?)
+}
+pub fn robotics_verify_consent_evidence(
+    params_json: String,
+    robot_public_key: Vec<u8>,
+) -> Result<String, CoreError> {
+    Ok(rjson::verify_consent_evidence(
+        &params_json,
+        &robot_public_key,
+    )?)
 }
 
 uniffi::include_scaffolding!("vouch_core");

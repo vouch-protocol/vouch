@@ -1,0 +1,148 @@
+name: SDK Tests
+
+# Compiles and tests the Go, Rust, TypeScript, and WebAssembly SDKs on every PR.
+# The existing Tests workflow covers Python only; this closes the gap so a change
+# that breaks one of the other language implementations is caught in CI rather
+# than after a merge. Byte-identical interop is exercised by each SDK's robotics
+# vector tests against test-vectors/robotics/vector.json, and the WASM smoke test
+# verifies the shared cross-implementation vectors.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  go:
+    name: Go SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go-sidecar/go.mod
+      - name: Build and test
+        working-directory: go-sidecar
+        run: |
+          go build ./...
+          go test ./...
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and test FROST threshold signing (cgo, opt-in)
+        working-directory: go-sidecar
+        run: |
+          bash build-native.sh
+          CGO_ENABLED=1 LD_LIBRARY_PATH="$PWD/lib" go build -tags frost ./...
+          CGO_ENABLED=1 LD_LIBRARY_PATH="$PWD/lib" go test -tags frost ./...
+
+  rust:
+    name: Rust core and facades
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Test the Rust core
+        run: cargo test --manifest-path core/vouch-core/Cargo.toml
+      - name: Build the UniFFI facade
+        run: cargo build --manifest-path core/uniffi/Cargo.toml
+      - name: Build the WebAssembly facade
+        run: cargo build --manifest-path core/wasm/Cargo.toml --target wasm32-unknown-unknown
+
+  typescript:
+    name: TypeScript SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+      - name: Build the WASM core (for the optional FROST peer dependency)
+        working-directory: core/wasm
+        run: bash build-npm.sh
+      - name: Install and test
+        working-directory: packages/sdk-ts
+        run: |
+          # core-wasm is an optional peer dependency, built locally in the step
+          # above rather than resolved from the registry. --legacy-peer-deps
+          # keeps npm from trying to fetch the optional peer, then the local
+          # build is installed for the tests that exercise it.
+          npm install --legacy-peer-deps
+          npm install --no-save --legacy-peer-deps ../../core/wasm/pkg
+          npm test
+
+  wasm:
+    name: WASM core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+      - name: Build and smoke-test the WASM core
+        working-directory: core/wasm
+        run: |
+          wasm-pack build --target web --release
+          node smoke.mjs
+
+  c:
+    name: C bindings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the C library
+        run: cargo build --release --manifest-path core/uniffi/Cargo.toml
+      - name: Build and run the C example
+        run: |
+          cc -O2 -std=c11 -Isdks/cpp/include sdks/cpp/examples/example.c \
+            -o sdks/cpp/examples/example \
+            -L"$GITHUB_WORKSPACE/core/uniffi/target/release" -lvouch_core_uniffi
+          cd sdks/cpp/examples
+          LD_LIBRARY_PATH="$GITHUB_WORKSPACE/core/uniffi/target/release" ./example
+
+  dotnet:
+    name: .NET SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the native core
+        working-directory: sdks/dotnet
+        run: bash build-native.sh
+      - name: Test
+        working-directory: sdks/dotnet
+        run: dotnet test --nologo
+
+  jvm:
+    name: JVM SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the native core and refresh the binding
+        working-directory: sdks/jvm
+        run: bash build-native.sh
+      - name: Test
+        working-directory: sdks/jvm
+        run: |
+          chmod +x gradlew
+          ./gradlew test --no-daemon

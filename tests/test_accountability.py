@@ -8,11 +8,15 @@ from vouch import Signer, generate_identity
 from vouch.accountability import (
     OUTCOME_ATTESTATION_TYPE,
     OUTCOME_COMMITMENT_TYPE,
+    PRECEDENCE_EXISTENCE,
+    PRECEDENCE_PRE_OUTCOME,
     AccountabilityError,
     accountability_pointer,
     attest_outcome,
+    claims_precedence,
     commit_outcome,
     commitment_digest,
+    timestamp_anchor,
     verify_attestation,
     verify_commitment,
 )
@@ -231,3 +235,137 @@ class TestDigest:
         d2 = commitment_digest(CLAIM, None)
         assert d1 == d2
         assert commitment_digest(CLAIM, b"\x00" * 32) != d1
+
+
+class TestAnchor:
+    def test_anchor_embedded_and_signed(self):
+        kp, signer = _identity()
+        anchor = timestamp_anchor("opentimestamps", "ref-abc", "ots verify -d ref-abc")
+        cred, _ = commit_outcome(signer, claim=CLAIM, settlement=SETTLEMENT, anchor=anchor)
+        embedded = cred["credentialSubject"]["commitment"]["anchor"]
+        assert embedded[0]["method"] == "opentimestamps"
+        assert embedded[0]["recomputeCmd"] == "ots verify -d ref-abc"
+        ok, _ = verify_commitment(cred, kp.public_key_jwk)
+        assert ok is True
+
+    def test_anchor_is_tamper_evident(self):
+        kp, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor=timestamp_anchor("rfc3161-tsa", "ref-1"),
+        )
+        cred["credentialSubject"]["commitment"]["anchor"][0]["reference"] = "forged"
+        ok, _ = verify_commitment(cred, kp.public_key_jwk)
+        assert ok is False  # anchor is inside the signed credential
+
+    def test_anchor_accepts_multiple_tiers(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor=[
+                timestamp_anchor("opentimestamps", "a"),
+                timestamp_anchor("nostr-relay", "b"),
+            ],
+        )
+        assert len(cred["credentialSubject"]["commitment"]["anchor"]) == 2
+
+    def test_anchor_requires_method_and_reference(self):
+        _, signer = _identity()
+        with pytest.raises(AccountabilityError):
+            commit_outcome(signer, claim=CLAIM, settlement=SETTLEMENT, anchor={"method": "x"})
+
+    def test_timestamp_anchor_helper(self):
+        a = timestamp_anchor("transparency-log", "leaf-7", "rekor verify leaf-7")
+        assert a == {
+            "method": "transparency-log",
+            "reference": "leaf-7",
+            "establishes": PRECEDENCE_EXISTENCE,
+            "recomputeCmd": "rekor verify leaf-7",
+        }
+
+    def test_anchor_defaults_to_existence_only(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor=timestamp_anchor("opentimestamps", "ref"),
+        )
+        anchor = cred["credentialSubject"]["commitment"]["anchor"][0]
+        assert anchor["establishes"] == PRECEDENCE_EXISTENCE
+        assert claims_precedence(cred) is False  # an anchor alone is not ordering
+
+    def test_pre_outcome_ordering_is_claimed(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor=timestamp_anchor(
+                "opentimestamps", "ref", "ots verify ref", establishes=PRECEDENCE_PRE_OUTCOME
+            ),
+        )
+        assert claims_precedence(cred) is True
+
+    def test_raw_anchor_dict_gets_existence_default(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(
+            signer,
+            claim=CLAIM,
+            settlement=SETTLEMENT,
+            anchor={"method": "rfc3161-tsa", "reference": "r"},
+        )
+        assert cred["credentialSubject"]["commitment"]["anchor"][0]["establishes"] == (
+            PRECEDENCE_EXISTENCE
+        )
+
+    def test_bad_establishes_rejected(self):
+        with pytest.raises(AccountabilityError):
+            timestamp_anchor("opentimestamps", "ref", establishes="whenever")
+
+    def test_no_anchor_does_not_claim_precedence(self):
+        _, signer = _identity()
+        cred, _ = commit_outcome(signer, claim=CLAIM, settlement=SETTLEMENT)
+        assert claims_precedence(cred) is False
+
+
+class TestSettlementAndPointerFields:
+    def test_attestation_settlement_fields(self):
+        kp, signer = _identity()
+        cred, secret = commit_outcome(signer, claim=CLAIM, settlement=SETTLEMENT, private=True)
+        att = attest_outcome(
+            signer,
+            commitment=cred,
+            outcome=OUTCOME,
+            secret=secret,
+            settlement_venue="public-onchain-account",
+            settlement_ref="tx-0x123",
+        )
+        s = att["credentialSubject"]["settlement"]
+        assert s["venue"] == "public-onchain-account"
+        assert s["reference"] == "tx-0x123"
+        ok, _ = verify_attestation(att, kp.public_key_jwk)
+        assert ok is True
+
+    def test_pointer_generic_fields(self):
+        p = accountability_pointer(
+            ledger="https://example.com/ledger",
+            verifier_key="z6Mk-published-key",
+            record_pointer="https://example.com/ledger/entry/7",
+            verify_endpoint="https://example.com/verify-proof",
+            reputation_model="recomputable",
+            publishes_losses=True,
+        )
+        assert p["verifierKey"] == "z6Mk-published-key"
+        assert p["recordPointer"] == "https://example.com/ledger/entry/7"
+        assert p["verifyEndpoint"] == "https://example.com/verify-proof"
+        assert p["reputationModel"] == "recomputable"
+        assert p["publishesLosses"] is True
+
+    def test_pointer_rejects_bad_reputation_model(self):
+        with pytest.raises(AccountabilityError):
+            accountability_pointer(ledger="https://x.example", reputation_model="made-up")

@@ -110,7 +110,7 @@ from vouch import generate_identity, Signer
 
 keys = generate_identity("agent.example.com")
 signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
-signed = signer.sign_credential_hybrid(intent={
+signed = signer.sign_hybrid(intent={
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
@@ -128,7 +128,7 @@ import { Signer, generateIdentity } from '@vouch-protocol-official/sdk';
 
 const keys = await generateIdentity('agent.example.com');
 const signer = new Signer({ privateKey: keys.privateKeyJwk, did: keys.did });
-const signed = await signer.signCredentialHybrid({
+const signed = await signer.signHybrid({
   intent: {
     action: 'submit_claim',
     target: 'claim:HC-001',

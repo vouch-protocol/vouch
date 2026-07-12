@@ -27,6 +27,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>vector.json</Link>
     </None>
+    <None Include="../../../test-vectors/robotics/vector.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>robotics-vector.json</Link>
+    </None>
   </ItemGroup>
 
 </Project>

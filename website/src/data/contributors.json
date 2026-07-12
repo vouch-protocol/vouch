@@ -1,5 +1,10 @@
 [
   {
+    "login": "kautilyaa",
+    "pr": 37,
+    "title": "Identified and fixed the dev-setup and test failures"
+  },
+  {
     "login": "Franflorio",
     "pr": 110,
     "title": "Feature/reject unsigned agent requests fast api"
@@ -8,5 +13,35 @@
     "login": "WilliamK112",
     "pr": 131,
     "title": "chore: add self-documenting Makefile help"
+  },
+  {
+    "login": "277zyq",
+    "pr": 181,
+    "title": "Add shared load_signer() with friendlier missing-env error"
+  },
+  {
+    "login": "fahadhewad",
+    "pr": 182,
+    "title": "Print helpful message when vouch init is run without --domain"
+  },
+  {
+    "login": "Abhi757575",
+    "pr": 183,
+    "title": "docs: expand development setup with devcontainer and troubleshooting"
+  },
+  {
+    "login": "ahfoysal",
+    "pr": 283,
+    "title": "Update the examples README index"
+  },
+  {
+    "login": "ahfoysal",
+    "pr": 316,
+    "title": "docs: list all runnable examples"
+  },
+  {
+    "login": "ahfoysal",
+    "pr": 320,
+    "title": "test: add CLI help smoke coverage"
   }
 ]

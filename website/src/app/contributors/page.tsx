@@ -14,10 +14,37 @@ type Contributor = {
     title?: string;
 };
 
-// The list is populated automatically when a contributor's first PR merges
-// (see .github/workflows/verified-contributor.yml). Each entry links to that
-// contributor's certificate page at /c/<login>.
-const CONTRIBUTORS: Contributor[] = contributors as Contributor[];
+type Contribution = {
+    pr: number;
+    title?: string;
+};
+
+type ContributorGroup = {
+    login: string;
+    contributions: Contribution[];
+};
+
+// The data file records one entry per merged pull request (see
+// .github/workflows/verified-contributor.yml), because every contribution earns
+// its own signed certificate at /c/<login>/<pr>/. This page is a list of
+// contributors, not contributions, so we group those entries by person: one
+// card per contributor, with each of their contributions listed inside and
+// linked to its certificate. First-seen order is preserved for people and for
+// their contributions.
+function groupByLogin(entries: Contributor[]): ContributorGroup[] {
+    const order: string[] = [];
+    const byLogin = new Map<string, Contribution[]>();
+    for (const entry of entries) {
+        if (!byLogin.has(entry.login)) {
+            byLogin.set(entry.login, []);
+            order.push(entry.login);
+        }
+        byLogin.get(entry.login)!.push({ pr: entry.pr, title: entry.title });
+    }
+    return order.map((login) => ({ login, contributions: byLogin.get(login)! }));
+}
+
+const CONTRIBUTORS = groupByLogin(contributors as Contributor[]);
 
 const BADGE_URL =
     'https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d';
@@ -82,16 +109,41 @@ export default function ContributorsPage() {
                     ) : (
                         <ul className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {CONTRIBUTORS.map((c) => (
-                                <li key={`${c.login}-${c.pr}`} className="bg-parchment-warm border border-rule p-4">
-                                    <Link
-                                        href={`/c/${c.login}/${c.pr}/`}
-                                        className="font-mono text-burgundy no-underline"
-                                    >
-                                        @{c.login}
-                                    </Link>
-                                    <p className="text-ink-faint text-[0.85rem] mt-1 leading-snug">
-                                        {c.title ? c.title : `PR #${c.pr}`}
-                                    </p>
+                                <li key={c.login} className="bg-parchment-warm border border-rule p-4">
+                                    <div className="flex items-baseline justify-between gap-2 mb-2">
+                                        <Link
+                                            href={`https://github.com/${c.login}`}
+                                            className="font-mono text-burgundy no-underline"
+                                        >
+                                            @{c.login}
+                                        </Link>
+                                        {c.contributions.length > 1 && (
+                                            <span className="text-ink-faint text-[0.7rem] whitespace-nowrap">
+                                                {c.contributions.length} contributions
+                                            </span>
+                                        )}
+                                    </div>
+                                    <ul className="space-y-1">
+                                        {c.contributions.map((ct) => (
+                                            <li
+                                                key={ct.pr}
+                                                className="flex items-baseline justify-between gap-2"
+                                            >
+                                                <Link
+                                                    href={`/c/${c.login}/${ct.pr}/`}
+                                                    className="text-ink-faint text-[0.85rem] leading-snug no-underline hover:text-burgundy"
+                                                >
+                                                    {ct.title ? ct.title : `PR #${ct.pr}`}
+                                                </Link>
+                                                <Link
+                                                    href={`https://github.com/vouch-protocol/vouch/pull/${ct.pr}`}
+                                                    className="font-mono text-[0.75rem] text-ink-faint no-underline hover:text-burgundy whitespace-nowrap"
+                                                >
+                                                    #{ct.pr}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </li>
                             ))}
                         </ul>

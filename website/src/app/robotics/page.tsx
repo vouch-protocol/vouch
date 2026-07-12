@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
     title: 'Robotics - Vouch Protocol',
     description:
-        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, and an accountable safety record.',
+        'Open, vendor-neutral trust and accountability for robots and embodied agents: hardware-rooted identity, model and config provenance, cryptographically enforced physical limits, a robot-to-robot handshake, an encrypted black box, a verifiable kill switch, a scannable passport, a living-trust heartbeat, credential revocation, an accountable safety record, signed sensor perception provenance, an offline delegation lease, a physical quorum for high-consequence actions, lifecycle credentials for ownership transfer and decommissioning, a regulatory conformance profile mapping credentials to safety and AI regulations, post-quantum signing by default for a robot\'s decade-long life, cross-embodiment identity continuity so one accountable agent can move between robot bodies, a physical custody handoff chain across human and robot actors, bounded, revocable access to physical infrastructure like doors, elevators, and chargers, fused-sensor provenance that binds a robot\'s fused world model to the exact sensor frames that produced it, self-attested wear that narrows a robot\'s capability envelope as it degrades, and privacy-preserving bystander-consent evidence that binds the basis for a capture to the capture itself.',
 };
 
 const CAPABILITIES = [
@@ -62,6 +62,78 @@ const CAPABILITIES = [
         body: 'A tamper-evident, append-only ledger of incidents, near-misses, overrides, and kill-switch events, summarized into a portable signed record of a robot\'s safety standing that travels with it across owners, insurers, and regulators.',
         module: 'vouch.robotics.safety_record',
     },
+    {
+        num: 'x.',
+        title: 'Perception provenance',
+        body: 'A robot signs the provenance of each captured sensor frame at capture: the frame hash, the sensor, the modality, and the time, hash-linked into a tamper-evident log. It can prove what its cameras and lidar actually saw, and a substituted frame is detectable.',
+        module: 'vouch.robotics.perception',
+    },
+    {
+        num: 'xi.',
+        title: 'Offline delegation lease',
+        body: 'A short-lived, scope-bounded grant a disconnected robot can verify and act on with no network call. Leases nest, each sub-grant only narrowing the one above, so a vendor can lease to an integrator, the integrator to an operator, and the operator to the robot, all verifiable.',
+        module: 'vouch.robotics.lease',
+    },
+    {
+        num: 'xii.',
+        title: 'Physical quorum',
+        body: 'A cryptographic two-person rule for high-consequence actions. Applying large force near a person, or an irreversible move, can require M of N attested approvers to each sign off before the robot is authorized to act.',
+        module: 'vouch.robotics.physical_quorum',
+    },
+    {
+        num: 'xiii.',
+        title: 'Lifecycle and decommissioning',
+        body: 'A robot outlives its first owner. Ownership transfers chain into a verifiable chain of custody, the current key can authorize its successor to form a key history, and a signed decommission retires the robot at end of life so a verifier refuses to trust it.',
+        module: 'vouch.robotics.lifecycle',
+    },
+    {
+        num: 'xiv.',
+        title: 'Regulatory conformance',
+        body: "A machine-checkable mapping from a robot's credentials to the clauses of public safety and AI regulations, ISO 10218 and 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300. A checker reports which clauses the credentials satisfy, and an assessor can sign a conformance attestation an auditor consumes.",
+        module: 'vouch.robotics.conformance',
+    },
+    {
+        num: 'xv.',
+        title: 'Post-quantum by default',
+        body: 'A robot fielded today runs for decades, longer than classical signatures are expected to stay safe. Robot credentials sign with the hybrid post-quantum cryptosuite, a classical and an ML-DSA-44 signature together, and verification accepts either kind so a fleet moves to post-quantum without breaking the credentials already in the field.',
+        module: 'vouch.robotics.pq',
+    },
+    {
+        num: 'xvi.',
+        title: 'Cross-embodiment continuity',
+        body: 'An AI agent can run on one robot body today and a different body tomorrow. An embodiment credential binds the agent to a body and its hardware root for a period, signed by the agent\'s own key, and linking each embodiment forms a continuity chain that proves the same accountable agent persisted across bodies. A fork check confirms the agent was never active in two bodies at once.',
+        module: 'vouch.robotics.embodiment',
+    },
+    {
+        num: 'xvii.',
+        title: 'Physical custody handoff',
+        body: 'A task or object passes across a chain of actors, human and robot. Each handoff is a signed record that the receiver accepted custody, so a chain establishes who held the task at any moment and a physical-world incident traces to the exact hop. A condition attested at each handoff localizes damage or loss to the holder responsible for it.',
+        module: 'vouch.robotics.custody',
+    },
+    {
+        num: 'xviii.',
+        title: 'Infrastructure access',
+        body: 'A robot in a warehouse, hospital, or building needs to open doors, call elevators, dock at chargers, and operate machines. An operator issues a signed access grant naming a resource, the permitted operations, an optional zone, and a time window. The robot presents a signed request for one operation, and the resource authorizes it offline: valid operator grant, valid robot request, operation permitted, moment in window. The grant and the request together are a tamper-evident, attributable record of the access, and a sub-grant can only narrow what it inherits.',
+        module: 'vouch.robotics.access',
+    },
+    {
+        num: 'xix.',
+        title: 'Fused-sensor provenance',
+        body: 'A robot rarely acts on a single frame. It fuses camera, lidar, and radar into one world model and acts on that. A fused-perception attestation binds the fused output to the exact set of input frame hashes and the fusion method that produced it, signed by the robot. A verifier reproduces the input digest and the output hash, so the fusion commits to exactly those inputs, and checking each input against the robot\'s signed perception log confirms every fused input traces to a frame it actually recorded, so a manipulated fusion result or a dropped input is detectable.',
+        module: 'vouch.robotics.fusion',
+    },
+    {
+        num: 'xx.',
+        title: 'Wear and degradation',
+        body: 'A robot does not stay as capable as it left the factory: actuators wear, sensors drift, error rates creep up. It signs its own degradation as a wear level bound to its identity, hash-linked over time so the history is tamper-evident. A deterministic rule derives a physical scope whose force and speed caps are scaled down by the wear level, and the result is a valid attenuation of the original, so a worn robot operates inside a tighter, verifiable envelope instead of the static limit it shipped with.',
+        module: 'vouch.robotics.wear',
+    },
+    {
+        num: 'xxi.',
+        title: 'Bystander consent',
+        body: 'A robot in a shared or public space captures people incidentally. It records the basis on which a capture was permitted, bound to the specific capture by its hash and to its own identity, holding only hashes and never an image or anyone\'s identifying data. A bystander can sign a consent token bound to that one capture, so their consent verifies only against the recording it was given for and cannot be replayed to another. The robot signs evidence tying the capture to a consent basis, explicit token, posted notice, legitimate interest, or a redaction it applied.',
+        module: 'vouch.robotics.consent',
+    },
 ];
 
 export default function RoboticsPage() {
@@ -82,9 +154,14 @@ export default function RoboticsPage() {
                     </p>
                     <p className="text-ink-soft text-[1rem] leading-relaxed max-w-prose">
                         Every piece below is built on the same Verifiable Credentials as the rest of
-                        Vouch, so it verifies with the Python, Rust, TypeScript, and Go SDKs. These are
-                        open formats and reference implementations; hosted black-box storage and
-                        fleet-scale infrastructure are left to whoever deploys them.
+                        Vouch, so it verifies with the Python, Rust, TypeScript, and Go SDKs. A curated
+                        surface, verifying a robot credential, identity, conformance, passport, action
+                        checks, and post-quantum signing, authorizing infrastructure access, and verifying
+                        fused-sensor provenance, wear, bystander consent, embodiment continuity, and a
+                        custody chain, is also callable from the C, C++, .NET, JVM, and Swift wrappers, so
+                        an app in any of those languages can verify and integrate.
+                        These are open formats and reference implementations; hosted black-box storage
+                        and fleet-scale infrastructure are left to whoever deploys them.
                     </p>
                 </div>
             </section>

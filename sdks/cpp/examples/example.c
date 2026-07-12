@@ -149,6 +149,153 @@ int main(int argc, char **argv) {
     vouch_string_free(t2);
     vouch_string_free(err);
 
+    /* FROST(Ed25519) threshold signing: 2-of-3 signs, and the aggregate
+     * self-verifies inside the core before it is returned, so a successful,
+     * non-NULL result already proves the signature is valid. */
+    char *generated = vouch_threshold_generate_key(2, 3, &err);
+    ok("threshold_generate_key succeeds", generated != NULL);
+    vouch_string_free(err);
+    err = NULL;
+
+    char *share0 = NULL, *share1 = NULL, *id0 = NULL, *id1 = NULL;
+    if (generated) {
+        const char *p = strstr(generated, "\"shares\"");
+        p = strchr(p, '[');
+        p++; /* first '{' of shares[0] */
+        const char *start0 = p;
+        int depth = 0;
+        for (; *p; p++) {
+            if (*p == '{') depth++;
+            else if (*p == '}') { depth--; if (depth == 0) { p++; break; } }
+        }
+        share0 = malloc((size_t)(p - start0) + 1);
+        memcpy(share0, start0, (size_t)(p - start0));
+        share0[p - start0] = 0;
+        while (*p == ',' || *p == ' ') p++;
+        const char *start1 = p;
+        depth = 0;
+        for (; *p; p++) {
+            if (*p == '{') depth++;
+            else if (*p == '}') { depth--; if (depth == 0) { p++; break; } }
+        }
+        share1 = malloc((size_t)(p - start1) + 1);
+        memcpy(share1, start1, (size_t)(p - start1));
+        share1[p - start1] = 0;
+        id0 = find_field(share0, "identifier");
+        id1 = find_field(share1, "identifier");
+    }
+
+    char *round1_0 = share0 ? vouch_threshold_commit(share0, &err) : NULL;
+    vouch_string_free(err);
+    err = NULL;
+    char *round1_1 = share1 ? vouch_threshold_commit(share1, &err) : NULL;
+    vouch_string_free(err);
+    err = NULL;
+
+    char *commitments_json = NULL;
+    char *sig_share0 = NULL, *sig_share1 = NULL;
+    const char *message_b64 = "Y2hhcmdlIGFwaS5iYW5rIGludm9pY2VzLzQy"; /* base64("charge api.bank invoices/42") */
+    if (round1_0 && round1_1 && id0 && id1) {
+        char *nonces0 = find_field(round1_0, "nonces");
+        char *nonces1 = find_field(round1_1, "nonces");
+        char *commitments0 = find_field(round1_0, "commitments");
+        char *commitments1 = find_field(round1_1, "commitments");
+        char buf[4096];
+        snprintf(buf, sizeof buf, "{\"%s\":\"%s\",\"%s\":\"%s\"}", id0, commitments0, id1, commitments1);
+        commitments_json = malloc(strlen(buf) + 1);
+        strcpy(commitments_json, buf);
+
+        sig_share0 = vouch_threshold_sign_share(message_b64, share0, nonces0, commitments_json, &err);
+        vouch_string_free(err);
+        err = NULL;
+        sig_share1 = vouch_threshold_sign_share(message_b64, share1, nonces1, commitments_json, &err);
+        vouch_string_free(err);
+        err = NULL;
+
+        free(nonces0);
+        free(nonces1);
+        free(commitments0);
+        free(commitments1);
+    }
+    ok("threshold_sign_share succeeds for both signers", sig_share0 != NULL && sig_share1 != NULL);
+
+    char *group_public_key_json = generated ? find_object(generated, "group_public_key") : NULL;
+    char *signature = NULL;
+    if (commitments_json && sig_share0 && sig_share1 && group_public_key_json) {
+        char shares_json[4096];
+        snprintf(shares_json, sizeof shares_json, "{\"%s\":\"%s\",\"%s\":\"%s\"}", id0, sig_share0, id1, sig_share1);
+        signature = vouch_threshold_aggregate(message_b64, commitments_json, shares_json, group_public_key_json, &err);
+    }
+    ok("threshold_aggregate produces a self-verified signature", signature != NULL);
+    vouch_string_free(err);
+    err = NULL;
+
+    vouch_string_free(generated);
+    vouch_string_free(round1_0);
+    vouch_string_free(round1_1);
+    vouch_string_free(sig_share0);
+    vouch_string_free(sig_share1);
+    vouch_string_free(signature);
+    free(share0);
+    free(share1);
+    free(id0);
+    free(id1);
+    free(commitments_json);
+    free(group_public_key_json);
+
+    /* Root-identity recovery by Shamir secret sharing: split a fresh
+     * identity's seed into 3 shares (any 2 rebuild it), recover from 2 of
+     * them, and confirm the recovered seed signs identically to the
+     * original. */
+    char *kp = vouch_generate_ed25519(&err);
+    vouch_string_free(err);
+    err = NULL;
+    char *seed_b64 = kp ? find_field(kp, "seed_b64") : NULL;
+    char *did_key = kp ? find_field(kp, "did_key") : NULL;
+
+    char *rec_shares_json = seed_b64 ? vouch_recovery_split_identity(seed_b64, 2, 3, &err) : NULL;
+    vouch_string_free(err);
+    err = NULL;
+
+    char *rshare0 = NULL, *rshare1 = NULL;
+    if (rec_shares_json) {
+        const char *p = strchr(rec_shares_json, '[') + 1;
+        while (*p == ' ') p++;
+        const char *s0 = p + 1; /* skip opening quote */
+        const char *e0 = strchr(s0, '"');
+        rshare0 = malloc((size_t)(e0 - s0) + 1);
+        memcpy(rshare0, s0, (size_t)(e0 - s0));
+        rshare0[e0 - s0] = 0;
+        p = e0 + 1;
+        while (*p == ',' || *p == ' ') p++;
+        const char *s1 = p + 1;
+        const char *e1 = strchr(s1, '"');
+        rshare1 = malloc((size_t)(e1 - s1) + 1);
+        memcpy(rshare1, s1, (size_t)(e1 - s1));
+        rshare1[e1 - s1] = 0;
+    }
+
+    char *recovered = NULL;
+    if (rshare0 && rshare1) {
+        char subset[2048];
+        snprintf(subset, sizeof subset, "[\"%s\",\"%s\"]", rshare0, rshare1);
+        recovered = vouch_recovery_recover_identity(subset, did_key ? did_key : "", &err);
+    }
+    char *recovered_seed = recovered ? find_field(recovered, "seed") : NULL;
+    ok("recovered identity seed matches the original",
+       recovered_seed && seed_b64 && strcmp(recovered_seed, seed_b64) == 0);
+    vouch_string_free(err);
+    err = NULL;
+
+    vouch_string_free(kp);
+    vouch_string_free(rec_shares_json);
+    vouch_string_free(recovered);
+    free(seed_b64);
+    free(did_key);
+    free(rshare0);
+    free(rshare1);
+    free(recovered_seed);
+
     free(pub);
     free(seed);
     free(vm);

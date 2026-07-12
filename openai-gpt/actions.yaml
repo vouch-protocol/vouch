@@ -9,7 +9,7 @@ servers:
 paths:
     /sign:
         post:
-            operationId: signCredential
+            operationId: sign
             summary: Sign a Vouch credential for a user-approved intent.
             description: >
                 Builds and signs a Vouch credential. The action must be in the hosted
@@ -33,7 +33,7 @@ paths:
                     description: Invalid intent (missing field or disallowed action).
     /verify:
         post:
-            operationId: verifyCredential
+            operationId: verify
             summary: Verify a Vouch credential.
             description: >
                 Verifies the credential against the issuer's DID Document, checks

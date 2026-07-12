@@ -38,7 +38,7 @@ export interface VerificationResult {
 /**
  * Verified Verifiable Credential under Vouch Protocol v1.0.
  *
- * Returned by `Verifier.verifyCredential()` and
+ * Returned by `Verifier.verify()` and
  * `Verifier.checkVouchCredential()`. Parallel to the legacy `Passport`,
  * new code should prefer this type.
  */
@@ -55,6 +55,16 @@ export interface CredentialPassport {
   credentialId: string;
   /** Intent payload (action, target, resource) */
   intent: Intent;
+  /** Convenience accessor: intent.action. */
+  action?: string;
+  /** Convenience accessor: intent.target. */
+  target?: string;
+  /** Convenience accessor: intent.resource. */
+  resource?: string;
+  /** Issuer DID. Alias for `iss`. */
+  issuer: string;
+  /** True if the credential's validity window has passed (no skew). */
+  isExpired: boolean;
   /** Optional self-reported reputation score in [0, 100] */
   reputationScore?: number;
   /** Ordered delegation chain from root to current */
@@ -108,9 +118,19 @@ export interface JWKKey {
 /**
  * Options for issuing a Vouch Credential (modern path).
  */
-export interface SignCredentialOptions {
-  /** Intent payload. MUST contain action, target, resource. */
-  intent: Intent;
+export interface SignOptions {
+  /**
+   * Intent payload. MUST contain action, target, resource once merged with the
+   * named fields below. Pass the whole intent here, or use the
+   * action/target/resource shortcuts, or combine them (named fields win).
+   */
+  intent?: Intent;
+  /** Intent action (alternative to intent.action). */
+  action?: string;
+  /** Intent target (alternative to intent.target). */
+  target?: string;
+  /** Intent resource (alternative to intent.resource). */
+  resource?: string;
   /** Override the default validity window in seconds. */
   validSeconds?: number;
   /** Optional self-reported reputation score in [0, 100]. */

@@ -190,7 +190,7 @@ The sidecar is a security-critical component. Keep it minimal:
 
 ## Common questions
 
-**Q: Why not just use a separate Lambda / serverless function?**
+**Q: Why use a sidecar instead of a separate Lambda or serverless function?**
 A: You can. The sidecar pattern is the principle; "separate process"
 includes "separate serverless function." The HTTP API of the sidecar
 is the same whether the sidecar is a local process or a remote

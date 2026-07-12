@@ -4,6 +4,7 @@ import CodeBlock from '@/components/CodeBlock';
 import { ATI_SUMMARY, ATI_AGENTS } from './ati-data';
 import AtiLeaderboard from './AtiLeaderboard';
 import GradeChecker from './GradeChecker';
+import ShareButtons from './ShareButtons';
 
 const ACCOUNTABILITY = [
     { h: 'Who authorized it', p: 'A delegation chain shows who gave the agent its authority, on whose behalf, and within what limits, all verifiable.' },
@@ -17,6 +18,18 @@ export const metadata: Metadata = {
     title: 'Agent Trust Index - Vouch Protocol',
     description: `An open benchmark of how many autonomous agents can prove who they are. The first sweep checked ${TOTAL} public agents from the Model Context Protocol registry. ${ATI_SUMMARY.pctCannot}% cannot present a verifiable identity.`,
     alternates: { canonical: 'https://index.vouch-protocol.com/' },
+    openGraph: {
+        title: `${ATI_SUMMARY.pctCannot}% of AI agents cannot prove who they are`,
+        description: `An open benchmark of the agent world. ${ATI_SUMMARY.verifiable} of ${TOTAL} public agents can prove who they are.`,
+        url: 'https://vouch-protocol.com/agent-trust-index/',
+        type: 'website',
+        images: [{ url: '/assets/ati-card.png', width: 1200, height: 630 }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        site: '@Vouch_Protocol',
+        images: ['/assets/ati-card.png'],
+    },
 };
 
 const HEADLINE = [
@@ -60,13 +73,24 @@ export default function AgentTrustIndexPage() {
                     uncomfortable.
                 </p>
 
-                <div className="grid sm:grid-cols-3 gap-8 max-w-3xl mb-16">
+                <div className="grid sm:grid-cols-3 gap-8 max-w-3xl mb-4">
                     {HEADLINE.map((f) => (
                         <div key={f.label} className="border-l-2 border-burgundy pl-4">
                             <div className="font-serif font-semibold text-[2.2rem] tracking-tight mb-1">{f.stat}</div>
                             <p className="text-ink-soft text-[0.95rem] leading-relaxed">{f.label}</p>
                         </div>
                     ))}
+                </div>
+                <p className="font-mono uppercase text-[0.62rem] tracking-[0.14em] text-ink-faint mb-6">
+                    As of {ATI_SUMMARY.generated}. First sweep of {TOTAL} agents from the public Model
+                    Context Protocol registry.
+                </p>
+                <div className="mb-16">
+                    <ShareButtons
+                        text={`AI agents now act on our behalf, yet ${ATI_SUMMARY.pctCannot}% of them cannot prove who they are or who authorized them. As they start touching money and real data, this is the AI trust gap to watch:`}
+                        url="https://vouch-protocol.com/the-trust-gap/"
+                        image="/assets/ati-card.png"
+                    />
                 </div>
 
                 <div className="max-w-3xl mb-16 border-l-2 border-burgundy pl-5">
@@ -111,7 +135,8 @@ export default function AgentTrustIndexPage() {
                     </div>
                 </div>
 
-                <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-5">What the first sweep found</h2>
+                <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-1">What the first sweep found</h2>
+                <p className="font-mono uppercase text-[0.62rem] tracking-[0.14em] text-ink-faint mb-5">As of {ATI_SUMMARY.generated}</p>
                 <div className="border border-rule max-w-2xl mb-4 overflow-hidden">
                     <table className="w-full text-[0.95rem]">
                         <thead>
@@ -141,8 +166,8 @@ export default function AgentTrustIndexPage() {
                 <h2 className="font-serif font-semibold text-[1.5rem] tracking-tight mb-2">The agents that can prove it</h2>
                 <p className="text-ink-soft max-w-prose mb-6">
                     The {ATI_SUMMARY.verifiable} agents that publish a verifiable signal, scored from 0
-                    to 100 and graded. The other {ATI_SUMMARY.cannot.toLocaleString('en-US')} scored
-                    zero. Filter by grade.
+                    to 100 and graded, as of {ATI_SUMMARY.generated}. The other{' '}
+                    {ATI_SUMMARY.cannot.toLocaleString('en-US')} scored zero. Filter by grade.
                 </p>
                 <div className="mb-16">
                     <AtiLeaderboard agents={ATI_AGENTS} />

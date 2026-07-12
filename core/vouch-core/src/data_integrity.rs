@@ -90,7 +90,11 @@ pub fn build_proof(
 
 /// Sign a credential: build the proof and return the credential with `proof`
 /// attached.
-pub fn sign(credential: &Value, raw_private_seed: &[u8], opts: &BuildProofOptions) -> Result<Value> {
+pub fn sign(
+    credential: &Value,
+    raw_private_seed: &[u8],
+    opts: &BuildProofOptions,
+) -> Result<Value> {
     let proof = build_proof(credential, raw_private_seed, opts)?;
     let mut signed = credential.clone();
     signed
@@ -124,7 +128,11 @@ pub fn verify_proof(credential: &Value, raw_public_key: &[u8]) -> Result<bool> {
     }
     match proof.get("cryptosuite").and_then(|v| v.as_str()) {
         Some(CRYPTOSUITE_ID) => {}
-        other => return Err(CoreError::Json(format!("unexpected cryptosuite: {other:?}"))),
+        other => {
+            return Err(CoreError::Json(format!(
+                "unexpected cryptosuite: {other:?}"
+            )))
+        }
     }
     let proof_value = proof
         .get("proofValue")
@@ -190,10 +198,8 @@ mod tests {
     fn sign_then_verify_roundtrip() {
         let seed = [9u8; 32];
         let cred = sample_credential();
-        let opts = BuildProofOptions::new(
-            "did:web:agent.example.com#key-1",
-            "2026-04-26T10:00:00Z",
-        );
+        let opts =
+            BuildProofOptions::new("did:web:agent.example.com#key-1", "2026-04-26T10:00:00Z");
         let signed = sign(&cred, &seed, &opts).unwrap();
         assert!(verify_with_seed(&signed, &seed).unwrap());
     }
@@ -202,7 +208,8 @@ mod tests {
     fn tamper_fails_verification() {
         let seed = [9u8; 32];
         let cred = sample_credential();
-        let opts = BuildProofOptions::new("did:web:agent.example.com#key-1", "2026-04-26T10:00:00Z");
+        let opts =
+            BuildProofOptions::new("did:web:agent.example.com#key-1", "2026-04-26T10:00:00Z");
         let mut signed = sign(&cred, &seed, &opts).unwrap();
         signed["credentialSubject"]["intent"]["action"] = json!("delete_database");
         assert!(!verify_with_seed(&signed, &seed).unwrap());
@@ -211,7 +218,8 @@ mod tests {
     #[test]
     fn exposes_proof_verification_method() {
         let seed = [9u8; 32];
-        let opts = BuildProofOptions::new("did:web:agent.example.com#key-1", "2026-04-26T10:00:00Z");
+        let opts =
+            BuildProofOptions::new("did:web:agent.example.com#key-1", "2026-04-26T10:00:00Z");
         let signed = sign(&sample_credential(), &seed, &opts).unwrap();
         assert_eq!(
             proof_verification_method(&signed).unwrap(),
@@ -224,7 +232,8 @@ mod tests {
     fn deterministic_proof_value() {
         let seed = [9u8; 32];
         let cred = sample_credential();
-        let opts = BuildProofOptions::new("did:web:agent.example.com#key-1", "2026-04-26T10:00:00Z");
+        let opts =
+            BuildProofOptions::new("did:web:agent.example.com#key-1", "2026-04-26T10:00:00Z");
         let a = build_proof(&cred, &seed, &opts).unwrap();
         let b = build_proof(&cred, &seed, &opts).unwrap();
         assert_eq!(a["proofValue"], b["proofValue"]);

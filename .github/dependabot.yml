@@ -32,3 +32,9 @@ updates:
       - "github-actions"
     commit-message:
       prefix: "ci"
+    ignore:
+      # first-interaction v2+ renamed its inputs (repo_token/issue_message/
+      # pr_message) and breaks the welcome workflow, which pins v1 on purpose.
+      # Stay on v1 until the workflow is migrated to the newer input names.
+      - dependency-name: "actions/first-interaction"
+        update-types: ["version-update:semver-major"]

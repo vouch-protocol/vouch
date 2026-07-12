@@ -42,10 +42,16 @@ export const HELP_SECTIONS: HelpSection[] = [
 ## Install
 
 \`\`\`bash
+# Linux and macOS: one line (on Windows, use pip below)
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+
+# Or with pip on any platform
 pip install vouch-protocol
 \`\`\`
 
 The hybrid post-quantum profile (\`hybrid-eddsa-mldsa44-jcs-2026\`) is bundled by default; nothing else to install.
+
+Not ready to write code yet? Run \`vouch\` with no arguments for a short menu (sign your git commits, or create an agent identity), or run \`vouch onboard --quick\` to generate a full agent setup with recommended defaults in one command.
 
 ## Step 1 - Sign and verify locally
 
@@ -89,10 +95,8 @@ That round-trip is the entire credential layer: keypair, signed action, verified
 The legacy JWS form above stays for backward compatibility. New code should prefer the W3C Verifiable Credential form with a Data Integrity proof (\`eddsa-jcs-2022\`):
 
 \`\`\`python
-from vouch import build_vouch_credential
-
-credential = build_vouch_credential(
-    subject_did=identity.did,
+# sign takes the intent directly (action, target, resource required).
+signed = signer.sign(
     intent={
         "action": "submit_claim",
         "target": "claim:HC-001",
@@ -100,8 +104,6 @@ credential = build_vouch_credential(
     },
     valid_seconds=300,
 )
-
-signed = signer.sign_credential(credential)
 print(signed["proof"]["proofValue"])
 \`\`\`
 
@@ -115,11 +117,11 @@ verifier = Verifier(
     trusted_roots={identity.did: identity.public_key_jwk},
     allow_did_resolution=False,
 )
-result = asyncio.run(verifier.verify_credential(signed))
+result = asyncio.run(verifier.verify(signed))
 print(result.valid, result.reasons)
 \`\`\`
 
-For the hybrid post-quantum profile, swap \`sign_credential\` for \`sign_credential_hybrid\`. The required \`pqcrypto\` library is already bundled with \`vouch-protocol\`, so nothing else to install. Everything else stays the same.
+For the hybrid post-quantum profile, swap \`sign\` for \`sign_hybrid\`. The required \`pqcrypto\` library is already bundled with \`vouch-protocol\`, so nothing else to install. Everything else stays the same.
 
 ## Step 3 - When you are ready to publish
 
@@ -173,7 +175,6 @@ import {
   Signer,
   Verifier,
   generateIdentity,
-  buildVouchCredential,
 } from '@vouch-protocol-official/sdk';
 
 async function main() {
@@ -186,8 +187,8 @@ async function main() {
     did: identity.did!,
   });
 
-  const credential = buildVouchCredential({
-    subjectDid: identity.did!,
+  // sign takes the intent directly (action, target, resource).
+  const signed = await signer.sign({
     intent: {
       action: 'submit_claim',
       target: 'claim:HC-001',
@@ -195,8 +196,6 @@ async function main() {
     },
     validSeconds: 300,
   });
-
-  const signed = await signer.signCredential(credential);
   console.log('signed proof value:', signed.proof.proofValue);
 
   // trustedRoots is the local-dev escape hatch: in production the verifier
@@ -205,7 +204,7 @@ async function main() {
     trustedRoots: { [identity.did!]: identity.publicKeyJwk },
     allowDidResolution: false,
   });
-  const result = await verifier.verifyCredential(signed);
+  const result = await verifier.verify(signed);
   console.log('valid:', result.valid, 'reasons:', result.reasons);
 }
 
@@ -225,7 +224,7 @@ Then drop \`trustedRoots\` and \`allowDidResolution\`:
 
 \`\`\`ts
 const verifier = new Verifier();              // resolves did:web over HTTPS
-const result = await verifier.verifyCredential(signed);
+const result = await verifier.verify(signed);
 \`\`\`
 
 ## Cross-language interop
@@ -359,10 +358,10 @@ let canon = try Vouch.canonicalize(#"{"b":1,"a":2}"#)   // {"a":2,"b":1}
 let ok = try Vouch.verifyProof(signedCredentialJson, publicKey: publicKey)
 
 // Proof plus validity window in one call.
-let result = try Vouch.verifyCredential(signedCredentialJson, publicKey: publicKey, now: "2026-04-26T10:02:00Z")
+let result = try Vouch.verify(signedCredentialJson, publicKey: publicKey, now: "2026-04-26T10:02:00Z")
 \`\`\`
 
-\`Vouch.generateEd25519()\` returns a key pair and \`Vouch.signCredential(...)\` attaches the proof. VouchCore is a thin layer over the canonical Rust core via UniFFI, so a credential verified on iOS matches the exact bytes from every other SDK.
+\`Vouch.generateEd25519()\` returns a key pair and \`Vouch.sign(...)\` attaches the proof. VouchCore is a thin layer over the canonical Rust core via UniFFI, so a credential verified on iOS matches the exact bytes from every other SDK.
 `,
       },
       {
@@ -388,7 +387,7 @@ import com.vouchprotocol.core.Vouch;
 
 String canon = Vouch.canonicalize("{\\"b\\":1,\\"a\\":2}");   // {"a":2,"b":1}
 String kp = Vouch.generateEd25519();                       // {seed_b64, public_b64, multikey, did_key}
-String signed = Vouch.signCredential(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+String signed = Vouch.sign(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 boolean ok = Vouch.verifyProof(signed, publicB64);
 \`\`\`
 
@@ -417,7 +416,7 @@ using VouchProtocol.Core;
 
 string canon = Vouch.Canonicalize("{\\"b\\":1,\\"a\\":2}");   // {"a":2,"b":1}
 string kp = Vouch.GenerateEd25519();
-string signed = Vouch.SignCredential(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+string signed = Vouch.Sign(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 bool ok = Vouch.VerifyProof(signed, publicB64);
 \`\`\`
 
@@ -455,7 +454,7 @@ char *res = vouch_verify_proof(signed_credential_json, public_key_b64, &err);  /
 if (res) vouch_string_free(res); else vouch_string_free(err);
 \`\`\`
 
-The header also exposes \`vouch_sign_credential\`, \`vouch_verify_credential\`, delegation, dual-proof ML-DSA-44 verify, and BitstringStatusList revocation. A credential verified from C matches the exact bytes of every other SDK.
+The header also exposes \`vouch_sign\`, \`vouch_verify\`, delegation, dual-proof ML-DSA-44 verify, and BitstringStatusList revocation. A credential verified from C matches the exact bytes of every other SDK.
 `,
       },
       {
@@ -479,7 +478,7 @@ await init(); // fetches the .wasm next to the module
 
 core.canonicalize('{"b":1,"a":2}');   // {"a":2,"b":1}
 const kp = JSON.parse(core.generateEd25519());
-const signed = core.signCredential(JSON.stringify(myCredential), kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
+const signed = core.sign(JSON.stringify(myCredential), kp.seed_b64, kp.did_key + '#key-1', '2026-04-26T10:00:00Z');
 const ok = core.verifyProof(signed, kp.public_b64);   // true
 \`\`\`
 
@@ -603,10 +602,14 @@ The Cloudflare circl dependency is already transitive in the sidecar.
 Python:
 
 \`\`\`python
-from vouch import Signer
+from vouch import Signer, generate_identity
 
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(credential)
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+signed = signer.sign_hybrid(intent={
+    "action": "submit_claim", "target": "claim:HC-001",
+    "resource": "https://insurance.example.com/claims/HC-001",
+})
 \`\`\`
 
 TypeScript:
@@ -615,7 +618,7 @@ TypeScript:
 import { Signer } from '@vouch-protocol-official/sdk';
 
 const signer = await Signer.fromDidWithHybrid('did:web:agent.example.com');
-const signed = await signer.signCredentialHybrid(credential);
+const signed = await signer.signHybrid(credential);
 \`\`\`
 
 Go sidecar: pass \`--hybrid\` when starting the daemon.
@@ -696,6 +699,8 @@ Hybrid credentials exceed typical HTTP header size limits, so transmit them in t
 
 When a human principal delegates to an agent that delegates to a sub-agent, you need a verifiable audit trail. The delegation chain answers: who authorized this action, and what was the scope at each step?
 
+See it in the browser: the [interactive demos](/demos/#caveats) show a delegation chain whose caveats block an out-of-envelope action two hops down, and an irreversible action you can veto during a challenge window.
+
 ## Three rules
 
 1. Each link is a signed Vouch credential where the **issuer** is the **subject** of the previous link.
@@ -704,36 +709,37 @@ When a human principal delegates to an agent that delegates to a sub-agent, you 
 
 ## Build a chain in Python
 
+Each credential chains under its parent with \`parent_credential=\`, which appends a delegation link and enforces resource narrowing automatically:
+
 \`\`\`python
-from vouch import Signer, build_vouch_credential
+from vouch import Signer
 
-principal = Signer.from_did("did:web:principal.example.com")
-agent = Signer.from_did("did:web:agent.example.com")
-sub_agent = Signer.from_did("did:web:sub-agent.example.com")
+principal = Signer(private_key=principal_priv_jwk, did="did:web:principal.example.com")
+agent = Signer(private_key=agent_priv_jwk, did="did:web:agent.example.com")
+sub_agent = Signer(private_key=sub_agent_priv_jwk, did="did:web:sub-agent.example.com")
 
-# Principal delegates to agent
-principal_link = principal.sign_credential(build_vouch_credential(
-  subject_did=agent.did,
-  intent={"action": "*", "target": "*", "resource": "https://insurance.example.com/claims/*"},
+# Principal delegates broad authority to the agent.
+principal_link = principal.sign(
+  intent={"action": "*", "target": "*", "resource": "claims"},
   valid_seconds=3600,
-))
+)
 
-# Agent narrows and delegates to sub-agent
-agent_link = agent.sign_credential(build_vouch_credential(
-  subject_did=sub_agent.did,
-  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+# Agent narrows and re-delegates to the sub-agent.
+agent_link = agent.sign(
+  intent={"action": "read", "target": "claim:HC-001", "resource": "claims/HC-001"},
   valid_seconds=300,
-  delegated_from=[principal_link],
-))
+  parent_credential=principal_link,
+)
 
-# Sub-agent signs its actual action
-action = sub_agent.sign_credential(build_vouch_credential(
-  subject_did=sub_agent.did,
-  intent={"action": "read", "target": "claim:HC-001", "resource": "https://insurance.example.com/claims/HC-001"},
+# Sub-agent signs its actual action under the chain.
+action = sub_agent.sign(
+  intent={"action": "read", "target": "claim:HC-001", "resource": "claims/HC-001"},
   valid_seconds=60,
-  delegated_from=[principal_link, agent_link],
-))
+  parent_credential=agent_link,
+)
 \`\`\`
+
+For the one-line path, the principal can issue the grant with \`vouch.delegate(...)\` and the agent's tools can be wrapped with \`vouch.protect([...], parent=grant)\`.
 
 ## Verify
 
@@ -744,6 +750,227 @@ result = await verifier.verify_delegation_chain([principal_link, agent_link, act
 \`\`\`
 
 The verifier walks every link, validates each signature, and confirms resource narrowing.
+`,
+      },
+      {
+        id: 'cross-device-identity',
+        title: 'One Identity Across Your Devices',
+        summary: 'Use the same identity on many devices without ever copying your private key: per-device keys, delegation, revocation, and recovery.',
+        body: `
+## The idea
+
+Each device makes its own key and keeps it local. Your root identity signs a scoped permission slip (a delegation grant) for each device. A verifier ties any device's action back to your trusted root. Lose a device and you revoke it; lose all of them and you rebuild the root from recovery shares. What moves between devices is authority, never key material.
+
+See it in the browser: the [interactive demos](/demos/identity/#enrollment) show a device acting on a delegated grant, getting revoked, and a root rebuilt from a threshold of Shamir shares.
+
+## Enroll a device
+
+Each device mints its own key. The root delegates a scope to that device's DID.
+
+\`\`\`python
+from vouch import Agent, enroll_device
+
+root = Agent("alice.example")
+trusted_roots = {root.did: root.public_key_jwk}
+
+phone = Agent()  # a did:key minted on the phone
+grant = enroll_device(
+    root,
+    device_did=phone.did,
+    action="charge",
+    target="api.bank",
+    resource="https://api.bank/invoices",
+)
+\`\`\`
+
+## Sign and verify
+
+The device signs with its own key, chained under the grant. A verifier checks the whole chain back to the trusted root.
+
+\`\`\`python
+from vouch import verify_delegated_chain
+
+action = phone.sign(
+    action="charge", target="api.bank",
+    resource="https://api.bank/invoices/42", parent_credential=grant,
+)
+result = verify_delegated_chain([grant, action], trusted_roots=trusted_roots)
+assert result.ok
+\`\`\`
+
+## Revoke a lost device
+
+Track devices with a \`DeviceRegistry\` and revoke one when it is lost. Its actions stop verifying; other devices are unaffected.
+
+\`\`\`python
+from vouch import DeviceRegistry
+
+registry = DeviceRegistry()
+registry.enroll(phone.did, grant)
+registry.revoke(phone.did)
+
+result = verify_delegated_chain(
+    [grant, action], trusted_roots=trusted_roots, revoked=registry.is_revoked
+)
+assert not result.ok
+\`\`\`
+
+## Recover the root
+
+Split the root into shares so any threshold rebuild it. Distribute the shares to guardians or separate locations. Fewer than the threshold reveal nothing.
+
+\`\`\`python
+from vouch import split_identity, recover_identity, Signer
+
+# Splitting needs the root's key, so create the root with allow_key_export=True.
+root = Agent("alice.example", allow_key_export=True)
+shares = split_identity(root, threshold=2, shares=3)
+
+recovered = recover_identity([shares[0], shares[2]], did=root.did)
+signer = Signer.from_keypair(recovered)
+\`\`\`
+
+Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) exposes the same helpers. See the runnable example in \`examples/cross_device_identity.py\`.
+`,
+      },
+      {
+        id: 'threshold-signing',
+        title: 'Threshold Signing With Multiple Custodians (FROST)',
+        summary: 'Split a signing key among several custodians so any threshold of them can sign together, with the full key never existing whole.',
+        body: `
+## The idea
+
+FROST(Ed25519) threshold signing splits a key among several custodians so that any threshold of them can produce a signature together, without the full private key ever existing whole at any point, not even during signing. The result is a standard Ed25519 signature, so it verifies exactly like any other Vouch credential. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) binds the same audited \`frost-ed25519\` core (the Zcash Foundation's RFC 9591 implementation), so every language produces byte-identical results from one implementation.
+
+This is distinct from root-identity recovery above: recovery reconstructs a key once, for a deliberate restore. Threshold signing never reconstructs the key at all, and is meant for live, repeated signing.
+
+See it in the browser: the [interactive demo](/demos/identity/#threshold-signing) shows any threshold of custodians signing together, with the same signature verifying regardless of who signed.
+
+## Generate a threshold identity
+
+A dealer mints \`max_signers\` key shares and a group public key, such that any \`min_signers\` of them can sign together. This mints a fresh threshold-native identity; it does not convert an existing single-key Ed25519 identity into one.
+
+\`\`\`python
+from vouch import threshold
+
+generated = threshold.generate_key(min_signers=2, max_signers=3)
+# generated.shares: distribute one KeyShare to each custodian
+# generated.group_public_key: the identity's public key
+\`\`\`
+
+## Sign with a threshold of custodians
+
+\`ThresholdSigner\` runs the full commit / sign-share / aggregate ceremony in one call, for a coordinator that holds enough shares to sign. Pass it straight to \`Signer.from_backend\` and the rest of the Signer, and every verifier, stays unaware a threshold ceremony produced the signature.
+
+\`\`\`python
+from vouch import Signer, ThresholdSigner
+
+threshold_signer = ThresholdSigner(generated.shares[:2], generated.group_public_key)
+
+signer = Signer.from_backend(
+    did="did:web:agent.example",
+    public_key=generated.group_public_key.public_key_jwk,
+    sign=threshold_signer.sign,
+)
+credential = signer.sign(action="read", target="t", resource="https://x/y")
+\`\`\`
+
+## Verify
+
+Nothing changes on the verifying side. The aggregated signature is a standard Ed25519 signature, so any Vouch verifier checks it exactly like a single-key credential:
+
+\`\`\`python
+from vouch import Verifier
+
+valid, _ = Verifier.verify(credential, public_key=generated.group_public_key.public_key_jwk)
+assert valid
+\`\`\`
+
+A true multi-device ceremony, where custodians never share a coordinator process, calls \`threshold.commit\`, \`threshold.sign_share\`, and \`threshold.aggregate\` directly on each device, passing commitments and shares over the network instead of holding every share in one \`ThresholdSigner\`.
+`,
+      },
+      {
+        id: 'root-of-trust',
+        title: 'Anchoring Identity to a Root of Trust',
+        summary: 'Make Vouch Protocol the authority for agent identity: pin one root, recognize issuers, and verify any agent by walking a short chain back to the root.',
+        body: `
+## Why a root of trust
+
+A self-issued Vouch Protocol credential anchors to whatever the agent claims about itself: a domain with \`did:web\`, or a public key with \`did:key\`. That proves the same key signed, but it does not say who stands behind the agent, what model it runs, or who owns it.
+
+The Root of Trust layer adds that authority. A verifier pins one root up front. The root recognizes issuers. A recognized issuer binds an agent's DID to real attributes. A verifier then confirms any agent by walking a short chain back to the single root it already trusts, with no external certificate authority and no central per-agent lookup.
+
+Your agent's own \`vouch init\` identity is unchanged. This is an additive layer; reach for it when a verifier wants identities backed by a named authority.
+
+## The three credentials
+
+All three are ordinary Verifiable Credentials with the same \`eddsa-jcs-2022\` proof used everywhere else in Vouch Protocol.
+
+1. **Root of Trust** (\`VouchRootOfTrust\`): self-issued by the root, so it describes itself. The verifier pins the root DID.
+2. **Recognized-issuer** (\`RecognizedIssuerCredential\`): issued by the root. Names an issuer, its \`recognizedActions\` (\`issueAgentIdentity\`, \`issueRobotIdentity\`), and a \`recognizedIn\` pointer back to the root.
+3. **Agent identity** (\`AgentIdentityCredential\`): issued by a recognized issuer, where the issuer differs from the subject. Binds the agent's DID to attributes (owner, model, capability class).
+
+## Build a chain in Python
+
+\`\`\`python
+from vouch.root_of_trust import (
+  generate_did_key_identity, build_root_of_trust,
+  build_recognized_issuer, build_agent_identity, verify_identity_chain,
+)
+from vouch import Signer
+
+# Stand up a root (self-issued).
+root_keys = generate_did_key_identity()
+root = Signer.from_keypair(root_keys)
+root_cred = build_root_of_trust(root, name="Example Machine Identity Root")
+
+# The root recognizes an issuer.
+issuer_keys = generate_did_key_identity()
+issuer = Signer.from_keypair(issuer_keys)
+recognized = build_recognized_issuer(
+  root, issuer_did=issuer.did, recognized_actions=["issueAgentIdentity"],
+)
+
+# The recognized issuer vouches for an agent's identity.
+agent_keys = generate_did_key_identity()
+identity = build_agent_identity(
+  issuer, subject_did=agent_keys.did,
+  attributes={"owner": "Example Inc.", "model": "claims-assistant-2",
+              "capabilityClass": "financial-read"},
+)
+\`\`\`
+
+## Verify against the pinned root
+
+\`\`\`python
+result = verify_identity_chain(
+  identity, recognized,
+  trusted_root=root.did,        # the ONE DID this verifier trusts
+  root_credential=root_cred,    # optional self-consistency check
+)
+assert result.ok
+print(result.agent_did, result.issuer_did, result.root_did)
+print(result.attributes)
+\`\`\`
+
+The walk confirms the recognition is signed by the pinned root and grants the required action, then that the identity is signed by that recognized issuer. Pass an \`action_credential\` too and it also confirms the agent signed its own action. On failure the result carries a structured reason showing which link broke.
+
+## Offline and revocation
+
+When the root, issuer, and agent all use \`did:key\`, the whole chain verifies with no network, since each \`did:key\` carries its public key in the identifier. For \`did:web\` issuers, resolve keys over the network or pin them ahead of time.
+
+Both the recognized-issuer and identity credentials accept an optional \`credentialStatus\` (BitstringStatusList). Revoke a recognized issuer to withdraw its authority to vouch for new agents; revoke a single identity to retire one agent. The verifier checks the status during the walk.
+
+## From the command line
+
+Four subcommands drive the lifecycle:
+
+- \`vouch root init\` self-issues a root and mints its key.
+- \`vouch root recognize\` issues a recognized-issuer credential.
+- \`vouch root issue-identity\` issues an agent identity as a recognized issuer.
+- \`vouch root verify-chain\` walks an agent identity back to a pinned root.
+
+Anyone can run \`vouch root init\` and publish the root DID for verifiers to pin. The layer ships in Python, TypeScript, Rust, and Go with a byte-identical wire format, so a chain can span languages and still verify.
 `,
       },
     ],
@@ -1061,7 +1288,7 @@ The issuer maintains one or more \`StatusList\` instances (one per status purpos
 from vouch import (
   Signer, StatusList, FilesystemStatusListStore,
   build_status_list_credential, build_status_list_entry,
-  build_vouch_credential,
+  generate_identity,
 )
 
 # Load or create the status list. Persisted state survives restarts.
@@ -1071,14 +1298,15 @@ try:
 except FileNotFoundError:
   status_list = StatusList(status_list_id="https://issuer.example/status/1")
 
-signer = Signer.from_did("did:web:issuer.example")
+keys = generate_identity("issuer.example")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
 
 # ---- Issue a credential with a credentialStatus entry ----
 index = status_list.allocate_index()
 store.save(status_list) # persist the new cursor
 
-credential = build_vouch_credential(
-  issuer_did="did:web:issuer.example",
+# Pass the status entry to sign so the proof covers it.
+signed_credential = signer.sign(
   intent={"action": "submit_claim", "target": "claim:HC-001",
       "resource": "https://insurance.example/claims/HC-001"},
   credential_status=build_status_list_entry(
@@ -1086,7 +1314,6 @@ credential = build_vouch_credential(
     status_list_index=index,
   ),
 )
-signed_credential = signer.sign_credential(credential)
 
 # ---- Later, revoke that credential ----
 status_list.revoke(index)
@@ -1097,7 +1324,7 @@ status_credential = build_status_list_credential(
   issuer_did="did:web:issuer.example",
   status_list=status_list,
 )
-signed_status_credential = signer.sign_credential(status_credential)
+signed_status_credential = signer.sign(status_credential)
 \`\`\`
 
 ## Verifier flow
@@ -1175,7 +1402,7 @@ entry, _ := signer.BuildStatusListEntry(signer.BuildStatusListEntryOptions{
   StatusListIndex:   idx,
 })
 
-// Pass via SignCredentialOptions.CredentialStatus to Signer.SignCredential.
+// Pass via SignOptions.CredentialStatus to Signer.Sign.
 \`\`\`
 
 TypeScript and Go callers fetch the published status credential using their platform's HTTP client (\`fetch()\` / \`net/http.Get()\`) and call \`verifyStatus\` / \`VerifyStatus\` with the result.
@@ -1249,7 +1476,7 @@ Then point at your collector via \`OTEL_EXPORTER_OTLP_ENDPOINT\`. Verifier spans
       {
         id: 'integrations',
         title: 'Which AI Frameworks Vouch Plugs Into',
-        summary: 'Ready-made integrations for LangChain, CrewAI, AutoGPT, AutoGen, MCP, Vertex AI, and more.',
+        summary: 'Ready-made integrations for LangChain, LangGraph, CrewAI, Goose, AutoGPT, AutoGen, MCP, Vertex AI, and more.',
         body: `
 ## Python integrations
 
@@ -1258,6 +1485,7 @@ All under \`vouch/integrations/\`:
 | Framework | File | What it does |
 |---|---|---|
 | LangChain | \`langchain/tool.py\` | Wraps a LangChain Tool so its inputs are signed before execution |
+| LangGraph | \`langgraph.py\` | Signs LangGraph tool calls and graph nodes across a graph |
 | CrewAI | \`crewai/tool.py\` | Same pattern for crew-style multi-agent flows |
 | AutoGPT | \`autogpt/commands.py\` | Command integration for AutoGPT plugins |
 | AutoGen | \`autogen/tool.py\` | Tool wrapper for AutoGen conversational agents |
@@ -1268,6 +1496,7 @@ All under \`vouch/integrations/\`:
 | n8n | \`n8n.py\` | n8n workflow automation node |
 | Hasura | \`hasura/webhook.py\` | GraphQL webhook handler |
 | MCP | \`mcp/server.py\` | Reference Model Context Protocol server |
+| Goose | \`goose.py\` | Registers the Vouch MCP server as an extension for Block's Goose agent |
 | Amnesia | \`amnesia.py\` | Wraps an Amnesia egress decision in a Verifiable Credential for a replayable audit trail |
 
 End-to-end examples are at [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
@@ -1693,6 +1922,62 @@ See [PAD-016](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures
   },
 
   // =====================================================================
+  // ACCOUNTABLE AUTONOMY: bound and record what an authorized agent does
+  // =====================================================================
+  {
+    id: 'accountable-autonomy',
+    title: 'Accountable Autonomy',
+    description:
+      'Five modules that bound and record what an already-authorized agent does: reasoned actions, deliberation windows, executable caveats, inference provenance, and an append-only transparency log.',
+    articles: [
+      {
+        id: 'accountable-autonomy-overview',
+        title: 'The Accountable-Autonomy Runtime',
+        summary:
+          'Make an authorized agent state its reason, wait out a veto, stay inside its envelope, prove its output, and land in a public log.',
+        body: `
+Identity and delegation prove who acted and under what authority. They do not, on their own, bound what an already-authorized agent may do, slow down an irreversible action, prove why the agent acted, or make the record public. Five Python SDK modules add exactly that. Each is an ordinary \`eddsa-jcs-2022\` Verifiable Credential, so it verifies across the language SDKs, and each has a runnable example in the repo and a live section on the [interactive demos](/demos/).
+
+## Reasoned Action Proofs
+
+\`vouch.reasoning\` has the agent state its justification before acting, tie each reason to a real artifact by that artifact's hash, and escrow the justification before execution. An auditor proves the reasoning was not fabricated (\`evidence_unresolved\`, \`evidence_hash_mismatch\`), not rewritten (\`justification_digest_mismatch\`), and committed before the action (\`escrow_after_execution\`).
+
+\`\`\`python
+from vouch.reasoning import build_justification, evidence_anchor, sign_reasoned_action, verify_justification
+
+just = build_justification(intent, [evidence_anchor("user asked", ref="msg:1", evidence=user_message)])
+cred = sign_reasoned_action(agent, intent=intent, justification=just)
+ok, subject = verify_reasoned_action(cred, agent_pub)
+good, reason = verify_justification(just, subject, resolver=lookup)
+\`\`\`
+
+See \`examples/reasoned_action_demo.py\` and the [reasoned-action demo](/demos/#reasoned-action).
+
+## Proof of Deliberation
+
+\`vouch.deliberation\` gates irreversible actions. The agent commits and broadcasts a signed intent with a challenge window and named objectors, waits out the window, and survives any veto before a verifier accepts the execute credential. The agent cannot shorten the window (\`challenge_window_not_elapsed\`) or clear its own veto (\`vetoed\`). Reversible actions run with no delay. See \`examples/deliberation_demo.py\` and the [deliberation demo](/demos/#deliberation).
+
+## Executable Caveats
+
+\`vouch.caveats\` attaches live conditions to a delegation link ("only for shipped orders", "under the lifetime spend", "business hours"). Caveats accumulate down the chain and cannot be dropped by a descendant (the verifier requires the chain to root at the grantor, else \`unrooted_capability\`), and every verifier must evaluate every accumulated caveat. A standard caveat library evaluates identically across languages; a custom module-hash caveat is the escape hatch. See \`examples/caveats_demo.py\` and the [caveats demo](/demos/#caveats).
+
+## Inference Provenance
+
+\`vouch.provenance\` binds an output to a fingerprint of the model weights and a Merkle root over the retrieved context, plus the sampler settings. An auditor re-fetches the sources to reproduce the context root (\`context_root_mismatch\` on a substituted context) and re-runs the model on the same seed to byte-compare the output (\`output_mismatch\`, \`weights_mismatch\`). See \`examples/provenance_demo.py\` and the [provenance demo](/demos/#provenance).
+
+## Action Transparency
+
+\`vouch.transparency\` submits consequential actions to an append-only RFC 6962 Merkle log that signs its size and root as a Signed Tree Head. A verifier demands an inclusion proof that an action is in the log (\`inclusion_failed\`), and a monitor demands a consistency proof that an older tree head is a strict prefix of a newer one (\`consistency_failed\`, \`tree_shrank\`), so the log cannot omit or rewrite an action. See \`examples/transparency_demo.py\`.
+
+## How they compose
+
+None of these verify an agent's mind. Together they make harm hard to hide even for a misaligned agent: it must state a reason on the record, wait out a window a human can veto, stay inside an authority that cannot be broadened, against a decision that is reproducible, in front of a public append-only log.
+`,
+      },
+    ],
+  },
+
+  // =====================================================================
   // AI ASSISTANTS: walkthroughs for each surface
   // =====================================================================
   {
@@ -1946,6 +2231,51 @@ export VOUCH_SIDECAR_URL=http://localhost:8877
 \`\`\`
 
 The agent code does not change. What changes is the DID (production agents use a real did:web on your domain) and the key material (production loads from KMS).
+`,
+      },
+    ],
+  },
+  {
+    id: 'conformance',
+    title: 'Conformance',
+    description:
+      'Test whether an implementation, an SDK, fork, or port, produces byte-correct protocol output and supports the required feature sets, graded L1 to L3.',
+    articles: [
+      {
+        id: 'test-your-implementation',
+        title: 'Test your conformance level',
+        summary:
+          'Run the reference conformance runner against your implementation and read the highest level it passes.',
+        body: `
+## What conformance checks
+
+Conformance grades an implementation in three cumulative levels. A level is achieved only when every check at that level and all lower levels passes.
+
+- **L1 Credential**: RFC 8785 JCS canonicalization, \`eddsa-jcs-2022\` sign and verify, the validity window (an expired credential is rejected), and nonce replay resistance.
+- **L2 Structural-Security**: everything in L1, plus BitstringStatusList revocation, delegation narrowing with the five-link depth bound, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail.
+- **L3 State Verifiable plus Post-Quantum**: everything in L2, plus the hybrid dual-proof (\`eddsa-jcs-2022\` and \`mldsa44-jcs-2026\` over the same JCS bytes), the Heartbeat renewal chain, and an M-of-N validator quorum.
+
+Robotics is a separate profile, Robotics Conformant, not part of L1 to L3.
+
+## Run the self-test
+
+\`\`\`bash
+python -m vouch.conformance
+\`\`\`
+
+It runs the checks in-process against the SDK and prints a per-check pass or fail, then the highest fully-passing level:
+
+\`\`\`
+L1
+  [PASS] canonicalization: 13 vectors
+  [PASS] sign_verify: round-trip and tamper rejection
+  ...
+Highest fully-passing level: L3
+\`\`\`
+
+## The verified badge (coming)
+
+The self-test proves conformance to yourself. A hosted verifier is coming that issues fresh random challenges, re-checks every response server-side with the canonical core, and mints a signed \`VouchConformanceCredential\` unique to your implementation. Because it recomputes every expected answer, a pass cannot be faked by replaying the public test vectors, and anyone can re-verify Vouch's signature and re-run the challenges. Until it is live, the [conformance page](/conformance) carries a self-declaration and shows what a verified pass earns.
 `,
       },
     ],
@@ -2303,6 +2633,347 @@ ok, subject = safety_record.verify_safety_record(rec, authority_signer.public_ke
 \`\`\`
 
 Security boundary: \`verify_safety_log\` detects any altered or removed entry (the hash chain breaks). The record summary is anchored to the ledger head, so a summary that understates the log no longer matches its chain. \`verify_safety_record\` fails closed on a wrong type, an invalid proof, or a malformed summary.
+`,
+      },
+      {
+        id: 'robotics-perception',
+        title: 'Perception provenance',
+        summary: 'Sign what a robot sensor captured so it can prove what it saw and a substituted frame is detectable.',
+        body: `
+A \`PerceptionProvenanceCredential\` lets a robot prove what its sensors captured: the robot signs, at capture time, a record binding the frame's hash, the sensor, the modality, and the time to its DID.
+
+The problem it closes: a robot acts on what its sensors report, and that evidence is exactly what gets spoofed or disputed after the fact. Signing the frame's provenance at capture makes "this is what I saw" verifiable, and makes a substituted or edited frame detectable.
+
+How it works: \`hash_frame\` computes the multibase SHA-256 of the raw frame. A \`PerceptionLog\` hash-links each frame-provenance record into an append-only chain (the same chain the black box uses), so the sequence of perceived frames is tamper-evident. \`build_perception_attestation\` signs an attestation for a frame, optionally carrying the log head to anchor a whole segment. Only frame hashes are stored, never the raw frames.
+
+\`\`\`python
+from vouch.robotics import perception
+
+log = perception.PerceptionLog()
+entry = log.record(sensor_id="cam-front", modality="camera", frame=frame_bytes)
+att = perception.build_perception_attestation(robot_signer, robot_did=robot_did,
+    sensor_id="cam-front", modality="camera", frame_hash=entry["frameHash"],
+    log_head=log.head())
+ok, subject = perception.verify_perception_attestation(att, robot_signer.public_key(),
+    frame=frame_bytes)                                # recomputes and compares the hash
+\`\`\`
+
+Security boundary: \`verify_perception_attestation\` fails closed on a wrong type, an invalid proof, an unknown modality, or, when the frame is supplied, a hash that does not reproduce. \`verify_perception_log\` detects any altered or dropped frame in the chain. The open layer signs frame hashes in software, so it proves authorship and integrity of the recorded frame, not that the frame is a live hardware capture.
+`,
+      },
+      {
+        id: 'robotics-lease',
+        title: 'Offline delegation lease',
+        summary: 'A short-lived, scope-bounded grant a disconnected robot verifies and acts on with no network call.',
+        body: `
+A \`DelegationLeaseCredential\` is a self-contained grant of authority a robot can verify and act on entirely offline, for places with no connectivity.
+
+The problem it closes: a robot in a warehouse aisle, a field, or a tunnel cannot call home to check whether it is still allowed to do something. A lease bounds what it may physically do for a fixed, short window, and it carries everything needed to verify that, so the robot needs no network.
+
+How it works: \`build_delegation_lease\` issues a lease bounding a physical capability scope (force, speed, near-humans, zones) with a validFrom and a short validUntil. \`verify_delegation_lease\` checks the signature, that the window is current, and, when a parent scope is supplied, that the lease attenuates it. Leases nest, each sub-grant only narrowing the one above, which forms the open cross-vendor chain.
+
+\`\`\`python
+from vouch.robotics import build_delegation_lease, verify_delegation_lease, lease_permits, PhysicalAction
+
+lease = build_delegation_lease(authority_signer, robot_did=robot_did, lease_id="shift-42",
+    scope={"maxForceN": 80.0, "allowedZones": ["cell-3"]}, valid_seconds=3600)
+ok, subject = verify_delegation_lease(lease, authority_signer.public_key())   # offline
+allowed = lease_permits(subject, PhysicalAction(force_n=10.0, zone="cell-3"), lease)
+\`\`\`
+
+Security boundary: verification is fully offline. An expired or not-yet-valid lease fails. A sub-lease that widens any dimension of its parent (more force, a new zone, a wider window) is rejected by the attenuation check, so authority can only narrow down a chain, never grow.
+`,
+      },
+      {
+        id: 'robotics-quorum',
+        title: 'Physical quorum',
+        summary: 'A cryptographic two-person rule: M of N attested approvers must sign off before a high-consequence action.',
+        body: `
+A physical quorum requires several independent approvals before a robot performs a high-consequence action, such as applying large force near a person or an irreversible move.
+
+The problem it closes: some actions are serious enough that no single authority should be able to order them alone. A quorum makes the two-person rule cryptographic rather than procedural.
+
+How it works: each approver signs a \`PhysicalActionApprovalCredential\` over the same action id and robot. \`verify_action_authorization\` counts the DISTINCT valid approvers from an attested approver set and authorizes the action only when at least the threshold number have approved.
+
+\`\`\`python
+from vouch.robotics import build_action_approval, verify_action_authorization
+
+approvals = [build_action_approval(a, action_id="weld-7", robot_did=robot_did) for a in approvers]
+authorized, who = verify_action_authorization(approvals, action_id="weld-7", robot_did=robot_did,
+    approver_keys=approver_public_keys, threshold=2)
+\`\`\`
+
+Security boundary: only distinct approvers from the attested set count, so one approver cannot reach the threshold by signing twice. Approvals for a different action or robot, from outside the approver set, with an invalid proof, out of date, or carrying a reject decision are all ignored.
+`,
+      },
+      {
+        id: 'robotics-lifecycle',
+        title: 'Lifecycle and decommissioning',
+        summary: 'Cryptographically accountable ownership transfer, key rotation, and retirement for a robot over its whole life.',
+        body: `
+A robot is commissioned, resold, repurposed, and eventually scrapped. This makes each of those transitions verifiable: a chain of custody, a key history, and an end-of-life record.
+
+The problem it closes: a robot outlives its first owner, and today there is no cryptographic way to prove who owns it now, which keys it has used, or that it was properly retired.
+
+How it works: \`build_ownership_transfer\` lets the current owner hand the robot to a new owner, and linking each transfer forms a chain that \`verify_custody_chain\` walks. \`build_key_rotation\` lets the current key authorize a successor, forming a key history (\`verify_key_history\`). \`build_decommission\` retires the robot, after which a verifier should refuse to trust it.
+
+\`\`\`python
+from vouch.robotics import build_ownership_transfer, build_key_rotation, build_decommission
+
+transfer = build_ownership_transfer(seller_signer, robot_did=robot, to_owner=buyer_did)
+rotation = build_key_rotation(robot_signer, robot_did=robot, new_key_multibase=new_key)
+retired  = build_decommission(authority_signer, robot_did=robot, reason="end of service life",
+                              final_disposition="recycled")
+\`\`\`
+
+Security boundary: a transfer verifies only when its issuer is the current owner, so no one but the owner can hand the robot on. A key rotation must be signed by the key it rotates from, so the chain of trust is unbroken. A decommission can be restricted to an attested authority set. The open layer records these as plain signed credentials; a verifier decides how strictly to enforce them.
+`,
+      },
+      {
+        id: 'robotics-conformance',
+        title: 'Regulatory conformance',
+        summary: 'Map a robot credentials to safety and AI regulations, check coverage, and sign an attestation an auditor can consume.',
+        body: `
+A conformance profile is a machine-checkable mapping from a robot's Vouch credentials to the clauses of a public safety or AI regulation. Instead of a static certificate on paper, conformance becomes something a verifier can check from the credentials the robot actually holds.
+
+The problem it closes: regulators and operators need to know a robot meets ISO 10218, ISO/TS 15066, the EU Machinery Regulation, the EU AI Act, or UL 3300, and today that lives in documents no machine can check.
+
+How it works: \`check_conformance(credentials, profile_id)\` walks the named profile and reports, for each requirement, whether the presented credentials satisfy it, citing the clause. An assessing party then signs an attestation over that report.
+
+\`\`\`python
+from vouch.robotics import check_conformance, build_conformance_attestation
+
+report = check_conformance([identity, provenance, scope, safety_record], "eu-ai-act-high-risk")
+print(report["conforms"], report["satisfiedCount"], "/", report["totalCount"])
+
+attestation = build_conformance_attestation(assessor_signer, robot_did=robot, report=report)
+\`\`\`
+
+Built-in reference profiles: \`iso-10218\`, \`iso-ts-15066\`, \`eu-machinery-2023-1230\`, \`eu-ai-act-high-risk\`, and \`ul-3300\`.
+
+Security boundary: the report is deterministic, so any language reproduces it from the same credentials. The attestation embeds the report and binds it by digest, so \`verify_conformance_attestation\` rejects a report that was altered after signing. The profiles are a reference crosswalk, not legal advice; a deployment confirms each mapping against the current regulation text for its market.
+`,
+      },
+      {
+        id: 'robotics-pq',
+        title: 'Post-quantum signing',
+        summary: 'Sign robot credentials with a hybrid classical and post-quantum signature so they stay unforgeable across a robot decade-long life.',
+        body: `
+A robot fielded today runs for ten to twenty years, longer than classical Ed25519 is expected to stay safe. This signs robot credentials with the hybrid post-quantum cryptosuite so a robot identity signed now cannot be forged once a quantum computer arrives.
+
+The problem it closes: a long-lived robot signed with a classical-only key could have its identity forged decades into its service life, when the classical signature no longer holds.
+
+How it works: \`sign_pq\` attaches a hybrid proof, a classical Ed25519 signature alongside an ML-DSA-44 post-quantum signature, under \`hybrid-eddsa-mldsa44-jcs-2026\`. \`verify_robot_credential\` verifies a robot credential whether it carries a classical or a hybrid proof, detected from the credential, so a fleet moves to post-quantum gradually. \`migrate_to_pq\` re-signs a fielded robot's classical credential under a post-quantum key.
+
+\`\`\`python
+from vouch.robotics import sign_pq, verify_robot_credential, mint_robot_identity
+
+identity = sign_pq(mint_robot_identity(robot, root, make="Acme", model="AR-7", serial="SN-1"), robot)
+ok = verify_robot_credential(identity, robot_ed25519_public_key,
+                             mldsa44_public_key=robot.public_key_mldsa44_multikey())
+\`\`\`
+
+Security boundary: a hybrid credential passes only when both the classical and the post-quantum signature validate, so it is at least as strong as the classical signature and stays safe once classical signatures do not. Verifying a hybrid credential needs the ML-DSA-44 public key. The open layer is software signing, backward-compatible verification, and a software re-sign migration; managed post-quantum key custody and fleet migration are commercial.
+`,
+      },
+      {
+        id: 'robotics-wrapper-sdks',
+        title: 'Robotics from the C, C++, .NET, JVM, and Swift SDKs',
+        summary: 'Verify and integrate robot credentials from the wrapper SDKs through a curated VouchRobotics surface over the same Rust core.',
+        body: `
+The reference SDKs (Python, TypeScript, Go, and the Rust core) carry the full robotics surface. The C, C++, .NET, JVM (Java and Kotlin), and Swift wrappers expose a curated consumer surface over the same core, the same way they expose the agent operations, so an application in those languages can verify and integrate robot credentials without leaving its stack.
+
+The curated surface: \`verify_robot_credential\` (verify a classical or a hybrid post-quantum proof, auto-detected), \`mint_identity\` and \`verify_identity\`, \`check_conformance\` with \`build_conformance_attestation\` and \`verify_conformance_attestation\`, \`verify_passport\`, \`check_action\`, and \`sign_pq\`. In .NET, JVM, and Swift these are a \`VouchRobotics\` class; in C++ a \`vouch::robotics\` namespace.
+
+\`\`\`csharp
+using VouchProtocol.Core;
+
+bool ok = VouchRobotics.VerifyRobotCredential(credentialJson, ed25519PublicB64);
+string report = VouchRobotics.CheckConformance(credentialsJson, "eu-ai-act-high-risk");
+\`\`\`
+
+Output is byte-identical to the reference SDKs, so a robot credential produced in one language verifies in every other. The producer-side operations (handshakes, the black box, physical quorum, the liveness heartbeat) stay in the reference SDKs; a wrapper application that needs one of those calls a reference SDK or a service built on it.
+`,
+      },
+      {
+        id: 'robotics-embodiment',
+        title: 'Cross-embodiment identity continuity',
+        summary: 'Let one accountable AI agent move between robot bodies with a verifiable continuity chain, and detect a fork if it is ever in two bodies at once.',
+        body: `
+An AI agent, a mind with its own Vouch identity, can run on one robot body today and a different body tomorrow. This makes that continuous and accountable.
+
+The problem it closes: as agent minds get decoupled from bodies, there is no cryptographic way to prove that the accountable agent on body B is the same one that was on body A, or to stop the same mind running on two bodies at once.
+
+How it works: \`build_embodiment\` binds the agent to a body and that body's hardware root for a period, signed by the agent's own key. Each embodiment names the body it left (\`fromBody\`), so \`verify_continuity_chain\` walks the links, confirms every one is signed by the same agent key, and returns the current body. \`check_no_fork\` confirms no two embodiments place the agent in different bodies with overlapping active windows. It is the inverse of the ownership custody chain: there one body passes between owners, here one mind passes between bodies.
+
+\`\`\`python
+from vouch.robotics import build_embodiment, verify_continuity_chain, check_no_fork
+
+a = build_embodiment(agent, agent_did=agent_did, body_did="body-a", body_hardware_root="uA", valid_seconds=3600)
+b = build_embodiment(agent, agent_did=agent_did, body_did="body-b", body_hardware_root="uB", from_body="body-a")
+ok, current_body = verify_continuity_chain([a, b], agent_public_key)
+no_fork, _ = check_no_fork([a, b])
+\`\`\`
+
+Security boundary: the whole chain is signed by one persistent agent key, so a link signed by any other key breaks the continuity, and re-binding to each body's hardware root ties the mind to real hardware at each step. This is the open layer, signed credentials and software verification; managed key custody and fleet migration are commercial.
+`,
+      },
+      {
+        id: 'robotics-custody',
+        title: 'Physical custody handoff',
+        summary: 'Trace a task or object as it passes between human and robot actors, and localize damage to the hop responsible.',
+        body: `
+A physical task or object passes across a chain of actors, human and robot: a person picks an item, hands it to a robot, that robot hands it to another robot. This makes each handoff accountable.
+
+The problem it closes: when a shared physical workflow crosses people and machines, an incident (a lost tote, a damaged item, a mis-delivery) has no cryptographic way to point at the exact hop and actor responsible.
+
+How it works: \`build_handoff\` records that a receiving actor accepted custody of a task from a releasing actor, signed by the receiver, so the party taking responsibility signs for it. Each receiver becomes the next releaser, so \`verify_handoff_chain\` walks the chain and \`holder_at\` returns who held the task at a given time. A condition attested at each handoff lets \`locate_condition_change\` name the hop where a physical state change happened.
+
+\`\`\`python
+from vouch.robotics import build_handoff, verify_handoff_chain, holder_at, locate_condition_change
+
+h1 = build_handoff(robot_a, task_id="tote-42", from_actor=picker_did, to_actor=robot_a_did, condition="intact")
+h2 = build_handoff(robot_b, task_id="tote-42", from_actor=robot_a_did, to_actor=robot_b_did, condition="damaged")
+ok, current_holder = verify_handoff_chain([h1, h2], {robot_a_did: a_key, robot_b_did: b_key})
+change = locate_condition_change([h1, h2])   # responsible holder is robot A
+\`\`\`
+
+Security boundary: each handoff is signed by the receiver, so an actor attests its own acceptance of custody, and the chain is only valid when each receiver is the next releaser. This is the open layer of signed credentials and software verification; managed logistics custody orchestration and fleet tracking are commercial.
+`,
+      },
+      {
+        id: 'robotics-access',
+        title: 'Infrastructure access',
+        summary: 'Give a robot bounded, revocable, offline-verifiable access to physical infrastructure like doors, elevators, and chargers.',
+        body: `
+A robot in a warehouse, hospital, or building needs to open doors, call elevators, dock at chargers, and operate machines. This gives it a bounded, revocable, auditable way to do so.
+
+The problem it closes: physical access today is a shared credential (a badge, a key, a fixed code) that cannot be scoped to one robot, one resource, and one time window, and leaves no attributable record of who did what.
+
+How it works: the operator signs an \`InfrastructureAccessGrant\` with \`build_access_grant\`, naming the resource, the permitted operations, an optional zone, and a time window. The robot signs an \`InfrastructureAccessRequest\` for one operation with \`build_access_request\`. The resource runs \`authorize_access\` offline and allows the operation only when the grant verifies under the operator key and is in window, the request verifies under the robot key, the grant and request name the same robot and resource, and the operation is permitted. \`attenuates_grant\` confirms a sub-grant only narrows what it inherits.
+
+\`\`\`python
+from vouch.robotics import build_access_grant, build_access_request, authorize_access
+
+grant = build_access_grant(operator, robot_did=robot_did, resource="door-3", operations=["open", "close"], zone="cell-3", valid_seconds=3600)
+request = build_access_request(robot, robot_did=robot_did, resource="door-3", operation="open")
+result = authorize_access(grant, request, operator_key, robot_key)   # result.ok is True
+\`\`\`
+
+Security boundary: the grant is signed by the operator and the request by the robot, so the pair is a tamper-evident, attributable record and the decision is made offline at the resource. This is the open layer of signed grants and requests, offline authorization, and shrink-only attenuation; hardware-enforced actuation at the resource and managed fleet access-policy orchestration are commercial.
+`,
+      },
+      {
+        id: 'robotics-fusion',
+        title: 'Fused-sensor provenance',
+        summary: 'Bind a robot\'s fused world model to the exact sensor frames that produced it, so a manipulated fusion result or a dropped input is detectable.',
+        body: `
+A robot rarely acts on a single frame. It fuses camera, lidar, and radar into one world model, an object set, an occupancy grid, or a pose, and acts on that. This binds the fused output to the exact inputs that produced it.
+
+The problem it closes: perception provenance signs individual frames, but the thing a robot acts on is the fusion of many frames. A manipulated fusion result, or a fused output that quietly dropped or swapped an input, has no signed record tying the output back to its true inputs.
+
+How it works: \`build_fused_attestation\` signs a \`FusedPerceptionAttestation\` binding the fused output's hash to the ordered list of input frame hashes, a digest over those inputs, and a fusion method identifier. \`verify_fused_attestation\` checks the proof and reproduces the input digest, so the attestation commits to exactly those inputs and that output. \`verify_fusion_inputs\` checks each named input against the robot's signed perception log and returns any that were never recorded.
+
+\`\`\`python
+from vouch.robotics import build_fused_attestation, verify_fused_attestation, verify_fusion_inputs, hash_frame
+
+inputs = [hash_frame(cam), hash_frame(lidar), hash_frame(radar)]
+att = build_fused_attestation(robot, robot_did=robot_did, fusion_method="occupancy-grid-v1", input_frame_hashes=inputs, fused_output=world_model)
+ok, subject = verify_fused_attestation(att, robot_key, fused_output=world_model)
+inputs_ok, missing = verify_fusion_inputs(att, perception_log.entries())
+\`\`\`
+
+Security boundary: the robot signs the binding of a fused output to its inputs, and the input digest makes the set of inputs tamper-evident. This is the open layer of software-signed provenance reusing the perception frame hashes; hardware sensor attestation and managed sensor-fusion orchestration are commercial.
+`,
+      },
+      {
+        id: 'robotics-wear',
+        title: 'Wear and degradation',
+        summary: 'A robot signs its own wear over time and automatically narrows its capability envelope as it degrades.',
+        body: `
+A robot does not stay as capable as it left the factory: actuators wear, joints develop backlash, sensors drift out of calibration, and error rates creep up. This lets a robot attest its own degradation and operate inside a tighter envelope as it ages.
+
+The problem it closes: a robot's physical limits are usually the static caps it shipped with, and there is no signed, verifiable link between how worn a robot is and how much it is still allowed to do.
+
+How it works: \`build_wear_attestation\` signs a \`RobotWearAttestation\` carrying a normalized wear level (0 for as-new, 1 for fully worn) and optional metrics, bound to the robot's identity. Each attestation links to the previous one by its proof, so \`verify_wear_chain\` walks a tamper-evident wear history. \`attenuate_for_wear\` derives a physical scope whose force and speed caps are scaled down by the wear level, and the result is a valid attenuation of the original.
+
+\`\`\`python
+from vouch.robotics import build_wear_attestation, verify_wear_chain, attenuate_for_wear
+
+w1 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.1)
+w2 = build_wear_attestation(robot, robot_did=robot_did, wear_level=0.3, prev_proof=w1["proof"]["proofValue"])
+ok, latest = verify_wear_chain([w1, w2], robot_key)
+narrowed = attenuate_for_wear(full_scope, latest["wearLevel"])   # caps scaled to 0.7 of original
+\`\`\`
+
+Security boundary: the robot signs its wear state and derives the narrowed scope credential in software. Firmware-level enforcement of the narrowed envelope and managed predictive-maintenance modeling are commercial.
+`,
+      },
+      {
+        id: 'robotics-consent',
+        title: 'Bystander consent',
+        summary: 'A robot records a privacy-preserving, verifiable basis for capturing people, with bystander consent bound to the one capture it was given for.',
+        body: `
+A robot in a shared or public space captures people incidentally through its cameras and microphones. This lets it record why a capture was permitted, bound to the capture and to its own identity, holding only hashes and never anyone's identifying data.
+
+The problem it closes: a robot that records people has no verifiable, privacy-preserving way to show the basis it acted on, and a plain consent record can be reused to justify footage the person never agreed to.
+
+How it works: \`build_consent_token\` has a bystander sign over the hash of one capture and the robot's DID, so \`verify_consent_token\` accepts it only for that capture and that robot and it cannot be replayed. \`build_consent_evidence\` has the robot bind the capture hash to a consent basis (explicit-consent, posted-notice, legitimate-interest, or redacted), and for explicit consent it commits to the covering tokens by their proof value. \`verify_consent_evidence\` checks the robot's proof, the basis, and, when given the raw capture, that its hash matches.
+
+\`\`\`python
+from vouch.robotics import hash_capture, build_consent_token, build_consent_evidence, verify_consent_evidence
+
+ch = hash_capture(frame)
+token = build_consent_token(person, bystander_did=person_did, capture_hash=ch, robot_did=robot_did, valid_seconds=3600)
+ev = build_consent_evidence(robot, robot_did=robot_did, capture_hash=ch, basis="explicit-consent", consent_tokens=[token])
+ok, subject = verify_consent_evidence(ev, robot_key, capture=frame, consent_tokens=[token], bystander_keys={person_did: person_key})
+\`\`\`
+
+Security boundary: the open layer is the cryptographic binding of a consent basis to a capture and its verification, holding only hashes. On-device biometric detection and redaction, and managed consent-registry orchestration, are commercial.
+`,
+      },
+    ],
+  },
+  {
+    id: 'community',
+    title: 'Community',
+    description: 'Contribute to the protocol and earn a signed Vouch Verified Contributor credential.',
+    articles: [
+      {
+        id: 'verified-contributor',
+        title: 'Become a Vouch Verified Contributor',
+        summary: 'Land a merged pull request and receive a real, signed Verified Contributor credential, published to a certificate page and the contributors list.',
+        body: `
+## What it is
+
+When you land a merged pull request on the [repository](https://github.com/vouch-protocol/vouch), an automated workflow mints a **Vouch Verified Contributor** credential for you. It is a real Verifiable Credential, not a decorative image: the project signs it with its own protocol.
+
+## What you receive
+
+- A certificate page at \`vouch-protocol.com/c/<your-handle>/<pr>\`.
+- A listing on the [contributors page](https://vouch-protocol.com/contributors).
+- A comment on your pull request with the badge, a copy-paste snippet, and the full credential inline.
+
+## The credential
+
+- Signed with the \`eddsa-jcs-2022\` cryptosuite, the same default format every Vouch SDK produces.
+- Issued by \`did:web:vouch-protocol.com:contributors\`, chained back to the project root identity \`did:web:vouch-protocol.com\`.
+- The subject is the author of the merged commits, so credit stays correct even when a maintainer relays a contribution for someone else.
+
+## Verify it
+
+Because it is a normal Vouch credential, anyone can verify it with the SDK or the hosted verifier:
+
+\`\`\`python
+from vouch import Verifier
+
+is_valid, passport = Verifier.verify_credential(credential, public_key=issuer_public_jwk)
+print(is_valid, passport.subject_did)
+\`\`\`
+
+## Getting started
+
+New to the project? Pick up a [good first issue](https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). The badge is offered, never required.
 `,
       },
     ],

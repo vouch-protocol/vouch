@@ -1,0 +1,3 @@
+# Native libraries are built per runtime identifier in CI, not committed.
+# Keep this file and NATIVE_LIBS.txt; ignore the built <rid>/ directories.
+*/

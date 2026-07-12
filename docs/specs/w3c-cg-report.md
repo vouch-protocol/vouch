@@ -78,11 +78,12 @@ Transition pathways under consideration include the W3C Verifiable Credentials W
 15. [State Verifiability (Informative)](#15-state-verifiability-informative)
 16. [Implementer Interest and Charter Sponsors](#16-implementer-interest-and-charter-sponsors)
 17. [Conformance Levels](#17-conformance-levels)
-18. [Acknowledgements](#18-acknowledgements)
-19. [Appendix A: Relationship to Existing Standards](#appendix-a-relationship-to-existing-standards)
-20. [Appendix B: IANA Considerations](#appendix-b-iana-considerations)
-21. [Appendix C: Test Vectors](#appendix-c-test-vectors)
-22. [References](#references)
+18. [Root of Trust for Machine Identity](#18-root-of-trust-for-machine-identity)
+19. [Acknowledgements](#19-acknowledgements)
+20. [Appendix A: Relationship to Existing Standards](#appendix-a-relationship-to-existing-standards)
+21. [Appendix B: IANA Considerations](#appendix-b-iana-considerations)
+22. [Appendix C: Test Vectors](#appendix-c-test-vectors)
+23. [References](#references)
 
 ---
 
@@ -938,8 +939,8 @@ The verifier policy is local to the verifier and is not embedded in the credenti
 
 The conformance level of the dual-proof profile is expected to evolve in step with external post-quantum migration milestones (NIST CNSA 2.0 phased adoption, NSM-10 obligations, CNSSP-15 timelines), rather than fixed Vouch-internal dates:
 
-- **This revision:** `eddsa-jcs-2022` is the default conformance cryptosuite. Pairing it with an additional `mldsa44-jcs-2026` Data Integrity proof on the same credential is OPTIONAL (MAY).
-- **As CNSA 2.0 phase-in advances and regulator guidance matures:** the dual-proof profile is expected to be RECOMMENDED (SHOULD) for deployments in regulated sectors.
+- **This revision:** `eddsa-jcs-2022` is the default conformance cryptosuite. Pairing it with an additional `mldsa44-jcs-2026` Data Integrity proof on the same credential is RECOMMENDED (SHOULD) for deployments in regulated sectors and for credentials whose verification lifetime extends beyond applicable classical-signature deprecation horizons. It remains OPTIONAL (MAY) for other deployments.
+- **Basis for the current level:** the external milestones this ladder is indexed to have begun to materialize. United States Executive Order 14412 (June 22, 2026) sets December 31, 2031 as the deadline for post-quantum digital signatures on federal high-impact systems, and its implementing guidance (OMB M-26-15, June 2026) endorses hybrid classical-plus-post-quantum architectures and crypto-agility. The EU coordinated post-quantum roadmap calls for national transition roadmaps and pilots by December 31, 2026. The W3C Verifiable Credentials Working Group published the First Public Working Draft of Quantum-Resistant Cryptosuites v1.0 on June 16, 2026, standardizing ML-DSA-44 Data Integrity cryptosuites compatible with the proof-set approach used here.
 - **As classical-only signatures reach end-of-life under those policies:** a dual-proof or pure-PQ profile is expected to be REQUIRED (MUST) for new deployments.
 
 Implementers operating in regulated sectors are advised to align dual-proof adoption with the post-quantum migration schedule applicable to them.
@@ -1199,7 +1200,122 @@ The deployment SHOULD re-validate against the cross-language test vector suite o
 
 ---
 
-## 18. Acknowledgements
+## 18. Root of Trust for Machine Identity
+
+The Vouch Credential format (Section 5) is self-issued: the agent is both the `issuer` and the `credentialSubject`, so a signature proves control of a key and, through the DID method (Section 6), binds that key to a domain or to the key itself. This section defines an OPTIONAL authority layer that lets a verifier anchor an agent's identity to a single trust root without an external certificate authority and without a central per-agent lookup. A verifier that has pinned one root DID can then verify any agent offline by walking a short credential chain.
+
+The model is federated. A root recognizes issuers, and each recognized issuer attests the identity of its own agents or robots. The root does not enumerate agents, and verification requires no network call beyond resolving the DIDs in the chain, which for `did:key` is performed in process.
+
+### 18.1 Trust-Layer Credential Types
+
+Three credential types compose the authority layer. Each is a Verifiable Credential secured with an `eddsa-jcs-2022` Data Integrity proof (Section 7). A trust-layer credential MUST carry exactly one of the three type values defined below in addition to `VerifiableCredential`. A credential that carries two or more of these types MUST be rejected, so that one signed object cannot be presented in a different position in the chain.
+
+#### 18.1.1 Root of Trust Credential
+
+A `VouchRootOfTrust` credential is self-issued by the root.
+
+- `issuer` MUST equal `credentialSubject.id`, and both MUST be the root DID.
+- `credentialSubject.rootOfTrust.name` is a human-readable name for the root.
+- `credentialSubject.rootOfTrust.scope` is an array naming what the root anchors, for example `"ai-agent"` or `"robot"`.
+
+The Root of Trust credential is descriptive. A verifier anchors trust by pinning the root DID out of band (Section 18.3); the credential lets the root describe itself and lets a verifier confirm the root is self-issued.
+
+```json
+{
+  "@context": ["https://www.w3.org/ns/credentials/v2", "https://vouch-protocol.com/contexts/v1"],
+  "type": ["VerifiableCredential", "VouchRootOfTrust"],
+  "issuer": "did:web:root.example",
+  "validFrom": "2026-01-01T00:00:00Z",
+  "validUntil": "2126-01-01T00:00:00Z",
+  "credentialSubject": {
+    "id": "did:web:root.example",
+    "vouchVersion": "1.0",
+    "rootOfTrust": { "name": "Example Machine Identity Root", "scope": ["ai-agent", "robot"] }
+  }
+}
+```
+
+#### 18.1.2 Recognized Issuer Credential
+
+A `RecognizedIssuerCredential` is issued by the root to authorize an issuer.
+
+- `issuer` MUST be the root DID.
+- `credentialSubject.id` MUST be the DID of the recognized issuer.
+- `credentialSubject.recognizedActions` MUST be an array of action identifiers the issuer is permitted to perform. This specification defines `issueAgentIdentity` and `issueRobotIdentity`.
+- `credentialSubject.recognizedIn` SHOULD reference the root DID, chaining the recognition to its anchor.
+
+A holder presents this credential alongside the identity it supports, so the verifier does not contact the root at verification time.
+
+```json
+{
+  "@context": ["https://www.w3.org/ns/credentials/v2", "https://vouch-protocol.com/contexts/v1"],
+  "type": ["VerifiableCredential", "RecognizedIssuerCredential"],
+  "issuer": "did:web:root.example",
+  "validFrom": "2026-01-01T00:00:00Z",
+  "validUntil": "2027-01-01T00:00:00Z",
+  "credentialSubject": {
+    "id": "did:web:issuer.example",
+    "recognizedActions": ["issueAgentIdentity"],
+    "recognizedIn": "did:web:root.example"
+  }
+}
+```
+
+#### 18.1.3 Agent Identity Credential
+
+An `AgentIdentityCredential` is issued by a recognized issuer to bind an agent's key to real attributes. Here the `issuer` and the `credentialSubject` differ.
+
+- `issuer` MUST be the DID of a recognized issuer.
+- `credentialSubject.id` MUST be the DID of the agent or robot the credential describes, and MUST NOT equal `issuer`.
+- `credentialSubject.identity` is an object of attributes bound to the subject, for example `owner`, `model`, `capabilityClass`, and `createdAt`. For a robot, it MAY reference a hardware-rooted key.
+
+```json
+{
+  "@context": ["https://www.w3.org/ns/credentials/v2", "https://vouch-protocol.com/contexts/v1"],
+  "type": ["VerifiableCredential", "AgentIdentityCredential"],
+  "issuer": "did:web:issuer.example",
+  "validFrom": "2026-01-01T00:00:00Z",
+  "validUntil": "2027-01-01T00:00:00Z",
+  "credentialSubject": {
+    "id": "did:web:agent.example",
+    "identity": { "owner": "Example Corp", "model": "example-model", "capabilityClass": "shopping" }
+  }
+}
+```
+
+### 18.2 Verification Algorithm
+
+A verifier is given an Agent Identity Credential, its Recognized Issuer Credential, and a pinned trusted root DID. It MAY also be given the agent's action credential (Section 5) and the Root of Trust credential. The verifier MUST perform the following checks and MUST reject the identity if any check fails:
+
+1. Verify the Recognized Issuer Credential's Data Integrity proof (Section 8), resolving the public key from its `issuer` DID. The proof's `proofPurpose` MUST be `assertionMethod` and the `verificationMethod` MUST belong to the `issuer`.
+2. The Recognized Issuer Credential's `issuer` MUST equal the pinned trusted root DID.
+3. The required action, `issueAgentIdentity` by default, MUST appear in `credentialSubject.recognizedActions`, which MUST be an array.
+4. Verify the Agent Identity Credential's proof, resolving the public key from its `issuer` DID, with the same proof-purpose and verification-method checks.
+5. The Agent Identity Credential's `issuer` MUST equal the `credentialSubject.id` of the Recognized Issuer Credential.
+6. If a Root of Trust credential is supplied, it MUST verify, MUST be self-issued, and its subject MUST equal the pinned trusted root DID.
+7. If an action credential is supplied, it MUST verify (Section 8) and its issuer MUST equal the Agent Identity Credential's `credentialSubject.id`.
+
+Each credential MUST be within its validity window (Section 5) at verification time. Because the Recognized Issuer Credential is re-checked on every verification, an Agent Identity Credential is honored only while the recognition that authorized its issuer remains valid.
+
+A verifier MUST return a structured reason on failure so that callers can distinguish, for example, an issuer that is not recognized by the pinned root from an identity that was not issued by the recognized issuer.
+
+### 18.3 Trust Anchor and Offline Operation
+
+The pinned root DID is the single trust decision a verifier makes in advance. It MAY be obtained by direct configuration, by resolving a well-known `did:web` root, or from a trust list. All subsequent checks follow cryptographically from that anchor.
+
+When every DID in the chain is a `did:key`, verification is fully offline, because each key is derived from its identifier (Section 6.1.2). A `did:web` DID in the chain requires HTTPS resolution and inherits the trust of that domain.
+
+### 18.4 Revocation
+
+A Recognized Issuer Credential or an Agent Identity Credential MAY carry a `credentialStatus` entry referencing a BitstringStatusList (Section 11). A verifier that enforces revocation MUST reject a credential whose status is revoked. A root revokes an issuer by revoking that issuer's Recognized Issuer Credential, which withdraws the authority behind every identity that issuer attested.
+
+### 18.5 Conformance
+
+Support for the Root of Trust for Machine Identity is OPTIONAL. An implementation that claims support MUST implement the verification algorithm in Section 18.2 and MUST pass the interoperability vector published at `test-vectors/root-of-trust/vector.json` (Appendix C).
+
+---
+
+## 19. Acknowledgements
 
 The editor thanks the following individuals and organizations for review, feedback, and adjacent contributions to the agent identity ecosystem:
 
@@ -1281,6 +1397,7 @@ Test vectors are published in the companion repository at `https://github.com/vo
 - **C.4 Delegation chain vectors**: Linear chains of depth 1, 3, and 5 with valid and invalid resource-narrowing examples.
 - **C.5 Heartbeat sequence vectors**: Sample heartbeat request/response pairs with canary reveal/commitment chains.
 - **C.6 Dual-proof post-quantum vectors**: Reference credentials carrying two independent Data Integrity proofs (one `eddsa-jcs-2022`, one `mldsa44-jcs-2026`) over the same JCS-canonicalized bytes, published at `test-vectors/hybrid-eddsa-mldsa44/vector.json` with deterministic generation parameters and cross-implementation interop tests in Python, TypeScript, and Go.
+- **C.7 Root of Trust vectors**: The three authority-layer credential types (`VouchRootOfTrust`, `RecognizedIssuerCredential`, `AgentIdentityCredential`) built from fixed seeds and timestamps, published at `test-vectors/root-of-trust/vector.json`, with a chain that verifies an agent identity against a pinned root.
 
 Implementations claiming conformance MUST pass all test vectors in this revision. Cross-implementation interoperability testing is REQUIRED before an implementation may be listed in the Implementer Interest section.
 

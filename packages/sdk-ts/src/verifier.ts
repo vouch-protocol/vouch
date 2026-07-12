@@ -1,21 +1,9 @@
 /**
  * Vouch Protocol Verifier (TypeScript).
  *
- * Verifies both legacy JWS-format Vouch-Tokens and modern W3C Verifiable
- * Credentials with Data Integrity proofs (eddsa-jcs-2022).
- *
- * Two coexisting verification paths:
- *
- *   1. Legacy JWS: Verifier.verify(token, ...) and
- *    verifier.checkVouch(token). Operates on JWS Compact Serialization
- *    strings produced by Signer.sign().
- *
- *   2. W3C VC: Verifier.verifyCredential(credential, ...) and
- *    verifier.checkVouchCredential(credential). Operates on credential
- *    objects produced by Signer.signCredential() (Specification §8).
- *
- * Existing callers of the legacy methods continue to work unchanged. New
- * callers should prefer the credential methods.
+ * Verifies W3C Verifiable Credentials with Data Integrity proofs
+ * (eddsa-jcs-2022) via Verifier.verify(credential, ...) and
+ * verifier.checkVouchCredential(credential) (Specification §8).
  */
 
 import * as crypto from 'crypto';
@@ -38,15 +26,11 @@ import type {
 } from './vc';
 
 export class Verifier {
-  private trustedRoots: Map<string, jose.KeyLike | Uint8Array>;
   private trustedRootsRaw: Map<string, crypto.KeyObject>;
   private clockSkew: number;
-  private keyPromises: Map<string, Promise<jose.KeyLike | Uint8Array>>;
 
   constructor(config: VerifierConfig = {}) {
-    this.trustedRoots = new Map();
     this.trustedRootsRaw = new Map();
-    this.keyPromises = new Map();
     this.clockSkew = config.clockSkewSeconds ?? 30;
 
     if (config.trustedRoots) {
@@ -57,15 +41,12 @@ export class Verifier {
   }
 
   /**
-   * Add a trusted DID and its public key. Stores both the jose KeyLike
-   * (for legacy JWS verification) and a Node KeyObject (for Data Integrity
-   * verification).
+   * Add a trusted DID and its public key for Data Integrity verification.
    */
   addTrustedRoot(did: string, publicKey: string | JWKKey | Record<string, unknown>): void {
     const jwk =
       typeof publicKey === 'string' ? JSON.parse(publicKey) : publicKey;
 
-    this.keyPromises.set(did, jose.importJWK(jwk as jose.JWK, 'EdDSA'));
     this.trustedRootsRaw.set(
       did,
       crypto.createPublicKey({ key: jwk as crypto.JsonWebKey, format: 'jwk' })
@@ -73,125 +54,7 @@ export class Verifier {
   }
 
   // ------------------------------------------------------------------
-  // Legacy JWS path. Behavior preserved verbatim.
-  // ------------------------------------------------------------------
-
-  /**
-   * Verify a JWS-format token using trusted roots.
-   */
-  async checkVouch(token: string): Promise<VerificationResult> {
-    if (!token) {
-      return { isValid: false, passport: null, error: 'Empty token' };
-    }
-
-    try {
-      const payload = jose.decodeJwt(token) as jose.JWTPayload;
-      const issuer = payload.iss as string;
-      if (!issuer) {
-        return {
-          isValid: false,
-          passport: null,
-          error: 'No issuer in token',
-        };
-      }
-      const keyPromise = this.keyPromises.get(issuer);
-      if (!keyPromise) {
-        return {
-          isValid: false,
-          passport: null,
-          error: `Unknown issuer: ${issuer}`,
-        };
-      }
-      const publicKey = await keyPromise;
-      return await Verifier.verify(token, publicKey);
-    } catch (error) {
-      return {
-        isValid: false,
-        passport: null,
-        error: error instanceof Error ? error.message : 'Verification failed',
-      };
-    }
-  }
-
-  /**
-   * Static method to verify a JWS-format token with a public key.
-   */
-  static async verify(
-    token: string,
-    publicKey?: string | Record<string, unknown> | jose.KeyLike | Uint8Array
-  ): Promise<VerificationResult> {
-    if (!token) {
-      return { isValid: false, passport: null, error: 'Empty token' };
-    }
-
-    try {
-      let key: jose.KeyLike | Uint8Array | undefined;
-
-      if (publicKey) {
-        if (typeof publicKey === 'string') {
-          const jwk = JSON.parse(publicKey);
-          key = await jose.importJWK(jwk as jose.JWK, 'EdDSA');
-        } else if (
-          publicKey !== null &&
-          typeof publicKey === 'object' &&
-          'kty' in (publicKey as Record<string, unknown>)
-        ) {
-          key = await jose.importJWK(
-            publicKey as unknown as jose.JWK,
-            'EdDSA'
-          );
-        } else {
-          key = publicKey as jose.KeyLike | Uint8Array;
-        }
-      }
-
-      let payload: jose.JWTPayload;
-      if (key) {
-        const result = await jose.jwtVerify(token, key, {
-          clockTolerance: 30,
-        });
-        payload = result.payload;
-      } else {
-        payload = jose.decodeJwt(token);
-      }
-
-      const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && now > payload.exp + 30) {
-        return { isValid: false, passport: null, error: 'Token expired' };
-      }
-      if (payload.nbf && now < payload.nbf - 30) {
-        return {
-          isValid: false,
-          passport: null,
-          error: 'Token not yet valid',
-        };
-      }
-
-      const vouch = payload.vouch as
-        | { payload?: Record<string, unknown> }
-        | undefined;
-
-      const passport: Passport = {
-        sub: (payload.sub as string) || '',
-        iss: (payload.iss as string) || '',
-        iat: (payload.iat as number) || 0,
-        exp: (payload.exp as number) || 0,
-        jti: (payload.jti as string) || '',
-        payload: vouch?.payload || {},
-        rawClaims: payload as Record<string, unknown>,
-      };
-      return { isValid: true, passport };
-    } catch (error) {
-      return {
-        isValid: false,
-        passport: null,
-        error: error instanceof Error ? error.message : 'Verification failed',
-      };
-    }
-  }
-
-  // ------------------------------------------------------------------
-  // Modern path: VC + Data Integrity (eddsa-jcs-2022).
+  // Verify a VC + Data Integrity proof (eddsa-jcs-2022).
   // ------------------------------------------------------------------
 
   /**
@@ -204,7 +67,7 @@ export class Verifier {
    *          structural and temporal checks run.
    * @param clockSkewSeconds Allowed clock drift (default 30).
    */
-  static async verifyCredential(
+  static async verify(
     credential: VouchCredential | Record<string, unknown> | string,
     publicKey?: crypto.KeyObject | string | Record<string, unknown>,
     clockSkewSeconds: number = 30
@@ -324,10 +187,15 @@ export class Verifier {
     const passport: CredentialPassport = {
       sub: (subject.id as string) || '',
       iss: issuer,
+      issuer: issuer,
       validFrom: cred.validFrom as string,
       validUntil: cred.validUntil as string,
       credentialId: (cred.id as string) || '',
       intent: intent,
+      action: intent.action,
+      target: intent.target,
+      resource: intent.resource,
+      isExpired: validUntil.getTime() < Date.now(),
       reputationScore: repScore,
       delegationChain: chain,
       rawCredential: cred as unknown as VouchCredential,
@@ -377,7 +245,7 @@ export class Verifier {
         };
       }
 
-      return await Verifier.verifyCredential(
+      return await Verifier.verify(
         cred as unknown as VouchCredential,
         rawKey,
         this.clockSkew
@@ -391,6 +259,57 @@ export class Verifier {
       };
     }
   }
+}
+
+/**
+ * Verify a Vouch Credential in one line (the receiving-side counterpart to
+ * {@link sign}).
+ *
+ * With a `publicKey`, verifies offline against that key. Without one, the issuer
+ * key is resolved from a `did:key` issuer (self-certifying, offline). For
+ * `did:web` issuers, pass the public key or use a Verifier with trusted roots.
+ */
+export async function verify(
+  credential: VouchCredential | Record<string, unknown> | string,
+  publicKey?: crypto.KeyObject | string | Record<string, unknown>,
+  opts?: { clockSkewSeconds?: number }
+): Promise<CredentialVerificationResult> {
+  const skew = opts?.clockSkewSeconds ?? 30;
+  if (publicKey !== undefined) {
+    return Verifier.verify(credential, publicKey, skew);
+  }
+
+  let cred: Record<string, unknown>;
+  try {
+    cred =
+      typeof credential === 'string'
+        ? (JSON.parse(credential) as Record<string, unknown>)
+        : (credential as Record<string, unknown>);
+  } catch {
+    return { isValid: false, passport: null, error: 'Invalid credential JSON' };
+  }
+
+  const issuerField = cred.issuer;
+  const issuer =
+    typeof issuerField === 'string'
+      ? issuerField
+      : Array.isArray(issuerField)
+       ? (issuerField[0] as string) || ''
+       : '';
+
+  if (issuer.startsWith('did:key:')) {
+    // did:key is self-certifying: the multikey after the prefix is the key.
+    const multikey = issuer.slice('did:key:'.length);
+    return Verifier.verify(cred, multikey, skew);
+  }
+
+  return {
+    isValid: false,
+    passport: null,
+    error:
+      `Cannot resolve the issuer key for ${issuer || 'this credential'}; ` +
+      'pass a publicKey, or use a Verifier configured with trusted roots',
+  };
 }
 
 // ---------------------------------------------------------------------------

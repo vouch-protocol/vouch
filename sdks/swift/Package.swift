@@ -35,7 +35,11 @@ let package = Package(
         .testTarget(
             name: "VouchCoreTests",
             dependencies: ["VouchCore"],
-            path: "Tests/VouchCoreTests"
+            path: "Tests/VouchCoreTests",
+            // The shared cross-language robotics interop fixture, bundled so the
+            // curated-robotics interop tests load it via Bundle.module. The file
+            // is a symlink to the canonical test-vectors/robotics/vector.json.
+            resources: [.process("Resources/vector.json")]
         ),
     ]
 )

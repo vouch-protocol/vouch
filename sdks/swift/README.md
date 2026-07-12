@@ -11,6 +11,7 @@ and .NET SDKs. Apache-2.0.
 - Data Integrity proofs (`eddsa-jcs-2022`): sign + verify, with validity-window checks
 - Post-quantum: ML-DSA-44 and dual proofs (Ed25519 + ML-DSA), plus composite verify
 - BitstringStatusList revocation checks
+- Robotics (`VouchRobotics`): verify a robot credential (classical or hybrid post-quantum, auto-detected), mint and verify identity, regulatory conformance, passport, and physical action checks
 
 ## Build
 
@@ -44,13 +45,13 @@ rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
 import VouchCore
 
 let kp = try Vouch.generateEd25519()
-let signed = try Vouch.signCredential(
+let signed = try Vouch.sign(
     credentialJson,
     seed: kp.seed,
     verificationMethod: kp.didKey + "#key-1",
     created: "2026-04-26T10:00:00Z"
 )
-let result = try Vouch.verifyCredential(signed, publicKey: kp.publicKey, now: isoNow)
+let result = try Vouch.verify(signed, publicKey: kp.publicKey, now: isoNow)
 // result.valid, result.proofValid, result.timeValid
 ```
 

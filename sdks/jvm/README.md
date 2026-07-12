@@ -17,6 +17,7 @@ Two entry points over the same native core:
 - Data Integrity proofs (`eddsa-jcs-2022`): sign + verify, with validity-window checks
 - Post-quantum dual-proof and composite verification
 - BitstringStatusList revocation checks
+- Robotics (`VouchRobotics`): verify a robot credential (classical or hybrid post-quantum, auto-detected), mint and verify identity, regulatory conformance, passport, and physical action checks
 
 ## Build
 
@@ -37,9 +38,9 @@ The host native library is bundled under `src/main/resources/<jna-platform>/`
 import com.vouchprotocol.core.Vouch;
 
 String kp = Vouch.generateEd25519();           // JSON {seed_b64, public_b64, multikey, did_key}
-String signed = Vouch.signCredential(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
+String signed = Vouch.sign(credentialJson, seedB64, didKey + "#key-1", "2026-04-26T10:00:00Z");
 boolean ok = Vouch.verifyProof(signed, publicB64);
-String result = Vouch.verifyCredential(signed, publicB64, nowIso, 30);  // JSON {proofValid, timeValid, valid}
+String result = Vouch.verify(signed, publicB64, nowIso, 30);  // JSON {proofValid, timeValid, valid}
 ```
 
 Binary values are base64 strings; credentials and proofs are JSON strings.
@@ -50,7 +51,7 @@ Binary values are base64 strings; credentials and proofs are JSON strings.
 import uniffi.vouch_core.*
 
 val kp = generateEd25519()
-val signed = signCredential(credentialJson, kp.seed, "${kp.didKey}#key-1", "2026-04-26T10:00:00Z")
+val signed = sign(credentialJson, kp.seed, "${kp.didKey}#key-1", "2026-04-26T10:00:00Z")
 val ok = verifyProof(signed, kp.publicKey)     // ByteArray keys, native types
 ```
 

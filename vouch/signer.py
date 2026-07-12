@@ -1,21 +1,10 @@
 """
 Vouch Protocol Signer.
 
-Two issuance modes coexist during the migration from JWS to Data Integrity
-(see Specification §3.1, "Backward Compatibility"):
-
-  1. Legacy JWS Compact Serialization, the v0.x format. Produced by
-    `Signer.sign()`. Retained for backward compatibility while integrations
-    migrate. Will be removed once all callers transition.
-
-  2. Verifiable Credentials with Data Integrity proofs (eddsa-jcs-2022),
-    the v1.0 format. Produced by `Signer.sign_credential()` and
-    `Signer.sign_credential_json()`. This is the standards-aligned form aligned with
-    the CG Report.
-
-Both modes share the same Ed25519 signing key. Existing callers using
-`Signer.sign()` continue to work unchanged. New callers should prefer
-`sign_credential()`.
+Issues Verifiable Credentials with Data Integrity proofs (eddsa-jcs-2022),
+the v1.0 format, via ``Signer.sign()``. A JSON-serialized form is available
+through ``Signer.sign_json()``, and the post-quantum hybrid profile
+(hybrid-eddsa-mldsa44-jcs-2026) through ``Signer.sign_hybrid()``.
 """
 
 from __future__ import annotations
@@ -24,7 +13,7 @@ import json
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from jwcrypto import jwk, jws
@@ -35,22 +24,19 @@ from . import data_integrity, data_integrity_hybrid, multikey, vc
 
 class Signer:
     """
-    Issues Vouch credentials using Ed25519 keys.
+    Issues Vouch Credentials using Ed25519 keys.
 
-    The same key pair backs both the legacy JWS path and the new VC + Data
-    Integrity path. Choose the issuance mode by which method you call:
+    Sign an intent to get a Verifiable Credential with a Data Integrity proof:
 
-      legacy = signer.sign({"action": "x", "target": "y"})       # JWS string
-      modern = signer.sign_credential(intent={              # VC dict
-        "action": "x",
-        "target": "y",
-        "resource": "https://api.example.com/y",
+      cred = signer.sign(intent={
+        "action": "read",
+        "target": "inbox",
+        "resource": "https://mail.example.com/api/inbox",
       })
 
     Example:
       >>> signer = Signer(private_key='{"kty":"OKP",...}', did='did:web:example.com')
-      >>> token = signer.sign({'action': 'read_email'})      # legacy
-      >>> cred = signer.sign_credential(intent={         # modern
+      >>> cred = signer.sign(intent={
       ...   'action': 'read_email',
       ...   'target': 'inbox',
       ...   'resource': 'https://mail.example.com/api/inbox',
@@ -97,105 +83,100 @@ class Signer:
         except Exception:  # pragma: no cover - defensive
             self._raw_priv = None
 
+        # A backend-signed Signer (see from_backend) leaves these set instead of
+        # holding the raw key. None here means "this Signer holds the key".
+        self._sign_func: Optional[Callable[[bytes], bytes]] = None
+        self._public_jwk_str: Optional[str] = None
+        self._public_multikey: Optional[str] = None
+
+    @classmethod
+    def from_backend(
+        cls,
+        did: str,
+        public_key: str,
+        sign: Callable[[bytes], bytes],
+        default_expiry_seconds: int = 300,
+    ) -> "Signer":
+        """Construct a Signer whose private key lives outside this process.
+
+        Instead of a private JWK, you supply the agent's public key and a
+        callable ``sign(digest: bytes) -> bytes`` that returns the Ed25519
+        signature over the digest. The raw key never enters this process, so it
+        can live in an OS secure element, a sidecar, a cloud KMS/HSM, or an MPC
+        quorum. This Signer issues Data Integrity credentials (the modern path);
+        the legacy JWS ``sign()`` is not available without the private key.
+
+        Args:
+          did: the agent's DID.
+          public_key: the agent's public key as a JWK JSON string or a Multikey
+            (z-prefixed) string.
+          sign: callable that signs a 32-byte digest and returns the 64-byte
+            Ed25519 signature.
+          default_expiry_seconds: token validity period (default 5 minutes).
+        """
+        if not did:
+            raise ValueError("Signer.from_backend requires a 'did'")
+        if not public_key:
+            raise ValueError("Signer.from_backend requires the agent 'public_key'")
+        if not callable(sign):
+            raise ValueError("Signer.from_backend requires a callable 'sign'")
+
+        self = cls.__new__(cls)
+        self.did = did
+        self.default_expiry = default_expiry_seconds
+        self._key = None
+        self._raw_priv = None
+        self._sign_func = sign
+        self._public_jwk_str, self._public_multikey = _normalize_public_key(public_key)
+        return self
+
+    @classmethod
+    def from_keypair(cls, keypair: Any, default_expiry_seconds: int = 300) -> "Signer":
+        """Construct a Signer directly from a :class:`~vouch.keys.KeyPair`.
+
+        Saves unpacking ``keypair.private_key_jwk`` and ``keypair.did`` by hand::
+
+            keys = generate_identity("agent.example")
+            signer = Signer.from_keypair(keys)
+
+        Args:
+          keypair: a KeyPair (or any object exposing ``private_key_jwk`` and
+            ``did`` attributes).
+          default_expiry_seconds: token validity period (default 5 minutes).
+
+        Raises:
+          ValueError: if the keypair has no DID.
+        """
+        did = getattr(keypair, "did", None)
+        if not did:
+            raise ValueError(
+                "Signer.from_keypair requires a keypair with a DID; "
+                "generate it with a domain, e.g. generate_identity('agent.example')"
+            )
+        return cls(
+            private_key=keypair.private_key_jwk,
+            did=did,
+            default_expiry_seconds=default_expiry_seconds,
+        )
+
     # ------------------------------------------------------------------
-    # Legacy JWS path (v0.x). Preserved verbatim for backward compatibility.
+    # VC + Data Integrity (eddsa-jcs-2022).
     # ------------------------------------------------------------------
 
     def sign(
         self,
-        payload: Dict[str, Any],
-        expiry_seconds: Optional[int] = None,
-        reputation_score: Optional[int] = None,
-        parent_token: Optional[str] = None,
-    ) -> str:
-        """
-        Legacy: sign a payload and return a JWS Compact Serialization string.
-
-        Retained for backward compatibility. New code should prefer
-        :meth:`sign_credential`. See module docstring.
-
-        Args:
-          payload: Dictionary containing the intent/action data to sign.
-          expiry_seconds: Optional override for token expiry time.
-          reputation_score: Optional reputation score (0-100).
-          parent_token: Optional parent legacy JWS token for delegation chains.
-
-        Returns:
-          A JWS compact serialized token string.
-        """
-        now = int(time.time())
-        exp = expiry_seconds if expiry_seconds is not None else self.default_expiry
-
-        vouch_claim = {"version": "1.0", "payload": payload}
-        if reputation_score is not None:
-            vouch_claim["reputation_score"] = max(0, min(100, reputation_score))
-        if parent_token:
-            chain = self._build_delegation_chain(parent_token, payload)
-            if chain:
-                vouch_claim["delegation_chain"] = chain
-
-        claims = {
-            "jti": str(uuid.uuid4()),
-            "iss": self.did,
-            "sub": self.did,
-            "iat": now,
-            "nbf": now,
-            "exp": now + exp,
-            "vouch": vouch_claim,
-        }
-
-        token = jws.JWS(json.dumps(claims, sort_keys=True, separators=(",", ":")))
-        protected_header = {
-            "alg": "EdDSA",
-            "typ": "vouch+jwt",
-            "kid": self._key.get("kid") or self.did,
-        }
-        token.add_signature(self._key, None, json_encode(protected_header), None)
-        return token.serialize(compact=True)
-
-    def _build_delegation_chain(self, parent_token: str, current_payload: Dict[str, Any]) -> list:
-        """Legacy delegation chain assembly (operates on JWS tokens)."""
-        MAX_CHAIN_DEPTH = 5
-        try:
-            jws_token = jws.JWS()
-            jws_token.deserialize(parent_token)
-
-            payload_bytes = jws_token.objects.get("payload", b"")
-            if isinstance(payload_bytes, str):
-                payload_bytes = payload_bytes.encode("utf-8")
-
-            parent_claims = json.loads(payload_bytes.decode("utf-8"))
-            parent_vouch = parent_claims.get("vouch", {})
-            existing_chain = parent_vouch.get("delegation_chain", [])
-
-            if len(existing_chain) >= MAX_CHAIN_DEPTH:
-                raise ValueError(f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}")
-
-            new_link = {
-                "iss": parent_claims.get("iss", ""),
-                "sub": self.did,
-                "intent": json.dumps(current_payload, sort_keys=True),
-                "iat": int(time.time()),
-                "sig": parent_token.split(".")[-1][:64],
-            }
-            return existing_chain + [new_link]
-        except Exception as e:
-            raise ValueError(f"Failed to build delegation chain: {e}")
-
-    # ------------------------------------------------------------------
-    # Modern path: VC + Data Integrity (eddsa-jcs-2022).
-    # ------------------------------------------------------------------
-
-    def sign_credential(
-        self,
-        intent: Dict[str, Any],
+        intent: Optional[Dict[str, Any]] = None,
         *,
+        action: Optional[str] = None,
+        target: Optional[str] = None,
+        resource: Optional[str] = None,
         valid_seconds: Optional[int] = None,
         reputation_score: Optional[int] = None,
         delegation_chain: Optional[List[Dict[str, Any]]] = None,
         parent_credential: Optional[Dict[str, Any]] = None,
         valid_from: Optional[datetime] = None,
         credential_id: Optional[str] = None,
+        credential_status: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Issue a Verifiable Credential with a Data Integrity proof.
@@ -204,8 +185,23 @@ class Signer:
         returned credential is a dict that can be JSON-serialized and
         transmitted in an HTTP body or header.
 
+        The intent can be passed either as a dict (the original form) or as the
+        named keyword arguments `action`, `target`, and `resource`. The two
+        styles are equivalent and may be combined; named arguments override the
+        matching keys in the `intent` dict::
+
+            signer.sign(action="read", target="inbox",
+                                   resource="https://mail/api/inbox")
+            signer.sign(intent={"action": "read", "target": "inbox",
+                                           "resource": "https://mail/api/inbox"})
+
         Args:
-          intent: Intent payload. MUST contain `action`, `target`, `resource`.
+          intent: Intent payload dict. MUST contain `action`, `target`,
+            `resource` once merged with any named arguments.
+          action: Optional intent action (alternative to `intent["action"]`).
+          target: Optional intent target (alternative to `intent["target"]`).
+          resource: Optional intent resource (alternative to
+            `intent["resource"]`).
           valid_seconds: Optional validity window override.
           reputation_score: Optional self-reported score in [0, 100].
           delegation_chain: Pre-built delegation chain to attach (advanced).
@@ -214,20 +210,22 @@ class Signer:
             a new link from the parent's subject to this Signer's DID.
           valid_from: Optional override for the credential's `validFrom`.
           credential_id: Optional credential ID. Defaults to a fresh UUID URN.
+          credential_status: Optional W3C `credentialStatus` entry (typically
+            from `vouch.status_list.build_status_list_entry`) so a credential
+            can be revoked later. The proof covers it, so it must be set at
+            signing time.
 
         Returns:
           A signed Vouch Credential dict conforming to VC Data Model 2.0
           with a `proof` object (eddsa-jcs-2022).
 
         Raises:
-          ValueError: If `intent` is missing required fields, the chain
-            exceeds max depth, or the private key bytes are unavailable.
+          ValueError: If the merged intent is missing required fields, the chain
+            exceeds max depth, or no signing key/backend is available.
         """
-        if self._raw_priv is None:
-            raise ValueError(
-                "Cannot issue Data Integrity credentials: private key bytes "
-                "could not be derived from the JWK"
-            )
+        signer = self._credential_signer()
+
+        intent = _merge_intent(intent, action=action, target=target, resource=resource)
 
         chain = delegation_chain or []
         if parent_credential is not None:
@@ -241,20 +239,36 @@ class Signer:
             delegation_chain=chain or None,
             credential_id=credential_id,
             valid_from=valid_from,
+            credential_status=credential_status,
         )
 
         proof = data_integrity.build_proof(
             credential,
-            private_key=self._raw_priv,
+            private_key=signer,
             verification_method=self.verification_method_id(),
         )
         credential["proof"] = proof
         return credential
 
-    def sign_credential_hybrid(
+    def _credential_signer(self):
+        """Return the signer for the Data Integrity path: the raw key if this
+        Signer holds it, otherwise the backend sign callback."""
+        if self._raw_priv is not None:
+            return self._raw_priv
+        if self._sign_func is not None:
+            return self._sign_func
+        raise ValueError(
+            "Cannot issue Data Integrity credentials: no signing key is available "
+            "(construct the Signer with a private key or via Signer.from_backend)"
+        )
+
+    def sign_hybrid(
         self,
-        intent: Dict[str, Any],
+        intent: Optional[Dict[str, Any]] = None,
         *,
+        action: Optional[str] = None,
+        target: Optional[str] = None,
+        resource: Optional[str] = None,
         valid_seconds: Optional[int] = None,
         reputation_score: Optional[int] = None,
         delegation_chain: Optional[List[Dict[str, Any]]] = None,
@@ -270,6 +284,9 @@ class Signer:
         over the same canonical form. Verification REQUIRES both signatures
         to validate, providing safety against compromise of either algorithm.
 
+        Accepts the intent either as a dict or as the named `action`/`target`/
+        `resource` arguments, exactly like :meth:`sign`.
+
         Note: this profile produces credentials roughly 2.5 KB larger than
         the eddsa-jcs-2022 default. Implementations using this profile
         SHOULD transmit credentials in the HTTP request body (§5.6).
@@ -278,10 +295,20 @@ class Signer:
         Requires the `pqcrypto` package to be installed.
         """
         if self._raw_priv is None:
+            # The hybrid profile needs both an Ed25519 and an ML-DSA-44 signature.
+            # A backend Signer only exposes the Ed25519 sign callback, so the
+            # hybrid path is not available there yet.
+            if self._sign_func is not None:
+                raise NotImplementedError(
+                    "sign_hybrid is not supported for a backend Signer "
+                    "(from_backend); use the eddsa-jcs-2022 path or hold the key locally"
+                )
             raise ValueError(
                 "Cannot issue Data Integrity credentials: private key bytes "
                 "could not be derived from the JWK"
             )
+
+        intent = _merge_intent(intent, action=action, target=target, resource=resource)
 
         chain = delegation_chain or []
         if parent_credential is not None:
@@ -328,9 +355,9 @@ class Signer:
         self._mldsa44_public = pub
         self._mldsa44_secret = sec
 
-    def sign_credential_json(self, intent: Dict[str, Any], **kwargs: Any) -> str:
-        """JSON-serialized form of :meth:`sign_credential` for HTTP transport."""
-        cred = self.sign_credential(intent, **kwargs)
+    def sign_json(self, intent: Dict[str, Any], **kwargs: Any) -> str:
+        """JSON-serialized form of :meth:`sign` for HTTP transport."""
+        cred = self.sign(intent, **kwargs)
         return json.dumps(cred, separators=(",", ":"))
 
     def _extend_delegation_chain_from_parent(
@@ -386,7 +413,11 @@ class Signer:
 
     def get_public_key_jwk(self) -> str:
         """Return the public key in JWK format (legacy DID Documents)."""
-        return self._key.export_public()
+        if self._key is not None:
+            return self._key.export_public()
+        if self._public_jwk_str is not None:
+            return self._public_jwk_str
+        raise ValueError("No public key available for this Signer")
 
     def get_public_key_multikey(self) -> str:
         """
@@ -397,6 +428,10 @@ class Signer:
         """
         from jwcrypto.common import base64url_decode
 
+        if self._key is None:
+            if self._public_multikey is not None:
+                return self._public_multikey
+            raise ValueError("No public key available for this Signer")
         pub_b64 = self._key.get("x")
         if not pub_b64:
             raise ValueError("JWK does not expose the Ed25519 public component")
@@ -422,3 +457,110 @@ def _is_sub_resource(child: str, parent: str) -> bool:
     if child.startswith(parent.rstrip("/") + "/"):
         return True
     return False
+
+
+def _normalize_public_key(public_key: str) -> tuple:
+    """Accept a JWK JSON string or a Multikey (z...) string and return
+    (jwk_json_str, multikey_str) for both export formats."""
+    from jwcrypto.common import base64url_decode
+
+    if public_key.startswith("z"):
+        alg, raw = multikey.decode(public_key)
+        if alg != "Ed25519":
+            raise ValueError(f"Expected an Ed25519 public key, got {alg}")
+        key = jwk.JWK.from_json(
+            json.dumps(
+                {
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "x": _b64url_nopad(raw),
+                }
+            )
+        )
+        return key.export_public(), public_key
+
+    # Otherwise treat it as a JWK JSON string.
+    key = jwk.JWK.from_json(public_key)
+    if key.get("kty") != "OKP" or key.get("crv") != "Ed25519":
+        raise ValueError("Public key JWK must be an Ed25519 key (OKP, crv=Ed25519)")
+    raw = base64url_decode(key.get("x"))
+    return key.export_public(), multikey.encode_ed25519_public(raw)
+
+
+def _b64url_nopad(raw: bytes) -> str:
+    import base64
+
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _merge_intent(
+    intent: Optional[Dict[str, Any]],
+    *,
+    action: Optional[str] = None,
+    target: Optional[str] = None,
+    resource: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Combine a dict intent with the named action/target/resource arguments.
+
+    Named arguments override the matching keys in `intent`. The original dict is
+    never mutated. Required-field validation is left to `vc.build_vouch_credential`
+    so the error message stays in one place.
+    """
+    merged: Dict[str, Any] = dict(intent) if intent else {}
+    if action is not None:
+        merged["action"] = action
+    if target is not None:
+        merged["target"] = target
+    if resource is not None:
+        merged["resource"] = resource
+    return merged
+
+
+# ---------------------------------------------------------------------------
+# One-line signing (the sending-side counterpart to vouch.verify)
+# ---------------------------------------------------------------------------
+
+
+def sign(
+    keypair: Any,
+    intent: Optional[Dict[str, Any]] = None,
+    *,
+    action: Optional[str] = None,
+    target: Optional[str] = None,
+    resource: Optional[str] = None,
+    valid_seconds: Optional[int] = None,
+    reputation_score: Optional[int] = None,
+    parent_credential: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Sign an intent as a Vouch Credential in one line, no Signer to construct.
+
+    The no-class counterpart to :func:`vouch.verify`::
+
+        keys = vouch.generate_identity("agent.example")
+        signed = vouch.sign(keys, action="read", target="did:web:files",
+                            resource="https://files/x")
+        ok, who = vouch.verify(signed, keys.public_key_jwk)
+
+    Args:
+      keypair: a :class:`~vouch.keys.KeyPair` (must carry a DID).
+      intent: optional intent dict; alternatively pass `action`/`target`/
+        `resource` as named arguments. The two styles may be combined.
+      action / target / resource: named intent fields.
+      valid_seconds: optional validity window override.
+      reputation_score: optional self-reported score in [0, 100].
+      parent_credential: optional parent grant to chain this credential under.
+
+    Returns:
+      A signed Vouch Credential dict, identical to what
+      ``Signer.from_keypair(keypair).sign(...)`` returns.
+    """
+    signer = Signer.from_keypair(keypair)
+    return signer.sign(
+        intent,
+        action=action,
+        target=target,
+        resource=resource,
+        valid_seconds=valid_seconds,
+        reputation_score=reputation_score,
+        parent_credential=parent_credential,
+    )

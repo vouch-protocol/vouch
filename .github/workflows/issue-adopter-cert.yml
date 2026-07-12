@@ -1,0 +1,205 @@
+name: Issue adopter certificate (manual)
+
+# Issue a Vouch Verified Integration certificate for a system that integrates
+# Vouch Protocol against the published schema. Renders the certificate page at
+# /i/<slug>/, lists the adopter on /adopters, and redeploys the site. The
+# certificate is a Verifiable Credential signed by the Adopter Authority (a
+# delegated key, see scripts/bootstrap_adopter_authority.py) and chained to the
+# root authority through adopters/delegation.json. When a discussion, pull
+# request, or issue URL is given, it also posts the certificate there to notify
+# the adopter, mirroring the contributor certificate flow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "URL slug for the certificate at /i/<slug>/"
+        required: true
+      name:
+        description: "Display name of the integration"
+        required: true
+      by:
+        description: "Author handle or organization (optional)"
+        required: false
+      focus:
+        description: "What part of Vouch it integrates"
+        required: true
+      badge:
+        description: "Short badge label (e.g. First reference integration)"
+        required: true
+      summary:
+        description: "One-paragraph summary for the adopters page"
+        required: true
+      live_surface:
+        description: "URL a verifier can check (optional)"
+        required: false
+      discussion:
+        description: "Discussion or PR URL (optional)"
+        required: false
+
+permissions:
+  contents: write
+  actions: write
+  discussions: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install vouch
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Mint credential
+        env:
+          VOUCH_ADOPTER_PRIVATE_KEY: ${{ secrets.VOUCH_ADOPTER_PRIVATE_KEY }}
+          VOUCH_ADOPTER_DID: ${{ secrets.VOUCH_ADOPTER_DID }}
+          SLUG: ${{ inputs.slug }}
+          NAME: ${{ inputs.name }}
+          BY: ${{ inputs.by }}
+          FOCUS: ${{ inputs.focus }}
+          LIVE_SURFACE: ${{ inputs.live_surface }}
+          DISCUSSION: ${{ inputs.discussion }}
+        run: |
+          if [ -z "$VOUCH_ADOPTER_PRIVATE_KEY" ] || [ -z "$VOUCH_ADOPTER_DID" ]; then
+            echo "::error::Adopter issuer key not configured (VOUCH_ADOPTER_PRIVATE_KEY / VOUCH_ADOPTER_DID)."
+            echo "::error::Run the 'Bootstrap adopter authority' workflow first."
+            exit 1
+          fi
+          PARENT=""
+          if [ -f adopters/delegation.json ]; then
+            PARENT="--parent adopters/delegation.json"
+          fi
+          python scripts/mint_adopter_credential.py \
+            --slug "$SLUG" \
+            --name "$NAME" \
+            --by "$BY" \
+            --focus "$FOCUS" \
+            --live-surface "$LIVE_SURFACE" \
+            --discussion "$DISCUSSION" \
+            $PARENT \
+            --out credential.json
+
+      - name: Verify the certificate against the published DID document
+        run: |
+          python - <<'PY'
+          import json, sys
+          from vouch import Verifier
+          cred = open("credential.json").read()
+          doc = json.load(open("website/public/adopters/did.json"))
+          pub = json.dumps(doc["verificationMethod"][0]["publicKeyJwk"])
+          ok, _ = Verifier.verify(cred, public_key=pub)
+          print("Certificate self-verify against published DID:", ok)
+          if not ok:
+              print("::error::Minted certificate does not verify against the published adopter DID."
+                    " Check that ADOPTER_PRIVATE_KEY and ADOPTER_DID hold the adopter issuer key.")
+              sys.exit(1)
+          PY
+
+      - name: Publish the certificate and list the adopter
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLUG: ${{ inputs.slug }}
+          NAME: ${{ inputs.name }}
+          BY: ${{ inputs.by }}
+          FOCUS: ${{ inputs.focus }}
+          BADGE: ${{ inputs.badge }}
+          SUMMARY: ${{ inputs.summary }}
+          LIVE_SURFACE: ${{ inputs.live_surface }}
+          DISCUSSION: ${{ inputs.discussion }}
+        run: |
+          python scripts/render_adopter_cert.py \
+            --credential credential.json \
+            --slug "$SLUG" \
+            --out "website/public/i/${SLUG}/index.html"
+          python - <<'PY'
+          import json, os
+          path = "website/src/data/adopters.json"
+          entry = {
+              "slug": os.environ["SLUG"],
+              "name": os.environ["NAME"],
+              "by": os.environ.get("BY", ""),
+              "focus": os.environ["FOCUS"],
+              "badge": os.environ["BADGE"],
+              "summary": os.environ["SUMMARY"],
+              "liveSurface": os.environ.get("LIVE_SURFACE", ""),
+              "discussion": os.environ.get("DISCUSSION", ""),
+          }
+          data = json.load(open(path)) if os.path.exists(path) else []
+          data = [a for a in data if a.get("slug") != entry["slug"]]
+          data.append(entry)
+          with open(path, "w") as f:
+              json.dump(data, f, indent=4)
+              f.write("\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "website/public/i/${SLUG}/index.html" website/src/data/adopters.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(adopters): certificate for ${SLUG}"
+            for i in 1 2 3; do
+              git pull --rebase origin main && git push origin HEAD:main && break
+              sleep $((2 ** i))
+            done
+            gh workflow run deploy-website.yml --ref main
+          fi
+
+      - name: Notify the adopter
+        if: ${{ inputs.discussion != '' && hashFiles('credential.json') != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NAME: ${{ inputs.name }}
+          SLUG: ${{ inputs.slug }}
+          DISCUSSION: ${{ inputs.discussion }}
+          REPO: ${{ github.repository }}
+          BADGE: "https://img.shields.io/badge/Vouch-Verified_Integration-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
+        run: |
+          CERT_URL="https://vouch-protocol.com/i/${SLUG}/"
+          {
+            echo "### Vouch Verified Integration :sparkles:"
+            echo ""
+            echo "**${NAME}** is now a Vouch Verified Integration, a signed certificate from the Vouch Adopter Authority, chained to the project root and verifiable by anyone against the published DID document."
+            echo ""
+            echo "[![Vouch Verified Integration](${BADGE})](${CERT_URL})"
+            echo ""
+            echo "**Certificate (download and share it):** ${CERT_URL}"
+            echo ""
+            echo "**Listed on the adopters page:** https://vouch-protocol.com/adopters/"
+            echo ""
+            echo "**Add the badge to your site (optional):**"
+            echo ""
+            echo '```markdown'
+            echo "[![Vouch Verified Integration](${BADGE})](${CERT_URL})"
+            echo '```'
+            echo ""
+            echo "<details><summary>The Verifiable Credential (eddsa-jcs-2022)</summary>"
+            echo ""
+            echo '```json'
+            cat credential.json
+            echo ""
+            echo '```'
+            echo ""
+            echo "</details>"
+          } > notify.md
+          num="${DISCUSSION##*/}"
+          owner="${REPO%%/*}"
+          reponame="${REPO##*/}"
+          if echo "$DISCUSSION" | grep -q "/discussions/"; then
+            disc_id=$(gh api graphql -f query='query($o:String!,$n:String!,$num:Int!){repository(owner:$o,name:$n){discussion(number:$num){id}}}' -F o="$owner" -F n="$reponame" -F num="$num" --jq '.data.repository.discussion.id')
+            gh api graphql -f query='mutation($id:ID!,$b:String!){addDiscussionComment(input:{discussionId:$id,body:$b}){comment{url}}}' -F id="$disc_id" -F b=@notify.md --jq '.data.addDiscussionComment.comment.url'
+          elif echo "$DISCUSSION" | grep -q "/pull/"; then
+            gh pr comment "$num" --repo "$REPO" --body-file notify.md
+          elif echo "$DISCUSSION" | grep -q "/issues/"; then
+            gh issue comment "$num" --repo "$REPO" --body-file notify.md
+          else
+            echo "Discussion URL type not recognized ($DISCUSSION); skipping notification."
+          fi

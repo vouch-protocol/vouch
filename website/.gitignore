@@ -19,6 +19,9 @@
 /.next/
 /out/
 
+# Vouch Protocol WASM core, copied from the npm package at build time, never committed
+/public/wasm/
+
 # production
 /build
 

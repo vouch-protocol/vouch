@@ -71,6 +71,8 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-059](./PAD-059-vouch-amnesia-attestation-bridge.md) | Method for Cryptographically Anchoring Deterministic Pre-Push Policy Decisions of an AI Coding Assistant Workspace to W3C Verifiable Credentials with Optional Hybrid Post-Quantum Signatures | 2026-05-14 | Published |
 | [PAD-060](./PAD-060-single-use-audited-override-of-egress-block.md) | Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use | 2026-05-14 | Published |
 | [PAD-061](./PAD-061-per-region-human-ai-code-attribution.md) | Per-Region Authorship Attribution for Mixed Human and AI Source Code via Edit-Channel Capture and Independently-Keyed Signatures | 2026-06-10 | Published |
+| [PAD-062](./PAD-062-self-contained-agent-passport.md) | Self-Contained, Offline-Verifiable Agent Passport Stapled Into Transport Metadata | 2026-07-12 | Published |
+| [PAD-063](./PAD-063-live-trust-standing-propagation-a2a.md) | Live Trust-Standing Propagation Across Agent-to-Agent Calls | 2026-07-12 | Published |
 | [PAD-064](./PAD-064-hardware-rooted-robot-identity.md) | Hardware-Rooted Verifiable Robot Identity and Lifecycle Credential | 2026-06-14 | Published |
 | [PAD-065](./PAD-065-model-config-provenance-attestation.md) | Re-Signable Model-and-Config Provenance Attestation for Embodied Agents | 2026-06-14 | Published |
 | [PAD-066](./PAD-066-physical-capability-scope-attenuation.md) | Physical Capability Scope as Cryptographically Enforceable Attenuation | 2026-06-14 | Published |
@@ -79,6 +81,215 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-069](./PAD-069-confidential-tamper-evident-robot-blackbox.md) | Confidential, Tamper-Evident Robot Black-Box with Separable Confidentiality and Integrity | 2026-06-15 | Published |
 | [PAD-070](./PAD-070-scannable-offline-robot-passport.md) | Self-Contained, Offline-Verifiable Robot Passport for Physical-World Scanning | 2026-06-15 | Published |
 | [PAD-071](./PAD-071-outcome-evidence-commit-before-outcome-credential.md) | Commit-Before-Outcome Verdict Credential with Neutral-Settler Outcome Attestation | 2026-06-17 | Published |
+| [PAD-072](./PAD-072-proof-of-integration-recognition-credential.md) | Proof-of-Integration Recognition Credential Gated by a Live Keyed Challenge-Response | 2026-07-03 | Published |
+| [PAD-073](./PAD-073-liveness-conformance-decaying-recognition-credential.md) | Liveness-Conformance-Decaying Recognition Credential with Automatic Revocation | 2026-07-03 | Published |
+| [PAD-074](./PAD-074-trust-preserving-transport-failover.md) | Trust-Preserving Multi-Transport Failover for Liability-Bearing Credential Envelopes | 2026-06-30 | Published |
+| [PAD-075](./PAD-075-untrusted-resolver-identity-routing.md) | Untrusted-Resolver Identity Routing via Self-Signed Route Records with Anti-Substitution Binding | 2026-06-30 | Published |
+| [PAD-076](./PAD-076-offline-physical-delegation-lease.md) | Offline-Verifiable, Scope-Bounded Delegation Lease for Physical Authority with Shrink-Only Nesting | 2026-07-04 | Published |
+| [PAD-077](./PAD-077-physical-action-quorum.md) | Cryptographic M-of-N Quorum Gating a High-Consequence Physical Robot Action | 2026-07-04 | Published |
+| [PAD-078](./PAD-078-robot-lifecycle-custody-chain.md) | Verifiable Robot Lifecycle: Chained Custody, Key History, and Signed Decommission | 2026-07-04 | Published |
+| [PAD-079](./PAD-079-machine-checkable-regulatory-conformance.md) | Machine-Checkable Regulatory Conformance Over Robot Verifiable Credentials | 2026-07-04 | Published |
+| [PAD-080](./PAD-080-post-quantum-default-robot-credentials.md) | Post-Quantum-by-Default Robot Credentials with Backward-Compatible Dual Verification and Software Migration | 2026-07-04 | Published |
+| [PAD-081](./PAD-081-cross-embodiment-identity-continuity.md) | Cross-Embodiment Identity Continuity Across Robot Bodies via a Chain of Hardware-Re-Bound Embodiment Credentials | 2026-07-04 | Published |
+| [PAD-082](./PAD-082-portable-agent-identity-fork-detection.md) | Fork Detection for a Portable Agent Identity via Embodiment Time-Overlap | 2026-07-04 | Published |
+| [PAD-083](./PAD-083-physical-custody-handoff-chain.md) | Physical Custody Handoff Chain Across Human and Robot Actors | 2026-07-05 | Published |
+| [PAD-084](./PAD-084-custody-condition-localization.md) | Localizing a Physical State Change to a Custody Hop via Handoff Condition Attestation | 2026-07-05 | Published |
+| [PAD-085](./PAD-085-two-phase-deliberated-execution.md) | Two-Phase Deliberated Execution of Irreversible Agent Actions with Signed Veto Window | 2026-07-05 | Published |
+| [PAD-086](./PAD-086-executable-caveats-delegation-chains.md) | Deterministic Executable Caveats Embedded in Object-Capability Delegation Chains | 2026-07-05 | Published |
+| [PAD-087](./PAD-087-bounded-infrastructure-access-grant.md) | Bounded, Offline-Verifiable Robot Access to Physical Infrastructure With Shrink-Only Attenuation | 2026-07-05 | Published |
+| [PAD-088](./PAD-088-auditable-access-use-record.md) | Auditable, Attributable Record of a Robot's Use of Physical Infrastructure | 2026-07-05 | Published |
+| [PAD-089](./PAD-089-fused-sensor-provenance-attestation.md) | Signed Provenance Binding a Robot's Fused World Model to Its Input Frames | 2026-07-05 | Published |
+| [PAD-090](./PAD-090-fused-input-provenance-completeness.md) | Detecting a Dropped or Substituted Input in a Robot's Fused Perception Output | 2026-07-05 | Published |
+| [PAD-091](./PAD-091-robot-wear-degradation-attestation.md) | Self-Attested Robot Wear and Degradation Bound to Identity | 2026-07-05 | Published |
+| [PAD-092](./PAD-092-wear-driven-capability-attenuation.md) | Wear-Driven Automatic Attenuation of a Robot's Physical Capability Scope | 2026-07-05 | Published |
+| [PAD-093](./PAD-093-bystander-consent-evidence.md) | Privacy-Preserving Bystander-Consent Evidence for Robot Capture | 2026-07-06 | Published |
+| [PAD-094](./PAD-094-capture-bound-consent-token.md) | Capture-Bound Bystander Consent Token That Cannot Be Replayed | 2026-07-06 | Published |
+| [PAD-095](./PAD-095-control-authority-handoff-chain.md) | Accountable Control-Authority Handoff Chain Between Autonomy and Human Teleoperators | 2026-07-06 | Published |
+| [PAD-096](./PAD-096-control-continuity-gap-overlap.md) | Detecting an Unattributed-Control Gap or a Dual-Control Overlap in a Robot's Control Timeline | 2026-07-06 | Published |
+| [PAD-097](./PAD-097-operating-domain-conformance.md) | Operator-Certified Operating Domain and Robot-Attested In-Domain Conformance | 2026-07-06 | Published |
+| [PAD-098](./PAD-098-in-domain-predicate.md) | Deterministic Multi-Dimensional In-Domain Check for a Robot's Operating Parameters | 2026-07-06 | Published |
+| [PAD-099](./PAD-099-verifiable-swarm-membership.md) | Verifiable Swarm Membership for a Multi-Robot Group | 2026-07-06 | Published |
+| [PAD-100](./PAD-100-collective-action-attribution.md) | Attribution of a Multi-Robot Collective Action to Its Participating Members | 2026-07-06 | Published |
+| [PAD-101](./PAD-101-human-handover-envelope.md) | Robot-to-Human Handover Credential With a Safety-Envelope Attestation at the Release | 2026-07-06 | Published |
+| [PAD-102](./PAD-102-handover-acknowledgement.md) | Recipient Acknowledgement Bound to a Specific Robot-to-Human Handover | 2026-07-06 | Published |
+| [PAD-103](./PAD-103-root-anchored-hardware-rooted-robot-identity.md) | Root-Anchored, Hardware-Rooted Robot Identity Binding | 2026-07-12 | Published |
+| [PAD-104](./PAD-104-per-tool-call-continuous-trust-authorization.md) | Per-Tool-Call Continuous-Trust Authorization with Resource-Bound Delegation | 2026-07-12 | Published |
+| [PAD-105](./PAD-105-safety-island-evidence-record.md) | Signed Tamper-Evident Safety-Evidence Record Bound to a Robot's Identity and Certified Stack | 2026-07-12 | Published |
+
+
+## July 12, 2026: Safety-Island Evidence Record (PAD-105)
+
+PAD-105 seals the event stream from a robot's functional-safety subsystem into an
+encrypted, hash-linked log, then has the robot sign a credential fixing the log's chain
+head and entry count and binding them to its identity and to the certified safety-stack
+elements it ran on. A verifier confirms the record is unaltered, untruncated, attributable
+to that robot, and tied to the certified configuration, all without the log's
+confidentiality key. It is the evidence layer beneath a design-time safety certification.
+
+
+## July 12, 2026: Root-Anchored Hardware-Rooted Robot Identity (PAD-103)
+
+PAD-103 composes the recognized-issuer authority layer with the hardware-rooted robot
+identity format so a verifier pinning one root confirms, in a single offline check, both
+that a robot comes from a recognized manufacturer and that its identity key is bound to a
+hardware root. The manufacturer's authority identity references the robot's
+hardware-rooted key, and verification requires the vouched key to equal the
+hardware-attested key, so provenance and hardware-rooting cannot be presented apart.
+
+
+## July 6, 2026: Robotics Forward-Looking, Second Wave (PAD-095 to PAD-102)
+
+Four capabilities extend accountability to how robots are controlled, where they operate,
+how they act as a group, and how they hand objects to people. PAD-095 and PAD-096 make the
+transfer of control between autonomy and human teleoperators accountable, with a continuity
+check that catches a moment with no controller or two. PAD-097 and PAD-098 bind a robot to
+its certified operating domain and check, deterministically, whether it stayed inside it.
+PAD-099 and PAD-100 make swarm membership verifiable and attribute a collective action to its
+admitted members. PAD-101 and PAD-102 record a robot-to-human handover with the safety
+envelope at the release and a recipient receipt bound to that one handover.
+
+
+## July 6, 2026: Bystander Consent for Robot Capture (PAD-093, PAD-094)
+
+Two disclosures cover a robot recording people accountably without retaining anyone's
+identity. PAD-093 is a privacy-preserving bystander-consent evidence credential that
+binds the basis for a capture (an explicit token, posted notice, a legitimate interest,
+or an applied redaction) to the capture by its hash and to the robot's identity, storing
+only hashes. PAD-094 is a bystander-signed consent token bound to a single capture and
+robot, so consent given for one recording cannot be replayed to justify another, and the
+evidence commits to its tokens by proof value rather than by identity.
+
+
+## July 5, 2026: Robot Wear and Degradation (PAD-091, PAD-092)
+
+Two disclosures cover a robot accounting for its own wear. PAD-091 has the robot sign its
+own degradation as a normalized wear level bound to its identity and hash-linked over time,
+so its condition history is tamper-evident and portable. PAD-092 derives a physical
+capability scope whose force and speed caps are scaled down by the attested wear level, and
+the result is a valid attenuation of the original, so a worn robot operates inside a
+tighter, verifiable envelope than the limit it shipped with.
+
+
+## July 5, 2026: Fused-Sensor Provenance (PAD-089, PAD-090)
+
+Two disclosures cover the provenance of a robot's fused world model. PAD-089 is a signed
+fused-perception attestation binding the hash of a fused output to the ordered set of
+input frame hashes, a reproducible digest over them, and the fusion method that produced
+it, so a manipulated fusion result no longer matches. PAD-090 reconciles the inputs a
+fused attestation names against the robot's signed perception log and names any that were
+never recorded, so a dropped or substituted fused input is detected.
+
+
+## July 5, 2026: Robot Infrastructure Access (PAD-087, PAD-088)
+
+Two disclosures cover bounded robot access to physical infrastructure like doors,
+elevators, and chargers. PAD-087 is an operator-signed access grant naming a resource,
+its permitted operations, an optional zone, and a time window, which a resource
+authorizes offline against the robot presenting a request, with shrink-only attenuation
+of a sub-grant. PAD-088 pairs the robot-signed request with the operator-signed grant to
+form a tamper-evident, attributable record of which robot used which resource, for which
+operation, and when, independently verifiable without a trusted central log.
+
+
+## July 5, 2026: Accountable Autonomy for Actions Inside the Envelope (PAD-085, PAD-086)
+
+Two disclosures that move accountability past the point where an action is merely
+authorized, toward controlling what an already-authorized agent may do.
+
+- **PAD-085** gates an agent's consequential, irreversible actions behind a
+  two-phase deliberated sequence: a signed intent is committed and broadcast with
+  a challenge window and a named set of objectors, the window must provably elapse
+  (by signed timestamp or a Verifiable Delay Function), and any authorized party
+  may block execution with a separately-signed veto bound to the committed intent.
+  Reversible actions pay no delay. It is a preventive control, acting before an
+  irreversible effect rather than auditing it afterward, and it gives regulatory
+  human-oversight mandates a machine-checkable hook.
+- **PAD-086** attaches deterministic, fuel-bounded executable caveats to the links
+  of an object-capability delegation chain. Caveats accumulate down the chain and
+  cannot be removed by any descendant, every verifier is obligated to evaluate
+  each accumulated caveat against a proposed action, and the pinned, side-effect-
+  free runtime keeps evaluation offline and byte-identical across implementations.
+  It turns the static delegation envelope into live, portable conditional
+  authority ("only for shipped orders," "only during an incident") while
+  preserving the object-capability invariant that delegation only ever attenuates.
+
+Both build on the same `eddsa-jcs-2022` credentials and JCS canonicalization as
+the rest of Vouch, so they verify across the language SDKs and compose with the
+delegation, reasoning, and commit-before-outcome primitives (PAD-002, PAD-017,
+PAD-047, PAD-071).
+
+
+## July 5, 2026: Physical Custody Handoff (PAD-083, PAD-084)
+
+Two disclosures cover the physical handoff of a task or object across human and robot
+actors. PAD-083 is a custody handoff chain: each handoff credential records a receiving
+actor accepting custody from a releasing actor, signed by the receiver, so a chain
+establishes who held the task and a holder-at-time lookup traces a physical-world
+incident to the exact hop. PAD-084 localizes a physical state change (damage, loss, a
+quantity drop) to a specific hop by attesting a condition at each handoff and finding
+the hop where it changed, naming the holder responsible.
+
+
+## July 4, 2026: Cross-Embodiment Identity Continuity (PAD-081, PAD-082)
+
+Two disclosures cover a portable agent identity moving between robot bodies. PAD-081
+binds one accountable agent identity across a sequence of bodies: an embodiment
+credential binds the agent to a body and that body's hardware root, signed by the
+agent's own persistent key, and linking each embodiment forms a continuity chain a
+verifier walks to confirm the same agent persisted, the inverse of an ownership
+custody chain. PAD-082 detects a fork of that portable identity by confirming no two
+embodiments place the agent in different bodies with overlapping active time windows,
+so a clean handover passes and a mind active in two bodies at once is caught.
+
+
+## July 4, 2026: Robotics Delegation, Governance, Lifecycle, Conformance, and Post-Quantum (PAD-076 through PAD-080)
+
+Five disclosures cover the robotics capabilities added since the first robotics
+batch, each reducing an established primitive to the embodied, physical setting.
+PAD-076 is an offline-verifiable delegation lease bounded by a physical capability
+scope, with shrink-only nesting across parties, so a disconnected robot can prove it
+is acting inside a currently valid grant. PAD-077 gates a high-consequence physical
+action behind an M-of-N quorum of attested approvers counted as distinct signers
+over the same action. PAD-078 makes a robot's whole life accountable through a
+chained ownership custody record, a predecessor-signed key history, and a signed
+decommission, all bound to a hardware-rooted identity. PAD-079 expresses a
+regulatory clause as a machine-checkable predicate over robot credentials, producing
+a deterministic report and a signed conformance attestation. PAD-080 defaults a
+long-lived robot's credentials to a hybrid post-quantum signature, with dual
+verification that auto-detects classical or hybrid and a software re-sign migration
+for fielded robots.
+
+
+## July 3, 2026: Proof-of-Integration and Liveness-Decaying Recognition (PAD-072, PAD-073)
+
+Two disclosures covering how a recognition credential, a badge attesting that an
+independent system integrates the protocol, is made evidence rather than
+assertion. PAD-072 gates issuance on a challenge-response: the candidate answers a
+fresh nonce through its own live surface, signed with the key bound to its
+claimed DID, so the credential proves a working, keyed deployment and embeds a
+proof any verifier can re-check. PAD-073 makes such a credential's trust a
+continuous function of independently observed liveness-conformance: an automated
+prober emits signed conformance receipts, the credential's consumable trust
+decays with elapsed time since the last passing observation, and it auto-revokes
+through the status list when conformance lapses. Both build on the same
+eddsa-jcs-2022 credentials, heartbeat cadence (PAD-016), and verifiable state
+receipts (PAD-036, PAD-071) as the rest of Vouch.
+
+
+## June 30, 2026: Identity-First Transport Primitives (PAD-074, PAD-075)
+
+Two disclosures covering the `vouch.transport` identity-first routing layer.
+PAD-074 is a trust-preserving multi-transport failover discipline: a
+self-protecting envelope carrying a credential, liability attestations, and
+provenance is handed byte-for-byte to whichever transport succeeds, with an
+integrity-versus-availability error taxonomy that forbids re-routing a corrupted
+payload, so the trust posture is invariant under failover. PAD-075 is an
+untrusted-resolver routing model: an agent self-signs a record binding its DID to
+a current endpoint, and the requesting party re-verifies the record and confirms
+its subject equals the queried DID, so resolving infrastructure can neither forge
+a route nor substitute another identity's record. Both build on, and explicitly
+do not claim, UDNA's DID-as-routing-primitive, fingerprint scheme, and facet
+model.
 
 
 ## June 17, 2026: Commit-Before-Outcome Verdict Evidence (PAD-071)

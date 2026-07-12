@@ -44,7 +44,6 @@ Maintain a single `StatusList` per status purpose (revocation, or optionally sus
 from vouch import (
     generate_identity, Signer, StatusList, FilesystemStatusListStore,
     build_status_list_credential, build_status_list_entry,
-    build_vouch_credential,
 )
 
 # Load or create the status list
@@ -64,15 +63,13 @@ signer = Signer(private_key=issuer_keys.private_key_jwk, did=issuer_keys.did)
 index = status_list.allocate_index()
 store.save(status_list)  # persist the cursor
 
-credential = build_vouch_credential(
-    issuer_did="did:web:issuer.example",
+signed_credential = signer.sign(
     intent={"action": "...", "target": "...", "resource": "..."},
     credential_status=build_status_list_entry(
         status_list_credential="https://issuer.example/status/1",
         status_list_index=index,
     ),
 )
-signed_credential = signer.sign_credential(credential)
 ```
 
 #### Revoke later
@@ -86,7 +83,7 @@ status_credential = build_status_list_credential(
     issuer_did="did:web:issuer.example",
     status_list=status_list,
 )
-signed_status_credential = signer.sign_credential(status_credential)
+signed_status_credential = signer.sign(status_credential)
 
 # Publish at the URL referenced by the original credential
 # (typically PUT to your CDN / S3 / GitHub Pages)

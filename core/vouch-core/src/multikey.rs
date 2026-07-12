@@ -79,9 +79,9 @@ pub fn encode_mldsa44_public(raw: &[u8]) -> Result<String> {
 
 /// Decode a Multikey string into algorithm name plus raw key bytes.
 pub fn decode(multikey: &str) -> Result<DecodedKey> {
-    let body = multikey
-        .strip_prefix('z')
-        .ok_or_else(|| CoreError::InvalidMultikey("must use base58btc encoding (z-prefix)".into()))?;
+    let body = multikey.strip_prefix('z').ok_or_else(|| {
+        CoreError::InvalidMultikey("must use base58btc encoding (z-prefix)".into())
+    })?;
     let decoded = decode_base58_bounded(body)?;
     if decoded.len() < 2 {
         return Err(CoreError::InvalidMultikey("too short".into()));

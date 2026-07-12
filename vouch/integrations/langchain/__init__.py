@@ -1,5 +1,17 @@
-"""Vouch LangChain integration."""
+"""Vouch LangChain integration - deterministic signing."""
 
-from .tool import VouchSignerTool, VouchSignerInput
+from .tool import (
+    autosign,
+    current_credential,
+    protect,
+    sign_intent,
+    signed,
+)
 
-__all__ = ["VouchSignerTool", "VouchSignerInput"]
+__all__ = [
+    "protect",
+    "signed",
+    "autosign",
+    "sign_intent",
+    "current_credential",
+]

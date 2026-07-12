@@ -17,7 +17,7 @@ INTENT = {"action": "read", "target": "order:1", "resource": "https://api.exampl
 def agent():
     ident = generate_identity(domain="caller.example.com")
     signer = Signer(private_key=ident.private_key_jwk, did=ident.did)
-    cred = signer.sign_credential(intent=INTENT, valid_seconds=300)
+    cred = signer.sign(intent=INTENT, valid_seconds=300)
     return ident, signer, cred
 
 

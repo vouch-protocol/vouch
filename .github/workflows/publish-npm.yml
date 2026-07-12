@@ -4,7 +4,7 @@
 #   @vouch-protocol-official/api-client  (sdks/clients/typescript)
 #
 # Trigger: push a tag like `npm-v0.1.0`, or run manually (workflow_dispatch).
-# Required repo secret: NPM_TOKEN (npm automation token).
+# Required repo secret: NPM_TOKEN (an npm Automation token, which bypasses 2FA).
 name: Publish npm
 
 on:
@@ -18,8 +18,8 @@ jobs:
     env:
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
@@ -28,7 +28,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Build the WASM core
         working-directory: core/wasm
-        run: bash build-npm.sh
+        run: bash build-npm.sh 2.0.0
       - name: Publish core-wasm
         working-directory: core/wasm/pkg
         run: |
@@ -36,10 +36,10 @@ jobs:
       - name: Publish sdk
         working-directory: packages/sdk-ts
         run: |
-          npm ci
+          npm install
           npm publish --access public || echo "sdk: version may already be published, continuing"
       - name: Publish api-client
         working-directory: sdks/clients/typescript
         run: |
-          npm ci
+          npm install
           npm publish --access public || echo "api-client: version may already be published, continuing"

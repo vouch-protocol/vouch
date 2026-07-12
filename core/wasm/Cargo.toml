@@ -1,6 +1,6 @@
 [package]
 name = "vouch-core-wasm"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2021"
 authors = ["Ramprasad Anandam Gaddam"]
 description = "Vouch Protocol core, WASM build (browser + Node): JCS canonicalization, Ed25519, did:key/multikey, Data Integrity (eddsa-jcs-2022), credentials, delegation, dual-proof ML-DSA-44, and BitstringStatusList revocation. Thin wasm-bindgen wrapper over the canonical vouch-core crate."

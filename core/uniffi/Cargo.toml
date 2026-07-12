@@ -1,6 +1,6 @@
 [package]
 name = "vouch-core-uniffi"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2021"
 authors = ["Ramprasad Anandam Gaddam"]
 description = "Vouch Protocol core: UniFFI bindings (Swift, Kotlin) and C-FFI over the canonical vouch-core crate. One byte-exact implementation for native and mobile SDKs."
@@ -16,7 +16,7 @@ name = "uniffi-bindgen"
 path = "uniffi-bindgen.rs"
 
 [dependencies]
-vouch-core = { path = "../vouch-core" }
+vouch-core = { path = "../vouch-core", version = "2.0.0" }
 uniffi = { version = "0.28", features = ["cli"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 base64 = "0.22"

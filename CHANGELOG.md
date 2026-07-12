@@ -5,9 +5,19 @@ All notable changes to Vouch Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-07-05
+
+### Changed (BREAKING)
+
+- Renamed the credential API to `sign` / `verify` across every SDK and the Rust core. `Signer.sign_credential` is now `Signer.sign`, `Verifier.verify_credential` is now `Verifier.verify`, and `sign_credential_hybrid` is now `sign_hybrid`. The same rename applies in the TypeScript, Swift, JVM, .NET, C++, and Go SDKs, and in the C ABI (`vouch_sign_credential` becomes `vouch_sign`, `vouch_verify_credential` becomes `vouch_verify`).
+
+### Removed (BREAKING)
+
+- Removed the legacy v0.x JWS credential path (`Signer.sign()` returning a JWS token, and the JWS `Verifier.verify()` / `check_vouch()`). Credentials are W3C Verifiable Credentials with `eddsa-jcs-2022` Data Integrity proofs.
 
 ### Added
+
+- `vouch-mcp`: a Model Context Protocol server that lets any MCP client issue and verify Vouch Credentials (`sign`, `verify`, `create_session`, `check_revocation`, `get_identity`), over stdio or Streamable HTTP, with an optional post-quantum profile.
 
 #### Robotics: living trust, revocation, and accountable safety record
 
@@ -21,10 +31,64 @@ The Python reference adds three robotics capabilities on the same
   BitstringStatusList plus whole-DID kill via the existing registry.
 - `vouch.robotics.safety_record`: a tamper-evident incident and near-miss ledger
   summarized into a portable, signed safety-record credential.
+- `vouch.robotics.perception`: signed, hash-linked provenance for captured sensor
+  frames (camera, lidar, audio, and more), so a robot can prove what its sensors
+  saw and a substituted frame is detectable.
+- `vouch.robotics.lease`: a short-lived, scope-bounded delegation lease a
+  disconnected robot verifies and acts on offline, nesting across vendors.
+- `vouch.robotics.physical_quorum`: a cryptographic two-person rule requiring M of
+  N attested approvers before a high-consequence physical action is authorized.
+- `vouch.robotics.lifecycle`: ownership transfer (chain of custody), key rotation
+  (key history), and a signed decommission credential for a robot's whole life.
+- `vouch.robotics.conformance`: machine-checkable profiles mapping robot credentials
+  to ISO 10218/15066, the EU Machinery Regulation, the EU AI Act, and UL 3300, a
+  deterministic conformance checker, and a signed conformance attestation.
+- `vouch.robotics.pq`: hybrid post-quantum signing for robot credentials
+  (hybrid-eddsa-mldsa44-jcs-2026), backward-compatible dual verification, and a
+  re-signing migration path for a robot's decade-long service life.
+- `vouch.robotics.embodiment`: cross-embodiment identity continuity, an embodiment
+  credential binding an agent to a body and its hardware root, a continuity chain
+  proving one accountable agent persisted across bodies, and a fork check.
+- `vouch.robotics.custody`: a physical custody handoff chain across human and robot
+  actors, a holder-at-time lookup, and condition localization of a state change to
+  the responsible hop.
+- `vouch.robotics.access`: bounded, revocable robot access to physical
+  infrastructure, an operator-signed grant naming a resource, its operations, an
+  optional zone, and a time window, paired with a robot-signed request the resource
+  authorizes offline, plus shrink-only attenuation of a sub-grant.
+- `vouch.robotics.fusion`: fused-sensor provenance, a signed attestation binding a
+  robot's fused world model to the ordered set of input frame hashes and the fusion
+  method that produced it, with an input digest that makes the input set
+  tamper-evident and a check of each input against the robot's perception log.
+- `vouch.robotics.wear`: wear and degradation attestation, a robot-signed wear level
+  bound to its identity and hash-linked over time, with a deterministic rule that
+  narrows its physical capability scope as it degrades, so the derated scope stays a
+  valid attenuation of the original.
+- `vouch.robotics.consent`: bystander-consent evidence, a robot binds the basis for a
+  capture to the capture hash and its identity, holding only hashes, and a bystander
+  signs a consent token bound to one capture and robot so it cannot be replayed.
 
 Implemented in Python, TypeScript, Go, and the Rust core (flowing to the Swift,
 Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers), byte-identical and pinned by
 the robotics interop vector.
+
+#### Robotics: control, operating domain, swarm, and human handover
+
+The Python reference adds four forward-looking robotics capabilities, each with an
+interactive website demo and defensive disclosures:
+
+- `vouch.robotics.teleop`: accountable teleoperation handoff, a signed chain of
+  control-authority transfers between an autonomous policy and human teleoperators,
+  with a controller-at-time lookup and a control-continuity check.
+- `vouch.robotics.odd`: operating-domain conformance, an operator-certified operating
+  domain and a robot-signed attestation that it stayed inside it, with a deterministic
+  in-domain check.
+- `vouch.robotics.swarm`: multi-robot swarm accountability, verifiable swarm membership
+  and attribution of a collective action to its admitted members.
+- `vouch.robotics.handover`: safe robot-to-human handover, a signed handover with the
+  force and speed envelope at the release and a recipient acknowledgement bound to it.
+
+Disclosed as PAD-095 through PAD-102. Cross-language ports follow.
 
 ## [1.6.3] - 2026-06-15
 
@@ -65,6 +129,44 @@ byte-identical reference implementations in Python (`vouch.robotics`), TypeScrip
 A shared interop vector (`test-vectors/robotics/vector.json`) pins the hardware-root
 binding and the config hash, so a robotics credential signed in any language
 verifies in every other.
+
+#### Root-anchored hardware-rooted robot identity (PAD-103)
+
+The robotics layer binds the hardware-rooted robot identity to the Root of Trust for
+Machine Identity, so a verifier pinning one root confirms in a single offline check both
+that a robot comes from a recognized manufacturer and that its identity key is
+hardware-rooted:
+
+- **`build_robot_identity`**: a manufacturer recognized by the pinned root to issue robot
+  identities issues an authority identity whose subject references the robot's
+  hardware-rooted key.
+- **`verify_robot_identity_chain`**: anchors the manufacturer's recognition to the pinned
+  root, verifies the robot's hardware attestation, and confirms the key the manufacturer
+  vouched for is the exact key the hardware attested, with the same anchor-once model and
+  reason-code style as the recognized-issuer authority layer.
+
+Implemented in Python (`vouch.robotics.root_identity`), TypeScript, Go, and the Rust
+core, with the root-anchored robot identity added to the Root of Trust interop vector
+(`test-vectors/root-of-trust/vector.json`).
+
+#### Halos safety-evidence recorder (NVIDIA Halos integration, PAD-105)
+
+An evidence layer for a robot running an NVIDIA Halos-certified stack. Halos certifies
+that the stack is safe and secure by design; this records what a specific robot actually
+did and binds it to the robot's identity:
+
+- **`SafetyEventRecorder`**: captures the Halos safety-event stream (the Outside-In
+  Safety Blueprint components SIPP, SAIM, SEI, SDM, plus emergency stops and operator
+  actions) into the tamper-evident, encrypted black-box.
+- **`build_safety_evidence` / `verify_safety_evidence`**: the robot signs a
+  `HalosSafetyEvidenceCredential` that seals the black-box head and entry count and binds
+  them to its identity and to the Halos stack elements it ran on (IGX system-on-module,
+  Halos Core, Blueprint applications). A verifier confirms, without the black-box key,
+  that the record is unaltered, untruncated, attributable to that robot, and tied to the
+  certified configuration, while the payloads stay confidential.
+
+Implemented in the Python reference (`vouch.robotics.halos`) and the Rust core, exposed
+through the curated robotics C ABI.
 
 #### State Verifiability runtime (Specification §11, §15)
 
@@ -126,13 +228,13 @@ across Python, TypeScript, and Go SDKs:
 
 standards-aligned alignment with backward-compatible coexistence of the legacy v0.x JWS path.
 
-- **Verifiable Credentials issuance** (`Signer.sign_credential`): produces a VC Data Model 2.0 credential carrying the agent's intent (`action`, `target`, required `resource`), reputation, and optional delegation chain.
-- **Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (`Verifier.verify_credential`): proof attaches as a sibling object on the credential, no Base64-wrapping of the payload.
+- **Verifiable Credentials issuance** (`Signer.sign`): produces a VC Data Model 2.0 credential carrying the agent's intent (`action`, `target`, required `resource`), reputation, and optional delegation chain.
+- **Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (`Verifier.verify`): proof attaches as a sibling object on the credential, no Base64-wrapping of the payload.
 - **JCS canonicalization** (`vouch.jcs`): RFC 8785 implementation. Cross-implementation interop verified against shared test vectors at `test-vectors/jcs/vectors.json`.
 - **Multikey verification methods** (`vouch.multikey`): multibase + multicodec encoding for Ed25519 (`0xed01`) and ML-DSA-44 (`0x1207`). Algorithm-agnostic key resolution via `DIDDocument.get_ed25519_public_key()` (auto-falls-back to legacy JWK).
-- **Hybrid post-quantum profile** (`Signer.sign_credential_hybrid`): optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite. Both Ed25519 and ML-DSA-44 sign the same JCS canonical bytes for graceful verifier downgrade. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines. Requires `pip install vouch-protocol[pq]` for the optional `pqcrypto` dependency.
+- **Hybrid post-quantum profile** (`Signer.sign_hybrid`): optional `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite. Both Ed25519 and ML-DSA-44 sign the same JCS canonical bytes for graceful verifier downgrade. Aligns with NIST CNSA 2.0 / NSM-10 migration timelines. Requires `pip install vouch-protocol[pq]` for the optional `pqcrypto` dependency.
 - **VC envelope helpers** (`vouch.vc`): `build_vouch_credential`, `build_session_voucher`.
-- **Async verifier credential path** (`AsyncVerifier.verify_credential`, `AsyncVerifier.check_vouch_credential`): mirrors the sync path with async DID resolution.
+- **Async verifier credential path** (`AsyncVerifier.verify`, `AsyncVerifier.check_vouch_credential`): mirrors the sync path with async DID resolution.
 - **Three-language interop** with TypeScript (`typescript/`) and Go (`go-sidecar/`) producing byte-identical canonical form.
 - **Three new defensive disclosures** (PAD-039, PAD-040, PAD-041) plus 16 amendments to existing PADs documenting Data Integrity embodiments and JCS-determinism properties.
 

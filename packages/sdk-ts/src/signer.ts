@@ -1,19 +1,10 @@
 /**
  * Vouch Protocol Signer (TypeScript).
  *
- * Two issuance modes coexist during the migration from JWS to W3C Data
- * Integrity (Specification §3.1):
- *
- *   1. Legacy JWS Compact Serialization (v0.x): Signer.sign().
- *    Retained for backward compatibility while integrations migrate.
- *
- *   2. Verifiable Credentials with Data Integrity proofs
- *    (eddsa-jcs-2022, v1.0): Signer.signCredential().
- *    The standards-aligned form aligned with the CG Report.
- *
- * Both modes share the same Ed25519 signing key. Existing callers using
- * Signer.sign() continue to work unchanged. New callers should prefer
- * signCredential().
+ * Issues Verifiable Credentials with W3C Data Integrity proofs
+ * (eddsa-jcs-2022, Specification §3.1) via Signer.sign(). The post-quantum
+ * hybrid profile (hybrid-eddsa-mldsa44-jcs-2026) is available via
+ * Signer.signHybrid().
  */
 
 import * as crypto from 'crypto';
@@ -24,9 +15,13 @@ import {
   buildHybridProof,
   generateMLDSA44KeyPair,
 } from './data-integrity-hybrid';
-import { encodeEd25519Public, encodeMLDSA44Public } from './multikey';
+import {
+  decode as decodeMultikey,
+  encodeEd25519Public,
+  encodeMLDSA44Public,
+} from './multikey';
 import type {
-  SignCredentialOptions,
+  SignOptions,
   SignerConfig,
   JWKKey,
 } from './types';
@@ -50,7 +45,7 @@ const MAX_CHAIN_DEPTH = 5;
  * const token = await signer.sign({ action: 'read_database' });
  *
  * // Modern VC + Data Integrity:
- * const cred = await signer.signCredential({
+ * const cred = await signer.sign({
  *  intent: {
  *   action: 'read_database',
  *   target: 'users_table',
@@ -62,9 +57,15 @@ const MAX_CHAIN_DEPTH = 5;
 export class Signer {
   private did: string;
   private defaultExpiry: number;
-  private keyPromise: Promise<jose.KeyLike | Uint8Array>;
-  private rawPrivateKeyPromise: Promise<crypto.KeyObject>;
-  private rawPublicKeyBytesPromise: Promise<Uint8Array>;
+  private keyPromise!: Promise<jose.KeyLike | Uint8Array>;
+  private rawPrivateKeyPromise!: Promise<crypto.KeyObject>;
+  private rawPublicKeyBytesPromise!: Promise<Uint8Array>;
+
+  // Set for a backend Signer (fromBackend): the private key lives outside this
+  // process and this callback produces the signature over the digest.
+  private signFunc?: (digest: Uint8Array) => Uint8Array;
+  private backendPublicKeyJwk?: string;
+  private backendPublicMultikey?: string;
 
   // Lazily-generated ML-DSA-44 keypair for the hybrid post-quantum profile
   // (Specification §13.2). Independent of any other PQ key the caller may
@@ -121,6 +122,73 @@ export class Signer {
   }
 
   /**
+   * Build a Signer from a generated identity (the result of generateIdentity),
+   * so you do not have to unpack privateKeyJwk and did by hand.
+   */
+  static fromKeypair(
+    keypair: { privateKeyJwk: string; did: string | null },
+    opts?: { defaultExpirySeconds?: number }
+  ): Signer {
+    if (!keypair.did) {
+      throw new Error(
+        'Signer.fromKeypair requires a keypair with a DID; generate it with a ' +
+        "domain, e.g. generateIdentity('agent.example')"
+      );
+    }
+    return new Signer({
+      privateKey: keypair.privateKeyJwk,
+      did: keypair.did,
+      defaultExpirySeconds: opts?.defaultExpirySeconds,
+    });
+  }
+
+  /**
+   * Build a Signer whose Ed25519 private key lives outside this process.
+   *
+   * Instead of a private JWK you supply the agent's public key and a callback
+   * `sign(digest) -> signature` that produces the Ed25519 signature over the
+   * digest. The raw key never enters this process, so it can live in an OS
+   * secure element, a sidecar, a cloud KMS/HSM, or an MPC quorum. This Signer
+   * issues Data Integrity credentials; the legacy JWS sign() and the hybrid
+   * profile, which need the raw key, are not available.
+   *
+   * @param did The agent's DID.
+   * @param publicKey The agent's public key as a JWK JSON string or a Multikey
+   *          (z-prefixed) string.
+   * @param sign Callback that signs the 32-byte digest, returns the 64-byte
+   *        Ed25519 signature.
+   */
+  static fromBackend(
+    did: string,
+    publicKey: string,
+    sign: (digest: Uint8Array) => Uint8Array,
+    opts?: { defaultExpirySeconds?: number }
+  ): Signer {
+    if (!did) throw new Error('Signer.fromBackend requires a did');
+    if (!publicKey) throw new Error('Signer.fromBackend requires the public key');
+    if (typeof sign !== 'function') {
+      throw new Error('Signer.fromBackend requires a sign callback');
+    }
+    const s: Signer = Object.create(Signer.prototype);
+    s.initBackend(did, publicKey, sign, opts?.defaultExpirySeconds ?? 300);
+    return s;
+  }
+
+  private initBackend(
+    did: string,
+    publicKey: string,
+    sign: (digest: Uint8Array) => Uint8Array,
+    defaultExpiry: number
+  ): void {
+    this.did = did;
+    this.defaultExpiry = defaultExpiry;
+    this.signFunc = sign;
+    const { jwk, multikey } = normalizePublicKey(publicKey);
+    this.backendPublicKeyJwk = jwk;
+    this.backendPublicMultikey = multikey;
+  }
+
+  /**
    * Get the DID associated with this signer.
    */
   getDid(): string {
@@ -140,6 +208,7 @@ export class Signer {
    * Specification §4.3.
    */
   async getPublicKeyMultikey(): Promise<string> {
+    if (this.backendPublicMultikey) return this.backendPublicMultikey;
     const raw = await this.rawPublicKeyBytesPromise;
     return encodeEd25519Public(raw);
   }
@@ -149,58 +218,43 @@ export class Signer {
    *
    * For custom credential types (for example robotics credentials) that the
    * caller assembles by hand rather than from an intent. Mirrors the signing
-   * step of `signCredential`. Returns the credential with its `proof` set.
+   * step of `sign`. Returns the credential with its `proof` set.
    */
   async attachProof(
+    credential: Record<string, unknown>,
+    opts?: { created?: Date }
+  ): Promise<Record<string, unknown>> {
+    const signOpts = await this.proofSignOptions();
+    const proof = buildProof(credential, {
+      ...signOpts,
+      created: opts?.created,
+    });
+    return { ...credential, proof };
+  }
+
+  /**
+   * Attach a hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof to a pre-built
+   * credential. The hybrid counterpart to `attachProof`, for custom credential
+   * types the caller assembles by hand. Lazily generates the ML-DSA-44 keypair.
+   */
+  async attachProofHybrid(
     credential: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
-    const privateKey = await this.rawPrivateKeyPromise;
-    const proof = buildProof(credential, {
-      privateKey,
+    this.ensureMldsa44KeyPair();
+    const ed25519PrivateKey = await this.rawPrivateKeyPromise;
+    const proof = buildHybridProof(credential, {
+      ed25519PrivateKey,
+      mldsa44SecretKey: this.mldsa44SecretKey!,
       verificationMethod: this.verificationMethodId(),
     });
     return { ...credential, proof };
   }
 
-  // ------------------------------------------------------------------
-  // Legacy JWS path. Behavior preserved verbatim.
-  // ------------------------------------------------------------------
-
   /**
-   * Sign a payload and return a JWS compact token (legacy v0.x format).
-   *
-   * Retained for backward compatibility. New code should prefer
-   * `signCredential`.
-   */
-  async sign(
-    payload: Record<string, unknown>,
-    expirySeconds?: number
-  ): Promise<string> {
-    const key = await this.keyPromise;
-    const now = Math.floor(Date.now() / 1000);
-    const exp = now + (expirySeconds ?? this.defaultExpiry);
-
-    const claims = {
-      jti: crypto.randomUUID(),
-      iss: this.did,
-      sub: this.did,
-      iat: now,
-      nbf: now,
-      exp: exp,
-      vouch: {
-        payload: payload,
-      },
-    };
-
-    return await new jose.SignJWT(claims)
-      .setProtectedHeader({ alg: 'EdDSA', typ: 'JWT', kid: this.did })
-      .sign(key);
-  }
-
-  /**
-   * Get the public key in JWK format (legacy DID Documents).
+   * Get the public key in JWK format (for DID Documents).
    */
   async getPublicKeyJwk(): Promise<string> {
+    if (this.backendPublicKeyJwk) return this.backendPublicKeyJwk;
     const key = await this.keyPromise;
     const publicJwk = await jose.exportJWK(key);
     delete (publicJwk as { d?: string }).d;
@@ -218,18 +272,16 @@ export class Signer {
    * Returns a credential dict that can be JSON-serialized and transmitted
    * in an HTTP body or header.
    */
-  async signCredential(opts: SignCredentialOptions): Promise<VouchCredential> {
+  async sign(opts: SignOptions): Promise<VouchCredential> {
+    const intent = mergeIntent(opts);
     let chain: DelegationLink[] | undefined = opts.delegationChain;
     if (opts.parentCredential) {
-      chain = this.extendDelegationChainFromParent(
-        opts.parentCredential,
-        opts.intent
-      );
+      chain = this.extendDelegationChainFromParent(opts.parentCredential, intent);
     }
 
     const credential = buildVouchCredential({
       issuerDid: this.did,
-      intent: opts.intent,
+      intent,
       validSeconds: opts.validSeconds ?? this.defaultExpiry,
       reputationScore: opts.reputationScore,
       delegationChain: chain,
@@ -237,23 +289,35 @@ export class Signer {
       validFrom: opts.validFrom,
     });
 
-    const privateKey = await this.rawPrivateKeyPromise;
     const proof = buildProof(
       credential as unknown as Record<string, unknown>,
-      {
-        privateKey,
-        verificationMethod: this.verificationMethodId(),
-      }
+      await this.proofSignOptions()
     );
     credential.proof = proof;
     return credential;
   }
 
   /**
-   * JSON-serialized form of `signCredential` for HTTP transport.
+   * Build the signing options for buildProof: the raw key if this Signer holds
+   * it, otherwise the backend sign callback.
    */
-  async signCredentialJson(opts: SignCredentialOptions): Promise<string> {
-    const cred = await this.signCredential(opts);
+  private async proofSignOptions(): Promise<{
+    privateKey?: crypto.KeyObject;
+    sign?: (digest: Uint8Array) => Uint8Array;
+    verificationMethod: string;
+  }> {
+    if (this.signFunc) {
+      return { sign: this.signFunc, verificationMethod: this.verificationMethodId() };
+    }
+    const privateKey = await this.rawPrivateKeyPromise;
+    return { privateKey, verificationMethod: this.verificationMethodId() };
+  }
+
+  /**
+   * JSON-serialized form of `sign` for HTTP transport.
+   */
+  async signJson(opts: SignOptions): Promise<string> {
+    const cred = await this.sign(opts);
     return JSON.stringify(cred);
   }
 
@@ -268,18 +332,22 @@ export class Signer {
    * the eddsa-jcs-2022 default. Callers using this profile SHOULD
    * transmit credentials in the HTTP request body.
    */
-  async signCredentialHybrid(opts: SignCredentialOptions): Promise<VouchCredential> {
+  async signHybrid(opts: SignOptions): Promise<VouchCredential> {
+    if (this.signFunc) {
+      throw new Error(
+        'signHybrid is not supported for a backend Signer (fromBackend); ' +
+        'use the eddsa-jcs-2022 path or hold the key locally'
+      );
+    }
+    const intent = mergeIntent(opts);
     let chain: DelegationLink[] | undefined = opts.delegationChain;
     if (opts.parentCredential) {
-      chain = this.extendDelegationChainFromParent(
-        opts.parentCredential,
-        opts.intent
-      );
+      chain = this.extendDelegationChainFromParent(opts.parentCredential, intent);
     }
 
     const credential = buildVouchCredential({
       issuerDid: this.did,
-      intent: opts.intent,
+      intent,
       validSeconds: opts.validSeconds ?? this.defaultExpiry,
       reputationScore: opts.reputationScore,
       delegationChain: chain,
@@ -403,9 +471,58 @@ export async function generateIdentity(domain?: string): Promise<{
   };
 }
 
+/**
+ * Sign an intent as a Vouch Credential in one line, no Signer to construct.
+ *
+ * The sending-side counterpart to {@link verify}:
+ * ```typescript
+ * const keys = await generateIdentity('agent.example');
+ * const signed = await sign(keys, {
+ *   action: 'read', target: 'did:web:files', resource: 'https://files/x',
+ * });
+ * ```
+ */
+export async function sign(
+  keypair: { privateKeyJwk: string; did: string | null },
+  opts: SignOptions
+): Promise<VouchCredential> {
+  return Signer.fromKeypair(keypair).sign(opts);
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/** Combine a dict intent with the named action/target/resource shortcuts. */
+function mergeIntent(opts: SignOptions): Intent {
+  const merged: Record<string, unknown> = { ...(opts.intent ?? {}) };
+  if (opts.action !== undefined) merged.action = opts.action;
+  if (opts.target !== undefined) merged.target = opts.target;
+  if (opts.resource !== undefined) merged.resource = opts.resource;
+  return merged as Intent;
+}
+
+/** Accept a JWK JSON string or a Multikey (z...) string, return both forms. */
+function normalizePublicKey(publicKey: string): { jwk: string; multikey: string } {
+  if (publicKey.startsWith('z')) {
+    const { algorithm, rawKey } = decodeMultikey(publicKey);
+    if (algorithm !== 'Ed25519') {
+      throw new Error(`Expected an Ed25519 public key, got ${algorithm}`);
+    }
+    const jwk = JSON.stringify({
+      kty: 'OKP',
+      crv: 'Ed25519',
+      x: base64UrlEncode(rawKey),
+    });
+    return { jwk, multikey: publicKey };
+  }
+  const parsed = JSON.parse(publicKey) as JWKKey;
+  if (parsed.kty !== 'OKP' || parsed.crv !== 'Ed25519' || !parsed.x) {
+    throw new Error('Public key JWK must be an Ed25519 key (OKP, crv Ed25519)');
+  }
+  const raw = base64UrlDecode(parsed.x);
+  return { jwk: publicKey, multikey: encodeEd25519Public(raw) };
+}
 
 function base64UrlDecode(s: string): Uint8Array {
   const padded = s
@@ -413,6 +530,14 @@ function base64UrlDecode(s: string): Uint8Array {
     .replace(/_/g, '/')
     .padEnd(s.length + ((4 - (s.length % 4)) % 4), '=');
   return new Uint8Array(Buffer.from(padded, 'base64'));
+}
+
+function base64UrlEncode(bytes: Uint8Array): string {
+  return Buffer.from(bytes)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 }
 
 function isSubResource(child: string, parent: string): boolean {

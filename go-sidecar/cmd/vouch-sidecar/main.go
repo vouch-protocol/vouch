@@ -80,7 +80,7 @@ func main() {
 			req.Sensitive = true
 		}
 
-		out, err := s.Sign(req)
+		out, err := s.SignToken(req)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("signing failed: %v", err), http.StatusInternalServerError)
 			return

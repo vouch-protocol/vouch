@@ -54,7 +54,7 @@ def test_analyze_credential_extracts_capabilities():
     ident = generate_identity(domain="agent.example.com")
     signer = Signer(private_key=ident.private_key_jwk, did=ident.did)
     # A credential whose intent reads private data; add scopes for the other legs.
-    cred = signer.sign_credential(
+    cred = signer.sign(
         intent={
             "action": "read_database",
             "target": "users",
@@ -69,7 +69,7 @@ def test_analyze_credential_extracts_capabilities():
 def test_credential_without_trifecta_is_safe():
     ident = generate_identity(domain="agent.example.com")
     signer = Signer(private_key=ident.private_key_jwk, did=ident.did)
-    cred = signer.sign_credential(
+    cred = signer.sign(
         intent={
             "action": "read_file",
             "target": "config",

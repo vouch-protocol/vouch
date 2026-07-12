@@ -30,25 +30,31 @@ import (
 
 const (
 	CryptosuiteEddsaJcs2022 = "eddsa-jcs-2022"
-	ProofTypeDataIntegrity = "DataIntegrityProof"
+	ProofTypeDataIntegrity  = "DataIntegrityProof"
 )
 
 // DataIntegrityProof represents a Data Integrity proof object.
 type DataIntegrityProof struct {
-	Type        string `json:"type"`
-	Cryptosuite    string `json:"cryptosuite"`
-	Created      string `json:"created"`
+	Type               string `json:"type"`
+	Cryptosuite        string `json:"cryptosuite"`
+	Created            string `json:"created"`
 	VerificationMethod string `json:"verificationMethod"`
-	ProofPurpose    string `json:"proofPurpose"`
-	ProofValue     string `json:"proofValue,omitempty"`
+	ProofPurpose       string `json:"proofPurpose"`
+	ProofValue         string `json:"proofValue,omitempty"`
 }
 
 // BuildProofOptions configures BuildDataIntegrityProof.
+//
+// Provide either PrivateKey (signed in process) or Sign, a callback that takes
+// the 32-byte digest and returns the 64-byte Ed25519 signature. The Sign form
+// lets the key live where this process cannot read it (an OS secure element, a
+// sidecar, a cloud KMS/HSM, or an MPC quorum). If both are set, Sign wins.
 type BuildProofOptions struct {
-	PrivateKey     ed25519.PrivateKey
+	PrivateKey         ed25519.PrivateKey
+	Sign               func(digest []byte) []byte
 	VerificationMethod string
-	ProofPurpose    string // defaults to "assertionMethod"
-	Created      time.Time
+	ProofPurpose       string // defaults to "assertionMethod"
+	Created            time.Time
 }
 
 // BuildDataIntegrityProof generates a Data Integrity proof for the given
@@ -71,11 +77,11 @@ func BuildDataIntegrityProof(
 	}
 
 	proof := DataIntegrityProof{
-		Type:        ProofTypeDataIntegrity,
-		Cryptosuite:    CryptosuiteEddsaJcs2022,
-		Created:      formatISO8601(created),
+		Type:               ProofTypeDataIntegrity,
+		Cryptosuite:        CryptosuiteEddsaJcs2022,
+		Created:            formatISO8601(created),
 		VerificationMethod: opts.VerificationMethod,
-		ProofPurpose:    purpose,
+		ProofPurpose:       purpose,
 	}
 
 	// Build proof representation as a plain map matching the JSON shape
@@ -92,7 +98,15 @@ func BuildDataIntegrityProof(
 	}
 	digest := sha256.Sum256(canonical)
 
-	signature := ed25519.Sign(opts.PrivateKey, digest[:])
+	var signature []byte
+	switch {
+	case opts.Sign != nil:
+		signature = opts.Sign(digest[:])
+	case opts.PrivateKey != nil:
+		signature = ed25519.Sign(opts.PrivateKey, digest[:])
+	default:
+		return DataIntegrityProof{}, errors.New("BuildProofOptions needs a PrivateKey or a Sign callback")
+	}
 	proof.ProofValue = "z" + b58Encode(signature)
 	return proof, nil
 }
@@ -148,11 +162,11 @@ func VerifyDataIntegrityProof(
 
 func proofToMap(p DataIntegrityProof) map[string]any {
 	m := map[string]any{
-		"type":        p.Type,
-		"cryptosuite":    p.Cryptosuite,
-		"created":      p.Created,
+		"type":               p.Type,
+		"cryptosuite":        p.Cryptosuite,
+		"created":            p.Created,
 		"verificationMethod": p.VerificationMethod,
-		"proofPurpose":    p.ProofPurpose,
+		"proofPurpose":       p.ProofPurpose,
 	}
 	if p.ProofValue != "" {
 		m["proofValue"] = p.ProofValue

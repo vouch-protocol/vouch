@@ -1,122 +1,95 @@
 """
-Vouch Protocol LangChain Integration.
+Vouch Protocol LangChain Integration - deterministic signing.
 
-Provides a LangChain-compatible tool for generating Vouch-Tokens.
+Every tool call is signed in Python before it runs. Three tiers of effort:
+
+  * ``protect([...])``  - wrap a list of tools (one line)
+  * ``@signed``         - annotate a single tool (one decorator)
+  * ``autosign()``      - sign every ``@tool`` framework-wide (near-zero)
+
+See :mod:`vouch.autosign` for the framework-agnostic core.
 """
 
-from typing import Type, Optional
-import os
-
-from pydantic import BaseModel, Field
-
-try:
-    from langchain.tools import BaseTool
-except ImportError:
-    # Fallback for users without LangChain
-    class BaseTool:
-        """Fallback BaseTool class."""
-
-        name: str = ""
-        description: str = ""
-
-        def _run(self, *args, **kwargs):
-            raise NotImplementedError("LangChain not installed")
-
+import inspect
+from typing import Any, List, Optional, Sequence
 
 from vouch import Signer
+from vouch.autosign import (  # noqa: F401
+    current_credential,
+    install_decorator_autosign,
+    sign_intent,
+    signed,
+)
+from vouch.autosign import protect as _protect_callables
 
 
-class VouchSignerInput(BaseModel):
-    """Input schema for the Vouch Signer tool."""
+def _inner_attr(obj: Any) -> Optional[str]:
+    """Attribute holding a LangChain tool's underlying callable, or ``None``."""
+    if inspect.isfunction(obj) or inspect.ismethod(obj):
+        return None
+    for attr in ("func", "_run", "run"):
+        if callable(getattr(obj, attr, None)):
+            return attr
+    return None
 
-    intent: str = Field(
-        description="A description of the action being signed (e.g., 'search_database', 'send_email')"
-    )
-    target: Optional[str] = Field(default=None, description="Optional target service or resource")
 
+def protect(
+    tools: Sequence[Any],
+    *,
+    signer: Optional[Signer] = None,
+    **signed_kwargs: Any,
+) -> List[Any]:
+    """Sign-wrap a list of LangChain tools (or plain functions).
 
-class VouchSignerTool(BaseTool):
+    Plain callables are wrapped via the core signer. LangChain tool objects
+    (``BaseTool`` / ``StructuredTool``) have their underlying callable wrapped
+    in place so every invocation is signed, then the same object is returned.
+
+    Example::
+
+        from vouch.integrations.langchain import protect
+
+        agent = create_react_agent(llm, tools=protect([search, send_email]))
     """
-    LangChain tool for generating Vouch-Tokens.
-
-    Use this tool to generate cryptographic identity proofs before making
-    authenticated API calls to external services.
-
-    Example:
-        >>> from vouch.integrations.langchain.tool import VouchSignerTool
-        >>> tool = VouchSignerTool()  # Uses env vars
-        >>> token = tool._run("read_customer_data")
-    """
-
-    name: str = "vouch_signer"
-    description: str = (
-        "Generates a cryptographic Vouch-Token to prove your identity. "
-        "Use this before making authenticated API calls to external services. "
-        "The token should be included as a 'Vouch-Token' header in your request."
-    )
-    args_schema: Type[BaseModel] = VouchSignerInput
-
-    # Instance configuration
-    _signer: Optional[Signer] = None
-
-    def __init__(
-        self, private_key_json: Optional[str] = None, agent_did: Optional[str] = None, **kwargs
-    ):
-        """
-        Initialize the Vouch Signer tool.
-
-        Args:
-            private_key_json: JWK JSON string. Falls back to VOUCH_PRIVATE_KEY env var.
-            agent_did: The agent's DID. Falls back to VOUCH_DID env var.
-        """
-        super().__init__(**kwargs)
-
-        private_key = private_key_json or os.getenv("VOUCH_PRIVATE_KEY")
-        did = agent_did or os.getenv("VOUCH_DID")
-
-        if private_key and did:
-            try:
-                self._signer = Signer(private_key=private_key, did=did)
-            except Exception:
-                # Log but don't fail initialization
-                pass
-
-    def _run(self, intent: str, target: Optional[str] = None) -> str:
-        """
-        Generate a Vouch-Token for the given intent.
-
-        Args:
-            intent: Description of the action being taken.
-            target: Optional target service.
-
-        Returns:
-            The Vouch-Token string or an error message.
-        """
-        if not self._signer:
-            private_key = os.getenv("VOUCH_PRIVATE_KEY")
-            did = os.getenv("VOUCH_DID")
-
-            if not private_key:
-                return "Error: VOUCH_PRIVATE_KEY not set in environment"
-            if not did:
-                return "Error: VOUCH_DID not set in environment"
-
-            try:
-                self._signer = Signer(private_key=private_key, did=did)
-            except Exception as e:
-                return f"Error initializing signer: {e}"
-
+    out: List[Any] = []
+    for t in tools:
+        attr = _inner_attr(t)
+        if attr is None:
+            out.append(_protect_callables([t], signer=signer, **signed_kwargs)[0])
+            continue
+        original = getattr(t, attr)
+        if getattr(original, "__vouch_signed__", False):
+            out.append(t)
+            continue
+        wrapped = signed(original, signer=signer, **signed_kwargs)
         try:
-            payload = {"intent": intent}
-            if target:
-                payload["target"] = target
+            object.__setattr__(t, attr, wrapped)  # pydantic models block plain setattr
+        except Exception:
+            setattr(t, attr, wrapped)
+        out.append(t)
+    return out
 
-            token = self._signer.sign(payload)
-            return f"Vouch-Token: {token}"
 
-        except Exception as e:
-            return f"Error signing: {e}"
+def autosign(*, signer: Optional[Signer] = None) -> bool:
+    """Near-zero setup: sign **every** LangChain tool defined after this call.
 
-    async def _arun(self, intent: str, target: Optional[str] = None) -> str:
-        """Async version of _run."""
-        return self._run(intent, target)
+    Monkeypatches ``langchain_core.tools.tool`` (falling back to
+    ``langchain.tools.tool``) so any tool created with ``@tool`` - bare or with
+    arguments - is automatically sign-wrapped::
+
+        import vouch.integrations.langchain as vl
+        vl.autosign()
+
+        @tool                            # signed transparently
+        def search(query: str) -> str: ...
+    """
+    module = None
+    attr = "tool"
+    try:
+        import langchain_core.tools as module  # type: ignore
+    except ImportError:
+        try:
+            import langchain.tools as module  # type: ignore
+        except ImportError as e:  # pragma: no cover - optional dep
+            raise RuntimeError("langchain is not installed; cannot autosign") from e
+    return install_decorator_autosign(module, attr, signer=signer)

@@ -31,10 +31,10 @@ The credential's `intent` is missing one of `action`, `target`, or
 
 ```python
 # Wrong:
-build_vouch_credential(issuer_did="...", intent={"action": "submit"})
+signer.sign(intent={"action": "submit"})
 
 # Right:
-build_vouch_credential(issuer_did="...", intent={
+signer.sign(intent={
     "action": "submit_claim",
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
@@ -44,9 +44,8 @@ build_vouch_credential(issuer_did="...", intent={
 ### Signature byte length is wrong
 
 Ed25519 signatures are always exactly 64 bytes (raw). After multibase
-base58btc encoding with the `z` prefix, expect ~88 characters. If you
-see a different length, you may be looking at JWS Compact Serialization
-from the legacy v0.x path; use `sign_credential` instead of `sign`.
+base58btc encoding with the `z` prefix, expect ~88 characters. A Data
+Integrity proof carries this in `proof.proofValue`.
 
 Hybrid signatures are 64 + 2,420 = 2,484 bytes raw, about 3,400
 characters base58btc.
@@ -55,7 +54,7 @@ characters base58btc.
 
 Signing doesn't need the DID Document; verification does. If you see
 this error during signing, your SDK is incorrectly trying to verify
-the just-signed credential. Check that you're using `sign_credential`,
+the just-signed credential. Check that you're using `sign`,
 not a misconfigured roundtrip helper.
 
 ## Verification

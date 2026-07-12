@@ -35,11 +35,11 @@ char *vouch_generate_ed25519(char **err_out);
 /**
  * Sign a credential (eddsa-jcs-2022). seed_b64 is the 32-byte Ed25519 seed.
  */
-char *vouch_sign_credential(const char *credential_json,
-                            const char *seed_b64,
-                            const char *verification_method,
-                            const char *created,
-                            char **err_out);
+char *vouch_sign(const char *credential_json,
+                 const char *seed_b64,
+                 const char *verification_method,
+                 const char *created,
+                 char **err_out);
 
 /**
  * Build a detached eddsa-jcs-2022 proof object (JSON).
@@ -59,11 +59,11 @@ char *vouch_verify_proof(const char *credential_json, const char *public_b64, ch
  * Verify a credential's proof and validity window. Returns JSON
  * {proofValid, timeValid, valid}.
  */
-char *vouch_verify_credential(const char *credential_json,
-                              const char *public_b64,
-                              const char *now_iso,
-                              int64_t clock_skew_seconds,
-                              char **err_out);
+char *vouch_verify(const char *credential_json,
+                   const char *public_b64,
+                   const char *now_iso,
+                   int64_t clock_skew_seconds,
+                   char **err_out);
 
 /**
  * Verify a dual proof (Ed25519 + ML-DSA-44). Returns "true"/"false".
@@ -109,6 +109,232 @@ char *vouch_verify_chain_time_bound(const char *chain_json,
                                     const char *now_iso,
                                     int64_t clock_skew_seconds,
                                     char **err_out);
+
+/**
+ * Mint a fresh threshold-native Ed25519 identity: max_signers key shares, any
+ * min_signers of which can sign together. Returns JSON
+ * {shares: [{identifier, key_package}, ...], group_public_key: {verifying_key, public_key_package}}.
+ */
+char *vouch_threshold_generate_key(uint16_t min_signers,
+                                   uint16_t max_signers,
+                                   char **err_out);
+
+/**
+ * Round 1 for one signer (one entry from generate_key's shares array).
+ * Returns JSON {nonces, commitments}. `nonces` is SECRET: keep it on this
+ * signer's device only, use it for exactly one vouch_threshold_sign_share
+ * call, then discard it.
+ */
+char *vouch_threshold_commit(const char *key_share_json, char **err_out);
+
+/**
+ * Round 2 for one signer. message is the raw bytes to sign (base64).
+ * commitments_json maps every participating signer's base64 identifier to
+ * its base64 commitment, including this signer's own. Returns the
+ * base64-encoded signature share.
+ */
+char *vouch_threshold_sign_share(const char *message_b64,
+                                 const char *key_share_json,
+                                 const char *nonces_b64,
+                                 const char *commitments_json,
+                                 char **err_out);
+
+/**
+ * Combine signature shares into the final signature. commitments_json and
+ * shares_json map each signer's base64 identifier to its base64 commitment /
+ * signature share. group_public_key_json is the group_public_key object from
+ * vouch_threshold_generate_key. Returns the base64-encoded 64-byte Ed25519
+ * signature.
+ */
+char *vouch_threshold_aggregate(const char *message_b64,
+                                const char *commitments_json,
+                                const char *shares_json,
+                                const char *group_public_key_json,
+                                char **err_out);
+
+/**
+ * Split a base64-encoded secret into `shares` pieces; any `threshold` of them
+ * reconstruct it. Returns a JSON array of base64-encoded shares.
+ */
+char *vouch_recovery_split_secret(const char *secret_b64,
+                                  uint16_t threshold,
+                                  uint16_t shares,
+                                  char **err_out);
+
+/**
+ * Reconstruct a secret from a JSON array of base64-encoded shares. Returns
+ * the base64-encoded secret. Fewer than the original threshold returns a
+ * wrong value, not an error.
+ */
+char *vouch_recovery_combine_shares(const char *shares_json, char **err_out);
+
+/**
+ * Split a root identity's base64-encoded Ed25519 seed into recovery shares.
+ * Returns a JSON array of base64-encoded shares.
+ */
+char *vouch_recovery_split_identity(const char *seed_b64,
+                                    uint16_t threshold,
+                                    uint16_t shares,
+                                    char **err_out);
+
+/**
+ * Recover a root identity from a JSON array of base64-encoded recovery
+ * shares. Pass an empty string for `did` to derive a did:key from the
+ * recovered public key instead of setting an explicit one. Returns JSON
+ * {did, seed, public_key} (seed and public_key are base64).
+ */
+char *vouch_recovery_recover_identity(const char *shares_json, const char *did, char **err_out);
+
+/**
+ * Mint a RobotIdentityCredential.  carries make/model/serial and
+ * the hardware root; returns the signed credential JSON.
+ */
+char *vouch_robotics_mint_identity(const char *robot_seed_b64,
+                                   const char *params_json,
+                                   char **err_out);
+
+/**
+ * Verify a RobotIdentityCredential. Returns the credentialSubject JSON.
+ */
+char *vouch_robotics_verify_identity(const char *credential_json,
+                                     const char *public_b64,
+                                     char **err_out);
+
+/**
+ * Check a physical action against a physical capability scope. Returns JSON
+ * {ok, reasons}.
+ */
+char *vouch_robotics_check_action(const char *scope_json, const char *action_json, char **err_out);
+
+/**
+ * Verify a scannable robot passport URI. Returns the passport summary JSON.
+ */
+char *vouch_robotics_verify_passport(const char *uri,
+                                     const char *public_b64,
+                                     const char *now_iso,
+                                     char **err_out);
+
+/**
+ * Check a set of robot credentials against a named regulatory profile.
+ *  is a JSON array; returns the deterministic report JSON.
+ */
+char *vouch_robotics_check_conformance(const char *credentials_json,
+                                       const char *profile_id,
+                                       char **err_out);
+
+/**
+ * Sign a point-in-time conformance attestation over a report.
+ * carries issuerDid/robotDid/report; returns the signed credential JSON.
+ */
+char *vouch_robotics_build_conformance_attestation(const char *signer_seed_b64,
+                                                   const char *params_json,
+                                                   char **err_out);
+
+/**
+ * Verify a conformance attestation and its bound report digest. Returns the
+ * credentialSubject JSON.
+ */
+char *vouch_robotics_verify_conformance_attestation(const char *credential_json,
+                                                    const char *public_b64,
+                                                    char **err_out);
+
+/**
+ * Attach a hybrid post-quantum proof (Ed25519 + ML-DSA-44) to a robot
+ * credential. Returns the re-signed credential JSON.
+ */
+char *vouch_robotics_sign_pq(const char *credential_json,
+                             const char *ed25519_seed_b64,
+                             const char *mldsa_secret_b64,
+                             const char *mldsa_public_b64,
+                             const char *created_iso,
+                             char **err_out);
+
+/**
+ * Verify a robot credential whether it carries a classical or a hybrid proof,
+ * auto-detected from the proof. Pass the ML-DSA-44 public key (base64) for a
+ * hybrid credential, or NULL for a classical one. Returns "true"/"false".
+ */
+char *vouch_robotics_verify_robot_credential(const char *credential_json,
+                                             const char *ed25519_public_b64,
+                                             const char *mldsa44_public_b64,
+                                             char **err_out);
+
+/**
+ * Authorize an infrastructure access request offline against an operator grant.
+ * params_json carries {grant, request, now?}. Pass the operator and robot public
+ * keys (base64). Returns the authorize result JSON {ok, reasons}.
+ */
+char *vouch_robotics_authorize_access(const char *params_json,
+                                      const char *operator_public_b64,
+                                      const char *robot_public_b64,
+                                      char **err_out);
+
+/**
+ * Verify a fused-sensor provenance attestation. Pass the robot public key
+ * (base64) and, optionally, the raw fused output as multibase (or NULL) to
+ * reproduce its hash. Returns the subject JSON or "null".
+ */
+char *vouch_robotics_verify_fused_attestation(const char *credential_json,
+                                              const char *public_b64,
+                                              const char *fused_output_mb,
+                                              char **err_out);
+
+/**
+ * Verify a robot wear attestation. Pass the robot public key (base64). Returns
+ * the subject JSON or "null".
+ */
+char *vouch_robotics_verify_wear_attestation(const char *credential_json,
+                                             const char *public_b64,
+                                             char **err_out);
+
+/**
+ * Derive a physical capability scope narrowed for a wear level. params_json
+ * carries {scope, wearLevel}. Returns the narrowed scope JSON.
+ */
+char *vouch_robotics_attenuate_for_wear(const char *params_json, char **err_out);
+
+/**
+ * Verify bystander-consent evidence. params_json carries {evidence, capture?,
+ * consentTokens?, bystanderKeys?, now?}. Pass the robot public key (base64).
+ * Returns the subject JSON or "null".
+ */
+char *vouch_robotics_verify_consent_evidence(const char *params_json,
+                                             const char *robot_public_b64,
+                                             char **err_out);
+
+/**
+ * Verify a cross-embodiment continuity chain. params_json carries the chain and
+ * options. Pass the agent public key (base64). Returns the result JSON.
+ */
+char *vouch_robotics_verify_continuity_chain(const char *params_json,
+                                             const char *agent_public_b64,
+                                             char **err_out);
+
+/**
+ * Verify a physical custody handoff chain. params_json carries the chain, the
+ * actor keys, and options. Returns the result JSON.
+ */
+char *vouch_robotics_verify_handoff_chain(const char *params_json, char **err_out);
+
+/**
+ * Seal a robot's Halos safety-event record into a signed
+ * HalosSafetyEvidenceCredential. params_json carries {halosStack, window,
+ * blackboxHead, entryCount, robotIdentity?, validSeconds?, validFrom, created}.
+ * The robot DID is derived from the signer seed. Returns the signed credential JSON.
+ */
+char *vouch_robotics_build_safety_evidence(const char *signer_seed_b64,
+                                           const char *params_json,
+                                           char **err_out);
+
+/**
+ * Verify a Halos safety-evidence credential. Pass the robot public key (base64)
+ * and, optionally, the black-box entries as a JSON array (or NULL) to check the
+ * chain against the sealed head and entry count. Returns JSON {ok, subject}.
+ */
+char *vouch_robotics_verify_safety_evidence(const char *credential_json,
+                                            const char *robot_public_b64,
+                                            const char *entries_json,
+                                            char **err_out);
 
 #ifdef __cplusplus
 }  // extern "C"

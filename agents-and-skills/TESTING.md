@@ -40,7 +40,7 @@ produce protocol-correct output.
 
 | Prompt | Expected file | Expected behavior |
 |---|---|---|
-| "Show me a Python quickstart for signing a Vouch credential." | `reference/python-sdk.md` | Code with `Signer.generate`, `build_vouch_credential`, `sign_credential`, `Verifier` |
+| "Show me a Python quickstart for signing a Vouch credential." | `reference/python-sdk.md` | Code with `Signer.generate`, `build_vouch_credential`, `sign`, `Verifier` |
 | "Enable the hybrid post-quantum signature for my agent." | `reference/post-quantum.md` | Code that sets cryptosuite to `hybrid-eddsa-mldsa44-jcs-2026` |
 | "Wrap a LangChain tool with Vouch." | `reference/integrations.md` | `VouchTool` wrapper code with `intent_template` |
 | "Why is my verifier returning verificationMethod_not_found?" | `reference/troubleshooting.md` | Three causes (rotation, cache, mismatch) |
@@ -280,7 +280,7 @@ In the GPT preview, type:
 The GPT should:
 1. Summarize the credential it is about to sign.
 2. Ask for explicit confirmation.
-3. Only after you type "yes", call `signCredential`.
+3. Only after you type "yes", call `sign`.
 4. Show you the returned credential id and proof fields.
 
 ### Pass criteria

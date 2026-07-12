@@ -28,8 +28,47 @@
 // Cryptographic SDK (v1.0+)
 // ---------------------------------------------------------------------------
 
-export { Signer, generateIdentity } from './signer';
-export { Verifier } from './verifier';
+export { Signer, generateIdentity, sign } from './signer';
+export { Verifier, verify } from './verifier';
+export { Agent } from './agent';
+export type { AgentCreateOptions, AgentVerifyOptions } from './agent';
+export { Credential } from './credential';
+export {
+  requireSigned,
+  guardMcp,
+  guardTools,
+  DEFAULT_CREDENTIAL_ARG,
+} from './guard';
+export type { RequireSignedOptions } from './guard';
+export {
+  MemoryKeyStore,
+  EncryptedFileKeyStore,
+  resolveDefaultStore,
+} from './keystore';
+export type { KeyStore, StoredIdentity } from './keystore';
+export { enrollDevice, verifyDelegatedChain, DeviceRegistry } from './fleet';
+export type {
+  EnrollDeviceOptions,
+  FleetResult,
+  VerifyDelegatedChainOptions,
+} from './fleet';
+export {
+  splitSecret,
+  combineShares,
+  splitIdentity,
+  recoverIdentity,
+} from './recovery';
+export type { SplitOptions, RecoveredIdentity } from './recovery';
+export {
+  ThresholdError,
+  ThresholdSigner,
+  groupPublicKeyMultikey,
+  generateKey as thresholdGenerateKey,
+  commit as thresholdCommit,
+  signShare as thresholdSignShare,
+  aggregate as thresholdAggregate,
+} from './threshold';
+export type { KeyShare, GroupPublicKey, GenerateKeyResult, Round1 } from './threshold';
 
 export type {
   Passport,
@@ -39,7 +78,7 @@ export type {
   SignerConfig,
   VerifierConfig,
   JWKKey,
-  SignCredentialOptions,
+  SignOptions,
 } from './types';
 
 export type {
@@ -204,6 +243,201 @@ export type {
   AppendEventOptions,
   BuildSafetyRecordOptions,
 } from './robotics/safety_record';
+export {
+  PERCEPTION_TYPE,
+  PERCEPTION_LOG_VERSION,
+  MODALITIES,
+  hashFrame,
+  PerceptionLog,
+  verifyPerceptionLog,
+  buildPerceptionAttestation,
+  verifyPerceptionAttestation,
+} from './robotics/perception';
+export type {
+  RecordFrameOptions,
+  BuildPerceptionAttestationOptions,
+} from './robotics/perception';
+export {
+  DELEGATION_LEASE_TYPE,
+  buildDelegationLease,
+  verifyDelegationLease,
+  leasePermits,
+} from './robotics/lease';
+export type {
+  BuildDelegationLeaseOptions,
+  VerifyDelegationLeaseOptions,
+  LeasePermitsOptions,
+} from './robotics/lease';
+export {
+  ACTION_APPROVAL_TYPE,
+  APPROVE,
+  REJECT,
+  buildActionApproval,
+  verifyActionAuthorization,
+} from './robotics/physical_quorum';
+export type {
+  BuildActionApprovalOptions,
+  VerifyActionAuthorizationOptions,
+} from './robotics/physical_quorum';
+export {
+  OWNERSHIP_TRANSFER_TYPE,
+  KEY_ROTATION_TYPE,
+  DECOMMISSION_TYPE,
+  buildOwnershipTransfer,
+  verifyOwnershipTransfer,
+  verifyCustodyChain,
+  buildKeyRotation,
+  verifyKeyRotation,
+  verifyKeyHistory,
+  buildDecommission,
+  verifyDecommission,
+} from './robotics/lifecycle';
+export type {
+  BuildOwnershipTransferOptions,
+  VerifyCustodyChainOptions,
+  BuildKeyRotationOptions,
+  BuildDecommissionOptions,
+  VerifyDecommissionOptions,
+} from './robotics/lifecycle';
+
+// Halos safety-evidence recorder (NVIDIA Halos integration): a robot-signed
+// credential sealing a tamper-evident black-box of Halos safety events to the
+// robot's identity and certified stack, byte-identical with the Python module.
+export {
+  HALOS_SAFETY_EVIDENCE_TYPE,
+  HALOS_EVENT_SOURCES,
+  HalosError,
+  SafetyEventRecorder,
+  buildSafetyEvidence,
+  verifySafetyEvidence,
+} from './robotics/halos';
+export type { BuildSafetyEvidenceOptions } from './robotics/halos';
+
+// Regulatory conformance profiles, deterministic checker, and signed
+// point-in-time attestation, byte-identical with the Python module.
+export {
+  CONFORMANCE_ATTESTATION_TYPE,
+  PROFILES,
+  profile,
+  checkConformance,
+  reportDigest,
+  buildConformanceAttestation,
+  verifyConformanceAttestation,
+} from './robotics/conformance';
+export type {
+  Requirement,
+  Profile,
+  RequirementResult,
+  ConformanceReport,
+  BuildConformanceAttestationOptions,
+} from './robotics/conformance';
+
+// Cross-embodiment identity continuity: signed embodiment credentials,
+// continuity-chain verification, and software fork detection, byte-identical
+// with the Python module.
+export {
+  EMBODIMENT_TYPE,
+  buildEmbodiment,
+  verifyEmbodiment,
+  verifyContinuityChain,
+  checkNoFork,
+} from './robotics/embodiment';
+export type {
+  BuildEmbodimentOptions,
+  VerifyContinuityChainOptions,
+  CheckNoForkConflict,
+} from './robotics/embodiment';
+
+// Physical custody handoff: signed handoff credentials, chain verification, a
+// holder-at-time helper, and software condition localization, byte-identical
+// with the Python module.
+export {
+  CUSTODY_HANDOFF_TYPE,
+  buildHandoff,
+  verifyHandoff,
+  verifyHandoffChain,
+  holderAt,
+  locateConditionChange,
+} from './robotics/custody';
+export type {
+  BuildHandoffOptions,
+  VerifyHandoffChainOptions,
+  ConditionChange,
+} from './robotics/custody';
+
+// Robot-to-infrastructure bounded access: signed grants and requests, an
+// offline authorize decision, and shrink-only attenuation, byte-identical with
+// the Python module.
+export {
+  ACCESS_GRANT_TYPE,
+  ACCESS_REQUEST_TYPE,
+  buildAccessGrant,
+  verifyAccessGrant,
+  buildAccessRequest,
+  authorizeAccess,
+  attenuatesGrant,
+} from './robotics/access';
+export type {
+  BuildAccessGrantOptions,
+  BuildAccessRequestOptions,
+  AuthorizeResult,
+} from './robotics/access';
+
+// Fused-sensor provenance: a signed attestation binding a fused output to its
+// input frame hashes and a fusion method, with a deterministic digest over the
+// ordered inputs, byte-identical with the Python module.
+export {
+  FUSED_PERCEPTION_TYPE,
+  hashFusedOutput,
+  fusionInputsDigest,
+  buildFusedAttestation,
+  verifyFusedAttestation,
+  verifyFusionInputs,
+} from './robotics/fusion';
+export type { BuildFusedAttestationOptions } from './robotics/fusion';
+
+// Robot wear and degradation attestation: a signed, hash-linked wear history and
+// a physical scope narrowed for the attested wear level, byte-identical with the
+// Python module.
+export {
+  WEAR_ATTESTATION_TYPE,
+  buildWearAttestation,
+  verifyWearAttestation,
+  verifyWearChain,
+  attenuateForWear,
+} from './robotics/wear';
+export type { BuildWearAttestationOptions } from './robotics/wear';
+
+// Bystander-consent evidence: a bystander-signed consent token bound to one
+// capture and one robot, and a robot-signed evidence credential binding a
+// capture hash to a consent basis and the tokens that cover it, byte-identical
+// with the Python module.
+export {
+  CONSENT_EVIDENCE_TYPE,
+  CONSENT_TOKEN_TYPE,
+  CONSENT_BASES,
+  hashCapture,
+  buildConsentToken,
+  verifyConsentToken,
+  buildConsentEvidence,
+  verifyConsentEvidence,
+} from './robotics/consent';
+export type {
+  BuildConsentTokenOptions,
+  BuildConsentEvidenceOptions,
+} from './robotics/consent';
+
+// Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
+export {
+  CLASSICAL_CRYPTOSUITE,
+  HYBRID_CRYPTOSUITE,
+  signPq,
+  isPq,
+  verifyPq,
+  verifyRobotCredential,
+  migrateToPq,
+} from './robotics/pq';
+export type { VerifyRobotCredentialOptions } from './robotics/pq';
 
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
@@ -232,6 +466,42 @@ export type {
   VerifyStatusOptions,
   StatusListStateDict,
 } from './status-list';
+
+// Root of Trust for Machine Identity (Specification §18): Vouch Protocol as the
+// trust anchor for AI agent and robot identity, byte-identical with the Python
+// module.
+export {
+  ROOT_OF_TRUST_TYPE,
+  RECOGNIZED_ISSUER_TYPE,
+  AGENT_IDENTITY_TYPE,
+  ACTION_ISSUE_AGENT_IDENTITY,
+  ACTION_ISSUE_ROBOT_IDENTITY,
+  buildRootOfTrust,
+  buildRecognizedIssuer,
+  buildAgentIdentity,
+  verifyIdentityChain,
+  registerRecognizedIssuer,
+} from './root-of-trust';
+export type {
+  IdentityChainResult,
+  BuildRootOfTrustOptions,
+  BuildRecognizedIssuerOptions,
+  BuildAgentIdentityOptions,
+  VerifyIdentityChainOptions,
+} from './root-of-trust';
+
+// Root of Trust for robot identity: bind a hardware-rooted robot to a
+// recognized manufacturer, anchored to one pinned Vouch root, matching the
+// Python `vouch.robotics.root_identity` module.
+export {
+  buildRobotIdentity,
+  verifyRobotIdentityChain,
+} from './robotics/root-identity';
+export type {
+  RobotIdentityChainResult,
+  BuildRobotIdentityOptions,
+  VerifyRobotIdentityChainOptions,
+} from './robotics/root-identity';
 
 // ---------------------------------------------------------------------------
 // Daemon Client

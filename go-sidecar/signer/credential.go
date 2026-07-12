@@ -4,13 +4,14 @@
 // This file extends Signer with a credential-issuance path that coexists
 // with the legacy composite-JWS path in signer.go. Both paths share the
 // same Ed25519 signing key. Existing callers using Signer.Sign() continue
-// to work unchanged. New callers should prefer SignCredential().
+// to work unchanged. New callers should prefer Sign().
 
 package signer
 
 import (
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -20,11 +21,19 @@ import (
 
 const maxDelegationDepth = 5
 
-// SignCredentialOptions configures Signer.SignCredential.
-type SignCredentialOptions struct {
+// SignOptions configures Signer.Sign.
+type SignOptions struct {
 	// Intent is the action being authorized. Must contain action, target,
-	// resource (Specification §5.4.1).
+	// resource (Specification §5.4.1). The intent can also be supplied via the
+	// Action/Target/Resource fields below; when both are set, the named fields
+	// override the matching keys in Intent.
 	Intent map[string]any
+
+	// Action, Target, Resource are a convenience alternative to building the
+	// Intent map by hand. Any that are non-empty are folded into Intent.
+	Action   string
+	Target   string
+	Resource string
 
 	// ValidSeconds overrides the default validity window (Signer.defaultExpiry).
 	ValidSeconds int
@@ -55,10 +64,11 @@ type SignCredentialOptions struct {
 	CredentialStatus map[string]any
 }
 
-// SignCredential issues a Verifiable Credential with a Data Integrity
+// Sign issues a Verifiable Credential with a Data Integrity
 // proof using the eddsa-jcs-2022 cryptosuite (Specification §5, §7.1).
 // Returns the credential as a map suitable for JSON serialization.
-func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, error) {
+func (s *Signer) Sign(opts SignOptions) (map[string]any, error) {
+	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain
 	if opts.ParentCredential != nil {
 		extended, err := s.extendDelegationChain(opts.ParentCredential, opts.Intent)
@@ -87,10 +97,13 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 		return nil, err
 	}
 
-	proof, err := BuildDataIntegrityProof(cred, BuildProofOptions{
-		PrivateKey:         s.ed25519Private,
-		VerificationMethod: s.VerificationMethodID(),
-	})
+	proofOpts := BuildProofOptions{VerificationMethod: s.VerificationMethodID()}
+	if s.signFunc != nil {
+		proofOpts.Sign = s.signFunc
+	} else {
+		proofOpts.PrivateKey = s.ed25519Private
+	}
+	proof, err := BuildDataIntegrityProof(cred, proofOpts)
 	if err != nil {
 		return nil, fmt.Errorf("build proof: %w", err)
 	}
@@ -99,10 +112,10 @@ func (s *Signer) SignCredential(opts SignCredentialOptions) (map[string]any, err
 	return cred, nil
 }
 
-// SignCredentialJSON returns the credential as a JSON-serialized byte slice
+// SignJSON returns the credential as a JSON-serialized byte slice
 // suitable for transmission over HTTP.
-func (s *Signer) SignCredentialJSON(opts SignCredentialOptions) ([]byte, error) {
-	cred, err := s.SignCredential(opts)
+func (s *Signer) SignJSON(opts SignOptions) ([]byte, error) {
+	cred, err := s.Sign(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +164,7 @@ func (s *Signer) DID() string {
 // AttachProof attaches an eddsa-jcs-2022 Data Integrity proof to a pre-built
 // credential map, for custom credential types (for example robotics
 // credentials) the caller assembles directly rather than from an intent.
-// Mirrors the signing step of SignCredential; returns the credential with its
+// Mirrors the signing step of Sign; returns the credential with its
 // "proof" set.
 func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) {
 	proof, err := BuildDataIntegrityProof(credential, BuildProofOptions{
@@ -165,7 +178,30 @@ func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) 
 	return credential, nil
 }
 
-// SignCredentialHybrid issues a Vouch Credential under the hybrid
+// AttachHybridProof attaches a hybrid post-quantum (Ed25519 plus ML-DSA-44)
+// Data Integrity proof to a pre-built credential map, for custom credential
+// types (for example robotics credentials) the caller assembles directly
+// rather than from an intent. Mirrors AttachProof but uses the
+// hybrid-eddsa-mldsa44-jcs-2026 cryptosuite; both keys live in this process,
+// so it is not available for a backend Signer. Returns the credential with its
+// "proof" set.
+func (s *Signer) AttachHybridProof(credential map[string]any) (map[string]any, error) {
+	if s.signFunc != nil {
+		return nil, errors.New("vouch: AttachHybridProof needs the raw keys and is not available for a backend Signer")
+	}
+	proof, err := BuildHybridDataIntegrityProof(credential, BuildHybridProofOptions{
+		Ed25519PrivateKey:  s.ed25519Private,
+		MLDSA44PrivateKey:  s.mldsa44Private,
+		VerificationMethod: s.VerificationMethodID(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("attach hybrid proof: %w", err)
+	}
+	credential["proof"] = proofToMap(proof)
+	return credential, nil
+}
+
+// SignHybrid issues a Vouch Credential under the hybrid
 // post-quantum profile (Specification §13.2). The credential carries a
 // hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof containing both an
 // Ed25519 signature and an ML-DSA-44 signature over the same canonical form.
@@ -174,7 +210,14 @@ func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) 
 // Note: this profile produces credentials roughly 2.5 KB larger than the
 // eddsa-jcs-2022 default. Implementations using this profile SHOULD
 // transmit credentials in the HTTP request body (§5.6).
-func (s *Signer) SignCredentialHybrid(opts SignCredentialOptions) (map[string]any, error) {
+func (s *Signer) SignHybrid(opts SignOptions) (map[string]any, error) {
+	if s.signFunc != nil {
+		// The hybrid profile needs both an Ed25519 and an ML-DSA-44 signature.
+		// A backend Signer only exposes the Ed25519 callback, so this path is
+		// not available there.
+		return nil, errors.New("vouch: SignHybrid is not supported for a backend Signer")
+	}
+	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain
 	if opts.ParentCredential != nil {
 		extended, err := s.extendDelegationChain(opts.ParentCredential, opts.Intent)
@@ -286,4 +329,24 @@ func isSubResource(child, parent string) bool {
 	}
 	trimmed := strings.TrimRight(parent, "/")
 	return strings.HasPrefix(child, trimmed+"/")
+}
+
+// mergeIntent folds the named action/target/resource into a copy of the intent
+// map. Named values override matching keys; the caller's map is not mutated.
+// Required-field validation is left to BuildVouchCredential.
+func mergeIntent(intent map[string]any, action, target, resource string) map[string]any {
+	merged := make(map[string]any, len(intent)+3)
+	for k, v := range intent {
+		merged[k] = v
+	}
+	if action != "" {
+		merged["action"] = action
+	}
+	if target != "" {
+		merged["target"] = target
+	}
+	if resource != "" {
+		merged["resource"] = resource
+	}
+	return merged
 }

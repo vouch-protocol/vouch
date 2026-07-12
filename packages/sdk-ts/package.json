@@ -1,6 +1,6 @@
 {
  "name": "@vouch-protocol-official/sdk",
- "version": "1.1.0",
+ "version": "2.0.0",
  "description": "Official TypeScript SDK for Vouch Protocol. Verifiable Credentials with Data Integrity proofs (eddsa-jcs-2022), Multikey verification methods, optional hybrid post-quantum profile (Ed25519 + ML-DSA-44), plus a daemon client for delegating signing operations.",
  "keywords": [
   "vouch",
@@ -85,15 +85,20 @@
   "jose": "^5.2.0"
  },
  "peerDependencies": {
-  "@noble/post-quantum": "^0.4.0"
+  "@noble/post-quantum": "^0.4.0",
+  "@vouch-protocol-official/core-wasm": "^2.0.0"
  },
  "peerDependenciesMeta": {
   "@noble/post-quantum": {
+   "optional": true
+  },
+  "@vouch-protocol-official/core-wasm": {
    "optional": true
   }
  },
  "devDependencies": {
   "@noble/post-quantum": "^0.4.0",
+  "@vouch-protocol-official/core-wasm": "^2.0.0",
   "@types/node": "^20.10.0",
   "tsup": "^8.0.0",
   "typescript": "^5.3.0",

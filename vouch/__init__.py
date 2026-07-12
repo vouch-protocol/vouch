@@ -5,19 +5,75 @@ This package provides cryptographic identity binding for autonomous AI agents,
 enabling verifiable proof of intent and non-repudiation.
 """
 
-__version__ = "1.6.0"
+__version__ = "2.0.2"
 
 # Core signing/verification
-from .signer import Signer
-from .verifier import Verifier, Passport, VerificationError, DelegationLink
+from .signer import Signer, sign
+from .verifier import Verifier, Passport, VerificationError, DelegationLink, verify
 from .auditor import Auditor
+
+# One-object identity and the read-friendly credential wrapper (ergonomic sugar
+# over Signer/Verifier; the credential dict stays the canonical wire form).
+from .agent import Agent
+from .credential import Credential
 
 # Key management
 from .keys import generate_identity, KeyPair
 from .kms import RotatingKeyProvider, KeyConfig
 
+# Where a minted identity is saved (secure by default). See vouch.keystore.
+from .keystore import (
+    EncryptedFileKeyStore,
+    KeyringKeyStore,
+    KeyStore,
+    MemoryKeyStore,
+    resolve_default_store,
+)
+
+# Deterministic, zero-prompt signing for agent tool calls. Wrap a tool once and
+# every call is signed in Python before it runs - no reliance on the model
+# choosing to call a signing tool. See vouch.autosign and the framework
+# adapters under vouch.integrations.*.
+from .autosign import (
+    current_credential,
+    current_token_header,
+    delegate,
+    protect,
+    resolve_signer,
+    sign_intent,
+    signed,
+)
+
+# Receiving-side verification guards: a server-side gate and one-line tool
+# guards (the counterpart to protect/sign on the sending side).
+from .gate import CredentialGate, GateResult
+from .mcp_guard import guard_mcp, guard_tools, require_signed
+
+# Cross-device identity: per-device keys delegated from a root, with full chain
+# verification back to a trusted root (the key never travels). See vouch.fleet.
+from .fleet import DeviceRegistry, FleetResult, enroll_device, verify_delegated_chain
+
+# Root-identity recovery by Shamir secret sharing (split the root across
+# guardians; any threshold reconstruct it). See vouch.recovery.
+from .recovery import (
+    combine_shares,
+    recover_identity,
+    split_identity,
+    split_secret,
+)
+
 # Audio signing
 from .audio import AudioSigner, SignedAudioResult
+from .root_of_trust import (
+    IdentityChainResult,
+    build_agent_identity,
+    build_identity_bundle,
+    build_recognized_issuer,
+    build_root_of_trust,
+    generate_did_key_identity,
+    verify_bundle,
+    verify_identity_chain,
+)
 
 
 # Enterprise features (lazy imports to avoid requiring optional deps)
@@ -185,12 +241,139 @@ def __getattr__(name):
         "verify_attestation",
         "accountability_pointer",
         "commitment_digest",
+        "timestamp_anchor",
+        "claims_precedence",
+        "PRECEDENCE_PRE_OUTCOME",
+        "PRECEDENCE_EXISTENCE",
         "OUTCOME_COMMITMENT_TYPE",
         "OUTCOME_ATTESTATION_TYPE",
     ):
         from . import accountability
 
         return getattr(accountability, name)
+    # Proof-of-Integration recognition primitive (PAD-072)
+    elif name in (
+        "ProofOfIntegrationError",
+        "build_integration_challenge",
+        "answer_integration_challenge",
+        "verify_integration_response",
+        "proof_of_integration_block",
+        "CHALLENGE_TYPE",
+        "RESPONSE_TYPE",
+    ):
+        from . import proof_of_integration
+
+        return getattr(proof_of_integration, name)
+    # Liveness-conformance-decaying recognition trust (PAD-073)
+    elif name in (
+        "LivenessError",
+        "build_conformance_receipt",
+        "verify_conformance_receipt",
+        "last_conformant",
+        "consumable_trust",
+        "should_revoke",
+        "revocation_entry",
+        "CONFORMANCE_RECEIPT_TYPE",
+    ):
+        from . import liveness_conformance
+
+        return getattr(liveness_conformance, name)
+    # Reasoned Action Proofs (justification bound to the action, PAD-017/071)
+    elif name in (
+        "ReasonedActionError",
+        "REASONED_ACTION_TYPE",
+        "evidence_anchor",
+        "build_justification",
+        "justification_digest",
+        "artifact_digest",
+        "build_escrow_receipt",
+        "verify_escrow_receipt",
+        "LocalEscrow",
+        "sign_reasoned_action",
+        "check_reasoned_action",
+        "verify_reasoned_action",
+        "verify_justification",
+    ):
+        from . import reasoning
+
+        return getattr(reasoning, name)
+    # Proof of Deliberation (two-phase deliberated execution, PAD-085)
+    elif name in (
+        "DeliberationError",
+        "INTENT_TYPE",
+        "EXECUTE_TYPE",
+        "VETO_TYPE",
+        "CLASS_REVERSIBLE",
+        "CLASS_REVERSIBLE_COSTLY",
+        "CLASS_IRREVERSIBLE_FINANCIAL",
+        "CLASS_IRREVERSIBLE_DESTRUCTIVE",
+        "CLASS_IRREVERSIBLE_EXTERNAL",
+        "action_digest",
+        "requires_window",
+        "commit_intent",
+        "verify_intent",
+        "veto_intent",
+        "execute",
+        "check_execution",
+        "verify_execution",
+    ):
+        from . import deliberation
+
+        return getattr(deliberation, name)
+    # Executable caveats in delegation chains (PAD-086)
+    elif name in (
+        "CaveatError",
+        "CAPABILITY_TYPE",
+        "caveat",
+        "value_ceiling",
+        "running_total_ceiling",
+        "time_window",
+        "allowlist",
+        "flag_true",
+        "incident_gate",
+        "rate_limit",
+        "evaluate_caveat",
+        "build_capability",
+        "chain_caveats",
+        "verify_capability",
+    ):
+        from . import caveats
+
+        return getattr(caveats, name)
+    # Inference provenance (bind an output to its model and context, PAD-043/045)
+    elif name in (
+        "ProvenanceError",
+        "PROVENANCE_TYPE",
+        "output_digest",
+        "context_root",
+        "weights_hash",
+        "sign_inference_provenance",
+        "verify_inference_provenance",
+        "verify_context",
+        "check_replay",
+    ):
+        from . import provenance
+
+        return getattr(provenance, name)
+    # Action transparency (append-only RFC 6962 log of agent actions)
+    elif name in (
+        "TransparencyError",
+        "SIGNED_TREE_HEAD_TYPE",
+        "TransparencyLog",
+        "entry_digest",
+        "merkle_tree_hash",
+        "inclusion_proof",
+        "verify_inclusion",
+        "consistency_proof",
+        "verify_consistency",
+        "sign_tree_head",
+        "verify_tree_head",
+        "check_inclusion",
+        "check_consistency",
+    ):
+        from . import transparency
+
+        return getattr(transparency, name)
     # Reputation receipts and aggregation (evidence-backed reputation)
     elif name in (
         "ReceiptError",
@@ -262,6 +445,21 @@ def __getattr__(name):
         from . import kms
 
         return getattr(kms, name)
+    # FROST(Ed25519) threshold signing (needs the native vouch_core_uniffi
+    # library). The ceremony functions (generate_key, commit, sign_share,
+    # aggregate) have names too generic to export at the top level without
+    # colliding with unrelated symbols (aggregate is already reputation
+    # aggregation); use vouch.threshold.generate_key(...) directly.
+    elif name in (
+        "ThresholdError",
+        "ThresholdSigner",
+        "KeyShare",
+        "GroupPublicKey",
+        "GenerateKeyResult",
+    ):
+        from . import threshold
+
+        return getattr(threshold, name)
     raise AttributeError(f"module 'vouch' has no attribute '{name}'")
 
 
@@ -269,16 +467,57 @@ __all__ = [
     "__version__",
     # Core
     "Signer",
+    "sign",
     "Verifier",
+    "verify",
+    "Agent",
+    "Credential",
     "Passport",
     "VerificationError",
     "DelegationLink",
     "Auditor",
+    # Root of Trust for machine identity
+    "build_root_of_trust",
+    "build_recognized_issuer",
+    "build_agent_identity",
+    "verify_identity_chain",
+    "build_identity_bundle",
+    "verify_bundle",
+    "generate_did_key_identity",
+    "IdentityChainResult",
     # Key management
     "generate_identity",
     "KeyPair",
     "RotatingKeyProvider",
     "KeyConfig",
+    # Key storage (secure by default)
+    "KeyStore",
+    "MemoryKeyStore",
+    "EncryptedFileKeyStore",
+    "KeyringKeyStore",
+    "resolve_default_store",
+    # Deterministic agent-tool signing
+    "protect",
+    "signed",
+    "delegate",
+    "sign_intent",
+    "current_credential",
+    "current_token_header",
+    "resolve_signer",
+    # Receiving-side verification guards
+    "CredentialGate",
+    "GateResult",
+    "require_signed",
+    "enroll_device",
+    "verify_delegated_chain",
+    "FleetResult",
+    "DeviceRegistry",
+    "split_secret",
+    "combine_shares",
+    "split_identity",
+    "recover_identity",
+    "guard_mcp",
+    "guard_tools",
     # Audio
     "AudioSigner",
     "SignedAudioResult",
@@ -336,8 +575,98 @@ __all__ = [
     "verify_attestation",
     "accountability_pointer",
     "commitment_digest",
+    "timestamp_anchor",
+    "claims_precedence",
+    "PRECEDENCE_PRE_OUTCOME",
+    "PRECEDENCE_EXISTENCE",
     "OUTCOME_COMMITMENT_TYPE",
     "OUTCOME_ATTESTATION_TYPE",
+    # Proof-of-Integration recognition primitive (PAD-072)
+    "ProofOfIntegrationError",
+    "build_integration_challenge",
+    "answer_integration_challenge",
+    "verify_integration_response",
+    "proof_of_integration_block",
+    "CHALLENGE_TYPE",
+    "RESPONSE_TYPE",
+    # Liveness-conformance-decaying recognition trust (PAD-073)
+    "LivenessError",
+    "build_conformance_receipt",
+    "verify_conformance_receipt",
+    "last_conformant",
+    "consumable_trust",
+    "should_revoke",
+    "revocation_entry",
+    "CONFORMANCE_RECEIPT_TYPE",
+    # Reasoned Action Proofs (justification bound to the action)
+    "ReasonedActionError",
+    "REASONED_ACTION_TYPE",
+    "evidence_anchor",
+    "build_justification",
+    "justification_digest",
+    "artifact_digest",
+    "build_escrow_receipt",
+    "verify_escrow_receipt",
+    "LocalEscrow",
+    "sign_reasoned_action",
+    "check_reasoned_action",
+    "verify_reasoned_action",
+    "verify_justification",
+    # Proof of Deliberation (two-phase deliberated execution)
+    "DeliberationError",
+    "INTENT_TYPE",
+    "EXECUTE_TYPE",
+    "VETO_TYPE",
+    "CLASS_REVERSIBLE",
+    "CLASS_REVERSIBLE_COSTLY",
+    "CLASS_IRREVERSIBLE_FINANCIAL",
+    "CLASS_IRREVERSIBLE_DESTRUCTIVE",
+    "CLASS_IRREVERSIBLE_EXTERNAL",
+    "commit_intent",
+    "verify_intent",
+    "veto_intent",
+    "execute",
+    "check_execution",
+    "verify_execution",
+    # Executable caveats in delegation chains
+    "CaveatError",
+    "CAPABILITY_TYPE",
+    "caveat",
+    "value_ceiling",
+    "running_total_ceiling",
+    "time_window",
+    "allowlist",
+    "flag_true",
+    "incident_gate",
+    "rate_limit",
+    "evaluate_caveat",
+    "build_capability",
+    "chain_caveats",
+    "verify_capability",
+    # Inference provenance (bind an output to its model and context)
+    "ProvenanceError",
+    "PROVENANCE_TYPE",
+    "output_digest",
+    "context_root",
+    "weights_hash",
+    "sign_inference_provenance",
+    "verify_inference_provenance",
+    "verify_context",
+    "check_replay",
+    # Action transparency (append-only RFC 6962 log)
+    "TransparencyError",
+    "SIGNED_TREE_HEAD_TYPE",
+    "TransparencyLog",
+    "entry_digest",
+    "merkle_tree_hash",
+    "inclusion_proof",
+    "verify_inclusion",
+    "consistency_proof",
+    "verify_consistency",
+    "sign_tree_head",
+    "verify_tree_head",
+    "check_inclusion",
+    "check_consistency",
     # Reputation receipts and aggregation
     "ReceiptError",
     "Signal",
@@ -375,4 +704,10 @@ __all__ = [
     "AWSKMSProvider",
     "GCPKMSProvider",
     "AzureKeyVaultProvider",
+    # FROST(Ed25519) threshold signing
+    "ThresholdError",
+    "ThresholdSigner",
+    "KeyShare",
+    "GroupPublicKey",
+    "GenerateKeyResult",
 ]

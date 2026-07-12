@@ -52,6 +52,7 @@ export const FAQ_SECTIONS: FAQSection[] = [
         a: `Vouch is a digital signature layer for AI agents. When your agent does something on your behalf (sends an email, transfers money, files a claim, queries a database), Vouch lets it cryptographically sign that action so anyone, anywhere, can later prove who did what and with whose permission.
 
 Think of it as a tamper-proof receipt for every move an autonomous AI makes. The receipt is human-readable, cryptographically signed, and works across whatever framework you use to build agents (LangChain, CrewAI, MCP, anything).`,
+        helpLinks: [{ label: 'See it: an agent that must state why', href: '/demos/#reasoned-action' }],
       },
       {
         q: 'What problem does it solve?',
@@ -60,6 +61,7 @@ Think of it as a tamper-proof receipt for every move an autonomous AI makes. The
 The tools we built for humans (API keys, login sessions, OAuth tokens) were not designed for this. They prove someone has access. They don't prove what the agent intended to do, who delegated the action down to it, or whether the agent is still behaving correctly.
 
 Vouch fixes this by turning every agent action into a signed receipt. Identity, intent, target, and the chain of permissions are all cryptographically bound together. If your CFO asks "did our agent really wire that money?", you can prove it in seconds, with math, not log files.`,
+        helpLinks: [{ label: 'See it: veto an irreversible action before it runs', href: '/demos/#deliberation' }],
       },
       {
         q: 'How is this different from OAuth, API keys, or JWTs?',
@@ -155,7 +157,10 @@ The credential format for these renewals ships today (it is called SessionVouche
         q: 'What is a delegation chain?',
         a: `A chain of permission slips that tracks "who let whom do what." Imagine you tell your assistant "please book my flight." Your assistant tells an AI travel agent "please find flights." The travel agent tells a payment agent "please charge this card." Three steps, three permission grants.
 
-A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.`,
+A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.
+
+Beyond narrowing static fields, a link can carry executable caveats: live conditions ("only for shipped orders", "under the customer's lifetime spend", "business hours only") that accumulate down the chain and that no downstream holder can drop. Try it in the interactive demo, where a rule the CEO sets still blocks an agent two hops away.`,
+        helpLinks: [{ label: 'See it: the delegation-envelope demo', href: '/demos/#caveats' }],
       },
       {
         q: 'Can Vouch prove an agent has a track record it cannot fake?',
@@ -174,6 +179,120 @@ This is the evidence layer underneath reputation. Vouch reputation is itself evi
 A consumer does not trust a server's number: it fetches the receipts and recomputes the score itself. Anonymous star ratings carry almost no weight, and a human review only counts when it is bound to proof the rater actually used the agent. An agent can prove it clears a bar, say a composite of at least 75, without revealing its score, and a receipt issued in error can be disputed and dropped by an arbiter.`,
         helpLinks: [{ label: 'Evidence-backed reputation', href: '/help/#reputation-evidence' }],
         meta: 'Shipped on main - vouch.receipts, vouch.reputation_aggregate, vouch.reputation_ledger',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ACCOUNTABLE AUTONOMY
+  // =====================================================================
+  {
+    id: 'accountable-autonomy',
+    audience: 'Accountable autonomy',
+    title: 'Bounding and recording what an authorized agent does',
+    items: [
+      {
+        q: 'Identity proves who acted. What stops an authorized agent from doing something harmful?',
+        a: `A misaligned agent can take an action that is inside its authority and still catastrophic. Vouch does not read the agent's mind. It does what institutions have always done with authorized actors: five Python SDK modules make each action state its reason (\`vouch.reasoning\`), slow down the irreversible ones behind a veto (\`vouch.deliberation\`), stay inside an authority that cannot be broadened (\`vouch.caveats\`), come from a decision that is reproducible (\`vouch.provenance\`), and land in a public append-only log (\`vouch.transparency\`). Together they make harm hard to hide even for a misaligned agent.`,
+        helpLinks: [{ label: 'See all four in the browser', href: '/demos/' }],
+        meta: 'Shipped - vouch.reasoning, deliberation, caveats, provenance, transparency',
+      },
+      {
+        q: 'How does an agent prove why it acted, without being able to fake the reason?',
+        a: `\`vouch.reasoning\` (Reasoned Action Proofs) has the agent state its justification before acting, tie each reason to a real artifact by that artifact's hash, and escrow the justification before execution. An auditor can then prove the reasoning was not fabricated (each anchor must resolve and hash-match a real message or delegation), not rewritten after the fact (it must recompute to the committed digest), and committed before the action. It does not make deception impossible; it puts the agent on the record, so a false justification is provable.`,
+        helpLinks: [{ label: 'See it: reasoned action', href: '/demos/#reasoned-action' }],
+      },
+      {
+        q: 'Can I make an agent wait, or let a human veto, before it does something irreversible?',
+        a: `Yes, with \`vouch.deliberation\`. A reversible action runs instantly. An irreversible one (wiring funds, deleting without backup, publishing) must commit and broadcast a signed intent with a challenge window and a set of authorized objectors, wait out the window, and survive any veto before a verifier accepts it. The agent cannot shorten the window (the verifier checks the elapse) and cannot clear its own veto (the veto authority is a separate DID). This gives regulatory human-oversight requirements a machine-checkable hook.`,
+        helpLinks: [{ label: 'See it: the deliberation window', href: '/demos/#deliberation' }],
+      },
+      {
+        q: 'Can a permission carry a live condition that a sub-agent two hops down cannot drop?',
+        a: `Yes, with executable caveats (\`vouch.caveats\`). Beyond narrowing static fields, a delegation link can carry conditions ("only for shipped orders", "under the customer's lifetime spend", "business hours only"). Caveats accumulate down the chain, so a rule the grantor sets binds every descendant, and no holder in between can drop it because the verifier requires the presented chain to root at the grantor. Every verifier must evaluate every accumulated caveat, offline, with no policy server.`,
+        helpLinks: [{ label: 'See it: the delegation envelope', href: '/demos/#caveats' }],
+      },
+      {
+        q: 'Can I prove an agent output came from a specific model and context, not a hallucination?',
+        a: `\`vouch.provenance\` binds an output to a fingerprint of the model weights and a Merkle root over the context it was grounded in, plus the sampler settings. An auditor can re-fetch the sources to reproduce the context root (catching a fabricated or substituted context) and re-run the model on the same seed to byte-compare the output. It does not read the model's mind; it makes the provenance of a decision reproducible and its inputs non-repudiable, and it is the anchor point for zero-knowledge proofs of inference later.`,
+        helpLinks: [{ label: 'See it: the provenance', href: '/demos/#provenance' }],
+      },
+      {
+        q: 'How do I make agent actions publicly auditable so none can be hidden or rewritten?',
+        a: `\`vouch.transparency\` submits consequential actions to an append-only RFC 6962 Merkle log that signs its size and root as a Signed Tree Head. A verifier can demand an inclusion proof that a specific action is in the log, and a monitor can demand a consistency proof that an older tree head is a strict prefix of a newer one. So the log cannot silently omit an action or rewrite history, and comparing tree heads across observers catches a split view. It is the same discipline Certificate Transparency brought to misissuance.`,
+        helpLinks: [{ label: 'See it: the transparency log', href: '/demos/#transparency' }],
+      },
+    ],
+  },
+
+  // =====================================================================
+  // CONFORMANCE
+  // =====================================================================
+  {
+    id: 'conformance',
+    audience: 'Conformance',
+    title: 'Proving an implementation is conformant',
+    items: [
+      {
+        q: 'What does Vouch conformance mean?',
+        a: `Conformance proves that an implementation, an SDK, a fork, or a port, produces byte-correct protocol output and supports the required feature sets. It is graded in three cumulative levels. L1 Credential: canonicalization, eddsa-jcs-2022 sign and verify, the validity window, and nonce replay resistance. L2 Structural-Security: everything in L1 plus BitstringStatusList revocation, delegation narrowing with the five-link depth bound, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail. L3 State Verifiable plus Post-Quantum: everything in L2 plus the hybrid dual-proof, the Heartbeat renewal chain, and an M-of-N validator quorum. This is separate from robotics regulatory conformance, which grades a robot against a regulation.`,
+        meta: 'Spec section 17',
+      },
+      {
+        q: 'How do I test my implementation?',
+        a: `Run the reference runner. It checks your implementation against the levels and reports the highest it fully satisfies: \`python -m vouch.conformance\`. It runs the checks in-process against the SDK and prints a per-check pass or fail with the highest passing level.`,
+      },
+      {
+        q: 'Is there a verified badge?',
+        a: `The self-test proves conformance to yourself. A hosted verifier is coming that turns it into a Vouch-verified, re-checkable result: it issues fresh random challenges, re-checks every response server-side with the canonical core, and mints a signed credential unique to your implementation. Because it recomputes every expected answer, a pass cannot be faked by replaying the public test vectors. Until it is live, the conformance page carries a self-declaration and shows what a verified pass will earn.`,
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROOT OF TRUST FOR MACHINE IDENTITY
+  // =====================================================================
+  {
+    id: 'root-of-trust',
+    audience: 'Root of trust',
+    title: 'Anchoring agent identity to an authority you pin',
+    items: [
+      {
+        q: 'What is the Root of Trust for Machine Identity?',
+        a: `It is an optional authority layer. A verifier pins one Vouch Protocol root, the root recognizes issuers, and a recognized issuer vouches for an agent's identity. A verifier then confirms any agent by walking a short chain back to the single root it already trusts.
+
+Your agent's own \`vouch init\` identity is unchanged. This layer is additive: reach for it when a verifier wants identities backed by a named authority rather than self-asserted alone.`,
+        meta: 'Spec section 18',
+      },
+      {
+        q: 'Why would I need it if my agent already has a DID?',
+        a: `A self-issued credential anchors to whatever the agent claims about itself: a domain with \`did:web\`, or a public key with \`did:key\`. That proves the same key signed the credential, but it does not say who stands behind the agent, what model it runs, or who owns it.
+
+The Root of Trust layer closes that gap. A recognized issuer binds the agent's DID to real attributes (owner, model, capability class), and the recognition traces back to a root the verifier pinned in advance. There is no external certificate authority and no central per-agent lookup.`,
+      },
+      {
+        q: 'What are the three credential types?',
+        a: `1. **Root of Trust credential** (\`VouchRootOfTrust\`), self-issued by the root so it describes itself.
+2. **Recognized-issuer credential** (\`RecognizedIssuerCredential\`), issued by the root, naming an issuer, its \`recognizedActions\` (like \`issueAgentIdentity\` or \`issueRobotIdentity\`), and a \`recognizedIn\` pointer back to the root.
+3. **Agent identity credential** (\`AgentIdentityCredential\`), issued by a recognized issuer (issuer differs from subject), binding an agent DID to attributes.
+
+All three are ordinary Verifiable Credentials with the same \`eddsa-jcs-2022\` proof used everywhere else in Vouch Protocol.`,
+      },
+      {
+        q: 'How does verification work, and can it run offline?',
+        a: `\`verify_identity_chain\` walks the chain: the recognized-issuer credential must be signed by the pinned root and grant the required action, the identity credential must be signed by that recognized issuer, and an optional action credential must be signed by the agent the identity describes. Everything anchors at the one root DID the verifier trusts up front.
+
+When the root, issuer, and agent all use \`did:key\`, the whole chain verifies with no network, since each \`did:key\` carries its public key in the identifier. For \`did:web\` issuers you can resolve keys over the network or pin them ahead of time.`,
+      },
+      {
+        q: 'How do I revoke a recognition or an identity?',
+        a: `Both the recognized-issuer credential and the agent identity credential carry an optional \`credentialStatus\` (BitstringStatusList). Revoke a recognized issuer to withdraw its authority to vouch for new agents; revoke a single identity to retire one agent without touching the issuer. The verifier checks the status during the walk and rejects a revoked link.`,
+      },
+      {
+        q: 'Who runs the root? Is there a central one?',
+        a: `There is no privileged central root. Anyone can run \`vouch root init\` to stand up their own root, recognize their own issuers, and publish the root DID for verifiers to pin. An enterprise runs one for its fleet, a marketplace for the agents it lists, a robotics vendor for the machines it ships. Verifiers choose which roots to trust.
+
+The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch root issue-identity\`, and \`vouch root verify-chain\`. The layer ships in Python, TypeScript, Rust, and Go with a byte-identical wire format, so a chain can span languages and still verify.`,
       },
     ],
   },
@@ -254,7 +373,7 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
       {
         q: 'Can I prove what model and safety policy a robot ran, even after an OTA update?',
         a: `Yes, via a \`ModelProvenanceAttestation\` recording the model name, weights hash, safety policy, and config hash. On an over-the-air update the robot re-signs a new attestation with a \`supersedes\` link to the previous one, forming a tamper-evident chain you can walk to answer "what was running at any past time."`,
-        helpLinks: [{ label: 'Provenance guide', href: '/help/#robotics-provenance' }],
+        helpLinks: [{ label: 'Provenance guide', href: '/help/#robotics-provenance' }, { label: 'See it: reproduce and replay a decision', href: '/demos/#provenance' }],
         meta: 'Shipped - vouch.robotics.provenance, PAD-065',
       },
       {
@@ -487,6 +606,316 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
   },
 
   // =====================================================================
+  // ROBOTICS: PERCEPTION PROVENANCE
+  // =====================================================================
+  {
+    id: 'robotics-perception',
+    audience: 'Robotics: perception',
+    title: 'Perception provenance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can a robot prove what its cameras and lidar actually saw?',
+        a: `Yes. At capture, the robot signs a \`PerceptionProvenanceCredential\` binding the frame's hash, the sensor id, the modality, and the capture time to its DID. A verifier that holds the frame recomputes its hash and checks it matches, so a substituted or edited frame is detectable.`,
+        helpLinks: [{ label: 'Perception provenance guide', href: '/help/#robotics-perception' }],
+        meta: 'Shipped - vouch.robotics.perception',
+      },
+      {
+        q: 'How is the sequence of frames kept tamper-evident?',
+        a: `Each frame's provenance record is hash-linked to the previous one in a \`PerceptionLog\`, the same append-only chain the black box uses. Altering or dropping a frame breaks the chain, and \`verify_perception_log\` detects it. An attestation can carry the chain head to anchor a whole segment of frames.`,
+        helpLinks: [{ label: 'Perception provenance guide', href: '/help/#robotics-perception' }],
+        meta: 'Shipped - vouch.robotics.perception',
+      },
+      {
+        q: 'Are the raw frames stored in the credential?',
+        a: `No. Only the frame hash and the metadata are carried, so the log stays small and the raw sensor data lives wherever the deployment keeps it. The hash is enough to prove, later, that a given frame is the one the robot attested.`,
+        meta: 'Shipped - vouch.robotics.perception',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: OFFLINE DELEGATION LEASE
+  // =====================================================================
+  {
+    id: 'robotics-lease',
+    audience: 'Robotics: offline lease',
+    title: 'Offline delegation lease',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does a robot act safely where there is no connectivity?',
+        a: `An authority issues a \`DelegationLeaseCredential\` that bounds what the robot may physically do, a force, speed, near-humans, and zone scope, for a fixed short window. The robot verifies the signature, that the window is current, and that a proposed action fits the scope, all offline with no network call.`,
+        helpLinks: [{ label: 'Offline lease guide', href: '/help/#robotics-lease' }],
+        meta: 'Shipped - vouch.robotics.lease',
+      },
+      {
+        q: 'How does this work across vendors?',
+        a: `Leases nest, and each sub-grant can only narrow the one above it. A vendor leases to an integrator, the integrator to an operator, the operator to the robot, and every link is verifiable and bounded. \`verify_delegation_lease\` checks that a child lease attenuates its parent, so no link can widen authority.`,
+        helpLinks: [{ label: 'Offline lease guide', href: '/help/#robotics-lease' }],
+        meta: 'Shipped - vouch.robotics.lease',
+      },
+      {
+        q: 'What stops an expired lease from being used?',
+        a: `Verification checks the window: a lease that has expired or is not yet valid fails. Because leases are short-lived by design, the exposure from a compromised or stale lease is bounded to its window.`,
+        meta: 'Shipped - vouch.robotics.lease',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: PHYSICAL QUORUM
+  // =====================================================================
+  {
+    id: 'robotics-quorum',
+    audience: 'Robotics: physical quorum',
+    title: 'Physical quorum',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can I require more than one approval before a robot does something dangerous?',
+        a: `Yes. A physical quorum is a cryptographic two-person rule: a high-consequence action is authorized only when at least M of an attested set of N approvers have each signed an approval over the same action. \`verify_action_authorization\` counts the distinct valid approvers and authorizes only when the threshold is met.`,
+        helpLinks: [{ label: 'Physical quorum guide', href: '/help/#robotics-quorum' }],
+        meta: 'Shipped - vouch.robotics.physical_quorum',
+      },
+      {
+        q: 'Can one approver just sign twice to reach the threshold?',
+        a: `No. The verifier counts DISTINCT approvers, so a single approver counts once no matter how many approvals it submits. Approvals from outside the attested approver set, for a different action, or carrying a reject decision are all ignored.`,
+        helpLinks: [{ label: 'Physical quorum guide', href: '/help/#robotics-quorum' }],
+        meta: 'Shipped - vouch.robotics.physical_quorum',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: LIFECYCLE AND DECOMMISSIONING
+  // =====================================================================
+  {
+    id: 'robotics-lifecycle',
+    audience: 'Robotics: lifecycle',
+    title: 'Lifecycle and decommissioning',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How do I prove a robot changed hands legitimately when it is resold?',
+        a: `The current owner signs a \`RobotOwnershipTransferCredential\` handing the robot to the new owner. Linking each transfer to the previous one forms a chain of custody, and \`verify_custody_chain\` checks that every link's new owner matches the next link's seller and that only the current owner could sign each transfer.`,
+        helpLinks: [{ label: 'Lifecycle guide', href: '/help/#robotics-lifecycle' }],
+        meta: 'Shipped - vouch.robotics.lifecycle',
+      },
+      {
+        q: 'How does a robot rotate its key without losing its history?',
+        a: `The robot's current key signs a \`RobotKeyRotationCredential\` that authorizes the new key. Because the old key vouches for the new one, anyone who trusted the old key can follow \`verify_key_history\` to the current key, for a routine rotation or after a compromise.`,
+        helpLinks: [{ label: 'Lifecycle guide', href: '/help/#robotics-lifecycle' }],
+        meta: 'Shipped - vouch.robotics.lifecycle',
+      },
+      {
+        q: 'What happens when a robot is retired?',
+        a: `An owner or authority signs a \`RobotDecommissionCredential\` recording the reason and final disposition. After that, a verifier should refuse to trust the robot. With a trusted-authority set, only an attested authority can retire it.`,
+        meta: 'Shipped - vouch.robotics.lifecycle',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: REGULATORY CONFORMANCE
+  // =====================================================================
+  {
+    id: 'robotics-conformance',
+    audience: 'Robotics: conformance',
+    title: 'Regulatory conformance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can I check a robot against a safety regulation automatically?',
+        a: `Yes. A conformance profile maps the robot's credentials to the clauses of a regulation, and \`check_conformance(credentials, profile_id)\` returns a report saying which clauses the presented credentials satisfy, each one cited. Built-in reference profiles cover ISO 10218-1/-2, ISO/TS 15066, the EU Machinery Regulation 2023/1230, the EU AI Act high-risk requirements, and UL 3300.`,
+        helpLinks: [{ label: 'Conformance guide', href: '/help/#robotics-conformance' }],
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
+      {
+        q: 'How does an auditor consume the result?',
+        a: `The robot, its owner, or an assessing authority signs a \`RobotConformanceAttestation\` with \`build_conformance_attestation\`. It embeds the report and binds it by digest, so an auditor verifies the signature and the digest with \`verify_conformance_attestation\` and knows the report was not altered.`,
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
+      {
+        q: 'Are the built-in profiles legal advice?',
+        a: `No. The profiles are a reference crosswalk to make conformance verifiable in the open. A deployment confirms each mapping against the current text of the regulation for its market before relying on it.`,
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: POST-QUANTUM
+  // =====================================================================
+  {
+    id: 'robotics-pq',
+    audience: 'Robotics: post-quantum',
+    title: 'Post-quantum signing',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Why do robot credentials need post-quantum signatures?',
+        a: `A robot fielded today runs for ten to twenty years, longer than classical Ed25519 is expected to stay safe. A robot identity signed now could be forged once a quantum computer arrives. Signing robot credentials with the hybrid cryptosuite (\`hybrid-eddsa-mldsa44-jcs-2026\`, a classical signature alongside an ML-DSA-44 signature) keeps them unforgeable across the robot's whole service life. Use \`sign_pq\` to sign.`,
+        helpLinks: [{ label: 'Post-quantum guide', href: '/help/#robotics-pq' }],
+        meta: 'Shipped - vouch.robotics.pq',
+      },
+      {
+        q: 'Do I have to migrate every robot at once?',
+        a: `No. \`verify_robot_credential\` accepts a classical or a hybrid proof and detects which from the credential, so a fleet moves to post-quantum gradually while the classical credentials already in the field keep verifying. \`migrate_to_pq\` re-signs a fielded robot's classical credential under a post-quantum key when you are ready.`,
+        meta: 'Shipped - vouch.robotics.pq',
+      },
+      {
+        q: 'Does a verifier need the post-quantum key?',
+        a: `To verify a hybrid credential, yes: pass the ML-DSA-44 public key (raw bytes or a multikey) to \`verify_pq\` or \`verify_robot_credential\`. Both the classical and the post-quantum signature must validate for the credential to pass.`,
+        meta: 'Shipped - vouch.robotics.pq',
+      },
+      {
+        q: 'Can I verify a robot credential from .NET, Java, Swift, or C++?',
+        a: `Yes. The reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface, and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface over the same core: verify a robot credential (classical or hybrid, auto-detected), mint and verify identity, conformance, passport, action check, and post-quantum sign. In .NET, JVM, and Swift these are a \`VouchRobotics\` class; in C++ a \`vouch::robotics\` namespace. Output is byte-identical across languages.`,
+        meta: 'Shipped - C, C++, .NET, JVM, Swift',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: CROSS-EMBODIMENT CONTINUITY
+  // =====================================================================
+  {
+    id: 'robotics-embodiment',
+    audience: 'Robotics: embodiment',
+    title: 'Cross-embodiment continuity',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can one AI agent move between robot bodies and stay accountable?',
+        a: `Yes. An embodiment credential binds the agent (a mind with its own identity) to a specific body and that body's hardware root for a period, signed by the agent's own key. Linking each embodiment to the previous one forms a continuity chain that \`verify_continuity_chain\` walks to confirm the same accountable agent persisted across bodies, re-binding to each body's hardware root. It is the inverse of the ownership custody chain: there one body passes between owners, here one mind passes between bodies.`,
+        helpLinks: [{ label: 'Cross-embodiment guide', href: '/help/#robotics-embodiment' }],
+        meta: 'Shipped - vouch.robotics.embodiment',
+      },
+      {
+        q: 'How do you stop the same agent running on two bodies at once?',
+        a: `\`check_no_fork\` confirms no two embodiments place the agent in different bodies with overlapping active time windows. A clean handover sets one body's window to end where the next begins, so there is no overlap; two bodies active at the same time is reported as a fork.`,
+        meta: 'Shipped - vouch.robotics.embodiment',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: PHYSICAL CUSTODY HANDOFF
+  // =====================================================================
+  {
+    id: 'robotics-custody',
+    audience: 'Robotics: custody',
+    title: 'Physical custody handoff',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can I trace who held a physical item across humans and robots?',
+        a: `Yes. Each handoff is a \`CustodyHandoffCredential\` signed by the receiver accepting custody of a task or object from a releasing actor, who may be a person or a robot. Linking each handoff (each receiver becomes the next releaser) forms a chain \`verify_handoff_chain\` walks, and \`holder_at\` returns who held the task at a given time, so a physical-world incident traces to the exact hop and actor.`,
+        helpLinks: [{ label: 'Custody handoff guide', href: '/help/#robotics-custody' }],
+        meta: 'Shipped - vouch.robotics.custody',
+      },
+      {
+        q: 'If an item is damaged in transit, can I tell which hop it happened in?',
+        a: `Yes. Each handoff can attest the condition of the item as received. \`locate_condition_change\` finds the first hop where the condition differs from the previous one and names the holder who was responsible while it changed, so damage or loss localizes to a specific actor rather than the whole route.`,
+        meta: 'Shipped - vouch.robotics.custody',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: INFRASTRUCTURE ACCESS
+  // =====================================================================
+  {
+    id: 'robotics-access',
+    audience: 'Robotics: access',
+    title: 'Infrastructure access',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'How does a robot open a door or use an elevator without a shared secret?',
+        a: `The infrastructure operator issues an \`InfrastructureAccessGrant\` with \`build_access_grant\`, naming the resource (a door, elevator, charger, or machine), the permitted operations, an optional zone, and a time window, signed by the operator. The robot presents an \`InfrastructureAccessRequest\` for one operation, signed by its own key. The resource runs \`authorize_access\` offline: it allows the operation only when the grant verifies under the operator key and is in window, the request verifies under the robot key, the grant and request name the same robot and resource, and the operation is one the grant permits. No shared secret and no live call to a server.`,
+        helpLinks: [{ label: 'Infrastructure access guide', href: '/help/#robotics-access' }],
+        meta: 'Shipped - vouch.robotics.access',
+      },
+      {
+        q: 'Can I hand a robot a narrower slice of access than I hold?',
+        a: `Yes. \`attenuates_grant\` confirms a sub-grant only narrows what it inherits: the same resource, a subset of the operations, and the same zone. A grant can be passed down the chain and checked at each step so no one widens it, and because the grant and the matching request are both signed, the pair is a tamper-evident, attributable record of exactly what access was used and when.`,
+        meta: 'Shipped - vouch.robotics.access',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: FUSED-SENSOR PROVENANCE
+  // =====================================================================
+  {
+    id: 'robotics-fusion',
+    audience: 'Robotics: fusion',
+    title: 'Fused-sensor provenance',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot acts on fused sensor data, not one frame. Can I prove where a fused result came from?',
+        a: `Yes. \`build_fused_attestation\` signs a \`FusedPerceptionAttestation\` that binds the hash of the fused output (a world model, an occupancy grid, or a pose) to the ordered list of input frame hashes and the fusion method that produced it. \`verify_fused_attestation\` checks the robot's proof and reproduces a digest over the listed inputs, so the attestation commits to exactly those inputs and that output, and a manipulated fusion result no longer matches.`,
+        helpLinks: [{ label: 'Fused-sensor provenance guide', href: '/help/#robotics-fusion' }],
+        meta: 'Shipped - vouch.robotics.fusion',
+      },
+      {
+        q: 'Can I tell if a fused result quietly dropped or swapped one of its input frames?',
+        a: `Yes. \`verify_fusion_inputs\` checks every input frame the attestation names against the robot's signed perception log and returns any that were never recorded, so a dropped or substituted fused input is named rather than hidden. Because the input digest is signed, adding, removing, or reordering an input also changes the digest and breaks verification.`,
+        meta: 'Shipped - vouch.robotics.fusion',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: WEAR AND DEGRADATION
+  // =====================================================================
+  {
+    id: 'robotics-wear',
+    audience: 'Robotics: wear',
+    title: 'Wear and degradation',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot wears out over its life. Can it prove its own degradation?',
+        a: `Yes. \`build_wear_attestation\` signs a \`RobotWearAttestation\` carrying a normalized wear level (0 for as-new, 1 for fully worn) and optional detailed metrics like actuator wear, calibration drift, and cycle count, bound to the robot's identity. Linking each attestation to the previous one by its proof forms a hash-linked history \`verify_wear_chain\` walks, so the way a robot degraded over its life is tamper-evident.`,
+        helpLinks: [{ label: 'Wear and degradation guide', href: '/help/#robotics-wear' }],
+        meta: 'Shipped - vouch.robotics.wear',
+      },
+      {
+        q: 'Can a worn robot automatically operate inside tighter limits?',
+        a: `Yes. \`attenuate_for_wear\` derives a physical capability scope whose force and speed caps are scaled down by the wear level, and the result is a valid attenuation of the original scope, so the same attenuation check the rest of Vouch uses accepts it. A robot at 25 percent wear runs on a scope with three-quarters of its original caps, verifiably narrower than the limit it shipped with.`,
+        meta: 'Shipped - vouch.robotics.wear',
+      },
+    ],
+  },
+
+  // =====================================================================
+  // ROBOTICS: BYSTANDER CONSENT
+  // =====================================================================
+  {
+    id: 'robotics-consent',
+    audience: 'Robotics: consent',
+    title: 'Bystander consent',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot with cameras records people in public. Can it prove it had a basis to?',
+        a: `Yes. \`build_consent_evidence\` signs a \`BystanderConsentEvidence\` credential that binds a capture, named only by its hash, to a consent basis: an explicit token, posted notice, a legitimate interest, or a redaction the robot applied. It stores only hashes and the basis, never an image or anyone's identifying data, so the record is verifiable without retaining biometrics. \`verify_consent_evidence\` checks the robot's proof, that the basis is one an interoperable verifier accepts, and, when given the raw capture, that its hash matches.`,
+        helpLinks: [{ label: 'Bystander consent guide', href: '/help/#robotics-consent' }],
+        meta: 'Shipped - vouch.robotics.consent',
+      },
+      {
+        q: 'If a person consents to being recorded, can that consent be reused for other footage?',
+        a: `No, and that is the point. \`build_consent_token\` has the bystander sign over the hash of the one capture and the robot's DID, so \`verify_consent_token\` accepts it only for that capture and that robot. A token given for one recording cannot be replayed against another. The evidence commits to its tokens by their proof value, so an explicit-consent record names exactly which consents cover the capture without embedding anyone's identity.`,
+        meta: 'Shipped - vouch.robotics.consent',
+      },
+    ],
+  },
+
+  // =====================================================================
   // FOR DEVELOPERS
   // =====================================================================
   {
@@ -494,6 +923,31 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
     audience: 'Building with Vouch',
     title: 'Adding Vouch to your code',
     items: [
+      {
+        q: 'What is the fastest way to add Vouch to my agent?',
+        a: `One line. Run \`vouch init --yes\` once to provision an identity, then wrap your tools:
+
+\`\`\`python
+from vouch import protect
+
+agent.tools = protect([charge_invoice, send_email])
+\`\`\`
+
+Every tool call is now signed in Python before it runs. There is no prompt to write and nothing for the model to remember, and identity is resolved automatically, so agent code needs no key plumbing. \`protect\` works for plain functions and for CrewAI, LangChain, AutoGen, AutoGPT, Vertex AI, Google, and ADK tools. For decorator frameworks you can also call \`<framework>.autosign()\` to sign every tool framework-wide. Verify on the receiving side with \`vouch.verify(credential)\`, or add the FastAPI \`VouchGate\` dependency to an endpoint.`,
+        helpLinks: [{ label: 'Integrations', href: '/help/#integrations' }],
+        meta: 'Shipped v1.6.x',
+      },
+      {
+        q: 'What is the fastest way to start using Vouch?',
+        a: `On Linux or macOS, one line installs the \`vouch\` command (on Windows, use \`pip install vouch-protocol\`):
+
+\`\`\`bash
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+\`\`\`
+
+Then run \`vouch\` with no arguments and pick from a short menu: sign your git commits (a verified badge on GitHub), or give an agent its own identity. For a full agent setup with recommended defaults and no questions, run \`vouch onboard --quick\`, which writes a working identity, allow-list, verifier, and heartbeat config in one command.`,
+        helpLinks: [{ label: 'Getting started', href: '/help/#quickstart-python' }],
+      },
       {
         q: 'Which languages have Vouch SDKs?',
         a: `One canonical Rust core does the cryptography once, and every language is a thin wrapper over it, so a credential signed on any platform verifies on every other, byte for byte (JCS canonicalization):
@@ -515,27 +969,27 @@ Every implementation passes the same cross-language test vectors at [test-vector
       },
       {
         q: 'How do I sign a credential in Python?',
-        a: `Three lines after imports:
+        a: `Build a signer from your identity, then pass the intent directly to \`sign\`:
 
 \`\`\`python
-from vouch import Signer, build_vouch_credential
+from vouch import Signer, generate_identity
 
-signer = Signer.from_did("did:web:agent.example.com")
-credential = build_vouch_credential(
-  subject_did="did:web:agent.example.com",
-  intent={"action": "submit_claim", "target": "claim:HC-001",
-      "resource": "https://insurance.example.com/claims/HC-001"},
-  valid_seconds=300,
-)
-signed = signer.sign_credential(credential)
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+
+signed = signer.sign(intent={
+  "action": "submit_claim",
+  "target": "claim:HC-001",
+  "resource": "https://insurance.example.com/claims/HC-001",
+}, valid_seconds=300)
 \`\`\`
 
-The \`signed\` dict has a \`proof\` object with a \`proofValue\` (z-base58 encoded Ed25519 signature) and verification metadata.`,
+The \`signed\` dict has a \`proof\` object with a \`proofValue\` (z-base58 encoded Ed25519 signature) and verification metadata. To make an agent sign every tool call automatically, use \`protect([...])\` instead (see the question above).`,
         helpLinks: [{ label: 'Full Python quickstart', href: '/help/#quickstart-python' }],
       },
       {
         q: 'How do I sign with the hybrid post-quantum profile?',
-        a: `Use \`sign_credential_hybrid()\` instead of \`sign_credential()\`. The required \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so nothing else to install:
+        a: `Use \`sign_hybrid()\` instead of \`sign()\`. The required \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so nothing else to install:
 
 \`\`\`bash
 pip install vouch-protocol
@@ -544,10 +998,16 @@ pip install vouch-protocol
 Then:
 
 \`\`\`python
-from vouch import Signer, build_vouch_credential
+from vouch import Signer, generate_identity
 
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(credential)
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+
+signed = signer.sign_hybrid(intent={
+  "action": "submit_claim",
+  "target": "claim:HC-001",
+  "resource": "https://insurance.example.com/claims/HC-001",
+})
 \`\`\`
 
 The resulting credential's \`proof\` field is an **array** of two Data Integrity proofs: one with \`cryptosuite: "eddsa-jcs-2022"\` (the classical Ed25519 proof) and one with \`cryptosuite: "mldsa44-jcs-2026"\` (the post-quantum ML-DSA-44 proof). Both proofs cover the same JCS-canonicalized credential bytes. Verifiers iterate the array and apply their local policy (validate either, validate both).
@@ -563,7 +1023,7 @@ The resulting credential's \`proof\` field is an **array** of two Data Integrity
 \`\`\`python
 from vouch import Verifier
 verifier = Verifier()
-result = await verifier.verify_credential(signed) # accepts credentials from any SDK
+result = await verifier.verify(signed) # accepts credentials from any SDK
 \`\`\`
 
 The published test vectors at [test-vectors/hybrid-eddsa-mldsa44/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors/hybrid-eddsa-mldsa44) include a Python-generated signature that is exercised by both the TypeScript and Go test suites.`,
@@ -591,32 +1051,75 @@ The verifier walks every link, validates signatures, and confirms resource subse
         meta: 'Specification §9 Delegation Chains',
       },
       {
-        q: 'How do I make a credential revocable later?',
-        a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Two steps: allocate an index from your status list, then pass a status entry to \`build_vouch_credential\`:
+        q: 'How do I use one identity across my devices without copying my private key?',
+        a: `Each device makes its own key and keeps it local. Your root identity signs a scoped grant for each device, and the device signs its actions with its own key, chained under that grant. A verifier ties any action back to the trusted root. The private key never travels between devices.
 
 \`\`\`python
-from vouch import (
-  StatusList, build_status_list_entry, build_vouch_credential, Signer,
+from vouch import Agent, enroll_device, verify_delegated_chain
+
+root = Agent("alice.example")
+phone = Agent()  # a did:key minted on the phone
+grant = enroll_device(root, device_did=phone.did, action="charge",
+                      target="api.bank", resource="https://api.bank/invoices")
+action = phone.sign(action="charge", target="api.bank",
+                    resource="https://api.bank/invoices/42", parent_credential=grant)
+result = verify_delegated_chain([grant, action],
+                                trusted_roots={root.did: root.public_key_jwk})
+\`\`\`
+
+Lose a device and you revoke it with a \`DeviceRegistry\`; lose the root and you rebuild it from a threshold of Shamir shares with \`split_identity\` and \`recover_identity\`. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) exposes the same helpers.`,
+        meta: 'Cross-device identity',
+        helpLinks: [
+          { label: 'See it: enroll and revoke a device', href: '/demos/identity/#enrollment' },
+          { label: 'See it: recover a root from Shamir shares', href: '/demos/identity/#recovery' },
+        ],
+      },
+      {
+        q: 'Can several people jointly sign one action without any of them holding the full key?',
+        a: `Yes, with FROST(Ed25519) threshold signing. A key is split among several custodians so that any threshold of them can sign together, and the full private key never exists whole at any point, not even during signing. The result is a standard Ed25519 signature, so it verifies exactly like any other credential.
+
+\`\`\`python
+from vouch import Signer, ThresholdSigner, threshold
+
+generated = threshold.generate_key(min_signers=2, max_signers=3)
+threshold_signer = ThresholdSigner(generated.shares[:2], generated.group_public_key)
+
+signer = Signer.from_backend(
+    did="did:web:agent.example",
+    public_key=generated.group_public_key.public_key_jwk,
+    sign=threshold_signer.sign,
 )
+credential = signer.sign(action="read", target="t", resource="https://x/y")
+\`\`\`
+
+This is distinct from the recovery shares above: recovery reconstructs a key once, for a deliberate restore; threshold signing never reconstructs it at all, and is meant for live, repeated signing. Every SDK (Python, TypeScript, Go, JVM, .NET, C, Swift) binds the same audited \`frost-ed25519\` core (the Zcash Foundation's RFC 9591 implementation), so every language produces byte-identical results.`,
+        meta: 'FROST threshold signing',
+        helpLinks: [{ label: 'See it: any threshold of custodians signs', href: '/demos/identity/#threshold-signing' }],
+      },
+      {
+        q: 'How do I make a credential revocable later?',
+        a: `Attach a status entry when you issue it. That way, if you ever need to revoke it, you just flip a bit on a published list. Allocate an index from your status list, then pass the entry as \`credential_status\` to \`sign\` so the proof covers it:
+
+\`\`\`python
+from vouch import Signer, StatusList, build_status_list_entry, generate_identity
 
 # Issuer maintains a single StatusList per status purpose (revocation or suspension).
 status_list = StatusList(status_list_id="https://issuer.example/status/1")
 index = status_list.allocate_index()
 
-# Attach the status entry at issuance time.
 status_entry = build_status_list_entry(
   status_list_credential="https://issuer.example/status/1",
   status_list_index=index,
 )
 
-credential = build_vouch_credential(
-  issuer_did="did:web:issuer.example",
+keys = generate_identity("issuer.example")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+
+signed = signer.sign(
   intent={"action": "submit_claim", "target": "claim:HC-001",
       "resource": "https://insurance.example/claims/HC-001"},
   credential_status=status_entry,
 )
-
-signed = Signer.from_did("did:web:issuer.example").sign_credential(credential)
 \`\`\`
 
 The TypeScript and Go SDKs expose the same API (\`buildStatusListEntry\` / \`BuildStatusListEntry\`) and accept \`credentialStatus\` / \`CredentialStatus\` on their credential builders.`,
@@ -634,7 +1137,7 @@ status_credential = build_status_list_credential(
   issuer_did="did:web:issuer.example",
   status_list=status_list,
 )
-signed_status_credential = signer.sign_credential(status_credential)
+signed_status_credential = signer.sign(status_credential)
 
 # Publish signed_status_credential at the URL referenced by issued credentials.
 \`\`\`
@@ -691,6 +1194,7 @@ status_list = store.load()
         a: `Python integrations live under \`vouch/integrations/\`:
 
 - **LangChain** - tool wrapper that signs tool inputs before execution
+- **LangGraph** - signs tool calls and graph nodes across a LangGraph graph
 - **CrewAI** - tool wrapper for crew-style multi-agent flows
 - **AutoGPT** - command integration
 - **AutoGen** - tool wrapper
@@ -701,8 +1205,9 @@ status_list = store.load()
 - **n8n** - workflow automation node
 - **Hasura** - GraphQL webhook
 - **MCP** - Model Context Protocol server
+- **Goose** - registers the Vouch MCP server as an extension for Block's Goose agent
 
-**New standalone packages in v1.6.2:** \`vouch-langchain\`, \`vouch-crewai\`, \`vouch-a2a\` (binds an A2A Agent Card to a Vouch identity), \`vouch-mlflow\` (signs a model artifact at registration time, bound to its content digest), and \`vouch-safetensors\` (embeds a credential in the model header, complementary to OpenSSF Model Signing). Each issues a verifiable credential per tool call, with optional delegation back to a human principal.
+**New standalone packages:** \`vouch-langchain\`, \`vouch-langgraph\` (signs LangGraph tool calls and graph nodes), \`vouch-crewai\`, \`vouch-a2a\` (binds an A2A Agent Card to a Vouch identity), \`vouch-goose\` (registers the Vouch MCP server as a Goose extension), \`vouch-mlflow\` (signs a model artifact at registration time, bound to its content digest), and \`vouch-safetensors\` (embeds a credential in the model header, complementary to OpenSSF Model Signing). Each issues a verifiable credential per tool call, with optional delegation back to a human principal.
 
 Examples for each are in [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
 
@@ -1102,8 +1607,14 @@ You can issue dual-proof credentials right now and they remain valid whether you
         a: `Just call the hybrid signer. The \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so a plain \`pip install vouch-protocol\` gives you everything needed:
 
 \`\`\`python
-signer = Signer.from_did_with_hybrid("did:web:agent.example.com")
-signed = signer.sign_credential_hybrid(credential)
+from vouch import Signer, generate_identity
+
+keys = generate_identity("agent.example.com")
+signer = Signer(private_key=keys.private_key_jwk, did=keys.did)
+signed = signer.sign_hybrid(intent={
+  "action": "submit_claim", "target": "claim:HC-001",
+  "resource": "https://insurance.example/claims/HC-001",
+})
 \`\`\`
 
 TypeScript and Go work the same way. There is a full how-to in the [Guides](/help/#hybrid-pq) with code in all three languages.
@@ -1375,6 +1886,28 @@ Rule of thumb: if your auditor will ask about the sidecar, run the Go one. For e
       {
         q: 'Can the sidecar run as a serverless function (Lambda, Cloud Run, Fly Machines)?',
         a: `Yes for the Go sidecar, which is a static binary and starts in milliseconds. The Python and TS sidecars work as serverless too but their cold-start latency makes them less suited to high-frequency signing. For typical agent workloads (one credential per minute), any of them is fine.`,
+      },
+    ],
+  },
+
+  // =====================================================================
+  // COMMUNITY AND CONTRIBUTING
+  // =====================================================================
+  {
+    id: 'community',
+    audience: 'Community & Contributing',
+    title: 'Contributing and the Verified Contributor badge',
+    items: [
+      {
+        q: 'How do I become a Vouch Verified Contributor?',
+        a: `Land a merged pull request on the [repository](https://github.com/vouch-protocol/vouch). When it merges, an automated workflow mints a signed Vouch Verified Contributor credential for you, publishes a certificate page at \`vouch-protocol.com/c/<your-handle>/<pr>\`, adds you to the [contributors page](https://vouch-protocol.com/contributors), and posts a comment on your pull request with the badge and the full credential.
+
+New to the project? Start with a [good first issue](https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). The badge is offered, never required.`,
+        helpLinks: [{ label: 'Become a Vouch Verified Contributor', href: '/help/#verified-contributor' }],
+      },
+      {
+        q: 'Is the contributor badge a real credential or an image?',
+        a: `It is a real Verifiable Credential, signed with the same \`eddsa-jcs-2022\` cryptosuite every Vouch SDK uses. It is issued by \`did:web:vouch-protocol.com:contributors\` and chained back to the project root identity \`did:web:vouch-protocol.com\`, so anyone can verify it with the Vouch verifier or an SDK. The subject is the author of the merged commits, so credit stays correct even when a maintainer relays a contribution for someone else.`,
       },
     ],
   },

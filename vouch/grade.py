@@ -77,7 +77,7 @@ def fix_its(signals: Dict[str, Any]) -> List[str]:
     if not signals.get("pq_ready"):
         fixes.append(
             "Add a post-quantum key (ML-DSA-44) alongside your Ed25519 key and sign with "
-            "`sign_credential_hybrid`, so credentials survive a future quantum break."
+            "`sign_hybrid`, so credentials survive a future quantum break."
         )
     if not signals.get("has_revocation"):
         fixes.append(

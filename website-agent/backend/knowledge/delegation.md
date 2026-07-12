@@ -49,50 +49,69 @@ Each link records: issuer, subject (the next entity in the chain), the
 intent scope being delegated, validity window, and the proof value of
 the parent link (binding the chain cryptographically).
 
-## Construction (Python)
+## Construction (one line)
+
+The one-line path uses `vouch.delegate` on the principal side and a `parent=`
+argument on the agent side. The agent's tools are then chained under the grant
+automatically, and the protocol enforces that each link can only narrow the
+authority, never widen it.
 
 ```python
-from vouch import Signer, build_vouch_credential
+import vouch
 
-# Principal signs delegation #1
-principal_signer = Signer.from_did("did:web:cfo.example.com")
-delegation_to_agent = principal_signer.sign_credential(build_vouch_credential(
-    issuer_did="did:web:cfo.example.com",
-    subject_did="did:web:agent.example.com",
-    intent={"action": "*", "target": "*", "resource": "orders/*"},
+# Principal grants narrow authority in one call.
+grant = vouch.delegate(
+    action="submit_claim", target="*", resource="orders",
+    to="did:web:agent.example.com", signer=principal_signer,
+)
+
+# Every action the agent signs is chained under the grant.
+agent.tools = vouch.protect([submit_claim], parent=grant)
+```
+
+`parent=` also works on `@signed` and `sign_intent`.
+
+## Construction (lower level)
+
+To build a chain explicitly, sign each credential under its parent. The
+`parent_credential` argument appends a delegation link and enforces resource
+narrowing and the depth limit.
+
+```python
+from vouch import Signer
+
+# Principal grants to the agent.
+principal_signer = Signer(private_key=principal_priv_jwk, did="did:web:cfo.example.com")
+delegation_to_agent = principal_signer.sign(
+    intent={"action": "*", "target": "*", "resource": "orders"},
     valid_seconds=86400,  # 24h
-))
+)
 
-# Agent signs delegation #2 (narrowing to one order)
-agent_signer = Signer.from_did("did:web:agent.example.com")
-delegation_to_sub = agent_signer.sign_credential_with_parent(
-    parent=delegation_to_agent,
-    subject_did="did:web:sub.example.com",
+# Agent narrows and re-delegates to a sub-agent.
+agent_signer = Signer(private_key=agent_priv_jwk, did="did:web:agent.example.com")
+delegation_to_sub = agent_signer.sign(
     intent={"action": "submit_claim", "target": "*", "resource": "orders/HC-001"},
+    parent_credential=delegation_to_agent,
     valid_seconds=3600,
 )
 
-# Sub-agent signs the action
-sub_signer = Signer.from_did("did:web:sub.example.com")
-action = sub_signer.sign_credential_with_chain(
-    chain=[delegation_to_agent, delegation_to_sub],
+# Sub-agent signs the action under the chain.
+sub_signer = Signer(private_key=sub_priv_jwk, did="did:web:sub.example.com")
+action = sub_signer.sign(
     intent={"action": "submit_claim", "target": "claim:HC-001", "resource": "orders/HC-001"},
+    parent_credential=delegation_to_sub,
     valid_seconds=300,
 )
 ```
 
-The SDK helpers `sign_credential_with_parent` and
-`sign_credential_with_chain` handle parent-proof binding and depth
-enforcement.
-
 ## Verification
 
 ```python
-from vouch import Verifier
+import vouch
 
-verifier = Verifier()
-result = await verifier.verify_credential(action)
-# Verifier automatically walks delegationChain backward and validates each link
+# One line. Auto-resolves the issuer key and walks the delegationChain,
+# validating each link.
+ok, passport = vouch.verify(action)
 ```
 
 The verifier checks at each link:

@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 
 use vouch_core::{
     credentials, data_integrity, delegation, hybrid, keys, multikey, pq, robotics_json as rjson,
-    status_list,
+    status_list, threshold_json,
 };
 
 // --------------------------------------------------------------------------
@@ -118,8 +118,8 @@ pub fn build_proof(
     Ok(proof.to_string())
 }
 
-#[wasm_bindgen(js_name = signCredential)]
-pub fn sign_credential(
+#[wasm_bindgen(js_name = sign)]
+pub fn sign(
     credential_json: &str,
     seed_b64: &str,
     verification_method: &str,
@@ -140,14 +140,14 @@ pub fn verify_proof(credential_json: &str, public_b64: &str) -> Result<bool, JsE
 // Credentials + verification (with temporal window)
 // --------------------------------------------------------------------------
 
-#[wasm_bindgen(js_name = verifyCredential)]
-pub fn verify_credential(
+#[wasm_bindgen(js_name = verify)]
+pub fn verify(
     credential_json: &str,
     public_b64: &str,
     now_iso: &str,
     clock_skew_seconds: i32,
 ) -> Result<String, JsError> {
-    let r = credentials::verify_credential(
+    let r = credentials::verify(
         &parse(credential_json)?,
         &b64d(public_b64)?,
         now_iso,
@@ -195,6 +195,67 @@ pub fn verify_chain_time_bound(
         .as_array()
         .ok_or_else(|| JsError::new("chain must be a JSON array"))?;
     delegation::verify_chain_time_bound(arr, now_iso, clock_skew_seconds as i64).map_err(jerr)
+}
+
+// --------------------------------------------------------------------------
+// FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
+// signature is a standard Ed25519 signature, verifiable with ed25519Verify
+// like any other; no new proof type. See vouch_core::threshold for the
+// ceremony and why the full private key is never reconstructed.
+// --------------------------------------------------------------------------
+
+/// Mint a fresh threshold-native Ed25519 identity: maxSigners key shares, any
+/// minSigners of which can sign together. Returns JSON
+/// {shares: [{identifier, key_package}, ...], group_public_key: {verifying_key, public_key_package}}.
+#[wasm_bindgen(js_name = thresholdGenerateKey)]
+pub fn threshold_generate_key(min_signers: u16, max_signers: u16) -> Result<String, JsError> {
+    threshold_json::generate_key(min_signers, max_signers).map_err(jerr)
+}
+
+/// Round 1 for one signer (one entry from thresholdGenerateKey's shares
+/// array). Returns JSON {nonces, commitments}. nonces is SECRET: keep it on
+/// this signer's device only, use it for exactly one thresholdSignShare call,
+/// then discard it.
+#[wasm_bindgen(js_name = thresholdCommit)]
+pub fn threshold_commit(key_share_json: &str) -> Result<String, JsError> {
+    threshold_json::commit(key_share_json).map_err(jerr)
+}
+
+/// Round 2 for one signer. messageB64 is the base64-encoded bytes to sign.
+/// commitmentsJson maps every participating signer's base64 identifier to its
+/// base64 commitment, including this signer's own. Returns the
+/// base64-encoded signature share.
+#[wasm_bindgen(js_name = thresholdSignShare)]
+pub fn threshold_sign_share(
+    message_b64: &str,
+    key_share_json: &str,
+    nonces_b64: &str,
+    commitments_json: &str,
+) -> Result<String, JsError> {
+    let message = b64d(message_b64)?;
+    threshold_json::sign_share(&message, key_share_json, nonces_b64, commitments_json).map_err(jerr)
+}
+
+/// Combine signature shares into the final signature. commitmentsJson and
+/// sharesJson map each signer's base64 identifier to its base64 commitment /
+/// signature share. groupPublicKeyJson is the group_public_key object from
+/// thresholdGenerateKey. Returns the base64-encoded 64-byte Ed25519 signature.
+#[wasm_bindgen(js_name = thresholdAggregate)]
+pub fn threshold_aggregate(
+    message_b64: &str,
+    commitments_json: &str,
+    shares_json: &str,
+    group_public_key_json: &str,
+) -> Result<String, JsError> {
+    let message = b64d(message_b64)?;
+    let sig = threshold_json::aggregate(
+        &message,
+        commitments_json,
+        shares_json,
+        group_public_key_json,
+    )
+    .map_err(jerr)?;
+    Ok(b64e(&sig))
 }
 
 // --------------------------------------------------------------------------
@@ -609,4 +670,420 @@ pub fn robotics_verify_safety_record(
     public_b64: &str,
 ) -> Result<String, JsError> {
     rjson::verify_safety_record(credential_json, &b64d(public_b64)?).map_err(jerr)
+}
+
+// Perception provenance (Phase 5.10).
+#[wasm_bindgen(js_name = roboticsHashFrame)]
+pub fn robotics_hash_frame(frame_b64: &str) -> Result<String, JsError> {
+    Ok(rjson::hash_frame(&b64d(frame_b64)?))
+}
+#[wasm_bindgen(js_name = roboticsPerceptionRecord)]
+pub fn robotics_perception_record(params_json: &str) -> Result<String, JsError> {
+    rjson::perception_record_entry(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyPerceptionLog)]
+pub fn robotics_verify_perception_log(
+    entries_json: &str,
+    genesis_prev_hash: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_perception_log(entries_json, genesis_prev_hash.as_deref()).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildPerception)]
+pub fn robotics_build_perception(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_perception_attestation(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyPerception)]
+pub fn robotics_verify_perception(
+    credential_json: &str,
+    public_b64: &str,
+    frame_b64: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_perception_attestation(credential_json, &b64d(public_b64)?, frame_b64.as_deref())
+        .map_err(jerr)
+}
+
+// Delegation lease (Phase 5.11).
+#[wasm_bindgen(js_name = roboticsBuildLease)]
+pub fn robotics_build_lease(signer_seed_b64: &str, params_json: &str) -> Result<String, JsError> {
+    rjson::build_delegation_lease(&b64d(signer_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyLease)]
+pub fn robotics_verify_lease(
+    credential_json: &str,
+    public_b64: &str,
+    now_iso: Option<String>,
+    parent_scope_json: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_delegation_lease(
+        credential_json,
+        &b64d(public_b64)?,
+        now_iso.as_deref(),
+        parent_scope_json.as_deref(),
+    )
+    .map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsLeasePermits)]
+pub fn robotics_lease_permits(params_json: &str) -> Result<bool, JsError> {
+    rjson::lease_permits(params_json).map_err(jerr)
+}
+
+// Physical quorum (Phase 5.12).
+#[wasm_bindgen(js_name = roboticsBuildActionApproval)]
+pub fn robotics_build_action_approval(
+    approver_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_action_approval(&b64d(approver_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyActionAuthorization)]
+pub fn robotics_verify_action_authorization(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_action_authorization(params_json).map_err(jerr)
+}
+
+// Robot lifecycle (Phase 5.13).
+#[wasm_bindgen(js_name = roboticsBuildOwnershipTransfer)]
+pub fn robotics_build_ownership_transfer(
+    current_owner_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_ownership_transfer(&b64d(current_owner_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyOwnershipTransfer)]
+pub fn robotics_verify_ownership_transfer(
+    credential_json: &str,
+    public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_ownership_transfer(credential_json, &b64d(public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyCustodyChain)]
+pub fn robotics_verify_custody_chain(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_custody_chain(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildKeyRotation)]
+pub fn robotics_build_key_rotation(
+    old_key_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_key_rotation(&b64d(old_key_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyKeyRotation)]
+pub fn robotics_verify_key_rotation(
+    credential_json: &str,
+    old_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_key_rotation(credential_json, &b64d(old_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyKeyHistory)]
+pub fn robotics_verify_key_history(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_key_history(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildDecommission)]
+pub fn robotics_build_decommission(
+    signer_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_decommission(&b64d(signer_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyDecommission)]
+pub fn robotics_verify_decommission(
+    credential_json: &str,
+    public_b64: &str,
+    trusted_authorities_json: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_decommission(
+        credential_json,
+        &b64d(public_b64)?,
+        trusted_authorities_json.as_deref(),
+    )
+    .map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsCheckConformance)]
+pub fn robotics_check_conformance(
+    credentials_json: &str,
+    profile_id: &str,
+) -> Result<String, JsError> {
+    rjson::check_conformance(credentials_json, profile_id).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsReportDigest)]
+pub fn robotics_report_digest(report_json: &str) -> Result<String, JsError> {
+    rjson::report_digest(report_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildConformanceAttestation)]
+pub fn robotics_build_conformance_attestation(
+    signer_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_conformance_attestation(&b64d(signer_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyConformanceAttestation)]
+pub fn robotics_verify_conformance_attestation(
+    credential_json: &str,
+    public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_conformance_attestation(credential_json, &b64d(public_b64)?).map_err(jerr)
+}
+
+// --------------------------------------------------------------------------
+// Robotics: post-quantum robot credentials
+// --------------------------------------------------------------------------
+
+#[wasm_bindgen(js_name = roboticsSignPq)]
+pub fn robotics_sign_pq(
+    credential_json: &str,
+    ed25519_seed_b64: &str,
+    mldsa_secret_b64: &str,
+    mldsa_public_b64: &str,
+    created: &str,
+) -> Result<String, JsError> {
+    rjson::sign_pq(
+        credential_json,
+        &b64d(ed25519_seed_b64)?,
+        &b64d(mldsa_secret_b64)?,
+        &b64d(mldsa_public_b64)?,
+        created,
+    )
+    .map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsIsPq)]
+pub fn robotics_is_pq(credential_json: &str) -> Result<bool, JsError> {
+    rjson::is_pq(credential_json).map_err(jerr)
+}
+
+/// Verify a hybrid robot credential. `mldsa44_public_b64` is base64 of raw
+/// 1312-byte bytes or of an ML-DSA-44 Multikey string (UTF-8).
+#[wasm_bindgen(js_name = roboticsVerifyPq)]
+pub fn robotics_verify_pq(
+    credential_json: &str,
+    ed25519_public_b64: &str,
+    mldsa44_public_b64: &str,
+) -> Result<bool, JsError> {
+    rjson::verify_pq(
+        credential_json,
+        &b64d(ed25519_public_b64)?,
+        &b64d(mldsa44_public_b64)?,
+    )
+    .map_err(jerr)
+}
+
+/// Dual verify auto-detected from the proof. `mldsa44_public_b64`, when present,
+/// is base64 of raw 1312-byte bytes or of an ML-DSA-44 Multikey string (UTF-8);
+/// a hybrid credential requires it, a classical credential ignores it.
+#[wasm_bindgen(js_name = roboticsVerifyRobotCredential)]
+pub fn robotics_verify_robot_credential(
+    credential_json: &str,
+    ed25519_public_b64: &str,
+    mldsa44_public_b64: Option<String>,
+) -> Result<bool, JsError> {
+    let ml = match mldsa44_public_b64 {
+        Some(s) => Some(b64d(&s)?),
+        None => None,
+    };
+    rjson::verify_robot_credential(credential_json, &b64d(ed25519_public_b64)?, ml.as_deref())
+        .map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsMigrateToPq)]
+pub fn robotics_migrate_to_pq(
+    credential_json: &str,
+    ed25519_seed_b64: &str,
+    mldsa_secret_b64: &str,
+    mldsa_public_b64: &str,
+    created: &str,
+) -> Result<String, JsError> {
+    rjson::migrate_to_pq(
+        credential_json,
+        &b64d(ed25519_seed_b64)?,
+        &b64d(mldsa_secret_b64)?,
+        &b64d(mldsa_public_b64)?,
+        created,
+    )
+    .map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsBuildEmbodiment)]
+pub fn robotics_build_embodiment(
+    agent_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_embodiment(&b64d(agent_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyEmbodiment)]
+pub fn robotics_verify_embodiment(
+    credential_json: &str,
+    agent_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_embodiment(credential_json, &b64d(agent_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyContinuityChain)]
+pub fn robotics_verify_continuity_chain(
+    params_json: &str,
+    agent_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_continuity_chain(params_json, &b64d(agent_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsCheckNoFork)]
+pub fn robotics_check_no_fork(params_json: &str) -> Result<String, JsError> {
+    rjson::check_no_fork(params_json).map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsBuildHandoff)]
+pub fn robotics_build_handoff(
+    receiver_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_handoff(&b64d(receiver_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyHandoff)]
+pub fn robotics_verify_handoff(
+    credential_json: &str,
+    receiver_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_handoff(credential_json, &b64d(receiver_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyHandoffChain)]
+pub fn robotics_verify_handoff_chain(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_handoff_chain(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsHolderAt)]
+pub fn robotics_holder_at(params_json: &str) -> Result<String, JsError> {
+    rjson::holder_at(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsLocateConditionChange)]
+pub fn robotics_locate_condition_change(params_json: &str) -> Result<String, JsError> {
+    rjson::locate_condition_change(params_json).map_err(jerr)
+}
+
+#[wasm_bindgen(js_name = roboticsBuildAccessGrant)]
+pub fn robotics_build_access_grant(
+    operator_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_access_grant(&b64d(operator_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyAccessGrant)]
+pub fn robotics_verify_access_grant(
+    credential_json: &str,
+    operator_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_access_grant(credential_json, &b64d(operator_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildAccessRequest)]
+pub fn robotics_build_access_request(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_access_request(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsAuthorizeAccess)]
+pub fn robotics_authorize_access(
+    params_json: &str,
+    operator_public_b64: &str,
+    robot_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::authorize_access(
+        params_json,
+        &b64d(operator_public_b64)?,
+        &b64d(robot_public_b64)?,
+    )
+    .map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsAttenuatesGrant)]
+pub fn robotics_attenuates_grant(params_json: &str) -> Result<String, JsError> {
+    rjson::attenuates_grant(params_json).map_err(jerr)
+}
+
+// Fused-sensor provenance (Phase 5.18).
+#[wasm_bindgen(js_name = roboticsFusionInputsDigest)]
+pub fn robotics_fusion_inputs_digest(params_json: &str) -> Result<String, JsError> {
+    rjson::fusion_inputs_digest(params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsHashFusedOutput)]
+pub fn robotics_hash_fused_output(output_b64: &str) -> Result<String, JsError> {
+    Ok(rjson::hash_fused_output(&b64d(output_b64)?))
+}
+#[wasm_bindgen(js_name = roboticsBuildFusedAttestation)]
+pub fn robotics_build_fused_attestation(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_fused_attestation(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyFusedAttestation)]
+pub fn robotics_verify_fused_attestation(
+    credential_json: &str,
+    public_b64: &str,
+    fused_output_b64: Option<String>,
+) -> Result<String, JsError> {
+    rjson::verify_fused_attestation(
+        credential_json,
+        &b64d(public_b64)?,
+        fused_output_b64.as_deref(),
+    )
+    .map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyFusionInputs)]
+pub fn robotics_verify_fusion_inputs(params_json: &str) -> Result<String, JsError> {
+    rjson::verify_fusion_inputs(params_json).map_err(jerr)
+}
+
+// Wear and degradation attestation (Phase 5.19).
+#[wasm_bindgen(js_name = roboticsBuildWearAttestation)]
+pub fn robotics_build_wear_attestation(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_wear_attestation(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyWearAttestation)]
+pub fn robotics_verify_wear_attestation(
+    credential_json: &str,
+    public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_wear_attestation(credential_json, &b64d(public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyWearChain)]
+pub fn robotics_verify_wear_chain(params_json: &str, public_b64: &str) -> Result<String, JsError> {
+    rjson::verify_wear_chain(params_json, &b64d(public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsAttenuateForWear)]
+pub fn robotics_attenuate_for_wear(params_json: &str) -> Result<String, JsError> {
+    rjson::attenuate_for_wear(params_json).map_err(jerr)
+}
+
+// Bystander-consent evidence (Phase 5.20).
+#[wasm_bindgen(js_name = roboticsHashCapture)]
+pub fn robotics_hash_capture(capture_b64: &str) -> Result<String, JsError> {
+    Ok(rjson::hash_capture(&b64d(capture_b64)?))
+}
+#[wasm_bindgen(js_name = roboticsBuildConsentToken)]
+pub fn robotics_build_consent_token(
+    bystander_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_consent_token(&b64d(bystander_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyConsentToken)]
+pub fn robotics_verify_consent_token(
+    params_json: &str,
+    bystander_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_consent_token(params_json, &b64d(bystander_public_b64)?).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsBuildConsentEvidence)]
+pub fn robotics_build_consent_evidence(
+    robot_seed_b64: &str,
+    params_json: &str,
+) -> Result<String, JsError> {
+    rjson::build_consent_evidence(&b64d(robot_seed_b64)?, params_json).map_err(jerr)
+}
+#[wasm_bindgen(js_name = roboticsVerifyConsentEvidence)]
+pub fn robotics_verify_consent_evidence(
+    params_json: &str,
+    robot_public_b64: &str,
+) -> Result<String, JsError> {
+    rjson::verify_consent_evidence(params_json, &b64d(robot_public_b64)?).map_err(jerr)
 }

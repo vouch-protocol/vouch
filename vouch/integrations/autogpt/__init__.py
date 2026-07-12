@@ -1,5 +1,17 @@
-"""Vouch AutoGPT integration."""
+"""Vouch AutoGPT integration - deterministic signing."""
 
-from .commands import sign_with_vouch, register_commands
+from .commands import (
+    autosign,
+    current_credential,
+    protect,
+    sign_intent,
+    signed,
+)
 
-__all__ = ["sign_with_vouch", "register_commands"]
+__all__ = [
+    "protect",
+    "signed",
+    "autosign",
+    "sign_intent",
+    "current_credential",
+]
