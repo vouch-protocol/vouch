@@ -353,6 +353,51 @@ pub fn verify_killswitch_credential(
     )?))
 }
 
+// ---- halos safety evidence ------------------------------------------------
+
+/// Seal a robot's Halos safety-event record into a signed
+/// `HalosSafetyEvidenceCredential`. `params_json` carries `{halosStack, window:
+/// {from, to}, blackboxHead, entryCount, robotIdentity?, validSeconds?, validFrom,
+/// created}`. The robot DID is derived from `signer_seed`.
+pub fn build_safety_evidence(signer_seed: &[u8], params_json: &str) -> Result<String> {
+    let p = parse(params_json)?;
+    let window = p.get("window").cloned().unwrap_or(Value::Null);
+    let params = r::BuildSafetyEvidence {
+        halos_stack: p.get("halosStack").cloned().unwrap_or(Value::Null),
+        window_from: gs(&window, "from"),
+        window_to: gs(&window, "to"),
+        blackbox_head: gs(&p, "blackboxHead"),
+        entry_count: p.get("entryCount").and_then(|v| v.as_u64()).unwrap_or(0),
+        robot_identity: gos(&p, "robotIdentity"),
+        valid_seconds: p.get("validSeconds").and_then(|v| v.as_i64()),
+        valid_from: gs(&p, "validFrom"),
+        created: gs(&p, "created"),
+    };
+    Ok(r::build_safety_evidence(signer_seed, &params)?.to_string())
+}
+
+/// Verify a Halos safety-evidence credential. `entries_json` is the black-box
+/// entries as a JSON array, or `""`/`"null"` for none. Returns `{ok, subject}`
+/// where `subject` is the credentialSubject or the JSON literal `null`.
+pub fn verify_safety_evidence(
+    credential_json: &str,
+    robot_pub: &[u8],
+    entries_json: &str,
+) -> Result<String> {
+    let credential = parse(credential_json)?;
+    let entries = opt_obj(Some(entries_json))?;
+    let entries_slice = match &entries {
+        Some(v) => Some(
+            v.as_array()
+                .ok_or_else(|| CoreError::Json("entries must be a JSON array".into()))?
+                .as_slice(),
+        ),
+        None => None,
+    };
+    let (ok, subject) = r::verify_safety_evidence(&credential, robot_pub, entries_slice)?;
+    Ok(json!({"ok": ok, "subject": subject.unwrap_or(Value::Null)}).to_string())
+}
+
 // ---- passport -------------------------------------------------------------
 
 pub fn build_passport(signer_seed: &[u8], params_json: &str) -> Result<String> {

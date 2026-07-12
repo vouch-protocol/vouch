@@ -1237,6 +1237,166 @@ pub fn verify_killswitch_credential(
 }
 
 // ---------------------------------------------------------------------------
+// Halos safety-evidence recorder (NVIDIA Halos integration)
+// ---------------------------------------------------------------------------
+//
+// Byte-exact port of the Python reference `vouch/robotics/halos.py`.
+//
+// Halos certifies that a robot's stack is functionally safe and secure by design.
+// It does not, on its own, produce a verifiable record of what a specific robot
+// did or bind that record to the robot's identity. This is the evidence layer
+// under a Halos-certified stack: the robot seals its black-box chain head and
+// entry count into a signed `HalosSafetyEvidenceCredential` that binds them to its
+// identity, to the Halos stack elements it ran on, and to a time window. A
+// verifier that holds the credential and the entries confirms, without the
+// black-box key, that the record is unaltered, was not truncated or extended since
+// it was sealed, and is attributable to that robot. This composes the existing
+// black-box and credential primitives and adds no new cryptography.
+
+pub const HALOS_SAFETY_EVIDENCE_TYPE: &str = "HalosSafetyEvidenceCredential";
+
+/// Format Unix epoch seconds as "YYYY-MM-DDTHH:MM:SSZ" for a whole-second UTC
+/// instant. Howard Hinnant's civil-from-days algorithm, matching the rest of the
+/// core so a `valid_seconds` lifetime renders identically across languages.
+fn halos_epoch_to_iso(epoch: i64) -> String {
+    let days = epoch.div_euclid(86400);
+    let secs = epoch.rem_euclid(86400);
+    let z = days + 719468;
+    let era = (if z >= 0 { z } else { z - 146096 }) / 146097;
+    let doe = z - era * 146097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = if m <= 2 { y + 1 } else { y };
+    let hh = secs / 3600;
+    let mm = (secs % 3600) / 60;
+    let ss = secs % 60;
+    format!("{year:04}-{m:02}-{d:02}T{hh:02}:{mm:02}:{ss:02}Z")
+}
+
+/// Parameters for [`build_safety_evidence`]. The robot DID is derived from
+/// `signer_seed` (a did:key), mirroring the Python signer. `blackbox_head` and
+/// `entry_count` seal the robot's black-box chain; `halos_stack` names the
+/// certified configuration; `window` covers the recorded events. Timestamps are
+/// caller-supplied ISO-8601 strings.
+#[derive(Debug, Clone)]
+pub struct BuildSafetyEvidence {
+    pub halos_stack: Value,
+    pub window_from: String,
+    pub window_to: String,
+    pub blackbox_head: String,
+    pub entry_count: u64,
+    pub robot_identity: Option<String>,
+    pub valid_seconds: Option<i64>,
+    pub valid_from: String,
+    pub created: String,
+}
+
+/// Seal a robot's Halos safety-event record into a signed
+/// `HalosSafetyEvidenceCredential`. The robot signs a credential binding the
+/// black-box chain head and entry count to its identity, to the Halos stack
+/// elements it ran on, and to the time window.
+pub fn build_safety_evidence(signer_seed: &[u8], params: &BuildSafetyEvidence) -> Result<Value> {
+    match params.halos_stack.as_object() {
+        Some(o) if !o.is_empty() => {}
+        _ => return Err(CoreError::Json("halos_stack is required".into())),
+    }
+    if params.window_from.is_empty() || params.window_to.is_empty() {
+        return Err(CoreError::Json(
+            "window with 'from' and 'to' is required".into(),
+        ));
+    }
+
+    let kp = keys::Ed25519KeyPair::from_seed_slice(signer_seed)?;
+    let robot_did = keys::ed25519_to_did_key(&kp.public_key())?;
+
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(robot_did));
+    subject.insert("blackboxHead".into(), json!(params.blackbox_head));
+    subject.insert("entryCount".into(), json!(params.entry_count));
+    subject.insert("halosStack".into(), params.halos_stack.clone());
+    subject.insert(
+        "window".into(),
+        json!({ "from": params.window_from, "to": params.window_to }),
+    );
+    if let Some(robot_identity) = &params.robot_identity {
+        subject.insert("robotIdentity".into(), json!(robot_identity));
+    }
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", HALOS_SAFETY_EVIDENCE_TYPE]),
+    );
+    cred.insert("issuer".into(), json!(robot_did));
+    cred.insert("validFrom".into(), json!(params.valid_from));
+    if let Some(valid_seconds) = params.valid_seconds {
+        let from = crate::time::iso_to_epoch_seconds(&params.valid_from)?;
+        cred.insert(
+            "validUntil".into(),
+            json!(halos_epoch_to_iso(from + valid_seconds)),
+        );
+    }
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(format!("{robot_did}#key-1"), &params.created);
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+/// Verify a `HalosSafetyEvidenceCredential`: the robot's proof and that the issuer
+/// is the robot (`credentialSubject.id`). When `entries` is supplied, also checks
+/// that the black-box chain is intact, that its length matches the sealed entry
+/// count, and that its head matches the sealed head, so a truncated, extended,
+/// reordered, or tampered record is rejected. Returns `(ok, credentialSubject)`.
+pub fn verify_safety_evidence(
+    credential: &Value,
+    robot_public_key: &[u8],
+    entries: Option<&[Value]>,
+) -> Result<(bool, Option<Value>)> {
+    if !has_type(credential.get("type"), HALOS_SAFETY_EVIDENCE_TYPE) {
+        return Ok((false, None));
+    }
+    if !data_integrity::verify_proof(credential, robot_public_key)? {
+        return Ok((false, None));
+    }
+
+    let subject = match credential.get("credentialSubject") {
+        Some(s) if s.is_object() => s.clone(),
+        _ => return Ok((false, None)),
+    };
+    let subject_id = subject.get("id").and_then(|v| v.as_str());
+    if subject_id.is_none() || subject_id != credential.get("issuer").and_then(|v| v.as_str()) {
+        return Ok((false, None));
+    }
+
+    if let Some(entries) = entries {
+        if !verify_blackbox_chain(entries, None).ok {
+            return Ok((false, None));
+        }
+        if subject.get("entryCount").and_then(|v| v.as_u64()) != Some(entries.len() as u64) {
+            return Ok((false, None));
+        }
+        let head = match entries.last() {
+            Some(last) => last
+                .get("entryHash")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            None => genesis_prev_hash(),
+        };
+        if Some(head.as_str()) != subject.get("blackboxHead").and_then(|v| v.as_str()) {
+            return Ok((false, None));
+        }
+    }
+
+    Ok((true, Some(subject)))
+}
+
+// ---------------------------------------------------------------------------
 // Scannable robot passport (Phase 5.6)
 // ---------------------------------------------------------------------------
 
@@ -4814,6 +4974,111 @@ mod tests {
         let cred = mint_robot_identity(&robot_seed, &params).unwrap();
         let subject = verify_robot_identity(&cred, &robot_kp.public_key()).unwrap();
         assert!(subject.is_some(), "round-trip identity must verify");
+    }
+
+    // Cross-language interop: this HalosSafetyEvidenceCredential, its black-box
+    // entries, and the robot public key were produced by the Python reference
+    // (vouch/robotics/halos.py) from a fixed Ed25519 seed (0x05 x32), a fixed
+    // black-box key, and a fixed `created` timestamp. The Rust verify must accept
+    // it, and must reject a tampered entry or a wrong entry count.
+    const PY_HALOS_CREDENTIAL: &str = r#"{"@context":["https://www.w3.org/ns/credentials/v2","https://vouch-protocol.com/contexts/v1"],"type":["VerifiableCredential","HalosSafetyEvidenceCredential"],"issuer":"did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2","validFrom":"2026-01-01T00:00:00Z","credentialSubject":{"id":"did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2","blackboxHead":"utfv4sSWc6TH-n0HrNqB35Hacy3lYVksU0QYz6gbHol8","entryCount":3,"halosStack":{"igxSom":"IGX-Orin-64","halosCore":"1.4.0","blueprint":["SAIM","SEI","SDM"]},"window":{"from":"2026-01-01T00:00:00Z","to":"2026-01-01T00:00:10Z"},"robotIdentity":"urn:uuid:robot-identity-1"},"proof":{"type":"DataIntegrityProof","cryptosuite":"eddsa-jcs-2022","created":"2026-01-01T00:00:00Z","verificationMethod":"did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2#key-1","proofPurpose":"assertionMethod","proofValue":"z5FjYsg9oQ543K8jtAsaYyYS3YG53ixoUYnhYop8oJWuLCoZp45uYos4416i13JR2bkt4tPtKB9hTk5xG9s8mQoQd"}}"#;
+
+    const PY_HALOS_ENTRIES: &str = r#"[{"version":"1.0","seq":0,"timestamp":"2026-01-01T00:00:01Z","event":"hazard_detected","ciphertext":"uzhrB2FNU_UNfM5ey2Dx1ogaX4_IuPx-0ylXC7022a7TqQ5ktnB9GmFqmrv9VzRx7ecoSyCAC6b6pcp1r7K2nQLSsDnmX2oar","prevHash":"uAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","entryHash":"uZm_cIGAA1kuQio4QWWwbE27xBVZE9QSuvAGweybxZZk"},{"version":"1.0","seq":1,"timestamp":"2026-01-01T00:00:02Z","event":"slow_stop","ciphertext":"ulQY1i5OnYlWdSJOS0Rp4esqwLIyh_4TM4WO-apHKoJde3AgFaGHgPIZ2GIb8q5sYKjtB9Az6kUnajkhzYA7VPQ6ChvF_3yQGfHuIM1lnaF5JEg","prevHash":"uZm_cIGAA1kuQio4QWWwbE27xBVZE9QSuvAGweybxZZk","entryHash":"uPulCLvRvEs_zV1R3koher2EMjyBZy5Rfe-Sv0Y64Tfk"},{"version":"1.0","seq":2,"timestamp":"2026-01-01T00:00:03Z","event":"cleared","ciphertext":"us7pdRfPVAGSeKCQU7RgEb1ee_2358wbs_P4epd4gPJoUUx9bw3hJSiVPGKwc2Xc3PjZySEaWKgK_F0h5mU2sxb0pEZ-E_FwwQQk3","prevHash":"uPulCLvRvEs_zV1R3koher2EMjyBZy5Rfe-Sv0Y64Tfk","entryHash":"utfv4sSWc6TH-n0HrNqB35Hacy3lYVksU0QYz6gbHol8"}]"#;
+
+    // Robot public key (raw 32-byte Ed25519) as base64url-no-pad.
+    const PY_HALOS_ROBOT_PUB: &str = "bnoc3Smwt4_ROvTFWY_v9O8qlxZuPKby5Pv8zYBQW_E";
+
+    #[test]
+    fn build_verify_safety_evidence_roundtrip() {
+        let robot_seed = [5u8; 32];
+        let robot_kp = Ed25519KeyPair::from_seed(&robot_seed);
+
+        // A black-box chain the robot recorded.
+        let mut log = BlackBoxLog::new(&[9u8; 32], None).unwrap();
+        log.append(
+            "hazard_detected",
+            &json!({"zone": "cell-3"}),
+            "2026-01-01T00:00:01Z",
+        )
+        .unwrap();
+        log.append(
+            "slow_stop",
+            &json!({"reason": "human"}),
+            "2026-01-01T00:00:02Z",
+        )
+        .unwrap();
+        let entries: Vec<Value> = log.entries().to_vec();
+
+        let params = BuildSafetyEvidence {
+            halos_stack: json!({"igxSom": "IGX-Orin-64", "halosCore": "1.4.0"}),
+            window_from: "2026-01-01T00:00:00Z".into(),
+            window_to: "2026-01-01T00:00:10Z".into(),
+            blackbox_head: log.head().to_string(),
+            entry_count: entries.len() as u64,
+            robot_identity: Some("urn:uuid:robot-identity-1".into()),
+            valid_seconds: Some(3600),
+            valid_from: "2026-01-01T00:00:00Z".into(),
+            created: "2026-01-01T00:00:00Z".into(),
+        };
+        let cred = build_safety_evidence(&robot_seed, &params).unwrap();
+
+        // The issuer is the did:key derived from the seed and the validUntil is
+        // rendered from the valid_seconds lifetime.
+        assert_eq!(
+            cred["issuer"],
+            json!("did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2")
+        );
+        assert_eq!(cred["validUntil"], json!("2026-01-01T01:00:00Z"));
+
+        let (ok, subject) =
+            verify_safety_evidence(&cred, &robot_kp.public_key(), Some(&entries)).unwrap();
+        assert!(ok, "a Rust-built evidence credential must verify in Rust");
+        assert_eq!(subject.unwrap()["entryCount"], json!(2));
+
+        // A credential whose issuer is not the subject id is rejected.
+        let mut forged = cred.clone();
+        forged["issuer"] = json!("did:key:z6Mkother");
+        let (ok_forged, _) = verify_safety_evidence(&forged, &robot_kp.public_key(), None).unwrap();
+        assert!(!ok_forged, "issuer must equal credentialSubject.id");
+    }
+
+    #[test]
+    fn verifies_python_halos_evidence() {
+        let credential: Value = serde_json::from_str(PY_HALOS_CREDENTIAL).unwrap();
+        let entries: Vec<Value> = serde_json::from_str(PY_HALOS_ENTRIES).unwrap();
+        let robot_pub = URL_SAFE_NO_PAD.decode(PY_HALOS_ROBOT_PUB).unwrap();
+
+        // The Python-produced credential and its entries verify in Rust.
+        let (ok, subject) =
+            verify_safety_evidence(&credential, &robot_pub, Some(&entries)).unwrap();
+        assert!(ok, "the Python Halos evidence must verify in Rust");
+        let subject = subject.expect("subject present on success");
+        assert_eq!(subject["entryCount"], json!(3));
+        assert_eq!(
+            subject["blackboxHead"],
+            json!("utfv4sSWc6TH-n0HrNqB35Hacy3lYVksU0QYz6gbHol8")
+        );
+
+        // The proof and issuer binding hold even without the entries.
+        let (ok_no_entries, _) = verify_safety_evidence(&credential, &robot_pub, None).unwrap();
+        assert!(
+            ok_no_entries,
+            "proof and issuer binding verify without entries"
+        );
+
+        // Tampering one entry breaks the chain, so verification fails.
+        let mut tampered = entries.clone();
+        tampered[1]["ciphertext"] = json!("utampered_ciphertext_value_that_does_not_match_hash");
+        let (ok_tampered, subj_tampered) =
+            verify_safety_evidence(&credential, &robot_pub, Some(&tampered)).unwrap();
+        assert!(!ok_tampered, "a tampered entry must be rejected");
+        assert!(subj_tampered.is_none());
+
+        // A wrong entry count (here a truncated log) is rejected against the seal.
+        let truncated = entries[..2].to_vec();
+        let (ok_truncated, _) =
+            verify_safety_evidence(&credential, &robot_pub, Some(&truncated)).unwrap();
+        assert!(!ok_truncated, "a wrong entry count must be rejected");
     }
 
     #[test]
