@@ -72,6 +72,7 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-060](./PAD-060-single-use-audited-override-of-egress-block.md) | Method for One-Time Time-Bounded Override of a Deterministic Egress-Time Policy Block, with Cryptographically Auditable Override Event and Structural Prevention of Repeated Re-Use | 2026-05-14 | Published |
 | [PAD-061](./PAD-061-per-region-human-ai-code-attribution.md) | Per-Region Authorship Attribution for Mixed Human and AI Source Code via Edit-Channel Capture and Independently-Keyed Signatures | 2026-06-10 | Published |
 | [PAD-062](./PAD-062-self-contained-agent-passport.md) | Self-Contained, Offline-Verifiable Agent Passport Stapled Into Transport Metadata | 2026-07-12 | Published |
+| [PAD-063](./PAD-063-live-trust-standing-propagation-a2a.md) | Live Trust-Standing Propagation Across Agent-to-Agent Calls | 2026-07-12 | Published |
 | [PAD-064](./PAD-064-hardware-rooted-robot-identity.md) | Hardware-Rooted Verifiable Robot Identity and Lifecycle Credential | 2026-06-14 | Published |
 | [PAD-065](./PAD-065-model-config-provenance-attestation.md) | Re-Signable Model-and-Config Provenance Attestation for Embodied Agents | 2026-06-14 | Published |
 | [PAD-066](./PAD-066-physical-capability-scope-attenuation.md) | Physical Capability Scope as Cryptographically Enforceable Attenuation | 2026-06-14 | Published |
@@ -112,6 +113,7 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-101](./PAD-101-human-handover-envelope.md) | Robot-to-Human Handover Credential With a Safety-Envelope Attestation at the Release | 2026-07-06 | Published |
 | [PAD-102](./PAD-102-handover-acknowledgement.md) | Recipient Acknowledgement Bound to a Specific Robot-to-Human Handover | 2026-07-06 | Published |
 | [PAD-103](./PAD-103-root-anchored-hardware-rooted-robot-identity.md) | Root-Anchored, Hardware-Rooted Robot Identity Binding | 2026-07-12 | Published |
+| [PAD-104](./PAD-104-per-tool-call-continuous-trust-authorization.md) | Per-Tool-Call Continuous-Trust Authorization with Resource-Bound Delegation | 2026-07-12 | Published |
 
 
 ## July 12, 2026: Root-Anchored Hardware-Rooted Robot Identity (PAD-103)
