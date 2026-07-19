@@ -145,7 +145,9 @@ def verify_autonomy_schedule(
     return (subject is not None), subject
 
 
-def select_envelope(schedule_subject: Dict[str, Any], staleness_epochs: int) -> Optional[Dict[str, Any]]:
+def select_envelope(
+    schedule_subject: Dict[str, Any], staleness_epochs: int
+) -> Optional[Dict[str, Any]]:
     """
     Select the applicable physical scope for the current staleness: the first step
     whose maxStalenessEpochs >= staleness. Beyond the last step (most stale), returns

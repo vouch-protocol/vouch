@@ -43,18 +43,23 @@ def signer(domain):
 
 # ---- Protocols are satisfied by simulated impls and by duck-typed drivers -- #
 
+
 def test_simulated_impls_satisfy_protocols():
     assert isinstance(SimulatedNavigation([0, 0, 0], [0, 0, 0]), NavigationSource)
     assert isinstance(SimulatedRangeSensor({"x": 1.0}), RangeSensor)
     assert isinstance(SimulatedClock("gnss", 1.0, 0.1), ClockSource)
 
+
 def test_custom_driver_duck_types():
     class MyRadio:
-        def measure_range_m(self, target): return 42.0
-    assert isinstance(MyRadio(), RangeSensor)   # runtime_checkable Protocol
+        def measure_range_m(self, target):
+            return 42.0
+
+    assert isinstance(MyRadio(), RangeSensor)  # runtime_checkable Protocol
 
 
 # ---- PAD-108 presence via the seam ---------------------------------------- #
+
 
 def test_capture_and_verify_presence_live():
     node, nkp = signer("node.example")
@@ -62,49 +67,72 @@ def test_capture_and_verify_presence_live():
     # The node (at origin) ranges its peer; sensor reports 100.4 m; peer claims (100,0,0).
     rs = SimulatedRangeSensor({peer_did: 100.4})
     att = capture_presence_attestation(
-        node, peer_did=peer_did, nonce="n1", claimed_position=[100, 0, 0],
-        range_sensor=rs, tolerance_m=1.0,
+        node,
+        peer_did=peer_did,
+        nonce="n1",
+        claimed_position=[100, 0, 0],
+        range_sensor=rs,
+        tolerance_m=1.0,
     )
     verifier_nav = SimulatedNavigation([0, 0, 0], [0, 0, 0])
     ok, sub = verify_presence_live(att, nkp.public_key_jwk, nav=verifier_nav, expected_nonce="n1")
     assert ok and sub["id"] == peer_did
 
+
 def test_presence_live_rejects_impossible_range():
     node, nkp = signer("node.example")
     peer_did = "did:web:peer"
-    rs = SimulatedRangeSensor({peer_did: 500.0})   # measured far from claimed 100 m
+    rs = SimulatedRangeSensor({peer_did: 500.0})  # measured far from claimed 100 m
     att = capture_presence_attestation(
-        node, peer_did=peer_did, nonce="n", claimed_position=[100, 0, 0],
-        range_sensor=rs, tolerance_m=1.0,
+        node,
+        peer_did=peer_did,
+        nonce="n",
+        claimed_position=[100, 0, 0],
+        range_sensor=rs,
+        tolerance_m=1.0,
     )
-    ok, _ = verify_presence_live(att, nkp.public_key_jwk, nav=SimulatedNavigation([0, 0, 0], [0, 0, 0]))
+    ok, _ = verify_presence_live(
+        att, nkp.public_key_jwk, nav=SimulatedNavigation([0, 0, 0], [0, 0, 0])
+    )
     assert not ok
 
 
 # ---- PAD-113 range observation via the seam ------------------------------- #
+
 
 def test_capture_range_observation():
     obs, okp = signer("observer.example")
     nav = SimulatedNavigation([10, 0, 0], [0, 0, 0])
     rs = SimulatedRangeSensor({"did:web:t": 90.0})
     epoch = SimulatedEpochSource(5)
-    o = capture_range_observation(obs, target_did="did:web:t", nav=nav, range_sensor=rs, nonce="n", epoch_source=epoch)
+    o = capture_range_observation(
+        obs, target_did="did:web:t", nav=nav, range_sensor=rs, nonce="n", epoch_source=epoch
+    )
     ok, sub = verify_range_observation(o, okp.public_key_jwk)
-    assert ok and sub["observerPosition"] == [10, 0, 0] and sub["measuredRangeM"] == 90.0 and sub["epoch"] == 5
+    assert (
+        ok
+        and sub["observerPosition"] == [10, 0, 0]
+        and sub["measuredRangeM"] == 90.0
+        and sub["epoch"] == 5
+    )
 
 
 # ---- PAD-121 beam presence via the seam ----------------------------------- #
+
 
 def test_capture_beam_presence():
     term, tkp = signer("term.example")
     pointing = SimulatedPointing([1, 0, 0], math.radians(10))
     att = capture_beam_presence(term, peer_did="did:web:peer", nonce="n", pointing_source=pointing)
-    ok, _ = verify_beam_presence(att, tkp.public_key_jwk, peer_direction=[1, 0.02, 0], expected_nonce="n")
+    ok, _ = verify_beam_presence(
+        att, tkp.public_key_jwk, peer_direction=[1, 0.02, 0], expected_nonce="n"
+    )
     bad, _ = verify_beam_presence(att, tkp.public_key_jwk, peer_direction=[0, 1, 0])
     assert ok and not bad
 
 
 # ---- PAD-115 time quality via the seam ------------------------------------ #
+
 
 def test_capture_time_quality_gate():
     node, nkp = signer("node.example")
@@ -118,6 +146,7 @@ def test_capture_time_quality_gate():
 
 # ---- PAD-118 integrity via the seam --------------------------------------- #
 
+
 def test_capture_integrity_risk():
     node, nkp = signer("node.example")
     mon = SimulatedIntegrityMonitor(0.8, {"doseRad": 1200, "seu": 4})
@@ -128,6 +157,7 @@ def test_capture_integrity_risk():
 
 
 # ---- PAD-107 freshness token via the seam --------------------------------- #
+
 
 def test_issue_freshness_token_and_advance():
     relay, rkp = signer("relay.example")
@@ -141,8 +171,13 @@ def test_issue_freshness_token_and_advance():
 
 # ---- PAD-114 kinematics via the seam -------------------------------------- #
 
+
 def test_check_kinematics_live():
     nav = SimulatedNavigation([40, 0, 0], [0, 0, 0])
-    assert check_kinematics_live(prior_position=[0, 0, 0], nav=nav, elapsed_seconds=10, envelope={"maxSpeedMps": 5})
+    assert check_kinematics_live(
+        prior_position=[0, 0, 0], nav=nav, elapsed_seconds=10, envelope={"maxSpeedMps": 5}
+    )
     nav_far = SimulatedNavigation([80, 0, 0], [0, 0, 0])
-    assert not check_kinematics_live(prior_position=[0, 0, 0], nav=nav_far, elapsed_seconds=10, envelope={"maxSpeedMps": 5})
+    assert not check_kinematics_live(
+        prior_position=[0, 0, 0], nav=nav_far, elapsed_seconds=10, envelope={"maxSpeedMps": 5}
+    )

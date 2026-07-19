@@ -265,9 +265,7 @@ def main() -> None:
         # --- 2b. A presents its lease; B verifies it and a concrete action -- #
         print("\n  [lease] A presents its authority-issued delegation lease.")
         link.send("A", {"type": "lease_presentation"})
-        ok_lease, subject = verify_delegation_lease(
-            lease, anchors[authority.get_did()]
-        )
+        ok_lease, subject = verify_delegation_lease(lease, anchors[authority.get_did()])
         assert ok_lease and subject is not None
         print(f"  [lease] B verified the lease offline. lease_id={subject['leaseId']}")
 
@@ -275,12 +273,16 @@ def main() -> None:
         permitted = lease_permits(subject, proposed, lease)
         print(f"  [lease] proposed move (1.2 m/s in sector-7): permitted={permitted}")
         too_fast = PhysicalAction(speed_mps=3.0, zone="sector-7")
-        print(f"  [lease] proposed move (3.0 m/s): permitted={lease_permits(subject, too_fast, lease)}")
+        print(
+            f"  [lease] proposed move (3.0 m/s): permitted={lease_permits(subject, too_fast, lease)}"
+        )
 
         # --- 2c. Passport scan, offline ------------------------------------ #
         ok_passport, psub = verify_passport(passport, anchors[node_a.get_did()])
-        print(f"\n  [passport] B scanned A's passport offline: ok={ok_passport}, "
-              f"status={psub.get('status')}")
+        print(
+            f"\n  [passport] B scanned A's passport offline: ok={ok_passport}, "
+            f"status={psub.get('status')}"
+        )
 
         # --- 2d. Bounded-staleness freshness gate -------------------------- #
         # B knows the lease's revocation BIT (from its synced snapshot), but the
@@ -310,8 +312,10 @@ def main() -> None:
             mark = "ALLOW" if verdict.allow else "DENY "
             print(f"    {mark} {action_label:<38} - {verdict.reason}")
 
-    print(f"\nContact window used ~{link.elapsed_s:.2f}s of one-way light-time across "
-          f"{link.elapsed_s / ONE_WAY_LIGHT_SECONDS:.0f} messages.")
+    print(
+        f"\nContact window used ~{link.elapsed_s:.2f}s of one-way light-time across "
+        f"{link.elapsed_s / ONE_WAY_LIGHT_SECONDS:.0f} messages."
+    )
     print("Every verification above completed with the network disabled. Nothing phoned home.")
 
 

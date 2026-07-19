@@ -67,9 +67,7 @@ def verify_conditional_revocation(
     credential: Dict[str, Any], authority_public_key: Any
 ) -> "Tuple[bool, Optional[Dict[str, Any]]]":
     """Verify the authority's proof on a conditional revocation. Returns (ok, subject)."""
-    subject = verify_typed_credential(
-        credential, authority_public_key, CONDITIONAL_REVOCATION_TYPE
-    )
+    subject = verify_typed_credential(credential, authority_public_key, CONDITIONAL_REVOCATION_TYPE)
     return (subject is not None), subject
 
 

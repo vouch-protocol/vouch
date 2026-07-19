@@ -21,7 +21,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from vouch.robotics import TimeQuality  # dataclass: (source_class, since_discipline_s, uncertainty_s)
+from vouch.robotics import (
+    TimeQuality,
+)  # dataclass: (source_class, since_discipline_s, uncertainty_s)
 
 Vec3 = List[float]
 

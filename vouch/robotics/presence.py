@@ -46,9 +46,7 @@ def expected_range_m(a: Vec3, b: Vec3) -> float:
     return math.sqrt(sum((float(a[i]) - float(b[i])) ** 2 for i in range(3)))
 
 
-def radial_velocity_mps(
-    verifier_pos: Vec3, peer_pos: Vec3, peer_velocity: Vec3
-) -> float:
+def radial_velocity_mps(verifier_pos: Vec3, peer_pos: Vec3, peer_velocity: Vec3) -> float:
     """
     Component of the peer's velocity along the line of sight from the verifier,
     positive when the peer is receding. Zero range returns 0 (undefined LoS).

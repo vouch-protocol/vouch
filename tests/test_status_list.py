@@ -363,9 +363,7 @@ def _snapshot(*, valid_from, valid_until=None):
         "validFrom": valid_from.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     if valid_until is not None:
-        snap["validUntil"] = valid_until.astimezone(timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+        snap["validUntil"] = valid_until.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return snap
 
 
@@ -386,34 +384,22 @@ class TestEvaluateFreshness:
         # 5 days old: within routine's 30d, past sensitive's 24h and critical's 1h.
         snap = _snapshot(valid_from=self.now - timedelta(days=5))
         assert evaluate_freshness(tier=CONSEQUENCE_ROUTINE, snapshot=snap, now=self.now).allow
-        assert not evaluate_freshness(
-            tier=CONSEQUENCE_SENSITIVE, snapshot=snap, now=self.now
-        ).allow
-        assert not evaluate_freshness(
-            tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now
-        ).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_SENSITIVE, snapshot=snap, now=self.now).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now).allow
 
     def test_boundary_is_inclusive(self):
         budget = DEFAULT_STALENESS_BUDGETS[CONSEQUENCE_CRITICAL]
         exactly = _snapshot(valid_from=self.now - budget)
         just_over = _snapshot(valid_from=self.now - budget - timedelta(seconds=1))
-        assert evaluate_freshness(
-            tier=CONSEQUENCE_CRITICAL, snapshot=exactly, now=self.now
-        ).allow
+        assert evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=exactly, now=self.now).allow
         assert not evaluate_freshness(
             tier=CONSEQUENCE_CRITICAL, snapshot=just_over, now=self.now
         ).allow
 
     def test_absent_snapshot_allows_routine_only(self):
-        assert evaluate_freshness(
-            tier=CONSEQUENCE_ROUTINE, snapshot=None, now=self.now
-        ).allow
-        assert not evaluate_freshness(
-            tier=CONSEQUENCE_SENSITIVE, snapshot=None, now=self.now
-        ).allow
-        assert not evaluate_freshness(
-            tier=CONSEQUENCE_CRITICAL, snapshot=None, now=self.now
-        ).allow
+        assert evaluate_freshness(tier=CONSEQUENCE_ROUTINE, snapshot=None, now=self.now).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_SENSITIVE, snapshot=None, now=self.now).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=None, now=self.now).allow
 
     def test_expired_snapshot_is_treated_as_absent(self):
         # validFrom is recent, but the publisher's own validUntil has passed.
@@ -422,12 +408,8 @@ class TestEvaluateFreshness:
             valid_until=self.now - timedelta(minutes=1),
         )
         # Recent enough by age, but unusable -> fails closed above routine.
-        assert not evaluate_freshness(
-            tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now
-        ).allow
-        assert evaluate_freshness(
-            tier=CONSEQUENCE_ROUTINE, snapshot=snap, now=self.now
-        ).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now).allow
+        assert evaluate_freshness(tier=CONSEQUENCE_ROUTINE, snapshot=snap, now=self.now).allow
 
     def test_malformed_validfrom_is_treated_as_absent(self):
         for bad in ({}, {"validFrom": "not-a-date"}, {"validFrom": ""}):
@@ -462,9 +444,7 @@ class TestEvaluateFreshness:
 
     def test_verdict_is_immutable_and_carries_budget(self):
         snap = _snapshot(valid_from=self.now - timedelta(minutes=1))
-        verdict = evaluate_freshness(
-            tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now
-        )
+        verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now)
         assert verdict.budget == DEFAULT_STALENESS_BUDGETS[CONSEQUENCE_CRITICAL]
         assert isinstance(verdict.reason, str) and verdict.reason
         with pytest.raises(dataclasses.FrozenInstanceError):

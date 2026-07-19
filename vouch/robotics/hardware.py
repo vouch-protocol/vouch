@@ -60,9 +60,9 @@ class PointingSource(Protocol):
 
 @dataclass
 class TimeQuality:
-    source_class: str          # e.g. "gnss", "csac", "rc-oscillator"
+    source_class: str  # e.g. "gnss", "csac", "rc-oscillator"
     since_discipline_s: float  # seconds since last trusted discipline
-    uncertainty_s: float       # bounded time uncertainty
+    uncertainty_s: float  # bounded time uncertainty
 
 
 @runtime_checkable

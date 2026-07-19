@@ -103,10 +103,9 @@ def region_attenuates(parent: Dict[str, Any], child: Dict[str, Any]) -> bool:
         return all(plo[i] <= clo[i] and chi[i] <= phi[i] for i in range(3))
 
     if kind == "altitudeBand":
-        return (
-            float(parent.get("minM")) <= float(child.get("minM"))
-            and float(child.get("maxM")) <= float(parent.get("maxM"))
-        )
+        return float(parent.get("minM")) <= float(child.get("minM")) and float(
+            child.get("maxM")
+        ) <= float(parent.get("maxM"))
 
     raise RoboticsError(f"unknown region type: {kind!r}")
 

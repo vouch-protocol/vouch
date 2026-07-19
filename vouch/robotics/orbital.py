@@ -40,10 +40,10 @@ def _stumpff_c(z: float) -> float:
 def _stumpff_s(z: float) -> float:
     if z > 1e-12:
         sz = math.sqrt(z)
-        return (sz - math.sin(sz)) / (sz ** 3)
+        return (sz - math.sin(sz)) / (sz**3)
     if z < -1e-12:
         sz = math.sqrt(-z)
-        return (math.sinh(sz) - sz) / (sz ** 3)
+        return (math.sinh(sz) - sz) / (sz**3)
     return 1.0 / 6.0
 
 
@@ -98,7 +98,7 @@ def propagate_two_body(
         s = _stumpff_s(z)
         f = (
             (r0mag * vr0 / sqrt_mu) * chi * chi * c
-            + (1.0 - alpha * r0mag) * chi ** 3 * s
+            + (1.0 - alpha * r0mag) * chi**3 * s
             + r0mag * chi
             - sqrt_mu * dt
         )
@@ -122,12 +122,12 @@ def propagate_two_body(
 
     # Lagrange coefficients.
     fl = 1.0 - (chi * chi / r0mag) * c
-    gl = dt - (chi ** 3 / sqrt_mu) * s
+    gl = dt - (chi**3 / sqrt_mu) * s
     r = [fl * r0[i] + gl * v0[i] for i in range(3)]
     rmag = _norm(r)
     if rmag == 0:
         raise RoboticsError("degenerate propagated state: |r| = 0")
-    fdot = (sqrt_mu / (rmag * r0mag)) * (alpha * chi ** 3 * s - chi)
+    fdot = (sqrt_mu / (rmag * r0mag)) * (alpha * chi**3 * s - chi)
     gdot = 1.0 - (chi * chi / rmag) * c
     v = [fdot * r0[i] + gdot * v0[i] for i in range(3)]
     return r, v

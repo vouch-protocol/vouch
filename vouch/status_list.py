@@ -643,8 +643,7 @@ def evaluate_freshness(
         return FreshnessVerdict(
             True,
             tier,
-            f"snapshot age {_fmt_delta(staleness)} within {tier} budget "
-            f"{_fmt_delta(budget)}",
+            f"snapshot age {_fmt_delta(staleness)} within {tier} budget {_fmt_delta(budget)}",
             staleness,
             budget,
         )

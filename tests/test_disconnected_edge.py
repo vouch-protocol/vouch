@@ -104,7 +104,7 @@ class TestPresenceAttestation:
             peer_did="did:web:peer.example",
             nonce="n",
             claimed_position=[100, 0, 0],
-            measured_range_m=500.0,   # measured far from the claimed 100 m
+            measured_range_m=500.0,  # measured far from the claimed 100 m
             tolerance_m=1.0,
         )
         ok, _ = verify_presence_attestation(att, kp.public_key_jwk, verifier_position=[0, 0, 0])
@@ -113,8 +113,12 @@ class TestPresenceAttestation:
     def test_rejects_wrong_nonce(self, verifier):
         signer, kp = verifier
         att = build_presence_attestation(
-            signer, peer_did="did:web:peer", nonce="real",
-            claimed_position=[10, 0, 0], measured_range_m=10.0, tolerance_m=0.5,
+            signer,
+            peer_did="did:web:peer",
+            nonce="real",
+            claimed_position=[10, 0, 0],
+            measured_range_m=10.0,
+            tolerance_m=0.5,
         )
         ok, _ = verify_presence_attestation(
             att, kp.public_key_jwk, verifier_position=[0, 0, 0], expected_nonce="forged"
@@ -124,15 +128,17 @@ class TestPresenceAttestation:
     def test_rejects_tampered_signature(self, verifier):
         signer, kp = verifier
         att = build_presence_attestation(
-            signer, peer_did="did:web:peer", nonce="n",
-            claimed_position=[10, 0, 0], measured_range_m=10.0, tolerance_m=0.5,
+            signer,
+            peer_did="did:web:peer",
+            nonce="n",
+            claimed_position=[10, 0, 0],
+            measured_range_m=10.0,
+            tolerance_m=0.5,
         )
         att["credentialSubject"]["geometry"]["measuredRangeM"] = 10.0000001  # tamper post-sign
         # A different verifier key must reject it regardless.
         other = generate_identity(domain="other.example")
-        ok, _ = verify_presence_attestation(
-            att, other.public_key_jwk, verifier_position=[0, 0, 0]
-        )
+        ok, _ = verify_presence_attestation(att, other.public_key_jwk, verifier_position=[0, 0, 0])
         assert not ok
 
 
@@ -144,8 +150,8 @@ class TestPresenceAttestation:
 class TestRegionPredicates:
     def test_sphere_contains(self):
         r = {"type": "sphere", "centerM": [0, 0, 0], "radiusM": 10.0}
-        assert region_contains(r, [3, 4, 0])       # dist 5 <= 10
-        assert not region_contains(r, [9, 9, 0])   # dist ~12.7 > 10
+        assert region_contains(r, [3, 4, 0])  # dist 5 <= 10
+        assert not region_contains(r, [9, 9, 0])  # dist ~12.7 > 10
 
     def test_box_contains(self):
         r = {"type": "box", "minM": [0, 0, 0], "maxM": [10, 10, 10]}
@@ -163,7 +169,7 @@ class TestRegionPredicates:
 
     def test_sphere_attenuation(self):
         parent = {"type": "sphere", "centerM": [0, 0, 0], "radiusM": 100.0}
-        inside = {"type": "sphere", "centerM": [10, 0, 0], "radiusM": 20.0}   # 10+20 <= 100
+        inside = {"type": "sphere", "centerM": [10, 0, 0], "radiusM": 20.0}  # 10+20 <= 100
         outside = {"type": "sphere", "centerM": [90, 0, 0], "radiusM": 20.0}  # 90+20 > 100
         assert region_attenuates(parent, inside)
         assert not region_attenuates(parent, outside)
@@ -192,15 +198,17 @@ class TestGeoscopedGrant:
         )
         ok, subject = verify_geoscoped_grant(grant, kp.public_key_jwk)
         assert ok
-        assert geoscope_permits(subject, [10, 10, 0])         # inside
-        assert not geoscope_permits(subject, [40, 40, 0])     # outside
+        assert geoscope_permits(subject, [10, 10, 0])  # inside
+        assert not geoscope_permits(subject, [40, 40, 0])  # outside
 
     def test_subgrant_must_attenuate_parent_region(self, verifier):
         signer, kp = verifier
         parent_region = {"type": "sphere", "centerM": [0, 0, 0], "radiusM": 100.0}
         # a valid sub-grant region fully inside the parent
         child = build_geoscoped_grant(
-            signer, holder_did="did:web:rover", grant_id="g2",
+            signer,
+            holder_did="did:web:rover",
+            grant_id="g2",
             region={"type": "sphere", "centerM": [10, 0, 0], "radiusM": 20.0},
             parent_grant_id="g1",
         )
@@ -209,7 +217,9 @@ class TestGeoscopedGrant:
 
         # a sub-grant that pokes outside the parent is rejected
         wide = build_geoscoped_grant(
-            signer, holder_did="did:web:rover", grant_id="g3",
+            signer,
+            holder_did="did:web:rover",
+            grant_id="g3",
             region={"type": "sphere", "centerM": [90, 0, 0], "radiusM": 30.0},
             parent_grant_id="g1",
         )
@@ -219,7 +229,9 @@ class TestGeoscopedGrant:
     def test_rejects_wrong_key(self, verifier):
         signer, _ = verifier
         grant = build_geoscoped_grant(
-            signer, holder_did="did:web:rover", grant_id="g",
+            signer,
+            holder_did="did:web:rover",
+            grant_id="g",
             region={"type": "altitudeBand", "minM": 0.0, "maxM": 100.0},
         )
         other = generate_identity(domain="other.example")

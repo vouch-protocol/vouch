@@ -132,7 +132,9 @@ def build_interaction_attestation(
 def verify_interaction_attestation(
     attestation: Dict[str, Any], attestor_public_key: Any
 ) -> "Tuple[bool, Optional[Dict[str, Any]]]":
-    subject = verify_typed_credential(attestation, attestor_public_key, INTERACTION_ATTESTATION_TYPE)
+    subject = verify_typed_credential(
+        attestation, attestor_public_key, INTERACTION_ATTESTATION_TYPE
+    )
     return (subject is not None), subject
 
 
@@ -164,9 +166,7 @@ def node_standing(
             freshest[attestor] = e
     total = 0.0
     for e in freshest.values():
-        total += decay_weight(
-            elapsed_epochs=current_epoch - e, half_life_epochs=half_life_epochs
-        )
+        total += decay_weight(elapsed_epochs=current_epoch - e, half_life_epochs=half_life_epochs)
     return total
 
 

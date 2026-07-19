@@ -53,7 +53,9 @@ def verify_bundle_trust(
     payload_hash: str,
 ) -> "Tuple[bool, Optional[Dict[str, Any]]]":
     """Verify the originator's proof and that the bound payload hash matches on arrival."""
-    subject = verify_typed_credential(bundle_credential, originator_public_key, BUNDLE_CREDENTIAL_TYPE)
+    subject = verify_typed_credential(
+        bundle_credential, originator_public_key, BUNDLE_CREDENTIAL_TYPE
+    )
     if subject is None:
         return False, None
     if subject.get("payloadHash") != payload_hash:

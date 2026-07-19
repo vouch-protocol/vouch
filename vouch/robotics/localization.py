@@ -115,7 +115,10 @@ def location_confirmed(
     """True if at least `threshold` observations are consistent with the claimed position."""
     if threshold <= 0:
         raise RoboticsError("threshold must be positive")
-    return count_consistent(observation_subjects, claimed_position, tolerance_m=tolerance_m) >= threshold
+    return (
+        count_consistent(observation_subjects, claimed_position, tolerance_m=tolerance_m)
+        >= threshold
+    )
 
 
 def build_proof_of_location(
