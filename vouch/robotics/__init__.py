@@ -111,6 +111,21 @@ from .lease import (
     lease_permits,
     verify_delegation_lease,
 )
+from .presence import (
+    build_presence_attestation,
+    check_presence,
+    expected_doppler_hz,
+    expected_range_m,
+    radial_velocity_mps,
+    verify_presence_attestation,
+)
+from .geoscope import (
+    build_geoscoped_grant,
+    geoscope_permits,
+    region_attenuates,
+    region_contains,
+    verify_geoscoped_grant,
+)
 from .physical_quorum import (
     build_action_approval,
     verify_action_authorization,
@@ -297,6 +312,19 @@ __all__ = [
     "build_delegation_lease",
     "verify_delegation_lease",
     "lease_permits",
+    # channel-geometry proof of presence (PAD-108)
+    "build_presence_attestation",
+    "verify_presence_attestation",
+    "check_presence",
+    "expected_range_m",
+    "radial_velocity_mps",
+    "expected_doppler_hz",
+    # ephemeris-scoped delegation authority (PAD-109)
+    "build_geoscoped_grant",
+    "verify_geoscoped_grant",
+    "geoscope_permits",
+    "region_contains",
+    "region_attenuates",
     # physical quorum (M-of-N approvals for high-consequence actions)
     "build_action_approval",
     "verify_action_authorization",

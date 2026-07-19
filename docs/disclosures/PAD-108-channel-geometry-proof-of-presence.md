@@ -114,13 +114,17 @@ freshness.
 
 ## 5. Technical Implementation
 
-A reference design adds, to the existing signed three-message handshake, an optional
-geometry-commitment field carrying the verifier's measured range or Doppler, the
-peer's claimed position/velocity, and a tolerance, all covered by the handshake
-signatures. Measurement acquisition is platform-specific (the radio, laser terminal,
-or acoustic modem); the open layer is the commitment format and the verifier's
-accept/reject predicate. When no measurement is available the field is absent and the
-handshake degrades to identity-and-freshness only, disclosed as such.
+A reference implementation ships as `vouch.robotics.presence`:
+`build_presence_attestation` binds a handshake nonce, the peer's claimed
+position/velocity, and the verifier's measured range and tolerance into a signed
+`ChannelGeometryPresenceAttestation`; `verify_presence_attestation` checks the proof,
+the nonce, and that the measured range agrees with the claimed position relative to
+the verifier's position within tolerance. Helpers `expected_range_m`,
+`radial_velocity_mps`, and `expected_doppler_hz` compute the geometry predicates.
+Measurement acquisition is platform-specific (the radio, laser terminal, or acoustic
+modem); the open layer is the commitment format and the verifier's accept/reject
+predicate. When no measurement is available the field is absent and the handshake
+degrades to identity-and-freshness only, disclosed as such.
 
 ---
 

@@ -475,3 +475,21 @@ runs the whole flow end to end: two nodes in different trust domains provision
 anchors while in contact, then — with the socket layer disabled to prove it is
 offline — complete the handshake, present and authorize a lease, scan a passport,
 and apply the bounded-staleness gate across all three consequence tiers.
+
+Two further primitives harden trust for moving nodes at the edge:
+
+- **Channel-geometry proof of presence** (`vouch.robotics.presence`, PAD-108) fuses a
+  measured physical predicate — signal time-of-flight/range or Doppler shift — into the
+  handshake, so a credential replayed from a different location fails.
+  `build_presence_attestation` binds a nonce, the peer's claimed position, and the
+  verifier's measured range and tolerance; `verify_presence_attestation` rejects a
+  measurement the committed geometry cannot explain. No shared secret, no live authority.
+- **Ephemeris-scoped authority** (`vouch.robotics.geoscope`, PAD-109) expresses a grant's
+  validity as a geometric predicate (a bounding sphere, box, or altitude band) evaluated
+  by the holder against its own navigation state, instead of a wall-clock window a
+  long-disconnected node cannot trust. `build_geoscoped_grant` / `verify_geoscoped_grant`
+  / `geoscope_permits` verify offline and enforce shrink-only nesting over regions.
+
+Both are disclosed as PAD-108 and PAD-109. See also the DTN peer-revocation and
+trust-distribution disclosures PAD-110 (swarm-consensus quarantine) and PAD-111
+(quorum-of-orbits anchoring).

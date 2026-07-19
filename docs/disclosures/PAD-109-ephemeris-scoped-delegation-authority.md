@@ -106,13 +106,15 @@ predicate grant with shrink-only geometric nesting for delay-tolerant vehicles.
 
 ## 5. Technical Implementation
 
-A reference design extends the delegation-lease credential with an optional region
-predicate (orbital-element bounds, a geodetic footprint/volume, or an altitude band)
-and a holder-side evaluator that tests the region against the onboard navigation
-solution before admitting an action, reusing the existing offline lease verification
-and shrink-only attenuation checks. Acquisition of the navigation solution is
-platform-specific; the open layer is the predicate format, the attenuation rule over
-regions, and the holder's accept/reject decision.
+A reference implementation ships as `vouch.robotics.geoscope`:
+`build_geoscoped_grant` issues an `EphemerisScopedGrantCredential` carrying a region
+predicate (a bounding sphere, an axis-aligned box, or an altitude band) and an
+optional physical capability scope; `verify_geoscoped_grant` checks the proof and,
+when given a parent region, that the grant's region attenuates it via
+`region_attenuates`; `geoscope_permits` (over `region_contains`) admits an action
+only while the holder's navigation position satisfies the region. Acquisition of the
+navigation solution is platform-specific; the open layer is the predicate format, the
+shrink-only attenuation rule over regions, and the holder's accept/reject decision.
 
 ---
 
