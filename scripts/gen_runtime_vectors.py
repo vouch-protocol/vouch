@@ -397,18 +397,25 @@ def build_canary_vector() -> dict:
 
 
 def build_behavioral_attestation_vector() -> dict:
+    # Drift samples are deliberately powers of two (0.5, 0.25, 0.0, 0.25) so
+    # their arithmetic mean (0.25) is exactly representable in IEEE-754 and the
+    # vector matches byte for byte on every runtime. Values like 0.1/0.2/0.3
+    # would make the mean depend on the summation algorithm: CPython 3.12+ uses
+    # compensated (Neumaier) summation in sum(), so sum([0.1, 0.2, 0.0, 0.3])/4
+    # is 0.15 there but 0.15000000000000002 on 3.11 and earlier. Keep these
+    # exactly representable; do not "naturalize" them back.
     api_calls = [
         {
             "endpoint": "https://api.example.com/orders",
             "tokens": 120,
             "resource": "order:1",
-            "drift": 0.1,
+            "drift": 0.5,
         },
         {
             "endpoint": "https://api.example.com/orders",
             "tokens": 80,
             "resource": "order:1",
-            "drift": 0.2,
+            "drift": 0.25,
         },
         {
             "endpoint": "https://api.example.com/users",
@@ -418,7 +425,7 @@ def build_behavioral_attestation_vector() -> dict:
         },
     ]
     resource_accesses = ["config:flags"]
-    drift_samples = [0.3]
+    drift_samples = [0.25]
 
     collector = ba.BehavioralCollector()
     for call in api_calls:
@@ -431,7 +438,7 @@ def build_behavioral_attestation_vector() -> dict:
         collector.record_drift_sample(sample)
     digest = collector.digest()
 
-    scorer_samples = [0.1, 0.2, 0.0, 0.3]
+    scorer_samples = [0.5, 0.25, 0.0, 0.25]
     ewma = ba.ewma_drift_scorer(alpha=0.3)
 
     invalid_digests = [

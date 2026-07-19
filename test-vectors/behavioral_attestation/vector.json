@@ -13,13 +13,13 @@
             "endpoint": "https://api.example.com/orders",
             "tokens": 120,
             "resource": "order:1",
-            "drift": 0.1
+            "drift": 0.5
           },
           {
             "endpoint": "https://api.example.com/orders",
             "tokens": 80,
             "resource": "order:1",
-            "drift": 0.2
+            "drift": 0.25
           },
           {
             "endpoint": "https://api.example.com/users",
@@ -32,7 +32,7 @@
           "config:flags"
         ],
         "drift_samples": [
-          0.3
+          0.25
         ]
       },
       "expected": {
@@ -44,7 +44,7 @@
             "user:7",
             "config:flags"
           ],
-          "intentDriftScore": 0.15000000000000002
+          "intentDriftScore": 0.25
         }
       }
     },
@@ -53,14 +53,14 @@
       "function": "mean_drift_scorer",
       "input": {
         "samples": [
-          0.1,
-          0.2,
+          0.5,
+          0.25,
           0.0,
-          0.3
+          0.25
         ]
       },
       "expected": {
-        "score": 0.15000000000000002
+        "score": 0.25
       }
     },
     {
@@ -68,14 +68,14 @@
       "function": "max_drift_scorer",
       "input": {
         "samples": [
-          0.1,
-          0.2,
+          0.5,
+          0.25,
           0.0,
-          0.3
+          0.25
         ]
       },
       "expected": {
-        "score": 0.3
+        "score": 0.5
       }
     },
     {
@@ -84,14 +84,14 @@
       "input": {
         "alpha": 0.3,
         "samples": [
-          0.1,
-          0.2,
+          0.5,
+          0.25,
           0.0,
-          0.3
+          0.25
         ]
       },
       "expected": {
-        "score": 0.1537
+        "score": 0.28325
       }
     },
     {
@@ -106,7 +106,7 @@
             "user:7",
             "config:flags"
           ],
-          "intentDriftScore": 0.15000000000000002
+          "intentDriftScore": 0.25
         }
       },
       "expected": {
