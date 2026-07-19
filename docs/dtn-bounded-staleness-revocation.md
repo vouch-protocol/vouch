@@ -224,7 +224,66 @@ ignorable fields, sitting on top of primitives that already ship. It makes
 disconnected revocation *honest about time* instead of silently trusting a
 snapshot of unknown age.
 
-## 8. Open questions
+## 8. Presenter-side proof of freshness (complementary)
+
+The gate in §4 is **verifier-side**: the verifier judges the age of *its own*
+revocation snapshot. That defends against a stale view of *revocation*, but it
+says nothing about the *presenter*. A presenter can hold a perfectly valid,
+unexpired credential while having been out of contact — and therefore
+unaccountable — for a long time. The dual mechanism closes that half.
+
+**Freshness token.** A relay (any node the authority has designated as a
+freshness anchor) issues a short-lived, signed `FreshnessToken` to a presenter
+during a contact window:
+
+```jsonc
+{
+  "type": ["VerifiableCredential", "FreshnessToken"],
+  "issuer": "did:web:relay.control.example",
+  "validFrom": "2026-07-19T11:40:00Z",
+  "validUntil": "2026-07-19T12:40:00Z",
+  "credentialSubject": {
+    "id": "did:web:surveyor.operator-a.example",
+    "epoch": 4412,               // monotonic DTN epoch counter
+    "nonce": "…"                 // binds the token to this contact, anti-replay
+  }
+}
+```
+
+At authorization time the verifier requires the presenter to show a
+`FreshnessToken` whose `validUntil` is current **and** whose `epoch` is within a
+tier-scoped window of the verifier's own last-known epoch:
+
+```
+epoch_gap = verifier_epoch − token.epoch
+allow if epoch_gap ≤ max_epoch_gap[tier]     (0 for the tightest critical policy)
+```
+
+This is the symmetric statement of §4: §4 bounds *"how old is my revocation
+knowledge"*; §8 bounds *"how recently has the presenter proven itself live to the
+network"*. A complete disconnected authorization applies **both** — a known
+revocation still denies unconditionally (§4 step 3), the verifier's snapshot must
+be fresh enough for the tier (§4 step 4), **and** the presenter must carry a
+recent-enough freshness token (§8).
+
+**This is not new machinery.** A `FreshnessToken` is a `SessionVoucher`
+(`vouch.heartbeat`, Specification §11) issued by a DTN relay instead of an
+always-on validator, and the epoch-window decay is exactly the `trust_entropy`
+model already used for heartbeat renewal. The contribution here is the *binding
+to DTN epochs* and the *tiering of the acceptable gap*, not a new credential
+type. Epochs (rather than wall-clock) matter precisely because a disconnected
+node's clock may drift; an epoch counter advanced by relays gives an
+adversary-resistant ordering that does not depend on synchronized time.
+
+**Honest limits.** This raises the bar; it is not a liveness *guarantee*. A
+presenter compromised *within* its freshness window still presents a valid token.
+Shrinking the window shrinks that exposure at the cost of demanding more frequent
+relay contact — the same budget/availability trade-off as §3, now on the
+presenter side. Detecting a peer that goes bad *between* contacts, with no relay
+reachable at all, is a different problem (peer-observation revocation) and is out
+of scope for this spec.
+
+## 9. Open questions
 
 - **Per-action budgets vs. per-tier.** Tiers keep policy legible; some
   deployments may want a raw seconds budget per action. The tier model can carry
