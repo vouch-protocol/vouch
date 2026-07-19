@@ -126,6 +126,69 @@ from .geoscope import (
     region_contains,
     verify_geoscoped_grant,
 )
+from .freshness import (
+    build_freshness_token,
+    decay_permits,
+    decay_weight,
+    verify_freshness_token,
+)
+from .dtn_revocation import (
+    build_conditional_revocation,
+    build_validity_root,
+    build_validity_witness,
+    conditional_revocation_active,
+    verify_conditional_revocation,
+    verify_validity_witness,
+)
+from .localization import (
+    build_beam_presence,
+    build_proof_of_location,
+    build_range_observation,
+    count_consistent,
+    kinematically_reachable,
+    location_confirmed,
+    verify_beam_presence,
+    verify_range_observation,
+    within_beam,
+)
+from .quorum_trust import (
+    accept_trust_state_update,
+    build_continuity_approval,
+    build_distress_attestation,
+    build_key_continuity_predelegation,
+    build_trust_state_update,
+    is_quarantined,
+    verify_distress_attestation,
+    verify_key_continuity,
+    verify_trust_state_update,
+)
+from .edge_trust import (
+    autonomy_permits,
+    build_autonomy_schedule,
+    build_integrity_risk_attestation,
+    build_time_quality_attestation,
+    integrity_authority_level,
+    select_envelope,
+    time_quality_permits,
+    verify_autonomy_schedule,
+    verify_integrity_risk_attestation,
+    verify_time_quality_attestation,
+)
+from .perception_consensus import (
+    build_interaction_attestation,
+    build_perception_claim,
+    cross_check_perception,
+    node_standing,
+    verify_interaction_attestation,
+    verify_perception_claim,
+)
+from .bundle import (
+    bind_credential_to_bundle,
+    build_custody_transfer,
+    custody_chain_ok,
+    verify_bundle_trust,
+    verify_custody_transfer,
+)
 from .physical_quorum import (
     build_action_approval,
     verify_action_authorization,
@@ -325,6 +388,62 @@ __all__ = [
     "geoscope_permits",
     "region_contains",
     "region_attenuates",
+    # presenter freshness + graded trust decay (PAD-107, PAD-119)
+    "build_freshness_token",
+    "verify_freshness_token",
+    "decay_weight",
+    "decay_permits",
+    # DTN revocation: dead-man + carried validity witness (PAD-112, PAD-120)
+    "build_conditional_revocation",
+    "verify_conditional_revocation",
+    "conditional_revocation_active",
+    "build_validity_root",
+    "build_validity_witness",
+    "verify_validity_witness",
+    # localization: proof-of-location, kinematic plausibility, beam presence (PAD-113/114/121)
+    "build_range_observation",
+    "verify_range_observation",
+    "count_consistent",
+    "location_confirmed",
+    "build_proof_of_location",
+    "kinematically_reachable",
+    "within_beam",
+    "build_beam_presence",
+    "verify_beam_presence",
+    # quorum/swarm: quarantine, quorum-of-orbits, key continuity (PAD-110/111/116)
+    "build_distress_attestation",
+    "verify_distress_attestation",
+    "is_quarantined",
+    "build_trust_state_update",
+    "verify_trust_state_update",
+    "accept_trust_state_update",
+    "build_key_continuity_predelegation",
+    "build_continuity_approval",
+    "verify_key_continuity",
+    # edge trust: time-quality, autonomy envelope, integrity risk (PAD-115/117/118)
+    "build_time_quality_attestation",
+    "verify_time_quality_attestation",
+    "time_quality_permits",
+    "build_autonomy_schedule",
+    "verify_autonomy_schedule",
+    "select_envelope",
+    "autonomy_permits",
+    "build_integrity_risk_attestation",
+    "verify_integrity_risk_attestation",
+    "integrity_authority_level",
+    # perception consensus + mesh (PAD-122, PAD-123)
+    "build_perception_claim",
+    "verify_perception_claim",
+    "cross_check_perception",
+    "build_interaction_attestation",
+    "verify_interaction_attestation",
+    "node_standing",
+    # DTN bundle custody binding (PAD-124)
+    "bind_credential_to_bundle",
+    "verify_bundle_trust",
+    "build_custody_transfer",
+    "verify_custody_transfer",
+    "custody_chain_ok",
     # physical quorum (M-of-N approvals for high-consequence actions)
     "build_action_approval",
     "verify_action_authorization",

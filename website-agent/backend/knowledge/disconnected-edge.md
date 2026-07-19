@@ -110,3 +110,19 @@ disconnected nodes.
 - API: `vouch.status_list.evaluate_freshness`, `FreshnessVerdict`,
   `DEFAULT_STALENESS_BUDGETS`, `CONSEQUENCE_ROUTINE` / `_SENSITIVE` / `_CRITICAL`
 - Robotics primitives: `vouch.robotics` (handshake, lease, passport, perception)
+
+## Shipped disconnected-edge modules (disclosed PAD-106 to PAD-124)
+
+The full portfolio is implemented as open-layer formats and verifier predicates
+(hardware acquisition — ranging, TPM, orbital propagators — is the caller's concern):
+
+- `vouch.status_list.evaluate_freshness` — consequence-tiered revocation staleness (106)
+- `vouch.robotics.freshness` — presenter freshness token + graded trust decay (107, 119)
+- `vouch.robotics.presence` — channel-geometry (range/Doppler) proof of presence (108)
+- `vouch.robotics.geoscope` — ephemeris/geometric-scoped authority (109)
+- `vouch.robotics.quorum_trust` — swarm quarantine, quorum-of-orbits, key continuity (110, 111, 116)
+- `vouch.robotics.dtn_revocation` — dead-man revocation, carried validity witness (112, 120)
+- `vouch.robotics.localization` — proof-of-location, kinematic plausibility, beam presence (113, 114, 121)
+- `vouch.robotics.edge_trust` — time-quality, autonomy envelope, integrity-risk narrowing (115, 117, 118)
+- `vouch.robotics.perception_consensus` — Byzantine sensor agreement, mesh standing (122, 123)
+- `vouch.robotics.bundle` — DTN Bundle Protocol custody binding (124)

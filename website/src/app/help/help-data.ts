@@ -2715,6 +2715,18 @@ if verdict.allow and not revoked_bit:
 Default staleness budgets (overridable per deployment): \`routine\` 30 days (a telemetry beacon), \`sensitive\` 24 hours (a data handoff), \`critical\` 1 hour (a physical maneuver). Security boundary: the gate fails closed on every ambiguous state, an unknown tier is treated as critical, a snapshot past its own validUntil or with a malformed validFrom is treated as absent, and an absent snapshot allows only routine. A known revocation always denies, independent of freshness. A complementary presenter-side proof of freshness (a relay-issued FreshnessToken bound to a monotonic network epoch, which resists clock drift) is specified as the dual mechanism.
 
 Run the whole thing: \`examples/disconnected_exchange_demo.py\` completes an offline exchange over a simulated high-latency link with the socket layer disabled, so nothing can phone home. The full design is in \`docs/dtn-bounded-staleness-revocation.md\`.
+
+The complete portfolio (disclosed PAD-106 to PAD-124) ships as open-layer modules, each an eddsa-jcs-2022 credential or a deterministic verifier predicate, with hardware acquisition (ranging, TPM, orbital propagators) left to the platform:
+
+- \`vouch.robotics.freshness\` — presenter freshness token bound to a network epoch, plus a graded trust-decay weight (PAD-107, 119)
+- \`vouch.robotics.presence\` — channel-geometry (range/Doppler) proof of presence (PAD-108)
+- \`vouch.robotics.geoscope\` — ephemeris/geometric-scoped authority with shrink-only regions (PAD-109)
+- \`vouch.robotics.quorum_trust\` — swarm-consensus quarantine, quorum-of-orbits update acceptance, offline threshold key continuity (PAD-110, 111, 116)
+- \`vouch.robotics.dtn_revocation\` — conditional dead-man revocation and a carried validity witness (PAD-112, 120)
+- \`vouch.robotics.localization\` — triangulated proof-of-location, kinematic-plausibility filtering, narrow-beam presence (PAD-113, 114, 121)
+- \`vouch.robotics.edge_trust\` — attested time-quality, connectivity-scaled autonomy envelope, integrity-risk authority narrowing (PAD-115, 117, 118)
+- \`vouch.robotics.perception_consensus\` — Byzantine sensor agreement, mutual-attestation mesh standing (PAD-122, 123)
+- \`vouch.robotics.bundle\` — DTN Bundle Protocol custody and credential/freshness binding (PAD-124)
 `,
       },
       {

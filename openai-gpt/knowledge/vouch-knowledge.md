@@ -4910,3 +4910,18 @@ bound to a monotonic DTN epoch) is specified too.
 
 Defined in `docs/dtn-bounded-staleness-revocation.md`, demonstrated in
 `examples/disconnected_exchange_demo.py`.
+
+**Shipped modules (disclosed PAD-106 to PAD-124).** The full disconnected-edge
+portfolio is implemented as open-layer formats and verifier predicates:
+`vouch.status_list.evaluate_freshness` (106), `vouch.robotics.freshness` (107,
+119: presenter freshness token + graded decay), `vouch.robotics.presence` (108:
+channel-geometry proof of presence), `vouch.robotics.geoscope` (109:
+ephemeris-scoped authority), `vouch.robotics.quorum_trust` (110/111/116: swarm
+quarantine, quorum-of-orbits, key continuity), `vouch.robotics.dtn_revocation`
+(112/120: dead-man revocation, carried validity witness),
+`vouch.robotics.localization` (113/114/121: proof-of-location, kinematic
+plausibility, beam presence), `vouch.robotics.edge_trust` (115/117/118:
+time-quality, autonomy envelope, integrity-risk narrowing),
+`vouch.robotics.perception_consensus` (122/123: Byzantine sensor agreement, mesh
+standing), and `vouch.robotics.bundle` (124: DTN Bundle Protocol custody binding).
+Hardware acquisition (ranging, TPM, orbital propagators) is the caller's concern.

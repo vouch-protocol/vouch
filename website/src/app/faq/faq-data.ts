@@ -694,6 +694,12 @@ The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch
         a: `No. Space is simply the extreme instance of a general disconnected-robotics capability. The same offline primitives and bounded-staleness revocation help a warehouse robot that lost Wi-Fi, an autonomous ocean glider, or mining equipment deep underground. There is a runnable example (\`examples/disconnected_exchange_demo.py\`) that completes the whole offline exchange over a simulated high-latency link with the socket layer disabled, so offline-ness is proven, not asserted.`,
         meta: 'Shipped - examples/disconnected_exchange_demo.py',
       },
+      {
+        q: 'Which disconnected-edge primitives ship today?',
+        a: `The full set (disclosed as PAD-106 to PAD-124) ships as open-layer modules: presenter freshness tokens and graded trust decay (\`vouch.robotics.freshness\`), channel-geometry proof of presence (\`presence\`), ephemeris-scoped authority (\`geoscope\`), swarm-consensus quarantine, quorum-of-orbits trust anchoring and offline threshold key continuity (\`quorum_trust\`), conditional dead-man revocation and a carried validity witness (\`dtn_revocation\`), triangulated proof-of-location, kinematic-plausibility filtering and narrow-beam presence (\`localization\`), attested time-quality, a connectivity-scaled autonomy envelope and integrity-risk narrowing (\`edge_trust\`), Byzantine sensor agreement and a mutual-attestation mesh (\`perception_consensus\`), and DTN Bundle Protocol custody binding (\`bundle\`). Each is an eddsa-jcs-2022 credential or a deterministic verifier predicate; the hardware acquisition (ranging, TPM, orbital propagators) is left to the platform.`,
+        helpLinks: [{ label: 'Disconnected-edge guide', href: '/help/#robotics-disconnected' }],
+        meta: 'Shipped - vouch.robotics (freshness, presence, geoscope, quorum_trust, dtn_revocation, localization, edge_trust, perception_consensus, bundle)',
+      },
     ],
   },
 

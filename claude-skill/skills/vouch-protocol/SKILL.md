@@ -477,6 +477,17 @@ snapshot all fail closed for anything above routine. See the spec
 `docs/dtn-bounded-staleness-revocation.md`, the runnable
 `examples/disconnected_exchange_demo.py`, and `reference/revocation.md`.
 
+The full disconnected-edge portfolio (disclosed PAD-106 to PAD-124) ships as
+open-layer modules: `vouch.robotics.freshness` (presenter freshness token +
+graded decay), `presence` (channel-geometry proof of presence), `geoscope`
+(ephemeris-scoped authority), `quorum_trust` (swarm quarantine, quorum-of-orbits,
+threshold key continuity), `dtn_revocation` (dead-man revocation, carried
+validity witness), `localization` (proof-of-location, kinematic plausibility,
+beam presence), `edge_trust` (time-quality, autonomy envelope, integrity-risk
+narrowing), `perception_consensus` (Byzantine sensor agreement, mesh standing),
+and `bundle` (DTN Bundle Protocol custody). Hardware acquisition (ranging, TPM,
+orbital propagators) is the caller's concern.
+
 ### "What is the Vouch Verified Contributor badge, and how do I get one?"
 
 Land a merged pull request on the repository and an automated workflow mints you a

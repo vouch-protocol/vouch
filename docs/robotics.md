@@ -490,6 +490,24 @@ Two further primitives harden trust for moving nodes at the edge:
   long-disconnected node cannot trust. `build_geoscoped_grant` / `verify_geoscoped_grant`
   / `geoscope_permits` verify offline and enforce shrink-only nesting over regions.
 
-Both are disclosed as PAD-108 and PAD-109. See also the DTN peer-revocation and
-trust-distribution disclosures PAD-110 (swarm-consensus quarantine) and PAD-111
-(quorum-of-orbits anchoring).
+Both are disclosed as PAD-108 and PAD-109.
+
+The full disconnected-edge / DTN set (disclosed PAD-106 through PAD-124) ships as
+open-layer formats and verifier predicates across these modules; hardware/platform
+acquisition (real ranging, TPM, orbital propagators) is the caller's concern:
+
+| Module | Capabilities | PADs |
+| --- | --- | --- |
+| `vouch.status_list.evaluate_freshness` | consequence-tiered revocation staleness gate | 106 |
+| `vouch.robotics.freshness` | presenter freshness token (epoch-bound); graded trust decay | 107, 119 |
+| `vouch.robotics.presence` | channel-geometry (range/Doppler) proof of presence | 108 |
+| `vouch.robotics.geoscope` | ephemeris/geometric-scoped authority, shrink-only regions | 109 |
+| `vouch.robotics.quorum_trust` | swarm-consensus quarantine; quorum-of-orbits update acceptance; offline threshold key continuity | 110, 111, 116 |
+| `vouch.robotics.dtn_revocation` | conditional dead-man revocation; carried validity witness | 112, 120 |
+| `vouch.robotics.localization` | triangulated proof-of-location; kinematic plausibility; narrow-beam presence | 113, 114, 121 |
+| `vouch.robotics.edge_trust` | attested time-quality; connectivity-scaled autonomy envelope; integrity-risk authority narrowing | 115, 117, 118 |
+| `vouch.robotics.perception_consensus` | Byzantine sensor agreement; mutual-attestation mesh standing | 122, 123 |
+| `vouch.robotics.bundle` | DTN Bundle Protocol custody + credential/freshness binding | 124 |
+
+All are `eddsa-jcs-2022` credentials or deterministic predicates over the existing
+primitives, verified with the shared Data Integrity path.
