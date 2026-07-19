@@ -13,10 +13,14 @@
 //! is deterministic and reproducible across SDKs.
 
 use serde_json::{json, Map, Value};
+use std::collections::HashSet;
+use std::sync::OnceLock;
+
+use sha2::{Digest, Sha256};
 
 use crate::data_integrity::{self, BuildProofOptions};
 use crate::error::{CoreError, Result};
-use crate::robotics::has_type;
+use crate::robotics::{attenuates, check_physical_action, has_type, mb64, unmb64, PhysicalAction};
 use crate::time::iso_to_epoch_seconds;
 
 pub const VC_CONTEXT_V2: &str = "https://www.w3.org/ns/credentials/v2";
@@ -965,6 +969,809 @@ pub fn conditional_revocation_active(
     Ok(!renewed)
 }
 
+// ===========================================================================
+// PAD-120: dynamic revocation accumulator (sparse Merkle tree)
+// ===========================================================================
+
+pub const SMT_DEPTH: usize = 256;
+pub const REVOCATION_ACCUMULATOR_TYPE: &str = "RevocationAccumulatorRoot";
+
+fn sha256(parts: &[&[u8]]) -> [u8; 32] {
+    let mut h = Sha256::new();
+    for p in parts {
+        h.update(p);
+    }
+    h.finalize().into()
+}
+
+fn empty_leaf() -> [u8; 32] {
+    [0u8; 32]
+}
+
+fn revoked_leaf() -> [u8; 32] {
+    sha256(&[b"vouch:smt:revoked-leaf:v1"])
+}
+
+/// Precomputed default (all-empty) subtree hash at each level, defaults[256]=empty.
+fn defaults() -> &'static [[u8; 32]; SMT_DEPTH + 1] {
+    static DEFAULTS: OnceLock<[[u8; 32]; SMT_DEPTH + 1]> = OnceLock::new();
+    DEFAULTS.get_or_init(|| {
+        let mut d = [[0u8; 32]; SMT_DEPTH + 1];
+        d[SMT_DEPTH] = empty_leaf();
+        for i in (0..SMT_DEPTH).rev() {
+            d[i] = sha256(&[&d[i + 1], &d[i + 1]]);
+        }
+        d
+    })
+}
+
+fn smt_key(credential_id: &str) -> [u8; 32] {
+    sha256(&[credential_id.as_bytes()])
+}
+
+fn smt_bit(key: &[u8; 32], level: usize) -> u8 {
+    (key[level >> 3] >> (7 - (level & 7))) & 1
+}
+
+fn smt_node(level: usize, keys: &[[u8; 32]]) -> [u8; 32] {
+    if keys.is_empty() {
+        return defaults()[level];
+    }
+    if level == SMT_DEPTH {
+        return revoked_leaf();
+    }
+    let (left, right): (Vec<_>, Vec<_>) = keys.iter().partition(|k| smt_bit(k, level) == 0);
+    sha256(&[&smt_node(level + 1, &left), &smt_node(level + 1, &right)])
+}
+
+/// A dynamic revocation accumulator over the revoked set (PAD-120).
+#[derive(Debug, Default, Clone)]
+pub struct SparseMerkleTree {
+    revoked: HashSet<[u8; 32]>,
+}
+
+impl SparseMerkleTree {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn revoke(&mut self, credential_id: &str) {
+        self.revoked.insert(smt_key(credential_id));
+    }
+    pub fn unrevoke(&mut self, credential_id: &str) {
+        self.revoked.remove(&smt_key(credential_id));
+    }
+    pub fn is_revoked(&self, credential_id: &str) -> bool {
+        self.revoked.contains(&smt_key(credential_id))
+    }
+    pub fn root(&self) -> [u8; 32] {
+        let keys: Vec<[u8; 32]> = self.revoked.iter().copied().collect();
+        smt_node(0, &keys)
+    }
+    pub fn root_multibase(&self) -> String {
+        mb64(&self.root())
+    }
+    /// Compressed non-membership proof: only non-default siblings, indexed by a bitmap.
+    pub fn non_revocation_proof(&self, credential_id: &str) -> Value {
+        let key = smt_key(credential_id);
+        let mut keys: Vec<[u8; 32]> = self.revoked.iter().copied().collect();
+        let mut bitmap = [0u8; SMT_DEPTH / 8];
+        let mut siblings: Vec<String> = Vec::new();
+        for level in 0..SMT_DEPTH {
+            let (left, right): (Vec<_>, Vec<_>) = keys.iter().partition(|k| smt_bit(k, level) == 0);
+            let (sib, next) = if smt_bit(&key, level) == 0 {
+                (smt_node(level + 1, &right), left)
+            } else {
+                (smt_node(level + 1, &left), right)
+            };
+            keys = next;
+            if sib != defaults()[level + 1] {
+                bitmap[level >> 3] |= 1 << (7 - (level & 7));
+                siblings.push(mb64(&sib));
+            }
+        }
+        json!({"bitmap": mb64(&bitmap), "siblings": siblings})
+    }
+}
+
+/// Verify a non-membership proof against `root` (assuming an empty leaf: not revoked).
+pub fn verify_non_revocation_proof(credential_id: &str, proof: &Value, root: &[u8; 32]) -> bool {
+    let key = smt_key(credential_id);
+    let bitmap = match proof.get("bitmap").and_then(|v| v.as_str()).and_then(|s| unmb64(s).ok()) {
+        Some(b) if b.len() == SMT_DEPTH / 8 => b,
+        _ => return false,
+    };
+    let sib_list: Vec<[u8; 32]> = match proof.get("siblings").and_then(|v| v.as_array()) {
+        Some(arr) => {
+            let mut out = Vec::new();
+            for s in arr {
+                match s.as_str().and_then(|x| unmb64(x).ok()) {
+                    Some(b) if b.len() == 32 => {
+                        let mut a = [0u8; 32];
+                        a.copy_from_slice(&b);
+                        out.push(a);
+                    }
+                    _ => return false,
+                }
+            }
+            out
+        }
+        None => return false,
+    };
+    // Map siblings to levels (ascending), defaults where bitmap bit unset.
+    let mut sib_by_level = [[0u8; 32]; SMT_DEPTH];
+    let mut idx = 0usize;
+    for (level, slot) in sib_by_level.iter_mut().enumerate() {
+        if (bitmap[level >> 3] >> (7 - (level & 7))) & 1 == 1 {
+            if idx >= sib_list.len() {
+                return false;
+            }
+            *slot = sib_list[idx];
+            idx += 1;
+        } else {
+            *slot = defaults()[level + 1];
+        }
+    }
+    if idx != sib_list.len() {
+        return false;
+    }
+    let mut current = empty_leaf();
+    for level in (0..SMT_DEPTH).rev() {
+        let sibling = sib_by_level[level];
+        current = if smt_bit(&key, level) == 0 {
+            sha256(&[&current, &sibling])
+        } else {
+            sha256(&[&sibling, &current])
+        };
+    }
+    &current == root
+}
+
+/// Sign the current accumulator root at `epoch` for distribution (PAD-120).
+pub fn build_revocation_accumulator_root(
+    authority_seed: &[u8],
+    authority_did: &str,
+    tree: &SparseMerkleTree,
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    if epoch < 0 {
+        return Err(CoreError::Json("epoch must be non-negative".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(authority_did));
+    subject.insert("epoch".into(), json!(epoch));
+    subject.insert("revocationRoot".into(), json!(tree.root_multibase()));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert("type".into(), json!(["VerifiableCredential", REVOCATION_ACCUMULATOR_TYPE]));
+    cred.insert("issuer".into(), json!(authority_did));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(vm(authority_did), created);
+    data_integrity::sign(&Value::Object(cred), authority_seed, &opts)
+}
+
+/// Verify offline that `credential_id` is not revoked as of the authority's signed root.
+pub fn verify_non_revocation(
+    credential_id: &str,
+    proof: &Value,
+    signed_root_credential: &Value,
+    authority_public_key: &[u8],
+) -> Result<bool> {
+    if !has_type(signed_root_credential.get("type"), REVOCATION_ACCUMULATOR_TYPE) {
+        return Ok(false);
+    }
+    if !data_integrity::verify_proof(signed_root_credential, authority_public_key)? {
+        return Ok(false);
+    }
+    let root_mb = signed_root_credential
+        .get("credentialSubject")
+        .and_then(|s| s.get("revocationRoot"))
+        .and_then(|v| v.as_str());
+    let root_vec = match root_mb.and_then(|s| unmb64(s).ok()) {
+        Some(b) if b.len() == 32 => b,
+        _ => return Ok(false),
+    };
+    let mut root = [0u8; 32];
+    root.copy_from_slice(&root_vec);
+    Ok(verify_non_revocation_proof(credential_id, proof, &root))
+}
+
+// ===========================================================================
+// PAD-110/111/116: swarm quarantine, quorum-of-orbits, key continuity
+// ===========================================================================
+
+pub const DISTRESS_TYPE: &str = "DistressAttestation";
+pub const TRUST_STATE_UPDATE_TYPE: &str = "TrustStateUpdate";
+pub const KEY_CONTINUITY_PREDELEGATION_TYPE: &str = "KeyContinuityPredelegation";
+pub const CONTINUITY_APPROVAL_TYPE: &str = "ContinuityApproval";
+
+#[allow(clippy::too_many_arguments)]
+pub fn build_distress_attestation(
+    observer_seed: &[u8],
+    observer_did: &str,
+    target_did: &str,
+    reason: &str,
+    evidence_ref: &str,
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    if target_did.is_empty() || reason.is_empty() || evidence_ref.is_empty() {
+        return Err(CoreError::Json("target_did, reason, evidence_ref required".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(target_did));
+    subject.insert("observer".into(), json!(observer_did));
+    subject.insert("reason".into(), json!(reason));
+    subject.insert("evidenceRef".into(), json!(evidence_ref));
+    subject.insert("epoch".into(), json!(epoch));
+    sign_subject(observer_seed, observer_did, DISTRESS_TYPE, subject, created)
+}
+
+pub fn verify_distress_attestation(attestation: &Value, observer_public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(attestation, observer_public_key, DISTRESS_TYPE)
+}
+
+/// True if at least `threshold` distinct attested members signed distress against
+/// `target_did`, optionally within an inclusive epoch `window`.
+pub fn is_quarantined(
+    distress_subjects: &[Value],
+    target_did: &str,
+    threshold: usize,
+    member_dids: &HashSet<String>,
+    window: Option<(i64, i64)>,
+) -> bool {
+    if threshold == 0 {
+        return false;
+    }
+    let mut signers: HashSet<&str> = HashSet::new();
+    for s in distress_subjects {
+        if s.get("id").and_then(|v| v.as_str()) != Some(target_did) {
+            continue;
+        }
+        let observer = match s.get("observer").and_then(|v| v.as_str()) {
+            Some(o) if member_dids.contains(o) => o,
+            _ => continue,
+        };
+        if let Some((lo, hi)) = window {
+            match s.get("epoch").and_then(|v| v.as_i64()) {
+                Some(e) if lo <= e && e <= hi => {}
+                _ => continue,
+            }
+        }
+        signers.insert(observer);
+    }
+    signers.len() >= threshold
+}
+
+pub fn build_trust_state_update(
+    anchor_seed: &[u8],
+    anchor_did: &str,
+    scope: &str,
+    change: &Value,
+    epoch: i64,
+    failure_domain: &str,
+    created: &str,
+) -> Result<Value> {
+    if scope.is_empty() || failure_domain.is_empty() {
+        return Err(CoreError::Json("scope and failure_domain required".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(anchor_did));
+    subject.insert("scope".into(), json!(scope));
+    subject.insert("change".into(), change.clone());
+    subject.insert("epoch".into(), json!(epoch));
+    subject.insert("failureDomain".into(), json!(failure_domain));
+    sign_subject(anchor_seed, anchor_did, TRUST_STATE_UPDATE_TYPE, subject, created)
+}
+
+pub fn verify_trust_state_update(update: &Value, anchor_public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(update, anchor_public_key, TRUST_STATE_UPDATE_TYPE)
+}
+
+/// Accept a change only when at least `threshold` corroborations agree on the same
+/// (scope, change, epoch) from DISTINCT failure domains, with no epoch rollback.
+pub fn accept_trust_state_update(corroborating_subjects: &[Value], current_epoch: i64, threshold: usize) -> bool {
+    if threshold == 0 || corroborating_subjects.is_empty() {
+        return false;
+    }
+    let reference = &corroborating_subjects[0];
+    let scope = reference.get("scope");
+    let change = reference.get("change");
+    let epoch = match reference.get("epoch").and_then(|v| v.as_i64()) {
+        Some(e) if e >= current_epoch => e,
+        _ => return false,
+    };
+    let mut domains: HashSet<&str> = HashSet::new();
+    for s in corroborating_subjects {
+        if s.get("scope") != scope || s.get("change") != change || s.get("epoch").and_then(|v| v.as_i64()) != Some(epoch) {
+            continue;
+        }
+        if let Some(fd) = s.get("failureDomain").and_then(|v| v.as_str()) {
+            domains.insert(fd);
+        }
+    }
+    domains.len() >= threshold
+}
+
+pub fn build_key_continuity_predelegation(
+    authority_seed: &[u8],
+    authority_did: &str,
+    mission_credential_id: &str,
+    member_dids: &[String],
+    threshold: usize,
+    created: &str,
+) -> Result<Value> {
+    let mut members: Vec<String> = member_dids.iter().cloned().collect::<HashSet<_>>().into_iter().collect();
+    members.sort();
+    if threshold == 0 || threshold > members.len() {
+        return Err(CoreError::Json("threshold must be in 1..=len(members)".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(mission_credential_id));
+    subject.insert("members".into(), json!(members));
+    subject.insert("threshold".into(), json!(threshold));
+    subject.insert("bound".into(), json!("preserve_or_narrow"));
+    sign_subject(authority_seed, authority_did, KEY_CONTINUITY_PREDELEGATION_TYPE, subject, created)
+}
+
+pub fn build_continuity_approval(
+    member_seed: &[u8],
+    member_did: &str,
+    reissuance_id: &str,
+    supersedes: &str,
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(reissuance_id));
+    subject.insert("member".into(), json!(member_did));
+    subject.insert("supersedes".into(), json!(supersedes));
+    subject.insert("epoch".into(), json!(epoch));
+    sign_subject(member_seed, member_did, CONTINUITY_APPROVAL_TYPE, subject, created)
+}
+
+/// Confirm an offline re-issuance: pre-delegation authorized the group and at least
+/// `threshold` distinct authorized members approved THIS re-issuance.
+pub fn verify_key_continuity(
+    predelegation_subject: &Value,
+    reissuance_id: &str,
+    supersedes: &str,
+    approval_subjects: &[Value],
+) -> bool {
+    let members: HashSet<&str> = predelegation_subject
+        .get("members")
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|v| v.as_str()).collect())
+        .unwrap_or_default();
+    let threshold = match predelegation_subject.get("threshold").and_then(|v| v.as_u64()) {
+        Some(t) if t > 0 => t as usize,
+        _ => return false,
+    };
+    let mut approvers: HashSet<&str> = HashSet::new();
+    for s in approval_subjects {
+        if s.get("id").and_then(|v| v.as_str()) != Some(reissuance_id)
+            || s.get("supersedes").and_then(|v| v.as_str()) != Some(supersedes)
+        {
+            continue;
+        }
+        if let Some(m) = s.get("member").and_then(|v| v.as_str()) {
+            if members.contains(m) {
+                approvers.insert(m);
+            }
+        }
+    }
+    approvers.len() >= threshold
+}
+
+// ===========================================================================
+// PAD-115/117/118: time-quality, autonomy envelope, integrity risk
+// ===========================================================================
+
+pub const TIME_QUALITY_TYPE: &str = "TimeQualityAttestation";
+pub const AUTONOMY_SCHEDULE_TYPE: &str = "AutonomyDecaySchedule";
+pub const INTEGRITY_RISK_TYPE: &str = "IntegrityRiskAttestation";
+pub const INTEGRITY_FULL: &str = "full";
+pub const INTEGRITY_NARROWED: &str = "narrowed";
+pub const INTEGRITY_SUSPECT: &str = "suspect";
+
+pub fn default_time_uncertainty_budget(tier: &str) -> f64 {
+    match tier_or_critical(tier) {
+        CONSEQUENCE_ROUTINE => 3600.0,
+        CONSEQUENCE_SENSITIVE => 60.0,
+        _ => 1.0,
+    }
+}
+
+pub fn build_time_quality_attestation(
+    signer_seed: &[u8],
+    signer_did: &str,
+    source_class: &str,
+    since_discipline_s: f64,
+    uncertainty_s: f64,
+    created: &str,
+) -> Result<Value> {
+    if uncertainty_s < 0.0 || since_discipline_s < 0.0 {
+        return Err(CoreError::Json("uncertainty_s and since_discipline_s must be non-negative".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(signer_did));
+    subject.insert("sourceClass".into(), json!(source_class));
+    subject.insert("sinceDisciplineS".into(), json!(since_discipline_s));
+    subject.insert("uncertaintyS".into(), json!(uncertainty_s));
+    sign_subject(signer_seed, signer_did, TIME_QUALITY_TYPE, subject, created)
+}
+
+pub fn verify_time_quality_attestation(attestation: &Value, public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(attestation, public_key, TIME_QUALITY_TYPE)
+}
+
+pub fn time_quality_permits(subject: &Value, tier: &str, budget_override: Option<f64>) -> bool {
+    let unc = match subject.get("uncertaintyS").and_then(|v| v.as_f64()) {
+        Some(u) => u,
+        None => return false,
+    };
+    let budget = budget_override.unwrap_or_else(|| default_time_uncertainty_budget(tier));
+    unc <= budget
+}
+
+/// Build a signed decay schedule; `steps` is a JSON array of
+/// {"maxStalenessEpochs": int, "physicalScope": {...}}, strictly ascending and
+/// each scope attenuating the previous. Validated on build.
+pub fn build_autonomy_schedule(
+    authority_seed: &[u8],
+    authority_did: &str,
+    subject_did: &str,
+    steps: &Value,
+    created: &str,
+) -> Result<Value> {
+    let arr = steps
+        .as_array()
+        .ok_or_else(|| CoreError::Json("steps must be an array".into()))?;
+    if arr.is_empty() {
+        return Err(CoreError::Json("steps must be non-empty".into()));
+    }
+    let mut prev_thresh: i64 = -1;
+    let mut prev_scope: Option<&Value> = None;
+    for st in arr {
+        let thresh = st
+            .get("maxStalenessEpochs")
+            .and_then(|v| v.as_i64())
+            .ok_or_else(|| CoreError::Json("maxStalenessEpochs must be an integer".into()))?;
+        if thresh <= prev_thresh {
+            return Err(CoreError::Json("maxStalenessEpochs must be strictly ascending".into()));
+        }
+        let scope = st
+            .get("physicalScope")
+            .ok_or_else(|| CoreError::Json("each step needs a physicalScope".into()))?;
+        if let Some(prev) = prev_scope {
+            if !attenuates(prev, scope) {
+                return Err(CoreError::Json("each step's scope must attenuate the previous".into()));
+            }
+        }
+        prev_thresh = thresh;
+        prev_scope = Some(scope);
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(subject_did));
+    subject.insert("steps".into(), steps.clone());
+    sign_subject(authority_seed, authority_did, AUTONOMY_SCHEDULE_TYPE, subject, created)
+}
+
+pub fn verify_autonomy_schedule(schedule: &Value, authority_public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(schedule, authority_public_key, AUTONOMY_SCHEDULE_TYPE)
+}
+
+/// Select the physical scope for the current staleness: the first step whose
+/// threshold >= staleness; beyond the last, the tightest step's scope.
+pub fn select_envelope(schedule_subject: &Value, staleness_epochs: i64) -> Option<Value> {
+    let steps = schedule_subject.get("steps")?.as_array()?;
+    for st in steps {
+        if let Some(t) = st.get("maxStalenessEpochs").and_then(|v| v.as_i64()) {
+            if staleness_epochs <= t {
+                return st.get("physicalScope").cloned();
+            }
+        }
+    }
+    steps.last().and_then(|st| st.get("physicalScope").cloned())
+}
+
+pub fn autonomy_permits(schedule_subject: &Value, staleness_epochs: i64, action: &PhysicalAction) -> bool {
+    match select_envelope(schedule_subject, staleness_epochs) {
+        Some(scope) => check_physical_action(&scope, action).ok,
+        None => false,
+    }
+}
+
+pub fn build_integrity_risk_attestation(
+    signer_seed: &[u8],
+    signer_did: &str,
+    cumulative_risk: f64,
+    metrics: Option<&Value>,
+    prev_hash: Option<&str>,
+    created: &str,
+) -> Result<Value> {
+    if cumulative_risk < 0.0 {
+        return Err(CoreError::Json("cumulative_risk must be non-negative".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(signer_did));
+    subject.insert("cumulativeRisk".into(), json!(cumulative_risk));
+    if let Some(m) = metrics {
+        subject.insert("metrics".into(), m.clone());
+    }
+    if let Some(p) = prev_hash {
+        subject.insert("prevHash".into(), json!(p));
+    }
+    sign_subject(signer_seed, signer_did, INTEGRITY_RISK_TYPE, subject, created)
+}
+
+pub fn verify_integrity_risk_attestation(attestation: &Value, public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(attestation, public_key, INTEGRITY_RISK_TYPE)
+}
+
+/// Deterministic risk-to-authority mapping (defaults: narrow 0.3, suspect 0.7).
+pub fn integrity_authority_level(cumulative_risk: f64, narrow_threshold: f64, suspect_threshold: f64) -> &'static str {
+    if cumulative_risk >= suspect_threshold {
+        INTEGRITY_SUSPECT
+    } else if cumulative_risk >= narrow_threshold {
+        INTEGRITY_NARROWED
+    } else {
+        INTEGRITY_FULL
+    }
+}
+
+// ===========================================================================
+// PAD-122/123: perception consensus + mutual-attestation mesh
+// ===========================================================================
+
+pub const PERCEPTION_CLAIM_TYPE: &str = "SharedPerceptionClaim";
+pub const INTERACTION_ATTESTATION_TYPE: &str = "InteractionAttestation";
+
+pub fn build_perception_claim(
+    signer_seed: &[u8],
+    signer_did: &str,
+    scene_nonce: &str,
+    feature: &str,
+    value: &Value,
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    if scene_nonce.is_empty() || feature.is_empty() {
+        return Err(CoreError::Json("scene_nonce and feature required".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(signer_did));
+    subject.insert("sceneNonce".into(), json!(scene_nonce));
+    subject.insert("feature".into(), json!(feature));
+    subject.insert("value".into(), value.clone());
+    subject.insert("epoch".into(), json!(epoch));
+    sign_subject(signer_seed, signer_did, PERCEPTION_CLAIM_TYPE, subject, created)
+}
+
+pub fn verify_perception_claim(claim: &Value, public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(claim, public_key, PERCEPTION_CLAIM_TYPE)
+}
+
+fn value_distance(a: &Value, b: &Value) -> Option<f64> {
+    if let (Some(x), Some(y)) = (a.as_f64(), b.as_f64()) {
+        return Some((x - y).abs());
+    }
+    if let (Some(x), Some(y)) = (a.as_array(), b.as_array()) {
+        if x.len() == y.len() {
+            let mut sum = 0.0;
+            for i in 0..x.len() {
+                let (xi, yi) = (x[i].as_f64()?, y[i].as_f64()?);
+                sum += (xi - yi).powi(2);
+            }
+            return Some(sum.sqrt());
+        }
+    }
+    None
+}
+
+/// Cross-check perception claims of one shared feature. Returns (corroborated,
+/// flagged) DIDs (each sorted). A node is corroborated when at least `threshold`
+/// OTHER nodes agree within `tolerance`.
+pub fn cross_check_perception(claim_subjects: &[Value], tolerance: f64, threshold: usize) -> (Vec<String>, Vec<String>) {
+    let entries: Vec<(&str, &Value)> = claim_subjects
+        .iter()
+        .filter_map(|s| Some((s.get("id")?.as_str()?, s.get("value")?)))
+        .collect();
+    let mut corroborated = Vec::new();
+    let mut flagged = Vec::new();
+    for (did, val) in &entries {
+        let mut agree = 0usize;
+        for (other, oval) in &entries {
+            if other == did {
+                continue;
+            }
+            if let Some(d) = value_distance(val, oval) {
+                if d <= tolerance {
+                    agree += 1;
+                }
+            }
+        }
+        if agree >= threshold {
+            corroborated.push(did.to_string());
+        } else {
+            flagged.push(did.to_string());
+        }
+    }
+    corroborated.sort();
+    flagged.sort();
+    (corroborated, flagged)
+}
+
+pub fn build_interaction_attestation(
+    signer_seed: &[u8],
+    signer_did: &str,
+    peer_did: &str,
+    outcome: &str,
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    if peer_did.is_empty() {
+        return Err(CoreError::Json("peer_did required".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(peer_did));
+    subject.insert("attestor".into(), json!(signer_did));
+    subject.insert("outcome".into(), json!(outcome));
+    subject.insert("epoch".into(), json!(epoch));
+    sign_subject(signer_seed, signer_did, INTERACTION_ATTESTATION_TYPE, subject, created)
+}
+
+pub fn verify_interaction_attestation(attestation: &Value, attestor_public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(attestation, attestor_public_key, INTERACTION_ATTESTATION_TYPE)
+}
+
+/// Decay-weighted sum of the freshest positive interaction attestation per distinct
+/// neighbor for `node_did`.
+pub fn node_standing(
+    attestation_subjects: &[Value],
+    node_did: &str,
+    current_epoch: i64,
+    half_life_epochs: f64,
+    positive_outcomes: &[&str],
+) -> f64 {
+    let mut freshest: std::collections::HashMap<&str, i64> = std::collections::HashMap::new();
+    for s in attestation_subjects {
+        if s.get("id").and_then(|v| v.as_str()) != Some(node_did) {
+            continue;
+        }
+        let outcome = s.get("outcome").and_then(|v| v.as_str()).unwrap_or("");
+        if !positive_outcomes.contains(&outcome) {
+            continue;
+        }
+        let attestor = match s.get("attestor").and_then(|v| v.as_str()) {
+            Some(a) => a,
+            None => continue,
+        };
+        let e = match s.get("epoch").and_then(|v| v.as_i64()) {
+            Some(e) if e <= current_epoch => e,
+            _ => continue,
+        };
+        freshest.entry(attestor).and_modify(|cur| { if e > *cur { *cur = e; } }).or_insert(e);
+    }
+    let mut total = 0.0;
+    for e in freshest.values() {
+        if let Ok(w) = decay_weight(current_epoch - e, half_life_epochs, "exponential") {
+            total += w;
+        }
+    }
+    total
+}
+
+// ===========================================================================
+// PAD-124: DTN Bundle Protocol custody binding
+// ===========================================================================
+
+pub const BUNDLE_CREDENTIAL_TYPE: &str = "BundleTrustCredential";
+pub const CUSTODY_TRANSFER_TYPE: &str = "BundleCustodyTransfer";
+
+pub fn bind_credential_to_bundle(
+    originator_seed: &[u8],
+    originator_did: &str,
+    bundle_id: &str,
+    payload_hash: &str,
+    intent: &Value,
+    created: &str,
+) -> Result<Value> {
+    if bundle_id.is_empty() || payload_hash.is_empty() {
+        return Err(CoreError::Json("bundle_id and payload_hash required".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(bundle_id));
+    subject.insert("originator".into(), json!(originator_did));
+    subject.insert("payloadHash".into(), json!(payload_hash));
+    subject.insert("intent".into(), intent.clone());
+    sign_subject(originator_seed, originator_did, BUNDLE_CREDENTIAL_TYPE, subject, created)
+}
+
+pub fn verify_bundle_trust(bundle_credential: &Value, originator_public_key: &[u8], payload_hash: &str) -> Result<Option<Value>> {
+    match verify_typed(bundle_credential, originator_public_key, BUNDLE_CREDENTIAL_TYPE)? {
+        Some(subject) => {
+            if subject.get("payloadHash").and_then(|v| v.as_str()) != Some(payload_hash) {
+                return Ok(None);
+            }
+            Ok(Some(subject))
+        }
+        None => Ok(None),
+    }
+}
+
+pub fn build_custody_transfer(
+    relay_seed: &[u8],
+    relay_did: &str,
+    bundle_id: &str,
+    previous_custodian: Option<&str>,
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(bundle_id));
+    subject.insert("custodian".into(), json!(relay_did));
+    subject.insert("previousCustodian".into(), match previous_custodian {
+        Some(p) => json!(p),
+        None => Value::Null,
+    });
+    subject.insert("epoch".into(), json!(epoch));
+    sign_subject(relay_seed, relay_did, CUSTODY_TRANSFER_TYPE, subject, created)
+}
+
+pub fn verify_custody_transfer(transfer: &Value, custodian_public_key: &[u8]) -> Result<Option<Value>> {
+    verify_typed(transfer, custodian_public_key, CUSTODY_TRANSFER_TYPE)
+}
+
+/// Confirm custody transfers form an unbroken chain for `bundle_id`.
+pub fn custody_chain_ok(transfer_subjects: &[Value], bundle_id: &str, originator: &str) -> bool {
+    let chain: Vec<&Value> = transfer_subjects
+        .iter()
+        .filter(|s| s.get("id").and_then(|v| v.as_str()) == Some(bundle_id))
+        .collect();
+    if chain.is_empty() {
+        return false;
+    }
+    let mut expected_prev = originator.to_string();
+    for s in chain {
+        let prev = s.get("previousCustodian").and_then(|v| v.as_str());
+        if prev != Some(expected_prev.as_str()) {
+            return false;
+        }
+        match s.get("custodian").and_then(|v| v.as_str()) {
+            Some(c) => expected_prev = c.to_string(),
+            None => return false,
+        }
+    }
+    true
+}
+
+// ---------------------------------------------------------------------------
+// Shared helpers for the build/verify pattern above.
+// ---------------------------------------------------------------------------
+
+fn sign_subject(seed: &[u8], issuer_did: &str, cred_type: &str, subject: Map<String, Value>, created: &str) -> Result<Value> {
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert("type".into(), json!(["VerifiableCredential", cred_type]));
+    cred.insert("issuer".into(), json!(issuer_did));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+    let opts = BuildProofOptions::new(vm(issuer_did), created);
+    data_integrity::sign(&Value::Object(cred), seed, &opts)
+}
+
+fn verify_typed(credential: &Value, public_key: &[u8], cred_type: &str) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), cred_type) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, public_key)? {
+        return Ok(None);
+    }
+    Ok(credential.get("credentialSubject").cloned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1104,5 +1911,154 @@ mod tests {
         let (pk, did) = identity(&[17u8; 32]);
         let o = build_range_observation(&[17u8; 32], &did, "did:web:t", [1.0, 2.0, 3.0], 10.0, "n", 1, "2026-07-19T12:00:00Z").unwrap();
         assert!(verify_range_observation(&o, &pk).unwrap().is_some());
+    }
+
+    #[test]
+    fn accumulator_non_revocation() {
+        let mut smt = SparseMerkleTree::new();
+        smt.revoke("cred-x");
+        smt.revoke("cred-y");
+        let root = smt.root();
+        assert!(verify_non_revocation_proof("cred-z", &smt.non_revocation_proof("cred-z"), &root));
+        // a revoked credential's proof must NOT verify
+        assert!(!verify_non_revocation_proof("cred-x", &smt.non_revocation_proof("cred-x"), &root));
+        // incremental update changes the root
+        let mut smt2 = SparseMerkleTree::new();
+        smt2.revoke("a");
+        let r1 = smt2.root();
+        smt2.revoke("z");
+        assert_ne!(smt2.root(), r1);
+        smt2.unrevoke("z");
+        assert!(verify_non_revocation_proof("z", &smt2.non_revocation_proof("z"), &smt2.root()));
+    }
+
+    #[test]
+    fn signed_accumulator_root_end_to_end() {
+        let (pk, did) = identity(&[19u8; 32]);
+        let mut smt = SparseMerkleTree::new();
+        smt.revoke("compromised");
+        let signed = build_revocation_accumulator_root(&[19u8; 32], &did, &smt, 42, "2026-07-19T12:00:00Z").unwrap();
+        let proof = smt.non_revocation_proof("good");
+        assert!(verify_non_revocation("good", &proof, &signed, &pk).unwrap());
+        let bad = smt.non_revocation_proof("compromised");
+        assert!(!verify_non_revocation("compromised", &bad, &signed, &pk).unwrap());
+    }
+
+    #[test]
+    fn quarantine_and_quorum() {
+        let (pk, did) = identity(&[21u8; 32]);
+        let d = build_distress_attestation(&[21u8; 32], &did, "did:web:bad", "out_of_envelope", "frame:abc", 5, "2026-07-19T12:00:00Z").unwrap();
+        assert!(verify_distress_attestation(&d, &pk).unwrap().is_some());
+        let members: HashSet<String> = ["did:web:m0", "did:web:m1", "did:web:m2", "did:web:m3"].iter().map(|s| s.to_string()).collect();
+        let mut subs = vec![
+            json!({"id": "did:web:bad", "observer": "did:web:m0", "epoch": 5}),
+            json!({"id": "did:web:bad", "observer": "did:web:m1", "epoch": 5}),
+            json!({"id": "did:web:bad", "observer": "did:web:m1", "epoch": 6}),
+            json!({"id": "did:web:bad", "observer": "did:web:outsider", "epoch": 5}),
+        ];
+        assert!(!is_quarantined(&subs, "did:web:bad", 3, &members, None));
+        subs.push(json!({"id": "did:web:bad", "observer": "did:web:m2", "epoch": 5}));
+        assert!(is_quarantined(&subs, "did:web:bad", 3, &members, None));
+        // quorum-of-orbits: distinct failure domains + no rollback
+        let change = json!({"op": "revoke", "did": "did:web:x"});
+        let mut ups = vec![
+            json!({"scope": "rev", "change": change, "epoch": 10, "failureDomain": "orbit-A"}),
+            json!({"scope": "rev", "change": change, "epoch": 10, "failureDomain": "orbit-A"}),
+        ];
+        assert!(!accept_trust_state_update(&ups, 9, 2));
+        ups.push(json!({"scope": "rev", "change": change, "epoch": 10, "failureDomain": "orbit-B"}));
+        assert!(accept_trust_state_update(&ups, 9, 2));
+        assert!(!accept_trust_state_update(&ups, 11, 2)); // rollback
+    }
+
+    #[test]
+    fn key_continuity_threshold() {
+        let (pk, did) = identity(&[23u8; 32]);
+        let members: Vec<String> = (0..3).map(|i| format!("did:web:m{i}")).collect();
+        let pre = build_key_continuity_predelegation(&[23u8; 32], &did, "mission-1", &members, 2, "2026-07-19T12:00:00Z").unwrap();
+        let pre_sub = verify_typed(&pre, &pk, KEY_CONTINUITY_PREDELEGATION_TYPE).unwrap().unwrap();
+        let approvals = vec![
+            json!({"id": "reissue-1", "member": "did:web:m0", "supersedes": "mission-1", "epoch": 20}),
+            json!({"id": "reissue-1", "member": "did:web:m1", "supersedes": "mission-1", "epoch": 20}),
+        ];
+        assert!(verify_key_continuity(&pre_sub, "reissue-1", "mission-1", &approvals));
+        assert!(!verify_key_continuity(&pre_sub, "reissue-1", "mission-1", &approvals[..1]));
+    }
+
+    #[test]
+    fn edge_trust_gates() {
+        let (pk, did) = identity(&[25u8; 32]);
+        let good = build_time_quality_attestation(&[25u8; 32], &did, "gnss", 5.0, 0.5, "2026-07-19T12:00:00Z").unwrap();
+        let sub = verify_time_quality_attestation(&good, &pk).unwrap().unwrap();
+        assert!(time_quality_permits(&sub, CONSEQUENCE_CRITICAL, None));
+        let poor = build_time_quality_attestation(&[25u8; 32], &did, "rc", 1e6, 120.0, "2026-07-19T12:00:00Z").unwrap();
+        let psub = verify_time_quality_attestation(&poor, &pk).unwrap().unwrap();
+        assert!(!time_quality_permits(&psub, CONSEQUENCE_CRITICAL, None));
+        assert!(time_quality_permits(&psub, CONSEQUENCE_ROUTINE, None));
+        // integrity levels
+        assert_eq!(integrity_authority_level(0.1, 0.3, 0.7), INTEGRITY_FULL);
+        assert_eq!(integrity_authority_level(0.4, 0.3, 0.7), INTEGRITY_NARROWED);
+        assert_eq!(integrity_authority_level(0.8, 0.3, 0.7), INTEGRITY_SUSPECT);
+    }
+
+    #[test]
+    fn autonomy_envelope_narrows() {
+        let (pk, did) = identity(&[27u8; 32]);
+        let steps = json!([
+            {"maxStalenessEpochs": 10, "physicalScope": {"maxSpeedMps": 2.0, "allowedZones": ["a", "b"]}},
+            {"maxStalenessEpochs": 100, "physicalScope": {"maxSpeedMps": 0.5, "allowedZones": ["a"]}}
+        ]);
+        let sched = build_autonomy_schedule(&[27u8; 32], &did, "did:web:node", &steps, "2026-07-19T12:00:00Z").unwrap();
+        let sub = verify_autonomy_schedule(&sched, &pk).unwrap().unwrap();
+        assert_eq!(select_envelope(&sub, 5).unwrap().get("maxSpeedMps").unwrap().as_f64(), Some(2.0));
+        assert_eq!(select_envelope(&sub, 50).unwrap().get("maxSpeedMps").unwrap().as_f64(), Some(0.5));
+        let action = PhysicalAction { force_n: None, speed_mps: Some(1.5), near_humans: false, zone: Some("b".into()), time_hm: None };
+        assert!(autonomy_permits(&sub, 5, &action));
+        assert!(!autonomy_permits(&sub, 50, &action));
+        // widening schedule rejected
+        let bad = json!([
+            {"maxStalenessEpochs": 10, "physicalScope": {"maxSpeedMps": 0.5}},
+            {"maxStalenessEpochs": 100, "physicalScope": {"maxSpeedMps": 2.0}}
+        ]);
+        assert!(build_autonomy_schedule(&[27u8; 32], &did, "did:web:node", &bad, "2026-07-19T12:00:00Z").is_err());
+    }
+
+    #[test]
+    fn perception_and_mesh() {
+        let subs = vec![
+            json!({"id": "did:web:a", "value": 10.0}),
+            json!({"id": "did:web:b", "value": 10.2}),
+            json!({"id": "did:web:c", "value": 9.9}),
+            json!({"id": "did:web:liar", "value": 50.0}),
+        ];
+        let (corr, flagged) = cross_check_perception(&subs, 1.0, 2);
+        assert!(flagged.contains(&"did:web:liar".to_string()));
+        assert_eq!(corr, vec!["did:web:a", "did:web:b", "did:web:c"]);
+        // node standing
+        let att = vec![
+            json!({"id": "did:web:n", "attestor": "did:web:p1", "outcome": "ok", "epoch": 100}),
+            json!({"id": "did:web:n", "attestor": "did:web:p2", "outcome": "ok", "epoch": 90}),
+            json!({"id": "did:web:n", "attestor": "did:web:p1", "outcome": "ok", "epoch": 80}),
+        ];
+        let st = node_standing(&att, "did:web:n", 100, 10.0, &["ok", "success", "authenticated"]);
+        assert!((st - 1.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn bundle_trust_and_custody() {
+        let (pk, did) = identity(&[29u8; 32]);
+        let bc = bind_credential_to_bundle(&[29u8; 32], &did, "b-1", "sha256:abc", &json!({"action": "deliver"}), "2026-07-19T12:00:00Z").unwrap();
+        assert!(verify_bundle_trust(&bc, &pk, "sha256:abc").unwrap().is_some());
+        assert!(verify_bundle_trust(&bc, &pk, "sha256:TAMPER").unwrap().is_none());
+        let transfers = vec![
+            json!({"id": "b-1", "custodian": "did:web:relay1", "previousCustodian": did, "epoch": 1}),
+            json!({"id": "b-1", "custodian": "did:web:relay2", "previousCustodian": "did:web:relay1", "epoch": 2}),
+        ];
+        assert!(custody_chain_ok(&transfers, "b-1", &did));
+        let broken = vec![
+            transfers[0].clone(),
+            json!({"id": "b-1", "custodian": "did:web:relay2", "previousCustodian": "did:web:GHOST", "epoch": 2}),
+        ];
+        assert!(!custody_chain_ok(&broken, "b-1", &did));
     }
 }
