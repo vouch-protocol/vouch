@@ -488,6 +488,17 @@ narrowing), `perception_consensus` (Byzantine sensor agreement, mesh standing),
 and `bundle` (DTN Bundle Protocol custody). Hardware acquisition (ranging, TPM,
 orbital propagators) is the caller's concern.
 
+A hardware seam, `vouch.robotics.hardware`, lets a platform plug real sensors into
+these predicates: typed Protocols (`NavigationSource`, `RangeSensor`,
+`DopplerSensor`, `PointingSource`, `ClockSource`, `EpochSource`, `IntegrityMonitor`),
+`Simulated*` reference implementations, and capture/verify-live adapters
+(`capture_presence_attestation`, `verify_presence_live`, `capture_range_observation`,
+…). Two predicates use production algorithms: kinematic plausibility does real
+two-body orbital propagation (`vouch.robotics.orbital`), and the carried
+non-revocation witness uses a dynamic sparse-Merkle accumulator
+(`vouch.robotics.accumulator`). See `examples/hardware_seam_demo.py` and the
+driver skeleton in `examples/hardware_drivers/`.
+
 ### "What is the Vouch Verified Contributor badge, and how do I get one?"
 
 Land a merged pull request on the repository and an automated workflow mints you a

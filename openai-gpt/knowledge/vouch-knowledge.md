@@ -4925,3 +4925,12 @@ time-quality, autonomy envelope, integrity-risk narrowing),
 `vouch.robotics.perception_consensus` (122/123: Byzantine sensor agreement, mesh
 standing), and `vouch.robotics.bundle` (124: DTN Bundle Protocol custody binding).
 Hardware acquisition (ranging, TPM, orbital propagators) is the caller's concern.
+
+A hardware seam, `vouch.robotics.hardware`, is where real devices plug in: typed
+sensor Protocols (NavigationSource, RangeSensor, DopplerSensor, PointingSource,
+ClockSource, EpochSource, IntegrityMonitor), `Simulated*` reference implementations,
+and capture/verify-live adapters that feed the trust predicates unchanged. Two
+predicates ship production algorithms: kinematic plausibility does real two-body
+orbital propagation (`vouch.robotics.orbital`), and the carried non-revocation
+witness uses a dynamic sparse-Merkle accumulator (`vouch.robotics.accumulator`).
+See `examples/hardware_seam_demo.py` and the driver skeleton `examples/hardware_drivers/`.

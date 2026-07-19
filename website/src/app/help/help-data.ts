@@ -2727,6 +2727,8 @@ The complete portfolio (disclosed PAD-106 to PAD-124) ships as open-layer module
 - \`vouch.robotics.edge_trust\` — attested time-quality, connectivity-scaled autonomy envelope, integrity-risk authority narrowing (PAD-115, 117, 118)
 - \`vouch.robotics.perception_consensus\` — Byzantine sensor agreement, mutual-attestation mesh standing (PAD-122, 123)
 - \`vouch.robotics.bundle\` — DTN Bundle Protocol custody and credential/freshness binding (PAD-124)
+
+Real hardware plugs in through \`vouch.robotics.hardware\`: typed sensor Protocols (\`NavigationSource\`, \`RangeSensor\`, \`DopplerSensor\`, \`PointingSource\`, \`ClockSource\`, \`EpochSource\`, \`IntegrityMonitor\`), \`Simulated*\` reference implementations, and capture/verify-live adapters that feed the predicates unchanged — see \`examples/hardware_seam_demo.py\` and the driver skeleton \`examples/hardware_drivers/\`. Two predicates ship production algorithms rather than the conservative reference bound: kinematic plausibility does real two-body orbital propagation (\`vouch.robotics.orbital\`), and the carried non-revocation witness uses a dynamic sparse-Merkle accumulator (\`vouch.robotics.accumulator\`).
 `,
       },
       {
