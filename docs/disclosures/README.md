@@ -119,6 +119,22 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-107](./PAD-107-presenter-proof-of-freshness-dtn-epochs.md) | Presenter-Side Proof of Freshness Bound to Monotonic Delay-Tolerant Network Epochs | 2026-07-19 | Published |
 | [PAD-108](./PAD-108-channel-geometry-proof-of-presence.md) | Channel-Geometry Proof of Presence as a Freshness Factor in DID Handshakes | 2026-07-19 | Published |
 | [PAD-109](./PAD-109-ephemeris-scoped-delegation-authority.md) | Ephemeris-Scoped Delegation Authority Bound to a Trajectory or Geometric Predicate | 2026-07-19 | Published |
+| [PAD-110](./PAD-110-swarm-consensus-revocation-quarantine.md) | Swarm-Consensus Revocation: Local Peer-Observation Quarantine Under an Honest-Majority Assumption | 2026-07-19 | Published |
+| [PAD-111](./PAD-111-quorum-of-orbits-trust-anchoring.md) | Quorum-of-Orbits Trust Anchoring via Independent-Failure-Domain Corroboration | 2026-07-19 | Published |
+
+
+## July 19, 2026: Offline Peer Revocation and Trust Distribution (PAD-110 to PAD-111)
+
+Two disclosures for the revocation cases that bounded-staleness (PAD-106) cannot reach
+on its own. PAD-110 lets a local cluster of hardware-attested peers quarantine a node
+that turns malicious *between* contacts, by a threshold of evidence-bound distress
+attestations, sound under a stated local honest-majority assumption and deliberately
+bounded and reversible so collusion or error degrades to a temporary, appealable,
+cluster-local effect rather than a permanent kill. PAD-111 hardens how a disconnected
+mobile node accepts trust-state updates: an anchor change, revocation delta, or freshness
+advance is admitted only on corroboration by a threshold of anchors from *distinct
+independent failure domains* (different orbits, operators, or authorities), with monotonic
+epochs preventing rollback to a stale, more permissive state.
 
 
 ## July 19, 2026: Disconnected-Edge and Space Trust (PAD-106 to PAD-109)
