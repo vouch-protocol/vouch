@@ -122,6 +122,7 @@ See also the integration-specific READMEs in [browser-extension/](browser-extens
 | [reasoned_action_demo.py](reasoned_action_demo.py) | Signs a reasoned action. | `python reasoned_action_demo.py` |
 | [reputation_demo.py](reputation_demo.py) | Runs a standalone reputation example. | `python reputation_demo.py` |
 | [robotics_demo.py](robotics_demo.py) | Demonstrates robotics identity and trust flow. | `python robotics_demo.py` |
+| [disconnected_exchange_demo.py](disconnected_exchange_demo.py) | Two nodes authenticate and exchange authority fully offline over a simulated high-latency link, then apply the [bounded-staleness revocation](../docs/dtn-bounded-staleness-revocation.md) gate. | `python disconnected_exchange_demo.py` |
 | [secure_banking_agent.py](secure_banking_agent.py) | Runs a banking-style trusted agent demo. | `python secure_banking_agent.py` |
 | [telephony_gateway.py](telephony_gateway.py) | Runs a voice/telephony gateway demo. | `python telephony_gateway.py` |
 | [udna_rendezvous_demo.py](udna_rendezvous_demo.py) | Demonstrates uDNA rendezvous behavior. | `python udna_rendezvous_demo.py` |

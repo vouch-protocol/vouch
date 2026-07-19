@@ -452,3 +452,26 @@ managed consent-registry orchestration, are commercial.
 Sections 5.7 to 5.21 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.
+
+## Disconnected operation and bounded-staleness revocation
+
+The primitives above already verify authority offline against pre-distributed
+trust anchors: a delegation lease (5.11), a passport (5.6), and the robot-to-robot
+handshake (5.4) all complete with no network call. The one part of a trust
+decision that is inherently a *freshness* problem rather than a *signature*
+problem is revocation — an offline verifier holds a status-list snapshot synced at
+last contact, and a credential revoked after that sync still looks valid to it.
+
+[docs/dtn-bounded-staleness-revocation.md](dtn-bounded-staleness-revocation.md)
+specifies a verifier-side policy that binds the acceptable *age* of a revocation
+snapshot to the *consequence* of the action being authorized: a routine beacon
+tolerates a stale view, a physical maneuver does not, and every ambiguous state
+(no snapshot, expired snapshot, unusable clock) fails closed. It adds no new
+cryptography — only consequence tiers and a freshness gate on top of
+`vouch.status_list`.
+
+[`examples/disconnected_exchange_demo.py`](../examples/disconnected_exchange_demo.py)
+runs the whole flow end to end: two nodes in different trust domains provision
+anchors while in contact, then — with the socket layer disabled to prove it is
+offline — complete the handshake, present and authorize a lease, scan a passport,
+and apply the bounded-staleness gate across all three consequence tiers.
