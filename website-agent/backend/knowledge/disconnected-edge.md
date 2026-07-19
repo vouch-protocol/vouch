@@ -8,6 +8,28 @@ decision. Space is the most demanding instance of this; the same primitives
 serve any disconnected robot, so a satellite constellation and an underground
 mine use one mechanism.
 
+## The general class: DDIL environments
+
+Space is the lighthouse example, not the whole market. The unifying category is
+what defense and comms call **DDIL — Denied, Degraded, Intermittent, or Limited**
+connectivity. Every one of these has the same shape: pre-distribute trust anchors
+during a contact window, verify offline, and bound revocation staleness by the
+consequence of the action.
+
+| Domain | Example edge nodes | Why the round trip fails |
+| --- | --- | --- |
+| Orbital / cislunar | satellites, rovers, probes, cislunar relays | light-time and line-of-sight windows |
+| Subsea | ROVs, AUVs, ocean gliders, pipeline crawlers | RF does not penetrate water; acoustic links are kbps |
+| Subterranean | mining, tunnel-boring, cave rescue, deep wells | rock blocks all RF |
+| Polar / remote wilderness | Antarctic stations, wildfire crews, remote sensors | no infrastructure, satellite-only, weather outages |
+| Tactical / defense edge | dismounted units, BLOS UAV swarms, GPS-denied ops | connectivity actively denied by an adversary |
+| Aviation | transoceanic flights, high-altitude platforms, BVLOS drones | no continuous ground link |
+| Maritime | vessels mid-ocean, autonomous shipping, offshore rigs | intermittent, expensive satcom |
+| Grid / industrial | substations, pipeline SCADA, field agriculture robots | air-gapped by design or no cell coverage |
+
+The same Vouch code serves all of these; only the physical link and the contact
+cadence change.
+
 ## Why offline verification is possible
 
 A Vouch credential is a self-contained `eddsa-jcs-2022` Verifiable Credential.

@@ -494,12 +494,14 @@ const ok = core.verifyProof(signed, kp.public_b64);   // true
             <h2>At the disconnected edge, including space</h2>
           </div>
           <p className="text-ink-soft max-w-prose mb-6 leading-relaxed">
-            In orbit, on the lunar surface, deep underground, or under water, a round trip to an
-            Earth-based server is impossible or too slow to be part of a trust decision. Because a
-            Vouch credential verifies entirely offline against pre-distributed anchors, two nodes can
-            authenticate each other and exchange authority at the edge with no live connection home.
-            Space is simply the most demanding instance of a capability that already serves any
-            disconnected robot, so the same primitives cover a satellite constellation and a mine.
+            In orbit, on the lunar surface, deep underground, under water, in a jammed or
+            infrastructure-poor theater, a round trip to a home server is impossible or too slow to be
+            part of a trust decision. Because a Vouch credential verifies entirely offline against
+            pre-distributed anchors, two nodes can authenticate each other and exchange authority at
+            the edge with no live connection home. Space is simply the most demanding instance of a
+            general capability for denied, degraded, intermittent, and limited-connectivity (DDIL)
+            environments, so the same primitives cover a satellite constellation, an ocean glider, an
+            underground mine, and a tactical edge node alike.
           </p>
           <p className="text-ink-soft max-w-prose mb-12 leading-relaxed text-[0.9rem]">
             One honest caveat: offline trust is <em>enabled</em> by distributing trust anchors during a

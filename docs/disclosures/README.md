@@ -115,6 +115,25 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-103](./PAD-103-root-anchored-hardware-rooted-robot-identity.md) | Root-Anchored, Hardware-Rooted Robot Identity Binding | 2026-07-12 | Published |
 | [PAD-104](./PAD-104-per-tool-call-continuous-trust-authorization.md) | Per-Tool-Call Continuous-Trust Authorization with Resource-Bound Delegation | 2026-07-12 | Published |
 | [PAD-105](./PAD-105-safety-island-evidence-record.md) | Signed Tamper-Evident Safety-Evidence Record Bound to a Robot's Identity and Certified Stack | 2026-07-12 | Published |
+| [PAD-106](./PAD-106-dtn-bounded-staleness-revocation.md) | DTN-Aware Bounded-Staleness Revocation for Disconnected Verifiers | 2026-07-19 | Published |
+| [PAD-107](./PAD-107-presenter-proof-of-freshness-dtn-epochs.md) | Presenter-Side Proof of Freshness Bound to Monotonic Delay-Tolerant Network Epochs | 2026-07-19 | Published |
+| [PAD-108](./PAD-108-channel-geometry-proof-of-presence.md) | Channel-Geometry Proof of Presence as a Freshness Factor in DID Handshakes | 2026-07-19 | Published |
+| [PAD-109](./PAD-109-ephemeris-scoped-delegation-authority.md) | Ephemeris-Scoped Delegation Authority Bound to a Trajectory or Geometric Predicate | 2026-07-19 | Published |
+
+
+## July 19, 2026: Disconnected-Edge and Space Trust (PAD-106 to PAD-109)
+
+Four disclosures for trust at the disconnected edge — space, subsea, subterranean, and
+denied-connectivity (DDIL) environments — building on the offline primitives (PAD-070,
+PAD-076, PAD-087). PAD-106 makes revocation honest about time: a disconnected verifier
+weighs the age of its last-synced status snapshot against the consequence of the action
+and fails closed when the view is too old. PAD-107 adds the presenter-side dual, a
+relay-issued freshness token bound to a monotonic network epoch so recency survives clock
+drift. PAD-108 fuses a measured channel-geometry predicate (time-of-flight, range, or
+Doppler) into the DID handshake so a credential replayed from a different location fails.
+PAD-109 scopes delegated authority to a trajectory or geometric predicate (an orbital arc,
+a footprint, a geofence) evaluated by the holder against its own navigation state rather
+than a clock it cannot trust.
 
 
 ## July 12, 2026: Safety-Island Evidence Record (PAD-105)
