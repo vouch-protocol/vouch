@@ -511,3 +511,28 @@ acquisition (real ranging, TPM, orbital propagators) is the caller's concern:
 
 All are `eddsa-jcs-2022` credentials or deterministic predicates over the existing
 primitives, verified with the shared Data Integrity path.
+
+### Hardware-facing seam (`vouch.robotics.hardware`)
+
+The predicates above consume *measurements* (a range, a pointing solution, a
+position, a clock, an epoch, an integrity reading). `vouch.robotics.hardware`
+defines that seam as typed Protocols — `NavigationSource`, `RangeSensor`,
+`DopplerSensor`, `PointingSource`, `ClockSource`, `EpochSource`,
+`IntegrityMonitor` — that a platform implements with its own drivers. It ships
+`Simulated*` reference implementations for tests and demos, and capture/verify-live
+adapters (`capture_presence_attestation`, `verify_presence_live`,
+`capture_range_observation`, `capture_beam_presence`, `capture_time_quality`,
+`capture_integrity_risk`, `issue_freshness_token`, `check_kinematics_live`) that
+read a sensor and feed the existing build/verify functions unchanged. Integrating
+real hardware is implementing an interface, not rewriting the trust logic — a
+driver need only duck-type the Protocol.
+
+```python
+from vouch.robotics import capture_presence_attestation, verify_presence_live, SimulatedRangeSensor, SimulatedNavigation
+
+# on the presenting node: range its peer and commit the geometry
+att = capture_presence_attestation(node, peer_did=peer, nonce=n,
+    claimed_position=[100, 0, 0], range_sensor=my_radio, tolerance_m=1.0)
+# on the verifier: check against its own live position
+ok, subject = verify_presence_live(att, peer_key, nav=my_gnss, expected_nonce=n)
+```

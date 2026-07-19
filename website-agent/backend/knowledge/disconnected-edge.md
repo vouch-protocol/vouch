@@ -126,3 +126,16 @@ The full portfolio is implemented as open-layer formats and verifier predicates
 - `vouch.robotics.edge_trust` — time-quality, autonomy envelope, integrity-risk narrowing (115, 117, 118)
 - `vouch.robotics.perception_consensus` — Byzantine sensor agreement, mesh standing (122, 123)
 - `vouch.robotics.bundle` — DTN Bundle Protocol custody binding (124)
+
+## Hardware-facing seam
+
+`vouch.robotics.hardware` is where real devices plug in. It defines typed Protocols
+— `NavigationSource`, `RangeSensor`, `DopplerSensor`, `PointingSource`,
+`ClockSource`, `EpochSource`, `IntegrityMonitor` — that a platform implements with
+its own drivers, plus `Simulated*` reference implementations and capture/verify-live
+adapters (`capture_presence_attestation`, `verify_presence_live`,
+`capture_range_observation`, `capture_beam_presence`, `capture_time_quality`,
+`capture_integrity_risk`, `issue_freshness_token`, `check_kinematics_live`). A driver
+duck-types the Protocol; the trust logic is unchanged. This is the boundary between
+the deterministic, testable trust predicates and platform sensing (radio ranging,
+IMU/GNSS, laser terminal attitude, TPM, radiation monitor, relay epoch counter).
