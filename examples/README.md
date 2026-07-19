@@ -121,6 +121,7 @@ See also the integration-specific READMEs in [browser-extension/](browser-extens
 | [hybrid_transport_demo.py](hybrid_transport_demo.py) | Demonstrates hybrid transport behavior. | `python hybrid_transport_demo.py` |
 | [reasoned_action_demo.py](reasoned_action_demo.py) | Signs a reasoned action. | `python reasoned_action_demo.py` |
 | [reputation_demo.py](reputation_demo.py) | Runs a standalone reputation example. | `python reputation_demo.py` |
+| [mcp_trust_lifecycle.py](mcp_trust_lifecycle.py) | Walks one accountable agent task through the Vouch MCP lifecycle tools in order: delegate, check_action, check_trust, disclose_ai_origin, scan, reputation, attribute. | `python mcp_trust_lifecycle.py` |
 | [robotics_demo.py](robotics_demo.py) | Demonstrates robotics identity and trust flow. | `python robotics_demo.py` |
 | [disconnected_exchange_demo.py](disconnected_exchange_demo.py) | Two nodes authenticate and exchange authority fully offline over a simulated high-latency link, then apply the [bounded-staleness revocation](../docs/dtn-bounded-staleness-revocation.md) gate. | `python disconnected_exchange_demo.py` |
 | [hardware_seam_demo.py](hardware_seam_demo.py) | A verifier decides whether to trust a peer for a maneuver using (simulated) sensors: freshness, channel-geometry presence, triangulated location, time-quality, kinematics, and integrity, all offline. | `python hardware_seam_demo.py` |

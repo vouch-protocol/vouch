@@ -357,6 +357,25 @@ Configure Claude Desktop to use it:
 }
 ```
 
+The built-in server exposes far more than `sign` / `verify`. Beyond issuing and
+verifying credentials, your agent gets tools for the whole trust lifecycle:
+
+| Tool | Use it to… |
+|---|---|
+| `scan` | catch a leaked private key in text before it crosses a boundary |
+| `decode_did` | confirm a peer's key algorithm before trusting it |
+| `delegate` | hand a worker agent one narrowed capability (Spec §9.3) |
+| `check_action` | gate a tool call on the agent's capabilities (Shield) |
+| `check_trust` | recompute a session's decayed trust before a high-stakes act |
+| `disclose_ai_origin` | sign a verifiable AI-origin claim over your output |
+| `reputation` | score an agent from its history of signed outcomes |
+| `attribute` | record human/AI authorship from a signed manifest |
+| `evaluate_freshness` / `verify_disconnected_edge` | make offline (DTN) trust decisions |
+
+For a single task walked through these in order, see
+[`examples/mcp_trust_lifecycle.py`](../examples/mcp_trust_lifecycle.py). The
+[MCP Quickstart](./mcp-quickstart.md) lists every tool.
+
 ---
 
 ## Summary
