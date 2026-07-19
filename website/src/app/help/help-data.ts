@@ -2718,17 +2718,17 @@ Run the whole thing: \`examples/disconnected_exchange_demo.py\` completes an off
 
 The complete portfolio (disclosed PAD-106 to PAD-124) ships as open-layer modules, each an eddsa-jcs-2022 credential or a deterministic verifier predicate, with hardware acquisition (ranging, TPM, orbital propagators) left to the platform:
 
-- \`vouch.robotics.freshness\` — presenter freshness token bound to a network epoch, plus a graded trust-decay weight (PAD-107, 119)
-- \`vouch.robotics.presence\` — channel-geometry (range/Doppler) proof of presence (PAD-108)
-- \`vouch.robotics.geoscope\` — ephemeris/geometric-scoped authority with shrink-only regions (PAD-109)
-- \`vouch.robotics.quorum_trust\` — swarm-consensus quarantine, quorum-of-orbits update acceptance, offline threshold key continuity (PAD-110, 111, 116)
-- \`vouch.robotics.dtn_revocation\` — conditional dead-man revocation and a carried validity witness (PAD-112, 120)
-- \`vouch.robotics.localization\` — triangulated proof-of-location, kinematic-plausibility filtering, narrow-beam presence (PAD-113, 114, 121)
-- \`vouch.robotics.edge_trust\` — attested time-quality, connectivity-scaled autonomy envelope, integrity-risk authority narrowing (PAD-115, 117, 118)
-- \`vouch.robotics.perception_consensus\` — Byzantine sensor agreement, mutual-attestation mesh standing (PAD-122, 123)
-- \`vouch.robotics.bundle\` — DTN Bundle Protocol custody and credential/freshness binding (PAD-124)
+- \`vouch.robotics.freshness\`: presenter freshness token bound to a network epoch, plus a graded trust-decay weight (PAD-107, 119)
+- \`vouch.robotics.presence\`: channel-geometry (range/Doppler) proof of presence (PAD-108)
+- \`vouch.robotics.geoscope\`: ephemeris/geometric-scoped authority with shrink-only regions (PAD-109)
+- \`vouch.robotics.quorum_trust\`: swarm-consensus quarantine, quorum-of-orbits update acceptance, offline threshold key continuity (PAD-110, 111, 116)
+- \`vouch.robotics.dtn_revocation\`: conditional dead-man revocation and a carried validity witness (PAD-112, 120)
+- \`vouch.robotics.localization\`: triangulated proof-of-location, kinematic-plausibility filtering, narrow-beam presence (PAD-113, 114, 121)
+- \`vouch.robotics.edge_trust\`: attested time-quality, connectivity-scaled autonomy envelope, integrity-risk authority narrowing (PAD-115, 117, 118)
+- \`vouch.robotics.perception_consensus\`: Byzantine sensor agreement, mutual-attestation mesh standing (PAD-122, 123)
+- \`vouch.robotics.bundle\`: DTN Bundle Protocol custody and credential/freshness binding (PAD-124)
 
-Real hardware plugs in through \`vouch.robotics.hardware\`: typed sensor Protocols (\`NavigationSource\`, \`RangeSensor\`, \`DopplerSensor\`, \`PointingSource\`, \`ClockSource\`, \`EpochSource\`, \`IntegrityMonitor\`), \`Simulated*\` reference implementations, and capture/verify-live adapters that feed the predicates unchanged — see \`examples/hardware_seam_demo.py\` and the driver skeleton \`examples/hardware_drivers/\`. Two predicates ship production algorithms rather than the conservative reference bound: kinematic plausibility does real two-body orbital propagation (\`vouch.robotics.orbital\`), and the carried non-revocation witness uses a dynamic sparse-Merkle accumulator (\`vouch.robotics.accumulator\`).
+Real hardware plugs in through \`vouch.robotics.hardware\`: typed sensor Protocols (\`NavigationSource\`, \`RangeSensor\`, \`DopplerSensor\`, \`PointingSource\`, \`ClockSource\`, \`EpochSource\`, \`IntegrityMonitor\`), \`Simulated*\` reference implementations, and capture/verify-live adapters that feed the predicates unchanged. See \`examples/hardware_seam_demo.py\` and the driver skeleton \`examples/hardware_drivers/\`. Two predicates ship production algorithms rather than the conservative reference bound: kinematic plausibility does real two-body orbital propagation (\`vouch.robotics.orbital\`), and the carried non-revocation witness uses a dynamic sparse-Merkle accumulator (\`vouch.robotics.accumulator\`).
 `,
       },
       {
