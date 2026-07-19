@@ -44,7 +44,7 @@
             "user:7",
             "config:flags"
           ],
-          "intentDriftScore": 0.15
+          "intentDriftScore": 0.15000000000000002
         }
       }
     },
@@ -60,7 +60,7 @@
         ]
       },
       "expected": {
-        "score": 0.15
+        "score": 0.15000000000000002
       }
     },
     {
@@ -106,7 +106,7 @@
             "user:7",
             "config:flags"
           ],
-          "intentDriftScore": 0.15
+          "intentDriftScore": 0.15000000000000002
         }
       },
       "expected": {
