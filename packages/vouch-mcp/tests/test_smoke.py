@@ -36,6 +36,8 @@ def test_registered_tool_names():
         "create_session",
         "check_revocation",
         "get_identity",
+        "evaluate_freshness",
+        "verify_disconnected_edge",
     } <= names
 
 

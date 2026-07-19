@@ -86,6 +86,8 @@ VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
 | `create_session(purpose, valid_seconds, decay_lambda, initial_trust)` | Issue a trust-decaying session voucher (Heartbeat Protocol). |
 | `check_revocation(credential_json)` | Check a credential's `BitstringStatusList` entry: `ACTIVE`, `REVOKED`, or not individually revocable. |
 | `get_identity()` | Return the agent's DID. |
+| `evaluate_freshness(tier, snapshot_json=None, now_iso=None)` | Bounded-staleness revocation gate for offline/DTN use: decide if a last-synced revocation snapshot is fresh enough for the action's consequence tier, failing closed when too old. |
+| `verify_disconnected_edge(credential_json, public_key)` | Authenticate any disconnected-edge (DTN) credential type (freshness token, presence, ephemeris grant, revocation, bundle custody, …); returns its type and subject. |
 
 ## Why `verify` matters
 

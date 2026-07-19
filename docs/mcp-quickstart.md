@@ -70,6 +70,8 @@ Edit your config file:
 You'll see 🛠️ tools with:
 - **sign_action** - Sign any action
 - **get_identity** - Show your DID
+- **evaluate_freshness** - Bounded-staleness revocation gate for offline/DTN use
+- **verify_disconnected_edge** - Authenticate a disconnected-edge (DTN) credential
 
 ---
 

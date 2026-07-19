@@ -27,6 +27,8 @@ Tools:
     create_session     Issue a trust-decaying session voucher (Heartbeat).
     check_revocation   Check a credential's BitstringStatusList entry.
     get_identity       Return this agent's DID.
+    evaluate_freshness Bounded-staleness revocation gate for offline/DTN use.
+    verify_disconnected_edge  Authenticate a disconnected-edge (DTN) credential.
 
 Run (stdio, for Claude Desktop / Cursor):
     VOUCH_PRIVATE_KEY=... VOUCH_DID=... vouch-mcp
@@ -268,6 +270,136 @@ def get_identity() -> str:
     if signer is None:
         return "No Vouch identity configured. Set VOUCH_DID or run 'vouch init'."
     return f"Agent DID: {signer.did}"
+
+
+# Disconnected-edge / DTN trust surface (PAD-106 to PAD-124). These let an MCP
+# client make offline-first trust decisions: the bounded-staleness revocation gate,
+# and authenticity checks for the disconnected-edge credential types.
+
+_DISCONNECTED_EDGE_TYPES = {
+    "FreshnessToken",
+    "ChannelGeometryPresenceAttestation",
+    "EphemerisScopedGrantCredential",
+    "RangeObservationCredential",
+    "ProofOfLocationCredential",
+    "BeamPresenceAttestation",
+    "ConditionalRevocationCredential",
+    "RevocationAccumulatorRoot",
+    "ValiditySetRootCredential",
+    "DistressAttestation",
+    "TrustStateUpdate",
+    "KeyContinuityPredelegation",
+    "ContinuityApproval",
+    "TimeQualityAttestation",
+    "AutonomyDecaySchedule",
+    "IntegrityRiskAttestation",
+    "SharedPerceptionClaim",
+    "InteractionAttestation",
+    "BundleTrustCredential",
+    "BundleCustodyTransfer",
+}
+
+
+@mcp.tool()
+def evaluate_freshness(
+    tier: str = "critical",
+    snapshot_json: Optional[str] = None,
+    now_iso: Optional[str] = None,
+) -> str:
+    """Decide if a revocation snapshot is fresh enough for a disconnected action.
+
+    Bounded-staleness revocation gate (PAD-106) for delay-tolerant / offline use:
+    a verifier that cannot fetch a live status list weighs the age of the snapshot
+    it holds against the consequence of the action, and fails closed when the view
+    is too old. A routine beacon tolerates a 30-day-old snapshot; a critical
+    maneuver does not (1-hour default budget).
+
+    Args:
+        tier: Consequence tier: 'routine', 'sensitive', or 'critical' (default).
+            An unknown tier is treated as 'critical' (fail-closed).
+        snapshot_json: The last-synced BitstringStatusListCredential as a JSON
+            string, or omitted if no snapshot is held (allows only 'routine').
+        now_iso: The verifier's clock as 'YYYY-MM-DDTHH:MM:SSZ'. Defaults to now.
+
+    Returns:
+        'ALLOW' or 'DENY' with the reason (snapshot age vs. the tier budget).
+    """
+    from datetime import datetime, timezone
+
+    from vouch.status_list import evaluate_freshness as _eval
+
+    snapshot = None
+    if snapshot_json:
+        try:
+            snapshot = json.loads(snapshot_json)
+        except json.JSONDecodeError as e:
+            return f"Error: snapshot_json is not valid JSON ({e})"
+
+    now = None
+    if now_iso:
+        try:
+            now = datetime.strptime(now_iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        except ValueError as e:
+            return f"Error: now_iso must be 'YYYY-MM-DDTHH:MM:SSZ' ({e})"
+
+    verdict = _eval(tier=tier, snapshot=snapshot, now=now)
+    mark = "ALLOW" if verdict.allow else "DENY"
+    return f"{mark} (tier={verdict.tier}): {verdict.reason}"
+
+
+@mcp.tool()
+def verify_disconnected_edge(credential_json: str, public_key: str) -> str:
+    """Authenticate a disconnected-edge (DTN) credential's signature.
+
+    Verifies the eddsa-jcs-2022 proof of any disconnected-edge credential type
+    (PAD-106 to PAD-124): freshness tokens, channel-geometry presence,
+    ephemeris-scoped grants, dead-man and accumulator revocation, distress and
+    trust-state updates, time-quality, autonomy schedules, integrity risk,
+    perception claims, DTN bundle custody, and more. This confirms authenticity
+    and returns the credential's type and subject; the geometry, epoch-gap, region,
+    and staleness *predicates* are applied by the holder with its own local state
+    (position, epoch, clock), so they are not evaluated here.
+
+    Args:
+        credential_json: The disconnected-edge credential as a JSON string.
+        public_key: The issuer's Ed25519 public key (Multikey or JWK).
+
+    Returns:
+        'VERIFIED' with the credential type and subject, or a rejection reason.
+    """
+    from vouch import data_integrity
+    from vouch.verifier import _coerce_ed25519_public_key
+
+    try:
+        credential = json.loads(credential_json)
+    except json.JSONDecodeError as e:
+        return f"REJECTED: not valid JSON ({e})"
+
+    type_field = credential.get("type") or []
+    types = [type_field] if isinstance(type_field, str) else list(type_field)
+    edge_type = next((t for t in types if t in _DISCONNECTED_EDGE_TYPES), None)
+    if edge_type is None:
+        return (
+            "REJECTED: not a disconnected-edge credential type. Use 'verify' for "
+            "general Vouch credentials."
+        )
+
+    try:
+        key = _coerce_ed25519_public_key(public_key)
+        if key is None or not data_integrity.verify_proof(credential, key):
+            return "REJECTED: signature or proof check failed."
+    except Exception as e:
+        return f"REJECTED: verification error ({e})"
+
+    subject = credential.get("credentialSubject", {})
+    return (
+        "VERIFIED\n"
+        f"  type:    {edge_type}\n"
+        f"  issuer:  {credential.get('issuer', '(unknown)')}\n"
+        f"  subject: {json.dumps(subject, separators=(',', ':'))}\n"
+        "  note:    authenticity only; apply freshness/geometry/region predicates "
+        "with your local state."
+    )
 
 
 def main() -> None:
