@@ -572,6 +572,399 @@ pub fn geoscope_permits(subject: &Value, position: [f64; 3]) -> bool {
     }
 }
 
+// ===========================================================================
+// PAD-114: two-body orbital propagation + kinematic plausibility
+// ===========================================================================
+
+pub const MU_EARTH: f64 = 3.986_004_418e14;
+pub const RANGE_OBSERVATION_TYPE: &str = "RangeObservationCredential";
+pub const PROOF_OF_LOCATION_TYPE: &str = "ProofOfLocationCredential";
+pub const BEAM_PRESENCE_TYPE: &str = "BeamPresenceAttestation";
+pub const CONDITIONAL_REVOCATION_TYPE: &str = "ConditionalRevocationCredential";
+
+fn stumpff_c(z: f64) -> f64 {
+    if z > 1e-12 {
+        let sz = z.sqrt();
+        (1.0 - sz.cos()) / z
+    } else if z < -1e-12 {
+        let sz = (-z).sqrt();
+        (sz.cosh() - 1.0) / (-z)
+    } else {
+        0.5
+    }
+}
+
+fn stumpff_s(z: f64) -> f64 {
+    if z > 1e-12 {
+        let sz = z.sqrt();
+        (sz - sz.sin()) / sz.powi(3)
+    } else if z < -1e-12 {
+        let sz = (-z).sqrt();
+        (sz.sinh() - sz) / sz.powi(3)
+    } else {
+        1.0 / 6.0
+    }
+}
+
+fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+fn norm(a: [f64; 3]) -> f64 {
+    dot(a, a).sqrt()
+}
+
+/// Propagate a state vector forward by `dt` seconds under two-body gravity `mu`,
+/// using the universal-variable formulation. Returns (position, velocity).
+pub fn propagate_two_body(
+    r0: [f64; 3],
+    v0: [f64; 3],
+    dt: f64,
+    mu: f64,
+) -> Result<([f64; 3], [f64; 3])> {
+    if mu <= 0.0 {
+        return Err(CoreError::Json("mu must be positive".into()));
+    }
+    if dt == 0.0 {
+        return Ok((r0, v0));
+    }
+    let r0mag = norm(r0);
+    let v0mag = norm(v0);
+    if r0mag == 0.0 {
+        return Err(CoreError::Json("degenerate state: |r0| = 0".into()));
+    }
+    let sqrt_mu = mu.sqrt();
+    let vr0 = dot(r0, v0) / r0mag;
+    let alpha = 2.0 / r0mag - v0mag * v0mag / mu;
+    let mut chi = sqrt_mu * alpha.abs() * dt;
+
+    let mut converged = false;
+    for _ in 0..100 {
+        let z = alpha * chi * chi;
+        let c = stumpff_c(z);
+        let s = stumpff_s(z);
+        let f = (r0mag * vr0 / sqrt_mu) * chi * chi * c
+            + (1.0 - alpha * r0mag) * chi.powi(3) * s
+            + r0mag * chi
+            - sqrt_mu * dt;
+        let df = (r0mag * vr0 / sqrt_mu) * chi * (1.0 - alpha * chi * chi * s)
+            + (1.0 - alpha * r0mag) * chi * chi * c
+            + r0mag;
+        if df == 0.0 {
+            return Err(CoreError::Json("two-body propagation stalled".into()));
+        }
+        let dchi = f / df;
+        chi -= dchi;
+        if dchi.abs() < 1e-8 {
+            converged = true;
+            break;
+        }
+    }
+    if !converged {
+        return Err(CoreError::Json("two-body propagation did not converge".into()));
+    }
+
+    let z = alpha * chi * chi;
+    let c = stumpff_c(z);
+    let s = stumpff_s(z);
+    let fl = 1.0 - (chi * chi / r0mag) * c;
+    let gl = dt - (chi.powi(3) / sqrt_mu) * s;
+    let r = [
+        fl * r0[0] + gl * v0[0],
+        fl * r0[1] + gl * v0[1],
+        fl * r0[2] + gl * v0[2],
+    ];
+    let rmag = norm(r);
+    if rmag == 0.0 {
+        return Err(CoreError::Json("degenerate propagated state".into()));
+    }
+    let fdot = (sqrt_mu / (rmag * r0mag)) * (alpha * chi.powi(3) * s - chi);
+    let gdot = 1.0 - (chi * chi / rmag) * c;
+    let v = [
+        fdot * r0[0] + gdot * v0[0],
+        fdot * r0[1] + gdot * v0[1],
+        fdot * r0[2] + gdot * v0[2],
+    ];
+    Ok((r, v))
+}
+
+/// True if `claimed` is reachable from the prior orbital state within `elapsed`:
+/// propagate the coast, then allow a `max_delta_v * elapsed` ball plus tolerance.
+pub fn reachable_two_body(
+    prior_position: [f64; 3],
+    prior_velocity: [f64; 3],
+    claimed_position: [f64; 3],
+    elapsed_seconds: f64,
+    mu: f64,
+    max_delta_v_mps: f64,
+    tolerance_m: f64,
+) -> Result<bool> {
+    if elapsed_seconds < 0.0 {
+        return Err(CoreError::Json("elapsed_seconds must be non-negative".into()));
+    }
+    let (r_pred, _) = propagate_two_body(prior_position, prior_velocity, elapsed_seconds, mu)?;
+    let d = expected_range_m(claimed_position, r_pred);
+    Ok(d <= max_delta_v_mps * elapsed_seconds + tolerance_m)
+}
+
+/// Kinematic reachability dispatching on the `envelope` JSON:
+/// surface `{"maxSpeedMps": v}`; orbital ball `{"maxDeltaVMps": dv}` with velocity;
+/// two-body `{"model": "two-body", "maxDeltaVMps": dv, "muM3S2": mu?}` with velocity.
+pub fn kinematically_reachable(
+    prior_position: [f64; 3],
+    claimed_position: [f64; 3],
+    elapsed_seconds: f64,
+    envelope: &Value,
+    prior_velocity: Option<[f64; 3]>,
+    tolerance_m: f64,
+) -> Result<bool> {
+    if elapsed_seconds < 0.0 {
+        return Err(CoreError::Json("elapsed_seconds must be non-negative".into()));
+    }
+    if envelope.get("model").and_then(|v| v.as_str()) == Some("two-body") {
+        let v0 = prior_velocity
+            .ok_or_else(|| CoreError::Json("two-body model requires prior_velocity".into()))?;
+        let mu = envelope.get("muM3S2").and_then(|v| v.as_f64()).unwrap_or(MU_EARTH);
+        let dv = envelope.get("maxDeltaVMps").and_then(|v| v.as_f64()).unwrap_or(0.0);
+        return reachable_two_body(prior_position, v0, claimed_position, elapsed_seconds, mu, dv, tolerance_m);
+    }
+    let d = expected_range_m(prior_position, claimed_position);
+    let reach = if let Some(dv) = envelope.get("maxDeltaVMps").and_then(|v| v.as_f64()) {
+        let v0 = prior_velocity.map(norm).unwrap_or(0.0);
+        (v0 + dv) * elapsed_seconds
+    } else {
+        envelope.get("maxSpeedMps").and_then(|v| v.as_f64()).unwrap_or(0.0) * elapsed_seconds
+    };
+    Ok(d <= reach + tolerance_m)
+}
+
+// ===========================================================================
+// PAD-113: distributed proof of location
+// ===========================================================================
+
+#[allow(clippy::too_many_arguments)]
+pub fn build_range_observation(
+    observer_seed: &[u8],
+    observer_did: &str,
+    target_did: &str,
+    observer_position: [f64; 3],
+    measured_range_m: f64,
+    nonce: &str,
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(target_did));
+    subject.insert("observer".into(), json!(observer_did));
+    subject.insert("observerPosition".into(), json!(observer_position.to_vec()));
+    subject.insert("measuredRangeM".into(), json!(measured_range_m));
+    subject.insert("nonce".into(), json!(nonce));
+    subject.insert("epoch".into(), json!(epoch));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert("type".into(), json!(["VerifiableCredential", RANGE_OBSERVATION_TYPE]));
+    cred.insert("issuer".into(), json!(observer_did));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(vm(observer_did), created);
+    data_integrity::sign(&Value::Object(cred), observer_seed, &opts)
+}
+
+pub fn verify_range_observation(observation: &Value, observer_public_key: &[u8]) -> Result<Option<Value>> {
+    if !has_type(observation.get("type"), RANGE_OBSERVATION_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(observation, observer_public_key)? {
+        return Ok(None);
+    }
+    Ok(observation.get("credentialSubject").cloned())
+}
+
+/// Count how many observation subjects are consistent with `claimed_position`.
+pub fn count_consistent(subjects: &[Value], claimed_position: [f64; 3], tolerance_m: f64) -> usize {
+    let mut n = 0;
+    for s in subjects {
+        let obs_pos = s.get("observerPosition").and_then(vec3);
+        let measured = s.get("measuredRangeM").and_then(|v| v.as_f64());
+        if let (Some(p), Some(m)) = (obs_pos, measured) {
+            if (m - expected_range_m(p, claimed_position)).abs() <= tolerance_m {
+                n += 1;
+            }
+        }
+    }
+    n
+}
+
+/// True if at least `threshold` observations are consistent with the claimed position.
+pub fn location_confirmed(subjects: &[Value], claimed_position: [f64; 3], tolerance_m: f64, threshold: usize) -> bool {
+    threshold > 0 && count_consistent(subjects, claimed_position, tolerance_m) >= threshold
+}
+
+pub fn build_proof_of_location(
+    combiner_seed: &[u8],
+    combiner_did: &str,
+    target_did: &str,
+    position: [f64; 3],
+    observer_dids: &[String],
+    epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(target_did));
+    subject.insert("position".into(), json!(position.to_vec()));
+    subject.insert("observers".into(), json!(observer_dids));
+    subject.insert("epoch".into(), json!(epoch));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert("type".into(), json!(["VerifiableCredential", PROOF_OF_LOCATION_TYPE]));
+    cred.insert("issuer".into(), json!(combiner_did));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(vm(combiner_did), created);
+    data_integrity::sign(&Value::Object(cred), combiner_seed, &opts)
+}
+
+// ===========================================================================
+// PAD-121: narrow-beam optical alignment presence
+// ===========================================================================
+
+/// True if `peer_direction` lies within half the beamwidth of the `pointing` axis.
+pub fn within_beam(pointing: [f64; 3], peer_direction: [f64; 3], beamwidth_rad: f64) -> bool {
+    if beamwidth_rad < 0.0 {
+        return false;
+    }
+    let na = norm(pointing);
+    let nb = norm(peer_direction);
+    if na == 0.0 || nb == 0.0 {
+        return false;
+    }
+    let cos = (dot(pointing, peer_direction) / (na * nb)).clamp(-1.0, 1.0);
+    cos.acos() <= beamwidth_rad / 2.0
+}
+
+pub fn build_beam_presence(
+    signer_seed: &[u8],
+    issuer_did: &str,
+    peer_did: &str,
+    nonce: &str,
+    pointing: [f64; 3],
+    beamwidth_rad: f64,
+    created: &str,
+) -> Result<Value> {
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(peer_did));
+    subject.insert("nonce".into(), json!(nonce));
+    subject.insert("pointing".into(), json!(pointing.to_vec()));
+    subject.insert("beamwidthRad".into(), json!(beamwidth_rad));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert("type".into(), json!(["VerifiableCredential", BEAM_PRESENCE_TYPE]));
+    cred.insert("issuer".into(), json!(issuer_did));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(vm(issuer_did), created);
+    data_integrity::sign(&Value::Object(cred), signer_seed, &opts)
+}
+
+pub fn verify_beam_presence(
+    attestation: &Value,
+    public_key: &[u8],
+    peer_direction: [f64; 3],
+    expected_nonce: Option<&str>,
+) -> Result<Option<Value>> {
+    if !has_type(attestation.get("type"), BEAM_PRESENCE_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(attestation, public_key)? {
+        return Ok(None);
+    }
+    let subject = match attestation.get("credentialSubject") {
+        Some(Value::Object(_)) => attestation.get("credentialSubject").cloned().unwrap(),
+        _ => return Ok(None),
+    };
+    if let Some(want) = expected_nonce {
+        if subject.get("nonce").and_then(|v| v.as_str()) != Some(want) {
+            return Ok(None);
+        }
+    }
+    let pointing = match subject.get("pointing").and_then(vec3) {
+        Some(p) => p,
+        None => return Ok(None),
+    };
+    let beamwidth = match subject.get("beamwidthRad").and_then(|v| v.as_f64()) {
+        Some(b) => b,
+        None => return Ok(None),
+    };
+    if !within_beam(pointing, peer_direction, beamwidth) {
+        return Ok(None);
+    }
+    Ok(Some(subject))
+}
+
+// ===========================================================================
+// PAD-112: conditional dead-man revocation
+// ===========================================================================
+
+pub fn build_conditional_revocation(
+    authority_seed: &[u8],
+    authority_did: &str,
+    target_credential_id: &str,
+    subject_did: &str,
+    deadline_epoch: i64,
+    created: &str,
+) -> Result<Value> {
+    if target_credential_id.is_empty() {
+        return Err(CoreError::Json("target_credential_id is required".into()));
+    }
+    if deadline_epoch < 0 {
+        return Err(CoreError::Json("deadline_epoch must be non-negative".into()));
+    }
+    let mut subject = Map::new();
+    subject.insert("id".into(), json!(subject_did));
+    subject.insert("targetCredentialId".into(), json!(target_credential_id));
+    subject.insert("deadlineEpoch".into(), json!(deadline_epoch));
+    subject.insert("renewalPredicate".into(), json!("renewal_epoch_gte_deadline"));
+
+    let mut cred = Map::new();
+    cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
+    cred.insert("type".into(), json!(["VerifiableCredential", CONDITIONAL_REVOCATION_TYPE]));
+    cred.insert("issuer".into(), json!(authority_did));
+    cred.insert("credentialSubject".into(), Value::Object(subject));
+
+    let opts = BuildProofOptions::new(vm(authority_did), created);
+    data_integrity::sign(&Value::Object(cred), authority_seed, &opts)
+}
+
+pub fn verify_conditional_revocation(credential: &Value, authority_public_key: &[u8]) -> Result<Option<Value>> {
+    if !has_type(credential.get("type"), CONDITIONAL_REVOCATION_TYPE) {
+        return Ok(None);
+    }
+    if !data_integrity::verify_proof(credential, authority_public_key)? {
+        return Ok(None);
+    }
+    Ok(credential.get("credentialSubject").cloned())
+}
+
+/// True if the dead-man revocation has fired: deadline passed and no renewal at or
+/// beyond the deadline was observed.
+pub fn conditional_revocation_active(
+    subject: &Value,
+    current_epoch: i64,
+    last_renewal_epoch: Option<i64>,
+) -> Result<bool> {
+    let deadline = subject
+        .get("deadlineEpoch")
+        .and_then(|v| v.as_i64())
+        .ok_or_else(|| CoreError::Json("subject missing integer deadlineEpoch".into()))?;
+    if current_epoch <= deadline {
+        return Ok(false);
+    }
+    let renewed = matches!(last_renewal_epoch, Some(r) if r >= deadline);
+    Ok(!renewed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -650,5 +1043,66 @@ mod tests {
         let outside = json!({"type": "sphere", "centerM": [90.0, 0.0, 0.0], "radiusM": 20.0});
         assert!(region_attenuates(&parent, &inside).unwrap());
         assert!(!region_attenuates(&parent, &outside).unwrap());
+    }
+
+    #[test]
+    fn two_body_circular_orbit() {
+        let radius = 7.0e6;
+        let v = (MU_EARTH / radius).sqrt();
+        let period = 2.0 * std::f64::consts::PI * (radius.powi(3) / MU_EARTH).sqrt();
+        let (r, _) = propagate_two_body([radius, 0.0, 0.0], [0.0, v, 0.0], period / 4.0, MU_EARTH).unwrap();
+        // quarter period: +x rotates to +y, radius conserved
+        assert!((norm(r) - radius).abs() / radius < 1e-6);
+        assert!(r[0].abs() < 1.0);
+        assert!((r[1] - radius).abs() / radius < 1e-6);
+    }
+
+    #[test]
+    fn kinematic_two_body_dispatch() {
+        let radius = 7.0e6;
+        let v = (MU_EARTH / radius).sqrt();
+        let (r_pred, _) = propagate_two_body([radius, 0.0, 0.0], [0.0, v, 0.0], 120.0, MU_EARTH).unwrap();
+        let env = json!({"model": "two-body", "maxDeltaVMps": 0.5});
+        assert!(kinematically_reachable([radius, 0.0, 0.0], r_pred, 120.0, &env, Some([0.0, v, 0.0]), 1.0).unwrap());
+        let off = [r_pred[0], r_pred[1] + 10_000.0, r_pred[2]];
+        assert!(!kinematically_reachable([radius, 0.0, 0.0], off, 120.0, &env, Some([0.0, v, 0.0]), 0.0).unwrap());
+    }
+
+    #[test]
+    fn location_by_triangulation() {
+        let obs = vec![
+            json!({"observerPosition": [0.0, 0.0, 0.0], "measuredRangeM": 100.0}),
+            json!({"observerPosition": [200.0, 0.0, 0.0], "measuredRangeM": 100.0}),
+            json!({"observerPosition": [0.0, 200.0, 0.0], "measuredRangeM": 100.0}),
+        ];
+        assert_eq!(count_consistent(&obs, [100.0, 0.0, 0.0], 2.0), 2);
+        assert!(location_confirmed(&obs, [100.0, 0.0, 0.0], 2.0, 2));
+        assert!(!location_confirmed(&obs, [100.0, 0.0, 0.0], 2.0, 3));
+    }
+
+    #[test]
+    fn beam_presence_roundtrip() {
+        let (pk, did) = identity(&[13u8; 32]);
+        let bw = 10.0_f64.to_radians();
+        let att = build_beam_presence(&[13u8; 32], &did, "did:web:peer", "n", [1.0, 0.0, 0.0], bw, "2026-07-19T12:00:00Z").unwrap();
+        assert!(verify_beam_presence(&att, &pk, [1.0, 0.02, 0.0], Some("n")).unwrap().is_some());
+        assert!(verify_beam_presence(&att, &pk, [0.0, 1.0, 0.0], None).unwrap().is_none());
+    }
+
+    #[test]
+    fn dead_man_revocation_fires() {
+        let (pk, did) = identity(&[15u8; 32]);
+        let cr = build_conditional_revocation(&[15u8; 32], &did, "cred-1", "did:web:node", 100, "2026-07-19T12:00:00Z").unwrap();
+        let sub = verify_conditional_revocation(&cr, &pk).unwrap().unwrap();
+        assert!(!conditional_revocation_active(&sub, 100, None).unwrap());
+        assert!(conditional_revocation_active(&sub, 101, None).unwrap());
+        assert!(!conditional_revocation_active(&sub, 101, Some(100)).unwrap());
+    }
+
+    #[test]
+    fn range_observation_roundtrip() {
+        let (pk, did) = identity(&[17u8; 32]);
+        let o = build_range_observation(&[17u8; 32], &did, "did:web:t", [1.0, 2.0, 3.0], 10.0, "n", 1, "2026-07-19T12:00:00Z").unwrap();
+        assert!(verify_range_observation(&o, &pk).unwrap().is_some());
     }
 }
