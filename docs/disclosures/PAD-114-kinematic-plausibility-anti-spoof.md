@@ -103,12 +103,14 @@ motion envelope evaluated by a disconnected verifier.
 
 ## 5. Technical Implementation
 
-A reference design carries a motion envelope (max speed/acceleration, or orbital
-elements plus a delta-v budget) in the node's signed identity, and a verifier predicate
-that propagates the prior attested state and admits a new claim only within the
-reachable set. Propagation models are standard (kinematic or two-body plus maneuver);
-the open layer is the envelope binding and the reachability predicate, composing with
-PAD-108 and PAD-113.
+A reference implementation ships in `vouch.robotics.orbital`
+(`propagate_two_body` via the universal-variable Kepler solver, and
+`reachable_two_body`) and is wired into `vouch.robotics.localization.kinematically_reachable`
+via a `{"model": "two-body", "maxDeltaVMps": …, "muM3S2": …}` envelope: the coasting
+orbit is propagated precisely and the reachable set is a delta-v-budget ball around
+the propagated position. Surface/aerial speed/acceleration envelopes and a
+dependency-free delta-v ball remain for non-orbital nodes. The open layer is the
+envelope binding and the reachability predicate, composing with PAD-108 and PAD-113.
 
 ---
 

@@ -503,8 +503,8 @@ acquisition (real ranging, TPM, orbital propagators) is the caller's concern:
 | `vouch.robotics.presence` | channel-geometry (range/Doppler) proof of presence | 108 |
 | `vouch.robotics.geoscope` | ephemeris/geometric-scoped authority, shrink-only regions | 109 |
 | `vouch.robotics.quorum_trust` | swarm-consensus quarantine; quorum-of-orbits update acceptance; offline threshold key continuity | 110, 111, 116 |
-| `vouch.robotics.dtn_revocation` | conditional dead-man revocation; carried validity witness | 112, 120 |
-| `vouch.robotics.localization` | triangulated proof-of-location; kinematic plausibility; narrow-beam presence | 113, 114, 121 |
+| `vouch.robotics.dtn_revocation` | conditional dead-man revocation; carried validity witness; dynamic revocation accumulator (`vouch.robotics.accumulator` sparse Merkle tree, non-membership proofs) | 112, 120 |
+| `vouch.robotics.localization` | triangulated proof-of-location; kinematic plausibility (two-body propagation via `vouch.robotics.orbital`); narrow-beam presence | 113, 114, 121 |
 | `vouch.robotics.edge_trust` | attested time-quality; connectivity-scaled autonomy envelope; integrity-risk authority narrowing | 115, 117, 118 |
 | `vouch.robotics.perception_consensus` | Byzantine sensor agreement; mutual-attestation mesh standing | 122, 123 |
 | `vouch.robotics.bundle` | DTN Bundle Protocol custody + credential/freshness binding | 124 |

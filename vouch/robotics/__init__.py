@@ -134,12 +134,17 @@ from .freshness import (
 )
 from .dtn_revocation import (
     build_conditional_revocation,
+    build_non_revocation_proof,
+    build_revocation_accumulator_root,
     build_validity_root,
     build_validity_witness,
     conditional_revocation_active,
     verify_conditional_revocation,
+    verify_non_revocation,
     verify_validity_witness,
 )
+from .accumulator import SparseMerkleTree, verify_non_revocation_proof
+from .orbital import MU_EARTH, propagate_two_body, reachable_two_body
 from .localization import (
     build_beam_presence,
     build_proof_of_location,
@@ -425,6 +430,16 @@ __all__ = [
     "build_validity_root",
     "build_validity_witness",
     "verify_validity_witness",
+    # dynamic revocation accumulator (PAD-120): sparse Merkle tree
+    "SparseMerkleTree",
+    "verify_non_revocation_proof",
+    "build_revocation_accumulator_root",
+    "build_non_revocation_proof",
+    "verify_non_revocation",
+    # two-body orbital propagation for kinematic plausibility (PAD-114)
+    "MU_EARTH",
+    "propagate_two_body",
+    "reachable_two_body",
     # localization: proof-of-location, kinematic plausibility, beam presence (PAD-113/114/121)
     "build_range_observation",
     "verify_range_observation",

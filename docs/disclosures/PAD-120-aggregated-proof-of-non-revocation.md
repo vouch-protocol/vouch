@@ -94,11 +94,17 @@ consequence-gated non-revocation proof for a disconnected verifier holding nothi
 
 ## 5. Technical Implementation
 
-A reference design defines an authority-issued non-revocation witness (credential
-reference, accumulator witness, epoch, signature), a verifier check against a
-distributed accumulator value and the PAD-106 staleness gate, and a supersession rule on
-epoch. The accumulator construction is standard; the open layer is the carried-witness
-format, the epoch scoping, and the disconnected verifier predicate.
+A reference implementation ships in `vouch.robotics.accumulator` as a sparse Merkle
+tree (`SparseMerkleTree`, a dynamic accumulator over the *revoked* set with O(1)
+incremental `revoke`/`unrevoke`) plus `verify_non_revocation_proof`; the signed root
+and disconnected verifier flow are `build_revocation_accumulator_root`,
+`build_non_revocation_proof`, and `verify_non_revocation` in
+`vouch.robotics.dtn_revocation`. Proofs are compressed (only non-default sibling
+hashes travel, indexed by a 256-bit bitmap), so a sparse revocation set yields a
+small carried witness. The epoch is judged separately by the PAD-106 staleness gate,
+with a supersession rule on epoch. (An earlier static valid-set Merkle witness also
+ships for small fixed sets.) The open layer is the carried-witness format, the epoch
+scoping, and the disconnected verifier predicate.
 
 ---
 

@@ -159,13 +159,34 @@ def kinematically_reachable(
     True if `claimed_position` is reachable from `prior_position` within
     `elapsed_seconds` given the motion `envelope`:
 
-      surface/aerial: {"maxSpeedMps": v}                -> reach <= v * t
-      orbital:        {"maxSpeedMps": v, "maxDeltaVMps": dv}
-                      with prior_velocity                -> reach <= (|v0| + dv) * t
-                      (a conservative delta-v-augmented bound)
+      surface/aerial: {"maxSpeedMps": v}                 -> reach <= v * t
+      orbital (ball): {"maxDeltaVMps": dv} with prior_velocity
+                      -> reach <= (|v0| + dv) * t         (conservative delta-v ball)
+      orbital (two-body): {"model": "two-body", "maxDeltaVMps": dv, "muM3S2": mu?}
+                      with prior_velocity -> propagate the coasting orbit precisely,
+                      then allow a dv * t maneuver ball around the propagated position.
+
+    The two-body model is the tight, physically-grounded bound for spacecraft; the
+    ball models remain for surface/aerial nodes and as a dependency-free fallback.
     """
     if elapsed_seconds < 0:
         raise RoboticsError("elapsed_seconds must be non-negative")
+
+    if envelope.get("model") == "two-body":
+        if prior_velocity is None:
+            raise RoboticsError("two-body model requires prior_velocity")
+        from .orbital import MU_EARTH, reachable_two_body
+
+        return reachable_two_body(
+            prior_position=prior_position,
+            prior_velocity=prior_velocity,
+            claimed_position=claimed_position,
+            elapsed_seconds=elapsed_seconds,
+            mu=float(envelope.get("muM3S2", MU_EARTH)),
+            max_delta_v_mps=float(envelope.get("maxDeltaVMps", 0.0)),
+            tolerance_m=tolerance_m,
+        )
+
     d = _dist(prior_position, claimed_position)
     max_speed = float(envelope.get("maxSpeedMps", 0.0))
     if "maxDeltaVMps" in envelope:

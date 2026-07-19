@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 from .. import merkle
+from . import accumulator as _acc
 from .identity import RoboticsError
 from ._signing import attach_proof
 from ._verify import verify_typed_credential
@@ -24,6 +25,7 @@ VC_CONTEXT_V2 = "https://www.w3.org/ns/credentials/v2"
 VOUCH_CONTEXT_V1 = "https://vouch-protocol.com/contexts/v1"
 CONDITIONAL_REVOCATION_TYPE = "ConditionalRevocationCredential"
 VALIDITY_ROOT_TYPE = "ValiditySetRootCredential"
+REVOCATION_ACCUMULATOR_TYPE = "RevocationAccumulatorRoot"
 
 
 # --------------------------------------------------------------------------- #
@@ -186,13 +188,80 @@ def verify_validity_witness(
         return False
 
 
+# --------------------------------------------------------------------------- #
+# PAD-120 (dynamic): revocation accumulator via a sparse Merkle tree.
+# The authority revokes incrementally; a node carries a compact non-revocation
+# proof a verifier checks against the signed root, holding no status list.
+# --------------------------------------------------------------------------- #
+
+
+def build_revocation_accumulator_root(
+    authority_signer: Any,
+    *,
+    tree: "_acc.SparseMerkleTree",
+    epoch: int,
+) -> Dict[str, Any]:
+    """Sign the current sparse-Merkle revocation root at `epoch` for distribution."""
+    if not isinstance(epoch, int) or epoch < 0:
+        raise RoboticsError("epoch must be a non-negative integer")
+    credential: Dict[str, Any] = {
+        "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
+        "type": ["VerifiableCredential", REVOCATION_ACCUMULATOR_TYPE],
+        "issuer": authority_signer.get_did(),
+        "credentialSubject": {
+            "id": authority_signer.get_did(),
+            "epoch": epoch,
+            "revocationRoot": tree.root_multibase(),
+        },
+    }
+    return attach_proof(credential, authority_signer)
+
+
+def build_non_revocation_proof(
+    *, tree: "_acc.SparseMerkleTree", credential_id: str
+) -> Dict[str, Any]:
+    """Build a compact non-membership proof that `credential_id` is not in the revoked set."""
+    return tree.non_revocation_proof(credential_id)
+
+
+def verify_non_revocation(
+    *,
+    credential_id: str,
+    proof: Dict[str, Any],
+    signed_root_credential: Dict[str, Any],
+    authority_public_key: Any,
+) -> bool:
+    """
+    Verify, offline and holding no status list, that `credential_id` is not revoked
+    as of the authority's signed accumulator root. The caller separately judges the
+    root's epoch age via the consequence-scaled staleness gate.
+    """
+    subject = verify_typed_credential(
+        signed_root_credential, authority_public_key, REVOCATION_ACCUMULATOR_TYPE
+    )
+    if subject is None:
+        return False
+    root_mb = subject.get("revocationRoot")
+    if not isinstance(root_mb, str):
+        return False
+    try:
+        root = merkle._decode_multibase(root_mb)
+    except (ValueError, TypeError):
+        return False
+    return _acc.verify_non_revocation_proof(credential_id=credential_id, proof=proof, root=root)
+
+
 __all__ = [
     "CONDITIONAL_REVOCATION_TYPE",
     "VALIDITY_ROOT_TYPE",
+    "REVOCATION_ACCUMULATOR_TYPE",
     "build_conditional_revocation",
     "verify_conditional_revocation",
     "conditional_revocation_active",
     "build_validity_root",
     "build_validity_witness",
     "verify_validity_witness",
+    "build_revocation_accumulator_root",
+    "build_non_revocation_proof",
+    "verify_non_revocation",
 ]
