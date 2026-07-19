@@ -150,6 +150,24 @@ const STANDARDS = [
   { label: 'C2PA', href: 'https://c2pa.org' },
 ];
 
+const DISCONNECTED_EDGE = [
+  {
+    num: 'i.',
+    title: 'Offline mutual authentication',
+    body: 'Two spacecraft from different agencies or operators run a signed three-message handshake over an inter-satellite link and agree a bounded-trust session, with no round trip to a ground station. Trust anchors are exchanged ahead of time; the handshake itself needs no live registry.',
+  },
+  {
+    num: 'ii.',
+    title: 'Authority that travels with the craft',
+    body: 'A short-lived, scope-bounded delegation lease and a scannable passport let a probe or rover prove what it is authorized to do and act on it while out of contact. Every credential is a plain eddsa-jcs-2022 Verifiable Credential, verifiable in the same second it is presented.',
+  },
+  {
+    num: 'iii.',
+    title: 'Revocation that is honest about time',
+    body: 'A disconnected verifier cannot fetch a live revocation list, so it weighs the age of its last-synced snapshot against the consequence of the action: a routine beacon tolerates a stale view, a maneuver command does not, and every ambiguous state fails closed. Signed sensor frames prove provenance at the moment of capture.',
+  },
+];
+
 export default function HomePage() {
   return (
     <>
@@ -464,6 +482,60 @@ const ok = core.verifyProof(signed, kp.public_b64);   // true
                 </Link>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Disconnected edge / space */}
+      <section className="border-b border-rule">
+        <div className="container-wide py-20">
+          <div className="section-heading">
+            <span className="num">§ V</span>
+            <h2>At the disconnected edge, including space</h2>
+          </div>
+          <p className="text-ink-soft max-w-prose mb-6 leading-relaxed">
+            In orbit, on the lunar surface, deep underground, or under water, a round trip to an
+            Earth-based server is impossible or too slow to be part of a trust decision. Because a
+            Vouch credential verifies entirely offline against pre-distributed anchors, two nodes can
+            authenticate each other and exchange authority at the edge with no live connection home.
+            Space is simply the most demanding instance of a capability that already serves any
+            disconnected robot, so the same primitives cover a satellite constellation and a mine.
+          </p>
+          <p className="text-ink-soft max-w-prose mb-12 leading-relaxed text-[0.9rem]">
+            One honest caveat: offline trust is <em>enabled</em> by distributing trust anchors during a
+            contact window, not by removing that step. Vouch makes the offline exchange sound and makes
+            staleness explicit; it does not pretend a node can trust a peer it has never had any prior
+            root for.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            {DISCONNECTED_EDGE.map((item) => (
+              <div key={item.title} className="feature-card">
+                <div className="eyebrow-faint mb-2">{item.num}</div>
+                <h3 className="font-serif font-semibold text-[1.25rem] mb-3 tracking-tight">{item.title}</h3>
+                <p className="text-ink-soft text-[0.95rem] leading-relaxed">{item.body}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 items-baseline">
+            <Link href="/robotics/" className="font-mono text-burgundy text-[0.7rem] tracking-wider no-underline hover:underline">
+              ROBOTICS PRIMITIVES &rarr;
+            </Link>
+            <a
+              href="https://github.com/vouch-protocol/vouch/blob/main/docs/dtn-bounded-staleness-revocation.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-burgundy text-[0.7rem] tracking-wider no-underline hover:underline"
+            >
+              DTN BOUNDED-STALENESS SPEC &rarr;
+            </a>
+            <a
+              href="https://github.com/vouch-protocol/vouch/blob/main/examples/disconnected_exchange_demo.py"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-burgundy text-[0.7rem] tracking-wider no-underline hover:underline"
+            >
+              OFFLINE-EXCHANGE EXAMPLE &rarr;
+            </a>
           </div>
         </div>
       </section>
