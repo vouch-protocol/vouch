@@ -39,7 +39,7 @@ import contextlib
 import socket
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 from vouch import Signer, generate_identity
 from vouch.robotics import (
@@ -59,8 +59,12 @@ from vouch.robotics import (
 from vouch.robotics.revocation import attach_credential_status
 from vouch.robotics._signing import attach_proof
 from vouch.status_list import (
+    CONSEQUENCE_CRITICAL,
+    CONSEQUENCE_ROUTINE,
+    CONSEQUENCE_SENSITIVE,
     StatusList,
     build_status_list_credential,
+    evaluate_freshness,
     verify_status,
 )
 
@@ -110,63 +114,10 @@ def network_disabled():
         socket.socket = real_socket  # type: ignore[assignment]
 
 
-# --------------------------------------------------------------------------- #
-# Bounded-staleness freshness gate (reference implementation of the spec).
-# See docs/dtn-bounded-staleness-revocation.md for the normative description.
-# --------------------------------------------------------------------------- #
-
-# Consequence tiers and the maximum age of a revocation snapshot each will accept.
-# A routine beacon tolerates a stale view; a physical maneuver does not.
-MAX_STALENESS = {
-    "routine": timedelta(days=30),
-    "sensitive": timedelta(hours=24),
-    "critical": timedelta(hours=1),
-}
-
-
-@dataclass
-class FreshnessVerdict:
-    allow: bool
-    reason: str
-    staleness: Optional[timedelta] = None
-
-
-def evaluate_freshness(
-    *,
-    tier: str,
-    snapshot: Optional[Dict[str, Any]],
-    now: datetime,
-) -> FreshnessVerdict:
-    """
-    Decide whether a locally-held revocation `snapshot` (a signed
-    BitstringStatusListCredential the verifier synced at last contact) is fresh
-    enough to authorize an action of the given consequence `tier`.
-
-    Fail closed: a missing snapshot denies anything above routine; an
-    over-age snapshot denies the action. The caller has ALREADY verified the
-    snapshot's Data Integrity proof and the target bit; this function only
-    judges age against the tier budget.
-    """
-    budget = MAX_STALENESS[tier]
-    if snapshot is None:
-        # No local revocation view at all.
-        if tier == "routine":
-            return FreshnessVerdict(True, "no snapshot, routine tier tolerates it")
-        return FreshnessVerdict(False, f"no revocation snapshot; {tier} tier fails closed")
-
-    as_of = _parse_iso(snapshot.get("validFrom"))
-    staleness = now - as_of
-    if staleness <= budget:
-        return FreshnessVerdict(
-            True,
-            f"snapshot age {_fmt(staleness)} within {tier} budget {_fmt(budget)}",
-            staleness,
-        )
-    return FreshnessVerdict(
-        False,
-        f"snapshot age {_fmt(staleness)} exceeds {tier} budget {_fmt(budget)}; fails closed",
-        staleness,
-    )
+# The bounded-staleness freshness gate itself now ships in the SDK as
+# `vouch.status_list.evaluate_freshness` (see docs/dtn-bounded-staleness-revocation.md);
+# this demo just calls it. It decides whether a locally-held revocation snapshot
+# is fresh enough for the consequence of the action, and fails closed otherwise.
 
 
 # --------------------------------------------------------------------------- #
@@ -340,11 +291,12 @@ def main() -> None:
             credential_status=lease["credentialStatus"],
             status_list_credential=snapshot,
         )
-        for tier, action_label in [
-            ("routine", "send a telemetry beacon"),
-            ("sensitive", "accept a data-payload handoff"),
-            ("critical", "execute a physical relay maneuver"),
-        ]:
+        tiered_actions = [
+            (CONSEQUENCE_ROUTINE, "send a telemetry beacon"),
+            (CONSEQUENCE_SENSITIVE, "accept a data-payload handoff"),
+            (CONSEQUENCE_CRITICAL, "execute a physical relay maneuver"),
+        ]
+        for tier, action_label in tiered_actions:
             verdict = evaluate_freshness(tier=tier, snapshot=snapshot, now=now)
             allow = verdict.allow and not revoked
             mark = "ALLOW" if allow else "DENY "
@@ -353,11 +305,7 @@ def main() -> None:
         # Show the fail-closed edge: pretend last contact was 5 days ago.
         print("\n  [freshness] same checks, but last contact was 5 DAYS ago:")
         stale_snapshot = dict(snapshot, validFrom=_iso(now - timedelta(days=5)))
-        for tier, action_label in [
-            ("routine", "send a telemetry beacon"),
-            ("sensitive", "accept a data-payload handoff"),
-            ("critical", "execute a physical relay maneuver"),
-        ]:
+        for tier, action_label in tiered_actions:
             verdict = evaluate_freshness(tier=tier, snapshot=stale_snapshot, now=now)
             mark = "ALLOW" if verdict.allow else "DENY "
             print(f"    {mark} {action_label:<38} - {verdict.reason}")
@@ -372,21 +320,8 @@ def main() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def _parse_iso(s: str) -> datetime:
-    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-
-
 def _iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _fmt(td: timedelta) -> str:
-    total = int(td.total_seconds())
-    if total < 3600:
-        return f"{total // 60}m"
-    if total < 86400:
-        return f"{total // 3600}h"
-    return f"{total // 86400}d"
 
 
 if __name__ == "__main__":

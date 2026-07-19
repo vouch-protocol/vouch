@@ -131,31 +131,29 @@ The system never treats "I could not check recently enough" as "allowed".
 
 ### 4.1 Reference implementation
 
-The freshness gate is small and lives entirely on the verifier. The reference
-implementation ships in the companion demo as `evaluate_freshness()`:
+The freshness gate is small and lives entirely on the verifier. It ships in the
+SDK as `vouch.status_list.evaluate_freshness`, alongside the tier constants
+(`CONSEQUENCE_ROUTINE` / `CONSEQUENCE_SENSITIVE` / `CONSEQUENCE_CRITICAL`), the
+`DEFAULT_STALENESS_BUDGETS` policy defaults, and the `FreshnessVerdict` result:
 
 ```python
-MAX_STALENESS = {
-    "routine":   timedelta(days=30),
-    "sensitive": timedelta(hours=24),
-    "critical":  timedelta(hours=1),
-}
+from vouch.status_list import evaluate_freshness, CONSEQUENCE_CRITICAL
 
-def evaluate_freshness(*, tier, snapshot, now):
-    budget = MAX_STALENESS[tier]
-    if snapshot is None:
-        if tier == "routine":
-            return Allow("no snapshot, routine tier tolerates it")
-        return Deny(f"no revocation snapshot; {tier} tier fails closed")
-    staleness = now - parse_iso(snapshot["validFrom"])
-    if staleness <= budget:
-        return Allow(f"snapshot age {staleness} within {tier} budget {budget}")
-    return Deny(f"snapshot age {staleness} exceeds {tier} budget; fails closed")
+# snapshot is the fetched-at-last-contact BitstringStatusListCredential (or None)
+verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snapshot, now=now)
+if verdict.allow and not revoked_bit:
+    ...  # authorize
 ```
+
+`evaluate_freshness` judges only the snapshot's age against the tier budget:
+it coerces an unknown tier to `critical`, treats a snapshot past its own
+`validUntil` (or with a malformed `validFrom`) as absent, and fails closed on
+every ambiguous state. Budgets are overridable per call via `budgets=`.
 
 Steps 1–3 are unchanged calls into `verify_delegation_lease()` /
 `lease_permits()` / `verify_status()`. The gate composes on top; it does not
-modify any existing verifier.
+modify any existing verifier. A full runnable wiring is in
+[`examples/disconnected_exchange_demo.py`](../examples/disconnected_exchange_demo.py).
 
 ## 5. Wire format (backward compatible)
 
