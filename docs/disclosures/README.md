@@ -121,6 +121,39 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-109](./PAD-109-ephemeris-scoped-delegation-authority.md) | Ephemeris-Scoped Delegation Authority Bound to a Trajectory or Geometric Predicate | 2026-07-19 | Published |
 | [PAD-110](./PAD-110-swarm-consensus-revocation-quarantine.md) | Swarm-Consensus Revocation: Local Peer-Observation Quarantine Under an Honest-Majority Assumption | 2026-07-19 | Published |
 | [PAD-111](./PAD-111-quorum-of-orbits-trust-anchoring.md) | Quorum-of-Orbits Trust Anchoring via Independent-Failure-Domain Corroboration | 2026-07-19 | Published |
+| [PAD-112](./PAD-112-conditional-dead-man-offline-revocation.md) | Conditional Dead-Man Revocation via Pre-Signed Self-Revoking Credentials | 2026-07-19 | Published |
+| [PAD-113](./PAD-113-distributed-proof-of-location-triangulation.md) | Distributed Proof of Location via Multi-Verifier Range Triangulation | 2026-07-19 | Published |
+| [PAD-114](./PAD-114-kinematic-plausibility-anti-spoof.md) | Kinematic-Plausibility Checking of Position and Velocity Claims | 2026-07-19 | Published |
+| [PAD-115](./PAD-115-attested-time-quality-trust-input.md) | Attested Time-Quality as an Input to Offline Trust Decisions | 2026-07-19 | Published |
+| [PAD-116](./PAD-116-offline-threshold-key-continuity.md) | Offline Threshold Key Continuity and Re-Issuance for Autonomous Missions | 2026-07-19 | Published |
+| [PAD-117](./PAD-117-connectivity-scaled-autonomy-envelope.md) | Connectivity-Scaled Autonomy Envelope | 2026-07-19 | Published |
+| [PAD-118](./PAD-118-radiation-fault-aware-key-attestation.md) | Radiation- and Fault-Aware Key Attestation with Authority Narrowing | 2026-07-19 | Published |
+| [PAD-119](./PAD-119-graded-trust-decay-long-disconnection.md) | Graded Continuous Trust Decay for Long-Duration Disconnection | 2026-07-19 | Published |
+| [PAD-120](./PAD-120-aggregated-proof-of-non-revocation.md) | Carried Aggregated Proof of Non-Revocation for Offline Presentation | 2026-07-19 | Published |
+| [PAD-121](./PAD-121-optical-beam-alignment-presence.md) | Narrow-Beam Optical Alignment as an Implicit Proof of Presence | 2026-07-19 | Published |
+| [PAD-122](./PAD-122-byzantine-sensor-agreement-provenance.md) | Byzantine Sensor Agreement via Cross-Checked Signed Perception Provenance | 2026-07-19 | Published |
+| [PAD-123](./PAD-123-mutual-attestation-mesh-trust-graph.md) | Mutual-Attestation Mesh: A Live Offline Trust Graph | 2026-07-19 | Published |
+| [PAD-124](./PAD-124-dtn-bundle-custody-credential-binding.md) | Binding Verifiable-Credential Trust to DTN Bundle Custody | 2026-07-19 | Published |
+
+
+## July 19, 2026: Disconnected-Edge Trust, Full Set (PAD-112 to PAD-124)
+
+Thirteen further disclosures completing the disconnected-edge / DDIL trust portfolio on
+top of PAD-106–111, all building on the shipped offline primitives rather than inventing
+parallel mechanisms. Revocation and freshness: PAD-112 pre-signed dead-man revocation
+that fires offline on a missed renewal; PAD-119 continuous graded trust decay; PAD-120 a
+presenter-carried non-revocation witness a verifier checks holding no status list.
+Physics-bound trust: PAD-113 multi-verifier triangulated proof-of-location; PAD-114
+kinematic/orbital-mechanics plausibility filtering of position claims; PAD-121 narrow-beam
+optical alignment as implicit presence; PAD-115 attested time-quality as a signed trust
+input. Autonomy and hardware: PAD-117 an autonomy envelope that narrows with time since
+contact; PAD-118 radiation/fault-aware key attestation with authority narrowing; PAD-116
+offline threshold key continuity for long missions. Multi-node: PAD-122 Byzantine sensor
+agreement over cross-checked perception provenance; PAD-123 a mutual-attestation mesh
+trust graph. Transport: PAD-124 binds credential trust and freshness to DTN Bundle
+Protocol custody. Each differentiates honestly against its prior art (fixed-window
+revocation, multilateration, accumulators, web-of-trust, BPSec) rather than claiming the
+general mechanisms.
 
 
 ## July 19, 2026: Offline Peer Revocation and Trust Distribution (PAD-110 to PAD-111)
