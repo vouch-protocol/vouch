@@ -130,6 +130,12 @@ def __getattr__(name):
         "build_status_list_credential",
         "build_status_list_entry",
         "verify_status",
+        "evaluate_freshness",
+        "FreshnessVerdict",
+        "DEFAULT_STALENESS_BUDGETS",
+        "CONSEQUENCE_ROUTINE",
+        "CONSEQUENCE_SENSITIVE",
+        "CONSEQUENCE_CRITICAL",
     ):
         from . import status_list
 
@@ -559,6 +565,12 @@ __all__ = [
     "build_status_list_credential",
     "build_status_list_entry",
     "verify_status",
+    "evaluate_freshness",
+    "FreshnessVerdict",
+    "DEFAULT_STALENESS_BUDGETS",
+    "CONSEQUENCE_ROUTINE",
+    "CONSEQUENCE_SENSITIVE",
+    "CONSEQUENCE_CRITICAL",
     # Reputation
     "ReputationEngine",
     "ReputationScore",

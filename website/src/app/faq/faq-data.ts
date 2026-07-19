@@ -664,6 +664,46 @@ The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch
   },
 
   // =====================================================================
+  // ROBOTICS: DISCONNECTED EDGE (SPACE & TACTICAL)
+  // =====================================================================
+  {
+    id: 'robotics-disconnected',
+    audience: 'Robotics: disconnected edge',
+    title: 'Trust at the disconnected edge, including space',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'Can two spacecraft (or any disconnected robots) establish trust with no connection to Earth?',
+        a: `Yes. A Vouch credential is self-contained: verifying it needs the issuer's public key, not a live registry, so two nodes that hold each other's trust anchors can authenticate and exchange authority entirely offline. The three-message robot-to-robot handshake, the delegation lease, the scannable passport, and signed perception provenance all run with no network call. Space (a satellite, a lunar rover, a probe) is the most demanding case; the same mechanism serves a robot in a mine, a tunnel, or under water.`,
+        helpLinks: [{ label: 'Disconnected-edge guide', href: '/help/#robotics-disconnected' }, { label: 'Offline lease guide', href: '/help/#robotics-lease' }],
+        meta: 'Shipped - vouch.robotics (handshake, lease, passport, perception)',
+      },
+      {
+        q: 'Isn’t the point that nodes discover each other with no prior configuration?',
+        a: `Not quite, and it is important to be honest about this. Offline trust is *enabled* by distributing trust anchors during a contact window, not by removing that step. There is no trust with no prior root, so "spontaneous discovery with zero configuration" is a myth: the trust anchors are the configuration, and they must be synced at some point. What Vouch removes is the *live* round trip at decision time, not the one-time provisioning.`,
+        meta: 'Design note',
+      },
+      {
+        q: 'How does a disconnected node handle revocation if it cannot fetch a live status list?',
+        a: `It weighs the age of its last-synced revocation snapshot against the consequence of the action, using \`vouch.status_list.evaluate_freshness\`, and fails closed when the view is too old. A telemetry beacon tolerates a 30-day-old snapshot; a physical maneuver does not (a 1-hour default budget). An unknown tier, an expired or malformed snapshot, or no snapshot at all all fail closed for anything above routine, and a *known* revocation always denies. A complementary presenter-side proof of freshness (a relay-issued token bound to a monotonic network epoch) is specified too.`,
+        helpLinks: [{ label: 'Disconnected-edge guide', href: '/help/#robotics-disconnected' }, { label: 'Revocation guide', href: '/help/#robotics-revocation' }],
+        meta: 'Shipped - vouch.status_list.evaluate_freshness; spec docs/dtn-bounded-staleness-revocation.md',
+      },
+      {
+        q: 'Is this a space-only feature?',
+        a: `No. Space is simply the extreme instance of a general disconnected-robotics capability. The same offline primitives and bounded-staleness revocation help a warehouse robot that lost Wi-Fi, an autonomous ocean glider, or mining equipment deep underground. There is a runnable example (\`examples/disconnected_exchange_demo.py\`) that completes the whole offline exchange over a simulated high-latency link with the socket layer disabled, so offline-ness is proven, not asserted.`,
+        meta: 'Shipped - examples/disconnected_exchange_demo.py',
+      },
+      {
+        q: 'Which disconnected-edge primitives ship today?',
+        a: `The full set (disclosed as PAD-106 to PAD-124) ships as open-layer modules: presenter freshness tokens and graded trust decay (\`vouch.robotics.freshness\`), channel-geometry proof of presence (\`presence\`), ephemeris-scoped authority (\`geoscope\`), swarm-consensus quarantine, quorum-of-orbits trust anchoring and offline threshold key continuity (\`quorum_trust\`), conditional dead-man revocation and a carried validity witness (\`dtn_revocation\`), triangulated proof-of-location, kinematic-plausibility filtering and narrow-beam presence (\`localization\`), attested time-quality, a connectivity-scaled autonomy envelope and integrity-risk narrowing (\`edge_trust\`), Byzantine sensor agreement and a mutual-attestation mesh (\`perception_consensus\`), and DTN Bundle Protocol custody binding (\`bundle\`). Each is an eddsa-jcs-2022 credential or a deterministic verifier predicate; the hardware acquisition (ranging, TPM, orbital propagators) is left to the platform through a hardware seam (\`vouch.robotics.hardware\`) of typed sensor interfaces, simulated reference implementations, and capture adapters. Two predicates ship production algorithms: kinematic plausibility does real two-body orbital propagation, and the carried non-revocation witness uses a dynamic sparse-Merkle accumulator.`,
+        helpLinks: [{ label: 'Disconnected-edge guide', href: '/help/#robotics-disconnected' }],
+        meta: 'Shipped - vouch.robotics (freshness, presence, geoscope, quorum_trust, dtn_revocation, localization, edge_trust, perception_consensus, bundle, hardware)',
+      },
+    ],
+  },
+
+  // =====================================================================
   // ROBOTICS: PHYSICAL QUORUM
   // =====================================================================
   {

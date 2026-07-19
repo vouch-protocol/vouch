@@ -218,3 +218,34 @@ all of them immediately.
 - **Issuer re-allocates the same index after restart**: the issuer
   didn't persist `nextIndex`. Restore from `to_state_dict` / `from_state_dict`
   pattern or use `FilesystemStatusListStore`.
+
+## Bounded-staleness revocation for disconnected verifiers
+
+The mechanisms above assume the verifier can reach a current status list. A
+verifier at the disconnected edge (in space, underground, under water) cannot: it
+holds a snapshot synced at last contact, so a credential revoked after that sync
+still looks valid. Revocation there is a *freshness* problem, not a *signature*
+problem.
+
+`vouch.status_list.evaluate_freshness` closes this by weighing the age of the
+snapshot against the consequence of the action, and failing closed when the view
+is too old.
+
+```python
+from vouch.status_list import evaluate_freshness, CONSEQUENCE_CRITICAL
+
+verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snapshot, now=now)
+if verdict.allow and not revoked_bit:
+    ...  # authorize
+```
+
+Consequence tiers carry default staleness budgets (overridable per deployment):
+`routine` = 30 days, `sensitive` = 24 hours, `critical` = 1 hour. The gate fails
+closed on every ambiguous state: an unknown tier is treated as `critical`; a
+snapshot past its own `validUntil` or with a malformed `validFrom` is treated as
+absent; an absent snapshot allows only `routine`. A *known* revocation (the bit is
+set) always denies, independent of freshness.
+
+Full design, including a complementary presenter-side proof-of-freshness
+(a relay-issued `FreshnessToken` bound to a monotonic DTN epoch), is in
+`docs/dtn-bounded-staleness-revocation.md` and `examples/disconnected_exchange_demo.py`.
