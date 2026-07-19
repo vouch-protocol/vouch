@@ -10,6 +10,7 @@ This file consolidates the Vouch Protocol knowledge corpus. Each section below i
 - Delegation Chains Reference
 - Root of Trust for Machine Identity
 - Revocation Reference
+- Disconnected-Edge Trust (space and tactical)
 - Identity Sidecar Pattern Reference
 - Hybrid Post-Quantum Reference
 - Threshold Signing Reference
@@ -4857,3 +4858,55 @@ using VouchProtocol.Core;
 bool ok = VouchRobotics.VerifyRobotCredential(credentialJson, ed25519PublicB64);
 string report = VouchRobotics.CheckConformance(credentialsJson, "eu-ai-act-high-risk");
 ```
+
+---
+
+## Disconnected-Edge Trust (space and tactical)
+
+Vouch makes trust decisions locally, with no live connection to a home server, so
+it works at the disconnected edge: in orbit, on the lunar surface, deep
+underground, under water, or anywhere a round trip to a home registry is
+impossible or too slow. Space is the most demanding instance; the same primitives
+serve any disconnected robot, so a satellite constellation and an underground mine
+use one mechanism.
+
+**Why offline verification works.** A Vouch credential is a self-contained
+`eddsa-jcs-2022` Verifiable Credential; verifying it needs the issuer's public
+key, not a network call. Two nodes that hold each other's trust anchors
+authenticate and exchange authority with no connection home.
+
+**Honest caveat.** Offline trust is enabled by distributing trust anchors during a
+contact window, not by removing that step. There is no trust with no prior root;
+"spontaneous discovery with no configuration" is a myth, because the trust anchors
+are the configuration.
+
+**What runs offline today** (all in `vouch.robotics`, verifying in every SDK):
+
+- Offline mutual authentication via the three-message robot-to-robot handshake,
+  agreeing a bounded session scoped to the intersection of what each side offers.
+- A short-lived, scope-bounded delegation lease and a scannable passport a node
+  verifies and acts on while out of contact; leases nest and can only narrow.
+- Signed perception provenance binding each sensor frame's hash to the node's key,
+  so a substituted frame is detectable.
+
+**Revocation that is honest about time.** A disconnected verifier holds a
+status-list snapshot of unknown age, so revocation is a freshness problem.
+`vouch.status_list.evaluate_freshness` weighs the snapshot's age against the
+consequence of the action and fails closed when it is too old.
+
+```python
+from vouch.status_list import evaluate_freshness, CONSEQUENCE_CRITICAL
+
+verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snapshot, now=now)
+if verdict.allow and not revoked_bit:
+    ...  # authorize
+```
+
+Default staleness budgets (overridable): `routine` 30 days, `sensitive` 24 hours,
+`critical` 1 hour. Unknown tier, expired or malformed snapshot, or absent snapshot
+all fail closed for anything above routine; a known revocation always denies. A
+complementary presenter-side proof of freshness (a relay-issued `FreshnessToken`
+bound to a monotonic DTN epoch) is specified too.
+
+Defined in `docs/dtn-bounded-staleness-revocation.md`, demonstrated in
+`examples/disconnected_exchange_demo.py`.

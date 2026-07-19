@@ -565,6 +565,76 @@ function Handover() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Disconnected edge: bounded-staleness revocation, offline, by tier.  */
+/* ------------------------------------------------------------------ */
+
+type EdgeScenario = 'beacon' | 'maneuver-fresh' | 'maneuver-stale' | 'revoked' | 'none';
+
+const EDGE_SCENARIOS: Array<{ id: EdgeScenario; label: string }> = [
+  { id: 'beacon', label: 'Send a telemetry beacon · snapshot 20 min old' },
+  { id: 'maneuver-fresh', label: 'Execute a physical maneuver · snapshot 20 min old' },
+  { id: 'maneuver-stale', label: 'Execute a physical maneuver · snapshot 5 days old' },
+  { id: 'revoked', label: 'Execute a maneuver · credential revoked in the snapshot' },
+  { id: 'none', label: 'Execute a maneuver · no snapshot synced yet' },
+];
+
+function DisconnectedEdge() {
+  const [scenario, setScenario] = useState<EdgeScenario>('maneuver-fresh');
+
+  const view = {
+    beacon: { tier: 'routine', budget: '30 days', snapshot: 'age 20m · not revoked', ok: true, reason: 'snapshot within the routine budget' },
+    'maneuver-fresh': { tier: 'critical', budget: '1 hour', snapshot: 'age 20m · not revoked', ok: true, reason: 'snapshot within the critical budget' },
+    'maneuver-stale': { tier: 'critical', budget: '1 hour', snapshot: 'age 5d · not revoked', ok: false, reason: 'snapshot exceeds the critical budget · fails closed' },
+    revoked: { tier: 'critical', budget: '1 hour', snapshot: 'age 20m · REVOKED bit set', ok: false, reason: 'known revocation always denies' },
+    none: { tier: 'critical', budget: '1 hour', snapshot: 'none synced', ok: false, reason: 'no snapshot · fails closed above routine' },
+  }[scenario];
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          A disconnected node cannot fetch a live revocation list, so it holds a snapshot synced at last contact. It weighs
+          that snapshot&apos;s age against the consequence of the action: a routine beacon tolerates a stale view, a physical
+          maneuver does not. Every ambiguous state fails closed. This mirrors <code className="font-mono text-[0.85em]">vouch.status_list.evaluate_freshness</code>.
+        </p>
+        <div className="eyebrow-faint mb-2">Choose the action and the state of the local snapshot</div>
+        <div className={styles.controls}>
+          {EDGE_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.radio}${scenario === s.id ? ' ' + styles.on : ''}`}
+              onClick={() => setScenario(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Requested action</div>
+          <div className={styles.mono}>
+            consequence tier: {view.tier}
+            <br />
+            staleness budget: {view.budget}
+          </div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Local revocation snapshot</div>
+          <div className={styles.mono}>{view.snapshot}</div>
+        </div>
+        <div className={styles.verdict}>
+          <span className={styles.badge} style={{ color: view.ok ? ALLOW : DENY, borderColor: view.ok ? ALLOW : DENY }}>
+            {view.ok ? '✓ ALLOW' : '✕ DENY'}
+          </span>
+          <span className={styles.reason}>{view.reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export default function RoboticsDemos() {
   return (
@@ -646,7 +716,7 @@ export default function RoboticsDemos() {
         </div>
       </section>
 
-      <section id="handover" className="scroll-mt-24">
+      <section id="handover" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ VIII</span>
@@ -654,6 +724,17 @@ export default function RoboticsDemos() {
           </div>
           <p className="eyebrow mb-6">A robot-to-human release, inside the near-human envelope · vouch.robotics.handover</p>
           <Handover />
+        </div>
+      </section>
+
+      <section id="disconnected" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ IX</span>
+            <h2>Disconnected edge, including space</h2>
+          </div>
+          <p className="eyebrow mb-6">Revocation that is honest about time, offline · vouch.status_list.evaluate_freshness</p>
+          <DisconnectedEdge />
         </div>
       </section>
     </>

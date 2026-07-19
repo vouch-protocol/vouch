@@ -444,6 +444,39 @@ C++, .NET, JVM, and Swift wrappers through a `VouchRobotics` class (a
 `vouch::robotics` namespace in C++), for verifying and integrating from those
 languages. See `reference/robotics.md`.
 
+### "How does a node operate offline at the disconnected edge (space, underground, subsea)?"
+
+Everything a Vouch credential needs to verify is the issuer's public key, not a
+live registry, so two nodes that hold each other's trust anchors authenticate and
+exchange authority with no connection home. This is the "edge autonomy" case: a
+satellite, lunar rover, or probe, and equally a robot in a mine, a tunnel, or
+under water. The offline handshake (`vouch.robotics.handshake`), the delegation
+lease and passport (`vouch.robotics.lease`, `vouch.robotics.passport`), and signed
+perception provenance (`vouch.robotics.perception`) all run with no network call.
+
+Be honest about the one requirement: offline trust is enabled by distributing the
+trust anchors during a contact window, not by removing that step. There is no
+trust with no prior root.
+
+The part that is genuinely a freshness problem is revocation: a disconnected
+verifier holds a status-list snapshot of unknown age. Use
+`vouch.status_list.evaluate_freshness` to weigh the snapshot's age against the
+consequence of the action and fail closed when it is too old:
+
+```python
+from vouch.status_list import evaluate_freshness, CONSEQUENCE_CRITICAL
+
+verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snapshot, now=now)
+if verdict.allow and not revoked_bit:
+    ...  # authorize
+```
+
+Default staleness budgets: `routine` 30 days, `sensitive` 24 hours, `critical`
+1 hour, all overridable. Unknown tier, expired/malformed snapshot, or absent
+snapshot all fail closed for anything above routine. See the spec
+`docs/dtn-bounded-staleness-revocation.md`, the runnable
+`examples/disconnected_exchange_demo.py`, and `reference/revocation.md`.
+
 ### "What is the Vouch Verified Contributor badge, and how do I get one?"
 
 Land a merged pull request on the repository and an automated workflow mints you a
