@@ -38,6 +38,14 @@ def test_registered_tool_names():
         "get_identity",
         "evaluate_freshness",
         "verify_disconnected_edge",
+        "scan",
+        "decode_did",
+        "delegate",
+        "check_action",
+        "check_trust",
+        "disclose_ai_origin",
+        "reputation",
+        "attribute",
     } <= names
 
 

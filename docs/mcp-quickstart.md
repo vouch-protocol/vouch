@@ -68,8 +68,17 @@ Edit your config file:
 ### Step 4: Restart Claude Desktop
 
 You'll see 🛠️ tools with:
-- **sign_action** - Sign any action
+- **sign** - Sign any action
+- **verify** - Verify a credential another agent presented
 - **get_identity** - Show your DID
+- **scan** - Scan text for leaked private keys before it crosses a trust boundary
+- **decode_did** - Decode a DID key / Multikey and report its algorithm
+- **delegate** - Issue a narrowed sub-delegation grant to a worker agent
+- **check_action** - Decide if an agent's capabilities permit a tool call (Shield)
+- **check_trust** - Recompute a session voucher's decayed trust vs a threshold
+- **disclose_ai_origin** - Sign a disclosure that content is AI-generated
+- **reputation** - Compute an agent's reputation from its outcome history
+- **attribute** - Attribute authorship from a signed attribution manifest
 - **evaluate_freshness** - Bounded-staleness revocation gate for offline/DTN use
 - **verify_disconnected_edge** - Authenticate a disconnected-edge (DTN) credential
 
