@@ -97,7 +97,7 @@ jobs:
           # v7 requires opting in to run at all under pull_request_target.
           allow-unsafe-pr-checkout: true
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: steps.resolve.outputs.should_run == 'true'
         with:
           python-version: "3.11"
