@@ -1,9 +1,23 @@
 # Using Vouch Protocol from any framework, over MCP
 
 `vouch-mcp` is a Model Context Protocol server. Any MCP-capable agent framework
-can connect to it and gain two tools: `sign` (authorize an action with a
-Verifiable Credential) and `verify` (check one someone else
-presented), plus `create_session`, `check_revocation`, and `get_identity`.
+can connect to it and gain the whole Vouch trust surface as tools. The core two
+are `sign` (authorize an action with a Verifiable Credential) and `verify`
+(check one someone else presented); around them sit the rest of the lifecycle:
+
+- **Identity & sessions:** `create_session`, `check_revocation`, `get_identity`
+- **Key hygiene & DID inspection:** `scan` (catch leaked keys before they cross
+  a boundary), `decode_did` (inspect a peer's key algorithm)
+- **Authority:** `delegate` (hand a worker one narrowed capability),
+  `check_action` (the Shield capability gate)
+- **Trust over time & transparency:** `check_trust` (recompute a session's
+  decayed trust), `disclose_ai_origin` (sign an AI-origin claim over content)
+- **Accountability:** `reputation` (score an agent from its outcomes),
+  `attribute` (authorship blame from a signed manifest)
+- **Disconnected edge (DTN):** `evaluate_freshness`, `verify_disconnected_edge`
+
+See [`examples/mcp_trust_lifecycle.py`](../mcp_trust_lifecycle.py) for a single
+task walked through the lifecycle tools in order.
 
 The payoff: you do not need a bespoke Vouch connector per framework. You run one
 server and wire it in through each framework's standard MCP client. The agent's

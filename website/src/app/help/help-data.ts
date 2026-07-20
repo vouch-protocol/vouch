@@ -1531,7 +1531,7 @@ The signing and verification core ships as an installable package in every major
 
 For a language-agnostic drop-in, three standalone services need no framework and no SDK:
 
-- **\`vouch-mcp\`** a Model Context Protocol server any MCP client (Claude Desktop, Cursor, any agent) can call to create identities, sign, verify, and scan.
+- **\`vouch-mcp\`** a Model Context Protocol server any MCP client (Claude Desktop, Cursor, any agent) can call to sign and verify credentials, scan for leaked keys, decode DIDs, delegate authority, gate actions, check trust, disclose AI origin, and score reputation.
 - **\`vouch-bridge\`** an HTTP server for media provenance: C2PA image signing, QR badge overlay, and audio watermarking.
 - **\`vouch-sidecar\`** the Go signing daemon that mints credentials over localhost for any language, keeping the key out of the model's process.
 `,

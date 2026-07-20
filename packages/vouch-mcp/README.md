@@ -86,6 +86,16 @@ VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
 | `create_session(purpose, valid_seconds, decay_lambda, initial_trust)` | Issue a trust-decaying session voucher (Heartbeat Protocol). |
 | `check_revocation(credential_json)` | Check a credential's `BitstringStatusList` entry: `ACTIVE`, `REVOKED`, or not individually revocable. |
 | `get_identity()` | Return the agent's DID. |
+| `evaluate_freshness(tier, snapshot_json=None, now_iso=None)` | Bounded-staleness revocation gate for offline/DTN use: decide if a last-synced revocation snapshot is fresh enough for the action's consequence tier, failing closed when too old. |
+| `verify_disconnected_edge(credential_json, public_key)` | Authenticate any disconnected-edge (DTN) credential type (freshness token, presence, ephemeris grant, revocation, bundle custody, …); returns its type and subject. |
+| `scan(text)` | Scan text (a diff, log, message, or file) for leaked Ed25519/hybrid private keys, seed env vars, and DID documents that embed a private key, before it crosses a trust boundary. |
+| `decode_did(key)` | Decode a `did:key:z...` identifier or bare Multikey and report its algorithm and public-key size — confirm a peer's key is the algorithm you expect before trusting it. |
+| `delegate(action, target, resource, to=None, valid_seconds=None, reputation_score=None)` | Issue a narrowed sub-delegation grant to a worker agent; every action it signs chains under the grant and can only narrow the authority, never widen it (Spec §9.3). |
+| `check_action(tool, capabilities_json, requirements_json)` | Decide whether an agent's capabilities (filesystem/network/shell) permit a tool call — the authorization gate Vouch Shield applies before a tool runs. |
+| `check_trust(voucher_json, threshold=0.5, now_iso=None)` | Recompute a session voucher's *current* trust after decay (Trust Entropy) and compare it to the threshold the action requires; refuse when trust has fallen too far. |
+| `disclose_ai_origin(content_hash, content_ref=None)` | Sign a Vouch Credential attesting this agent produced the content at `content_hash`, so downstream parties verify the AI-origin claim instead of trusting an unsigned label. |
+| `reputation(did, events_json)` | Compute an agent's reputation score and success rate from a history of recorded outcomes, to weigh how much to trust a peer with a track record. |
+| `attribute(manifest_json, path=None)` | Attribute authorship from a signed attribution manifest: a whole-manifest human/AI/pre-existing split, or per-line blame for one file. |
 
 ## Why `verify` matters
 

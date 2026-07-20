@@ -503,6 +503,10 @@ export type {
   VerifyRobotIdentityChainOptions,
 } from './robotics/root-identity';
 
+// Disconnected-edge / DTN trust primitives (PAD-106 to PAD-124), byte-identical
+// with the Python vouch.robotics disconnected-edge modules and the Rust core.
+export * from './robotics/dtn';
+
 // ---------------------------------------------------------------------------
 // Daemon Client
 // ---------------------------------------------------------------------------
