@@ -15,7 +15,7 @@
 
 use std::collections::BTreeSet;
 
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::error::{CoreError, Result};
 use crate::time::iso_to_epoch_seconds;
@@ -482,6 +482,85 @@ pub fn validate_chain(
     }
 
     Ok(())
+}
+
+// --------------------------------------------------------------------------
+// JSON boundary for the SDK bindings (uniffi / wasm)
+// --------------------------------------------------------------------------
+
+/// Validate a delegation chain from a single JSON request, returning a JSON
+/// verdict. Infallible: malformed input yields a `malformed_delegation` verdict
+/// rather than an error, so every caller gets a uniform verdict shape.
+///
+/// Request:  `{ "chain": [..links..], "trustedRoots"?: [..], "revokedIndices"?:
+/// [..], "budget"?: {"maxDepth"?: n, "maxCumulativeTtlSeconds"?: n}, "nowIso":
+/// "..", "clockSkewSeconds"?: 30 }`
+///
+/// Response: `{"valid": true}` or `{"valid": false, "code": "..", ..detail..}`.
+pub fn validate_chain_json(request_json: &str) -> String {
+    let req: Value = match serde_json::from_str(request_json) {
+        Ok(v) => v,
+        Err(e) => return verdict_malformed(&format!("request json: {e}")),
+    };
+    let chain: Vec<Value> = match req.get("chain").and_then(|v| v.as_array()) {
+        Some(c) => c.clone(),
+        None => return verdict_malformed("missing chain array"),
+    };
+    let trusted_roots: Vec<String> = req
+        .get("trustedRoots")
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect())
+        .unwrap_or_default();
+    let revoked: Vec<usize> = req
+        .get("revokedIndices")
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_u64().map(|n| n as usize)).collect())
+        .unwrap_or_default();
+    let budget = VerifierBudget {
+        max_depth: req
+            .pointer("/budget/maxDepth")
+            .and_then(|v| v.as_u64())
+            .map(|n| n as usize),
+        max_cumulative_ttl_seconds: req
+            .pointer("/budget/maxCumulativeTtlSeconds")
+            .and_then(|v| v.as_i64()),
+    };
+    let now = req.get("nowIso").and_then(|v| v.as_str()).unwrap_or("");
+    let skew = req
+        .get("clockSkewSeconds")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(30);
+
+    match validate_chain(&chain, &trusted_roots, &revoked, &budget, now, skew) {
+        Ok(()) => json!({ "valid": true }).to_string(),
+        Err(r) => reject_to_json(&r).to_string(),
+    }
+}
+
+fn verdict_malformed(detail: &str) -> String {
+    json!({ "valid": false, "code": "malformed_delegation", "detail": detail }).to_string()
+}
+
+fn reject_to_json(r: &DelegationReject) -> Value {
+    let mut v = json!({ "valid": false, "code": r.code() });
+    let o = v.as_object_mut().unwrap();
+    match r {
+        DelegationReject::ScopeExceedsParent { dimension } => {
+            o.insert("dimension".into(), json!(dimension.as_str()));
+        }
+        DelegationReject::VerifierBudgetExceeded { limit } => {
+            o.insert("limit".into(), json!(limit));
+        }
+        DelegationReject::DelegationRevoked { link_index }
+        | DelegationReject::SubjectIssuerMismatch { link_index } => {
+            o.insert("linkIndex".into(), json!(link_index));
+        }
+        DelegationReject::Malformed { detail } => {
+            o.insert("detail".into(), json!(detail));
+        }
+        DelegationReject::UntrustedPrincipal | DelegationReject::OutsideValidityWindow => {}
+    }
+    v
 }
 
 #[cfg(test)]
