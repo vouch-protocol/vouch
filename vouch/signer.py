@@ -398,20 +398,20 @@ class Signer:
         """
         Build a delegation link from `parent_credential` to this signer.
 
-        Implements Specification §9.2 link structure. Validates depth limit
-        (§9.4) and resource-narrowing (§9.3 step 5).
+        Implements Specification §9.2 link structure and enforces the v1.7
+        non-expansion rule (§9.3-9.5): the new link must not broaden the parent
+        on any dimension. The fixed depth limit is removed; verifiers bound
+        chain cost with their own budgets.
         """
-        MAX_CHAIN_DEPTH = 5
-
         parent_subject = parent_credential.get("credentialSubject", {})
         parent_intent = parent_subject.get("intent", {})
         parent_chain = parent_subject.get("delegationChain") or []
 
-        if len(parent_chain) >= MAX_CHAIN_DEPTH:
-            raise ValueError(f"Delegation chain exceeds max depth of {MAX_CHAIN_DEPTH}")
-
-        # Resource-narrowing check (§9.3): child resource must be a sub-resource
-        # of (or equal to) the parent's resource.
+        # v1.7 removes the fixed depth limit. The full non-expansion rule across
+        # all six dimensions is enforced at verification time by the shared
+        # validator (vouch/attenuation.py, pinned to the cross-language interop
+        # vectors). At build time we keep the resource-narrowing guard as a fast
+        # local check so an obviously-broadening link is refused early.
         parent_resource = parent_intent.get("resource", "")
         child_resource = current_intent.get("resource", "")
         if (
