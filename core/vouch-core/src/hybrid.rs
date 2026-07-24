@@ -388,6 +388,39 @@ mod tests {
         );
     }
 
+    /// A proof set may carry an extra proof for an unrecognized cryptosuite
+    /// without breaking a verifier that predates it, as long as both known
+    /// members are present and verify.
+    #[test]
+    fn unrecognized_extra_proof_is_ignored() {
+        let seed = [4u8; 32];
+        let ml = MlDsa44KeyPair::generate().unwrap();
+        let signed = sign_dual(
+            &cred(),
+            &seed,
+            &ml,
+            "did:web:agent.example.com#key-1",
+            "did:web:agent.example.com#key-2",
+            "2026-04-26T10:00:00Z",
+        )
+        .unwrap();
+        let ed_pub = ed25519_public_from_seed(&seed).unwrap();
+        let proofs = signed["proof"].as_array().unwrap().clone();
+
+        let mut future = proofs[0].clone();
+        future["cryptosuite"] = json!("some-unregistered-suite-2030");
+
+        // Extra unknown proof alongside both known members: still verifies.
+        let mut extended = signed.clone();
+        extended["proof"] = json!([proofs[0].clone(), proofs[1].clone(), future.clone()]);
+        assert!(verify_dual(&extended, &ed_pub, &ml.public_key()).unwrap());
+
+        // The unknown proof cannot substitute for a missing known member.
+        let mut ed_only_plus_unknown = signed.clone();
+        ed_only_plus_unknown["proof"] = json!([proofs[0].clone(), future]);
+        assert!(!verify_dual(&ed_only_plus_unknown, &ed_pub, &ml.public_key()).unwrap());
+    }
+
     /// A proof set that drops the post-quantum member must not verify.
     #[test]
     fn proof_set_without_the_post_quantum_member_fails() {
