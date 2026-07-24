@@ -49,7 +49,7 @@ This specification defines the **Vouch Protocol**, an open standard for establis
 
 Where existing agent identity specifications answer *"who is this agent and what are they authorized to do?"*, Vouch Protocol answers the operational follow-on questions: *"is this agent's runtime state still aligned with its authorization?"*, *"how do we maintain trust as the agent operates over time?"*, and *"what does post-quantum migration look like for an agent identity layer?"*
 
-The protocol uses W3C Verifiable Credentials secured with W3C Data Integrity proofs (`eddsa-jcs-2022` cryptosuite), W3C Decentralized Identifiers as the identity format, and the Multikey verification method to support cryptographic agility. It introduces several novel architectural mechanisms: the Identity Sidecar pattern for LLM key isolation, recursive delegation chains with explicit resource binding, continuous trust maintenance via the Heartbeat Protocol, federated validator quorum, and an optional dual-proof post-quantum profile in which a credential carries two independent Data Integrity proofs (one `eddsa-jcs-2022`, one `mldsa44-jcs-2026`) on the same JCS-canonicalized payload bytes.
+The protocol uses W3C Verifiable Credentials secured with W3C Data Integrity proofs (`eddsa-jcs-2022` cryptosuite), W3C Decentralized Identifiers as the identity format, and the Multikey verification method to support cryptographic agility. It introduces several novel architectural mechanisms: the Identity Sidecar pattern for LLM key isolation, recursive delegation chains with explicit resource binding, continuous trust maintenance via the Heartbeat Protocol, federated validator quorum, and an optional dual-proof post-quantum profile in which a credential carries two independent Data Integrity proofs (one `eddsa-jcs-2022`, one `mldsa44-jcs-2024`) on the same JCS-canonicalized payload bytes.
 
 ## Status of This Document
 
@@ -104,7 +104,7 @@ Autonomous AI agents are increasingly deployed to take real-world actions across
 Existing authentication mechanisms (API keys, Bearer tokens, OAuth 2.0) were designed for human users and stateless services. Newer agent identity specifications address *who* an agent is and *what* it has been authorized to do. Operators in the regulated sectors above have additional, currently-unmet requirements:
 
 1. **Identity Binding**: Cryptographic proof that a specific agent, controlled by a specific principal, performed a specific action.
-2. **Intent Attestation**: Non-repudiable attestation of the action the agent authorized, bound to the resource the action targets, not just the action's name.
+2. **Intent Attestation**: Non-repudiable attestation of the action the agent authorized, bound to both the action's name and the specific resource it targets.
 3. **Delegation Accountability**: A verifiable chain from human principal to the agent (and any sub-agents) that actually executed the action, with explicit per-link resource scope.
 4. **Continuous State Verifiability**: Mechanisms to continuously verify that an agent's runtime behavior remains aligned with its authorized intent, beyond a single point-in-time authentication.
 5. **Post-Quantum Migration Path**: A concrete roadmap from current elliptic-curve signatures to quantum-resistant signatures, addressing harvest-now-decrypt-later and retroactive forgery threats.
@@ -114,7 +114,7 @@ Existing authentication mechanisms (API keys, Bearer tokens, OAuth 2.0) were des
 The Vouch Protocol is designed with the following goals:
 
 - **Standards-Aligned**: Built on W3C Verifiable Credentials, W3C Data Integrity proofs (`eddsa-jcs-2022`), W3C Decentralized Identifiers, and Multikey verification methods. No new cryptographic primitives are introduced where existing standards suffice.
-- **Crypto-Agile**: The signature algorithm is selected per-deployment via Multikey and the cryptosuite mechanism. Migration to post-quantum signatures (ML-DSA-44) is supported as an optional dual-proof profile in which a credential carries two independent Data Integrity proofs (`eddsa-jcs-2022` and `mldsa44-jcs-2026`) on the same JCS-canonicalized payload bytes, with reference implementations in Python, TypeScript, and Go and published cross-implementation test vectors.
+- **Crypto-Agile**: The signature algorithm is selected per-deployment via Multikey and the cryptosuite mechanism. Migration to post-quantum signatures (ML-DSA-44) is supported as an optional dual-proof profile in which a credential carries two independent Data Integrity proofs (`eddsa-jcs-2022` and `mldsa44-jcs-2024`) on the same JCS-canonicalized payload bytes, with reference implementations in Python, TypeScript, and Go and published cross-implementation test vectors.
 - **Framework-Agnostic**: Operates with any AI agent framework, including the Model Context Protocol (MCP), LangChain, CrewAI, AutoGPT, AutoGen, and custom frameworks, by binding identity to credentials rather than to a specific transport.
 - **Fail-Secure**: The default state is untrusted. Identity must be cryptographically proven; there is no fallback to bearer-token or session-cookie authentication.
 - **LLM-Safe**: Private keys are never exposed to the LLM context window. The Identity Sidecar pattern (Section 10) is normative.
@@ -130,7 +130,7 @@ This specification covers:
 - The Identity Sidecar architectural pattern.
 - Credential lifecycle management via the Heartbeat Protocol.
 - Credential and key revocation, including credential-level status via W3C BitstringStatusList (shipped across Python, TypeScript, and Go SDKs with a cross-language test vector) and a complementary DID-level revocation registry (`vouch.revocation`).
-- An optional dual-proof post-quantum profile in which a credential carries two independent Data Integrity proofs (one `eddsa-jcs-2022`, one `mldsa44-jcs-2026`) on the same JCS-canonicalized payload bytes, shipped with cross-language reference implementations and test vectors.
+- An optional dual-proof post-quantum profile in which a credential carries two independent Data Integrity proofs (one `eddsa-jcs-2022`, one `mldsa44-jcs-2024`) on the same JCS-canonicalized payload bytes, shipped with cross-language reference implementations and test vectors.
 - An informative description of the State Verifiability layer.
 
 This specification does NOT cover:
@@ -203,7 +203,7 @@ A conforming **Vouch Verifier** implementation:
 - MUST resolve the agent's verification method via DID resolution as specified in Section 8.3.
 - SHOULD support DID resolution for `did:web` identifiers.
 - MAY support additional DID methods.
-- MAY additionally verify the second `mldsa44-jcs-2026` proof on credentials that use the dual-proof post-quantum profile defined in Section 13.
+- MAY additionally verify the second `mldsa44-jcs-2024` proof on credentials that use the dual-proof post-quantum profile defined in Section 13.
 
 A conforming **Vouch Agent** implementation:
 - MUST use the Identity Sidecar pattern (Section 10) to isolate private keys from the LLM context window.
@@ -351,7 +351,7 @@ The `proof` object MUST conform to [VC-DATA-INTEGRITY] using the `eddsa-jcs-2022
 | Field | Required | Description |
 |---|---|---|
 | `type` | REQUIRED | MUST be `"DataIntegrityProof"` |
-| `cryptosuite` | REQUIRED | MUST be `"eddsa-jcs-2022"` for the classical proof. For the dual-proof post-quantum profile (Section 13), a second proof object in the same `proof` array uses `"mldsa44-jcs-2026"`. The transitional composite identifier `"hybrid-eddsa-mldsa44-jcs-2026"` is retained for v1.6.x interop only. |
+| `cryptosuite` | REQUIRED | MUST be `"eddsa-jcs-2022"` for the classical proof. For the dual-proof post-quantum profile (Section 13), a second proof object in the same `proof` array uses `"mldsa44-jcs-2024"`. The transitional composite identifier `"hybrid-eddsa-mldsa44-jcs-2026"` is retained for v1.6.x interop only. |
 | `created` | REQUIRED | XML Schema datetime |
 | `verificationMethod` | REQUIRED | DID URL of the verification method (e.g., `did:web:agent.example.com#key-1`) |
 | `proofPurpose` | REQUIRED | MUST be `"assertionMethod"` |
@@ -453,7 +453,7 @@ This procedure conforms to [VC-DI-EDDSA] §3.1 (`eddsa-jcs-2022` cryptosuite).
 
 ### 7.2 Algorithm Restriction
 
-This specification mandates the `eddsa-jcs-2022` cryptosuite for v1.0 conformance. Implementations MAY additionally support the post-quantum `mldsa44-jcs-2026` cryptosuite as a second Data Integrity proof on the same credential (the dual-proof profile of Section 13).
+This specification mandates the `eddsa-jcs-2022` cryptosuite for v1.0 conformance. Implementations MAY additionally support the post-quantum `mldsa44-jcs-2024` cryptosuite as a second Data Integrity proof on the same credential (the dual-proof profile of Section 13).
 
 Algorithm negotiation in the wire format is not supported. The cryptosuite is unambiguously declared by `proof.cryptosuite`.
 
@@ -861,7 +861,7 @@ This section is structured as a STRIDE-shaped threat model per the W3C Security 
 | Attacker modifies the `intent` payload of a signed credential in flight. | The Data Integrity proof (`eddsa-jcs-2022`) covers the JCS-canonicalized credential bytes (Section 7). Any modification of a covered field invalidates the proof. |
 | Attacker replays a previously-issued credential against a different resource. | The REQUIRED `intent.resource` field binds the credential to a specific resource URI (Section 5.4.1). Implementations MUST reject credentials where `resource` is missing, empty, or syntactically invalid as a URI. |
 | Attacker replays an unmodified credential to the same resource within its validity window. | Vouch Credentials carry `validFrom` and `validUntil` (default 300 s window) and a RECOMMENDED `id`. Verifiers SHOULD maintain a cache of recently seen credential ids to detect replay attempts within the validity window. The cache MUST persist across verifier restarts to maintain the guarantee during operator-initiated downtime. |
-| Attacker downgrades the cryptosuite to a weaker algorithm. | The cryptosuite is declared explicitly in `proof.cryptosuite`. There is no negotiation surface; a verifier configured to require ML-DSA-44 (per the dual-proof policy of Section 13.2 Mode B or C) MUST reject any credential whose `proof` array does not include a valid `mldsa44-jcs-2026` proof. |
+| Attacker downgrades the cryptosuite to a weaker algorithm. | The cryptosuite is declared explicitly in `proof.cryptosuite`. There is no negotiation surface; a verifier configured to require ML-DSA-44 (per the dual-proof policy of Section 13.2 Mode B or C) MUST reject any credential whose `proof` array does not include a valid `mldsa44-jcs-2024` proof. |
 
 ### 12.3 Repudiation
 
@@ -924,22 +924,26 @@ The dual-proof profile is defined as follows:
 - The agent's DID Document publishes an Ed25519 Multikey and an ML-DSA-44 [FIPS 204] Multikey under separate `verificationMethod` slots.
 - The credential's `proof` field is an array containing two Data Integrity proof objects:
   - One proof with `cryptosuite: "eddsa-jcs-2022"` (the default classical cryptosuite of Section 7).
-  - One proof with `cryptosuite: "mldsa44-jcs-2026"` (the post-quantum cryptosuite; see Section 13.5 for its provisional identifier and ongoing coordination with the W3C Data Integrity Working Group and the Digital Bazaar `mldsa44-rdfc-2024-cryptosuite` family).
-- Both proofs are computed over the **same** RFC 8785 JCS-canonicalized credential bytes. This shared-bytes property is preserved by construction because both cryptosuites use JCS canonicalization, and is documented as [PAD-040](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-040-hybrid-composite-signature-same-canonical-bytes.md) (Dual-Proof Same-Canonical-Bytes Property).
+  - One proof with `cryptosuite: "mldsa44-jcs-2024"`, the identifier defined for ML-DSA-44 over JCS canonicalization by the W3C Quantum-Resistant Cryptosuites specification.
+- Each proof's signing input is computed with the W3C Data Integrity hashing algorithm: the SHA-256 digest of the RFC 8785 JCS-canonicalized proof configuration, joined with the SHA-256 digest of the RFC 8785 JCS-canonicalized unsecured document, proof configuration digest first.
+- Both proofs are computed over the **same** unsecured document, so the document digest is shared between them. The proof configuration digests differ, because each proof configuration names its own cryptosuite and verification method. Both cryptosuites use JCS canonicalization, so a single canonicalization rule reconstructs the signing input for either proof. The shared-document property is documented as [PAD-040](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-040-hybrid-composite-signature-same-canonical-bytes.md).
+- The `eddsa-jcs-2022` proof value is a base58btc Multibase value. The `mldsa44-jcs-2024` proof value is a base64url-nopad Multibase value, as specified for that cryptosuite family.
 - Verifier policy decides which proofs must validate:
   - **Mode A (classical-only):** validate the `eddsa-jcs-2022` proof. Useful for verifiers that have not yet been upgraded to ML-DSA-44.
-  - **Mode B (post-quantum-only):** validate the `mldsa44-jcs-2026` proof. Useful for verifiers operating under strict PQ migration mandates.
+  - **Mode B (post-quantum-only):** validate the `mldsa44-jcs-2024` proof. Useful for verifiers operating under strict PQ migration mandates.
   - **Mode C (both required, recommended for regulated audit credentials):** validate both proofs. The credential is accepted only if every proof in the array verifies.
 
 The verifier policy is local to the verifier and is not embedded in the credential itself, which keeps the wire format identical regardless of the verifier's posture.
 
-**Why dual proofs rather than a composite cryptosuite.** An earlier revision of this specification defined a single composite cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`) whose `proofValue` was a concatenation of an Ed25519 signature and an ML-DSA-44 signature. The dual-proof formulation is preferred because (a) each proof uses a separately-standardized cryptosuite identifier, avoiding the need to register a Vouch-specific composite identifier; (b) the Data Integrity `proof` field is already specified as an array, so dual-signing is a natural use of existing primitives; (c) future expansion to additional cryptosuites (ML-DSA-65, SLH-DSA, hash-based schemes) becomes additive rather than requiring a new composite identifier; and (d) verifiers that understand only one cryptosuite remain interoperable without needing to parse a bespoke composite proofValue. The composite cryptosuite identifier `hybrid-eddsa-mldsa44-jcs-2026` is retained as a transitional alias for backward compatibility with v1.6.x reference implementations; new implementations SHOULD emit dual proofs.
+**Accepted earlier forms.** Verifiers accept three forms carried by credentials issued under earlier revisions, and implementations do not emit any of them: the identifier `mldsa44-jcs-2026` in place of `mldsa44-jcs-2024`; a base58btc proof value on an ML-DSA-44 proof; and a signing input consisting of a single SHA-256 digest over the JCS-canonicalized credential with its unsigned proof attached. Accepting these keeps every previously issued credential verifiable.
+
+**Why a proof set rather than a composite cryptosuite.** An earlier revision of this specification defined a single composite cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`) whose `proofValue` was a concatenation of an Ed25519 signature and an ML-DSA-44 signature. The proof-set formulation is preferred because (a) each proof uses a separately-standardized cryptosuite identifier, avoiding the need to register a Vouch Protocol-specific composite identifier; (b) the Data Integrity `proof` field is already specified as an array, so a proof set is a natural use of existing primitives; (c) future expansion to additional cryptosuites (ML-DSA-65, SLH-DSA, hash-based schemes) becomes additive rather than requiring a new composite identifier; and (d) verifiers that understand only one cryptosuite remain interoperable without needing to parse a bespoke composite proofValue. Implementations accept the composite identifier `hybrid-eddsa-mldsa44-jcs-2026` on verification so that credentials issued under v1.6.x continue to validate, and emit proof sets.
 
 ### 13.3 Migration Guidance
 
 The conformance level of the dual-proof profile is expected to evolve in step with external post-quantum migration milestones (NIST CNSA 2.0 phased adoption, NSM-10 obligations, CNSSP-15 timelines), rather than fixed Vouch-internal dates:
 
-- **This revision:** `eddsa-jcs-2022` is the default conformance cryptosuite. Pairing it with an additional `mldsa44-jcs-2026` Data Integrity proof on the same credential is RECOMMENDED (SHOULD) for deployments in regulated sectors and for credentials whose verification lifetime extends beyond applicable classical-signature deprecation horizons. It remains OPTIONAL (MAY) for other deployments.
+- **This revision:** `eddsa-jcs-2022` is the default conformance cryptosuite. Pairing it with an additional `mldsa44-jcs-2024` Data Integrity proof on the same credential is RECOMMENDED (SHOULD) for deployments in regulated sectors and for credentials whose verification lifetime extends beyond applicable classical-signature deprecation horizons. It remains OPTIONAL (MAY) for other deployments.
 - **Basis for the current level:** the external milestones this ladder is indexed to have begun to materialize. United States Executive Order 14412 (June 22, 2026) sets December 31, 2031 as the deadline for post-quantum digital signatures on federal high-impact systems, and its implementing guidance (OMB M-26-15, June 2026) endorses hybrid classical-plus-post-quantum architectures and crypto-agility. The EU coordinated post-quantum roadmap calls for national transition roadmaps and pilots by December 31, 2026. The W3C Verifiable Credentials Working Group published the First Public Working Draft of Quantum-Resistant Cryptosuites v1.0 on June 16, 2026, standardizing ML-DSA-44 Data Integrity cryptosuites compatible with the proof-set approach used here.
 - **As classical-only signatures reach end-of-life under those policies:** a dual-proof or pure-PQ profile is expected to be REQUIRED (MUST) for new deployments.
 
@@ -947,7 +951,7 @@ Implementers operating in regulated sectors are advised to align dual-proof adop
 
 ### 13.4 Payload Considerations
 
-ML-DSA-44 produces signatures of approximately 2,420 bytes and public keys of approximately 1,312 bytes. A credential carrying both an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2026` proof therefore exceeds typical HTTP header size limits. Implementations using the dual-proof profile SHOULD transmit credentials in the HTTP request body (Section 5.6).
+ML-DSA-44 produces signatures of approximately 2,420 bytes and public keys of approximately 1,312 bytes. A credential carrying both an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof therefore exceeds typical HTTP header size limits. Implementations using the dual-proof profile SHOULD transmit credentials in the HTTP request body (Section 5.6).
 
 The defensive disclosure portfolio includes additional optimizations for post-quantum payloads:
 - [[PAD-033](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-033-zk-pq-signature-compression.md)] ZK PQ Signature Compression (zero-knowledge proof compression of post-quantum signatures).
@@ -961,7 +965,7 @@ These are referenced as informative prior art and are not normative requirements
 | Algorithm | Multicodec | Cryptosuite Identifier |
 |---|---|---|
 | Ed25519 | `ed25519-pub` (`0xed01`), registered | `eddsa-jcs-2022` |
-| ML-DSA-44 | `mldsa44-pub`, registered (see the multicodec table for the assigned code) | `mldsa44-jcs-2026` (provisional; to be aligned with the W3C Data Integrity Working Group's selection, expected to converge with the Digital Bazaar `mldsa44-rdfc-2024-cryptosuite` family's forthcoming JCS variant) |
+| ML-DSA-44 | `mldsa44-pub`, registered (see the multicodec table for the assigned code) | `mldsa44-jcs-2024` (provisional; to be aligned with the W3C Data Integrity Working Group's selection, expected to converge with the Digital Bazaar `mldsa44-rdfc-2024-cryptosuite` family's forthcoming JCS variant) |
 
 The dual-proof profile of Section 13.2 uses two independent Multikey entries (one Ed25519, one ML-DSA-44) in the issuer's DID Document, each with its already-registered multicodec; no separate composite multicodec is defined. Final cryptosuite identifiers will be coordinated with the W3C Data Integrity Working Group and the multicodec registry.
 
@@ -1166,7 +1170,7 @@ The full protocol. Suitable for long-running agents in regulated or adversarial 
 
 An L3-conforming implementation MUST satisfy all L2 requirements, plus:
 
-- Support the dual-proof post-quantum profile per Section 13: every Vouch Credential MAY carry two independent Data Integrity proofs on the same JCS-canonicalized bytes, one `eddsa-jcs-2022` and one `mldsa44-jcs-2026`. Verifiers MUST be able to operate in classical-only, PQ-only, or both-required modes (Section 13.2).
+- Support the dual-proof post-quantum profile per Section 13: every Vouch Credential MAY carry two independent Data Integrity proofs on the same JCS-canonicalized bytes, one `eddsa-jcs-2022` and one `mldsa44-jcs-2024`. Verifiers MUST be able to operate in classical-only, PQ-only, or both-required modes (Section 13.2).
 - Deploy the Heartbeat Protocol per Section 11.1: long-running agents renew their Session Voucher on a configurable interval (default 60 seconds).
 - Enforce trust entropy decay per Section 11.5 against a deployment-configured threshold for each action class.
 - Generate per-interval behavioural attestation digests and canary commit/reveal chains per Sections 11.3 and 11.7.
@@ -1381,7 +1385,7 @@ No composite hybrid multicodec is defined: the dual-proof profile of Section 13.
 ### B.4 W3C Data Integrity Cryptosuite Registration
 
 This specification will coordinate with the W3C Data Integrity Working Group for the registration of:
-- `mldsa44-jcs-2026` (the post-quantum cryptosuite used as the second proof in the dual-proof profile of Section 13; to be aligned with the Digital Bazaar `mldsa44-rdfc-2024-cryptosuite` family's forthcoming JCS variant)
+- `mldsa44-jcs-2024` (the post-quantum cryptosuite used as the second proof in the dual-proof profile of Section 13; to be aligned with the Digital Bazaar `mldsa44-rdfc-2024-cryptosuite` family's forthcoming JCS variant)
 
 The transitional composite identifier `hybrid-eddsa-mldsa44-jcs-2026` is retained for v1.6.x reference-implementation backward compatibility only and will not be submitted for W3C registration.
 
@@ -1396,7 +1400,7 @@ Test vectors are published in the companion repository at `https://github.com/vo
 - **C.3 DID Document examples**: `did:web` and `did:key` documents with Multikey verification methods.
 - **C.4 Delegation chain vectors**: Linear chains of depth 1, 3, and 5 with valid and invalid resource-narrowing examples.
 - **C.5 Heartbeat sequence vectors**: Sample heartbeat request/response pairs with canary reveal/commitment chains.
-- **C.6 Dual-proof post-quantum vectors**: Reference credentials carrying two independent Data Integrity proofs (one `eddsa-jcs-2022`, one `mldsa44-jcs-2026`) over the same JCS-canonicalized bytes, published at `test-vectors/hybrid-eddsa-mldsa44/vector.json` with deterministic generation parameters and cross-implementation interop tests in Python, TypeScript, and Go.
+- **C.6 Dual-proof post-quantum vectors**: Reference credentials carrying two independent Data Integrity proofs (one `eddsa-jcs-2022`, one `mldsa44-jcs-2024`) over the same JCS-canonicalized bytes, published at `test-vectors/hybrid-eddsa-mldsa44/vector.json` with deterministic generation parameters and cross-implementation interop tests in Python, TypeScript, and Go.
 - **C.7 Root of Trust vectors**: The three authority-layer credential types (`VouchRootOfTrust`, `RecognizedIssuerCredential`, `AgentIdentityCredential`) built from fixed seeds and timestamps, published at `test-vectors/root-of-trust/vector.json`, with a chain that verifies an agent identity against a pinned root.
 
 Implementations claiming conformance MUST pass all test vectors in this revision. Cross-implementation interoperability testing is REQUIRED before an implementation may be listed in the Implementer Interest section.
