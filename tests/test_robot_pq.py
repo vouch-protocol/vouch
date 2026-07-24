@@ -151,16 +151,12 @@ class TestDualVerify(unittest.TestCase):
         # A caller that requires post-quantum (passes the ML-DSA-44 key) must
         # reject the downgraded credential.
         self.assertFalse(
-            verify_robot_credential(
-                stripped, self.kp.public_key_jwk, mldsa44_public_key=ml_pub
-            )
+            verify_robot_credential(stripped, self.kp.public_key_jwk, mldsa44_public_key=ml_pub)
         )
 
         # A caller that accepts classical credentials (no ML-DSA-44 key) still
         # verifies the genuine extracted Ed25519 proof.
-        self.assertTrue(
-            verify_robot_credential(stripped, self.kp.public_key_jwk)
-        )
+        self.assertTrue(verify_robot_credential(stripped, self.kp.public_key_jwk))
 
 
 class TestMigration(unittest.TestCase):
