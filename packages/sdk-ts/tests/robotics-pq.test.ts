@@ -160,6 +160,32 @@ describe('hybrid verification rejects invalid inputs', () => {
   });
 });
 
+describe('post-quantum downgrade by extraction is rejected', () => {
+  it('rejects a proof set stripped to its lone eddsa proof when the ML-DSA key is supplied', async () => {
+    const { signer, edJwk, mldsa44Multikey } = await newRobotSigner();
+    const signed = await signPq(robotCredentialBody(), signer);
+    const proofs = signed.proof as Array<Record<string, unknown>>;
+    const eddsaProof = proofs.find(
+      (p) => p.cryptosuite === DATA_INTEGRITY_CRYPTOSUITE
+    );
+    // Attacker strips the proof set down to the standalone classical proof.
+    const stripped = { ...signed, proof: eddsaProof } as Record<string, unknown>;
+    expect(isPq(stripped)).toBe(false);
+
+    // The caller supplied the ML-DSA key, so it requires the post-quantum
+    // proof: the stripped classical credential must be rejected, never
+    // silently accepted under Ed25519 alone.
+    expect(
+      verifyRobotCredential(stripped, edJwk, {
+        mldsa44PublicKey: mldsa44Multikey,
+      })
+    ).toBe(false);
+
+    // A caller that passes no ML-DSA key accepts classical credentials.
+    expect(verifyRobotCredential(stripped, edJwk)).toBe(true);
+  });
+});
+
 describe('backward-compatible dual verify', () => {
   it('verifies a classical credential without an ML-DSA-44 key', async () => {
     const { signer, edPub } = await newRobotSigner();

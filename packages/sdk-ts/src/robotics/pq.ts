@@ -204,6 +204,12 @@ export function verifyRobotCredential(
     if (opts.mldsa44PublicKey === undefined) return false;
     return verifyPq(credential, ed25519PublicKey, opts.mldsa44PublicKey);
   }
+  // Supplying an ML-DSA-44 key means the caller requires the post-quantum
+  // proof. A credential that is not a post-quantum proof set is rejected here
+  // rather than verified under Ed25519 alone, so a post-quantum credential
+  // whose ML-DSA proof was stripped cannot be accepted as a classical one. A
+  // caller that intends to accept classical credentials passes no ML-DSA key.
+  if (opts.mldsa44PublicKey !== undefined) return false;
   const resolvedEd = coerceEd25519Public(ed25519PublicKey);
   if (resolvedEd === null) return false;
   try {
