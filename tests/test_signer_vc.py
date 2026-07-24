@@ -197,6 +197,42 @@ def test_delegation_chain_appends_link_from_parent():
     assert chain[0]["subject"] == child.did
 
 
+def test_delegation_from_proof_set_parent_binds_to_classical_member():
+    from vouch.signer import _parent_proof_binding_value
+
+    parent = _new_signer("did:web:alice.example.com")
+    parent_cred = parent.sign(
+        intent={
+            "action": "plan_trip",
+            "target": "destination:Paris",
+            "resource": "https://travel-api.example.com/v1/bookings",
+        }
+    )
+    # Simulate a post-quantum proof-set parent: proof becomes an array whose
+    # classical member carries the deterministic proof value.
+    classical = dict(parent_cred["proof"])
+    proof_set_parent = dict(parent_cred)
+    proof_set_parent["proof"] = [
+        classical,
+        {"type": "DataIntegrityProof", "cryptosuite": "mldsa44-jcs-2024", "proofValue": "uABC"},
+    ]
+
+    binding = _parent_proof_binding_value(proof_set_parent)
+    assert binding == classical["proofValue"]
+
+    child = _new_signer("did:web:assistant.example.com")
+    child_cred = child.sign(
+        intent={
+            "action": "book_flight",
+            "target": "flight:AF123",
+            "resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
+        },
+        parent_credential=proof_set_parent,
+    )
+    link = child_cred["credentialSubject"]["delegationChain"][0]
+    assert link["parentProofValue"] == classical["proofValue"][:64]
+
+
 def test_delegation_chain_resource_narrowing_violation_raises():
     parent = _new_signer("did:web:alice.example.com")
     child = _new_signer("did:web:rogue.example.com")

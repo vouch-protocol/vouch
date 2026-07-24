@@ -425,14 +425,13 @@ class Signer:
                 f"{parent_resource!r}"
             )
 
-        parent_proof = parent_credential.get("proof", {}) or {}
         new_link = {
             "issuer": parent_credential.get("issuer", ""),
             "subject": self.did,
             "intent": current_intent,
             "validFrom": parent_credential.get("validFrom"),
             "validUntil": parent_credential.get("validUntil"),
-            "parentProofValue": parent_proof.get("proofValue", "")[:64],
+            "parentProofValue": _parent_proof_binding_value(parent_credential)[:64],
         }
 
         return list(parent_chain) + [new_link]
@@ -475,6 +474,30 @@ class Signer:
     def get_did(self) -> str:
         """Returns the DID of this signer."""
         return self.did
+
+
+def _parent_proof_binding_value(parent_credential: dict) -> str:
+    """
+    The proof value a delegation link binds to its parent. When the parent
+    carries a proof set (a `proof` array), bind to the classical
+    `eddsa-jcs-2022` member, whose value is deterministic, falling back to the
+    first proof. For a single proof object, use its proof value.
+    """
+    proof = parent_credential.get("proof")
+    if isinstance(proof, list):
+        for entry in proof:
+            if (
+                isinstance(entry, dict)
+                and entry.get("cryptosuite") == data_integrity.CRYPTOSUITE_ID
+            ):
+                return entry.get("proofValue", "")
+        for entry in proof:
+            if isinstance(entry, dict) and entry.get("proofValue"):
+                return entry.get("proofValue", "")
+        return ""
+    if isinstance(proof, dict):
+        return proof.get("proofValue", "")
+    return ""
 
 
 def _is_sub_resource(child: str, parent: str) -> bool:

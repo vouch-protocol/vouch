@@ -30,8 +30,8 @@ func newTestSigner(t *testing.T, did string) *Signer {
 		t.Fatalf("seed generation: %v", err)
 	}
 	s, err := New(Config{
-		DID:         did,
-		Ed25519Seed:     seed,
+		DID:                  did,
+		Ed25519Seed:          seed,
 		DefaultExpirySeconds: 300,
 	})
 	if err != nil {
@@ -42,8 +42,8 @@ func newTestSigner(t *testing.T, did string) *Signer {
 
 func validIntent() map[string]any {
 	return map[string]any{
-		"action":  "read_database",
-		"target":  "users_table",
+		"action":   "read_database",
+		"target":   "users_table",
 		"resource": "https://api.example.com/v1/users",
 	}
 }
@@ -354,15 +354,15 @@ func TestDelegationAppendsLinkFromParent(t *testing.T) {
 
 	parentCred, _ := parent.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":  "plan_trip",
-			"target":  "destination:Paris",
+			"action":   "plan_trip",
+			"target":   "destination:Paris",
 			"resource": "https://travel-api.example.com/v1/bookings",
 		},
 	})
 	childCred, err := child.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":  "book_flight",
-			"target":  "flight:AF123",
+			"action":   "book_flight",
+			"target":   "flight:AF123",
 			"resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
 		},
 		ParentCredential: parentCred,
@@ -390,22 +390,70 @@ func TestDelegationAppendsLinkFromParent(t *testing.T) {
 	}
 }
 
+func TestDelegationFromProofSetParentBindsToClassicalMember(t *testing.T) {
+	parent := newTestSigner(t, "did:web:alice.example.com")
+	parentCred, _ := parent.Sign(SignOptions{
+		Intent: map[string]any{
+			"action":   "plan_trip",
+			"target":   "destination:Paris",
+			"resource": "https://travel-api.example.com/v1/bookings",
+		},
+	})
+	classical := parentCred["proof"].(map[string]any)
+	classicalPV, _ := classical["proofValue"].(string)
+
+	// Simulate a post-quantum proof-set parent: proof becomes an array.
+	proofSetParent := map[string]any{}
+	for k, v := range parentCred {
+		proofSetParent[k] = v
+	}
+	proofSetParent["proof"] = []any{
+		classical,
+		map[string]any{"type": "DataIntegrityProof", "cryptosuite": "mldsa44-jcs-2024", "proofValue": "uABC"},
+	}
+
+	if got := parentProofBindingValue(proofSetParent); got != classicalPV {
+		t.Fatalf("proof-set parent binding = %q, want the classical member %q", got, classicalPV)
+	}
+
+	child := newTestSigner(t, "did:web:assistant.example.com")
+	childCred, err := child.Sign(SignOptions{
+		Intent: map[string]any{
+			"action":   "book_flight",
+			"target":   "flight:AF123",
+			"resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
+		},
+		ParentCredential: proofSetParent,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	link := childCred["credentialSubject"].(map[string]any)["delegationChain"].([]any)[0].(map[string]any)
+	want := classicalPV
+	if len(want) > 64 {
+		want = want[:64]
+	}
+	if link["parentProofValue"] != want {
+		t.Fatalf("parentProofValue = %v, want %q", link["parentProofValue"], want)
+	}
+}
+
 func TestDelegationResourceNarrowingViolation(t *testing.T) {
 	parent := newTestSigner(t, "did:web:alice.example.com")
 	child := newTestSigner(t, "did:web:rogue.example.com")
 
 	parentCred, _ := parent.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":  "read",
-			"target":  "users",
+			"action":   "read",
+			"target":   "users",
 			"resource": "https://api.example.com/v1/users",
 		},
 	})
 
 	_, err := child.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":  "read",
-			"target":  "admin",
+			"action":   "read",
+			"target":   "admin",
 			"resource": "https://api.example.com/v1/admin",
 		},
 		ParentCredential: parentCred,
@@ -420,8 +468,8 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 
 func TestDelegationDepthLimit(t *testing.T) {
 	intent := map[string]any{
-		"action":  "read",
-		"target":  "data",
+		"action":   "read",
+		"target":   "data",
 		"resource": "https://api.example.com/v1/data",
 	}
 
@@ -436,7 +484,7 @@ func TestDelegationDepthLimit(t *testing.T) {
 	}
 	for i := 1; i <= 5; i++ {
 		cred, err = signers[i].Sign(SignOptions{
-			Intent:      intent,
+			Intent:           intent,
 			ParentCredential: cred,
 		})
 		if err != nil {
@@ -450,7 +498,7 @@ func TestDelegationDepthLimit(t *testing.T) {
 	}
 
 	if _, err := signers[6].Sign(SignOptions{
-		Intent:      intent,
+		Intent:           intent,
 		ParentCredential: cred,
 	}); err == nil {
 		t.Fatal("expected depth-limit error on 6th hop")
@@ -496,8 +544,8 @@ func TestLegacyAndModernCoexist(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 type jcsVector struct {
-	Name   string `json:"name"`
-	Input   any  `json:"input"`
+	Name      string `json:"name"`
+	Input     any    `json:"input"`
 	Canonical string `json:"canonical"`
 }
 

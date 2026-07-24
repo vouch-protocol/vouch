@@ -67,6 +67,36 @@ type SignOptions struct {
 // Sign issues a Verifiable Credential with a Data Integrity
 // proof using the eddsa-jcs-2022 cryptosuite (Specification §5, §7.1).
 // Returns the credential as a map suitable for JSON serialization.
+// parentProofBindingValue returns the proof value a delegation link binds to
+// its parent. When the parent carries a proof set (a proof array), it binds to
+// the classical eddsa-jcs-2022 member, whose value is deterministic, falling
+// back to the first proof. For a single proof object it uses that proof's value.
+func parentProofBindingValue(parentCredential map[string]any) string {
+	switch proof := parentCredential["proof"].(type) {
+	case map[string]any:
+		v, _ := proof["proofValue"].(string)
+		return v
+	case []any:
+		var first string
+		for _, entry := range proof {
+			pm, ok := entry.(map[string]any)
+			if !ok {
+				continue
+			}
+			pv, _ := pm["proofValue"].(string)
+			if first == "" {
+				first = pv
+			}
+			if cs, _ := pm["cryptosuite"].(string); cs == CryptosuiteEddsaJcs2022 {
+				return pv
+			}
+		}
+		return first
+	default:
+		return ""
+	}
+}
+
 func (s *Signer) Sign(opts SignOptions) (map[string]any, error) {
 	opts.Intent = mergeIntent(opts.Intent, opts.Action, opts.Target, opts.Resource)
 	chain := opts.DelegationChain
@@ -309,8 +339,7 @@ func (s *Signer) extendDelegationChain(
 		}
 	}
 
-	parentProof, _ := parentCredential["proof"].(map[string]any)
-	parentProofValue, _ := parentProof["proofValue"].(string)
+	parentProofValue := parentProofBindingValue(parentCredential)
 	if len(parentProofValue) > 64 {
 		parentProofValue = parentProofValue[:64]
 	}

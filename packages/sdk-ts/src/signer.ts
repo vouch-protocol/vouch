@@ -10,7 +10,7 @@
 import * as crypto from 'crypto';
 import * as jose from 'jose';
 
-import { buildProof } from './data-integrity';
+import { CRYPTOSUITE_ID, buildProof } from './data-integrity';
 import {
   buildDualProof,
   generateMLDSA44KeyPair,
@@ -34,6 +34,32 @@ import {
 } from './vc';
 
 const MAX_CHAIN_DEPTH = 5;
+
+/**
+ * The proofValue that binds a delegation link to its parent credential. A
+ * classical parent carries a single proof object, so its own proofValue is
+ * used. A post-quantum parent carries a proof SET (an array), which has no
+ * top-level proofValue: the binding is taken from the array's classical
+ * `eddsa-jcs-2022` member, whose proofValue is the stable, deterministic one,
+ * falling back to the first proof in the set when no classical member is
+ * present. Returns undefined when no proofValue can be resolved.
+ */
+function parentProofBindingValue(
+  parentCredential: VouchCredential
+): string | undefined {
+  const proof = (
+    parentCredential as {
+      proof?:
+        | { cryptosuite?: string; proofValue?: string }
+        | Array<{ cryptosuite?: string; proofValue?: string }>;
+    }
+  ).proof;
+  if (Array.isArray(proof)) {
+    const classical = proof.find((p) => p?.cryptosuite === CRYPTOSUITE_ID);
+    return (classical ?? proof[0])?.proofValue;
+  }
+  return proof?.proofValue;
+}
 
 /**
  * Signer for creating Vouch credentials (modern) or Vouch-Tokens (legacy).
@@ -448,14 +474,14 @@ export class Signer {
       );
     }
 
-    const parentProof = (parentCredential as { proof?: { proofValue?: string } }).proof;
+    const parentProofValue = parentProofBindingValue(parentCredential);
     const newLink: DelegationLink = {
       issuer: parentCredential.issuer,
       subject: this.did,
       intent: currentIntent,
       validFrom: parentCredential.validFrom,
       validUntil: parentCredential.validUntil,
-      parentProofValue: parentProof?.proofValue?.slice(0, 64),
+      parentProofValue: parentProofValue?.slice(0, 64),
     };
 
     return [...parentChain, newLink];
