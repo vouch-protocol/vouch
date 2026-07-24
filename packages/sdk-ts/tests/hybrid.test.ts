@@ -12,9 +12,12 @@ import {
   encodeMLDSA44Public,
   decodeMultikey,
   HYBRID_CRYPTOSUITE_ID,
+  MLDSA44_CRYPTOSUITE_ID,
+  DATA_INTEGRITY_CRYPTOSUITE,
   DATA_INTEGRITY_PROOF_TYPE,
   buildHybridProof,
   verifyHybridProof,
+  verifyDualProof,
   generateMLDSA44KeyPair,
   hybridVerificationMethodPair,
   buildVouchCredential,
@@ -78,7 +81,7 @@ describe('Multikey ML-DSA-44', () => {
 // ---------------------------------------------------------------------------
 
 describe('Signer.signHybrid', () => {
-  test('produces a hybrid cryptosuite proof', async () => {
+  test('produces a post-quantum proof set', async () => {
     const { signer } = await newSigner();
     const cred = await signer.signHybrid({ intent: intent() });
 
@@ -86,12 +89,33 @@ describe('Signer.signHybrid', () => {
     expect(cred.type).toContain(VC_TYPE);
     expect(cred.type).toContain(VOUCH_CREDENTIAL_TYPE);
 
-    const proof = (cred as { proof?: Record<string, unknown> }).proof!;
-    expect(proof.type).toBe(DATA_INTEGRITY_PROOF_TYPE);
-    expect(proof.cryptosuite).toBe(HYBRID_CRYPTOSUITE_ID);
-    expect(proof.proofPurpose).toBe('assertionMethod');
-    expect(proof.verificationMethod).toBe(signer.verificationMethodId());
-    expect((proof.proofValue as string).startsWith('z')).toBe(true);
+    const proofs = (cred as { proof?: Array<Record<string, unknown>> }).proof!;
+    expect(Array.isArray(proofs)).toBe(true);
+    expect(proofs).toHaveLength(2);
+
+    const [ed, ml] = proofs;
+    expect(ed.type).toBe(DATA_INTEGRITY_PROOF_TYPE);
+    expect(ed.cryptosuite).toBe(DATA_INTEGRITY_CRYPTOSUITE);
+    expect(ed.proofPurpose).toBe('assertionMethod');
+    expect(ed.verificationMethod).toBe(signer.verificationMethodId());
+    expect((ed.proofValue as string).startsWith('z')).toBe(true);
+
+    expect(ml.type).toBe(DATA_INTEGRITY_PROOF_TYPE);
+    expect(ml.cryptosuite).toBe(MLDSA44_CRYPTOSUITE_ID);
+    expect(ml.proofPurpose).toBe('assertionMethod');
+    expect(ml.verificationMethod).toBe(
+      hybridVerificationMethodPair(signer.verificationMethodId()).mldsa44
+    );
+    expect((ml.proofValue as string).startsWith('u')).toBe(true);
+  });
+
+  test('never emits the pre-alignment composite cryptosuite', async () => {
+    const { signer } = await newSigner();
+    const cred = await signer.signHybrid({ intent: intent() });
+    const proofs = (cred as { proof?: Array<Record<string, unknown>> }).proof!;
+    for (const p of proofs) {
+      expect(p.cryptosuite).not.toBe(HYBRID_CRYPTOSUITE_ID);
+    }
   });
 
   test('exposes ML-DSA-44 public key in Multikey form', async () => {
@@ -107,7 +131,7 @@ describe('Signer.signHybrid', () => {
 // Verification roundtrip
 // ---------------------------------------------------------------------------
 
-describe('verifyHybridProof', () => {
+describe('verifyDualProof on Signer-issued credentials', () => {
   test('accepts a valid credential signed with the same signer', async () => {
     const { signer, publicKeyJwk } = await newSigner();
     const cred = await signer.signHybrid({ intent: intent() });
@@ -115,7 +139,7 @@ describe('verifyHybridProof', () => {
     const ed25519Pub = publicKeyObject(publicKeyJwk);
     const mldsa44Pub = signer.publicKeyMLDSA44();
 
-    const ok = verifyHybridProof(
+    const ok = verifyDualProof(
       cred as unknown as Record<string, unknown>,
       ed25519Pub,
       mldsa44Pub
@@ -131,7 +155,7 @@ describe('verifyHybridProof', () => {
     const ed25519Pub = publicKeyObject(publicKeyJwk);
     const mldsa44Pub = signer.publicKeyMLDSA44();
 
-    const ok = verifyHybridProof(
+    const ok = verifyDualProof(
       cred as unknown as Record<string, unknown>,
       ed25519Pub,
       mldsa44Pub
@@ -147,7 +171,7 @@ describe('verifyHybridProof', () => {
     const wrongEd = publicKeyObject(other.publicKeyJwk);
     const mldsa44Pub = signer.publicKeyMLDSA44();
 
-    const ok = verifyHybridProof(
+    const ok = verifyDualProof(
       cred as unknown as Record<string, unknown>,
       wrongEd,
       mldsa44Pub
@@ -163,7 +187,7 @@ describe('verifyHybridProof', () => {
     const ed25519Pub = publicKeyObject(publicKeyJwk);
     const wrongMld = await other.signer.publicKeyMLDSA44();
 
-    const ok = verifyHybridProof(
+    const ok = verifyDualProof(
       cred as unknown as Record<string, unknown>,
       ed25519Pub,
       wrongMld
@@ -188,7 +212,7 @@ describe('Hybrid and eddsa-jcs-2022 paths coexist', () => {
     expect(ed.isValid).toBe(true);
 
     const credHyb = await signer.signHybrid({ intent: intent() });
-    const ok = verifyHybridProof(
+    const ok = verifyDualProof(
       credHyb as unknown as Record<string, unknown>,
       publicKeyObject(publicKeyJwk),
       signer.publicKeyMLDSA44()
@@ -196,11 +220,11 @@ describe('Hybrid and eddsa-jcs-2022 paths coexist', () => {
     expect(ok).toBe(true);
   });
 
-  test('eddsa-jcs-2022 verifier rejects hybrid cryptosuite identifier', async () => {
+  test('single-proof eddsa-jcs-2022 verifier rejects a proof set', async () => {
     const { signer, publicKeyJwk } = await newSigner();
     const credHyb = await signer.signHybrid({ intent: intent() });
 
-    // Standard eddsa-jcs-2022 verifier should not accept hybrid proofs.
+    // The single-proof verifier does not consume a proof set.
     const result = await Verifier.verify(
       credHyb,
       publicKeyObject(publicKeyJwk)

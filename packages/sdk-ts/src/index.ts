@@ -8,9 +8,9 @@
  *
  * 1. Cryptographic SDK (v1.0+): Verifiable Credentials issuance
  *  and verification with Data Integrity proofs (`eddsa-jcs-2022`),
- *  Multikey verification methods, optional hybrid post-quantum profile
- *  (`hybrid-eddsa-mldsa44-jcs-2026`). Use for issuing and verifying
- *  Vouch credentials directly.
+ *  Multikey verification methods, optional post-quantum profile (a proof
+ *  set of `eddsa-jcs-2022` and `mldsa44-jcs-2024`). Use for issuing and
+ *  verifying Vouch credentials directly.
  *
  * 2. Daemon Client: A client library for communicating with the Vouch
  *  Bridge Daemon over HTTP/fetch. Works in both Browser and Node.js.
@@ -109,18 +109,30 @@ export {
 export {
   buildProof,
   verifyProof,
+  hashData,
+  legacyProofDigest,
   CRYPTOSUITE_ID as DATA_INTEGRITY_CRYPTOSUITE,
   PROOF_TYPE as DATA_INTEGRITY_PROOF_TYPE,
 } from './data-integrity';
 export type { DataIntegrityProof } from './data-integrity';
 export {
+  buildDualProof,
+  signDual,
+  verifyDualProof,
+  isMlDsaCryptosuite,
   buildHybridProof,
   verifyHybridProof,
   generateMLDSA44KeyPair,
   hybridVerificationMethodPair,
   HYBRID_CRYPTOSUITE_ID,
+  MLDSA44_CRYPTOSUITE_ID,
+  MLDSA44_LEGACY_CRYPTOSUITE_ID,
 } from './data-integrity-hybrid';
-export type { HybridKeyPair, BuildHybridProofOptions } from './data-integrity-hybrid';
+export type {
+  HybridKeyPair,
+  BuildHybridProofOptions,
+  BuildDualProofOptions,
+} from './data-integrity-hybrid';
 
 // Robotics (Phase 5): hardware-rooted robot identity and embodied-agent
 // credentials, byte-identical with the Python `vouch.robotics` package.
@@ -414,9 +426,10 @@ export type {
   BuildConsentEvidenceOptions,
 } from './robotics/consent';
 
-// Robot post-quantum signing (hybrid Ed25519 + ML-DSA-44, Specification §13.2)
+// Robot post-quantum signing (Ed25519 + ML-DSA-44 proof set, Specification §13.2)
 export {
   CLASSICAL_CRYPTOSUITE,
+  PQ_CRYPTOSUITE,
   HYBRID_CRYPTOSUITE,
   signPq,
   isPq,

@@ -21,6 +21,8 @@ import {
   verifyRobotCredential,
   migrateToPq,
   HYBRID_CRYPTOSUITE,
+  PQ_CRYPTOSUITE,
+  DATA_INTEGRITY_CRYPTOSUITE,
 } from '../src';
 
 const VECTOR = JSON.parse(
@@ -91,14 +93,23 @@ describe('post-quantum robot credential (cross-language interop)', () => {
   });
 });
 
-describe('hybrid signing round-trip', () => {
-  it('signs a robot credential hybrid and verifies it', async () => {
+describe('post-quantum signing round-trip', () => {
+  it('signs a robot credential as a proof set and verifies it', async () => {
     const { signer, edJwk, mldsa44Multikey } = await newRobotSigner();
     const signed = await signPq(robotCredentialBody(), signer);
 
-    expect((signed.proof as Record<string, unknown>).cryptosuite).toBe(
-      HYBRID_CRYPTOSUITE
-    );
+    const proofs = signed.proof as Array<Record<string, unknown>>;
+    expect(Array.isArray(proofs)).toBe(true);
+    expect(proofs.map((p) => p.cryptosuite)).toEqual([
+      DATA_INTEGRITY_CRYPTOSUITE,
+      PQ_CRYPTOSUITE,
+    ]);
+    // The pre-alignment composite is never emitted.
+    expect(proofs.some((p) => p.cryptosuite === HYBRID_CRYPTOSUITE)).toBe(false);
+    // Rust convention: {issuer}#key-1 for Ed25519, {issuer}#key-2 for ML-DSA.
+    expect(proofs[0].verificationMethod).toBe(`${ROBOT}#key-1`);
+    expect(proofs[1].verificationMethod).toBe(`${ROBOT}#key-2`);
+    expect((proofs[1].proofValue as string).startsWith('u')).toBe(true);
     expect(isPq(signed)).toBe(true);
 
     const ok = verifyRobotCredential(signed, edJwk, {

@@ -12,8 +12,9 @@ import * as jose from 'jose';
 
 import { buildProof } from './data-integrity';
 import {
-  buildHybridProof,
+  buildDualProof,
   generateMLDSA44KeyPair,
+  hybridVerificationMethodPair,
 } from './data-integrity-hybrid';
 import {
   decode as decodeMultikey,
@@ -62,8 +63,8 @@ export class Signer {
   private rawPublicKeyBytesPromise!: Promise<Uint8Array>;
 
   // Set for a backend Signer (fromBackend): the private key lives outside this
-  // process and this callback produces the signature over the digest.
-  private signFunc?: (digest: Uint8Array) => Uint8Array;
+  // process and this callback produces the signature over the signing input.
+  private signFunc?: (signingInput: Uint8Array) => Uint8Array;
   private backendPublicKeyJwk?: string;
   private backendPublicMultikey?: string;
 
@@ -97,7 +98,7 @@ export class Signer {
     this.keyPromise = jose.importJWK(jwk as jose.JWK, 'EdDSA');
 
     // Modern Data Integrity path. Use Node's KeyObject for raw Ed25519
-    // signing of SHA-256 digests.
+    // signing of the Data Integrity signing input.
     const rawPriv = crypto.createPrivateKey({
       key: jwk as crypto.JsonWebKey,
       format: 'jwk',
@@ -146,8 +147,8 @@ export class Signer {
    * Build a Signer whose Ed25519 private key lives outside this process.
    *
    * Instead of a private JWK you supply the agent's public key and a callback
-   * `sign(digest) -> signature` that produces the Ed25519 signature over the
-   * digest. The raw key never enters this process, so it can live in an OS
+   * `sign(signingInput) -> signature` that produces the Ed25519 signature over
+   * the signing input. The raw key never enters this process, so it can live in an OS
    * secure element, a sidecar, a cloud KMS/HSM, or an MPC quorum. This Signer
    * issues Data Integrity credentials; the legacy JWS sign() and the hybrid
    * profile, which need the raw key, are not available.
@@ -155,8 +156,8 @@ export class Signer {
    * @param did The agent's DID.
    * @param publicKey The agent's public key as a JWK JSON string or a Multikey
    *          (z-prefixed) string.
-   * @param sign Callback that signs the 32-byte digest, returns the 64-byte
-   *        Ed25519 signature.
+   * @param sign Callback that signs the 64-byte Data Integrity signing input,
+   *        returns the 64-byte Ed25519 signature.
    */
   static fromBackend(
     did: string,
@@ -233,21 +234,38 @@ export class Signer {
   }
 
   /**
-   * Attach a hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof to a pre-built
-   * credential. The hybrid counterpart to `attachProof`, for custom credential
-   * types the caller assembles by hand. Lazily generates the ML-DSA-44 keypair.
+   * Attach a post-quantum proof SET to a pre-built credential: an
+   * `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof, each standing on
+   * its own. The post-quantum counterpart to `attachProof`, for custom
+   * credential types the caller assembles by hand. Any existing proof is
+   * replaced. Lazily generates the ML-DSA-44 keypair.
+   *
+   * The verification methods default to the signer's #key-1 (Ed25519) and the
+   * parallel #key-2 slot (ML-DSA-44); pass them explicitly to bind the proofs
+   * to a different subject, for example a robot credential whose issuer is not
+   * the signer's DID.
    */
   async attachProofHybrid(
-    credential: Record<string, unknown>
+    credential: Record<string, unknown>,
+    opts?: {
+      created?: Date;
+      ed25519VerificationMethod?: string;
+      mldsa44VerificationMethod?: string;
+    }
   ): Promise<Record<string, unknown>> {
     this.ensureMldsa44KeyPair();
     const ed25519PrivateKey = await this.rawPrivateKeyPromise;
-    const proof = buildHybridProof(credential, {
+    const pair = hybridVerificationMethodPair(this.verificationMethodId());
+    const proof = buildDualProof(credential, {
       ed25519PrivateKey,
       mldsa44SecretKey: this.mldsa44SecretKey!,
-      verificationMethod: this.verificationMethodId(),
+      ed25519VerificationMethod: opts?.ed25519VerificationMethod ?? pair.ed25519,
+      mldsa44VerificationMethod: opts?.mldsa44VerificationMethod ?? pair.mldsa44,
+      created: opts?.created,
     });
-    return { ...credential, proof };
+    const base: Record<string, unknown> = { ...credential };
+    delete base.proof;
+    return { ...base, proof };
   }
 
   /**
@@ -322,11 +340,12 @@ export class Signer {
   }
 
   /**
-   * Issue a Vouch Credential under the hybrid post-quantum profile
-   * (Specification §13.2). The credential carries a
-   * hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof containing both
-   * an Ed25519 signature and an ML-DSA-44 signature over the same
-   * canonical form. Verification REQUIRES both signatures to validate.
+   * Issue a Vouch Credential under the post-quantum profile
+   * (Specification §13.2). The credential carries a `proof` SET: one
+   * `eddsa-jcs-2022` proof and one `mldsa44-jcs-2024` proof, each computed
+   * over the same unsecured document with its own proof configuration.
+   * Verification REQUIRES both to validate, and a verifier that understands
+   * only one of the two cryptosuites can still check that proof.
    *
    * Note: this profile produces credentials roughly 2.5 KB larger than
    * the eddsa-jcs-2022 default. Callers using this profile SHOULD
@@ -357,15 +376,16 @@ export class Signer {
 
     this.ensureMldsa44KeyPair();
     const ed25519PrivateKey = await this.rawPrivateKeyPromise;
-    const proof = buildHybridProof(
+    const pair = hybridVerificationMethodPair(this.verificationMethodId());
+    credential.proof = buildDualProof(
       credential as unknown as Record<string, unknown>,
       {
         ed25519PrivateKey,
         mldsa44SecretKey: this.mldsa44SecretKey!,
-        verificationMethod: this.verificationMethodId(),
+        ed25519VerificationMethod: pair.ed25519,
+        mldsa44VerificationMethod: pair.mldsa44,
       }
     );
-    credential.proof = proof;
     return credential;
   }
 
