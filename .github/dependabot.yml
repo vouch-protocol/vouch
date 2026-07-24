@@ -38,3 +38,7 @@ updates:
       # Stay on v1 until the workflow is migrated to the newer input names.
       - dependency-name: "actions/first-interaction"
         update-types: ["version-update:semver-major"]
+    groups:
+      github-actions:
+        patterns:
+          - "*"
