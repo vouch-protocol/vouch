@@ -119,16 +119,16 @@ runtimes. The Go sidecar serves high-throughput edge deployments. All
 three implementations share byte-identical JCS canonicalization and pass
 a common interop test vector suite.
 
-### F. Hybrid Post-Quantum as an Optional Profile
-**Decision**: We define `hybrid-eddsa-mldsa44-jcs-2026` as an OPTIONAL
-profile in v1.0 that may become RECOMMENDED for regulated deployments
-in v1.1.
+### F. Post-Quantum as an Optional Profile
+**Decision**: We define a post-quantum profile, a Data Integrity proof set
+carrying an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof, as OPTIONAL,
+and it may become RECOMMENDED for regulated deployments.
 **Why**: NIST CNSA 2.0 and U.S. NSM-10 require quantum-resistant
 cryptography on phased timelines. Healthcare, banking, and capital
 markets credentials issued today may be litigated decades into the
-future. The hybrid path produces credentials with both an Ed25519 and
-ML-DSA-44 signature over the same canonical form so the credential
-remains valid under either algorithm.
+future. The proof set produces credentials with both an Ed25519 proof and an
+ML-DSA-44 proof over the same document, each independently verifiable, so a
+verifier that understands one cryptosuite can still check that proof.
 
 ---
 

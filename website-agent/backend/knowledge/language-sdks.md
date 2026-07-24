@@ -39,8 +39,8 @@ All of the local SDKs cover the same surface:
 
 - Sign and verify Vouch credentials (eddsa-jcs-2022)
 - Verify a credential's validity window
-- Post-quantum: ML-DSA-44 and dual proofs (Ed25519 plus ML-DSA), and verify the
-  older composite profile
+- Post-quantum: the proof set (an eddsa-jcs-2022 proof plus an mldsa44-jcs-2024
+  proof on the same credential)
 - Delegation: build a link and validate a chain's time-bound rule
 - Revocation: check a credential's BitstringStatusList status
 - Robotics: the six embodied-agent capabilities (see the Robotics section below)

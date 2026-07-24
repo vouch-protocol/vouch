@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: '%s - Vouch Protocol',
   },
   description:
-    'The standards-aligned cryptographic identity and accountability layer for autonomous AI agents. Verifiable Credentials with Data Integrity proofs, resource-bound delegation, the Heartbeat Protocol, and an optional hybrid post-quantum profile.',
+    'The standards-aligned cryptographic identity and accountability layer for autonomous AI agents. Verifiable Credentials with Data Integrity proofs, resource-bound delegation, the Heartbeat Protocol, and an optional post-quantum proof set.',
   metadataBase: new URL('https://vouch-protocol.com'),
   openGraph: {
     title: 'Vouch Protocol',

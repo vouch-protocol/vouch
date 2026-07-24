@@ -2,7 +2,7 @@
 
 Show me a Python quickstart for signing a Vouch credential against a did:web.
 
-How do I migrate my existing agent from classical Ed25519 to the hybrid post-quantum cryptosuite?
+How do I migrate my existing agent from classical Ed25519 to the post-quantum profile?
 
 My verifier returns "verificationMethod not found." Walk me through the likely causes.
 

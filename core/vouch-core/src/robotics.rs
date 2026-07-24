@@ -3504,6 +3504,17 @@ fn pq_verification_method(credential: &Value) -> String {
     format!("{issuer}#key-1")
 }
 
+/// The ML-DSA-44 verification method slot, matching the `#key-2` convention the
+/// language SDKs derive for the post-quantum member of a proof set.
+fn pq_mldsa_verification_method(credential: &Value) -> String {
+    let issuer = credential
+        .as_object()
+        .and_then(|o| o.get("issuer"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    format!("{issuer}#key-2")
+}
+
 /// Attach a hybrid (classical Ed25519 plus post-quantum ML-DSA-44) Data Integrity
 /// proof to a pre-built robot `credential`. Any existing proof is replaced. The
 /// robot signs with its Ed25519 seed and its ML-DSA-44 key pair; `created` is the
@@ -3514,19 +3525,46 @@ pub fn sign_pq(
     mldsa: &MlDsa44KeyPair,
     created: &str,
 ) -> Result<Value> {
-    let vm = pq_verification_method(credential);
-    hybrid::sign_composite(credential, ed25519_seed, mldsa, &vm, created)
+    let ed_vm = pq_verification_method(credential);
+    let ml_vm = pq_mldsa_verification_method(credential);
+    hybrid::sign_dual(credential, ed25519_seed, mldsa, &ed_vm, &ml_vm, created)
 }
 
-/// Return true if `credential` carries a hybrid post-quantum proof.
+/// Return true if `credential` carries a post-quantum proof, in either the
+/// proof-set shape (a `proof` array holding an ML-DSA-44 proof) or the
+/// pre-alignment composite shape.
 pub fn is_pq(credential: &Value) -> bool {
-    credential
-        .as_object()
-        .and_then(|o| o.get("proof"))
-        .and_then(|p| p.as_object())
-        .and_then(|p| p.get("cryptosuite"))
-        .and_then(|v| v.as_str())
-        == Some(HYBRID_CRYPTOSUITE)
+    let proof = match credential.as_object().and_then(|o| o.get("proof")) {
+        Some(p) => p,
+        None => return false,
+    };
+    match proof {
+        Value::Array(proofs) => proofs.iter().any(|p| {
+            matches!(
+                p.get("cryptosuite").and_then(|v| v.as_str()),
+                Some(hybrid::MLDSA44_CRYPTOSUITE_ID) | Some(hybrid::MLDSA44_LEGACY_CRYPTOSUITE_ID)
+            )
+        }),
+        Value::Object(o) => {
+            o.get("cryptosuite").and_then(|v| v.as_str()) == Some(HYBRID_CRYPTOSUITE)
+        }
+        _ => false,
+    }
+}
+
+/// Verify a post-quantum robot credential in whichever shape it carries. Both
+/// the Ed25519 and the ML-DSA-44 signatures MUST validate in either shape.
+fn verify_pq_either_shape(
+    credential: &Value,
+    ed25519_public_key: &[u8],
+    mldsa44_public_key: &[u8],
+) -> Result<bool> {
+    match credential.as_object().and_then(|o| o.get("proof")) {
+        Some(Value::Array(_)) => {
+            hybrid::verify_dual(credential, ed25519_public_key, mldsa44_public_key)
+        }
+        _ => hybrid::verify_composite(credential, ed25519_public_key, mldsa44_public_key),
+    }
 }
 
 /// Verify a hybrid robot credential. Both the Ed25519 and the ML-DSA-44 signature
@@ -3538,7 +3576,7 @@ pub fn verify_pq(
     mldsa44_public_key: &[u8],
 ) -> Result<bool> {
     let resolved_ml = coerce_mldsa44_public(mldsa44_public_key)?;
-    hybrid::verify_composite(credential, ed25519_public_key, &resolved_ml)
+    verify_pq_either_shape(credential, ed25519_public_key, &resolved_ml)
 }
 
 /// Verify a robot credential whether it carries a classical or a hybrid proof,
@@ -3561,7 +3599,15 @@ pub fn verify_robot_credential(
             None => return Ok(false),
         };
         let resolved_ml = resolve_mldsa44_public(ml)?;
-        return hybrid::verify_composite(credential, ed25519_public_key, &resolved_ml);
+        return verify_pq_either_shape(credential, ed25519_public_key, &resolved_ml);
+    }
+    // Supplying an ML-DSA-44 key means the caller requires the post-quantum
+    // proof. A credential that is not a post-quantum proof set is rejected here
+    // rather than verified under Ed25519 alone, so a post-quantum credential
+    // whose ML-DSA proof was stripped cannot be accepted as a classical one. A
+    // caller that intends to accept classical credentials passes no ML-DSA key.
+    if mldsa44_public_key.is_some() {
+        return Ok(false);
     }
     data_integrity::verify_proof(credential, ed25519_public_key)
 }
@@ -6832,11 +6878,23 @@ mod tests {
         let classical = classical_robot_credential(issuer, &seed);
         assert!(!is_pq(&classical));
 
-        // Sign hybrid; any prior proof is replaced by exactly one hybrid proof.
+        // Sign post-quantum; any prior proof is replaced by a proof set holding
+        // one classical and one ML-DSA-44 proof.
         let signed = sign_pq(&classical, &seed, &ml, "2026-02-01T00:00:00Z").unwrap();
         assert!(is_pq(&signed));
-        assert!(signed["proof"].is_object());
-        assert_eq!(signed["proof"]["cryptosuite"], json!(HYBRID_CRYPTOSUITE));
+        let proofs = signed["proof"].as_array().expect("proof set");
+        assert_eq!(proofs.len(), 2);
+        assert_eq!(
+            proofs[0]["cryptosuite"],
+            json!(hybrid::EDDSA_CRYPTOSUITE_ID)
+        );
+        assert_eq!(
+            proofs[1]["cryptosuite"],
+            json!(hybrid::MLDSA44_CRYPTOSUITE_ID)
+        );
+        // Each proof carries the Multibase encoding its cryptosuite specifies.
+        assert!(proofs[0]["proofValue"].as_str().unwrap().starts_with('z'));
+        assert!(proofs[1]["proofValue"].as_str().unwrap().starts_with('u'));
 
         // Round-trip: both signatures validate under the correct keys.
         assert!(verify_pq(&signed, &kp.public_key(), &ml.public_key()).unwrap());
@@ -6865,6 +6923,26 @@ mod tests {
 
         // A hybrid credential without the ML-DSA key returns false, not true.
         assert!(!verify_robot_credential(&signed, &kp.public_key(), None).unwrap());
+
+        // Downgrade by extraction: an attacker strips the proof set to the lone
+        // standalone classical proof. A verifier that supplies the ML-DSA key
+        // (so requires post-quantum) must reject it, not accept it as classical.
+        let proofs = signed["proof"].as_array().unwrap();
+        let classical_proof = proofs
+            .iter()
+            .find(|p| p["cryptosuite"] == json!(hybrid::EDDSA_CRYPTOSUITE_ID))
+            .unwrap()
+            .clone();
+        let mut stripped = signed.clone();
+        stripped["proof"] = classical_proof;
+        assert!(!is_pq(&stripped));
+        assert!(
+            !verify_robot_credential(&stripped, &kp.public_key(), Some(&ml.public_key())).unwrap(),
+            "a stripped proof set must not verify when the caller requires post-quantum"
+        );
+        // The extracted classical proof is genuine, so a caller that only does
+        // classical verification (no ML-DSA key) still accepts it.
+        assert!(verify_robot_credential(&stripped, &kp.public_key(), None).unwrap());
     }
 
     #[test]

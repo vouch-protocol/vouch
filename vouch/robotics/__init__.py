@@ -242,7 +242,9 @@ from .conformance import (
     verify_conformance_attestation,
 )
 from .pq import (
+    CLASSICAL_CRYPTOSUITE,
     HYBRID_CRYPTOSUITE,
+    POST_QUANTUM_CRYPTOSUITE,
     is_pq,
     migrate_to_pq,
     sign_pq,
@@ -527,7 +529,9 @@ __all__ = [
     "report_digest",
     "build_conformance_attestation",
     "verify_conformance_attestation",
-    # post-quantum (hybrid signing + backward-compatible verification)
+    # post-quantum (proof-set signing + backward-compatible verification)
+    "CLASSICAL_CRYPTOSUITE",
+    "POST_QUANTUM_CRYPTOSUITE",
     "HYBRID_CRYPTOSUITE",
     "sign_pq",
     "is_pq",

@@ -421,6 +421,47 @@ describe('Delegation chains', () => {
       })
     ).rejects.toThrow(/max depth/);
   });
+
+  test('binds to a proof-set (post-quantum) parent via its classical proof member', async () => {
+    const { signer: parent } = await newSigner('did:web:alice.example.com');
+    const { signer: child } = await newSigner('did:web:assistant.example.com');
+
+    // A post-quantum parent carries a proof SET (an array), not a single
+    // proof object. Build the classical credential, then re-sign it under the
+    // proof set so its `proof` is an array.
+    const classicalParent = await parent.sign({
+      intent: {
+        action: 'plan_trip',
+        target: 'destination:Paris',
+        resource: 'https://travel-api.example.com/v1/bookings',
+      },
+    });
+    const proofSetParent = (await parent.attachProofHybrid(
+      classicalParent
+    )) as unknown as VouchCredential;
+    const parentProofs = (proofSetParent as unknown as { proof: unknown }).proof;
+    expect(Array.isArray(parentProofs)).toBe(true);
+
+    const childCred = await child.sign({
+      intent: {
+        action: 'book_flight',
+        target: 'flight:AF123',
+        resource:
+          'https://travel-api.example.com/v1/bookings/flight-AF123',
+      },
+      parentCredential: proofSetParent,
+    });
+
+    const chain = childCred.credentialSubject.delegationChain!;
+    expect(chain).toHaveLength(1);
+    // The binding is derived from the parent's classical eddsa-jcs-2022 proof
+    // member, not silently dropped because the parent proof is an array.
+    const eddsaMember = (
+      parentProofs as Array<{ cryptosuite: string; proofValue: string }>
+    ).find((p) => p.cryptosuite === DATA_INTEGRITY_CRYPTOSUITE)!;
+    expect(chain[0].parentProofValue).toBeTruthy();
+    expect(chain[0].parentProofValue).toBe(eddsaMember.proofValue.slice(0, 64));
+  });
 });
 
 // ---------------------------------------------------------------------------

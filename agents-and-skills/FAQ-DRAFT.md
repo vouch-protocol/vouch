@@ -72,7 +72,7 @@ Go one. For everything else, pick the language you already deploy.
 A: The sidecar is security-critical; smaller code surface is safer.
 Python and TS sidecars implement the bare minimum to be useful (sign
 intents with Ed25519, return the credential) and intentionally leave
-out features like hybrid post-quantum, KMS integration, sensitive-mode
+out features like the post-quantum profile, KMS integration, sensitive-mode
 JWE wrapping, and Heartbeat validation. When you need those, switch
 to the Go sidecar.
 

@@ -5,6 +5,36 @@ All notable changes to Vouch Protocol will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Data Integrity proofs use the W3C hashing algorithm for their signing input:
+  the SHA-256 digest of the JCS-canonicalized proof configuration joined with
+  the SHA-256 digest of the JCS-canonicalized document, proof configuration
+  first. Proofs issued this way verify under conformant `eddsa-jcs-2022` and
+  `mldsa44-jcs-2024` implementations. Verification also accepts the earlier
+  signing input, so credentials issued before this change keep verifying.
+- The post-quantum profile is a Data Integrity proof set. A post-quantum
+  credential's `proof` is an array of two independent proofs, one
+  `eddsa-jcs-2022` and one `mldsa44-jcs-2024`, each computed over the same
+  document with only its own proof configuration. Each proof verifies on its
+  own, so a verifier that understands one cryptosuite can still check that
+  proof, and both must verify for the credential to be accepted.
+- The ML-DSA cryptosuite identifier is `mldsa44-jcs-2024`, matching the W3C
+  Quantum-Resistant Cryptosuites identifier. The earlier `mldsa44-jcs-2026`
+  identifier is accepted on verification.
+- ML-DSA proof values use base64url-nopad Multibase (`u`), the encoding the
+  Quantum-Resistant Cryptosuites specification defines. The classical
+  `eddsa-jcs-2022` proof value stays base58btc (`z`).
+
+### Deprecated
+
+- The composite cryptosuite `hybrid-eddsa-mldsa44-jcs-2026`, whose single
+  `proofValue` concatenated the two signatures, is retired. It is accepted on
+  verification and is never emitted, so credentials issued before this change
+  keep verifying.
+
 ## [2.0.0] - 2026-07-05
 
 ### Changed (BREAKING)

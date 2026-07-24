@@ -21,6 +21,8 @@ import {
   verifyRobotCredential,
   migrateToPq,
   HYBRID_CRYPTOSUITE,
+  PQ_CRYPTOSUITE,
+  DATA_INTEGRITY_CRYPTOSUITE,
 } from '../src';
 
 const VECTOR = JSON.parse(
@@ -91,14 +93,23 @@ describe('post-quantum robot credential (cross-language interop)', () => {
   });
 });
 
-describe('hybrid signing round-trip', () => {
-  it('signs a robot credential hybrid and verifies it', async () => {
+describe('post-quantum signing round-trip', () => {
+  it('signs a robot credential as a proof set and verifies it', async () => {
     const { signer, edJwk, mldsa44Multikey } = await newRobotSigner();
     const signed = await signPq(robotCredentialBody(), signer);
 
-    expect((signed.proof as Record<string, unknown>).cryptosuite).toBe(
-      HYBRID_CRYPTOSUITE
-    );
+    const proofs = signed.proof as Array<Record<string, unknown>>;
+    expect(Array.isArray(proofs)).toBe(true);
+    expect(proofs.map((p) => p.cryptosuite)).toEqual([
+      DATA_INTEGRITY_CRYPTOSUITE,
+      PQ_CRYPTOSUITE,
+    ]);
+    // The pre-alignment composite is never emitted.
+    expect(proofs.some((p) => p.cryptosuite === HYBRID_CRYPTOSUITE)).toBe(false);
+    // Rust convention: {issuer}#key-1 for Ed25519, {issuer}#key-2 for ML-DSA.
+    expect(proofs[0].verificationMethod).toBe(`${ROBOT}#key-1`);
+    expect(proofs[1].verificationMethod).toBe(`${ROBOT}#key-2`);
+    expect((proofs[1].proofValue as string).startsWith('u')).toBe(true);
     expect(isPq(signed)).toBe(true);
 
     const ok = verifyRobotCredential(signed, edJwk, {
@@ -146,6 +157,32 @@ describe('hybrid verification rejects invalid inputs', () => {
     const { signer, edJwk } = await newRobotSigner();
     const signed = await signPq(robotCredentialBody(), signer);
     expect(verifyRobotCredential(signed, edJwk)).toBe(false);
+  });
+});
+
+describe('post-quantum downgrade by extraction is rejected', () => {
+  it('rejects a proof set stripped to its lone eddsa proof when the ML-DSA key is supplied', async () => {
+    const { signer, edJwk, mldsa44Multikey } = await newRobotSigner();
+    const signed = await signPq(robotCredentialBody(), signer);
+    const proofs = signed.proof as Array<Record<string, unknown>>;
+    const eddsaProof = proofs.find(
+      (p) => p.cryptosuite === DATA_INTEGRITY_CRYPTOSUITE
+    );
+    // Attacker strips the proof set down to the standalone classical proof.
+    const stripped = { ...signed, proof: eddsaProof } as Record<string, unknown>;
+    expect(isPq(stripped)).toBe(false);
+
+    // The caller supplied the ML-DSA key, so it requires the post-quantum
+    // proof: the stripped classical credential must be rejected, never
+    // silently accepted under Ed25519 alone.
+    expect(
+      verifyRobotCredential(stripped, edJwk, {
+        mldsa44PublicKey: mldsa44Multikey,
+      })
+    ).toBe(false);
+
+    // A caller that passes no ML-DSA key accepts classical credentials.
+    expect(verifyRobotCredential(stripped, edJwk)).toBe(true);
   });
 });
 

@@ -1,7 +1,7 @@
-# Hybrid Post-Quantum Profile: Implementation Guide
+# Post-Quantum Profile: Implementation Guide
 
-> Optional v1.6+ profile. Default deployments use `eddsa-jcs-2022`. Use
-> the hybrid profile when your deployment is regulated under NIST
+> Optional profile. Default deployments use `eddsa-jcs-2022`. Use the
+> post-quantum profile when your deployment is regulated under NIST
 > CNSA 2.0, U.S. NSM-10, CNSSP-15, or a similar mandate that requires
 > quantum-resistant signatures, or when the credentials you issue today
 > may be litigated decades into the future (insurance, capital markets,
@@ -9,31 +9,46 @@
 
 ## What it is
 
-`hybrid-eddsa-mldsa44-jcs-2026` is a Data Integrity cryptosuite
-that signs every Vouch Credential with **both** Ed25519 (classical)
-and ML-DSA-44 (post-quantum) over the **same** JCS-canonicalized
-bytes. A verifier can require both signatures to validate, only
-Ed25519 (classical-only deployment), or only ML-DSA-44 (post-quantum
-mandated), all without re-issuing the credential.
+The post-quantum profile of Vouch Protocol is a Data Integrity **proof set**.
+The credential's `proof` is an array carrying two independent proofs:
 
-The technical novelty is the same-bytes property documented in
+| Cryptosuite | Algorithm | proofValue encoding |
+|---|---|---|
+| `eddsa-jcs-2022` | Ed25519 | base58btc multibase (`z`) |
+| `mldsa44-jcs-2024` | ML-DSA-44 (FIPS 204) | base64url-nopad multibase (`u`) |
+
+`mldsa44-jcs-2024` is the identifier from the W3C Quantum-Resistant
+Cryptosuites work, and that specification is also where the base64url-nopad
+proof value encoding comes from. The classical `eddsa-jcs-2022` suite is
+specified separately and keeps base58btc.
+
+Each proof is computed over the same unsecured document combined with its own
+proof configuration, so each proof verifies on its own and a verifier that
+understands one of the two cryptosuites can still check that proof. Both proofs
+must verify for the credential to be accepted.
+
+Credentials issued before this alignment keep verifying. The earlier
+`mldsa44-jcs-2026` identifier and the earlier composite
+`hybrid-eddsa-mldsa44-jcs-2026` proof, whose single `proofValue` concatenated
+the two signatures, are both accepted on verification and are never emitted.
+
+Binding both proofs to the same document is the property documented in
 [PAD-040](./disclosures/PAD-040-hybrid-composite-signature-same-canonical-bytes.md):
-a single SHA-256 of the canonical credential is signed by both
-algorithms, eliminating the bind-each-algorithm-to-different-
-serialization attack surface that other PQ/T composite drafts permit.
+an attacker cannot present a different serialization to one algorithm than to
+the other.
 
 ## When to use it
 
 | Deployment type | Recommendation |
 |---|---|
 | Public web app, low-stakes agent | `eddsa-jcs-2022` (default) |
-| Healthcare AI accessing PHI | Hybrid recommended |
-| Banking or capital markets agents | Hybrid recommended |
-| EU AI Act high-risk system | Hybrid recommended |
-| Insurance claims authorization | Hybrid required for long-tail liability |
-| FDA SaMD / clinical trials | Hybrid required for 21 CFR Part 11 long retention |
+| Healthcare AI accessing PHI | Post-quantum profile recommended |
+| Banking or capital markets agents | Post-quantum profile recommended |
+| EU AI Act high-risk system | Post-quantum profile recommended |
+| Insurance claims authorization | Post-quantum profile required for long-tail liability |
+| FDA SaMD / clinical trials | Post-quantum profile required for 21 CFR Part 11 long retention |
 | Government / federal contracts | Required by CNSA 2.0 / NSM-10 timeline |
-| IoT / edge devices | Default, hybrid only if mandated |
+| IoT / edge devices | Default, post-quantum profile only if mandated |
 
 ## Dependency setup
 
@@ -44,8 +59,7 @@ pip install vouch-protocol[pq]
 ```
 
 The `[pq]` extra installs `pqcrypto`, which provides ML-DSA-44 keypair
-generation, signing, and verification. The default `vouch-protocol`
-install does NOT include this dependency.
+generation, signing, and verification.
 
 ### TypeScript
 
@@ -63,7 +77,7 @@ The Go sidecar uses `github.com/cloudflare/circl/sign/mldsa/mldsa44`,
 which is already a transitive dependency via
 `github.com/cloudflare/circl`. No additional install is required.
 
-## Issuing a hybrid credential
+## Issuing a post-quantum credential
 
 ### Python
 
@@ -72,7 +86,7 @@ from vouch import Signer
 
 signer = Signer(private_key=jwk_str, did="did:web:agent.example.com")
 
-# Issue under the hybrid profile. The signer transparently generates
+# Issue under the post-quantum profile. The signer transparently generates
 # the ML-DSA-44 keypair if one is not already provisioned.
 credential = signer.sign_hybrid(intent={
   "action": "submit_clinical_finding",
@@ -80,9 +94,8 @@ credential = signer.sign_hybrid(intent={
   "resource": "https://fda-submissions.example.com/api/findings",
 })
 
-# The credential's proof.cryptosuite is "hybrid-eddsa-mldsa44-jcs-2026".
-# proof.proofValue is the multibase-encoded concatenation of the
-# Ed25519 signature (64 bytes) and the ML-DSA-44 signature (2,420 bytes).
+# credential["proof"] is an array of two Data Integrity proofs, one
+# "eddsa-jcs-2022" and one "mldsa44-jcs-2024", over the same document.
 ```
 
 ### TypeScript
@@ -121,58 +134,51 @@ cred, _ := s.SignHybrid(signer.SignOptions{
 })
 ```
 
-## Three verifier modes
+## The wire format
 
-A receiving service chooses one of three verification modes. The same
-issued credential satisfies all three, depending on the verifier's
-local policy.
-
-### Mode A: classical-only (Ed25519 only)
-
-For verifiers that have not yet deployed ML-DSA-44 verification logic.
-Splits the proofValue at byte 64, takes the first 64 bytes as the
-Ed25519 signature, ignores the ML-DSA-44 portion.
-
-```python
-# Python
-is_valid, passport = Verifier.verify(
-  credential,
-  public_key=ed25519_public_key,
-  hybrid_mode="classical_only",
-)
+```json
+{
+ "proof": [
+  {
+   "type": "DataIntegrityProof",
+   "cryptosuite": "eddsa-jcs-2022",
+   "verificationMethod": "did:web:agent.example.com#key-1",
+   "proofPurpose": "assertionMethod",
+   "created": "2026-05-13T10:00:00Z",
+   "proofValue": "z..."
+  },
+  {
+   "type": "DataIntegrityProof",
+   "cryptosuite": "mldsa44-jcs-2024",
+   "verificationMethod": "did:web:agent.example.com#key-2",
+   "proofPurpose": "assertionMethod",
+   "created": "2026-05-13T10:00:00Z",
+   "proofValue": "u..."
+  }
+ ]
+}
 ```
 
-### Mode B: post-quantum only (ML-DSA-44 only)
+## What a verifier does
 
-For verifiers operating under regulatory mandate that no longer
-accepts classical signatures. Splits the proofValue at byte 64, takes
-the remaining 2,420 bytes as the ML-DSA-44 signature, ignores the
-Ed25519 portion.
+A receiving service iterates the `proof` array and matches on `cryptosuite`.
 
-```python
-is_valid, passport = Verifier.verify(
-  credential,
-  public_key=mldsa44_public_key,
-  hybrid_mode="pq_only",
-)
-```
+- **A verifier that understands `eddsa-jcs-2022` only** takes that proof out of
+  the array and validates it on its own against the Ed25519 public key. This is
+  the path for a service that has not deployed ML-DSA-44 verification yet.
+- **A verifier that understands `mldsa44-jcs-2024` only** does the same with the
+  ML-DSA-44 proof and the ML-DSA-44 public key. This is the path for a service
+  operating under a mandate that calls for a quantum-resistant signature.
+- **Vouch Protocol verification** validates both proofs and accepts the
+  credential when both pass.
 
-### Mode C: both required (default for regulated)
+Decode each `proofValue` by its multibase prefix: `z` for base58btc on the
+`eddsa-jcs-2022` proof, `u` for base64url-nopad on the `mldsa44-jcs-2024`
+proof.
 
-The default for regulated deployments. Both signatures must validate
-against the same canonical bytes for the credential to be accepted.
+## DID Document for post-quantum agents
 
-```python
-is_valid, passport = Verifier.verify(
-  credential,
-  public_key=(ed25519_public_key, mldsa44_public_key),
-  hybrid_mode="both_required",
-)
-```
-
-## DID Document for hybrid agents
-
-A hybrid-issuing agent publishes both keys in its DID Document:
+An agent issuing under the profile publishes both keys in its DID Document:
 
 ```json
 {
@@ -192,7 +198,7 @@ A hybrid-issuing agent publishes both keys in its DID Document:
    "id": "did:web:agent.example.com#key-2",
    "type": "Multikey",
    "controller": "did:web:agent.example.com",
-   "publicKeyMultibase": "zM<...long base58btc string for ML-DSA-44, ~1.8 KB...>"
+   "publicKeyMultibase": "z<...long base58btc string for ML-DSA-44, ~1.8 KB...>"
   }
  ],
  "authentication": ["did:web:agent.example.com#key-1", "did:web:agent.example.com#key-2"],
@@ -200,42 +206,38 @@ A hybrid-issuing agent publishes both keys in its DID Document:
 }
 ```
 
-The `proof.verificationMethod` field of the credential points at
-`#key-1`. The verifier infers from the `cryptosuite` field that
-`#key-2` is the corresponding ML-DSA-44 verification method.
+Multikey values are base58btc (`z`) for both keys. Each proof names its own
+`verificationMethod`, so the Ed25519 proof points at `#key-1` and the ML-DSA-44
+proof points at `#key-2`.
 
 ## Performance and size considerations
 
-| Property | `eddsa-jcs-2022` | `hybrid-eddsa-mldsa44-jcs-2026` |
+| Property | `eddsa-jcs-2022` alone | With the `mldsa44-jcs-2024` proof |
 |---|---|---|
 | Ed25519 signature size | 64 bytes | 64 bytes |
 | ML-DSA-44 signature size | 0 | 2,420 bytes |
-| `proofValue` length (multibase z-prefix) | ~88 chars | ~3,375 chars |
 | ML-DSA-44 public key size | 0 | 1,312 bytes |
 | Multikey-encoded public key | ~48 chars | ~1,800 chars (ML-DSA-44 entry) |
 | Sign latency (Python, M2 Mac) | ~150 microseconds | ~3 milliseconds |
 | Verify latency (Python, M2 Mac) | ~250 microseconds | ~5 milliseconds |
 | Total credential size (typical) | ~700 bytes | ~3,200 bytes |
 
-The hybrid profile credentials exceed typical HTTP header size
-budgets. **Always transmit hybrid credentials in the HTTP request
-body** with `Content-Type: application/vc+vouch` (the prior
-`application/vouch+credential+json` form is retained as a transitional
-alias for backward compatibility). Header transport is not supported
-for the hybrid profile.
+A credential carrying the proof set exceeds typical HTTP header size budgets.
+**Always transmit it in the HTTP request body** with
+`Content-Type: application/vc+vouch` (the prior
+`application/vouch+credential+json` form is retained as a transitional alias for
+backward compatibility).
 
-## Migration path within the hybrid profile
+## Migration path
 
 | Phase | Issuer | Verifier |
 |---|---|---|
-| Today | Ed25519 only (`eddsa-jcs-2022`) | Mode A only |
-| Next 6 months | Hybrid optional | Mode A or Mode C, configurable |
-| 2027+ | Hybrid recommended for regulated | Mode C default for regulated |
-| 2030+ | Hybrid required by NIST CNSA 2.0 phase 2 | Mode C universal |
-| Future | Hybrid or ML-DSA-44-only (`mldsa44-jcs-2026`) | Mode C transitions to Mode B |
+| Today | Ed25519 only (`eddsa-jcs-2022`), the proof set optional | Validates the `eddsa-jcs-2022` proof, or both proofs |
+| As CNSA 2.0 phases in | The proof set recommended for regulated sectors | Validates both proofs by default in regulated sectors |
+| As classical signatures reach end-of-life | The proof set, or an ML-DSA-44 proof alone | Validates the `mldsa44-jcs-2024` proof |
 
-A credential issued today under the hybrid profile remains verifiable
-through every phase of this migration without re-issuance.
+A credential issued today under the profile remains verifiable through every
+phase of this migration without re-issuance.
 
 ## Cross-implementation interop
 
@@ -245,9 +247,9 @@ A conforming Python, TypeScript, or Go implementation MUST verify the
 included signed credential against the published Ed25519 and ML-DSA-44
 public keys.
 
-The vector exercises all three verification modes (classical-only,
-PQ-only, both-required) and includes a tamper test confirming both
-signatures fail when any byte of the canonical form is mutated.
+The vector exercises each proof on its own and both together, and includes a
+tamper test confirming both proofs fail when any byte of the canonical form is
+mutated.
 
 ## References
 

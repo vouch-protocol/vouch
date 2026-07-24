@@ -12,7 +12,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::{Map, Value};
 use std::fs;
 
-use vouch_core::data_integrity::proof_digest;
+use vouch_core::data_integrity::legacy_proof_digest;
 use vouch_core::hybrid;
 use vouch_core::pq;
 
@@ -39,7 +39,9 @@ fn verifies_noble_mldsa_signature() {
     unsigned.remove("proofValue");
     let mut cred = sc.clone();
     cred.as_object_mut().unwrap().remove("proof");
-    let digest = proof_digest(&cred, &unsigned).unwrap();
+    // The shared vector is the v1.6.x composite, signed over the pre-alignment
+    // digest, so the ML-DSA signature verifies against that digest.
+    let digest = legacy_proof_digest(&cred, &unsigned).unwrap();
 
     let proof_value = sc["proof"]["proofValue"].as_str().unwrap();
     let combined = bs58::decode(&proof_value[1..]).into_vec().unwrap();

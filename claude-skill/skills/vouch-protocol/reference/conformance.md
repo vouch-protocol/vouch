@@ -19,9 +19,10 @@ nonce replay resistance.
 revocation, delegation narrowing with the five-link depth bound, the
 Identity Sidecar allow and deny behaviour, and a hash-linked audit trail.
 
-**L3 State Verifiable + Post-Quantum.** Everything in L2, plus the hybrid
-dual-proof (`eddsa-jcs-2022` and `mldsa44-jcs-2026` over the same JCS
-bytes), the Heartbeat renewal chain, and an M-of-N validator quorum.
+**L3 State Verifiable + Post-Quantum.** Everything in L2, plus the
+post-quantum proof set (an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024`
+proof over the same document), the Heartbeat renewal chain, and an M-of-N
+validator quorum.
 
 Robotics is a separate profile, Robotics Conformant, not part of L1 to L3.
 
@@ -37,7 +38,7 @@ python -m vouch.conformance
 It runs the checks in-process against the SDK (canonicalization against
 the shared JCS vectors, a sign and verify round-trip with tamper
 rejection, revocation, delegation narrowing, the sidecar allow and deny
-behaviour, the audit trail, the hybrid dual-proof, the heartbeat chain,
+behaviour, the audit trail, the post-quantum proof set, the heartbeat chain,
 and the validator quorum) and prints a per-check pass or fail with the
 highest passing level.
 

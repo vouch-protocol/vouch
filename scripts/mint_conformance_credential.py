@@ -12,8 +12,9 @@ The conformance issuer key is read from the environment:
   VOUCH_CONFORMANCE_DID          Issuer DID, e.g. did:web:vouch-protocol.com:conformance
 
 For a post-quantum (L3-grade) badge, also set the persistent ML-DSA-44 issuer
-key. When both are present the badge carries the hybrid-eddsa-mldsa44-jcs-2026
-dual proof; otherwise it falls back to the classical eddsa-jcs-2022 proof:
+key. When both are present the badge carries a proof set: an eddsa-jcs-2022
+proof and an mldsa44-jcs-2024 proof in the credential's proof array. Otherwise
+it carries the single classical eddsa-jcs-2022 proof:
   VOUCH_CONFORMANCE_MLDSA_SECRET  base64 of the ML-DSA-44 secret key
   MLDSA_PUBLIC_MULTIKEY           the ML-DSA-44 public key as a z-multikey
 

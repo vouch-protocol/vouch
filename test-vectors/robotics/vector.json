@@ -38,10 +38,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z5cqkSwTzj6pGYH6Gev3pfb6qCg7XdFAk8fqTmFyjQVBisLw8RAkzKDpAsi1pnDDhRd1hiYBAevCPn9bYKdZApnHo"
+      "proofValue": "z2nh7TA6UhKCtAc5a5bVtfowtiPD3MCMs2F3XoK4j2qMUU1nFpWUJQx4LUgpMiViGujCs4zK4Wj3T5Pvc4MFyhch8"
     }
   },
   "config": {
@@ -170,10 +170,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "zgwivokVJ29Dum1uRKPPvwFuZ746ktr8PRwgWp48U1U4JCZkAPBeCqdmLzpiBdyCcTdj7vMknqxCRutHPmgGzKZ7"
+      "proofValue": "z2Vf1PSMXg87duQtPERwB2QvuKF26Uu4DdPJebFWgPh2H7DAkvfn4XnMtiPfFTLxgxppNjFWkKEyo56p3EEFdyXwF"
     }
   },
   "quorum_action_id": "vector-action-1",
@@ -198,10 +198,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:approver-1.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z2ET7TG6uEPkhnUJedBH7UUsUUKLyRjAXtUimHsYRQpraDTiQNQGjdLkpZnsJD1dnozkawTPNTV1h1uZcT4nK9oi8"
+        "proofValue": "z4s41yrjwoCBL7CmaUrFiK8BNx69QAQUfwJqav19fEM4x64AJrWarxnHYmyQhK1qtnAZJBKnrxg2qHSo2psN9nMtA"
       }
     },
     {
@@ -224,10 +224,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:approver-2.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z3mTjmDL6bTheqsSFTxHMHnUKMuEPKvLNeKvL7xSbdpntH3Ar6vmPMtPGzF9ETEmvDTz6WJqdiqnFmRgJWtHZijVZ"
+        "proofValue": "z4W7V7LiyahkCfdHK49KHQG7mopMo8bW3AqguLXhigNnUEG8Vesr1YAoNvbJ4GWwSvFwZ53DkAQV4jFm3wYdnNbXS"
       }
     }
   ],
@@ -262,10 +262,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:owner-a.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z5iZ9dQaA4Gx65i13kTwKqwZLeguzRDrYwAAomps6gZPvqjZ6WWwT1ZWjtcjhuyT8cKozgQG5igqFhSvhNq8XjKYo"
+      "proofValue": "zpLvTE5ZGGFLneQLdKF6T2WPK6GmkBgXyFkguVoQ3fDUewaL4nywrg134AMWcYCqYFeLwr9UiNzmAa8wtCvwPr9f"
     }
   },
   "ownership_transfer_owner_key": {
@@ -292,10 +292,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z35HZPHCH7cRYevffMF18zFSwn4dJLta2W9Z5XdL5TM8f7LxfLecsWpxDN27SBQg1aAeznTSdabfRyqWXW9GMS8Jr"
+      "proofValue": "zVE87FRdLqQRiSrDFBH8TQY4Qp4SgeXNtUVDmvE8B3BKvmAR8wGREPK1fnHJKzmHGe9VT94zCpfoHprCZDx139ra"
     }
   },
   "decommission_credential": {
@@ -318,10 +318,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:authority.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z2wr3HxSwNuYQ8UE2wpJn97FMzkHAqR7Z4EAzFg14Jrm76L6zZoHgC6QKM9XK7b9Y3YTW3cyUWNW1oLURzSd9t7VW"
+      "proofValue": "z255FTpz8ETUhW3UAqrBAbqyLWgakzAAGYmDo5q4osZN7LBzdmat7jshqA7twES3YUaENQzFoUGRxmFHrot9q3TL9"
     }
   },
   "decommission_authority_key": {
@@ -454,16 +454,26 @@
       ],
       "owner": "did:web:owner.example.com"
     },
-    "proof": {
-      "type": "DataIntegrityProof",
-      "cryptosuite": "hybrid-eddsa-mldsa44-jcs-2026",
-      "created": "2026-07-05T22:28:01Z",
-      "verificationMethod": "did:web:robot.example.com#key-1",
-      "proofPurpose": "assertionMethod",
-      "proofValue": "zXX4hY8vmkFuGr7atZmpo2qFuYRqfvxLpuvxZkven2jEXhs2qBMNDpQtdH7dpiN23yKe5s1YnbR46D1gunjC7j8iPm9M91CPxWb9aJeB7ziDSwTxyL3TnE3ufmwR21EAaLwWNKCDcyJQ7vGy792AJzccT1E1qjQkhBwq8Gd1eYDMvReDrE6xvDDr8SUQk2X6sUbcLYyS71wqT8Dx7S3mUugxkHb3m1TFokpTp2tL78eZCcpsR7PVEj9iiZHZSNjkTCpZDuQuhvd8M2W929x2WHLEj2cy6kcTEAWVdRNDArBAA9MQ2zxYwMunBnSmRmY14VvvtLsvJHuxQCefWRdrafN8ub6oyuRxQiyoLMbyKf6mfKbTxmLPxvfK4ED7P6kVGcNgLAqivD7eCkVh9VbvkAzBGPENHTrEZBSmug7BmYmNMHwXCKrQtBecCrLygnxLqbkDxxDxkJNXy8sN6yujxsfSXXuYXtuSZhFZMPXK9XcRrJ6xq9BpQmzKLTCyeKb3JANezdXCDSVmYSreeosCVYTeY7T2sgdFDb64L5cfMwNHkYiAhGWf4Py94YVBU9wYrnCyVxbBmi7fDLWXVuvdNQ1pEthn7ATei2DsUad2ZgbY4pbL6w2LwxeJ3UVrJfpbSgZbhAX99CQMqFTsuFLTCRKQh3kHuYvSyb6kBnaookJnHQjB3DcX9XE1w7fkxbdVkPeMnzpRqzQHFMxW5F5uuQBYiUNaQTNNPHdtsFoECA2TnEdHujRePBrsyr5CdQLCH9W9FLAwfu2y2EzDpvNfoBAbrzPCS7BFcJLKibBTrsKfukV1suaGxGPM4hg8kdQzSXDuBCye8iXeYZwv3F1NVs8ReLUystk1QmYX3uYW6zdcA356irJ4zbTRM96Hq5RWcrbQ9am769FxA4cTQF8F9pJU549BUYYaTTV2Q2QLsazjXesjFeLoW1M5BQYM32zesoVBtz7GHXyFfn7kCrNcGQHiJfZbuoWuX4rpkHgy99mWipoGmSta4hrUtwUbAyNCTF8oVFGRKAQKMGpDXfWYgiyTjSRpZfujKvAxcCwsyho5ZUqGKwtriJyCCQ4A5PiAq5tiRBGZL7VNKqwPFsA7ddCpsFdP7pAXAXgaoeiNLFnyemRLxuoGwe1voTnsQEEsFqpQ7b7HATqha5UVLFh2yBNxT7V2b7L6aUQXGC53qrKB15vTjniVtiyTiUE9S8XAZo62sBmpMC6Do9sRywT5ZjKswykJtACkZhTTfix1AuDKYCf55WDxQzjdbCucC6N2rrbdHvPXBmqc4conAwTJ28W69dUV6Gu1trKPkwCToscHrhPpJ51CdryuyMYMefhptzP34rXgigq42L8tx4W7FoXhUKwbqd5xipMB63ez4MnCMKY2biYJWhQ2PbEcKvGhX9XzRxVRGbUDPkZ6xbFR8dD7MrEVVBFYfJaZnJBhbDnTdSjRfgYzCVnWGWJVXp1wowYikFsEwbriFJPNMTzTdQKJ39oX2yw3fdi5Pc1xWwBGToPXsMNQW8sF2tGCUK6Qa4WB242C5KAC2eCLrxxxVLgi4nVKddzBuypw3ufwg9PTXFgfmC2gon7jGh3KUPTtLMmnhbiWpyaEt5JBcHEmNUUzkNBTX8Go65QJZVapnbGX2xCzSrKR5cgYrKYwyD4N1BEbbcdrHrRSpaQn2rGbm95SYVgjio7z5hCNaeJqsxaGaCFZEEMBbCz91sNqMvCNy9NSi6PSfoD1GdJBs8YWRozrZwDYJDnPfMZYHVVVEbyEBrLsNCdvm2Gst6P5tEFBAkur36fXXbScK9p37Tn65Jo3gXTWMWBcJVc8aUSxyW61tDeq81F1HXwEryJxgkrNYkZFDpLJMjsy5amuvnzjU4UEqZ3iPay4jprfqH6Azyj7vEcmAW6TzpQtP6ShFsLww8x3dbxskvLC2EUnHtdi9sHoDb3g6amPrTMrA5FR4nnewZkwD6kcBpseikp91d4QFJAtu5mGY6Wzev6Yds7fkP8YgBj6MVWRae1fuzFEgbNFaHqNwVjsG6g4mkmcYX5kgTBPRWEwAohfHmw74tTfspnbP48Eh1qdBt6JAzUQfRLj3dXmmMBNX3eUNdupcvpP3BgmWLpK9GkLMT19hyGcL4tLrPfHfDZcXjxGEzcZXxfnfYQ3QMZWhaVmoM282HiQh7hdG3e4i4V2KG73BB6sK5LLWWRxRsMBvnpWc8JwfssLKRFABcUVxUVUj1bMLYFQMar1svrAK5vGPoVr8pZSi8igApJXAoQpeJd7ShPgpBn9hVdKmSuDWRMWmE31H5C5z2DxByZDAdnjTuyUmi3tjBBzNAFjpnxWVFGfWmuXtisQZu2j668NiV91MqKe6GN2CoZkJohLQjkw1FpbpdUjZmQ7KEq6br9CB7e6iqSfydw7hFEqXwVjocsR5x7Co2y1G9u5YyUM2MzemH9i9cY4uNyY7EA2eKXi2oemSv6SXq63bKcepadLx4RpkDk8shCqJcjEEeGqKEQchnEWwS6cA9R7jVprSS9CaMjhs6Pnj9WgdNMMSw8TxXjY7iqBDX9TJKEogcdATuu2Dc1NhEeKPei669shZgyxdfhR51EHuQrj21p9sVZNby24YDnoRtb3tcoWGPAWgnvstcffHe6TwNdU3YV3xGxQMYcKo6ujiGH4ph81bB8t2DYYGdFrBuuFt8cusdEz4JAjCpGorrWx7esWSycBbVKwZfPc12cEDYiCXPrt26YWqG9YLS4LPdB966SedChL9s72w2kdUYkGJbvdFmK8XmZ6tacBuVN2f6S52Agoci3macanVWEvDYqy5Ni1iT6ug1Y2u8it3jrwTFYcmR24Ujm4t48A3g4JNhaAcRsH2ubrEcVJcyFmVBzs5NuDu91bbu7rBCGTgqWR5EL9hVhg5Bxhc91zFnQBJKzn45PAeBWQxyTRJcAugGpMKVVTdLJC8UmHPRbMzLj8EcXmZiTEbtg12Jzr8LdaDaCiz4pN6jXEqDKHYNC4dNixvfSbvff7AfkCUqoMuNqHn4NLGXpjpvF5oByuWQKTdWiHvJDozgm3VtbDRyiWAFE6PNWXw6fgaettP7F9XMwxmQAAzzDJqWMu3tEZNhDTX2izD3VHNA4dcNy3pLRHqTfBUPaLpRk4eFNoDuAqJtGRwTEFdHEiFDzVWLAsdXkyybYj6SmbtcBwsonw2przNQMJNgJGZ5ZfkfhJiUTbYzC4bLy83q9oYLHifmdVf9aWQxxeCiuYBUBjFAJU1CuTG7HSQma8oNxZu4um4uNeaJNbiCsWdTtVFLovYgiCN6vNGQoFqKRNfiLP3E59pHKT3h6gpYgcSvLVfiWQ6jbXbzuHe3FawQ6zeeqEwrsAKy76C5BVBs6bMfmttBqMyiikJYH7f"
-    }
+    "proof": [
+      {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "created": "2026-07-24T19:26:46Z",
+        "verificationMethod": "did:web:robot.example.com#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z2nh7TA6UhKCtAc5a5bVtfowtiPD3MCMs2F3XoK4j2qMUU1nFpWUJQx4LUgpMiViGujCs4zK4Wj3T5Pvc4MFyhch8"
+      },
+      {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "mldsa44-jcs-2024",
+        "created": "2026-07-24T19:26:46Z",
+        "verificationMethod": "did:web:robot.example.com#key-2",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "uYfVv6TIn8nnRNc9yvzBRygXPRzMjVcHg8b_VZS3NOJkKBMsPOYEhQ3w2EhpoFyF_Lus_ZPDHl_wcbSenOlXtVujpDw20m7kzT-5V8JXTa28-p-aqXIWYHZ6Eoc8ZOU8nAKJat9Ytd7ytOv3CAWGaQlg8cnNwK_BR63jpiA7btTGYmOShKloQspkufsZSWC93X-O9VpCFxQTSTRtKxz1eJr1z__HQD5MiFfQQHmSjpQxLrYoXkjBQK_F26Bpja7Ocx0_m1IP9S7L7YRVY-Tql5cs2S8DvpN329KzRtoo2zmpFZrSKXvRiY1pgJyAPrVg5bNTGCGBVTgUiMrQaWBlIBDLmDPlfKab6O2jsvgqfnqa_w3uDk3E9eTTAtTcqnDtUebEn-euXPzPlKGEAQcXn1jGaC7aSw4uYnW0yrmucSyws5IoBMWQb-f2-HtT5ZZvY-r4BoJzNobm5VSqxoirP08uF4u2ybwaQ1xPu9SLNLRyJn-PAYDKV6mSJA67imE2pKgY3e3MzixTW0GtE0oLwqBEnT4aDsgwkx-PnIvooZg7WESxUs1t2s8xEE4YiP4jIySsPRr3nqicTxuUW6Nz1XSEDcQHs80xkNcRkb9AWTHAv3RyvI11FBBvWZpBLNWjKOiR_l56aZfulM4UEeFpvoF2kqf0i0QbBcM8TakzsR9HiGov9eTdYk6rx4sM5frtN_o8G8gMymoGrwEWj51jhtJ3z6rJNnFfYRXLD1GAPaeHcGZgMXoTKgNXwYgE6IZgyWtIQVX9Vol66IkOwg4aEsnfcaVK4BvUaA9Tq1RTyS95S8jknp3JGafR2G8T0F0OqRTbizcUBd29KVtkQrkCakE5UnQ-b1Yj832Hnd-BSqTLmP8SsIVEEJ_nTUn_Ziajk9Ffb2X6A9Dj0JFGqmr5r1qgPfKnnqFw2G2WW0r4OwSBv0k4uoEnYiuVGYxrG2ZtTPxAVfg0DQTIYrxCM7SQ5UYszQrbgapf3hvtAhx0eV2tZWcXftqP1nOc5xIPSOQr-mh02c7utAw8zSJpPfc3v6vE5odyCYSaDTCVj_t8Dz7APNIiFqoZhSIqhDwOiDRC9i6B1bj7ErtZFd3Bbob-pGSy8iVXNwJGsEEjrXRm8bTiqHR4Y8a1s-tJX-ihNbkmFW1T-YsgdEOYHDWLpnQ4-lN9GxS9hXV8CM95plUDOtJkkVlVbAfvqcTiz4rBhUKjB2lNYMGBwAp1EV8pyD4DNDVtbwcw54PDOOlTVv1smVIN1rx7sP75iOo4dlpogL2kZrcLnnPsJWwHpJAkyAJRQEHr2ndLYNd3NG9EWsMZrgvVtTJrbHGm0eoZ1LHByjvubYiJg0guJkgYISks717jXwbptnLTxFKQQ9I0bPFVcOWE2RK9W0iFkbhLi4n210MweEcis7bn4u1r0up4iB3QAunQPwW4B-OzhOi41zTpj8rC_GgyuGHfYu1cq84Sbc3CAMV9ABZdx8XuenZvunAvLnGwk5WcejCzxRm6nblTXNQuJxOaL_WIyhXG4bPhJWArjjfTVRIYmLIUCfkEObfqdpNVC0CpqMtt9bUifG2BaqogyuxpUqYBTeI5HG8cCpWGSDEGVyH5R__t2qJwr_uA2d8bSm5xSbwFvzO_F70WCvYEEWoNi559XDDZngOK_dUAHL1jroecdjyjtokzo4xAlXeFT0yt4s70dUNkxnI3k7juB_79WghgHS_HBxP3az9DbMs2J3jofpIfBSY30KAf1F5_-d7pFoAT9PO8vvlpR_0ST2O-6bHTjsSqoS4uyo5h8fqhBswClAM8ut1W2quUUtSvuszm6eZG_vEYawmVg9qwtuluBkc6e77jLv_z8lHZTZ2ZbBUALRrcCZHJs23dLWk_svWcIjV7wzo35xw9180ShkAUDTbntUz2VyzOoTR6sHStntxHL37hkrSKY1P-VA9qrAWLJ3kmZs4qmEo28-M9dKaCApf2myqkGEzfIcj8Bnkwdip7UEIrYzGa4HTNCDyGuGTxQYNBxF8hnthIIRst6hOrAhtuoojp7fYARNxnK48D2DZscnjhEIPbEI-_6njcmgFPlSlCVElDSLC_zx32qWr7cFd92iZlPMwoG_Eosh7LdxK45G7VWUM3H34HWUE46MWZxaV5BDaSl2J1h2cMXNM3dBPfzRYArt5_UD_laxCehbyyXN5r6QWTncJkJst1qdPsForIxQHyYz-LaGWBxsrk8ZHxSi1jti3l3h6NdYZZLqVHXk95OGlOD0E_2YEaixBIJa1FPA0T8p_TKpNxZOfoMafUwab03bpk1iGMytzTMrrA7JNSH2p2Mgh9iP9zzWK-6bgEgxnnTImOnmQXDHIsdckA1e0qUPJwfV4Rp5qpC7QfCrekZ953dPn6dQZ5OlBqyV-uVVeGxPcR3Jye7NBy75C7haGnHyABEnMb6URJut1yzCviRX89ynUpwrvFZzkr8XxCd2QNz8_mIOi58Sfx30GYd6GV7csWQdkT5ZUP_EEtaYmbxoSX1kAkfwAkpdS4RNgoI_0P_PmBb03GGWFRR97mb0XQMXA04d0L1wICvwdS5Y_aZTqURjm-Yql-vB_5aKtZLGxg8eSELb0PlqavMmv7iNtwSe1YIQvPgVpRaxHt0q5twK3nW_9OWuHkC-dHEdUMKWxivPafMWA_p-xtEJrsoSqDeMBs8AdPAJ-UUAxNPrj9W3DcLVi1AEaJVV9BzyHsK3nwAJxeyYcLB08N-GWafHGRfqXMtybClOFzfzaZXgYz_8EDbgqGo647nysrJDa0rf_tDfVUff3CXudgHMHLxRL_ay5lpac-ij7Nzzv-4sfR7ounhjhG5w0Wq63blIrk9h4pvolZY_WhK1MySzsCMK7dvLEWN3eOQzqtOmc2muUcJ0OpLM9H0ezywQvntg0JPhw-yK19P_RN5UPy7y3A2wyRgnXSfbBWUI68tGgLo9ow3VKZArA7V38xOlu4xay84ycssQrwx7FA2vxpRQj4zm9Qi9HZoPuldb57P3VGjd1ewIhzj0_711NXxXiEJI8V572KmBIkeGasXniOwpni6WRaalH2xsT1CrCUe0GDJPEgFAMdRAg-OVbMDViOd9li02GJjURLevikwOExPdIKMr7XAx8zO1Nnf5_YICRQ8SWCMjp6jt7jg7wgdIjM0REVnh5Xa3ePl6hksLVVWdoGRsr7H3eL2-wAAAAAAAAAAAAAAAAAAAAAAABIgLz4"
+      }
+    ]
   },
-  "robot_mldsa44_public_multikey": "z4dcHiu8WbiN2vdTZjPVFLB4cnasq9Qh1TNNmUZ6MpmDCQBqrhfynDkhktAdeh4Xrd1QqGGoBxKPrXvSWsLpa9dhfHc3nFhZW8HgPPgsyp9XCZAMxq4Vu4Rcf9zYXnXNww3k6JPW8CmKWRfjcBwJuoeQsgthFrAXnUgM5TfiwVyjTNwirxDjjnMs3i9S3HnsKUBCj7N2jBec75dnHPub4GGvQxN3zBrgTuDAFEDMYaXzgWz96n5KZkAu368572ys4w14nX1BTHwC3RQnvQeT9RtLunW2ysT1hS6oJ6pCoysGtUXmnn376gUhuAk4svBnbDtGxkE2JXxD8mybBMvuuqWdNNSi4zCEgE2XszDFcXisivU819vKCZb56gjBcWjk5A51NcwXFW3oSGo1iXSMN2nWGLTdzNMPTDSRy51b2ZFqGaMn4774kGWAN4MEKEUWhKq6tALysEac2f4JFSz4xzFahbtcC8rt7L6ivBLYCcDXU2UN9G2skugv5XCiSc7UctrNk3Jq658wPtGkYJJrFggZNYmWMe2tkoWUoSHujN73VsyWSpx9dqpPm29a6fkYMtAcw6Ca7cJb7r8yHpMYVpZanxkvb2ee1a9dVtV47QFtWwBn77c8en7QBGifmiPsdjjHBMspngtX5YbyF6XPBZGSjP3QiE4nmuD8bF2gq5Y3KhaYBPuqyLch2GKznhwdS4PiL2nvZyvvtaGMB6hNkfae3byaWTaSkWSrAg76ctbfaKra1a88VcFBwqGDRYSasGKSaYPUA3HnHgxbC3LQPDhCvsRn1vX6hZP6UDq2hm6hkiPmwwJHonXoXkUsYJ8VgfkiuYSVKFTtQWBCxG1sAVt2myX3sa8R1SEPJRe22BhG1NyLZ5HX8HpoAxyGPBt42WnZZDY7QRNYPTW8oqP6DZNasgJHGHXq1VBGR5556x6kcEMxhegVCTiEGtDGS9NdihTyUMtp6h82S15Q6HXwNasntbYA2yHKiUYB9b4awS3RMRryjn5vS7KKinZZvwDjoqbDosZffkUy4JArKfsoxf4RsxzfJ1ViZtsGFcbQbbh82Vu6rr8zRW7RQGeLt5NDtTDNvm5rUC5bQ6UphdsN8iMiG8qDW3wJq7C5yYqMa616kAKaNJTDSZogU6tp94pvt3SUYfgU1Mi3ruF57hWanNrKBaG97S6hrsCi6PFJDDaiETRMLsraLUXAXvnWt2gBaHvW7sSoTnyifEbe67rFAUA7rfuJ3fpLvh4ZZXJU59qUAGvcyPqRMRAw833vUXxN6gLfibWSqmNg9iqNTWFDztdbdifTaFoMUqeyUEaLf71Sad8p3ZacE2fbDj5egCyLK2df9LRcBDwUgZX8AAeaHS8ksSwSYQbUG5UeWksQn6SjYNECemZbRjj211K2AknVu6houwu8N6nZDCWYusQF5CcVRpTDd1M1Wnp7CyBc5vrwLgoPUdaD8QJ6VnPcZQFhzAKLPp5EugijpUiTuVNfWRY7TixUXdJpwCYrstfHGgQr8YW6bp5JDaJsrdpYNGnmKtvBxbazpRBdu5NXAYCsZ8GmuPehiZwBF8zTLTtPLTP7hcXRQVnWbyByirCYc5gPF5qTZF5nHv33E1Q9evAoqmyy8TCRBf7ya1aoFbPNZ6sdrVoMMspELkXKLeAjBVoBDz3xMigLCxvwVQWcxYmNPHfo35ikDUZ6aJNet5tMq4hkqnMZykYDEuX2hfXonnFdokbFSiBAkSUZUKbGj7FCkvoL3ryWq3JUyA7PafXWjcGsTPgE8oyvadoLYW4K1YT4B3tF",
+  "robot_mldsa44_public_multikey": "z4dc6oskVQotaNNQviVgUXwcZMK7Az8irJXuCD8wmcJf9qdvh55UMgUrsexRfC4yWiTcifnGy8fSPxHsxsWtyGH4ShwMEAaJR3pPpeDbkue8TZsH5dFndMd3fSBeGx8ySUgh6cLQMJbk6NFrG9p4k8sQiwKZ6avZtUDYhnC32x6McPsR5g3gjotykMeFQ1P7KRC1SHC7abmFyDCKhdsQnrAeZjasjR25B4XympSPEXChTy9juAgoASxmEGV65kjG4uHPTK1gMWFKZXdwSiawhhLDUcfqoc1VGV5BWmQW9RU7dRN7z1qA84xg4UCz1uNMfRCdEstuK31EMXgKG2AWEuJoqsq1iAqxfpw624L6dXcQLi2tCXkS8UpHBizY4hcDAA8YJJQowrmVJErpeSJeSRf4EppGAhFkXdrsyw2TmXc6Jgwjx5ZH7RTQRxRSDUBCcJnb2MUC4wnP84Evna7ghjXcNhgaLwWbXC81DrJXZetxmkwFjypwRFog3rDQy3bpPb7WporgNxuk6ZCDNbrZHfPceorH7abaJeQBBYeKvtapkN3QftfvEZ9dXsE9mw48nGd5HZSLonhKmY78hYveJGsuroPEBM5kAzwMjZXYVvv7iiPMFvkqAxeaAXx3f5tpt4PwnX33SKtkZnHdzxpx4w7az76wU5YLjJQ9hRetL9L6S8eeRypJ6xg2ShANzswQEgGKmkpBq2q3GkaVJReKfaCQ7tdNRUttFhCTWMkvcC4mjGkThf8pd1iuuSh4XbFTMp8WaBUVvbrk19a7ExypgiZkZwxszNS7ttqdKDf63kZ2joMAzm6co26c6MFH4zSVBXDxv94tFMXk9F3YZCJkQJrb5eQai1hA4anGo7oYRaN1CBYSiLcsBrTvMkWDrcFGTTTxhpyAqGXgVvnAuMBCpKjBXBkcCe5APQFqYgkyK7SufruiVRjpDszYvPgCGWm6DU7XbpRkcxg6o4BdepfBCbEDi4peHD6sS63uzgLo3KFgDge5WZmAvdiPG55Xy2CWY4VrWLyrkXNanM5kWggQJ7RrMPHb3MFg6qbHccGbBXnxga9R4Kj81x1XwK7meNCVsd8JnjShKScU1Fs7yg4vegnm2xnEKZLUdFTGU5AKmqDhrrJxd7rbvyiQLADoEA24Nk7J6av4ovWVEMKciGXJo1xT5uXUjsFTGWSgt3rD6rFj3Ej5YSXMRuM4Mgxa3985frBAMyctqFmWjTVSrzvm6fErc6fZFJLUKAgRqqoHk1unmC1heEMraMfLA41gr9Smv758wqQakAEwys8fRDrEM2RYnnvevnPwmmECBvjLTv92b6tkfqde2BsFVBM4JSiNt6ntE3McEXxL7GPu1G8EvGhjAqfFPp8bmYEzpxrf1fD7fci7gn9FAuYisHyP2PT2zA5xJEznjUxkW8wkVEJFYTzgB18AaFAf6zN3M5sgArCfSp9SpEJVsYjk2EK7CaZMqfcTzqWRKMhF1bMiQJD9QfimWxyohxr9xdmpzWfRQmSmTFH5pWwewbDKwFMLVFKWeV9qEGVv21yVFKTtavYWJFxTUTZ67eZk2QqKfJZsWPwXX2tPnLk6XXhVbmd43qJCfHX5Y9esxiW4wh63hzXwSigurMxFG3zhczRed4gek3DiXoaUg3q8MaQSCk4t7ptP3KMzkQ6ZiJFMxmZEcThqNKxWc1J3dSqQtfZQssNhJ8u6nyDgTpXZypYDGyVARGLxLoRa7SoPAoA3nFir3FPJv3kqDbJFWUMZizRaTbhM2Qc6uQtNbRJjEsx4gxKEWohDtwGS",
   "embodiment_chain": [
     {
       "@context": [
@@ -485,10 +495,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:agent.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z2BEaiuudqiKESTrmbEFqw9pw1sYFyHMnqEPAuKTbcgQgDYqtzhvN2xrUNoMjFpjNoALLgL6WGPCHyKWgpRxoS591"
+        "proofValue": "z39fAA2CF6a3KqeDioESLuGp73CQiz8S4NnfhJTj5PrUEi4FVW1NyiySKj5LAfVw8uZHyxhQvcS4eo5Pr7NTS879t"
       }
     },
     {
@@ -511,10 +521,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:agent.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z5a7smVXdDYcgRda2QnyegAPAwBCPkGEV4F1Wzzin5ip7dC63so2SCJKVbeuiTnLB2vQkU3g4TMYNx5HrG473FhPR"
+        "proofValue": "z5JEvzDPALHvQWfLYyq4boZEJFrasvgVy7Phwnjk9Ny3q2Xcmk4fYq5An2KNzAcbeyi31tZ7ZrMQ14U3B8ZCAXswX"
       }
     }
   ],
@@ -544,10 +554,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:robot-a.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z3WcFx6gYJuQYGG6Ms3mga1NzQXYCUA37ULERmfYgRcC7Fv58fED5D1P6ZVSgHjuURcB3bxNggbKpjaVscVUywhYS"
+        "proofValue": "z4hbCmtDki1LrqVpHA17Qtsax1R4g18cRBReKUaLLNJkN8v3da12hpP1hHjGZey15AWNq6TghPSpMDdG71dsdBnp1"
       }
     },
     {
@@ -570,10 +580,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:robot-b.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z2YDWZuU5PcES7HsVpdBkpDoew8ymfQ8HYQDjKGbEEsQAXXJ9eiLRPBHTDV4nvSFCcE4eRXXrqRcecrWGdyqUsAhx"
+        "proofValue": "zWQQPc1Ah5F4V8gRaoBPwdeSGtPnToFDvcakidHc8zkbe5RZxWqf4ohzZ7j5AoeXRwXnJdgp2JiJeEr1DusR31TS"
       }
     }
   ],
@@ -614,10 +624,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:facility-ops.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z3XG8DSRA1bt1E4wG8y6eQAeoS4cnzjhfQ89vJjuRGWBRnhpXoHYxGwkbJYcRJPcsyr5tg3k6AuMHvP4jWtVJS2mq"
+      "proofValue": "z447FQR5y1d9ZmZoqCT7r2zqnqhUbHgHoKbKDZCJ6PzV9nVnMisbDPWErATNDzscDEvCRUPUqYSyudo3iuaDxodRb"
     }
   },
   "access_request_credential": {
@@ -639,10 +649,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:robot-a.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4j7A4nGStE14sin57v4AMghgrY9pP6Z2G4VXkkB7JfCcwnF85bDpE6nLVWJmU73SRYqEkkuXwcLyyho7AhfvDqkV"
+      "proofValue": "z5thdEqsE3UfRVw8AgJyyL9YKr3g4QgEdXMBtSFsyqVk881G6XMvbkNCy8HuDLs3pHjVrWb1iLUA4eLdT6sQ3JymF"
     }
   },
   "access_operator_key": {
@@ -672,7 +682,7 @@
       "FusedPerceptionAttestation"
     ],
     "issuer": "did:web:robot.example.com",
-    "validFrom": "2026-07-05T22:28:01Z",
+    "validFrom": "2026-07-24T19:26:46Z",
     "credentialSubject": {
       "id": "did:web:robot.example.com",
       "fusionMethod": "occupancy-grid-v1",
@@ -688,10 +698,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z3zhYSYfBZqxK5mMBmPfPGLvQjtEYRtgXkCwM3Fa7XzXESS1yAixCYXVP8F6VgK8nKeEpPsD5AYPbTBe8ujAu9vup"
+      "proofValue": "z5qun1XhTQKQwFgxUyaGsJoaNgqCA5rQfNFr34JC2VaBKzLhxRSjdoBWJBJ1DEYzTzeMA2rgTMiU42omkK6Exh9XK"
     }
   },
   "wear_chain": [
@@ -718,10 +728,10 @@
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:robot.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "z5GhEVLFLejTCoR2ESRyssKJsjTXCk6N8atbLJbCddoTtmQVizPvs9pxQw18Jha5igyTH1dFamxBsPFSTHXgVHRaB"
+        "proofValue": "z2nkYCSWBo3oRSBTok5jkQYfvvwf76F9Zfbkd27vsBxTc9fGjUh6XyCkYExd2t1ARUHHeimYYrr7FxsGbYwrQ7x6d"
       }
     },
     {
@@ -743,15 +753,15 @@
           "actuatorWear": 0.3,
           "cycleCount": 120000
         },
-        "prevProof": "z5GhEVLFLejTCoR2ESRyssKJsjTXCk6N8atbLJbCddoTtmQVizPvs9pxQw18Jha5igyTH1dFamxBsPFSTHXgVHRaB"
+        "prevProof": "z2nkYCSWBo3oRSBTok5jkQYfvvwf76F9Zfbkd27vsBxTc9fGjUh6XyCkYExd2t1ARUHHeimYYrr7FxsGbYwrQ7x6d"
       },
       "proof": {
         "type": "DataIntegrityProof",
         "cryptosuite": "eddsa-jcs-2022",
-        "created": "2026-07-05T22:28:01Z",
+        "created": "2026-07-24T19:26:46Z",
         "verificationMethod": "did:web:robot.example.com#key-1",
         "proofPurpose": "assertionMethod",
-        "proofValue": "zpJ8KRBb8pTfZ2wkodBzqX8xkQrbPyLMxzbw34yQEoGfUh4otNypMgTznohjNv1qy1r4JG5QV9iVPGsq6dcykb3w"
+        "proofValue": "z4hBsMR8DeHPStUy6QXPT51KyAATR3io6tJyFsRNcWRCemFGV3f4PofuNZaTUNeSKoo3gWV2HR3FJoL8zpv4JQcpv"
       }
     }
   ],
@@ -805,10 +815,10 @@
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:person-1.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "zByLGEoxBnkfxj2DJgUWxiVgmoSaqPXPHYhFEMNMqbsKuX2TtAeGM4YbFkUThTmAXffT1H7nEDMjbGxRiVC9Scdn"
+      "proofValue": "z2sdVaBBJfu4c9di4Ehj8hp97q38RjyU4GhFSJXYTodFJ5FusTeBZszDm3a9nDnyuuQiueRw6sYxApxDckkkHiSJe"
     }
   },
   "consent_evidence_credential": {
@@ -827,16 +837,16 @@
       "captureHash": "uk4G56a8d6Zq_aTrzPuVErjYtGvKQu1WsnC-tMZB2p-o",
       "basis": "explicit-consent",
       "consentTokenRefs": [
-        "zByLGEoxBnkfxj2DJgUWxiVgmoSaqPXPHYhFEMNMqbsKuX2TtAeGM4YbFkUThTmAXffT1H7nEDMjbGxRiVC9Scdn"
+        "z2sdVaBBJfu4c9di4Ehj8hp97q38RjyU4GhFSJXYTodFJ5FusTeBZszDm3a9nDnyuuQiueRw6sYxApxDckkkHiSJe"
       ]
     },
     "proof": {
       "type": "DataIntegrityProof",
       "cryptosuite": "eddsa-jcs-2022",
-      "created": "2026-07-05T22:28:01Z",
+      "created": "2026-07-24T19:26:46Z",
       "verificationMethod": "did:web:robot.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z2wmJkLqYEQPonqNXnNmVfCyzz6B7XheCAPBUspTcCYeVVvmCyd4cE1ggjdBivKWJzVsrEWMSD37jBr27XfumBRV6"
+      "proofValue": "z2D5Hh6EAyizo8pKGmWkQ8rpbpBNh7nnQywzEAwt6uiJrdgzdW3gWci2kx3iNhy9HpihXKyrpAABPj377h9mfE29t"
     }
   },
   "consent_bystander_key": {

@@ -18,9 +18,9 @@ Use it when you need any of:
 - **Cross-machine verifiability.** A signed attestation produced on
  developer A's machine can be verified by anyone with the issuer's DID
  resolution path. No shared infrastructure, no central audit server.
-- **Post-quantum-ready audit logs.** With the
- `hybrid-eddsa-mldsa44-jcs-2026` cryptosuite, attestations remain
- verifiable even against future post-quantum adversaries.
+- **Post-quantum-ready audit logs.** With the post-quantum profile, where the
+ attestation carries an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof,
+ attestations remain verifiable even against future post-quantum adversaries.
 - **Insurance / liability evidence.** A signed attestation chain is
  admissible evidence that a developer's machine performed deterministic
  policy evaluation at the moment of egress.
@@ -103,13 +103,13 @@ for a in attestations:
   print(a.decision_overall, a.rule_count)
 ```
 
-For the post-quantum hybrid embodiment:
+For the post-quantum profile:
 
 ```python
 attestation = attest_decision(
   decision,
   signer,
-  cryptosuite='hybrid-eddsa-mldsa44-jcs-2026',
+  cryptosuite='mldsa44-jcs-2024',
 )
 ```
 

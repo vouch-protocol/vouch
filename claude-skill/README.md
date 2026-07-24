@@ -12,7 +12,7 @@ When you ask Claude something like:
 
 - "How do I sign an action with Vouch in Python?"
 - "Generate a did:web setup script for our agent"
-- "Why is my hybrid PQ signature failing to verify?"
+- "Why is my post-quantum credential failing to verify?"
 - "Wrap this LangChain tool with Vouch"
 - "Build a heartbeat session for my agent"
 - "Add BitstringStatusList revocation to my issuer"
@@ -106,7 +106,7 @@ The skill fires on any of these (and many natural-language variants):
 - `vouch-protocol`, `vouch protocol`, `@vouch-protocol-official/sdk`
 - `pip install vouch-protocol`, `npm install @vouch-protocol-official/sdk`
 - `did:web`, `did:key`, `did:vouch`, DID Document, Verifiable Credential
-- `eddsa-jcs-2022`, `hybrid-eddsa-mldsa44-jcs-2026`
+- `eddsa-jcs-2022`, `mldsa44-jcs-2024`
 - BitstringStatusList, revocation registry
 - SessionVoucher, Heartbeat Protocol, trust entropy, canary commitment
 - Identity Sidecar, vouch-sidecar

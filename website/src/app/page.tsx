@@ -96,7 +96,7 @@ const LANGUAGE_TILES = [
     name: 'Go',
     install: 'go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar',
     repoPath: 'go-sidecar/',
-    note: 'Long-running daemon for the Identity Sidecar pattern. HTTP /sign endpoint, ed25519 and hybrid signing.',
+    note: 'Long-running daemon for the Identity Sidecar pattern. HTTP /sign endpoint, ed25519 and post-quantum signing.',
   },
   {
     name: 'Swift (iOS / macOS)',

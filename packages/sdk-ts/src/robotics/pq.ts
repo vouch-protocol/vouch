@@ -1,36 +1,47 @@
 /**
  * Post-quantum signing for robot credentials (TypeScript).
  *
- * Mirrors `vouch/robotics/pq.py`. A robot fielded today lives for ten to twenty
- * years, longer than classical Ed25519 is expected to stay safe, so a robot
- * identity signed now could be forged once a quantum computer arrives. This
- * module makes the hybrid post-quantum cryptosuite
- * (`hybrid-eddsa-mldsa44-jcs-2026`, a classical Ed25519 signature alongside an
- * ML-DSA-44 signature) the recommended default for robot credentials, so they
- * stay unforgeable across the robot's whole service life.
+ * Mirrors `vouch/robotics/pq.py` and the robotics section of the Rust core. A
+ * robot fielded today lives for ten to twenty years, longer than classical
+ * Ed25519 is expected to stay safe, so a robot identity signed now could be
+ * forged once a quantum computer arrives. This module makes the post-quantum
+ * proof set (an `eddsa-jcs-2022` proof alongside an `mldsa44-jcs-2024` proof)
+ * the recommended default for robot credentials, so they stay unforgeable
+ * across the robot's whole service life.
  *
- *   - signPq: attach a hybrid proof to a robot credential.
+ *   - signPq: attach a post-quantum proof set to a robot credential.
  *   - verifyRobotCredential: verify a robot credential whether it carries a
- *     classical or a hybrid proof, auto-detected from the proof, so a fleet can
- *     move to PQ gradually without breaking the classical credentials already in
- *     the field.
+ *     classical proof, a proof set, or the pre-alignment composite proof,
+ *     auto-detected from the proof, so a fleet can move to PQ gradually without
+ *     breaking the credentials already in the field.
  *   - migrateToPq: re-sign a fielded robot's classical credential under PQ.
  *
- * This is the open layer: hybrid signing, backward-compatible verification, and
- * a software re-signing migration path. Managed PQ key custody and fleet-wide PQ
- * migration orchestration are out of scope for the open layer.
+ * This is the open layer: post-quantum signing, backward-compatible
+ * verification, and a software re-signing migration path. Managed PQ key
+ * custody and fleet-wide PQ migration orchestration are out of scope for the
+ * open layer.
  */
 
 import * as crypto from 'crypto';
 
 import { CRYPTOSUITE_ID as CLASSICAL_CRYPTOSUITE_ID, verifyProof } from '../data-integrity';
-import { HYBRID_CRYPTOSUITE_ID, verifyHybridProof } from '../data-integrity-hybrid';
+import {
+  HYBRID_CRYPTOSUITE_ID,
+  MLDSA44_CRYPTOSUITE_ID,
+  hybridVerificationMethodPair,
+  isMlDsaCryptosuite,
+  verifyDualProof,
+  verifyHybridProof,
+} from '../data-integrity-hybrid';
 import { decode as decodeMultikey } from '../multikey';
 import type { Signer } from '../signer';
 
 import { RoboticsError } from './identity';
 
 export const CLASSICAL_CRYPTOSUITE = CLASSICAL_CRYPTOSUITE_ID;
+/** The post-quantum member of the proof set robot credentials now carry. */
+export const PQ_CRYPTOSUITE = MLDSA44_CRYPTOSUITE_ID;
+/** The pre-alignment composite cryptosuite, accepted on verification only. */
 export const HYBRID_CRYPTOSUITE = HYBRID_CRYPTOSUITE_ID;
 
 /**
@@ -75,8 +86,27 @@ function coerceMldsa44Public(publicKey: Uint8Array | string): Uint8Array {
 }
 
 /**
- * Attach a hybrid (classical Ed25519 plus post-quantum ML-DSA-44) Data Integrity
- * proof to a pre-built robot `credential`. Any existing proof is replaced.
+ * The Ed25519 and ML-DSA-44 verification method slots for a robot credential:
+ * `{issuer}#key-1` and `{issuer}#key-2`, the convention the core and every SDK
+ * derive for the two members of a post-quantum proof set. Falls back to the
+ * signer's own slots when the credential carries no issuer.
+ */
+function pqVerificationMethods(
+  credential: Record<string, unknown>,
+  signer: Signer
+): { ed25519: string; mldsa44: string } {
+  const issuer = credential.issuer;
+  if (typeof issuer === 'string' && issuer.length > 0) {
+    return { ed25519: `${issuer}#key-1`, mldsa44: `${issuer}#key-2` };
+  }
+  const vm = signer.verificationMethodId();
+  return { ed25519: vm, mldsa44: hybridVerificationMethodPair(vm).mldsa44 };
+}
+
+/**
+ * Attach a post-quantum proof SET (an `eddsa-jcs-2022` proof plus an
+ * `mldsa44-jcs-2024` proof) to a pre-built robot `credential`. Any existing
+ * proof is replaced.
  */
 export async function signPq(
   credential: Record<string, unknown>,
@@ -86,20 +116,52 @@ export async function signPq(
   for (const [k, v] of Object.entries(credential)) {
     if (k !== 'proof') body[k] = v;
   }
-  return signer.attachProofHybrid(body);
+  const vms = pqVerificationMethods(body, signer);
+  return signer.attachProofHybrid(body, {
+    ed25519VerificationMethod: vms.ed25519,
+    mldsa44VerificationMethod: vms.mldsa44,
+  });
 }
 
 /**
- * Return true if `credential` carries a hybrid post-quantum proof.
+ * Return true if `credential` carries a post-quantum proof, in either shape:
+ * a `proof` ARRAY holding an ML-DSA-44 proof, or the pre-alignment composite
+ * proof object.
  */
 export function isPq(credential: Record<string, unknown>): boolean {
-  const proof = (credential.proof ?? {}) as Record<string, unknown>;
-  return proof.cryptosuite === HYBRID_CRYPTOSUITE;
+  const proof = credential.proof;
+  if (Array.isArray(proof)) {
+    return proof.some((p) =>
+      isMlDsaCryptosuite((p as Record<string, unknown> | null)?.cryptosuite)
+    );
+  }
+  if (proof && typeof proof === 'object') {
+    return (proof as Record<string, unknown>).cryptosuite === HYBRID_CRYPTOSUITE;
+  }
+  return false;
 }
 
 /**
- * Verify a hybrid robot credential. Both the Ed25519 and the ML-DSA-44 signature
- * must validate. `mldsa44PublicKey` is raw bytes or a Multikey string.
+ * Verify a post-quantum robot credential in whichever shape it carries: a proof
+ * set goes to the dual verifier, a composite proof object to the composite
+ * verifier. Both the Ed25519 and the ML-DSA-44 signature must validate in
+ * either shape, and no proof present in a set is ever skipped.
+ */
+function verifyPqEitherShape(
+  credential: Record<string, unknown>,
+  ed25519PublicKey: crypto.KeyObject,
+  mldsa44PublicKey: Uint8Array
+): boolean {
+  if (Array.isArray(credential.proof)) {
+    return verifyDualProof(credential, ed25519PublicKey, mldsa44PublicKey);
+  }
+  return verifyHybridProof(credential, ed25519PublicKey, mldsa44PublicKey);
+}
+
+/**
+ * Verify a post-quantum robot credential. Both the Ed25519 and the ML-DSA-44
+ * signature must validate. `mldsa44PublicKey` is raw bytes or a Multikey
+ * string.
  */
 export function verifyPq(
   credential: Record<string, unknown>,
@@ -115,7 +177,7 @@ export function verifyPq(
     return false;
   }
   try {
-    return verifyHybridProof(credential, resolvedEd, resolvedMl);
+    return verifyPqEitherShape(credential, resolvedEd, resolvedMl);
   } catch {
     return false;
   }
@@ -126,9 +188,11 @@ export interface VerifyRobotCredentialOptions {
 }
 
 /**
- * Verify a robot credential whether it carries a classical or a hybrid proof,
- * auto-detected from the proof cryptosuite. A hybrid credential requires
- * `mldsa44PublicKey`; a classical credential ignores it. This is the
+ * Verify a robot credential whether it carries a classical proof, a
+ * post-quantum proof set, or the pre-alignment composite proof, auto-detected
+ * from the proof. A post-quantum credential REQUIRES `mldsa44PublicKey` and
+ * fails closed (returns false) without it, so a missing key is never mistaken
+ * for a passing check. A classical credential ignores it. This is the
  * backward-compatible verify a fleet uses while migrating to PQ.
  */
 export function verifyRobotCredential(
@@ -140,6 +204,12 @@ export function verifyRobotCredential(
     if (opts.mldsa44PublicKey === undefined) return false;
     return verifyPq(credential, ed25519PublicKey, opts.mldsa44PublicKey);
   }
+  // Supplying an ML-DSA-44 key means the caller requires the post-quantum
+  // proof. A credential that is not a post-quantum proof set is rejected here
+  // rather than verified under Ed25519 alone, so a post-quantum credential
+  // whose ML-DSA proof was stripped cannot be accepted as a classical one. A
+  // caller that intends to accept classical credentials passes no ML-DSA key.
+  if (opts.mldsa44PublicKey !== undefined) return false;
   const resolvedEd = coerceEd25519Public(ed25519PublicKey);
   if (resolvedEd === null) return false;
   try {
@@ -150,8 +220,8 @@ export function verifyRobotCredential(
 }
 
 /**
- * Re-sign a fielded robot's classical `credential` under the hybrid PQ
- * cryptosuite, preserving its body. The signer holds the robot's current key.
+ * Re-sign a fielded robot's classical `credential` under the post-quantum
+ * proof set, preserving its body. The signer holds the robot's current key.
  */
 export async function migrateToPq(
   credential: Record<string, unknown>,

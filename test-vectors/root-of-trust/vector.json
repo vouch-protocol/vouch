@@ -39,7 +39,7 @@
       "created": "2026-01-01T00:00:00Z",
       "verificationMethod": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4xeJ2LF1WN5y7sXPA7zqHvVgYCXmekbuXUpYB7Mp9JePkbQTgzXWj4zp1cuyJ55ghqnmRXpaESbwxnYW2LaNsQSe"
+      "proofValue": "z4sLMQPSi2z84CaiQx2GwB1ngLiL5MD4fYGapPxTwy87LDjrn213GAjZ6UWrLUdfm3JHWCeukBXhKCsQewGrBVScs"
     }
   },
   "recognizedIssuer": {
@@ -68,7 +68,7 @@
       "created": "2026-01-01T00:00:00Z",
       "verificationMethod": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z2FSh4dJ8y7eDwFiVuWrSmreNw2uQ1osLejSg8Qnm2Jg4rpMoDy2Vp998ndstsntB6iWcfif9kzuohmtXvGcKmxAV"
+      "proofValue": "z2TsbcJLsKuMU8Wymmk6iBXJL16YQ3ZQpEs3mBKojhDNd6pc3dBpSTDC5fbHKDYXuWeq4efw1cuXzGpNr1DJup6PW"
     }
   },
   "agentIdentity": {
@@ -98,7 +98,7 @@
       "created": "2026-01-01T00:00:00Z",
       "verificationMethod": "did:key:z6Mko9hTggMwjSTEaJaPUfE6tqcy2xvU6BnNq3e3o8qVBiyH#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4L1zia38bYfefbR3Jmg2XjTLqDksGAgKjN4JyntsEju2WnfShMcvRuPW3wuTfKQmZ2h8kBsrq8ARB6qHrxJoLfuh"
+      "proofValue": "z5xvHQpshw77haRdcMN1CcerNt2GDyY2dkT8j5btwMbK2MdmEx2YaMqfTbQGuN7gJ39UaKRBjU4zGp7oNA1VMgAwm"
     }
   },
   "robotRecognizedIssuer": {
@@ -127,7 +127,7 @@
       "created": "2026-01-01T00:00:00Z",
       "verificationMethod": "did:key:z6Mkon3Necd6NkkyfoGoHxid2znGc59LU3K7mubaRcFbLfLX#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z2a2UhJ9W77mcBzXiDTBgVTLsTsNcyL63TiARfQrPzPbPftagwGdtggbVfF8MhrPZXhexesEjjhm7GQAdom82ujaH"
+      "proofValue": "z23fKqRJX2MoVjcDc9JpcLWGzJTuLvSvcZRsnWGfHkMiQYgtNJUR1p6CyYMN5dteRtwi7LHnjrbX2bMjj4YfXFVcR"
     }
   },
   "robotHardwareCredential": {
@@ -165,7 +165,7 @@
       "created": "2026-01-01T00:00:00Z",
       "verificationMethod": "did:key:z6MkmtWtY63GQVBrpMyRJWEzsnxfsGkemu6CtMDwGTv4RYj2#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4g543y6WHMLRYgYMTg9fajJsDKjyqSmquk5fLYqMkaR6LcRFAH8rknXHhCqBp8uBNoznG5QLdHrGVvgK6mz6cQpz"
+      "proofValue": "z39Mwmy7iNDwnY1tW8Kri2oFSroYV6DHFGLqbHeJyDkyqeBkkSBjVQ6pxrjWdBUKYADgw86Hn1cCxLXiQYZszwURE"
     }
   },
   "robotAuthorityIdentity": {
@@ -197,7 +197,7 @@
       "created": "2026-01-01T00:00:00Z",
       "verificationMethod": "did:key:z6Mkt6316e2PN3mZdB6N9CrzomJYUd1s5yBZi1XYHmwT9TUP#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z4uxgZy346TvNg3mL8swG2xRj2MGAHyLEZB4RBTLtoizVaazzwK3puYdFExc5qqhEtN595L1hM4B1k7M9TuyUr2t2"
+      "proofValue": "z2YcFcSJ31oLWoiAatJ9dUhyfsuZ2352ryBLdvQmd5C6bsiCfnierVjzrb7VwQhvPCgnGApBEa2Sne3VzokvDF2YD"
     }
   },
   "robotPublicKey": {

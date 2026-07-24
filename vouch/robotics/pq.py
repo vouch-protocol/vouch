@@ -3,20 +3,22 @@ Post-quantum signing for robot credentials.
 
 A robot fielded today lives for ten to twenty years, longer than classical
 Ed25519 is expected to stay safe, so a robot identity signed now could be forged
-once a quantum computer arrives. This module makes the hybrid post-quantum
-cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`, a classical Ed25519 signature
-alongside an ML-DSA-44 signature) the recommended default for robot credentials,
-so they stay unforgeable across the robot's whole service life.
+once a quantum computer arrives. This module makes the post-quantum proof set
+(an `eddsa-jcs-2022` proof alongside an `mldsa44-jcs-2024` proof, carried as a
+`proof` array) the recommended default for robot credentials, so they stay
+unforgeable across the robot's whole service life. The pre-alignment composite
+cryptosuite (`hybrid-eddsa-mldsa44-jcs-2026`) is still accepted on verification.
 
-  - sign_pq: attach a hybrid proof to a robot credential.
+  - sign_pq: attach a post-quantum proof set to a robot credential.
   - verify_robot_credential: verify a robot credential whether it carries a
-    classical or a hybrid proof, auto-detected from the proof, so a fleet can move
-    to PQ gradually without breaking the classical credentials already in the field.
+    classical or a post-quantum proof, auto-detected from the proof, so a fleet
+    can move to PQ gradually without breaking the classical credentials already
+    in the field.
   - migrate_to_pq: re-sign a fielded robot's classical credential under PQ.
 
-This is the open layer: hybrid signing, backward-compatible verification, and a
-software re-signing migration path. Managed PQ key custody and fleet-wide PQ
-migration orchestration are out of scope for the open layer.
+This is the open layer: post-quantum signing, backward-compatible verification,
+and a software re-signing migration path. Managed PQ key custody and fleet-wide
+PQ migration orchestration are out of scope for the open layer.
 """
 
 from __future__ import annotations
@@ -27,7 +29,13 @@ from .. import data_integrity, data_integrity_hybrid, multikey
 from ..verifier import _coerce_ed25519_public_key
 from .identity import RoboticsError
 
+# The Ed25519 proof, present on its own in a classical credential and as one
+# half of a post-quantum proof set.
 CLASSICAL_CRYPTOSUITE = "eddsa-jcs-2022"
+# The ML-DSA-44 proof emitted as the post-quantum half of a proof set.
+POST_QUANTUM_CRYPTOSUITE = data_integrity_hybrid.CRYPTOSUITE_MLDSA44
+# The pre-alignment composite proof. Accepted on verification only; never
+# emitted.
 HYBRID_CRYPTOSUITE = data_integrity_hybrid.CRYPTOSUITE_HYBRID_EDDSA_MLDSA44
 
 
@@ -53,27 +61,39 @@ def _coerce_mldsa44_public(public_key: Any) -> bytes:
 
 def sign_pq(credential: Dict[str, Any], signer: Any) -> Dict[str, Any]:
     """
-    Attach a hybrid (classical Ed25519 plus post-quantum ML-DSA-44) Data Integrity
-    proof to a pre-built robot `credential`. Any existing proof is replaced.
+    Attach a post-quantum proof set (a classical Ed25519 proof plus an
+    ML-DSA-44 proof) to a pre-built robot `credential`. Any existing proof is
+    replaced.
     """
     raw_priv = getattr(signer, "_raw_priv", None)
     if raw_priv is None:
         raise RoboticsError("PQ signing requires a Signer with an Ed25519 key")
     body = {k: v for k, v in credential.items() if k != "proof"}
-    proof = data_integrity_hybrid.build_hybrid_proof(
+    return data_integrity_hybrid.sign_dual(
         body,
         ed25519_private_key=raw_priv,
         mldsa44_secret_key=_mldsa44_secret(signer),
-        verification_method=signer.verification_method_id(),
+        ed25519_verification_method=signer.verification_method_id(),
     )
-    body["proof"] = proof
-    return body
+
+
+def _is_mldsa44_proof(proof: Any) -> bool:
+    return isinstance(proof, dict) and proof.get("cryptosuite") in (
+        data_integrity_hybrid.CRYPTOSUITE_MLDSA44,
+        data_integrity_hybrid.CRYPTOSUITE_MLDSA44_LEGACY,
+    )
 
 
 def is_pq(credential: Dict[str, Any]) -> bool:
-    """Return True if `credential` carries a hybrid post-quantum proof."""
-    proof = credential.get("proof") or {}
-    return proof.get("cryptosuite") == HYBRID_CRYPTOSUITE
+    """Return True if `credential` carries a post-quantum proof, either the
+    current proof set (an array holding an ML-DSA-44 proof) or the pre-alignment
+    composite proof object."""
+    proof = credential.get("proof")
+    if isinstance(proof, list):
+        return any(_is_mldsa44_proof(p) for p in proof)
+    if isinstance(proof, dict):
+        return proof.get("cryptosuite") == HYBRID_CRYPTOSUITE
+    return False
 
 
 def verify_pq(
@@ -82,8 +102,10 @@ def verify_pq(
     mldsa44_public_key: Any,
 ) -> bool:
     """
-    Verify a hybrid robot credential. Both the Ed25519 and the ML-DSA-44 signature
-    must validate. `mldsa44_public_key` is raw bytes or a Multikey string.
+    Verify a post-quantum robot credential. Both the Ed25519 and the ML-DSA-44
+    signature must validate. The current proof set and the pre-alignment
+    composite proof are both accepted. `mldsa44_public_key` is raw bytes or a
+    Multikey string.
     """
     resolved_ed = _coerce_ed25519_public_key(ed25519_public_key)
     if resolved_ed is None:
@@ -93,7 +115,13 @@ def verify_pq(
     except RoboticsError:
         return False
     try:
-        return data_integrity_hybrid.verify_hybrid_proof(
+        if isinstance(credential.get("proof"), dict):
+            return data_integrity_hybrid.verify_hybrid_proof(
+                credential,
+                ed25519_public_key=resolved_ed,
+                mldsa44_public_key=resolved_ml,
+            )
+        return data_integrity_hybrid.verify_dual(
             credential,
             ed25519_public_key=resolved_ed,
             mldsa44_public_key=resolved_ml,
@@ -109,15 +137,22 @@ def verify_robot_credential(
     mldsa44_public_key: Optional[Any] = None,
 ) -> bool:
     """
-    Verify a robot credential whether it carries a classical or a hybrid proof,
-    auto-detected from the proof cryptosuite. A hybrid credential requires
-    `mldsa44_public_key`; a classical credential ignores it. This is the
-    backward-compatible verify a fleet uses while migrating to PQ.
+    Verify a robot credential whether it carries a classical or a post-quantum
+    proof, auto-detected from the proof cryptosuite. A post-quantum credential
+    requires `mldsa44_public_key`; a classical credential ignores it. This is
+    the backward-compatible verify a fleet uses while migrating to PQ.
     """
     if is_pq(credential):
         if mldsa44_public_key is None:
             return False
         return verify_pq(credential, ed25519_public_key, mldsa44_public_key)
+    # Supplying an ML-DSA-44 key means the caller requires the post-quantum
+    # proof. A credential that is not a post-quantum proof set is rejected here
+    # rather than verified under Ed25519 alone, so a post-quantum credential
+    # whose ML-DSA proof was stripped cannot be accepted as a classical one. A
+    # caller that intends to accept classical credentials passes no ML-DSA key.
+    if mldsa44_public_key is not None:
+        return False
     resolved_ed = _coerce_ed25519_public_key(ed25519_public_key)
     if resolved_ed is None:
         return False
@@ -129,14 +164,15 @@ def verify_robot_credential(
 
 def migrate_to_pq(credential: Dict[str, Any], signer: Any) -> Dict[str, Any]:
     """
-    Re-sign a fielded robot's classical `credential` under the hybrid PQ
-    cryptosuite, preserving its body. The signer holds the robot's current key.
+    Re-sign a fielded robot's classical `credential` under the post-quantum
+    proof set, preserving its body. The signer holds the robot's current key.
     """
     return sign_pq(credential, signer)
 
 
 __all__ = [
     "CLASSICAL_CRYPTOSUITE",
+    "POST_QUANTUM_CRYPTOSUITE",
     "HYBRID_CRYPTOSUITE",
     "sign_pq",
     "is_pq",

@@ -283,12 +283,12 @@ against the current regulation text for its market.
 ## 5.15 Post-quantum signing (`vouch.robotics.pq`)
 
 A robot fielded today runs for ten to twenty years, longer than classical Ed25519
-is expected to stay safe, so robot credentials sign with the hybrid post-quantum
-cryptosuite `hybrid-eddsa-mldsa44-jcs-2026` (a classical Ed25519 signature
-alongside an ML-DSA-44 signature). `verify_robot_credential` verifies a credential
-whether it carries a classical or a hybrid proof, detected from the credential, so
-a fleet moves to post-quantum without breaking the credentials already in the
-field. `migrate_to_pq` re-signs a fielded robot's classical credential under a
+is expected to stay safe, so robot credentials carry a Data Integrity proof set,
+an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof over the same document.
+Each proof verifies on its own and both must verify for the credential to be
+accepted. `verify_robot_credential` verifies a credential whether it carries a
+classical proof or the proof set, detected from the credential, so a fleet moves
+to post-quantum without breaking the credentials already in the field. `migrate_to_pq` re-signs a fielded robot's classical credential under a
 post-quantum key.
 
 ```python

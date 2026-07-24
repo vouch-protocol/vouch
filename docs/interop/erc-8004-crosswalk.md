@@ -13,7 +13,7 @@ the anchor-tier hierarchy) informed the field set below.
 ## Why a crosswalk rather than a dependency
 
 Vouch is off-chain and crypto-agnostic (W3C Verifiable Credentials, eddsa-jcs-2022,
-optional hybrid post-quantum). The ERC vocabulary is on-chain and EVM-native
+optional post-quantum proof set). The ERC vocabulary is on-chain and EVM-native
 (ERC-721 identity, schnorr/secp256k1, on-chain settlement). Keeping the Vouch
 fields self-contained lets enterprise and non-EVM deployments use the same record
 shape, while this crosswalk keeps it interoperable with the on-chain world. One

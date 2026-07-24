@@ -99,13 +99,19 @@ You can add additional intent fields beyond these three (e.g.,
 ```
 
 - `type`: always `DataIntegrityProof`
-- `cryptosuite`: `eddsa-jcs-2022` (default) or `hybrid-eddsa-mldsa44-jcs-2026` (post-quantum)
+- `cryptosuite`: `eddsa-jcs-2022` (default) or `mldsa44-jcs-2024` (post-quantum)
 - `verificationMethod`: the DID Document `verificationMethod` ID (DID + `#fragment`)
 - `proofPurpose`: `assertionMethod` for action credentials
 - `created`: when the signature was made
 - `proofValue`: multibase-encoded signature
-  - For `eddsa-jcs-2022`: `z` prefix + base58btc of Ed25519 signature (64 bytes)
-  - For `hybrid-eddsa-mldsa44-jcs-2026`: `z` prefix + base58btc of (Ed25519 sig || ML-DSA-44 sig)
+  - For `eddsa-jcs-2022`: `z` prefix + base58btc of the Ed25519 signature (64 bytes)
+  - For `mldsa44-jcs-2024`: `u` prefix + base64url-nopad of the ML-DSA-44 signature (2,420 bytes)
+
+Under the post-quantum profile, `proof` is an ARRAY holding both of those
+proofs, one `eddsa-jcs-2022` and one `mldsa44-jcs-2024`, over the same
+document. That is a Data Integrity proof set: each proof verifies on its own,
+and both must verify for the credential to be accepted. See
+`post-quantum.md`.
 
 ## Signing algorithm (eddsa-jcs-2022)
 
@@ -117,8 +123,10 @@ You can add additional intent fields beyond these three (e.g.,
 6. base58btc-encode the signature, prepend `z`.
 7. Store under `proof.proofValue`.
 
-For hybrid, step 5-6 also include ML-DSA-44 signing over the same digest
-and concatenation of the two raw signatures before base58btc.
+Under the post-quantum profile, the same document is signed a second time with
+ML-DSA-44 under its own proof configuration, and that proof joins the
+`eddsa-jcs-2022` proof in the `proof` array. Its `proofValue` is `u` plus the
+base64url-nopad signature.
 
 ## SessionVoucher type
 
@@ -186,7 +194,7 @@ Companion to the credential. Resolves via `did:web` or `did:key`.
 }
 ```
 
-For hybrid post-quantum, add a second `verificationMethod` with the
+For the post-quantum profile, add a second `verificationMethod` with the
 ML-DSA-44 Multikey (multicodec prefix `0x1207`):
 
 ```json
@@ -200,11 +208,14 @@ ML-DSA-44 Multikey (multicodec prefix `0x1207`):
         {
             "id": "did:web:agent.example.com#key-pq",
             "type": "Multikey",
-            "publicKeyMultibase": "u..."  // ML-DSA-44
+            "publicKeyMultibase": "z87..."  // ML-DSA-44
         }
     ]
 }
 ```
+
+Multikey values are base58btc (`z`) for both keys. The `u` prefix belongs to
+the ML-DSA-44 `proofValue`, which a different specification governs.
 
 For `did:web`, serve this at `https://agent.example.com/.well-known/did.json`.
 
@@ -213,7 +224,7 @@ For `did:web`, serve this at `https://agent.example.com/.well-known/did.json`.
 Cross-language test vectors at `test-vectors/` in the repo:
 
 - `test-vectors/jcs/` - JCS canonicalization edge cases
-- `test-vectors/hybrid-eddsa-mldsa44/` - Full hybrid credential
+- `test-vectors/hybrid-eddsa-mldsa44/` - Full post-quantum credential
 - `test-vectors/bitstring-status-list/` - BitstringStatusList encoding
 
 Each has a `generate.py` script that reproduces the vector deterministically.

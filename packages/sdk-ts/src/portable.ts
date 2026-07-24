@@ -45,7 +45,12 @@ export { canonicalize, canonicalizeToString } from './jcs';
 // --- Data Integrity proofs (eddsa-jcs-2022), RN-safe -----------------------
 // Byte-compatible with the Node buildProof/verifyProof; sign/verify with raw
 // 32-byte Ed25519 keys via @noble (no Node crypto, no jose).
-export { buildProofPortable, verifyProofPortable } from './data-integrity-portable';
+export {
+  buildProofPortable,
+  verifyProofPortable,
+  hashDataPortable,
+  legacyProofDigestPortable,
+} from './data-integrity-portable';
 export type { BuildProofPortableOptions } from './data-integrity-portable';
 export type { DataIntegrityProof } from './data-integrity';
 

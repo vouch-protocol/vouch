@@ -5,7 +5,7 @@ import FAQClient from './FAQClient';
 export const metadata: Metadata = {
   title: 'FAQ',
   description:
-    'Frequently asked questions about Vouch Protocol: what it is, how it differs from API keys and OAuth, three-language SDK usage, KMS and storage backends, hybrid post-quantum signatures, compliance positioning, and how Vouch composes with the underlying open specifications.',
+    'Frequently asked questions about Vouch Protocol: what it is, how it differs from API keys and OAuth, three-language SDK usage, KMS and storage backends, post-quantum signatures, compliance positioning, and how Vouch composes with the underlying open specifications.',
 };
 
 export default function FAQPage() {

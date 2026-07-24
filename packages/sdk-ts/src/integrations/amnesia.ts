@@ -46,10 +46,19 @@ export interface AttestOptions {
   /** Override `vc.issuer`. Defaults to the signer's DID. */
   issuer?: string;
   /**
-   * 'eddsa-jcs-2022' (classical) or 'hybrid-eddsa-mldsa44-jcs-2026' (PQ
-   * hybrid). Default: 'eddsa-jcs-2022'.
+   * 'eddsa-jcs-2022' (classical, the default) or 'mldsa44-jcs-2024'
+   * (post-quantum). The post-quantum choice attaches a proof SET: an
+   * `eddsa-jcs-2022` proof alongside an `mldsa44-jcs-2024` proof.
+   *
+   * 'hybrid-eddsa-mldsa44-jcs-2026' is the pre-alignment composite identifier.
+   * It is still accepted here and treated as a request for the post-quantum
+   * profile, so existing callers keep working, but the composite proof itself
+   * is verify-only and is no longer emitted.
    */
-  cryptosuite?: 'eddsa-jcs-2022' | 'hybrid-eddsa-mldsa44-jcs-2026';
+  cryptosuite?:
+    | 'eddsa-jcs-2022'
+    | 'mldsa44-jcs-2024'
+    | 'hybrid-eddsa-mldsa44-jcs-2026';
   /** Extra `@context` entries appended to the VC. */
   extraContexts?: string[];
 }
@@ -103,7 +112,13 @@ export async function attestDecision(
   let credential: Record<string, unknown>;
   if (cryptosuite === 'eddsa-jcs-2022') {
     credential = await signer.attachProof(vc);
-  } else if (cryptosuite === 'hybrid-eddsa-mldsa44-jcs-2026') {
+  } else if (
+    cryptosuite === 'mldsa44-jcs-2024' ||
+    cryptosuite === 'hybrid-eddsa-mldsa44-jcs-2026'
+  ) {
+    // Both requests mean "post-quantum": attach the proof set. The composite
+    // identifier is honoured rather than ignored, but its wire format is
+    // verify-only and is never emitted.
     credential = await signer.attachProofHybrid(vc);
   } else {
     throw new Error(`unsupported cryptosuite: ${String(cryptosuite)}`);

@@ -59,7 +59,7 @@ const LEVELS: Level[] = [
             'Long-running agents in regulated or adversarial environments. High-stakes actions (financial transfers, regulated submissions, clinical records, production deployments).',
         must: [
             'Everything from L2',
-            'Dual-proof post-quantum cryptosuite (eddsa-jcs-2022 + mldsa44-jcs-2026)',
+            'Post-quantum proof set (eddsa-jcs-2022 + mldsa44-jcs-2024)',
             'Heartbeat Protocol with configurable renewal interval',
             'Trust entropy decay against per-action thresholds',
             'Behavioural attestation digests + canary commit/reveal chains',
@@ -169,7 +169,7 @@ export default function ConformancePage() {
                         A conformance level rests on machine-checked evidence. A shared, language-neutral
                         set of test vectors pins the exact bytes a conforming implementation must produce,
                         for JCS canonicalization, the eddsa-jcs-2022 proof, BitstringStatusList revocation,
-                        the hybrid post-quantum profile, audit trails, and robotics. Every SDK runs the same
+                        the post-quantum proof set, audit trails, and robotics. Every SDK runs the same
                         vectors in CI, so a credential signed in one language verifies byte-for-byte in every
                         other. The <code>testVectorsPassing</code> field in the declaration above names which
                         sets an implementation has cleared.

@@ -6,7 +6,7 @@ import HelpClient from './HelpClient';
 export const metadata: Metadata = {
     title: 'Help & Guides',
     description:
-        'Long-form guides for Vouch Protocol: quickstarts in Python, TypeScript, and Go; key management; hybrid post-quantum signing; delegation chains; sidecar deployment; KMS integration; reputation and revocation; framework integrations; CLI reference.',
+        'Long-form guides for Vouch Protocol: quickstarts in Python, TypeScript, and Go; key management; post-quantum signing; delegation chains; sidecar deployment; KMS integration; reputation and revocation; framework integrations; CLI reference.',
 };
 
 export default function HelpPage() {
@@ -23,7 +23,7 @@ export default function HelpPage() {
                     </h1>
                     <p className="text-ink-soft text-[1.05rem] leading-relaxed max-w-prose mb-5">
                         {HELP_SECTIONS.length} parts covering {totalArticles} guides: quickstarts in three languages,
-                        identity and key management, the hybrid post-quantum profile, delegation chains, sidecar
+                        identity and key management, the post-quantum profile, delegation chains, sidecar
                         deployment, KMS integration, reputation and revocation engines, framework integrations, and the
                         complete CLI reference. Use the marginalia at left to navigate, or search across every guide.
                     </p>
