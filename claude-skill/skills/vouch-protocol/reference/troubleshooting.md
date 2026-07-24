@@ -18,7 +18,7 @@ The SDK requires Node 18+. Upgrade Node.
 
 ### Go build error: `package github.com/cloudflare/circl/sign/mldsa/mldsa44`
 
-Make sure `go mod tidy` has run. The hybrid signer uses Cloudflare's
+Make sure `go mod tidy` has run. The post-quantum signer uses Cloudflare's
 CIRCL library; it's a transitive dependency that's fetched on first
 build.
 
@@ -47,8 +47,9 @@ Ed25519 signatures are always exactly 64 bytes (raw). After multibase
 base58btc encoding with the `z` prefix, expect ~88 characters. A Data
 Integrity proof carries this in `proof.proofValue`.
 
-Hybrid signatures are 64 + 2,420 = 2,484 bytes raw, about 3,400
-characters base58btc.
+Under the post-quantum profile the credential carries two proof values: a
+64-byte Ed25519 signature in base58btc (`z` prefix) and a 2,420-byte ML-DSA-44
+signature in base64url-nopad multibase (`u` prefix).
 
 ### "DID Document not found" when signing
 
@@ -99,8 +100,8 @@ The signature math failed. Common causes:
   divergence
 - Wrong public key: the DID Doc has a key, but it's not the one that
   signed this credential (key rotation gap)
-- Hybrid mode mismatch: classical-only verifier on a hybrid credential
-  (or vice versa). Check `proof.cryptosuite`
+- Proof set read as a single proof: under the post-quantum profile `proof` is
+  an array. Iterate it and match on `proof.cryptosuite`
 
 ### "credential_expired"
 
@@ -168,8 +169,8 @@ divergence. Common causes:
 
 ### Python signs, TypeScript can't verify
 
-Check `proof.cryptosuite`. If it's `hybrid-eddsa-mldsa44-jcs-2026`,
-ensure the TypeScript SDK has `@noble/post-quantum` installed.
+Check `proof.cryptosuite`. If it's `mldsa44-jcs-2024`, ensure the TypeScript
+SDK has `@noble/post-quantum` installed.
 
 ### Go signs, but the multibase prefix differs
 
@@ -214,7 +215,7 @@ curl http://localhost:8877/did
 
 ### Slow signing
 
-- Hybrid mode (3 ms per credential) vs classical (50 µs): expected
+- The post-quantum profile (3 ms per credential) vs classical (50 µs): expected
 - Cold start cost on first sign: subsequent are faster
 - KMS-backed signing has network RTT: about 30-50 ms per sign for AWS
   KMS in same region

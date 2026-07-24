@@ -294,4 +294,4 @@ A pragmatic checklist:
 - The action is internal and trusted? Often skip Vouch and save the latency.
 
 The integration tax is small (single-digit milliseconds for signing, about
-3 ms for hybrid post-quantum). The audit-trail value is large.
+3 ms for the post-quantum profile). The audit-trail value is large.

@@ -12,7 +12,7 @@
     {
       "name": "vouch-protocol",
       "source": "./claude-skill",
-      "description": "Integrate the Vouch Protocol into your codebase: sign and verify agent actions, delegation chains, hybrid post-quantum, and revocation, across SDKs on every major platform."
+      "description": "Integrate the Vouch Protocol into your codebase: sign and verify agent actions, delegation chains, the post-quantum proof set, and revocation, across SDKs on every major platform."
     }
   ]
 }

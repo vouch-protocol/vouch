@@ -564,7 +564,7 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                             {[
                                 'Show me a Python quickstart for signing a credential.',
                                 'My verifier returns verificationMethod_not_found. What does that mean?',
-                                'Walk me through enabling hybrid post-quantum signatures.',
+                                'Walk me through enabling post-quantum signatures.',
                                 'Sign a sample credential so I can see the proof structure.',
                             ].map((s) => (
                                 <button

@@ -32,9 +32,9 @@
       "print(\"verified:\", passport.payload)$0"
     ]
   },
-  "Vouch: hybrid post-quantum signer": {
+  "Vouch: post-quantum signer": {
     "prefix": ["vouch-hybrid-pq", "vouch-pq"],
-    "description": "Sign with the hybrid Ed25519 + ML-DSA-44 cryptosuite (W3C-aligned hybrid-eddsa-mldsa44-jcs-2026).",
+    "description": "Sign under the post-quantum profile: an eddsa-jcs-2022 proof plus an mldsa44-jcs-2024 proof on the same credential.",
     "body": [
       "from vouch import Signer, build_vouch_credential",
       "",

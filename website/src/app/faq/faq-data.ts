@@ -131,7 +131,7 @@ A Vouch credential is just a Verifiable Credential with an \`intent\` field that
         q: 'What is a Data Integrity proof?',
         a: `It is the cryptographic signature glued to the side of a Verifiable Credential. Vouch uses the Data Integrity mechanism, which keeps the credential as plain readable JSON and attaches the proof as a separate object next to it. You can open a Vouch credential in any text editor and read it.
 
-By default Vouch uses Ed25519 (fast, well-known elliptic-curve signatures). If you need post-quantum protection, switch to the hybrid cryptosuite that signs with both Ed25519 *and* ML-DSA-44 (a NIST-approved post-quantum algorithm).`,
+By default Vouch Protocol uses Ed25519 (fast, well-known elliptic-curve signatures). If you need post-quantum protection, turn on the post-quantum profile: the credential then carries a proof set, an \`eddsa-jcs-2022\` proof and an \`mldsa44-jcs-2024\` proof (ML-DSA-44 is a NIST-approved post-quantum algorithm), and both cover the same document.`,
       },
       {
         q: 'Why do you talk about "JCS canonicalization"?',
@@ -235,7 +235,7 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
     items: [
       {
         q: 'What does Vouch conformance mean?',
-        a: `Conformance proves that an implementation, an SDK, a fork, or a port, produces byte-correct protocol output and supports the required feature sets. It is graded in three cumulative levels. L1 Credential: canonicalization, eddsa-jcs-2022 sign and verify, the validity window, and nonce replay resistance. L2 Structural-Security: everything in L1 plus BitstringStatusList revocation, delegation narrowing with the five-link depth bound, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail. L3 State Verifiable plus Post-Quantum: everything in L2 plus the hybrid dual-proof, the Heartbeat renewal chain, and an M-of-N validator quorum. This is separate from robotics regulatory conformance, which grades a robot against a regulation.`,
+        a: `Conformance proves that an implementation, an SDK, a fork, or a port, produces byte-correct protocol output and supports the required feature sets. It is graded in three cumulative levels. L1 Credential: canonicalization, eddsa-jcs-2022 sign and verify, the validity window, and nonce replay resistance. L2 Structural-Security: everything in L1 plus BitstringStatusList revocation, delegation narrowing with the five-link depth bound, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail. L3 State Verifiable plus Post-Quantum: everything in L2 plus the post-quantum proof set, the Heartbeat renewal chain, and an M-of-N validator quorum. This is separate from robotics regulatory conformance, which grades a robot against a regulation.`,
         meta: 'Spec section 17',
       },
       {
@@ -755,23 +755,23 @@ The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch
     items: [
       {
         q: 'Why do robot credentials need post-quantum signatures?',
-        a: `A robot fielded today runs for ten to twenty years, longer than classical Ed25519 is expected to stay safe. A robot identity signed now could be forged once a quantum computer arrives. Signing robot credentials with the hybrid cryptosuite (\`hybrid-eddsa-mldsa44-jcs-2026\`, a classical signature alongside an ML-DSA-44 signature) keeps them unforgeable across the robot's whole service life. Use \`sign_pq\` to sign.`,
+        a: `A robot fielded today runs for ten to twenty years, longer than classical Ed25519 is expected to stay safe. A robot identity signed now could be forged once a quantum computer arrives. Signing robot credentials under the post-quantum profile, where the credential carries an \`eddsa-jcs-2022\` proof and an \`mldsa44-jcs-2024\` proof over the same document, keeps them unforgeable across the robot's whole service life. Use \`sign_pq\` to sign.`,
         helpLinks: [{ label: 'Post-quantum guide', href: '/help/#robotics-pq' }],
         meta: 'Shipped - vouch.robotics.pq',
       },
       {
         q: 'Do I have to migrate every robot at once?',
-        a: `No. \`verify_robot_credential\` accepts a classical or a hybrid proof and detects which from the credential, so a fleet moves to post-quantum gradually while the classical credentials already in the field keep verifying. \`migrate_to_pq\` re-signs a fielded robot's classical credential under a post-quantum key when you are ready.`,
+        a: `No. \`verify_robot_credential\` accepts a classical proof or a post-quantum proof set and detects which from the credential, so a fleet moves to post-quantum gradually while the classical credentials already in the field keep verifying. \`migrate_to_pq\` re-signs a fielded robot's classical credential under a post-quantum key when you are ready.`,
         meta: 'Shipped - vouch.robotics.pq',
       },
       {
         q: 'Does a verifier need the post-quantum key?',
-        a: `To verify a hybrid credential, yes: pass the ML-DSA-44 public key (raw bytes or a multikey) to \`verify_pq\` or \`verify_robot_credential\`. Both the classical and the post-quantum signature must validate for the credential to pass.`,
+        a: `To verify a post-quantum credential, yes: pass the ML-DSA-44 public key (raw bytes or a multikey) to \`verify_pq\` or \`verify_robot_credential\`. Both the classical proof and the post-quantum proof must validate for the credential to pass.`,
         meta: 'Shipped - vouch.robotics.pq',
       },
       {
         q: 'Can I verify a robot credential from .NET, Java, Swift, or C++?',
-        a: `Yes. The reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface, and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface over the same core: verify a robot credential (classical or hybrid, auto-detected), mint and verify identity, conformance, passport, action check, and post-quantum sign. In .NET, JVM, and Swift these are a \`VouchRobotics\` class; in C++ a \`vouch::robotics\` namespace. Output is byte-identical across languages.`,
+        a: `Yes. The reference SDKs (Python, TypeScript, Go, Rust) carry the full robotics surface, and the C, C++, .NET, JVM, and Swift wrappers expose a curated consumer surface over the same core: verify a robot credential (classical or post-quantum, auto-detected), mint and verify identity, conformance, passport, action check, and post-quantum sign. In .NET, JVM, and Swift these are a \`VouchRobotics\` class; in C++ a \`vouch::robotics\` namespace. Output is byte-identical across languages.`,
         meta: 'Shipped - C, C++, .NET, JVM, Swift',
       },
     ],
@@ -988,7 +988,7 @@ The \`signed\` dict has a \`proof\` object with a \`proofValue\` (z-base58 encod
         helpLinks: [{ label: 'Full Python quickstart', href: '/help/#quickstart-python' }],
       },
       {
-        q: 'How do I sign with the hybrid post-quantum profile?',
+        q: 'How do I sign with the post-quantum profile?',
         a: `Use \`sign_hybrid()\` instead of \`sign()\`. The required \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so nothing else to install:
 
 \`\`\`bash
@@ -1010,10 +1010,10 @@ signed = signer.sign_hybrid(intent={
 })
 \`\`\`
 
-The resulting credential's \`proof\` field is an **array** of two Data Integrity proofs: one with \`cryptosuite: "eddsa-jcs-2022"\` (the classical Ed25519 proof) and one with \`cryptosuite: "mldsa44-jcs-2026"\` (the post-quantum ML-DSA-44 proof). Both proofs cover the same JCS-canonicalized credential bytes. Verifiers iterate the array and apply their local policy (validate either, validate both).
+The resulting credential's \`proof\` field is an **array** of two Data Integrity proofs: one with \`cryptosuite: "eddsa-jcs-2022"\` (the classical Ed25519 proof, proofValue in base58btc) and one with \`cryptosuite: "mldsa44-jcs-2024"\` (the post-quantum ML-DSA-44 proof, proofValue in base64url-nopad multibase). Each proof is computed over the same document with only its own proof configuration, so each one verifies on its own, and both must verify for the credential to be accepted.
 
-(The earlier v1.6.x reference implementation emits a single composite proof with \`cryptosuite: "hybrid-eddsa-mldsa44-jcs-2026"\` and a concatenated proofValue. That format is retained as a transitional alias; new implementations SHOULD emit dual proofs.)`,
-        helpLinks: [{ label: 'Hybrid PQ implementation guide', href: '/help/#hybrid-pq' }],
+Credentials issued before this alignment keep verifying: the earlier \`mldsa44-jcs-2026\` identifier and the earlier composite \`hybrid-eddsa-mldsa44-jcs-2026\` proof are both accepted on verification.`,
+        helpLinks: [{ label: 'Post-quantum implementation guide', href: '/help/#hybrid-pq' }],
         meta: 'Shipped v1.6.0 - Specification §13.2',
       },
       {
@@ -1350,7 +1350,7 @@ OpenTelemetry exporters are optional via the \`[otel]\` extra.`,
       },
       {
         q: 'What throughput can the Python SDK handle?',
-        a: `The reputation engine's three-tier storage architecture is sized for 10K-50K RPS deployments per the CHANGELOG. Signing and verification throughput depends on the chosen cryptosuite (ed25519 is fast, hybrid PQ adds ML-DSA-44's ~3ms sign cost per operation on M-series hardware). For high-throughput verifier paths, use \`async_verifier\` (\`vouch/async_verifier.py\`, 16 KB) which supports concurrent verification with caching.`,
+        a: `The reputation engine's three-tier storage architecture is sized for 10K-50K RPS deployments per the CHANGELOG. Signing and verification throughput depends on the chosen cryptosuite (ed25519 is fast, the post-quantum profile adds ML-DSA-44's ~3ms sign cost per operation on M-series hardware). For high-throughput verifier paths, use \`async_verifier\` (\`vouch/async_verifier.py\`, 16 KB) which supports concurrent verification with caching.`,
         meta: 'Shipped v1.1.3 (async_verifier), v1.2.0 (reputation scale claims)',
       },
       {
@@ -1438,8 +1438,8 @@ Vouch addresses these through (a) intent-bound credentials with model-version me
       },
       {
         q: 'Does Vouch satisfy NIST CNSA 2.0 / NSM-10 for post-quantum migration?',
-        a: `Yes, in two phases. The current revision ships an **optional** dual-proof post-quantum profile: pair the default \`eddsa-jcs-2022\` Data Integrity proof with an additional \`mldsa44-jcs-2026\` Data Integrity proof on the same credential, aligning with the NIST CNSA 2.0 phase-in. As CNSA 2.0 advances and regulator guidance matures, the dual-proof profile is expected to become RECOMMENDED for regulated sectors, then REQUIRED. Implementers operating in regulated sectors can adopt it today by passing \`--hybrid\` to the signer (the v1.6.x reference implementations still emit the transitional composite proof; the v1.7 rewrite emits dual proofs).`,
-        helpLinks: [{ label: 'Hybrid PQ implementation guide', href: '/help/#hybrid-pq' }],
+        a: `Yes, in two phases. Vouch Protocol ships an **optional** post-quantum profile: the credential carries a Data Integrity proof set, the default \`eddsa-jcs-2022\` proof plus an \`mldsa44-jcs-2024\` proof over the same document, aligning with the NIST CNSA 2.0 phase-in. As CNSA 2.0 advances and regulator guidance matures, the proof set is expected to become RECOMMENDED for regulated sectors, then REQUIRED. Implementers operating in regulated sectors can adopt it today by passing \`--hybrid\` to the signer.`,
+        helpLinks: [{ label: 'Post-quantum implementation guide', href: '/help/#hybrid-pq' }],
         meta: 'Shipped v1.6.0 - NIST FIPS 204',
       },
       {
@@ -1494,10 +1494,10 @@ Any tool that knows how to read a VC can read a Vouch credential. It just will n
 
 Vouch uses two Data Integrity cryptosuites:
 
-- \`eddsa-jcs-2022\`, the default classical Ed25519 cryptosuite
-- \`mldsa44-jcs-2026\`, the post-quantum ML-DSA-44 cryptosuite (provisional identifier, being aligned with [Digital Bazaar's \`mldsa44-rdfc-2024-cryptosuite\`](https://github.com/digitalbazaar/mldsa44-rdfc-2024-cryptosuite) family's forthcoming JCS variant)
+- \`eddsa-jcs-2022\`, the default classical Ed25519 cryptosuite, with proofValue in base58btc
+- \`mldsa44-jcs-2024\`, the ML-DSA-44 cryptosuite from the W3C Quantum-Resistant Cryptosuites work, with proofValue in base64url-nopad multibase
 
-A credential can carry **one** proof (classical only) or **two** proofs (one of each cryptosuite, signing the same JCS-canonicalized bytes; this is the dual-proof post-quantum profile). The Data Integrity \`proof\` field is already specified as an array, so dual-signing is a natural use of existing primitives, no Vouch-specific composite cryptosuite required.`,
+A credential can carry **one** proof (classical only) or a **proof set** of two proofs, one of each cryptosuite, each computed over the same document with only its own proof configuration. That proof set is the post-quantum profile. Each proof verifies on its own, and both must verify for the credential to be accepted. The Data Integrity \`proof\` field is already specified as an array, so the proof set uses existing standard primitives.`,
       },
       {
         q: 'How does Vouch use DIDs?',
@@ -1512,7 +1512,7 @@ Adding more DID methods (\`did:peer\`, \`did:dht\`, etc.) is straightforward whe
         q: 'What is Multikey, and why does Vouch use it?',
         a: `Multikey is a format for encoding a public key with a small tag indicating which algorithm it belongs to. Vouch uses it because a single DID Document can then publish multiple keys side-by-side, one Ed25519 and one ML-DSA-44, for example, and verifiers pick whichever they support.
 
-That is the trick behind the hybrid post-quantum profile: you can advertise both a classical key and a post-quantum key, sign credentials with both, and older verifiers (that only know Ed25519) still work fine. No flag day, no breakage.`,
+That is the trick behind the post-quantum profile: you can advertise both a classical key and a post-quantum key, sign the credential with both, and a verifier that only knows Ed25519 still checks the \`eddsa-jcs-2022\` proof on its own. No flag day, no breakage.`,
       },
       {
         q: 'How does Vouch use BitstringStatusList for revocation?',
@@ -1551,13 +1551,13 @@ There is a reference MCP server integration in the Python SDK to make this concr
         q: 'What does "informative" vs "normative" mean in the Vouch spec?',
         a: `Standards-speak: **normative** means "if you say you implement this spec, you have to do X." **Informative** means "here is a useful description, but it is not part of the contract."
 
-The Vouch credential layer (signing, verification, delegation, hybrid post-quantum, revocation) is normative. If you call yourself Vouch-compatible, you must implement these the same way as everyone else, byte for byte.
+The Vouch credential layer (signing, verification, delegation, the post-quantum profile, revocation) is normative. If you call yourself Vouch-compatible, you must implement these the same way as everyone else, byte for byte.
 
 The State Verifiability layer (Heartbeat Protocol, validator quorum, behavioral attestation) was originally documented as informative, "here is the idea, implementations may vary." With the runtime now shipped in the Python SDK and being ported to TypeScript and Go, parts of that layer will become normative in a future revision of the Vouch Specification.`,
       },
       {
         q: 'Are there test vectors for cross-language interop?',
-        a: `Yes. [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors) has canonical test vectors for the hybrid post-quantum profile and for BitstringStatusList. Each comes with a deterministic generator script (\`generate.py\`) so anyone can regenerate it and audit the result.
+        a: `Yes. [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors) has canonical test vectors for the post-quantum profile and for BitstringStatusList. Each comes with a deterministic generator script (\`generate.py\`) so anyone can regenerate it and audit the result.
 
 Python, TypeScript, and Go all verify the same vectors. For BitstringStatusList specifically, Python and TypeScript produce byte-identical encoded output; Go produces a slightly different DEFLATE stream that decompresses to the same bitstring (semantically equivalent, which is what the the specification actually requires).`,
       },
@@ -1566,7 +1566,7 @@ Python, TypeScript, and Go all verify the same vectors. For BitstringStatusList 
         a: `Tracked at [ROADMAP.md](https://github.com/vouch-protocol/vouch/blob/main/ROADMAP.md). Headline items:
 
 - Promote the State Verifiability runtime to fully normative once TypeScript and Go ports of the Python implementation land.
-- Expand the post-quantum profile from "hybrid Ed25519 + ML-DSA-44" to "pure ML-DSA" as NIST's CNSA 2.0 migration progresses and confidence in ML-DSA matures.
+- Expand the post-quantum profile from the Ed25519 plus ML-DSA-44 proof set to a pure ML-DSA proof as NIST's CNSA 2.0 migration progresses and confidence in ML-DSA matures.
 - Federate the credential trust state across multiple validator quorums for multi-tenant deployments.
 - Propose the formal standards-track transition once we have enough implementer experience.
 - Publish a systems whitepaper on [arXiv](https://arxiv.org) that synthesizes the full architecture, Vouch's cryptographic identity layer, Amnesia's deterministic policy layer, and the bridge between them, with empirical evaluation from six to twelve months of real-world usage data.`,
@@ -1580,31 +1580,31 @@ Python, TypeScript, and Go all verify the same vectors. For BitstringStatusList 
   {
     id: 'post-quantum',
     audience: 'Post-Quantum Security',
-    title: 'Why the dual-proof profile, and how it works',
+    title: 'Why the proof set, and how it works',
     items: [
       {
         q: 'Why does Vouch care about post-quantum?',
         a: `Eventually, a sufficiently powerful quantum computer will be able to break today's elliptic-curve signatures (Ed25519 included). We don't know when, but governments are already publishing migration deadlines (NIST CNSA 2.0, U.S. NSM-10). Even more importantly, an attacker can harvest signed credentials now and decrypt them later. So even before quantum computers exist, the smart move is to start signing things with both an old and a new algorithm so old signatures stay valid forever.`,
       },
       {
-        q: 'How does the dual-proof post-quantum profile work?',
-        a: `Each credential gets **two** Data Integrity proofs attached: one with the \`eddsa-jcs-2022\` cryptosuite (today's classical Ed25519 algorithm, fast) and one with the \`mldsa44-jcs-2026\` cryptosuite (the NIST-approved ML-DSA-44 post-quantum algorithm). Both proofs cover the same JSON bytes, and they ride together inside the credential's \`proof\` array.
+        q: 'How does the post-quantum proof set work?',
+        a: `The credential's \`proof\` is an array carrying **two** independent Data Integrity proofs: one with the \`eddsa-jcs-2022\` cryptosuite (today's classical Ed25519 algorithm, fast) and one with the \`mldsa44-jcs-2024\` cryptosuite (the NIST-approved ML-DSA-44 post-quantum algorithm). Each proof is computed over the same document with only its own proof configuration, which is what makes each one verifiable on its own.
 
-A verifier can choose what to check:
+What that means in practice:
 
-- **Old verifier?** Validate the \`eddsa-jcs-2022\` proof. Ignore the rest. Works today.
-- **Forward-looking verifier?** Validate the \`mldsa44-jcs-2026\` proof.
-- **Belt-and-suspenders verifier?** Validate every proof in the array; fail if any one is wrong.
+- A verifier that understands only \`eddsa-jcs-2022\` checks that proof and gets a valid classical signature.
+- A verifier that understands only \`mldsa44-jcs-2024\` checks that proof and gets a valid post-quantum signature.
+- A Vouch Protocol verifier checks both, and the credential is accepted when both verify.
 
-You can issue dual-proof credentials right now and they remain valid whether your verifier has been upgraded or not. No flag day, no mass migration, and no Vouch-specific composite cryptosuite to register, the dual-proof pattern uses standard W3C Data Integrity primitives.`,
+You can issue post-quantum credentials right now and they stay readable whether or not a given verifier has been upgraded. No flag day, no mass migration, and no Vouch-specific cryptosuite to register: the proof set uses standard W3C Data Integrity primitives.`,
       },
       {
         q: 'Is post-quantum signing slower?',
-        a: `Yes, but barely. On a modern laptop, signing with Ed25519 takes about 50 microseconds; adding the ML-DSA-44 proof on top brings total signing time to around 3 milliseconds. Verification is similar. The bigger trade-off is size: a classical-only credential is ~700 bytes; a dual-proof credential is ~3.2 KB. You will want to send credentials in HTTP bodies rather than headers.`,
+        a: `Yes, but barely. On a modern laptop, signing with Ed25519 takes about 50 microseconds; adding the ML-DSA-44 proof on top brings total signing time to around 3 milliseconds. Verification is similar. The bigger trade-off is size: a classical-only credential is ~700 bytes; a credential with the post-quantum proof set is ~3.2 KB. You will want to send credentials in HTTP bodies rather than headers.`,
       },
       {
         q: 'How do I turn on the post-quantum profile?',
-        a: `Just call the hybrid signer. The \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so a plain \`pip install vouch-protocol\` gives you everything needed:
+        a: `Just call the post-quantum signer. The \`pqcrypto\` library is bundled with \`vouch-protocol\` by default (since v1.6.0), so a plain \`pip install vouch-protocol\` gives you everything needed:
 
 \`\`\`python
 from vouch import Signer, generate_identity
@@ -1619,7 +1619,7 @@ signed = signer.sign_hybrid(intent={
 
 TypeScript and Go work the same way. There is a full how-to in the [Guides](/help/#hybrid-pq) with code in all three languages.
 
-The v1.6.x reference implementations emit the transitional composite proof (\`hybrid-eddsa-mldsa44-jcs-2026\`). The v1.7 rewrite emits two separate Data Integrity proofs on the same credential. The CLI flag stays the same.`,
+The credential comes back with two Data Integrity proofs in its \`proof\` array, \`eddsa-jcs-2022\` and \`mldsa44-jcs-2024\`.`,
         helpLinks: [{ label: 'Post-quantum how-to', href: '/help/#hybrid-pq' }],
       },
       {
@@ -1676,11 +1676,11 @@ You can use Vouch Protocol without Shield (just sign and verify credentials in y
 Run the credential through the JCS reference test vectors at [test-vectors/](https://github.com/vouch-protocol/vouch/tree/main/test-vectors) to isolate the issue.`,
       },
       {
-        q: 'My hybrid PQ signature is rejected by a verifier that accepts ed25519. What is wrong?',
-        a: `Two possibilities depending on which version produced the credential:
+        q: 'My post-quantum credential is rejected by a verifier that accepts ed25519. What is wrong?',
+        a: `Usually the verifier is reading \`proof\` as a single object.
 
-- **v1.7+ dual-proof credentials:** the \`proof\` field is an array. A naive verifier might be reading only the first proof or expecting a single proof object. Make sure the verifier iterates the \`proof\` array and accepts any matching cryptosuite it recognizes (\`eddsa-jcs-2022\` is the classical one).
-- **v1.6.x transitional composite credentials:** the \`proof.proofValue\` is a base58 concatenation of the Ed25519 signature (first 64 bytes) and the ML-DSA-44 signature (remaining ~2,420 bytes). A naive verifier that tries to validate the whole concatenated blob as Ed25519 will fail. Either upgrade the verifier to understand the \`hybrid-eddsa-mldsa44-jcs-2026\` composite, or have the issuer emit dual proofs (v1.7+) and treat one of them as the classical proof.`,
+- **Proof set credentials:** the \`proof\` field is an array of two proofs. Make sure the verifier iterates the array, picks the proof whose \`cryptosuite\` it recognizes (\`eddsa-jcs-2022\` is the classical one), and verifies that proof on its own. Each proof in the set is computed over the same document with only its own proof configuration, so a single-cryptosuite verifier gets a clean result.
+- **proofValue encoding:** the \`eddsa-jcs-2022\` proofValue is base58btc (it starts with \`z\`) and the \`mldsa44-jcs-2024\` proofValue is base64url-nopad multibase (it starts with \`u\`). A verifier that assumes base58 for every proof will fail on the ML-DSA proof, so decode by the multibase prefix.`,
         meta: 'Specification §13.2',
       },
       {
@@ -1873,7 +1873,7 @@ Rule of thumb: if your auditor will ask about the sidecar, run the Go one. For e
       },
       {
         q: 'Why are the Python and TypeScript sidecars minimal?',
-        a: `The sidecar is security-critical, so smaller code surface is safer. Python and TS sidecars implement the bare minimum to be useful (sign intents with Ed25519, return the credential) and intentionally leave out hybrid post-quantum, KMS integration, sensitive-mode JWE wrapping, Heartbeat validation, and multi-tenancy. When you need those, switch to the Go sidecar. That switch is the design intent, not a workaround.`,
+        a: `The sidecar is security-critical, so smaller code surface is safer. Python and TS sidecars implement the bare minimum to be useful (sign intents with Ed25519, return the credential) and intentionally leave out the post-quantum profile, KMS integration, sensitive-mode JWE wrapping, Heartbeat validation, and multi-tenancy. When you need those, switch to the Go sidecar. That switch is the design intent, not a workaround.`,
       },
       {
         q: 'How do I pick between Python and TypeScript for the lightweight tier?',

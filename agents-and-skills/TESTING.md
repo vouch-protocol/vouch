@@ -41,7 +41,7 @@ produce protocol-correct output.
 | Prompt | Expected file | Expected behavior |
 |---|---|---|
 | "Show me a Python quickstart for signing a Vouch credential." | `reference/python-sdk.md` | Code with `Signer.generate`, `build_vouch_credential`, `sign`, `Verifier` |
-| "Enable the hybrid post-quantum signature for my agent." | `reference/post-quantum.md` | Code that sets cryptosuite to `hybrid-eddsa-mldsa44-jcs-2026` |
+| "Enable the post-quantum signature for my agent." | `reference/post-quantum.md` | Code that produces a proof array with `eddsa-jcs-2022` and `mldsa44-jcs-2024` proofs |
 | "Wrap a LangChain tool with Vouch." | `reference/integrations.md` | `VouchTool` wrapper code with `intent_template` |
 | "Why is my verifier returning verificationMethod_not_found?" | `reference/troubleshooting.md` | Three causes (rotation, cache, mismatch) |
 | "Build a heartbeat session that decays trust over 60 seconds." | `reference/state-verifiability.md` | `HeartbeatSession` + `HeartbeatScheduler` code |
@@ -267,7 +267,7 @@ Run each:
 | Prompt | Expected |
 |---|---|
 | "Show me a Python quickstart for signing a Vouch credential." | Code from quickstart.md; cites `[knowledge: quickstart.md]` or similar |
-| "Compare classical and hybrid PQ cryptosuites." | Mentions `eddsa-jcs-2022` and `hybrid-eddsa-mldsa44-jcs-2026`; cites post-quantum.md |
+| "Compare the classical and post-quantum cryptosuites." | Mentions `eddsa-jcs-2022` and `mldsa44-jcs-2024`; cites post-quantum.md |
 | "My verifier returns nonce_replay. What does that mean?" | Explanation from troubleshooting.md |
 | "How does the canary chain detect silent failures?" | Drawn from state-verifiability.md |
 
@@ -326,9 +326,9 @@ The GPT should:
 
 Run the same prompt in all four surfaces:
 
-> "What cryptosuite identifier do I use for the hybrid post-quantum profile?"
+> "What cryptosuite identifier do I use for the post-quantum profile?"
 
-Expected answer (verbatim string somewhere in the response): `hybrid-eddsa-mldsa44-jcs-2026`
+Expected answer (verbatim string somewhere in the response): `mldsa44-jcs-2024`
 
 If any surface produces a different string, that surface's knowledge or instructions need fixing.
 

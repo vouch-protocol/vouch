@@ -17,15 +17,15 @@ agent generation produced the action.
 
 Vouch replaces "bot-prod did it" with "did:web:claims-agent issued a
 signed credential at 14:02:18 UTC, authorizing action=submit_claim,
-target=HC-001, with a Hybrid Ed25519+ML-DSA-44 signature, verifiable
+target=HC-001, with an Ed25519 proof and an ML-DSA-44 proof, verifiable
 against the agent's published DID Document, with the issuer's DID
 present in the registry of trusted principals and not revoked."
 
 ## Layers
 
 1. **Credential layer**: Verifiable Credentials 2.0 with Vouch-specific
-   intent fields. Signed with Ed25519 by default; hybrid post-quantum
-   profile available for forward-looking deployments.
+   intent fields. Signed with Ed25519 by default; a post-quantum
+   profile is available for forward-looking deployments.
 2. **State Verifiability layer**: SessionVoucher credentials that
    carry a decaying trust score. Agents renew with a Heartbeat
    Protocol that includes behavioral attestation and a canary
@@ -40,9 +40,10 @@ present in the registry of trusted principals and not revoked."
 
 - Default: Ed25519 with the `eddsa-jcs-2022` cryptosuite (JCS-canonicalized
   payload, Ed25519 signature, multibase base58btc proofValue).
-- Hybrid PQ: `hybrid-eddsa-mldsa44-jcs-2026`, concatenated Ed25519 and
-  ML-DSA-44 signatures. Both must verify in dual mode; either alone
-  in transition modes.
+- Post-quantum: a Data Integrity proof set, an `eddsa-jcs-2022` proof and an
+  `mldsa44-jcs-2024` proof (multibase base64url-nopad proofValue) over the same
+  document. Each proof verifies on its own, and both must verify for the
+  credential to be accepted.
 
 ## SDKs
 

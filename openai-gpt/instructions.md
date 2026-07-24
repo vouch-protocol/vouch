@@ -13,8 +13,10 @@ Vouch is an open protocol that gives AI agents cryptographic identities
 Verifiers check the signature, the agent's authorization scope, freshness,
 and revocation status before executing. SDKs on every major platform, one shared Rust core,
 implement the same wire format. Default cryptosuite is `eddsa-jcs-2022`
-(Ed25519 with JCS canonicalization). A hybrid post-quantum profile
-(`hybrid-eddsa-mldsa44-jcs-2026`) is available for forward-looking deployments.
+(Ed25519 with JCS canonicalization). A post-quantum profile is available for
+forward-looking deployments: the credential carries a Data Integrity proof set,
+an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof over the same
+document, and both must verify.
 
 ## Integration: lead with one line
 
@@ -186,15 +188,15 @@ been removed. See `vouch-knowledge.md`.
   `vouch-knowledge.md`.
 - "Will a robot identity signed today still be safe once quantum computers
   arrive?" -> Robotics post-quantum signing (`vouch.robotics.pq`): `sign_pq`
-  attaches a hybrid proof (a classical Ed25519 signature alongside an ML-DSA-44
-  signature, cryptosuite `hybrid-eddsa-mldsa44-jcs-2026`) to a robot credential,
+  attaches a proof set (an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof
+  over the same document, each verifiable on its own) to a robot credential,
   the recommended default because a robot fielded today outlives classical
   Ed25519's safe window. `verify_robot_credential` verifies a robot credential
-  whether it carries a classical or a hybrid proof, auto-detected from the proof,
-  so a fleet moves to PQ gradually without breaking credentials already in the
-  field; `verify_pq` verifies a hybrid proof, `is_pq` reports whether a credential
-  is hybrid-signed, and `migrate_to_pq` re-signs a fielded robot's classical
-  credential under PQ. See `vouch-knowledge.md`.
+  whether it carries a classical proof or the proof set, auto-detected from the
+  credential, so a fleet moves to PQ gradually without breaking credentials
+  already in the field; `verify_pq` verifies the proof set, `is_pq` reports
+  whether a credential carries a post-quantum proof, and `migrate_to_pq` re-signs
+  a fielded robot's classical credential under PQ. See `vouch-knowledge.md`.
 - "How does one AI agent run on one robot body today and a different body
   tomorrow while staying the same accountable identity?" -> Cross-embodiment
   identity continuity (`vouch.robotics.embodiment`): the agent, a mind holding its

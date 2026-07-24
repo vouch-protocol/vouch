@@ -49,7 +49,7 @@ const signed = await signer.sign({
 // `signed` is a full Verifiable Credential dict with a Data Integrity proof.
 ```
 
-## Hybrid post-quantum
+## Post-quantum
 
 ```ts
 // The Signer manages its own ML-DSA-44 keypair. Call signHybrid
@@ -61,7 +61,8 @@ const signedHybrid = await signer.signHybrid({
         resource: 'https://insurance.example.com/claims/HC-001',
     },
 });
-// signedHybrid.proof.cryptosuite === 'hybrid-eddsa-mldsa44-jcs-2026'
+// signedHybrid.proof is an array of two proofs, one 'eddsa-jcs-2022'
+// and one 'mldsa44-jcs-2024', over the same document
 ```
 
 ## Verification
@@ -149,7 +150,7 @@ the key in a sidecar and use the daemon client below.
 | `verifier` | Verification (Verifier class) |
 | `vc` | `buildVouchCredential` |
 | `data-integrity` | eddsa-jcs-2022 proof |
-| `data-integrity-hybrid` | hybrid-eddsa-mldsa44-jcs-2026 proof |
+| `data-integrity-hybrid` | the post-quantum proof set (eddsa-jcs-2022 + mldsa44-jcs-2024) |
 | `multikey` | Multikey encode / decode |
 | `jcs` | RFC 8785 canonicalization |
 | `status-list` | BitstringStatusList (issuer + verifier) |

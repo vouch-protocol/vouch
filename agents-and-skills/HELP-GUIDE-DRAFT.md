@@ -46,7 +46,7 @@ We ship Python and TypeScript sidecars anyway because:
 To keep them minimal, the Python and TypeScript sidecars intentionally
 omit:
 
-- Hybrid post-quantum signing (`hybrid-eddsa-mldsa44-jcs-2026`)
+- Post-quantum signing (the `eddsa-jcs-2022` plus `mldsa44-jcs-2024` proof set)
 - KMS / HSM key integration
 - Sensitive-mode JWE wrapping (ML-KEM 768)
 - Heartbeat session validation

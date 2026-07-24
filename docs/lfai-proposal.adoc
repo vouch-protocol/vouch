@@ -13,7 +13,7 @@ Vouch Protocol
 === Project Description
 
 **What it does:**
-Vouch Protocol is the identity layer for AI agents. It provides cryptographic identity, authentication, and non-repudiation for autonomous AI systems using Verifiable Credentials secured by Data Integrity proofs (`eddsa-jcs-2022` cryptosuite), Decentralized Identifiers, and Multikey verification methods. An optional hybrid post-quantum profile (`hybrid-eddsa-mldsa44-jcs-2026`) carries Ed25519 + ML-DSA-44 composite signatures for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines. The legacy v0.x JWS API is retained during a deprecation window for backward compatibility.
+Vouch Protocol is the identity layer for AI agents. It provides cryptographic identity, authentication, and non-repudiation for autonomous AI systems using Verifiable Credentials secured by Data Integrity proofs (`eddsa-jcs-2022` cryptosuite), Decentralized Identifiers, and Multikey verification methods. An optional post-quantum profile carries a Data Integrity proof set, an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof on the same credential, for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines. The legacy v0.x JWS API is retained during a deprecation window for backward compatibility.
 
 **Why it is valuable:**
 As AI agents increasingly make real-world decisions (financial transactions, healthcare access, customer service), there is no open standard for:

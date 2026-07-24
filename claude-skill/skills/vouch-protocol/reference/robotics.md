@@ -645,39 +645,39 @@ deployment confirms against the regulation text.
 
 `vouch.robotics.pq`
 
-What it is: a hybrid post-quantum signing path for robot credentials. A hybrid
-proof carries a classical Ed25519 signature alongside an ML-DSA-44 signature
-under one cryptosuite, `hybrid-eddsa-mldsa44-jcs-2026`.
+What it is: a post-quantum signing path for robot credentials. The credential
+carries a Data Integrity proof set, an `eddsa-jcs-2022` proof and an
+`mldsa44-jcs-2024` proof over the same document, and each proof verifies on its
+own.
 
 The problem it closes: a robot fielded today lives ten to twenty years, longer
 than classical Ed25519 is expected to stay safe, so a robot identity signed now
-could be forged once a quantum computer arrives. Signing robot credentials with a
-hybrid proof keeps the classical guarantee for verifiers that only understand
-Ed25519 today and adds a quantum-resistant guarantee that holds for the working
-life of the robot. This makes the hybrid cryptosuite the recommended default for
-robot credentials.
+could be forged once a quantum computer arrives. The proof set keeps the
+classical guarantee for verifiers that only understand Ed25519 today and adds a
+quantum-resistant guarantee that holds for the working life of the robot. This
+makes the post-quantum profile the recommended default for robot credentials.
 
-How it works: `sign_pq` attaches a hybrid proof to a robot credential, so the
-credential carries both signatures. Verification is backward compatible:
+How it works: `sign_pq` attaches the proof set to a robot credential, so the
+credential carries both proofs. Verification is backward compatible:
 `verify_robot_credential` verifies a robot credential whether it carries a
-classical or a hybrid proof, auto-detected from the proof, so a fleet can move to
-PQ gradually without breaking the classical credentials already in the field.
-`verify_pq` verifies a hybrid proof directly and needs the ML-DSA-44 public key,
-passed as raw bytes or a multikey. `is_pq` reports whether a credential is
-hybrid-signed. `migrate_to_pq` re-signs a fielded robot's classical credential
-under PQ, so a deployment can upgrade credentials already in the field with a
-software re-sign rather than reissuing from scratch.
+classical proof or the proof set, auto-detected from the credential, so a fleet
+can move to PQ gradually without breaking the classical credentials already in
+the field. `verify_pq` verifies the proof set directly and needs the ML-DSA-44
+public key, passed as raw bytes or a multikey. `is_pq` reports whether a
+credential carries a post-quantum proof. `migrate_to_pq` re-signs a fielded
+robot's classical credential under PQ, so a deployment can upgrade credentials
+already in the field with a software re-sign rather than reissuing from scratch.
 
 The API: `sign_pq`, `is_pq`, `verify_pq`, `verify_robot_credential`,
 `migrate_to_pq`, and `HYBRID_CRYPTOSUITE`.
 
 Security boundary: `verify_pq` fails closed on a wrong type, a missing or wrong
-ML-DSA-44 public key, or either signature failing to verify, so a hybrid proof is
-accepted only when both the classical and the post-quantum signature are valid.
-`verify_robot_credential` accepts a classical-only credential as before and a
-hybrid credential when both signatures verify, so migrating a fleet to PQ never
-invalidates the classical credentials still in the field. This is the open layer;
-managed PQ key custody and fleet-wide PQ migration orchestration are commercial.
+ML-DSA-44 public key, or either proof failing to verify, so a post-quantum
+credential is accepted only when both the classical and the post-quantum proof
+are valid. `verify_robot_credential` accepts a classical-only credential as
+before and a post-quantum credential when both proofs verify, so migrating a
+fleet to PQ never invalidates the classical credentials still in the field.
+This is the open layer; managed PQ key custody and fleet-wide PQ migration orchestration are commercial.
 
 ---
 
@@ -1097,9 +1097,9 @@ down a cross-vendor chain (11), gates its highest-consequence actions behind
 a physical quorum (12), carries cryptographically accountable lifecycle
 transitions as it changes owners, rotates keys, and is retired (13), maps its
 credentials to the clauses of a public safety or AI regulation with a signed
-conformance report (14), can sign those robot credentials with a hybrid
-post-quantum proof so an identity issued today still holds once quantum computers
-arrive (15), and carries the same agent identity from one body to the next along a
+conformance report (14), can sign those robot credentials with a post-quantum
+proof set so an identity issued today still holds once quantum computers arrive
+(15), and carries the same agent identity from one body to the next along a
 signed continuity chain that proves one mind persisted across bodies without ever
 running in two at once (16), records a signed custody chain as a physical task
 or object passes from hand to hand so an incident traces to the exact hop and
@@ -1157,9 +1157,10 @@ Credential format, so one verifier and one trust model cover all twenty-one.
   `build_conformance_attestation` signs, citing the clause each requirement maps
   to (14).
 - Will a robot identity signed today still be safe once quantum computers
-  arrive? Yes, robotics post-quantum signing: a hybrid Ed25519 and ML-DSA-44
-  proof, with verification that auto-detects classical or hybrid so a fleet
-  migrates gradually without breaking credentials already in the field (15).
+  arrive? Yes, robotics post-quantum signing: an Ed25519 proof and an
+  ML-DSA-44 proof on the same credential, with verification that auto-detects a
+  classical credential or a proof set so a fleet migrates gradually without
+  breaking credentials already in the field (15).
 - Can one agent run on one robot body today and a different body tomorrow and
   still be the same accountable identity? Yes, cross-embodiment identity
   continuity: an embodiment credential binds the agent to a body's hardware root
@@ -1227,13 +1228,13 @@ agent operations: a `VouchRobotics` class in .NET, JVM, and Swift, and a
 verifies and integrates with:
 
 - `verify_robot_credential`: verify a robot credential whether it carries a
-  classical or a hybrid post-quantum proof, auto-detected from the proof.
+  classical proof or a post-quantum proof set, auto-detected from the credential.
 - `mint_identity` and `verify_identity` for a hardware-rooted robot identity.
 - `check_conformance` with `build_conformance_attestation` and
   `verify_conformance_attestation` for regulatory conformance.
 - `verify_passport` for an offline passport scan.
 - `check_action` to enforce a physical capability scope.
-- `sign_pq` to attach a hybrid post-quantum proof.
+- `sign_pq` to attach a post-quantum proof set.
 - `authorize_access` to decide an infrastructure access request offline against an
   operator grant.
 - `verify_fused_attestation` for fused-sensor provenance, and

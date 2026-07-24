@@ -11,7 +11,7 @@ and .NET SDKs. Apache-2.0.
 - Data Integrity proofs (`eddsa-jcs-2022`): sign + verify, with validity-window checks
 - Post-quantum: ML-DSA-44 and dual proofs (Ed25519 + ML-DSA), plus composite verify
 - BitstringStatusList revocation checks
-- Robotics (`VouchRobotics`): verify a robot credential (classical or hybrid post-quantum, auto-detected), mint and verify identity, regulatory conformance, passport, and physical action checks
+- Robotics (`VouchRobotics`): verify a robot credential (classical or post-quantum, auto-detected), mint and verify identity, regulatory conformance, passport, and physical action checks
 
 ## Build
 

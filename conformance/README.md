@@ -45,9 +45,9 @@ authority. It mirrors the verified-contributor badge exactly:
    - put the same `PUBLIC_MULTIKEY` into `website/public/conformance/did.json` at
      `#key-2` (replace `REPLACE_WITH_THE_MLDSA_PUBLIC_MULTIKEY`).
 
-   With both secrets set the badge carries the `hybrid-eddsa-mldsa44-jcs-2026`
-   dual proof (L3-grade); without them it falls back to the classical Ed25519
-   proof. The workflow installs `pqcrypto` for you.
+   With both secrets set the badge carries the post-quantum proof set, an
+   `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof (L3-grade); without
+   them it falls back to the classical Ed25519 proof. The workflow installs `pqcrypto` for you.
 
 The `verified-conformance.yml` workflow is a safe no-op until the secrets are
 set, so committing the placeholders is harmless.

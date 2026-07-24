@@ -81,7 +81,7 @@ VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
 
 | Tool | What it does |
 |---|---|
-| `sign(action, target, resource, post_quantum=False)` | Issue a credential authorizing one action, bound to that exact resource. Set `post_quantum=True` for the `hybrid-eddsa-mldsa44-jcs-2026` profile. |
+| `sign(action, target, resource, post_quantum=False)` | Issue a credential authorizing one action, bound to that exact resource. Set `post_quantum=True` for the post-quantum profile, which returns a proof set with an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof. |
 | `verify(credential_json, public_key=None)` | Verify a credential another agent or service presented. Any MCP client can verify without installing an SDK. |
 | `create_session(purpose, valid_seconds, decay_lambda, initial_trust)` | Issue a trust-decaying session voucher (Heartbeat Protocol). |
 | `check_revocation(credential_json)` | Check a credential's `BitstringStatusList` entry: `ACTIVE`, `REVOKED`, or not individually revocable. |

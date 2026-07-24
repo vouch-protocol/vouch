@@ -42,7 +42,7 @@ Restart Claude Code and run `/skills` to confirm. You should see
 ### How it triggers
 
 Phrases that load the skill: `vouch-protocol`, `did:web`, `eddsa-jcs-2022`,
-`hybrid-eddsa-mldsa44-jcs-2026`, `BitstringStatusList`, `SessionVoucher`,
+`mldsa44-jcs-2024`, `BitstringStatusList`, `SessionVoucher`,
 `Heartbeat Protocol`, and natural-language variants like "sign a credential
 with Vouch" or "verify a Vouch credential".
 

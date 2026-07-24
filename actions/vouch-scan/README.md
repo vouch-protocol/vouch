@@ -44,7 +44,7 @@ Example pinning the version and lowering the threshold:
 ## What it detects
 
 The same engine as the `vouch scan` CLI and the Gatekeeper App: Vouch-shaped
-Ed25519 private JWKs, seed environment variables, hybrid post-quantum private
+Ed25519 private JWKs, seed environment variables, post-quantum private
 keys, and DID documents that mistakenly include private key material. See
 [PAD-058](../../docs/disclosures/PAD-058-automated-key-rotation-on-leak-detection.md)
 for the detection pattern set.

@@ -7,7 +7,7 @@ Most complete surface; other languages mirror its API.
 
 ```bash
 pip install vouch-protocol            # core
-pip install 'vouch-protocol[pq]'      # + hybrid post-quantum (ML-DSA-44)
+pip install 'vouch-protocol[pq]'      # + post-quantum profile (ML-DSA-44)
 pip install 'vouch-protocol[server]'  # + FastAPI bridge server
 pip install 'vouch-protocol[all]'     # everything
 ```
@@ -55,7 +55,7 @@ signed = signer.sign(
 # signed is a dict ready to JSON-serialize and send
 ```
 
-## Hybrid post-quantum issuance
+## Post-quantum issuance
 
 ```python
 signer_pq = Signer(private_key=keys.private_key_jwk, did=keys.did)
@@ -64,7 +64,8 @@ signed_pq = signer_pq.sign_hybrid(intent={
     "target": "claim:HC-001",
     "resource": "https://insurance.example.com/claims/HC-001",
 })
-# signed_pq["proof"]["cryptosuite"] == "hybrid-eddsa-mldsa44-jcs-2026"
+# signed_pq["proof"] is an array of two proofs, one "eddsa-jcs-2022"
+# and one "mldsa44-jcs-2024", over the same document
 ```
 
 ## Verification
@@ -235,7 +236,7 @@ vouch revocation check [--did DID]      Check revocation status
 | `vouch.async_verifier` | High-throughput async verification |
 | `vouch.vc` | VC envelope builders |
 | `vouch.data_integrity` | eddsa-jcs-2022 proof construction |
-| `vouch.data_integrity_hybrid` | hybrid-eddsa-mldsa44-jcs-2026 |
+| `vouch.data_integrity_hybrid` | the post-quantum proof set (eddsa-jcs-2022 + mldsa44-jcs-2024) |
 | `vouch.multikey` | Multikey encode / decode |
 | `vouch.did_web` | did:web resolver and DID Document builder |
 | `vouch.kms` | KMS abstraction (AWS, GCP, Azure, local) |

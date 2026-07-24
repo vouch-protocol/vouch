@@ -95,7 +95,7 @@ const CAPABILITIES = [
     {
         num: 'xv.',
         title: 'Post-quantum by default',
-        body: 'A robot fielded today runs for decades, longer than classical signatures are expected to stay safe. Robot credentials sign with the hybrid post-quantum cryptosuite, a classical and an ML-DSA-44 signature together, and verification accepts either kind so a fleet moves to post-quantum without breaking the credentials already in the field.',
+        body: 'A robot fielded today runs for decades, longer than classical signatures are expected to stay safe. Robot credentials carry a post-quantum proof set, an eddsa-jcs-2022 proof and an mldsa44-jcs-2024 proof over the same document, and verification accepts a classical credential or a proof set so a fleet moves to post-quantum without breaking the credentials already in the field.',
         module: 'vouch.robotics.pq',
     },
     {

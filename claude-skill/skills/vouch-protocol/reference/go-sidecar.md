@@ -38,7 +38,7 @@ Flags:
 | `--did` | required | The agent DID this sidecar represents |
 | `--port` | 8877 | HTTP listen port |
 | `--key` | platform key store | Path to JWK private key file (alternative to KMS) |
-| `--hybrid` | off | Enable hybrid post-quantum signing (default plus ML-DSA-44) |
+| `--hybrid` | off | Enable post-quantum signing (the default proof plus an ML-DSA-44 proof) |
 | `--sensitive` / `-s` | off | Wrap responses in JWE so credentials are encrypted in flight |
 | `--verbose` | off | Detailed startup logs |
 
@@ -86,15 +86,16 @@ Response (`200 OK`):
 }
 ```
 
-With `--hybrid`, `cryptosuite` is `hybrid-eddsa-mldsa44-jcs-2026` and
-`proofValue` carries the concatenated Ed25519 + ML-DSA-44 signatures.
+With `--hybrid`, `proof` is an array of two proofs, one `eddsa-jcs-2022`
+(`proofValue` in base58btc) and one `mldsa44-jcs-2024` (`proofValue` in
+base64url-nopad multibase), over the same document.
 
 ### Other endpoints
 
 - `GET /health` - liveness check
 - `GET /did` - return the configured DID and verification method
 - `GET /pubkey` - return Multikey-encoded public key
-- `POST /sign/hybrid` - explicit hybrid signing endpoint
+- `POST /sign/hybrid` - explicit post-quantum signing endpoint
 
 ## Calling from Python
 
@@ -191,6 +192,6 @@ cred, err := s.Sign(signer.SignOptions{
 
 | Package | Purpose |
 |---|---|
-| `signer` | Credential issuance and verification (Ed25519 + hybrid PQ) |
+| `signer` | Credential issuance and verification (Ed25519 and the post-quantum proof set) |
 | `signer.NewStatusList`, etc. | BitstringStatusList primitives |
 | `cmd/vouch-sidecar` | HTTP daemon entrypoint |

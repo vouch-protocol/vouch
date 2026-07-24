@@ -10,7 +10,7 @@ the exact same bytes as every other Vouch SDK. Apache-2.0.
 - Data Integrity proofs (`eddsa-jcs-2022`): sign + verify, with validity-window checks
 - Post-quantum dual-proof and composite verification
 - BitstringStatusList revocation checks
-- Robotics (`VouchRobotics`): verify a robot credential (classical or hybrid post-quantum, auto-detected), mint and verify identity, regulatory conformance, passport, and physical action checks
+- Robotics (`VouchRobotics`): verify a robot credential (classical or post-quantum, auto-detected), mint and verify identity, regulatory conformance, passport, and physical action checks
 
 ## Build
 

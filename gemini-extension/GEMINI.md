@@ -31,8 +31,8 @@ tell the user to run `vouch init --env` and export the values.
    user pastes one, advise rotation and refuse to operate on it.
 4. Be terse and technical. Lead with the command or result, not preamble.
 5. Do not invent SDK method names, field names, or cryptosuite ids. The
-   default cryptosuite is `eddsa-jcs-2022`; the optional hybrid
-   post-quantum profile is `hybrid-eddsa-mldsa44-jcs-2026`.
+   default cryptosuite is `eddsa-jcs-2022`; the optional post-quantum
+   profile adds an `mldsa44-jcs-2024` proof on the same credential.
 
 ## Decision rules
 

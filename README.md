@@ -66,7 +66,7 @@ Vouch Protocol v1.0 aligns directly with the open standard:
 - **Verifiable Credentials** as the credential format (replacing v0.x JWS tokens).
 - **Data Integrity proofs** with the `eddsa-jcs-2022` cryptosuite (no JOSE, no Base64-wrapped payload, the credential remains human-readable JSON).
 - **Multikey verification methods** in DID Documents (algorithm-agnostic, ML-DSA-44 ready).
-- **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`) as an optional add-on for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
+- **Post-quantum profile** as a Data Integrity proof set: the credential carries two independent proofs, `eddsa-jcs-2022` and `mldsa44-jcs-2024`, an optional add-on for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
 - **Three-way cross-implementation interop** verified across Python, TypeScript, and Go.
 
 Credentials are issued with `Signer.sign()` and checked with `Verifier.verify()`. See the Specification at [vouch-protocol.com/specs/SPEC/](https://vouch-protocol.com/specs/SPEC/) for the full specification.
@@ -112,7 +112,7 @@ The standalone **`vouch-mcp`** package above ships alongside these in v1.6.2.
 Python, TypeScript, and Go are the full reference implementations. A Rust core with idiomatic Swift, JVM (Java and Kotlin), .NET, and C wrappers shares one codebase, so every language produces byte-identical output, verified against shared test vectors. A WebAssembly build is included for the browser and the edge. See the table further down for status per language.
 
 ### Robots and embodied agents
-A robot is an agent with a body, so identity and accountability matter even more once it can cause physical harm. The `vouch.robotics` module ships six capabilities on the same `eddsa-jcs-2022` credentials as the rest of Vouch: hardware-rooted identity (bound to a TPM or secure element, so it cannot be cloned to other hardware), model and config provenance (re-signable on every OTA update), physical capability scope (force, speed, a tighter cap near humans, allowed zones, and shift windows, checked before each actuation, with narrow-only delegation), a robot-to-robot trust handshake, an encrypted tamper-evident black box with a verifiable kill switch, and a scannable offline passport. All six are implemented in Python, TypeScript, Go, and the Rust core, which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers, so a robotics credential signed in one language verifies in every other. Fifteen further capabilities round out the set: a living-trust heartbeat (a signed per-interval motion summary whose trust decays unless it is renewed in-envelope), two-level credential revocation (per-credential status lists and whole-DID kill), an accountable safety record (a tamper-evident incident ledger summarized into a portable signed record), signed perception provenance (each captured sensor frame's hash bound to the robot's key and hash-linked, so a robot can prove what its sensors saw and a substituted frame is detectable), an offline delegation lease (a short-lived, scope-bounded grant a disconnected robot verifies and acts on with no network call, nesting across vendors), a physical quorum (a cryptographic two-person rule requiring M of N attested approvers for a high-consequence action), lifecycle credentials (ownership transfer that chains into a verifiable chain of custody, key rotation that forms a key history, and a signed decommission that retires the robot), a regulatory conformance profile (a machine-checkable mapping from a robot's credentials to the clauses of ISO 10218 and 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300, with a deterministic checker and a signed conformance attestation), post-quantum signing by default (robot credentials sign with the hybrid classical-plus-ML-DSA-44 cryptosuite, with backward-compatible verification, so a robot stays unforgeable across its decade-long life), and cross-embodiment identity continuity (an agent identity that moves between robot bodies, with an embodiment credential re-binding to each body's hardware root and a continuity chain that proves the same accountable agent persisted, plus a fork check), a physical custody handoff chain (a signed record of who accepted custody of a task or object at each hop across human and robot actors, so an incident traces to the exact hop and an attested condition localizes damage to the holder responsible), bounded infrastructure access (an operator-signed grant naming a resource, its permitted operations, an optional zone, and a time window, which a robot pairs with a signed request the resource authorizes offline, so a robot can open a door or dock at a charger with a tamper-evident, attributable, shrink-only record), fused-sensor provenance (a signed attestation binding a robot's fused world model to the exact set of input frame hashes and the fusion method that produced it, so a manipulated fusion result or a dropped input is detectable and every fused input traces to a frame the robot recorded), wear and degradation attestation (a robot signs its own wear level bound to its identity and hash-linked over time, and a deterministic rule narrows its physical capability scope as it degrades, so a worn robot operates inside a tighter, verifiable envelope than the static limit it shipped with), and bystander-consent evidence (a robot binds the basis for capturing people, an explicit token, posted notice, a legitimate interest, or a redaction it applied, to the capture itself by its hash, holding only hashes and never anyone's identifying data, and a bystander can sign consent bound to one capture so it cannot be replayed to another), implemented across the same languages and pinned by the shared interop vector. See [docs/robotics.md](docs/robotics.md) and the defensive disclosures PAD-064 through PAD-070, PAD-076 through PAD-084, and PAD-087 through PAD-094.
+A robot is an agent with a body, so identity and accountability matter even more once it can cause physical harm. The `vouch.robotics` module ships six capabilities on the same `eddsa-jcs-2022` credentials as the rest of Vouch: hardware-rooted identity (bound to a TPM or secure element, so it cannot be cloned to other hardware), model and config provenance (re-signable on every OTA update), physical capability scope (force, speed, a tighter cap near humans, allowed zones, and shift windows, checked before each actuation, with narrow-only delegation), a robot-to-robot trust handshake, an encrypted tamper-evident black box with a verifiable kill switch, and a scannable offline passport. All six are implemented in Python, TypeScript, Go, and the Rust core, which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers, so a robotics credential signed in one language verifies in every other. Fifteen further capabilities round out the set: a living-trust heartbeat (a signed per-interval motion summary whose trust decays unless it is renewed in-envelope), two-level credential revocation (per-credential status lists and whole-DID kill), an accountable safety record (a tamper-evident incident ledger summarized into a portable signed record), signed perception provenance (each captured sensor frame's hash bound to the robot's key and hash-linked, so a robot can prove what its sensors saw and a substituted frame is detectable), an offline delegation lease (a short-lived, scope-bounded grant a disconnected robot verifies and acts on with no network call, nesting across vendors), a physical quorum (a cryptographic two-person rule requiring M of N attested approvers for a high-consequence action), lifecycle credentials (ownership transfer that chains into a verifiable chain of custody, key rotation that forms a key history, and a signed decommission that retires the robot), a regulatory conformance profile (a machine-checkable mapping from a robot's credentials to the clauses of ISO 10218 and 15066, the EU Machinery Regulation, the EU AI Act, and UL 3300, with a deterministic checker and a signed conformance attestation), post-quantum signing by default (robot credentials carry a proof set with an Ed25519 proof and an ML-DSA-44 proof, with backward-compatible verification, so a robot stays unforgeable across its decade-long life), and cross-embodiment identity continuity (an agent identity that moves between robot bodies, with an embodiment credential re-binding to each body's hardware root and a continuity chain that proves the same accountable agent persisted, plus a fork check), a physical custody handoff chain (a signed record of who accepted custody of a task or object at each hop across human and robot actors, so an incident traces to the exact hop and an attested condition localizes damage to the holder responsible), bounded infrastructure access (an operator-signed grant naming a resource, its permitted operations, an optional zone, and a time window, which a robot pairs with a signed request the resource authorizes offline, so a robot can open a door or dock at a charger with a tamper-evident, attributable, shrink-only record), fused-sensor provenance (a signed attestation binding a robot's fused world model to the exact set of input frame hashes and the fusion method that produced it, so a manipulated fusion result or a dropped input is detectable and every fused input traces to a frame the robot recorded), wear and degradation attestation (a robot signs its own wear level bound to its identity and hash-linked over time, and a deterministic rule narrows its physical capability scope as it degrades, so a worn robot operates inside a tighter, verifiable envelope than the static limit it shipped with), and bystander-consent evidence (a robot binds the basis for capturing people, an explicit token, posted notice, a legitimate interest, or a redaction it applied, to the capture itself by its hash, holding only hashes and never anyone's identifying data, and a bystander can sign consent bound to one capture so it cannot be replayed to another), implemented across the same languages and pinned by the shared interop vector. See [docs/robotics.md](docs/robotics.md) and the defensive disclosures PAD-064 through PAD-070, PAD-076 through PAD-084, and PAD-087 through PAD-094.
 
 ### Inside your AI tools
 - **Claude Skill**, **OpenAI Custom GPT**, and **Gemini Gem** packages that teach your AI assistant how to add Vouch to your code, running on your own AI subscription.
@@ -158,7 +158,7 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 - **Data Integrity proofs** (`eddsa-jcs-2022` cryptosuite, no JOSE/JWS dependency)
 - **Decentralized Identifiers** (`did:web`, `did:key`)
 - **Multikey verification methods** (algorithm-agnostic, post-quantum ready)
-- **Hybrid post-quantum profile** (optional Ed25519 + ML-DSA-44 composite, `hybrid-eddsa-mldsa44-jcs-2026`)
+- **Post-quantum profile** (optional proof set: `eddsa-jcs-2022` + `mldsa44-jcs-2024`)
 - **Human-readable JSON** (proof attaches as a sibling object, no Base64-wrapped opaque payload)
 - **Framework-agnostic** (works with MCP, LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI)
 - **Cross-language interop** (Python, TypeScript, Go, byte-identical canonical form)
@@ -209,15 +209,15 @@ flowchart TB
   subgraph CRYPTO["Cryptographic Proof"]
     JCS["JCS canonicalization (RFC 8785)"]
     DEFAULT["eddsa-jcs-2022<br/>(Ed25519, default)"]
-    HYBRID["hybrid-eddsa-mldsa44-jcs-2026<br/>(Ed25519 + ML-DSA-44, optional)"]
+    PQ["mldsa44-jcs-2024<br/>(ML-DSA-44, optional second proof)"]
   end
   IDENTITY --> FORMAT
   FORMAT --> CRYPTO
   JCS --> DEFAULT
-  JCS --> HYBRID
+  JCS --> PQ
 ```
 
-**Trust = Verifiable Credentials + Data Integrity + Decentralized Identifiers + Multikey, with optional hybrid post-quantum signatures.** The same math that secures SSL/TLS, plus the standardized primitives that secure verifiable credentials elsewhere on the web, applied to AI agents.
+**Trust = Verifiable Credentials + Data Integrity + Decentralized Identifiers + Multikey, with an optional post-quantum proof set.** The same math that secures SSL/TLS, plus the standardized primitives that secure verifiable credentials elsewhere on the web, applied to AI agents.
 
 ---
 
@@ -233,7 +233,7 @@ flowchart TB
 | **Audit trail format** | ✅ (VC standardized) | ❌ (custom) |
 | **standards-aligned** | ✅ (`eddsa-jcs-2022` Data Integrity) | ❌ |
 | **Multikey verification methods** | ✅ (algorithm-agnostic) | ❌ |
-| **Hybrid post-quantum signatures** | ✅ (`hybrid-eddsa-mldsa44-jcs-2026`) | ❌ |
+| **Post-quantum signatures** | ✅ (`mldsa44-jcs-2024` proof set) | ❌ |
 | **Cross-implementation interop tests** | ✅ (Python, TypeScript, Go) | ❌ |
 | **Security best practices** | ✅ (built-in) | ⚠️ (easy to mess up) |
 
@@ -330,18 +330,19 @@ Works with all major AI frameworks out-of-the-box:
 - **Reputation Scoring**: track agent behavior over time
 - **Revocation Registry**: blacklist compromised keys
 - **Redis Caching**: production-scale verification
-- **Hybrid Post-Quantum Profile**: optional Ed25519 + ML-DSA-44 composite signatures (`hybrid-eddsa-mldsa44-jcs-2026`) for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 migration timelines
+- **Post-Quantum Profile**: an optional proof set carrying an `eddsa-jcs-2022` proof and an `mldsa44-jcs-2024` proof for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 migration timelines
 
-### Hybrid Post-Quantum Example
+### Post-Quantum Example
 
 ```python
-# Optional v1.0 profile, requires `pip install pqcrypto`
+# Optional profile, requires `pip install pqcrypto`
 credential = signer.sign_hybrid(intent={
   'action': 'submit_clinical_finding',
   'target': 'trial:NCT00000001',
   'resource': 'https://fda-submissions.example.com/api/findings',
 })
-# Carries both Ed25519 and ML-DSA-44 signatures over the same JCS canonical form.
+# The credential's `proof` is an array of two independent Data Integrity proofs,
+# eddsa-jcs-2022 and mldsa44-jcs-2024, over the same document.
 # Verification REQUIRES both to validate.
 ```
 
@@ -386,7 +387,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 
 - [Quick Start](https://github.com/vouch-protocol/vouch#quick-start)
 - [Vouch Specification (v1.6 normative)](https://vouch-protocol.com/specs/)
-- [Hybrid Post-Quantum Implementation Guide](https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md)
+- [Post-Quantum Implementation Guide](https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md)
 - [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
 - [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
 - [Threat Model and Security Considerations](https://github.com/vouch-protocol/vouch/blob/main/docs/THREAT_MODEL.md)
@@ -409,7 +410,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 
 - [x] **Verifiable Credentials + Data Integrity** (`eddsa-jcs-2022` cryptosuite)
 - [x] **Multikey verification methods** (algorithm-agnostic, multibase + multicodec)
-- [x] **Hybrid post-quantum profile** (`hybrid-eddsa-mldsa44-jcs-2026`, NIST CNSA 2.0 / NSM-10 aligned)
+- [x] **Post-quantum profile** (`eddsa-jcs-2022` + `mldsa44-jcs-2024` proof set, NIST CNSA 2.0 / NSM-10 aligned)
 - [x] **Three-language reference implementation** (Python, TypeScript, Go) with byte-identical canonical form via RFC 8785 JCS, verified against shared test vectors
 - [x] **Specification drafted** and submitted to the open standards group for incubation
 - [x] **55 Prior Art Disclosures** (CC0 defensive publications)
@@ -471,7 +472,7 @@ Contributions welcome. See [CONTRIBUTING.md](https://github.com/vouch-protocol/v
 
 **Areas where help is most useful:**
 - [ ] Additional framework integrations (Haystack, Semantic Kernel, LlamaIndex, others)
-- [ ] Cross-implementation interop test vectors (additional edge cases for JCS, VC, hybrid PQ)
+- [ ] Cross-implementation interop test vectors (additional edge cases for JCS, VC, post-quantum proof sets)
 - [ ] Tutorials and worked examples for regulated-sector deployments
 - [ ] Independent security review and audit
 - [ ] Reference implementations in additional languages (Rust, Java, .NET)
