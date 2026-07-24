@@ -213,7 +213,11 @@ def validate_chain(
         return {"valid": False, "code": "verifier_budget_exceeded", "limit": "depth"}
 
     for i, link in enumerate(chain):
-        if not isinstance(link, dict) or not isinstance(link.get("issuer"), str) or not isinstance(link.get("subject"), str):
+        if (
+            not isinstance(link, dict)
+            or not isinstance(link.get("issuer"), str)
+            or not isinstance(link.get("subject"), str)
+        ):
             return {"valid": False, "code": "malformed_delegation", "detail": f"link {i} malformed"}
 
     if trusted_roots:
@@ -265,9 +269,13 @@ def validate_chain_json(request_json: str) -> str:
     try:
         req = json.loads(request_json)
     except json.JSONDecodeError as e:
-        return json.dumps({"valid": False, "code": "malformed_delegation", "detail": f"request json: {e}"})
+        return json.dumps(
+            {"valid": False, "code": "malformed_delegation", "detail": f"request json: {e}"}
+        )
     if not isinstance(req.get("chain"), list):
-        return json.dumps({"valid": False, "code": "malformed_delegation", "detail": "missing chain array"})
+        return json.dumps(
+            {"valid": False, "code": "malformed_delegation", "detail": "missing chain array"}
+        )
     verdict = validate_chain(
         chain=req["chain"],
         trusted_roots=req.get("trustedRoots"),

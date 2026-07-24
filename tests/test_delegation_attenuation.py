@@ -9,8 +9,12 @@ import pytest
 from vouch.attenuation import validate_chain_json
 
 VECTORS = json.loads(
-    (Path(__file__).resolve().parent.parent
-     / "test-vectors" / "delegation-attenuation" / "vector.json").read_text()
+    (
+        Path(__file__).resolve().parent.parent
+        / "test-vectors"
+        / "delegation-attenuation"
+        / "vector.json"
+    ).read_text()
 )
 
 
