@@ -9,6 +9,8 @@
 \usepackage{authblk}
 \usepackage{abstract}
 \usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, backgrounds, calc}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{enumitem}
@@ -89,7 +91,7 @@
 \texttt{ram@vouch-protocol.com} \\
 \url{https://github.com/vouch-protocol/vouch}}
 \date{Version v0.1 \quad May 2026 \\
-\emph{Licensed under CC BY 4.0} \\[4pt]
+\emph{This paper is released under CC BY 4.0; the reference implementations under Apache 2.0; the defensive disclosures under CC0.} \\[4pt]
 \small Vouch-signed by Vouch Protocol: \url{https://vch.sh/arxiv-1}}
 
 % ====================================================================
@@ -100,18 +102,20 @@
 \begin{abstract}
 Autonomous AI agents now make decisions that matter: they move money, submit regulated filings, read clinical records, commit code. The credentials those agents use to do this (API keys, OAuth bearer tokens, shared service accounts) were designed for a human clicking through a session. They prove access. They do not prove who authorized that action, what the agent intends to do, or whether the agent is still trustworthy by the time it acts.
 
-We present the \textbf{Vouch Protocol}: an open specification and a reference implementation in Python, TypeScript, and Go for cryptographically identifying autonomous AI agents and binding every action they take to a signed Verifiable Credential. Each credential carries the agent's identity, the specific intent (action, target, resource), the delegation chain from the original human principal down to the agent, and a freshness window after which the credential stops being valid.
+We present the \textbf{Vouch Protocol}: an open specification with a byte-exact Rust core and software development kits in seven languages (Python, TypeScript, Go, C++, .NET, JVM, and Swift) for cryptographically identifying autonomous AI agents and binding every action they take to a signed Verifiable Credential. Each credential carries the agent's identity, the specific intent (action, target, resource), the delegation chain from the original human principal down to the agent, and a freshness window after which the credential stops being valid.
 
 Per-action signing is necessary but not sufficient. Once an agent has been admitted, the next question is whether it is still behaving correctly \emph{right now}, after we let it through the door. The protocol's \emph{State Verifiability layer} answers that with four mechanisms: (1) trust entropy decay, where credential trust falls exponentially over time and must be renewed before consequential actions; (2) behavioral attestation digests, lightweight per-interval summaries of the agent's API calls, resources accessed, and intent drift; (3) canary commit/reveal chains, providing cryptographic detection of silent agent failure or substitution; and (4) $M$-of-$N$ validator quorum, distributing trust evaluation across role-specialized validators (policy, behavior, budget).
 
-The protocol is built on W3C Verifiable Credentials Data Model 2.0 with Data Integrity proofs: the \texttt{eddsa-jcs-2022} cryptosuite, which signs Ed25519 over RFC 8785 JCS-canonicalized payloads. For the post-quantum transition, the protocol defines a \emph{dual-proof profile} in which a credential carries two independent Data Integrity proofs on the same JCS-canonicalized bytes: one \texttt{eddsa-jcs-2022} proof (classical Ed25519) and one \texttt{mldsa44-jcs-2026} proof (ML-DSA-44, FIPS 204). Verifiers can downgrade gracefully, and the wire format requires no Vouch-specific composite cryptosuite identifier.
+A cluster of recent systems enforces \emph{pre-action authorization}: they intercept an agent's tool call and evaluate it against a declarative policy before execution~\cite{oap2026,faramesh2026,aarm2026,righttoact2026,forge2026}. Vouch addresses the complementary and broader problem. Rather than checking an action against a finite authored allow-list, it verifies the action against the principal's cryptographically signed \emph{intent}, traced through a delegation chain to the root human author, which covers the open-ended space of legitimate actions that a finite policy cannot enumerate. Because the credential format is standards-native (W3C Verifiable Credentials secured by Data Integrity, the \texttt{eddsa-jcs-2022} cryptosuite), any conforming verifier can consume it, and the protocol extends verification with a correctness layer (reasoning-faithfulness and retrieval-grounding) that policy enforcement alone does not provide.
 
-This paper covers the credential format, the Identity Sidecar pattern that isolates an agent's signing key from the LLM process, delegation-chain construction with resource narrowing and depth-limited validation, the BitstringStatusList revocation mechanism, the Heartbeat Protocol's renewal cycle, the dual-proof post-quantum profile and its same-canonical-bytes property, and the State Verifiability runtime. We then work through the adversarial cases that motivated the design (prompt injection, key exfiltration, replay across resources, post-quantum cryptographic obsolescence) and what the protocol does about each. Cross-language test vectors show that three independent implementations produce byte-identical credentials.
+The protocol is built on W3C Verifiable Credentials Data Model 2.0 with Data Integrity proofs: the \texttt{eddsa-jcs-2022} cryptosuite, which signs Ed25519 over RFC 8785 JCS-canonicalized payloads. For the post-quantum transition, the protocol defines a \emph{dual-proof profile} in which a credential carries two independent Data Integrity proofs over the same JCS-canonicalized credential body: one \texttt{eddsa-jcs-2022} proof (classical Ed25519) and one \texttt{mldsa44-jcs-2024} proof (ML-DSA-44, FIPS 204). Verifiers can downgrade gracefully, and the wire format requires no Vouch-specific composite cryptosuite identifier.
 
-The implementation is open-source under Apache 2.0. Sixty defensive prior-art disclosures accompany the specification under CC0 to keep design innovations openly available.
+This paper covers the credential format, the Identity Sidecar pattern that isolates an agent's signing key from the LLM process, delegation-chain construction with resource narrowing and capability attenuation, the BitstringStatusList revocation mechanism, the Heartbeat Protocol's renewal cycle, the dual-proof post-quantum profile and its shared-canonical-document construction, and the State Verifiability runtime. We then work through the adversarial cases that motivated the design (prompt injection, key exfiltration, replay across resources, post-quantum cryptographic obsolescence) and what the protocol does about each. Because all seven language SDKs bind to a single Rust core, credentials produced through any SDK are byte-identical, and a published RFC 8785 JCS test-vector battery verifies this on every release.
+
+The implementation is open-source under Apache 2.0. More than 120 defensive prior-art disclosures accompany the specification under CC0 to keep design innovations openly available.
 
 \smallskip
-\noindent\textbf{Index Terms:} AI agent identity, Verifiable Credentials, decentralized identifiers, post-quantum cryptography, dual-proof signatures, JCS canonicalization, prompt injection, delegation, continuous attestation, behavioral provenance.
+\noindent\textbf{Index Terms:} AI agent identity, Verifiable Credentials, decentralized identifiers, intent-bound authorization, pre-action authorization, reasoning faithfulness, retrieval grounding, post-quantum cryptography, dual-proof signatures, JCS canonicalization, prompt injection, delegation, continuous attestation, behavioral provenance.
 \end{abstract}
 
 % ====================================================================
@@ -136,14 +140,16 @@ The accountability gap has three structural sources:
 The Vouch Protocol addresses these failures with three composing layers:
 
 \begin{enumerate}[label=\textbf{\arabic*.},leftmargin=*]
-\item A \textbf{credential layer} in which every agent action is issued as a W3C Verifiable Credential signed by the agent's Decentralized Identifier (DID) via a Data Integrity proof. The credential's \verb|credentialSubject.intent| field carries the action verb, the target identifier, and the resource URI bound together. The credential's \verb|validUntil| is short (commonly 5 minutes). The proof is \texttt{eddsa-jcs-2022} over the JCS-canonicalized credential bytes, optionally paired with a second \texttt{mldsa44-jcs-2026} proof on the same credential for the dual-proof post-quantum profile.
+\item A \textbf{credential layer} in which every agent action is issued as a W3C Verifiable Credential signed by the agent's Decentralized Identifier (DID) via a Data Integrity proof. The credential's \verb|credentialSubject.intent| field carries the action verb, the target identifier, and the resource URI bound together. The credential's \verb|validUntil| is short (commonly 5 minutes). The proof is \texttt{eddsa-jcs-2022} over the JCS-canonicalized credential bytes, optionally paired with a second \texttt{mldsa44-jcs-2024} proof on the same credential for the dual-proof post-quantum profile.
 
-\item A \textbf{delegation layer} in which credentials chain together, each link cryptographically attesting to a principal-to-sub-principal authorization. Resource scope must narrow at each link; chain depth is bounded; the root principal is verifiable. Multi-agent systems gain end-to-end attribution: ``the patient authorized the clinician, who authorized their EHR agent, who authorized the prior-auth sub-agent, who submitted this credential'' is a single auditable chain.
+\item A \textbf{delegation layer} in which credentials chain together, each link cryptographically attesting to a principal-to-sub-principal authorization. Each delegated capability must be a proper subset of its parent, so authority strictly narrows at each hop (capability attenuation); the root principal is verifiable. Multi-agent systems gain end-to-end attribution: ``the patient authorized the clinician, who authorized their EHR agent, who authorized the prior-auth sub-agent, who submitted this credential'' is a single auditable chain.
 
 \item A \textbf{state verifiability layer} in which long-running agents renew their credentials on a heartbeat schedule. Trust decays exponentially over time; behavioral attestation digests are computed per interval; canary commit/reveal chains detect silent failures; an $M$-of-$N$ validator quorum distributes trust evaluation across role-specialized policy / behavior / budget validators. An agent that cannot heartbeat, because it crashed, is compromised, or has drifted out of policy, loses authority by entropy decay; a missed heartbeat is cryptographically detectable.
 \end{enumerate}
 
 Together, the three layers move from ``the agent had a key'' to ``the agent issued a signed credential at time $T$, declaring action $A$ on resource $R$, with the authorization of principals $P_1 \to P_2 \to P_n$, verifiable against the agent's published DID Document and the issuer's revocation registry, with a freshness window of 300 seconds and a running behavioral attestation showing the agent is operating within its declared scope.''
+
+The protocol's central claim is one of \emph{intent verification} rather than \emph{policy authorization}. A recent and active line of work intercepts an agent's tool call and checks it against an authored declarative policy before execution~\cite{oap2026,faramesh2026,aarm2026,righttoact2026,forge2026}. A declarative policy is a finite allow-list and can admit only the actions its author anticipated; the space of legitimate actions an agent may need to take for a principal is open-ended. Vouch instead verifies each action against the principal's cryptographically signed intent, carried down a delegation chain to the root human author (\S\ref{sec:delegation}), and adds a correctness layer that checks reasoning-faithfulness~\cite{pad017} and retrieval-grounding~\cite{pad045}. The two approaches compose: a policy gate can bound capability type while Vouch establishes identity, intent, and correctness for each admitted action. \S\ref{sec:related} develops this positioning against the specific systems in that cluster.
 
 \subsection{Design Goals}
 
@@ -152,8 +158,8 @@ Six design goals shaped the protocol:
 \begin{itemize}[leftmargin=*]
 \item \textbf{Standards alignment over invention.} Where existing open standards suffice (W3C VC 2.0, Data Integrity, DIDs, BitstringStatusList, RFC 8785 JCS, NIST FIPS 204), the protocol composes with them and does not introduce new primitives.
 \item \textbf{LLM-isolated key material.} The agent's private signing key must never appear in the LLM's context window. The Identity Sidecar pattern isolates the key in a separate process that the LLM cannot reach.
-\item \textbf{Byte-identical canonicalization across languages.} Credentials signed by the Python SDK must verify against credentials signed by the TypeScript or Go SDK with the same input. JCS (RFC 8785) is the canonical form.
-\item \textbf{Cryptographic agility.} The protocol must accommodate the post-quantum transition without changing the canonical payload format. The dual-proof profile attaches two independent Data Integrity proofs on the same JCS-canonicalized bytes; verifiers select the trust level they require.
+\item \textbf{Byte-identical canonicalization across languages.} All seven language SDKs bind to a single Rust core (\texttt{vouch-core}); a credential produced through any SDK verifies against any other. JCS (RFC 8785) is the canonical form~\cite{pad039}.
+\item \textbf{Cryptographic agility.} The protocol must accommodate the post-quantum transition without changing the canonical payload format. The dual-proof profile attaches two independent Data Integrity proofs over the same JCS-canonicalized credential body; verifiers select the trust level they require.
 \item \textbf{Continuous verifiability, not point-in-time authentication.} Trust must be renewed under observation; an agent that goes silent must lose authority automatically.
 \item \textbf{Open prior art.} Every novel design pattern is published as a defensive disclosure (Apache 2.0 code, CC0 disclosure) to keep the design space open.
 \end{itemize}
@@ -165,11 +171,12 @@ This paper contributes:
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item The Vouch Credential format and its Data Integrity proof construction (\texttt{eddsa-jcs-2022}).
 \item The Identity Sidecar pattern with intent allow-list enforcement at the sidecar layer, defended against prompt injection by construction.
-\item The delegation chain mechanism with resource narrowing, depth-limit, and trusted-principal anchoring.
+\item The delegation chain mechanism with capability attenuation (proper-subset narrowing), verifier-side cost budgets, and trusted-principal anchoring.
 \item The BitstringStatusList integration for per-credential revocation, plus DID-level revocation for issuer-key compromise.
-\item The dual-proof post-quantum profile, in which a credential carries two independent Data Integrity proofs (\texttt{eddsa-jcs-2022} and \texttt{mldsa44-jcs-2026}) on the same JCS-canonicalized bytes.
+\item The dual-proof post-quantum profile, in which a credential carries two independent Data Integrity proofs (\texttt{eddsa-jcs-2022} and \texttt{mldsa44-jcs-2024}) over the same JCS-canonicalized credential body.
 \item The State Verifiability runtime: trust entropy decay, behavioral attestation digests, canary commit/reveal chains, $M$-of-$N$ validator quorum.
-\item Cross-language test vectors and three reference implementations (Python, TypeScript, Go).
+\item A byte-exact Rust core (\texttt{vouch-core}) with SDKs in seven languages (Python, TypeScript, Go, C++, .NET, JVM, Swift) that produce byte-identical credentials, backed by a published cross-language JCS test-vector battery~\cite{pad039}.
+\item A positioning of intent verification as distinct from, and broader than, policy-based pre-action authorization, extended with a correctness layer (reasoning-faithfulness~\cite{pad017}, retrieval-grounding~\cite{pad045}) absent from that body of work.
 \end{enumerate}
 
 \subsection{Paper Organization}
@@ -216,7 +223,16 @@ The Coalition for Content Provenance and Authenticity (C2PA) defines content-bin
 
 \subsection{Post-Quantum Signature Migration Frameworks}
 
-NIST's selection of ML-DSA-44 (FIPS 204) and SLH-DSA (FIPS 205) as standardized post-quantum digital signature algorithms~\cite{nistfips204} creates the migration pressure Vouch addresses. The IETF's \emph{draft-ietf-jose-pq-composite-sigs} defines composite signatures for JOSE; the W3C Data Integrity community has parallel work in progress, including Digital Bazaar's \texttt{mldsa44-rdfc-2024-cryptosuite} family~\cite{db-mldsa44} and an upcoming JCS variant. Vouch's \emph{dual-proof profile} is a Data-Integrity-native realization that avoids inventing a composite cryptosuite identifier: a single Vouch credential carries two independent Data Integrity proofs in its \verb|proof| array, one \texttt{eddsa-jcs-2022} proof and one \texttt{mldsa44-jcs-2026} proof, both computed over the same JCS canonical credential bytes. Verifiers in classical-only mode validate the \texttt{eddsa-jcs-2022} proof and ignore the rest; verifiers in PQ-aware mode validate the \texttt{mldsa44-jcs-2026} proof; verifiers in both-required mode iterate the proof array and accept only when every proof verifies.
+NIST's selection of ML-DSA-44 (FIPS 204) and SLH-DSA (FIPS 205) as standardized post-quantum digital signature algorithms~\cite{nistfips204} creates the migration pressure Vouch addresses. The IETF's \emph{draft-ietf-jose-pq-composite-sigs} defines composite signatures for JOSE; the W3C Data Integrity community has parallel work in progress, including Digital Bazaar's \texttt{mldsa44-rdfc-2024-cryptosuite} family~\cite{db-mldsa44} and an upcoming JCS variant. Vouch's \emph{dual-proof profile} is a Data-Integrity-native realization that avoids inventing a composite cryptosuite identifier: a single Vouch credential carries two independent Data Integrity proofs in its \verb|proof| array, one \texttt{eddsa-jcs-2022} proof and one \texttt{mldsa44-jcs-2024} proof, both computed over the same JCS-canonicalized credential body, each with its own proof configuration. Verifiers in classical-only mode validate the \texttt{eddsa-jcs-2022} proof and ignore the rest; verifiers in PQ-aware mode validate the \texttt{mldsa44-jcs-2024} proof; verifiers in both-required mode iterate the proof array and accept only when every proof verifies.
+
+\subsection{Pre-Action Authorization Systems}
+\label{sec:related-preaction}
+
+A cluster of systems published between January and April 2026 establishes \emph{pre-action authorization} as a distinct primitive for agent safety. Uchibeke's Open Agent Passport intercepts an agent's tool calls and evaluates them against a declarative policy before execution, emitting a signed audit record for each decision~\cite{oap2026}. Faramesh places a mandatory, transport-independent authorization checkpoint ahead of any action that changes external state, standardizing actions into a canonical representation and returning permit, defer, or deny artifacts that executors must honor~\cite{faramesh2026}. AARM specifies a runtime that intercepts actions, evaluates them against policy and intent alignment, and maintains tamper-evident records, with a threat taxonomy covering prompt injection and confused-deputy attacks~\cite{aarm2026}. Right-to-Act formalizes a pre-execution admissibility boundary in which any unmet required condition halts or defers execution, separating compensatory from non-compensatory decision regimes~\cite{righttoact2026}. FORGE compiles declarative policies, written in a Datalog-derived language over abstract predicates, into a reference monitor that enforces them at each agent decision point~\cite{forge2026}.
+
+These systems share an architecture: an enforcement point admits or denies an action against an authored policy. They differ from Vouch in three respects that this paper treats as the central distinction. First, they are \emph{policy-bound}: the admission decision is made against a finite, declaratively authored rule set, which can only cover the actions an author anticipated. Vouch is \emph{intent-bound}: the decision is made against the principal's cryptographically signed intent, traced through a delegation chain to the root human author (\S\ref{sec:delegation}), covering the open-ended space of legitimate actions a finite policy cannot enumerate. Second, none of these systems anchors its decision in a standards-defined credential; their audit records and decision artifacts are system-specific, whereas a Vouch credential is a W3C Verifiable Credential secured by Data Integrity (\S\ref{sec:credential}) that any conforming verifier can consume. Third, none adds a correctness layer: Vouch additionally verifies whether the agent's reasoning was faithful to the stated intent~\cite{pad017} and whether its outputs were grounded in retrieved evidence rather than confabulated~\cite{pad045}.
+
+The two approaches are complementary rather than competing. A deployment can run a pre-action policy gate and Vouch together: the policy gate bounds capability \emph{type}, and Vouch establishes who acted, under whose signed intent, with what delegated authority, and whether the action was reasoned faithfully. As a matter of record, the foundational primitives Vouch builds on were placed in the public domain as dated defensive disclosures contemporaneously with this cluster: the cryptographic binding of agent identity to signed intent in December 2025~\cite{pad001}, and the recursive, intent-bound delegation chain anchored to a root human author in January 2026~\cite{pad002}.
 
 % ====================================================================
 \section{The Vouch Credential}
@@ -272,28 +288,32 @@ The required fields beyond the VC 2.0 baseline:
 The default cryptosuite is \texttt{eddsa-jcs-2022} (W3C Data Integrity registered identifier). The signing procedure:
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
-\item Construct the credential dictionary with all required fields, including the \verb|proof| object except \verb|proofValue|.
-\item Canonicalize the entire credential using RFC 8785 JCS. JCS specifies a strict deterministic ordering, escaping, and number formatting; the output is byte-identical across conforming implementations.
-\item Compute the Ed25519 signature over the canonical bytes using the issuer's private key.
-\item Encode the signature in multibase base58btc form (the \texttt{z} prefix), producing approximately 88 characters.
-\item Set \verb|proof.proofValue| to the multibase-encoded signature.
+\item Construct the credential with all required fields, and separately construct the \emph{proof configuration}: the \verb|proof| object without \verb|proofValue|.
+\item Canonicalize the proof configuration and the credential body (the credential without its \verb|proof|) independently, each using RFC 8785 JCS. JCS specifies a strict deterministic ordering, escaping, and number formatting; the output is byte-identical across conforming implementations.
+\item Compute \verb|proofConfigHash|, the SHA-256 hash of the canonical proof configuration, and \verb|transformedDocumentHash|, the SHA-256 hash of the canonical credential body. Each is 32 bytes.
+\item Form \verb|hashData| by concatenating \verb|proofConfigHash| first and \verb|transformedDocumentHash| second, yielding 64 bytes.
+\item Compute the Ed25519 signature over \verb|hashData| using the issuer's private key.
+\item Encode the signature in multibase base58btc form (the \texttt{z} prefix), producing approximately 88 characters, and set \verb|proof.proofValue|.
 \end{enumerate}
 
 Verification reverses the process:
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
-\item Extract \verb|proof.proofValue|, decode from multibase base58btc.
-\item Reconstruct the credential dictionary excluding \verb|proof.proofValue| (other proof fields are part of the signed payload).
-\item JCS-canonicalize.
+\item Extract \verb|proof.proofValue| and decode it from multibase base58btc.
+\item Separate the proof configuration (the \verb|proof| object without \verb|proofValue|) from the credential body.
+\item JCS-canonicalize each independently and compute the SHA-256 hash of each.
+\item Reassemble \verb|hashData| as \verb|proofConfigHash| followed by \verb|transformedDocumentHash|.
 \item Resolve the issuer's DID Document, locate the verification method indicated by \verb|proof.verificationMethod|, extract the Ed25519 public key (encoded as Multikey in the DID Document).
-\item Verify the Ed25519 signature.
+\item Verify the Ed25519 signature over \verb|hashData|.
 \end{enumerate}
+
+\paragraph{Conformance note.} Earlier Vouch reference implementations computed a single SHA-256 digest over the JCS canonicalization of the credential with its unsigned proof merged in, and signed those 32 bytes. That is a different function of the same inputs, and a credential carrying such a proof is not verifiable by a conforming \texttt{eddsa-jcs-2022} implementation even though it declares that cryptosuite identifier. The two-hash construction above is the normative one, and the reference implementations are being corrected to it. Because Vouch has no external deployments relying on the earlier bytes, the correction is a direct replacement rather than a compatibility-preserving migration.
 
 \subsection{JCS Determinism Across Languages}
 
-JSON Canonicalization Scheme (RFC 8785) fixes the serialization that Ed25519 signs. The protocol's three reference implementations (Python, TypeScript, Go) produce byte-identical JCS output given byte-identical inputs. Cross-language test vectors verify the property on every release.
+JSON Canonicalization Scheme (RFC 8785) fixes the serialization that Ed25519 signs. Rather than maintaining several independent implementations in sync, the protocol exposes a single Rust core (\texttt{vouch-core}) to seven languages (Python, TypeScript, Go, C++, .NET, JVM, Swift) through WebAssembly and UniFFI bindings, so byte-identical JCS output is a property of the shared core rather than of cross-implementation discipline. A published JCS test-vector battery~\cite{pad039} pins the canonical form, and any conforming binding must reproduce it.
 
-The byte-identity property is foundational: without it, a credential signed by Python and a credential with the same logical content signed by TypeScript would have different signatures, breaking interoperability and federation across implementations.
+The byte-identity property is foundational: without it, a credential produced through one SDK and a credential with the same logical content produced through another would have different signatures, breaking interoperability and federation across languages.
 
 \subsection{Intent Replay Resistance}
 
@@ -319,7 +339,7 @@ Direct key exposure to the LLM is incompatible with the protocol's security mode
 
 \subsection{Architecture}
 
-The Identity Sidecar pattern separates the agent into two processes:
+The Identity Sidecar pattern separates the agent into two processes (Figure~\ref{fig:sidecar}):
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item \textbf{The Brain (stochastic).} The LLM. Holds zero cryptographic secrets. Reasons about which action to take and proposes intents to the Sidecar.
@@ -327,6 +347,33 @@ The Identity Sidecar pattern separates the agent into two processes:
 \end{enumerate}
 
 The Brain and the Passport communicate over a local IPC channel: typically localhost HTTP, a UNIX domain socket, or an MCP transport. The IPC boundary is the trust boundary.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    box/.style={draw, thick, minimum width=2.8cm, minimum height=1.9cm, align=center, font=\small},
+    brain/.style={box, fill=red!5, draw=red!50!black},
+    passport/.style={box, fill=teal!5, draw=teal!60!black},
+    resource/.style={draw, thick, fill=gray!5, minimum width=2.6cm, minimum height=1.9cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.2mm]}, thick},
+    boundary/.style={draw, dashed, thick, gray!60!black, rounded corners=3pt, inner sep=12pt},
+    lbl/.style={font=\footnotesize\itshape, text=gray!60!black, align=center},
+    annot/.style={font=\scriptsize\ttfamily, fill=white, inner sep=2pt}
+]
+\node[brain] (brain) at (0, 0) {\textbf{Brain}\\(LLM)\\[2pt]\footnotesize stochastic\\\footnotesize \emph{no keys}};
+\node[passport, right=3.3cm of brain] (passport) {\textbf{Passport}\\(Sidecar)\\[2pt]\footnotesize deterministic\\\footnotesize \emph{holds keys}};
+\begin{scope}[on background layer]
+  \node[boundary, fit=(brain) (passport), label={[lbl,anchor=south]above:trust boundary $=$ IPC channel}] {};
+\end{scope}
+\draw[arr] ($(brain.east) + (0, 0.45)$) -- node[annot, above]{intent proposal} ($(passport.west) + (0, 0.45)$);
+\draw[arr] ($(passport.west) + (0, -0.45)$) -- node[annot, below]{signed VC or rejection} ($(brain.east) + (0, -0.45)$);
+\node[resource, right=2.3cm of passport] (rs) {Resource\\server\\(Verifier)};
+\draw[arr] (brain.south) ++ (0, -0.1) -- ++(0, -1.2) coordinate (b1) -| node[annot, pos=0.25, below]{VC + request} (rs.south);
+\node[lbl, below=1.4cm of passport] {policy: structural $+$ allow-list $+$ rate limit};
+\end{tikzpicture}
+\caption{Identity Sidecar pattern. The Brain (LLM) holds no cryptographic secrets and proposes intents over a local IPC channel. The Passport applies a deterministic allow-list policy and signs only intents that pass. A compromised Brain cannot exceed the Passport's enforced scope.}
+\label{fig:sidecar}
+\end{figure}
 
 \subsection{Just-In-Time Signing Flow}
 
@@ -342,17 +389,19 @@ A signing operation proceeds:
 
 The Sidecar's policy check is the \emph{last line of defence} against a compromised Brain. A prompt-injected LLM may propose any intent it likes; the Sidecar refuses to sign anything outside the allow-list. The capability bound on a compromised Brain is therefore structural, not behavioural.
 
+It is worth distinguishing this allow-list from the declarative policies of the pre-action authorization systems discussed in \S\ref{sec:related-preaction}, because the resemblance is superficial. The Sidecar allow-list is a coarse bound on which \emph{classes} of action an agent may even propose: a defense-in-depth rail against a fully compromised model, not the mechanism that decides whether a given action is legitimate. Legitimacy in Vouch is established separately, by verifying each action against the principal's signed intent, its delegation chain to the human principal, and the correctness layer. In a policy-bound system the authored rule set \emph{is} the admission decision, so it can admit only what its author anticipated; in Vouch the allow-list only fences capability type, while the open-ended space of legitimate actions is covered by intent verification rather than by enumeration. A deployment may even omit the allow-list where the signed-intent and delegation checks suffice.
+
 \subsection{Reference Implementations and Tier Hierarchy}
 
-Three reference Sidecar implementations accompany the protocol:
+Three of the seven language SDKs additionally ship a signing sidecar daemon:
 
 \begin{itemize}[leftmargin=*]
-\item \textbf{Go} (\verb|go-sidecar/|): production-tier, KMS/HSM-backed, hybrid PQ supported, sensitive-mode JWE wrapping, multi-tenant.
-\item \textbf{Python} (\verb|vouch.sidecar.*|): lightweight tier for self-hosted Python stacks. File or environment keys. Intentionally omits KMS, hybrid PQ, JWE, and multi-tenancy.
+\item \textbf{Go} (\verb|go-sidecar/|): production-tier, KMS/HSM-backed, dual-proof PQ supported, sensitive-mode JWE wrapping, multi-tenant.
+\item \textbf{Python} (\verb|vouch.sidecar.*|): lightweight tier for self-hosted Python stacks. File or environment keys. Intentionally omits KMS, dual-proof PQ, JWE, and multi-tenancy.
 \item \textbf{TypeScript} (\verb|packages/sdk-ts/sidecar/|): lightweight tier for Node stacks. Same omissions as Python.
 \end{itemize}
 
-The HTTP wire contract is identical across all three. A shared contract test suite verifies that all three implementations accept and reject the same inputs and emit semantically equivalent credentials. The tier hierarchy is informative guidance: deployers requiring KMS, FIPS, hybrid PQ, or multi-tenancy run the Go sidecar; deployers with simpler requirements may run Python or TypeScript.
+The HTTP wire contract is identical across all three sidecars. A shared contract test suite verifies that the three sidecar implementations accept and reject the same inputs and emit semantically equivalent credentials. The tier hierarchy is informative guidance: deployers requiring KMS, FIPS, dual-proof PQ, or multi-tenancy run the Go sidecar; deployers with simpler requirements may run Python or TypeScript.
 
 % ====================================================================
 \section{Delegation Chains}
@@ -370,27 +419,54 @@ A delegation link is a Vouch credential whose \verb|credentialSubject| is shaped
 
 \begin{lstlisting}[language=json]
 {
-  "credentialSubject": {
-    "id": "did:web:research-agent.example.com",
-    "delegatedBy": "did:web:assistant.example.com",
-    "scope": {
-      "actions": ["web_search", "scrape_page"],
-      "resource": "https://research-agent.example.com/agents/research-agent/scope/2026"
-    },
-    "validUntil": "2026-05-14T08:00:00Z"
-  }
+  "issuer": "did:web:assistant.example.com",
+  "subject": "did:web:research-agent.example.com",
+  "intent": {
+    "action": "web_search",
+    "target": "topic:climate-2026",
+    "resource": "https://research-agent.example.com/agents/research-agent/scope/2026"
+  },
+  "validFrom": "2026-05-14T06:00:00Z",
+  "validUntil": "2026-05-14T08:00:00Z",
+  "proof": { "...DataIntegrityProof..." }
 }
 \end{lstlisting}
 
-The link's \verb|issuer| is the delegating principal. The link's \verb|credentialSubject.id| is the delegate. \verb|scope.actions| enumerates which actions are delegated; \verb|scope.resource| is the resource URI under which all delegated actions must fall.
+The link's \verb|issuer| is the delegating principal; \verb|subject| is the delegate. The \verb|intent| object (\verb|action|, \verb|target|, \verb|resource|) describes the authorized action and the resource URI under which it must fall; \verb|validFrom| and \verb|validUntil| bound the delegation in time. Each link is itself signed by its \verb|issuer|.
 
 \subsection{Chain Construction and the Resource Narrowing Rule}
 
-A chain is a list of delegation-link credentials, ordered from root principal to leaf agent. At each link, the child's \verb|scope.resource| MUST be a sub-URI of the parent's \verb|scope.resource|. The narrowing rule prevents capability widening at any link. A delegate cannot grant a sub-delegate more authority than it itself holds.
+A chain is a list of delegation-link credentials, ordered from root principal to leaf agent (Figure~\ref{fig:delegation}). At each link, the child's \verb|intent.resource| MUST be a sub-URI of, or equal to, the parent's \verb|intent.resource|. The narrowing rule prevents capability widening at any link: a delegate cannot grant a sub-delegate more authority than it itself holds.
 
-\subsection{Depth Limit}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    principal/.style={draw, thick, rounded corners=2pt, fill=teal!5, minimum width=2.6cm, minimum height=0.95cm, align=center, font=\small},
+    link/.style={font=\scriptsize\ttfamily, align=center, fill=white, inner sep=2pt},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    annot/.style={font=\footnotesize\itshape, text=gray!60!black, align=center}
+]
+\node[principal] (user)   at (0, 0)   {User\\\scriptsize did:web:alice};
+\node[principal] (asst)   at (3.4, 0) {Assistant\\\scriptsize did:web:asst};
+\node[principal] (res)    at (6.8, 0) {Research agent\\\scriptsize did:web:rsch};
+\node[principal] (leaf)   at (10.2, 0){Web scraper\\\scriptsize did:web:scrp};
+\draw[arr] (user)   -- node[link, above]{delegates}     (asst);
+\draw[arr] (asst)   -- node[link, above]{delegates}     (res);
+\draw[arr] (res)    -- node[link, above]{delegates}     (leaf);
+\node[annot, below=0.1cm of user]   {resource:\\\texttt{/*}};
+\node[annot, below=0.1cm of asst]   {\texttt{/research/*}};
+\node[annot, below=0.1cm of res]    {\texttt{/research/papers/*}};
+\node[annot, below=0.1cm of leaf]   {\texttt{/research/papers/x.pdf}};
+\draw[arr, dashed] (leaf.south) ++ (0, -1.15) -- node[link, right, xshift=2pt]{leaf intent + chain}+(0, -0.7);
+\node[principal, fill=gray!8, below=2.5cm of leaf, minimum width=3.2cm] (rs){Resource server\\\scriptsize (verifies whole chain)};
+\end{tikzpicture}
+\caption{Delegation chain. Each link records the parent's DID (\texttt{issuer}), the child's DID (\texttt{subject}), the intent handed down (action, target, resource), and a Data Integrity proof. The resource narrows at each link; a link that broadens its parent's resource triggers \texttt{resource\_not\_narrowed}. The resource server validates the whole chain on every request: signatures, capability attenuation, temporal bounds, and verifier-side budgets.}
+\label{fig:delegation}
+\end{figure}
 
-Chain depth is bounded to \textbf{five links maximum}. This limit prevents pathological chains from inflating verification cost and from obscuring the actual authorization path.
+\subsection{Capability Attenuation}
+
+Rather than capping the chain at a fixed number of links, each delegated capability MUST be a proper subset of its parent along at least one dimension (action, target, resource, time, rate, or policy) and broader along none. Authority therefore strictly narrows at every hop and cannot grow, which bounds the chain by construction: a link that fails to attenuate is rejected with \verb|capability_not_attenuated|. This rule replaces the earlier fixed depth limit, adopted following capability-security feedback from Alan Karp. Verification cost is bounded separately by verifier-side budgets (maximum depth, verification time, and cumulative time-to-live), which the verifier declares and enforces, returning \verb|verifier_budget_exceeded| when a chain exceeds them.
 
 \subsection{Chain Validation}
 
@@ -398,15 +474,15 @@ A verifier validating a leaf credential with an attached chain:
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item Verifies the leaf credential's signature.
-\item Identifies the chain root: the first link's \verb|issuer| MUST be in the verifier's set of trusted principals for the leaf action.
-\item For each adjacent pair (parent, child) in the chain, verifies the child's \verb|scope.resource| is a sub-URI of the parent's.
-\item Verifies each link's \verb|delegatedBy| matches the previous link's \verb|credentialSubject.id|.
-\item Verifies each link's signature.
-\item Verifies the leaf credential's \verb|intent.action| is in the deepest link's \verb|scope.actions|.
-\item Verifies the leaf credential's \verb|intent.resource| is a sub-URI of the deepest link's \verb|scope.resource|.
+\item Verifies the root link's \verb|issuer| is in the verifier's set of trusted principals for the leaf action.
+\item For each adjacent pair (parent, child), verifies the parent link's \verb|subject| equals the child link's \verb|issuer|.
+\item For each link, verifies its \verb|intent.resource| is a sub-URI of, or equal to, the parent link's \verb|intent.resource|.
+\item For each link, verifies its \verb|validFrom| and \verb|validUntil| fall within the parent link's temporal bounds.
+\item Verifies each link's Data Integrity proof.
+\item Verifies the leaf credential's \verb|intent.resource| is a sub-URI of the deepest link's \verb|intent.resource|.
 \end{enumerate}
 
-Any failure produces a structured rejection reason: \verb|untrusted_principal|, \verb|chain_depth_exceeded|, \verb|resource_not_narrowed|, \verb|link_signature_invalid|, \verb|parent_proof_mismatch|, or \verb|action_not_in_scope|.
+Any failure produces a structured rejection reason: \verb|untrusted_principal|, \verb|capability_not_attenuated|, \verb|resource_not_narrowed|, \verb|verifier_budget_exceeded|, \verb|temporal_bounds_exceeded|, \verb|subject_issuer_mismatch|, or \verb|link_signature_invalid|.
 
 % ====================================================================
 \section{Revocation}
@@ -443,7 +519,7 @@ The protocol's \verb|StatusListFetcher| caches the status list with a configurab
 
 NIST's selection of ML-DSA-44 (FIPS 204) as a standardized post-quantum digital signature~\cite{nistfips204} places a known cryptographic transition on the protocol's horizon. Ed25519 will not survive a sufficiently large fault-tolerant quantum computer. The transition window is uncertain but real, and credentials with multi-year audit retention requirements (regulated healthcare, financial settlement) cannot afford to be signed with an algorithm that will be broken before the retention window expires.
 
-The protocol's response is the \emph{dual-proof profile}: a credential carries two independent W3C Data Integrity proofs on the same JCS-canonicalized credential bytes, one \texttt{eddsa-jcs-2022} proof (classical Ed25519) and one \texttt{mldsa44-jcs-2026} proof (ML-DSA-44). The Data Integrity specification already defines the \verb|proof| field as an array, so the dual-proof construction is a natural use of existing primitives and requires no Vouch-specific composite cryptosuite identifier.
+The protocol's response is the \emph{dual-proof profile}: a credential carries two independent W3C Data Integrity proofs over the same JCS-canonicalized credential body, one \texttt{eddsa-jcs-2022} proof (classical Ed25519) and one \texttt{mldsa44-jcs-2024} proof (ML-DSA-44). The Data Integrity specification already defines the \verb|proof| field as an array, so the dual-proof construction is a natural use of existing primitives and requires no Vouch-specific composite cryptosuite identifier.
 
 \subsection{Construction}
 
@@ -460,15 +536,15 @@ The credential's \verb|proof| field is an array of two Data Integrity proof obje
   },
   {
     "type": "DataIntegrityProof",
-    "cryptosuite": "mldsa44-jcs-2026",
+    "cryptosuite": "mldsa44-jcs-2024",
     "verificationMethod": "...#key-mldsa44",
     "proofPurpose": "assertionMethod",
-    "proofValue": "z<base58btc(mldsa44_sig)>"
+    "proofValue": "u<base64url(mldsa44_sig)>"
   }
 ]
 \end{verbatim}
 
-Both proofs are computed over the same JCS-canonical credential bytes (the credential minus the \verb|proofValue| field of each proof, JCS-canonicalized). The same-canonical-bytes property is preserved by construction: both cryptosuites use JCS canonicalization on the same credential body. Each proof's \verb|proofValue| is independently multibase base58btc-encoded.
+Both proofs are anchored to the same canonical credential body: the credential is JCS-canonicalized and hashed once, and that \verb|transformedDocumentHash| is shared by both proofs. Each proof contributes its own \verb|proofConfigHash|, since the cryptosuite identifier and verification method differ between them, so the 64-byte \verb|hashData| each algorithm signs differs only in its leading 32 bytes.\footnote{Two conformant Data Integrity proofs on one credential cannot sign byte-identical input: each proof binds its own proof configuration (the cryptosuite identifier and verification method), which necessarily differs between the classical and post-quantum suites. What the two proofs share, and what matters, is the canonical document body. Identical-byte signing across suites is therefore neither possible nor required.} The two suites encode their signatures differently: the Ed25519 \verb|proofValue| uses multibase base58btc (the \texttt{z} prefix), while the ML-DSA-44 \verb|proofValue| uses multibase base64url (the \texttt{u} prefix), as the quantum-resistant cryptosuite specifies.
 
 The Ed25519 signature is exactly 64 bytes; the ML-DSA-44 signature is exactly 2,420 bytes. Each appears in its own proof object's \verb|proofValue| rather than being concatenated into a single field.
 
@@ -478,7 +554,7 @@ A verifier iterates the credential's \verb|proof| array and applies one of three
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item \textbf{Classical-only}: validate the \texttt{eddsa-jcs-2022} proof; ignore the rest. Useful when ML-DSA-44 libraries are unavailable or computationally expensive.
-\item \textbf{Post-quantum-only}: validate the \texttt{mldsa44-jcs-2026} proof. Useful when classical signatures are no longer trusted under the verifier's compliance regime.
+\item \textbf{Post-quantum-only}: validate the \texttt{mldsa44-jcs-2024} proof. Useful when classical signatures are no longer trusted under the verifier's compliance regime.
 \item \textbf{Both-required}: validate every proof in the array; reject if any one fails. The cautious mode, recommended for long-retention credentials.
 \end{enumerate}
 
@@ -495,7 +571,7 @@ A deployment migrates from classical to dual-proof in three steps:
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item \textbf{Adopt dual-proof signing}: the signer issues credentials with two proofs in the array. Existing classical-only verifiers continue working (they see a familiar \texttt{eddsa-jcs-2022} proof and ignore the second one they don't recognize).
 \item \textbf{Update verifiers}: deploy a verifier release that supports ML-DSA-44. Configure the verifier's mode (classical-only, PQ-only, or both-required) based on the deployment's risk tolerance.
-\item \textbf{Retire classical signing}: once all verifiers are PQ-aware, switch the signer to issue only the \texttt{mldsa44-jcs-2026} proof. The dual-proof profile is the migration vehicle, not the destination.
+\item \textbf{Retire classical signing}: once all verifiers are PQ-aware, switch the signer to issue only the \texttt{mldsa44-jcs-2024} proof. The dual-proof profile is the migration vehicle, not the destination.
 \end{enumerate}
 
 \subsection{Performance and Size}
@@ -519,7 +595,7 @@ The size delta matters for HTTP-header-conveyed credentials and for credentials 
 
 \subsection{Relationship to Concurrent Work}
 
-The dual-proof construction converges with Digital Bazaar's \texttt{mldsa44-rdfc-2024-cryptosuite} family~\cite{db-mldsa44}, which defines an ML-DSA-44 Data Integrity cryptosuite using RDFC canonicalization, and with that family's forthcoming JCS variant. The cryptosuite identifier \texttt{mldsa44-jcs-2026} used in this paper is provisional and is being aligned with that upstream registration. Earlier Vouch reference implementations (v1.6.x) emit a single composite cryptosuite (\texttt{hybrid-eddsa-mldsa44-jcs-2026}) with a concatenated \verb|proofValue|; this composite identifier is retained as a transitional alias for backward compatibility only, and new implementations emit the dual-proof form described above.
+The post-quantum proof uses \texttt{mldsa44-jcs-2024}, the ML-DSA-44 cryptosuite with JCS canonicalization defined in the W3C Quantum-Resistant Cryptosuites specification~\cite{w3cqr}. That specification declares itself experimental and not intended for production use, so a deployment should treat the post-quantum proof as a forward-looking migration vehicle rather than a production assurance; the classical proof carries the security of the credential today. Related work includes Digital Bazaar's \texttt{mldsa44-rdfc-2024-cryptosuite} family~\cite{db-mldsa44}, which defines an ML-DSA-44 cryptosuite over RDFC canonicalization rather than JCS. Earlier Vouch reference implementations (v1.6.x) emitted a single composite cryptosuite (\texttt{hybrid-eddsa-mldsa44-jcs-2026}) with a concatenated \verb|proofValue|; that identifier and its concatenated encoding are deprecated and removed, and current implementations emit the dual-proof form described above.
 
 % ====================================================================
 \section{The State Verifiability Layer}
@@ -533,7 +609,7 @@ A long-running agent without continuous attestation accumulates risk. The longer
 
 \subsection{The Heartbeat Protocol}
 
-The Heartbeat Protocol defines a periodic renewal cycle:
+The Heartbeat Protocol defines a periodic renewal cycle (Figure~\ref{fig:heartbeat}):
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item The agent's \verb|HeartbeatSession| records actions and behavioural signals during each interval.
@@ -544,7 +620,40 @@ The Heartbeat Protocol defines a periodic renewal cycle:
 \item On failure (broken canary, stale interval index, behavioural drift), no voucher is issued; the agent's existing voucher expires; the agent loses authority.
 \end{enumerate}
 
-The Heartbeat Protocol inverts the traditional PKI trust model from ``trusted until revoked'' to \emph{``untrusted until renewed.''}
+The Heartbeat Protocol inverts the traditional PKI trust model from ``trusted until revoked'' to \emph{``untrusted until renewed''}~\cite{pad016}.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    agentbox/.style={draw, thick, rounded corners=2pt, fill=teal!5, minimum width=2.8cm, minimum height=0.9cm, align=center, font=\small},
+    valbox/.style={draw, thick, rounded corners=2pt, fill=red!5, minimum width=2.8cm, minimum height=0.9cm, align=center, font=\small},
+    rsbox/.style={draw, thick, rounded corners=2pt, fill=gray!10, minimum width=2.8cm, minimum height=0.9cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.2mm]}, thick},
+    msg/.style={font=\scriptsize\ttfamily, fill=white, inner sep=2pt},
+    annot/.style={font=\scriptsize\itshape, text=gray!55!black, align=left}
+]
+\node[agentbox] (a0) at (0, 0) {Agent};
+\node[valbox]   (v0) at (5, 0) {Validator};
+\node[rsbox]    (r0) at (10, 0){Resource server};
+\draw[gray!40, dashed] (a0.south) -- ++(0, -7.5);
+\draw[gray!40, dashed] (v0.south) -- ++(0, -7.5);
+\draw[gray!40, dashed] (r0.south) -- ++(0, -7.5);
+\node[annot, anchor=west] at (-1.8, -0.7) {$t_0$: voucher issued};
+\draw[arr] (a0.south |- 0, -1.1) -- node[msg, above]{action + VC + voucher} ($(r0.south) + (0, -1.1)$);
+\node[annot, anchor=west] at (10.4, -1.1) {trust $=$ initial};
+\node[annot, anchor=west, text=red!60!black] at (-1.8, -2.0) {$t_1$: decay $T(t)=T_0 e^{-\lambda(t-t_0)}$};
+\draw[arr] (a0.south |- 0, -3.0) -- node[msg, above]{HeartbeatRequest} ($(v0.south) + (0, -3.0)$);
+\node[annot, anchor=west] at (-1.8, -3.0) {$t_{h}$};
+\node[annot, anchor=west] at (5.4, -3.4) {digest, Merkle root,\\canary reveal/commit};
+\node[annot, anchor=west, fill=red!5, draw=red!50, rounded corners=2pt, inner sep=3pt] at (4.0, -4.5) {validator: schema, drift,\\canary, monotonicity};
+\draw[arr] ($(v0.south) + (0, -5.5)$) -- node[msg, above]{SessionVoucher (renewed)} ($(a0.south) + (0, -5.5)$);
+\node[annot, anchor=west] at (-1.8, -5.5) {trust $\leftarrow$ initial};
+\node[annot, anchor=west, text=red!70!black] at (-1.8, -6.6) {if validator refuses or heartbeat missed:};
+\node[annot, anchor=west, text=red!70!black] at (-1.0, -7.1) {voucher expires; trust $\to 0$; resource server denies subsequent actions.};
+\end{tikzpicture}
+\caption{Heartbeat lifecycle. Each interval the agent's voucher trust decays exponentially. At the heartbeat boundary the agent submits a digest, an action Merkle root, and a canary commit/reveal to the validator. A renewed voucher resets trust. A missed or rejected heartbeat lets the existing voucher expire, and trust drives below the action's threshold within seconds.}
+\label{fig:heartbeat}
+\end{figure}
 
 \subsection{Trust Entropy Decay}
 
@@ -554,12 +663,14 @@ Each SessionVoucher carries \texttt{initialTrust} and \texttt{decayLambda}. The 
 \textsf{trust}(t) = \textsf{initialTrust} \cdot e^{-\lambda (t - t_0)}
 \]
 
-Sensitive actions are gated by current trust. The protocol defines three reference thresholds:
+Sensitive actions are gated by current trust. The specification defines five reference thresholds by operation category:
 
 \begin{itemize}[leftmargin=*]
-\item \verb|TRUST_THRESHOLD_HIGH_STAKES = 0.9|: financial transfers, code deployment, regulated submissions.
-\item \verb|TRUST_THRESHOLD_MEDIUM_STAKES = 0.75|: PHI read, customer-data access.
-\item \verb|TRUST_THRESHOLD_LOW_STAKES = 0.5|: status queries, idle activity.
+\item Financial transaction: $\theta = 0.95$ (transfers, settlement, regulated submissions).
+\item API write: $\theta = 0.80$ (state-changing calls, code deployment).
+\item API read: $\theta = 0.50$ (PHI read, customer-data access, status queries).
+\item Health check: $\theta = 0.20$ (liveness, idle activity).
+\item Logging: $\theta = 0.05$ (telemetry, audit emission).
 \end{itemize}
 
 Heartbeat interval should be set to less than half the half-life so renewal stays ahead of decay. For $\lambda = 0.01$, half-life is approximately 69 seconds; a 30-second heartbeat is appropriate.
@@ -634,6 +745,8 @@ The protocol does \emph{not} assume:
 
 \noindent\textbf{Prompt injection causing unauthorized credential issuance.} The Sidecar's intent allow-list makes this attack class capability-bounded: the LLM may propose any intent it likes, but the Sidecar refuses to sign intents outside the deployment's allow-list.
 
+\noindent\textbf{Injected or untrustworthy intent.} A natural objection is that verifying an action against ``signed intent'' only relocates the trust problem upstream: what if the captured intent is itself a product of prompt injection? Vouch closes this in two places. First, intent is signed at the human-principal boundary before any agent processing. The root of every delegation chain is a credential signed by the human principal's key (\S\ref{sec:delegation}), establishing a chain of custody from the original authorization down to the acting agent~\cite{pad002}; an intent fabricated inside a compromised agent carries no valid root signature and fails chain validation. Second, the faithfulness of the agent's reasoning relative to that signed intent is itself verifiable: the reasoning trace is evidence-anchored and checked for causal consistency with the chosen action~\cite{pad017}, and outputs can be bound to retrieved evidence rather than confabulated~\cite{pad045}. Intent an agent invents for itself is therefore neither rooted in a principal's signature nor reconcilable with a faithful reasoning trace.
+
 \noindent\textbf{Replay across resources.} Each credential's \verb|intent.resource| is part of the signed payload. Replaying against a different resource invalidates the signature.
 
 \noindent\textbf{Delegation chain forgery.} Each link is a signed credential; forging a link requires possessing the delegating principal's key. Trusted-principal anchoring ensures the chain root is known to the verifier independently.
@@ -660,12 +773,12 @@ The protocol does \emph{not} assume:
 
 \subsection{Test Vectors}
 
-The protocol ships cross-language test vectors verifying that Python, TypeScript, and Go implementations produce byte-identical credentials given identical inputs:
+The protocol ships cross-language test vectors verifying that every language SDK, each bound to the shared Rust core, produces byte-identical credentials given identical inputs:
 
 \begin{itemize}[leftmargin=*]
 \item \verb|test-vectors/jcs/|: JSON Canonicalization Scheme reference outputs.
 \item \verb|test-vectors/eddsa-jcs-2022/|: full credential signing test vectors for the classical cryptosuite.
-\item \verb|test-vectors/hybrid-eddsa-mldsa44/|: full credential signing test vectors for the dual-proof post-quantum profile (and, for v1.6.x interop, the transitional composite cryptosuite).
+\item \verb|test-vectors/hybrid-eddsa-mldsa44/|: full credential signing test vectors for the dual-proof post-quantum profile.
 \item \verb|test-vectors/bitstring-status-list/|: BitstringStatusList encoding test vectors.
 \item \verb|test-vectors/sidecar-contract/|: HTTP wire-contract test suite for the three sidecar implementations.
 \end{itemize}
@@ -675,23 +788,28 @@ The protocol ships cross-language test vectors verifying that Python, TypeScript
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{lllrrl}
+\begin{tabular}{ll}
 \toprule
-Implementation & Language & LOC & Tests & Cryptosuites & Sidecar tier \\
+Component & Language / runtime \\
 \midrule
-\verb|vouch/| & Python 3.10+ & 4{,}500 & 350 & classical + hybrid & Lightweight + Dev \\
-\verb|packages/sdk-ts/| & TypeScript 5+ & 3{,}200 & 120 & classical + hybrid & Lightweight \\
-\verb|go-sidecar/| & Go 1.21+ & 2{,}800 & 75 & classical + hybrid & Production \\
+\verb|vouch-core| & Rust (shared core) \\
+\verb|sdk-py| & Python 3.10+ \\
+\verb|sdk-ts| & TypeScript 5+ \\
+\verb|go-sidecar| & Go 1.21+ \\
+\verb|sdks/cpp| & C++ \\
+\verb|sdks/dotnet| & .NET \\
+\verb|sdks/jvm| & Java / Kotlin (JVM) \\
+\verb|sdks/swift| & Swift \\
 \bottomrule
 \end{tabular}
-\caption{Reference implementations of the Vouch Protocol.}
+\caption{The Vouch reference architecture: one Rust core (\texttt{vouch-core}) exposed to seven language SDKs through WebAssembly and UniFFI bindings, so every SDK produces byte-identical credentials by construction.}
 \end{table}
 
-All three pass the cross-language test vectors. CI runs the vectors on every commit, and rejects merges that introduce divergence.
+All SDKs pass the cross-language test vectors. CI runs the vectors on every commit and rejects merges that introduce divergence. Concretely, the same credential signed through any of the seven SDKs is byte-for-byte identical, classical proof and post-quantum proof alike, because every SDK binds to one Rust core operating over JCS canonical bytes. This cross-language identity is a separate property from the relationship between the two proofs \emph{within} a dual-proof credential, which sign different \verb|hashData| because each binds its own cryptosuite and key (\S\ref{sec:hybrid}).
 
 \subsection{Known Implementation Divergences}
 
-The only documented divergence is in BitstringStatusList byte-encoding: Python and TypeScript use \texttt{zlib}'s DEFLATE encoder, which produces byte-identical output for identical bitstrings; Go's \texttt{compress/flate} produces a valid but different DEFLATE stream. The spec requires equivalence of the \emph{decompressed} bitstring; all three implementations agree on the decompressed bitstring and therefore on every credential's revocation status. Verifiers and issuers interoperate across all three.
+The one documented divergence is in BitstringStatusList byte-encoding: different DEFLATE encoders across language runtimes produce valid but non-identical compressed streams for the same bitstring. The specification requires equivalence of the \emph{decompressed} bitstring, which every implementation satisfies; revocation status is therefore identical across all SDKs, and verifiers and issuers interoperate.
 
 % ====================================================================
 \section{Discussion}
@@ -699,7 +817,7 @@ The only documented divergence is in BitstringStatusList byte-encoding: Python a
 
 \subsection{Limitations}
 
-\noindent\textbf{State Verifiability is Python-only at the runtime level.} The data formats (SessionVoucher, behavioural digest, canary commitment, heartbeat request) are cross-language and verifiable in any of the three implementations. The runtime orchestration (\verb|HeartbeatSession|, \verb|HeartbeatScheduler|, \verb|HeartbeatValidator|, \verb|HeartbeatQuorum|) is implemented in Python only. TypeScript and Go ports are work in progress at the time of publication.
+\noindent\textbf{State Verifiability is Python-only at the runtime level.} The data formats (SessionVoucher, behavioural digest, canary commitment, heartbeat request) are cross-language and verifiable in any of the seven language SDKs. The runtime orchestration (\verb|HeartbeatSession|, \verb|HeartbeatScheduler|, \verb|HeartbeatValidator|, \verb|HeartbeatQuorum|) is implemented in Python only. TypeScript and Go ports are work in progress at the time of publication.
 
 \noindent\textbf{Trusted-principal anchoring is deployment-specific.} The protocol does not standardize how a verifier discovers its trusted principals. Each deployment configures this independently.
 
@@ -709,7 +827,7 @@ The only documented divergence is in BitstringStatusList byte-encoding: Python a
 
 \subsection{Adoption Path}
 
-The protocol has been validated against three reference implementations and a cross-language test-vector battery. Adoption requirements for a new deployment:
+The protocol has been validated against the Rust core, its seven language SDKs, and a cross-language test-vector battery. Adoption requirements for a new deployment:
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item Generate an issuer DID and publish its DID Document.
@@ -724,14 +842,15 @@ End-to-end onboarding effort is on the order of one to two engineering days for 
 
 \subsection{Future Work}
 
-Four directions are actively under development:
+Three directions remain actively under development:
 
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item \textbf{TypeScript and Go ports of the State Verifiability runtime.}
 \item \textbf{Confidentiality profile for sensitive intents} using ML-KEM-768 key encapsulation.
 \item \textbf{Hosted continuous leak monitor} that closes the loop from automated detection to DID rotation with dual-signed migration credentials and verifier broadcast.
-\item \textbf{AI-assisted developer tooling} distributed as Claude Skills / Custom GPTs / Gemini Gems, allowing developers to receive Vouch integration guidance through their own AI tool subscriptions with zero protocol-vendor inference cost.
 \end{enumerate}
+
+Two capabilities that earlier roadmaps listed as future work already ship: an embodied and robotics extension (hardware-rooted robot identity, physical capability attenuation, custody chains, and kill-switch and safety-evidence credentials), and AI-assisted developer tooling distributed as Claude Skills, Custom GPTs, and Gemini Gems. Both are documented in companion material rather than developed further in this paper.
 
 The protocol's State Verifiability runtime, the dual-proof post-quantum profile, and the migration story from classical to dual-proof to pure-PQ each merit follow-up papers; outlines are in preparation.
 
@@ -741,14 +860,14 @@ The protocol's State Verifiability runtime, the dual-proof post-quantum profile,
 
 We have presented the Vouch Protocol, an open standard for cryptographic identity and continuous state verifiability of autonomous AI agents. The protocol composes Verifiable Credentials, Decentralized Identifiers, Data Integrity proofs, and post-quantum cryptosuites with two novel layers: an Identity Sidecar pattern that isolates the agent's key from the LLM and bounds the agent's capabilities by an enforced allow-list, and a State Verifiability layer that renews trust continuously via heartbeat, decays trust exponentially in the interval, attests behaviour cryptographically, and detects silent failure through canary commit/reveal chains.
 
-Three reference implementations (Python, TypeScript, Go) interoperate at the credential-byte level. The protocol is open under Apache 2.0; sixty defensive disclosures keep the design space open under CC0.
+A single Rust core (\texttt{vouch-core}), exposed to seven language SDKs through WebAssembly and UniFFI bindings, makes credentials byte-identical across languages by construction. The protocol is open under Apache 2.0; more than 120 defensive disclosures keep the design space open under CC0.
 
 The accountability gap in agent identity is solvable today. The cryptographic primitives are sound, the standards exist, and the implementation effort is bounded. Vouch is one realization of a path the open agent-identity ecosystem will increasingly need: from ``the bearer has access'' to ``this specific agent issued this specific intent under this specific authorization chain, verifiable in seconds, with cryptography rather than logbook evidence.''
 
 % ====================================================================
 \section*{Acknowledgements}
 
-The author thanks Manu Sporny and the W3C Verifiable Credentials Working Group for foundational work on Verifiable Credentials, Data Integrity, and the eddsa-jcs-2022 cryptosuite; the W3C Credentials Community Group for hosting and reviewing the incubation; the IETF JOSE working group for ongoing work on PQ/T composite signatures; the C2PA technical committee for content-provenance complementarity; and the open-source community of contributors and reviewers whose feedback shaped many of the choices documented here.
+The author thanks Manu Sporny and the W3C Verifiable Credentials Working Group for foundational work on Verifiable Credentials, Data Integrity, and the eddsa-jcs-2022 cryptosuite; Alan Karp for the capability-attenuation model that shaped the delegation design, and Amir Hameed Mir for scope-framing feedback; the W3C Credentials Community Group for hosting and reviewing the incubation; the IETF JOSE working group for ongoing work on PQ/T composite signatures; the C2PA technical committee for content-provenance complementarity; and the open-source community of contributors and reviewers whose feedback shaped many of the choices documented here.
 
 % ====================================================================
 \bibliographystyle{plain}
@@ -763,6 +882,7 @@ The author thanks Manu Sporny and the W3C Verifiable Credentials Working Group f
 \item \textbf{Python}: \verb|pip install vouch-protocol|. Source: \url{https://github.com/vouch-protocol/vouch/tree/main/vouch/}
 \item \textbf{TypeScript}: \verb|npm install @vouch-protocol/core|. Source: \url{https://github.com/vouch-protocol/vouch/tree/main/packages/sdk-ts/}
 \item \textbf{Go}: install with \verb|go install| from \url{github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar}. Source: \url{https://github.com/vouch-protocol/vouch/tree/main/go-sidecar/}
+\item \textbf{Rust core and further SDKs}: the \texttt{vouch-core} crate is under \url{https://github.com/vouch-protocol/vouch/tree/main/core/}; SDKs for C++, .NET, JVM, and Swift are under \url{https://github.com/vouch-protocol/vouch/tree/main/sdks/}.
 \end{itemize}
 
 \section{Test Vectors}
