@@ -48,6 +48,8 @@ namespace vouch_core {
     [Throws=CoreError]
     boolean verify_chain_time_bound(string chain_json, string now_iso, i64 clock_skew_seconds);
 
+    string validate_delegation_chain(string request_json);
+
     // FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
     // signature is a standard Ed25519 signature, verifiable with
     // ed25519_verify like any other; no new proof type. See

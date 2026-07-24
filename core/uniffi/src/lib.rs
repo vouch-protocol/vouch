@@ -166,6 +166,12 @@ pub fn verify_chain_time_bound(
     )?)
 }
 
+/// v1.7 capability-attenuation chain validation. Infallible JSON boundary:
+/// returns a `{"valid": bool, ...}` verdict string (see core::attenuation).
+pub fn validate_delegation_chain(request_json: String) -> String {
+    vouch_core::attenuation::validate_chain_json(&request_json)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn build_delegation_link(
     issuer: String,
