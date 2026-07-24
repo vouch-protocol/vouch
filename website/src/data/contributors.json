@@ -43,5 +43,10 @@
     "login": "ahfoysal",
     "pr": 320,
     "title": "test: add CLI help smoke coverage"
+  },
+  {
+    "login": "kautilyaa",
+    "pr": 345,
+    "title": "152 test vector"
   }
 ]
