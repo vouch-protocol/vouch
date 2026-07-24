@@ -75,7 +75,7 @@ agent.tools = vouch.protect([submit_claim], parent=grant)
 
 To build a chain explicitly, sign each credential under its parent. The
 `parent_credential` argument appends a delegation link and enforces resource
-narrowing and the depth limit.
+narrowing at build time. The full non-expansion rule (no link may broaden its parent on any of action, target, resource, time, rate, or policy) is checked at verification, and there is no fixed chain-depth limit; verifiers bound cost with their own budgets.
 
 ```python
 from vouch import Signer
