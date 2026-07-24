@@ -212,6 +212,37 @@ Codes are **stable and append-only**. Once published, a code's meaning does not 
 
 ---
 
+## Phase 6: Root of Trust for Machine Identity
+
+**Goal:** Let Vouch Protocol act as the trust anchor for AI agent and robot identity, so a verifier pins one Vouch root and can then verify any agent or robot without relying on an external certificate authority or a central per-agent lookup.
+
+### 6.1 Vouch Root of Trust
+- [ ] Publish a Vouch root identity (root DID + key) that verifiers pin once
+- [ ] Root credential format, distribution, and pinning mechanism
+- [ ] Root key rotation and succession
+
+### 6.2 Recognized-issuer credentials
+- [ ] Credential type by which the root recognizes issuers allowed to attest agent and robot identity
+- [ ] Chaining so a recognition traces back to the Vouch root
+- [ ] Wire into the existing Vouch Shield `TrustRegistry` (consume and emit)
+- [ ] Holder-presented stapling so verifiers need no central lookup
+
+### 6.3 Authority-issued identity credential
+- [ ] Identity credential type where issuer differs from subject, binding an agent key to attributes (owner, model, capability class, creation time)
+- [ ] Reuse the SessionVoucher issuer-set plumbing
+- [ ] Revocation via BitstringStatusList
+- [ ] Interop vectors across Python / TypeScript / Go
+
+### 6.4 Verifier chain
+- [ ] End-to-end verification: action → authority-issued identity → recognized issuer → Vouch root
+- [ ] Offline verification with no per-agent lookup
+- [ ] Documentation and interactive demo
+
+### 6.5 Robot identity binding
+- [ ] Bind hardware-rooted robot keys to an authority-issued identity (coordinate with the robotics workstream)
+
+---
+
 ## PAD Coverage Matrix
 
 | PAD | Title | Implemented | Roadmap Phase |

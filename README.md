@@ -36,6 +36,16 @@
 ## Quick Start
 
 ```bash
+# Install (Linux and macOS). On Windows, use: pip install vouch-protocol
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+
+# Run vouch with no arguments and pick what you want to do
+vouch
+```
+
+Prefer to do it by hand? It is three commands:
+
+```bash
 pip install vouch-protocol
 
 # One command to configure SSH signing + Vouch branding
@@ -44,6 +54,8 @@ vouch git init
 # All future commits are now signed and show ✅ Verified on GitHub
 git commit -m "Secure commit"
 ```
+
+Setting up an agent instead of git signing? `vouch onboard --quick` generates a working identity, allow-list, verifier, and heartbeat config in one command.
 
 ---
 
@@ -230,6 +242,10 @@ flowchart TB
 
 ### 1. Install
 ```bash
+# Linux and macOS: one line
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+
+# Or with pip (any platform)
 pip install vouch-protocol
 ```
 

@@ -7,11 +7,11 @@ both Gemini consumer plans and Google Workspace.
 
 ## Files
 
-- `name.txt` — display name to paste into the Gem builder
-- `description.txt` — short description shown in the Gem picker
-- `instructions.md` — the system prompt (Gemini calls this "Instructions")
-- `examples.md` — example prompts (Gemini calls these "Examples")
-- `knowledge/` — files to attach as the Gem's knowledge
+- `name.txt`: display name to paste into the Gem builder
+- `description.txt`: short description shown in the Gem picker
+- `instructions.md`: the system prompt (Gemini calls this "Instructions")
+- `examples.md`: example prompts (Gemini calls these "Examples")
+- `knowledge/`: files to attach as the Gem's knowledge
 
 ## Creating the Gem
 

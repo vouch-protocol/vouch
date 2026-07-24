@@ -42,10 +42,16 @@ export const HELP_SECTIONS: HelpSection[] = [
 ## Install
 
 \`\`\`bash
+# Linux and macOS: one line (on Windows, use pip below)
+curl -fsSL https://vouch-protocol.com/install.sh | sh
+
+# Or with pip on any platform
 pip install vouch-protocol
 \`\`\`
 
 The hybrid post-quantum profile (\`hybrid-eddsa-mldsa44-jcs-2026\`) is bundled by default; nothing else to install.
+
+Not ready to write code yet? Run \`vouch\` with no arguments for a short menu (sign your git commits, or create an agent identity), or run \`vouch onboard --quick\` to generate a full agent setup with recommended defaults in one command.
 
 ## Step 1 - Sign and verify locally
 

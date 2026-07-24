@@ -120,6 +120,7 @@ docs/patents/
 
 # AI assistant config
 claude.md
+AGENTS.md
 
 # Claude Code local-only state (permission allowlist, agent settings, etc.)
 .claude/
