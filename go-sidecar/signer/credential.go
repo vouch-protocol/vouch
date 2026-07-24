@@ -19,7 +19,7 @@ import (
 	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
 )
 
-const maxDelegationDepth = 5
+// v1.7 removes the fixed delegation depth limit (was 5).
 
 // SignOptions configures Signer.Sign.
 type SignOptions struct {
@@ -321,12 +321,10 @@ func (s *Signer) extendDelegationChain(
 		parentChain = raw
 	}
 
-	if len(parentChain) >= maxDelegationDepth {
-		return nil, fmt.Errorf(
-			"delegation chain exceeds max depth of %d",
-			maxDelegationDepth,
-		)
-	}
+	// v1.7 removes the fixed depth limit; the non-expansion rule is enforced at
+	// verification by the shared attenuation validator, and cost is a
+	// verifier-side budget. The resource-narrowing guard below stays as a fast
+	// build-time check.
 
 	parentResource, _ := parentIntent["resource"].(string)
 	childResource, _ := currentIntent["resource"].(string)
