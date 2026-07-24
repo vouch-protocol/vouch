@@ -12,6 +12,7 @@
 //! `hybrid-eddsa-mldsa44-jcs-2026` whose single proofValue was
 //! base58btc(ed25519_sig || mldsa44_sig).
 
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use serde_json::{Map, Value};
 
 use crate::data_integrity::{self, legacy_proof_digest, BuildProofOptions, PROOF_TYPE};
@@ -76,9 +77,12 @@ pub fn build_dual_proof(
     let mut ml_proof = mldsa_unsigned_proof(mldsa_verification_method, created);
     let ml_signing_input = data_integrity::hash_data(&base, &ml_proof)?;
     let ml_sig = mldsa.sign(&ml_signing_input)?;
+    // The Quantum-Resistant Cryptosuites specification encodes proofValue as a
+    // base64url-nopad Multibase value ("u"). The classical eddsa-jcs-2022 suite
+    // is specified separately and keeps base58btc ("z").
     ml_proof.insert(
         "proofValue".into(),
-        Value::String(format!("z{}", bs58::encode(ml_sig).into_string())),
+        Value::String(format!("u{}", URL_SAFE_NO_PAD.encode(ml_sig))),
     );
 
     Ok(Value::Array(vec![ed_proof, Value::Object(ml_proof)]))
@@ -138,10 +142,19 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
                     .get("proofValue")
                     .and_then(|v| v.as_str())
                     .ok_or_else(|| CoreError::Json("ml-dsa proof missing proofValue".into()))?;
-                let body = pv
-                    .strip_prefix('z')
-                    .ok_or_else(|| CoreError::Json("proofValue must be base58btc (z)".into()))?;
-                let sig = crate::multikey::decode_base58_bounded(body)?;
+                // Accept the specified base64url-nopad encoding, and the
+                // pre-alignment base58btc encoding for credentials already issued.
+                let sig = if let Some(body) = pv.strip_prefix('u') {
+                    URL_SAFE_NO_PAD
+                        .decode(body)
+                        .map_err(|e| CoreError::Json(format!("bad base64url proofValue: {e}")))?
+                } else if let Some(body) = pv.strip_prefix('z') {
+                    crate::multikey::decode_base58_bounded(body)?
+                } else {
+                    return Err(CoreError::Json(
+                        "proofValue must be multibase base64url (u) or base58btc (z)".into(),
+                    ));
+                };
                 let mut unsigned = proof_obj.clone();
                 unsigned.remove("proofValue");
                 let signing_input = data_integrity::hash_data(&base, &unsigned)?;
