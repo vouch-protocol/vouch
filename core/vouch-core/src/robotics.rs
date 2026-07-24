@@ -3441,6 +3441,14 @@ pub fn verify_robot_credential(
         let resolved_ml = resolve_mldsa44_public(ml)?;
         return verify_pq_either_shape(credential, ed25519_public_key, &resolved_ml);
     }
+    // Supplying an ML-DSA-44 key means the caller requires the post-quantum
+    // proof. A credential that is not a post-quantum proof set is rejected here
+    // rather than verified under Ed25519 alone, so a post-quantum credential
+    // whose ML-DSA proof was stripped cannot be accepted as a classical one. A
+    // caller that intends to accept classical credentials passes no ML-DSA key.
+    if mldsa44_public_key.is_some() {
+        return Ok(false);
+    }
     data_integrity::verify_proof(credential, ed25519_public_key)
 }
 
@@ -6650,6 +6658,26 @@ mod tests {
 
         // A hybrid credential without the ML-DSA key returns false, not true.
         assert!(!verify_robot_credential(&signed, &kp.public_key(), None).unwrap());
+
+        // Downgrade by extraction: an attacker strips the proof set to the lone
+        // standalone classical proof. A verifier that supplies the ML-DSA key
+        // (so requires post-quantum) must reject it, not accept it as classical.
+        let proofs = signed["proof"].as_array().unwrap();
+        let classical_proof = proofs
+            .iter()
+            .find(|p| p["cryptosuite"] == json!(hybrid::EDDSA_CRYPTOSUITE_ID))
+            .unwrap()
+            .clone();
+        let mut stripped = signed.clone();
+        stripped["proof"] = classical_proof;
+        assert!(!is_pq(&stripped));
+        assert!(
+            !verify_robot_credential(&stripped, &kp.public_key(), Some(&ml.public_key())).unwrap(),
+            "a stripped proof set must not verify when the caller requires post-quantum"
+        );
+        // The extracted classical proof is genuine, so a caller that only does
+        // classical verification (no ML-DSA key) still accepts it.
+        assert!(verify_robot_credential(&stripped, &kp.public_key(), None).unwrap());
     }
 
     #[test]

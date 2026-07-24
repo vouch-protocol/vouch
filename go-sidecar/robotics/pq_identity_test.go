@@ -54,6 +54,47 @@ func TestSignPqThenVerifyRobotIdentity(t *testing.T) {
 	}
 }
 
+// Downgrade by extraction: an attacker strips a proof set to the lone standalone
+// classical proof. A verifier that supplies the ML-DSA key (so requires
+// post-quantum) must reject it, not accept it as a classical credential.
+func TestVerifyRobotIdentityRejectsStrippedProofSet(t *testing.T) {
+	cred, _, s := mintedRobotIdentity(t)
+	signed, err := SignPq(cred, s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proofs, ok := signed["proof"].([]any)
+	if !ok {
+		t.Fatalf("expected a proof array, got %T", signed["proof"])
+	}
+	var classical map[string]any
+	for _, p := range proofs {
+		if pm, ok := p.(map[string]any); ok && pm["cryptosuite"] == "eddsa-jcs-2022" {
+			classical = pm
+		}
+	}
+	if classical == nil {
+		t.Fatal("no classical proof in the set")
+	}
+	stripped := map[string]any{}
+	for k, v := range signed {
+		stripped[k] = v
+	}
+	stripped["proof"] = classical
+
+	if IsPq(stripped) {
+		t.Fatal("stripped credential should not report as post-quantum")
+	}
+	if ok, _ := VerifyRobotIdentity(stripped, s.PublicKeyEd25519(), s.PublicKeyMLDSA44()); ok {
+		t.Fatal("a stripped proof set must not verify when the caller requires post-quantum")
+	}
+	// The extracted classical proof is genuine, so a caller with no ML-DSA key
+	// (classical only) still accepts it.
+	if ok, _ := VerifyRobotIdentity(stripped, s.PublicKeyEd25519()); !ok {
+		t.Fatal("the genuine classical proof should verify for a classical-only caller")
+	}
+}
+
 func TestVerifyRobotIdentityRejectsTamperedProofSet(t *testing.T) {
 	cred, _, s := mintedRobotIdentity(t)
 

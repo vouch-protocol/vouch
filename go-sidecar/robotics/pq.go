@@ -168,6 +168,14 @@ func VerifyRobotCredential(credential map[string]any, ed25519PublicKey ed25519.P
 		}
 		return VerifyPq(credential, ed25519PublicKey, opts.Mldsa44PublicKey)
 	}
+	// Supplying an ML-DSA-44 key means the caller requires the post-quantum
+	// proof. A credential that is not a post-quantum proof set is rejected
+	// rather than verified under Ed25519 alone, so a stripped proof set cannot
+	// be accepted as classical. A caller that accepts classical credentials
+	// passes no ML-DSA key.
+	if opts.Mldsa44PublicKey != nil {
+		return false
+	}
 	if ed25519PublicKey == nil {
 		return false
 	}

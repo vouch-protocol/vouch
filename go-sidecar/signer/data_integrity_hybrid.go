@@ -290,8 +290,17 @@ func VerifyProof(
 			}
 			return VerifyHybridDataIntegrityProof(credential, ed25519Public, mldsa44Public)
 		}
+		// A single classical proof with an ML-DSA-44 key supplied means the
+		// caller requires post-quantum: reject rather than accept a possibly
+		// stripped proof set as a classical credential.
+		if mldsa44Public != nil {
+			return false, nil
+		}
 		return VerifyDataIntegrityProof(credential, ed25519Public)
 	default:
+		if mldsa44Public != nil {
+			return false, nil
+		}
 		return VerifyDataIntegrityProof(credential, ed25519Public)
 	}
 }
