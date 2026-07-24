@@ -56,8 +56,8 @@
       "created": "2026-04-26T10:00:00Z",
       "verificationMethod": "did:web:test.example.com#key-1",
       "proofPurpose": "assertionMethod",
-      "proofValue": "z24FsZHuADF9uwHAfsjW3okmynrNCCN4QkQirEPfEy5MtcXzg4uhFqz4o3RVH57cFvVXg9oarC4m51YEmNu5UQRLQ"
+      "proofValue": "zcY9EAkzUYKzfZ3ZAxtKtmZZ4y13DhTjUeaJ2jeniHAgQuCS4SL4Z3qygBX8MWcsKi4sjSXtWkvAxVS1iRQG4H36"
     }
   },
-  "proofValue": "z24FsZHuADF9uwHAfsjW3okmynrNCCN4QkQirEPfEy5MtcXzg4uhFqz4o3RVH57cFvVXg9oarC4m51YEmNu5UQRLQ"
+  "proofValue": "zcY9EAkzUYKzfZ3ZAxtKtmZZ4y13DhTjUeaJ2jeniHAgQuCS4SL4Z3qygBX8MWcsKi4sjSXtWkvAxVS1iRQG4H36"
 }

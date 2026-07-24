@@ -1,17 +1,16 @@
 //! Cross-implementation Data Integrity interop.
 //!
-//! The hybrid vector publishes `expected_canonical_sha256_b64`, the base64 of
-//! SHA-256 over the JCS canonical form of the credential with its unsigned proof
-//! attached. That is exactly the eddsa-jcs-2022 signing preimage. Reproducing it
-//! in Rust proves the JCS + SHA-256 pipeline matches the reference SDK on a real
-//! credential, so a signature over the digest is computed on identical bytes
-//! across implementations.
+//! The shared composite (v1.6.x) vector publishes `expected_canonical_sha256_b64`,
+//! the base64 of SHA-256 over the JCS canonical form of the credential with its
+//! unsigned proof attached. That is the pre-alignment signing preimage the
+//! composite was signed over. Reproducing it in Rust proves the JCS + SHA-256
+//! pipeline matches the reference SDK on a real credential.
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::{Map, Value};
 use std::fs;
 
-use vouch_core::data_integrity::hash_data;
+use vouch_core::data_integrity::legacy_proof_digest;
 
 #[test]
 fn jcs_sha256_digest_matches_shared_vector() {
@@ -32,7 +31,7 @@ fn jcs_sha256_digest_matches_shared_vector() {
     let mut cred = sc.clone();
     cred.as_object_mut().unwrap().remove("proof");
 
-    let digest = hash_data(&cred, &unsigned).expect("digest");
+    let digest = legacy_proof_digest(&cred, &unsigned).expect("digest");
     let got = STANDARD.encode(digest);
 
     assert_eq!(
