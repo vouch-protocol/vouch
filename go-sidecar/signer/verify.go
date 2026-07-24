@@ -2,10 +2,10 @@
 // binding, plus did:key resolution. Mirrors vouch/verifier.py's
 // CredentialPassport and verify().
 //
-// VerifyDataIntegrityProof (data_integrity.go) checks only the signature; this
-// file adds the temporal and structural checks Specification §8.1 requires,
-// and builds a passport the same shape as the Python and TypeScript SDKs
-// return.
+// VerifyProof (data_integrity_hybrid.go) checks only the signature, whichever
+// proof shape the credential carries; this file adds the temporal and
+// structural checks Specification §8.1 requires, and builds a passport the
+// same shape as the Python and TypeScript SDKs return.
 
 package signer
 
@@ -13,6 +13,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
 )
 
 // CredentialPassport is a verified credential, with the intent and delegation
@@ -52,16 +54,28 @@ func intentString(intent map[string]any, key string) string {
 // validity window, and checks the required intent.resource binding
 // (Specification §5.4.1, §8.4). publicKey verifies the proof; nowISO and
 // clockSkewSeconds bound the validity window. Returns (valid, passport, err).
-// err is non-nil only for a malformed credential; an otherwise well-formed but
-// invalid/expired credential returns (false, nil, nil).
+//
+// The proof is verified by shape, so a post-quantum credential carrying a
+// proof set verifies here the same way a classical one does. Pass the
+// credential's ML-DSA-44 public key as the trailing optional argument to check
+// a post-quantum credential; without it, a credential carrying an ML-DSA-44
+// proof returns ErrMissingMLDSA44Key rather than passing on the Ed25519 proof
+// alone.
+//
+// err is non-nil for a malformed credential's key requirements; an otherwise
+// well-formed but invalid/expired credential returns (false, nil, nil).
 func VerifyCredential(
 	credential map[string]any,
 	publicKey []byte,
 	nowISO string,
 	clockSkewSeconds int64,
+	mldsa44PublicKey ...*mldsa44.PublicKey,
 ) (bool, *CredentialPassport, error) {
-	proofOK, err := VerifyDataIntegrityProof(credential, publicKey)
+	proofOK, err := VerifyProof(credential, publicKey, optionalMLDSA44(mldsa44PublicKey))
 	if err != nil {
+		if errors.Is(err, ErrMissingMLDSA44Key) {
+			return false, nil, err
+		}
 		return false, nil, nil //nolint:nilerr // malformed proof is "invalid", not a caller error
 	}
 	if !proofOK {
@@ -138,14 +152,26 @@ func VerifyCredential(
 	return true, passport, nil
 }
 
+// optionalMLDSA44 unwraps the trailing optional ML-DSA-44 key argument.
+func optionalMLDSA44(keys []*mldsa44.PublicKey) *mldsa44.PublicKey {
+	if len(keys) == 0 {
+		return nil
+	}
+	return keys[0]
+}
+
 // Verify verifies a credential, resolving the issuer's key automatically when
 // publicKey is nil: a did:key issuer resolves offline from the DID itself. A
 // did:web issuer without an explicit publicKey cannot be resolved here (no
 // network resolution in this package); pass the key explicitly for did:web.
+//
+// A did:key encodes one key, so a post-quantum credential's ML-DSA-44 key can
+// never be resolved from the issuer. Pass it as the trailing optional argument.
 func Verify(
 	credential map[string]any,
 	publicKey []byte,
 	clockSkewSeconds int64,
+	mldsa44PublicKey ...*mldsa44.PublicKey,
 ) (bool, *CredentialPassport, error) {
 	if publicKey == nil {
 		issuer := issuerOf(credential)
@@ -160,7 +186,9 @@ func Verify(
 		}
 		publicKey = resolved
 	}
-	return VerifyCredential(credential, publicKey, formatISO8601(time.Now()), clockSkewSeconds)
+	return VerifyCredential(
+		credential, publicKey, formatISO8601(time.Now()), clockSkewSeconds, mldsa44PublicKey...,
+	)
 }
 
 func issuerOf(credential map[string]any) string {

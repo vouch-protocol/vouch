@@ -14,6 +14,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
 	"github.com/vouch-protocol/vouch/go-sidecar/signer"
 )
 
@@ -166,11 +167,27 @@ func MintRobotIdentity(robotSigner *signer.Signer, root HardwareRootOfTrust, opt
 // VerifyRobotIdentity verifies a RobotIdentityCredential: the credential proof
 // (robot key) AND the hardware-root attestation binding the robot key to the
 // hardware. Returns (ok, credentialSubject).
-func VerifyRobotIdentity(cred map[string]any, robotPub ed25519.PublicKey) (bool, map[string]any) {
+//
+// The credential proof is verified by shape, so a robot credential signed with
+// SignPq (a proof set) verifies here too. Pass the robot's ML-DSA-44 public
+// key, raw bytes or a Multikey string, as the trailing optional argument to
+// check one; without it a post-quantum credential is reported invalid rather
+// than passing on its Ed25519 proof alone.
+func VerifyRobotIdentity(cred map[string]any, robotPub ed25519.PublicKey, mldsa44PublicKey ...any) (bool, map[string]any) {
 	if !hasType(cred["type"], RobotIdentityType) {
 		return false, nil
 	}
-	ok, err := signer.VerifyDataIntegrityProof(cred, robotPub)
+
+	var mlPub *mldsa44.PublicKey
+	if len(mldsa44PublicKey) > 0 && mldsa44PublicKey[0] != nil {
+		resolved, err := coerceMLDSA44Public(mldsa44PublicKey[0])
+		if err != nil {
+			return false, nil
+		}
+		mlPub = resolved
+	}
+
+	ok, err := signer.VerifyProof(cred, robotPub, mlPub)
 	if err != nil || !ok {
 		return false, nil
 	}

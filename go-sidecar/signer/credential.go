@@ -178,34 +178,41 @@ func (s *Signer) AttachProof(credential map[string]any) (map[string]any, error) 
 	return credential, nil
 }
 
-// AttachHybridProof attaches a hybrid post-quantum (Ed25519 plus ML-DSA-44)
-// Data Integrity proof to a pre-built credential map, for custom credential
-// types (for example robotics credentials) the caller assembles directly
-// rather than from an intent. Mirrors AttachProof but uses the
-// hybrid-eddsa-mldsa44-jcs-2026 cryptosuite; both keys live in this process,
-// so it is not available for a backend Signer. Returns the credential with its
-// "proof" set.
+// MLDSA44VerificationMethodID returns the verification method identifier for
+// this signer's ML-DSA-44 key, the #key-2 slot parallel to the Ed25519 #key-1
+// entry on the same DID.
+func (s *Signer) MLDSA44VerificationMethodID() string {
+	_, mldsaVM := HybridVerificationMethodPair(s.VerificationMethodID())
+	return mldsaVM
+}
+
+// AttachHybridProof attaches a post-quantum proof set (an eddsa-jcs-2022 proof
+// alongside an mldsa44-jcs-2024 proof) to a pre-built credential map, for
+// custom credential types (for example robotics credentials) the caller
+// assembles directly rather than from an intent. Mirrors AttachProof; both keys
+// live in this process, so it is not available for a backend Signer. Returns
+// the credential with its "proof" set to the two-proof array.
 func (s *Signer) AttachHybridProof(credential map[string]any) (map[string]any, error) {
 	if s.signFunc != nil {
 		return nil, errors.New("vouch: AttachHybridProof needs the raw keys and is not available for a backend Signer")
 	}
-	proof, err := BuildHybridDataIntegrityProof(credential, BuildHybridProofOptions{
-		Ed25519PrivateKey:  s.ed25519Private,
-		MLDSA44PrivateKey:  s.mldsa44Private,
-		VerificationMethod: s.VerificationMethodID(),
+	proof, err := BuildDualProof(credential, BuildDualProofOptions{
+		Ed25519PrivateKey:         s.ed25519Private,
+		MLDSA44PrivateKey:         s.mldsa44Private,
+		Ed25519VerificationMethod: s.VerificationMethodID(),
+		MLDSA44VerificationMethod: s.MLDSA44VerificationMethodID(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("attach hybrid proof: %w", err)
 	}
-	credential["proof"] = proofToMap(proof)
+	credential["proof"] = proof
 	return credential, nil
 }
 
-// SignHybrid issues a Vouch Credential under the hybrid
-// post-quantum profile (Specification §13.2). The credential carries a
-// hybrid-eddsa-mldsa44-jcs-2026 Data Integrity proof containing both an
-// Ed25519 signature and an ML-DSA-44 signature over the same canonical form.
-// Verification REQUIRES both signatures to validate.
+// SignHybrid issues a Vouch Credential under the post-quantum profile. The
+// credential carries a `proof` ARRAY of two independent Data Integrity proofs,
+// an eddsa-jcs-2022 proof and an mldsa44-jcs-2024 proof, over the same
+// unsecured document. Verification REQUIRES both signatures to validate.
 //
 // Note: this profile produces credentials roughly 2.5 KB larger than the
 // eddsa-jcs-2022 default. Implementations using this profile SHOULD
@@ -246,16 +253,17 @@ func (s *Signer) SignHybrid(opts SignOptions) (map[string]any, error) {
 		return nil, err
 	}
 
-	proof, err := BuildHybridDataIntegrityProof(cred, BuildHybridProofOptions{
-		Ed25519PrivateKey:  s.ed25519Private,
-		MLDSA44PrivateKey:  s.mldsa44Private,
-		VerificationMethod: s.VerificationMethodID(),
+	proof, err := BuildDualProof(cred, BuildDualProofOptions{
+		Ed25519PrivateKey:         s.ed25519Private,
+		MLDSA44PrivateKey:         s.mldsa44Private,
+		Ed25519VerificationMethod: s.VerificationMethodID(),
+		MLDSA44VerificationMethod: s.MLDSA44VerificationMethodID(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("build hybrid proof: %w", err)
 	}
 
-	cred["proof"] = proofToMap(proof)
+	cred["proof"] = proof
 	return cred, nil
 }
 
