@@ -1,0 +1,481 @@
+{
+  "description": "Disconnected-edge (DTN) robotics interop vector, PAD-106 to PAD-124. Other languages verify these Python-signed credentials and reproduce the sparse-Merkle revocation root byte-for-byte.",
+  "issuerDid": "did:web:issuer.example",
+  "issuerPublicKeyRawB64Url": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+  "created": "2026-07-19T12:00:00Z",
+  "credentials": [
+    {
+      "name": "freshness_token",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "FreshnessToken"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:node",
+          "epoch": 100,
+          "nonce": "fx"
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z7Anvtr77NZonHPwP2aikRrRzk5oLG5tSSgpF25Pqivg2CSvLvyxLdshgEJBs3x9HSfn4UfaLWky1gxcrUKzxjij"
+        }
+      },
+      "verify": {
+        "kind": "freshness_token",
+        "verifierEpoch": 100,
+        "tier": "critical"
+      }
+    },
+    {
+      "name": "presence",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "ChannelGeometryPresenceAttestation"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:peer",
+          "nonce": "n1",
+          "geometry": {
+            "claimedPosition": [
+              100.0,
+              0.0,
+              0.0
+            ],
+            "measuredRangeM": 100.4,
+            "toleranceM": 1.0
+          }
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "zizcyXQrmo7R4QamzNePJqQyqKkrPMVPGxUxaKY84twvW5Sg5cCk3BXKmUjpVhXvoz1UnMuGf8wgydr8CMYKdZXM"
+        }
+      },
+      "verify": {
+        "kind": "presence",
+        "verifierPosition": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "expectedNonce": "n1"
+      }
+    },
+    {
+      "name": "geoscope",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "EphemerisScopedGrantCredential"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:rover",
+          "grantId": "g1",
+          "region": {
+            "type": "sphere",
+            "centerM": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radiusM": 50.0
+          }
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z22coqF8bZdeiABttBzHqUSgBS8tegfJVv2Y7iuAmtc9KpYgp5fryWy6kasgzNPobUpQ5xaorb2BtZXmLTRzXteZT"
+        }
+      },
+      "verify": {
+        "kind": "geoscope",
+        "position": [
+          10.0,
+          10.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "name": "conditional_revocation",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "ConditionalRevocationCredential"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:node",
+          "targetCredentialId": "cred-1",
+          "deadlineEpoch": 100,
+          "renewalPredicate": "renewal_epoch_gte_deadline"
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z1RezYu1VvtVriUr58XH8hPpdQJxF74K92tDqm6wpNwQTLDsbcF4WvUMWvXSPZpQQt8Hwxgw47zXwpnJGXyrzBjV"
+        }
+      },
+      "verify": {
+        "kind": "conditional_revocation"
+      }
+    },
+    {
+      "name": "range_observation",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "RangeObservationCredential"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:t",
+          "observer": "did:web:issuer.example",
+          "observerPosition": [
+            1.0,
+            2.0,
+            3.0
+          ],
+          "measuredRangeM": 10.0,
+          "nonce": "n",
+          "epoch": 1
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2QnRDPE3sYRHNGsAk7ru7SB54ia5VL3CfgUKuVvrKjsKdfjVJM8sfZrHakJQiMf7YT8Se1XxMQTk4tjTQdgkTGFV"
+        }
+      },
+      "verify": {
+        "kind": "range_observation"
+      }
+    },
+    {
+      "name": "beam_presence",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "BeamPresenceAttestation"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:peer",
+          "nonce": "n",
+          "pointing": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "beamwidthRad": 0.17453292519943295
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2nttQW8RDN4iJgrNM1Qbx9S3SinzFqDJaEXK75wpFdz8sxxYZAo1tftmYcG2myucVBtCoNUbhwLG4fXwMeLYcEA"
+        }
+      },
+      "verify": {
+        "kind": "beam_presence",
+        "peerDirection": [
+          1.0,
+          0.02,
+          0.0
+        ],
+        "expectedNonce": "n"
+      }
+    },
+    {
+      "name": "distress",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "DistressAttestation"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:bad",
+          "observer": "did:web:issuer.example",
+          "reason": "out_of_envelope",
+          "evidenceRef": "frame:abc",
+          "epoch": 5
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "zhajYMNEe9tinZKu76QBtUpB2Y1gm5UzsxFFKweVwa3RuNdFyguraoR6BFywhAVCituec1ryKSxnkwq2YYd7DdNx"
+        }
+      },
+      "verify": {
+        "kind": "distress"
+      }
+    },
+    {
+      "name": "trust_state_update",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "TrustStateUpdate"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:issuer.example",
+          "scope": "rev",
+          "change": {
+            "op": "revoke",
+            "did": "did:web:x"
+          },
+          "epoch": 10,
+          "failureDomain": "orbit-A"
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2KX1dNjgVZkh7jRRzbJaJNMhdFVHq13HBmt12pubHAixKP1deaLDfkK3pU6wWs5WV1iBYqVNuN7WUmv75iDF8r7C"
+        }
+      },
+      "verify": {
+        "kind": "trust_state_update"
+      }
+    },
+    {
+      "name": "time_quality",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "TimeQualityAttestation"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:issuer.example",
+          "sourceClass": "gnss",
+          "sinceDisciplineS": 5.0,
+          "uncertaintyS": 0.5
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z4KEjNEbuX2FjDB2yUDDygnLf5Br6Wg7HhDUsH5VnaBxP6YasGXN7EDim6k2QfXqups7hyMxSZ4HJmWnk4K85P6rb"
+        }
+      },
+      "verify": {
+        "kind": "time_quality",
+        "tier": "critical"
+      }
+    },
+    {
+      "name": "integrity_risk",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "IntegrityRiskAttestation"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:issuer.example",
+          "cumulativeRisk": 0.12,
+          "metrics": {
+            "doseRad": 180,
+            "seu": 0
+          }
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2LYcHKroc3v3paMqPEBTM42hJ5CCS6meL2nt9pePddWvZhNWn7AprScE4mt94NgYbjgg6vHWQR7w2r3vsPLMSf6A"
+        }
+      },
+      "verify": {
+        "kind": "integrity_risk"
+      }
+    },
+    {
+      "name": "perception_claim",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "SharedPerceptionClaim"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "did:web:issuer.example",
+          "sceneNonce": "scene-1",
+          "feature": "obstacle-x",
+          "value": 10.0,
+          "epoch": 7
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "zv6LZMk5BXiGjsZesdYC4RyEt3KzucZeLHiWCp9EhxecDghNWQbQibJNd7ptDbniEhV7kga7fp18dVkZjSDDioHF"
+        }
+      },
+      "verify": {
+        "kind": "perception_claim"
+      }
+    },
+    {
+      "name": "bundle",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "type": [
+          "VerifiableCredential",
+          "BundleTrustCredential"
+        ],
+        "issuer": "did:web:issuer.example",
+        "credentialSubject": {
+          "id": "b-1",
+          "originator": "did:web:issuer.example",
+          "payloadHash": "sha256:abc",
+          "intent": {
+            "action": "deliver"
+          }
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-07-19T12:00:00Z",
+          "verificationMethod": "did:web:issuer.example#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z3JmiC7kLCfVwhoPfySRVuHY3H9gJdkbWMC93WANk2ugqcRXkeybpGeqixTXXbVWQLz194py9gX5qsaGCe9FTqfwD"
+        }
+      },
+      "verify": {
+        "kind": "bundle",
+        "payloadHash": "sha256:abc"
+      }
+    }
+  ],
+  "accumulator": {
+    "revokedIds": [
+      "cred-a",
+      "cred-b",
+      "cred-c"
+    ],
+    "rootMultibase": "u11Mc_fjTT_mzfosp7U5id1lBfh-V-wWfg2oTDt-7yrE",
+    "signedRoot": {
+      "@context": [
+        "https://www.w3.org/ns/credentials/v2",
+        "https://vouch-protocol.com/contexts/v1"
+      ],
+      "type": [
+        "VerifiableCredential",
+        "RevocationAccumulatorRoot"
+      ],
+      "issuer": "did:web:issuer.example",
+      "credentialSubject": {
+        "id": "did:web:issuer.example",
+        "epoch": 42,
+        "revocationRoot": "u11Mc_fjTT_mzfosp7U5id1lBfh-V-wWfg2oTDt-7yrE"
+      },
+      "proof": {
+        "type": "DataIntegrityProof",
+        "cryptosuite": "eddsa-jcs-2022",
+        "created": "2026-07-19T12:00:00Z",
+        "verificationMethod": "did:web:issuer.example#key-1",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z34TkH6HaXYCu4dWE42TedkGb3FP5uLntBN26WB8xzRyaEUUzwhmvyTqqN9ZTHNCoaf5egKB9tabD24RM3LwAXwav"
+      }
+    },
+    "nonRevokedId": "cred-z",
+    "nonRevokedProof": {
+      "bitmap": "uMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "siblings": [
+        "uNhTW2irdIUGsrKkFMQR-JGMONF-DcQss09oddICV52M",
+        "upn0YP9omy2C49jn6LufV7tb37yrQBtVyKqc6BGoSlq0"
+      ]
+    },
+    "revokedId": "cred-a",
+    "revokedProof": {
+      "bitmap": "uIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "siblings": [
+        "uNhTW2irdIUGsrKkFMQR-JGMONF-DcQss09oddICV52M"
+      ]
+    }
+  }
+}

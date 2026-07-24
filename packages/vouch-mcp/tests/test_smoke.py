@@ -36,6 +36,16 @@ def test_registered_tool_names():
         "create_session",
         "check_revocation",
         "get_identity",
+        "evaluate_freshness",
+        "verify_disconnected_edge",
+        "scan",
+        "decode_did",
+        "delegate",
+        "check_action",
+        "check_trust",
+        "disclose_ai_origin",
+        "reputation",
+        "attribute",
     } <= names
 
 

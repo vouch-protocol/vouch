@@ -67,9 +67,11 @@ from .audio import AudioSigner, SignedAudioResult
 from .root_of_trust import (
     IdentityChainResult,
     build_agent_identity,
+    build_identity_bundle,
     build_recognized_issuer,
     build_root_of_trust,
     generate_did_key_identity,
+    verify_bundle,
     verify_identity_chain,
 )
 
@@ -128,6 +130,12 @@ def __getattr__(name):
         "build_status_list_credential",
         "build_status_list_entry",
         "verify_status",
+        "evaluate_freshness",
+        "FreshnessVerdict",
+        "DEFAULT_STALENESS_BUDGETS",
+        "CONSEQUENCE_ROUTINE",
+        "CONSEQUENCE_SENSITIVE",
+        "CONSEQUENCE_CRITICAL",
     ):
         from . import status_list
 
@@ -479,6 +487,8 @@ __all__ = [
     "build_recognized_issuer",
     "build_agent_identity",
     "verify_identity_chain",
+    "build_identity_bundle",
+    "verify_bundle",
     "generate_did_key_identity",
     "IdentityChainResult",
     # Key management
@@ -555,6 +565,12 @@ __all__ = [
     "build_status_list_credential",
     "build_status_list_entry",
     "verify_status",
+    "evaluate_freshness",
+    "FreshnessVerdict",
+    "DEFAULT_STALENESS_BUDGETS",
+    "CONSEQUENCE_ROUTINE",
+    "CONSEQUENCE_SENSITIVE",
+    "CONSEQUENCE_CRITICAL",
     # Reputation
     "ReputationEngine",
     "ReputationScore",

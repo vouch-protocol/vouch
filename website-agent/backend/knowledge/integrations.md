@@ -263,8 +263,14 @@ export VOUCH_DID='did:web:agent.example.com'
 vouch-mcp
 ```
 
-The server exposes tools to the connected model to mint a credential, return the
-configured DID, and create a short-lived session token.
+The server exposes the full Vouch trust surface as MCP tools: issue and verify
+credentials (`sign`, `verify`); identity, sessions, and revocation
+(`get_identity`, `create_session`, `check_revocation`); key hygiene and DID
+inspection (`scan`, `decode_did`); delegated authority and the capability gate
+(`delegate`, `check_action`); trust-over-time and AI-origin disclosure
+(`check_trust`, `disclose_ai_origin`); reputation and authorship attribution
+(`reputation`, `attribute`); and offline / disconnected-edge decisions
+(`evaluate_freshness`, `verify_disconnected_edge`).
 
 ## Goose
 

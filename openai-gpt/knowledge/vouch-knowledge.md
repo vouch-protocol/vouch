@@ -10,6 +10,7 @@ This file consolidates the Vouch Protocol knowledge corpus. Each section below i
 - Delegation Chains Reference
 - Root of Trust for Machine Identity
 - Revocation Reference
+- Disconnected-Edge Trust (space and tactical)
 - Identity Sidecar Pattern Reference
 - Post-Quantum Reference
 - Threshold Signing Reference
@@ -2368,8 +2369,14 @@ export VOUCH_DID='did:web:agent.example.com'
 vouch-mcp
 ```
 
-The server exposes tools to the connected model to mint a credential, return the
-configured DID, and create a short-lived session token.
+The server exposes the full Vouch trust surface as MCP tools: issue and verify
+credentials (`sign`, `verify`); identity, sessions, and revocation
+(`get_identity`, `create_session`, `check_revocation`); key hygiene and DID
+inspection (`scan`, `decode_did`); delegated authority and the capability gate
+(`delegate`, `check_action`); trust-over-time and AI-origin disclosure
+(`check_trust`, `disclose_ai_origin`); reputation and authorship attribution
+(`reputation`, `attribute`); and offline / disconnected-edge decisions
+(`evaluate_freshness`, `verify_disconnected_edge`).
 
 ### Goose
 
@@ -4898,3 +4905,79 @@ using VouchProtocol.Core;
 bool ok = VouchRobotics.VerifyRobotCredential(credentialJson, ed25519PublicB64);
 string report = VouchRobotics.CheckConformance(credentialsJson, "eu-ai-act-high-risk");
 ```
+
+---
+
+## Disconnected-Edge Trust (space and tactical)
+
+Vouch makes trust decisions locally, with no live connection to a home server, so
+it works at the disconnected edge: in orbit, on the lunar surface, deep
+underground, under water, or anywhere a round trip to a home registry is
+impossible or too slow. Space is the most demanding instance; the same primitives
+serve any disconnected robot, so a satellite constellation and an underground mine
+use one mechanism.
+
+**Why offline verification works.** A Vouch credential is a self-contained
+`eddsa-jcs-2022` Verifiable Credential; verifying it needs the issuer's public
+key, not a network call. Two nodes that hold each other's trust anchors
+authenticate and exchange authority with no connection home.
+
+**Honest caveat.** Offline trust is enabled by distributing trust anchors during a
+contact window, not by removing that step. There is no trust with no prior root;
+"spontaneous discovery with no configuration" is a myth, because the trust anchors
+are the configuration.
+
+**What runs offline today** (all in `vouch.robotics`, verifying in every SDK):
+
+- Offline mutual authentication via the three-message robot-to-robot handshake,
+  agreeing a bounded session scoped to the intersection of what each side offers.
+- A short-lived, scope-bounded delegation lease and a scannable passport a node
+  verifies and acts on while out of contact; leases nest and can only narrow.
+- Signed perception provenance binding each sensor frame's hash to the node's key,
+  so a substituted frame is detectable.
+
+**Revocation that is honest about time.** A disconnected verifier holds a
+status-list snapshot of unknown age, so revocation is a freshness problem.
+`vouch.status_list.evaluate_freshness` weighs the snapshot's age against the
+consequence of the action and fails closed when it is too old.
+
+```python
+from vouch.status_list import evaluate_freshness, CONSEQUENCE_CRITICAL
+
+verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snapshot, now=now)
+if verdict.allow and not revoked_bit:
+    ...  # authorize
+```
+
+Default staleness budgets (overridable): `routine` 30 days, `sensitive` 24 hours,
+`critical` 1 hour. Unknown tier, expired or malformed snapshot, or absent snapshot
+all fail closed for anything above routine; a known revocation always denies. A
+complementary presenter-side proof of freshness (a relay-issued `FreshnessToken`
+bound to a monotonic DTN epoch) is specified too.
+
+Defined in `docs/dtn-bounded-staleness-revocation.md`, demonstrated in
+`examples/disconnected_exchange_demo.py`.
+
+**Shipped modules (disclosed PAD-106 to PAD-124).** The full disconnected-edge
+portfolio is implemented as open-layer formats and verifier predicates:
+`vouch.status_list.evaluate_freshness` (106), `vouch.robotics.freshness` (107,
+119: presenter freshness token + graded decay), `vouch.robotics.presence` (108:
+channel-geometry proof of presence), `vouch.robotics.geoscope` (109:
+ephemeris-scoped authority), `vouch.robotics.quorum_trust` (110/111/116: swarm
+quarantine, quorum-of-orbits, key continuity), `vouch.robotics.dtn_revocation`
+(112/120: dead-man revocation, carried validity witness),
+`vouch.robotics.localization` (113/114/121: proof-of-location, kinematic
+plausibility, beam presence), `vouch.robotics.edge_trust` (115/117/118:
+time-quality, autonomy envelope, integrity-risk narrowing),
+`vouch.robotics.perception_consensus` (122/123: Byzantine sensor agreement, mesh
+standing), and `vouch.robotics.bundle` (124: DTN Bundle Protocol custody binding).
+Hardware acquisition (ranging, TPM, orbital propagators) is the caller's concern.
+
+A hardware seam, `vouch.robotics.hardware`, is where real devices plug in: typed
+sensor Protocols (NavigationSource, RangeSensor, DopplerSensor, PointingSource,
+ClockSource, EpochSource, IntegrityMonitor), `Simulated*` reference implementations,
+and capture/verify-live adapters that feed the trust predicates unchanged. Two
+predicates ship production algorithms: kinematic plausibility does real two-body
+orbital propagation (`vouch.robotics.orbital`), and the carried non-revocation
+witness uses a dynamic sparse-Merkle accumulator (`vouch.robotics.accumulator`).
+See `examples/hardware_seam_demo.py` and the driver skeleton `examples/hardware_drivers/`.

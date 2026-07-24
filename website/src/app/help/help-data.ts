@@ -1529,7 +1529,7 @@ The signing and verification core ships as an installable package in every major
 
 For a language-agnostic drop-in, three standalone services need no framework and no SDK:
 
-- **\`vouch-mcp\`** a Model Context Protocol server any MCP client (Claude Desktop, Cursor, any agent) can call to create identities, sign, verify, and scan.
+- **\`vouch-mcp\`** a Model Context Protocol server any MCP client (Claude Desktop, Cursor, any agent) can call to sign and verify credentials, scan for leaked keys, decode DIDs, delegate authority, gate actions, check trust, disclose AI origin, and score reputation.
 - **\`vouch-bridge\`** an HTTP server for media provenance: C2PA image signing, QR badge overlay, and audio watermarking.
 - **\`vouch-sidecar\`** the Go signing daemon that mints credentials over localhost for any language, keeping the key out of the model's process.
 `,
@@ -2680,6 +2680,53 @@ allowed = lease_permits(subject, PhysicalAction(force_n=10.0, zone="cell-3"), le
 \`\`\`
 
 Security boundary: verification is fully offline. An expired or not-yet-valid lease fails. A sub-lease that widens any dimension of its parent (more force, a new zone, a wider window) is rejected by the attenuation check, so authority can only narrow down a chain, never grow.
+`,
+      },
+      {
+        id: 'robotics-disconnected',
+        title: 'Trust at the disconnected edge, including space',
+        summary: 'Authenticate, delegate, and revoke with no live connection home, in space or anywhere disconnected, with revocation that is honest about time.',
+        body: `
+In orbit, on the lunar surface, deep underground, or under water, a round trip to a home server is impossible or too slow to be part of a real-time trust decision. Because a Vouch credential verifies offline against pre-distributed anchors, two nodes can authenticate each other and exchange authority at the edge with no connection home. Space is the most demanding instance of this; the same primitives serve any disconnected robot, so a satellite constellation and an underground mine use one mechanism.
+
+The problem it closes: legacy centralized security assumes a live path to a registry to check an identity or a revocation. At the edge that path does not exist. Vouch moves the whole trust decision to the node.
+
+What runs offline today, all built on primitives already covered above:
+
+- **Offline mutual authentication.** Two nodes in different trust domains run the three-message handshake (HELLO, ACCEPT, CONFIRM) and agree a bounded session whose scope is the intersection of what each side offers. See the handshake guide.
+- **Authority that travels.** A short-lived, scope-bounded delegation lease (above) and a scannable passport let a node prove what it may do and act on it while out of contact.
+- **Provenance at capture.** Signed perception provenance binds each sensor frame's hash to the node's key, so a substituted frame is detectable.
+
+One honest caveat: offline trust is *enabled* by distributing trust anchors during a contact window, not by removing that step. There is no trust with no prior root; "spontaneous discovery with zero configuration" is a myth, because the anchors are the configuration. What Vouch removes is the live round trip at decision time.
+
+The genuinely hard part is revocation, which is a freshness problem, not a signature problem: a disconnected verifier holds a status-list snapshot of unknown age, so a credential revoked after the last sync still looks valid. \`vouch.status_list.evaluate_freshness\` closes this by weighing the snapshot's age against the consequence of the action and failing closed when the view is too old.
+
+\`\`\`python
+from vouch.status_list import evaluate_freshness, CONSEQUENCE_CRITICAL
+
+# snapshot = the BitstringStatusListCredential synced at last contact (or None)
+verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snapshot, now=now)
+if verdict.allow and not revoked_bit:
+    ...  # authorize
+\`\`\`
+
+Default staleness budgets (overridable per deployment): \`routine\` 30 days (a telemetry beacon), \`sensitive\` 24 hours (a data handoff), \`critical\` 1 hour (a physical maneuver). Security boundary: the gate fails closed on every ambiguous state, an unknown tier is treated as critical, a snapshot past its own validUntil or with a malformed validFrom is treated as absent, and an absent snapshot allows only routine. A known revocation always denies, independent of freshness. A complementary presenter-side proof of freshness (a relay-issued FreshnessToken bound to a monotonic network epoch, which resists clock drift) is specified as the dual mechanism.
+
+Run the whole thing: \`examples/disconnected_exchange_demo.py\` completes an offline exchange over a simulated high-latency link with the socket layer disabled, so nothing can phone home. The full design is in \`docs/dtn-bounded-staleness-revocation.md\`.
+
+The complete portfolio (disclosed PAD-106 to PAD-124) ships as open-layer modules, each an eddsa-jcs-2022 credential or a deterministic verifier predicate, with hardware acquisition (ranging, TPM, orbital propagators) left to the platform:
+
+- \`vouch.robotics.freshness\`: presenter freshness token bound to a network epoch, plus a graded trust-decay weight (PAD-107, 119)
+- \`vouch.robotics.presence\`: channel-geometry (range/Doppler) proof of presence (PAD-108)
+- \`vouch.robotics.geoscope\`: ephemeris/geometric-scoped authority with shrink-only regions (PAD-109)
+- \`vouch.robotics.quorum_trust\`: swarm-consensus quarantine, quorum-of-orbits update acceptance, offline threshold key continuity (PAD-110, 111, 116)
+- \`vouch.robotics.dtn_revocation\`: conditional dead-man revocation and a carried validity witness (PAD-112, 120)
+- \`vouch.robotics.localization\`: triangulated proof-of-location, kinematic-plausibility filtering, narrow-beam presence (PAD-113, 114, 121)
+- \`vouch.robotics.edge_trust\`: attested time-quality, connectivity-scaled autonomy envelope, integrity-risk authority narrowing (PAD-115, 117, 118)
+- \`vouch.robotics.perception_consensus\`: Byzantine sensor agreement, mutual-attestation mesh standing (PAD-122, 123)
+- \`vouch.robotics.bundle\`: DTN Bundle Protocol custody and credential/freshness binding (PAD-124)
+
+Real hardware plugs in through \`vouch.robotics.hardware\`: typed sensor Protocols (\`NavigationSource\`, \`RangeSensor\`, \`DopplerSensor\`, \`PointingSource\`, \`ClockSource\`, \`EpochSource\`, \`IntegrityMonitor\`), \`Simulated*\` reference implementations, and capture/verify-live adapters that feed the predicates unchanged. See \`examples/hardware_seam_demo.py\` and the driver skeleton \`examples/hardware_drivers/\`. Two predicates ship production algorithms rather than the conservative reference bound: kinematic plausibility does real two-body orbital propagation (\`vouch.robotics.orbital\`), and the carried non-revocation witness uses a dynamic sparse-Merkle accumulator (\`vouch.robotics.accumulator\`).
 `,
       },
       {

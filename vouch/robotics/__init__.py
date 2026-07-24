@@ -30,6 +30,7 @@ robots and embodied agents:
   - swarm: multi-robot swarm membership and collective-action attribution.
   - handover: safe robot-to-human handover with an envelope attestation and receipt.
   - root_identity: bind a hardware-rooted robot to a recognized manufacturer under a pinned root.
+  - halos: signed, tamper-evident safety-evidence record for an NVIDIA Halos-certified stack.
 """
 
 from .capability import (
@@ -109,6 +110,114 @@ from .lease import (
     build_delegation_lease,
     lease_permits,
     verify_delegation_lease,
+)
+from .presence import (
+    build_presence_attestation,
+    check_presence,
+    expected_doppler_hz,
+    expected_range_m,
+    radial_velocity_mps,
+    verify_presence_attestation,
+)
+from .geoscope import (
+    build_geoscoped_grant,
+    geoscope_permits,
+    region_attenuates,
+    region_contains,
+    verify_geoscoped_grant,
+)
+from .freshness import (
+    build_freshness_token,
+    decay_permits,
+    decay_weight,
+    verify_freshness_token,
+)
+from .dtn_revocation import (
+    build_conditional_revocation,
+    build_non_revocation_proof,
+    build_revocation_accumulator_root,
+    build_validity_root,
+    build_validity_witness,
+    conditional_revocation_active,
+    verify_conditional_revocation,
+    verify_non_revocation,
+    verify_validity_witness,
+)
+from .accumulator import SparseMerkleTree, verify_non_revocation_proof
+from .orbital import MU_EARTH, propagate_two_body, reachable_two_body
+from .localization import (
+    build_beam_presence,
+    build_proof_of_location,
+    build_range_observation,
+    count_consistent,
+    kinematically_reachable,
+    location_confirmed,
+    verify_beam_presence,
+    verify_range_observation,
+    within_beam,
+)
+from .quorum_trust import (
+    accept_trust_state_update,
+    build_continuity_approval,
+    build_distress_attestation,
+    build_key_continuity_predelegation,
+    build_trust_state_update,
+    is_quarantined,
+    verify_distress_attestation,
+    verify_key_continuity,
+    verify_trust_state_update,
+)
+from .edge_trust import (
+    autonomy_permits,
+    build_autonomy_schedule,
+    build_integrity_risk_attestation,
+    build_time_quality_attestation,
+    integrity_authority_level,
+    select_envelope,
+    time_quality_permits,
+    verify_autonomy_schedule,
+    verify_integrity_risk_attestation,
+    verify_time_quality_attestation,
+)
+from .perception_consensus import (
+    build_interaction_attestation,
+    build_perception_claim,
+    cross_check_perception,
+    node_standing,
+    verify_interaction_attestation,
+    verify_perception_claim,
+)
+from .bundle import (
+    bind_credential_to_bundle,
+    build_custody_transfer,
+    custody_chain_ok,
+    verify_bundle_trust,
+    verify_custody_transfer,
+)
+from .hardware import (
+    ClockSource,
+    DopplerSensor,
+    EpochSource,
+    IntegrityMonitor,
+    NavigationSource,
+    PointingSource,
+    RangeSensor,
+    SimulatedClock,
+    SimulatedDopplerSensor,
+    SimulatedEpochSource,
+    SimulatedIntegrityMonitor,
+    SimulatedNavigation,
+    SimulatedPointing,
+    SimulatedRangeSensor,
+    TimeQuality,
+    capture_beam_presence,
+    capture_integrity_risk,
+    capture_presence_attestation,
+    capture_range_observation,
+    capture_time_quality,
+    check_kinematics_live,
+    issue_freshness_token,
+    verify_presence_live,
 )
 from .physical_quorum import (
     build_action_approval,
@@ -230,6 +339,14 @@ from .root_identity import (
     build_robot_identity,
     verify_robot_identity_chain,
 )
+from .halos import (
+    HALOS_EVENT_SOURCES,
+    HALOS_SAFETY_EVIDENCE_TYPE,
+    HalosError,
+    SafetyEventRecorder,
+    build_safety_evidence,
+    verify_safety_evidence,
+)
 
 __all__ = [
     # identity
@@ -290,6 +407,109 @@ __all__ = [
     "build_delegation_lease",
     "verify_delegation_lease",
     "lease_permits",
+    # channel-geometry proof of presence (PAD-108)
+    "build_presence_attestation",
+    "verify_presence_attestation",
+    "check_presence",
+    "expected_range_m",
+    "radial_velocity_mps",
+    "expected_doppler_hz",
+    # ephemeris-scoped delegation authority (PAD-109)
+    "build_geoscoped_grant",
+    "verify_geoscoped_grant",
+    "geoscope_permits",
+    "region_contains",
+    "region_attenuates",
+    # presenter freshness + graded trust decay (PAD-107, PAD-119)
+    "build_freshness_token",
+    "verify_freshness_token",
+    "decay_weight",
+    "decay_permits",
+    # DTN revocation: dead-man + carried validity witness (PAD-112, PAD-120)
+    "build_conditional_revocation",
+    "verify_conditional_revocation",
+    "conditional_revocation_active",
+    "build_validity_root",
+    "build_validity_witness",
+    "verify_validity_witness",
+    # dynamic revocation accumulator (PAD-120): sparse Merkle tree
+    "SparseMerkleTree",
+    "verify_non_revocation_proof",
+    "build_revocation_accumulator_root",
+    "build_non_revocation_proof",
+    "verify_non_revocation",
+    # two-body orbital propagation for kinematic plausibility (PAD-114)
+    "MU_EARTH",
+    "propagate_two_body",
+    "reachable_two_body",
+    # localization: proof-of-location, kinematic plausibility, beam presence (PAD-113/114/121)
+    "build_range_observation",
+    "verify_range_observation",
+    "count_consistent",
+    "location_confirmed",
+    "build_proof_of_location",
+    "kinematically_reachable",
+    "within_beam",
+    "build_beam_presence",
+    "verify_beam_presence",
+    # quorum/swarm: quarantine, quorum-of-orbits, key continuity (PAD-110/111/116)
+    "build_distress_attestation",
+    "verify_distress_attestation",
+    "is_quarantined",
+    "build_trust_state_update",
+    "verify_trust_state_update",
+    "accept_trust_state_update",
+    "build_key_continuity_predelegation",
+    "build_continuity_approval",
+    "verify_key_continuity",
+    # edge trust: time-quality, autonomy envelope, integrity risk (PAD-115/117/118)
+    "build_time_quality_attestation",
+    "verify_time_quality_attestation",
+    "time_quality_permits",
+    "build_autonomy_schedule",
+    "verify_autonomy_schedule",
+    "select_envelope",
+    "autonomy_permits",
+    "build_integrity_risk_attestation",
+    "verify_integrity_risk_attestation",
+    "integrity_authority_level",
+    # perception consensus + mesh (PAD-122, PAD-123)
+    "build_perception_claim",
+    "verify_perception_claim",
+    "cross_check_perception",
+    "build_interaction_attestation",
+    "verify_interaction_attestation",
+    "node_standing",
+    # DTN bundle custody binding (PAD-124)
+    "bind_credential_to_bundle",
+    "verify_bundle_trust",
+    "build_custody_transfer",
+    "verify_custody_transfer",
+    "custody_chain_ok",
+    # hardware-facing seam: sensor Protocols, simulated impls, capture adapters
+    "NavigationSource",
+    "RangeSensor",
+    "DopplerSensor",
+    "PointingSource",
+    "ClockSource",
+    "EpochSource",
+    "IntegrityMonitor",
+    "TimeQuality",
+    "SimulatedNavigation",
+    "SimulatedRangeSensor",
+    "SimulatedDopplerSensor",
+    "SimulatedPointing",
+    "SimulatedClock",
+    "SimulatedEpochSource",
+    "SimulatedIntegrityMonitor",
+    "capture_presence_attestation",
+    "verify_presence_live",
+    "capture_range_observation",
+    "capture_beam_presence",
+    "capture_time_quality",
+    "capture_integrity_risk",
+    "issue_freshness_token",
+    "check_kinematics_live",
     # physical quorum (M-of-N approvals for high-consequence actions)
     "build_action_approval",
     "verify_action_authorization",
@@ -395,6 +615,13 @@ __all__ = [
     "RobotIdentityChainResult",
     "build_robot_identity",
     "verify_robot_identity_chain",
+    # halos safety evidence (signed tamper-evident record for a Halos-certified stack)
+    "HALOS_SAFETY_EVIDENCE_TYPE",
+    "HALOS_EVENT_SOURCES",
+    "HalosError",
+    "SafetyEventRecorder",
+    "build_safety_evidence",
+    "verify_safety_evidence",
     # safety record (incident/near-miss ledger + portable record)
     "SafetyEventLog",
     "verify_safety_log",

@@ -179,6 +179,25 @@ Implemented in Python (`vouch.robotics.root_identity`), TypeScript, Go, and the 
 core, with the root-anchored robot identity added to the Root of Trust interop vector
 (`test-vectors/root-of-trust/vector.json`).
 
+#### Halos safety-evidence recorder (NVIDIA Halos integration, PAD-105)
+
+An evidence layer for a robot running an NVIDIA Halos-certified stack. Halos certifies
+that the stack is safe and secure by design; this records what a specific robot actually
+did and binds it to the robot's identity:
+
+- **`SafetyEventRecorder`**: captures the Halos safety-event stream (the Outside-In
+  Safety Blueprint components SIPP, SAIM, SEI, SDM, plus emergency stops and operator
+  actions) into the tamper-evident, encrypted black-box.
+- **`build_safety_evidence` / `verify_safety_evidence`**: the robot signs a
+  `HalosSafetyEvidenceCredential` that seals the black-box head and entry count and binds
+  them to its identity and to the Halos stack elements it ran on (IGX system-on-module,
+  Halos Core, Blueprint applications). A verifier confirms, without the black-box key,
+  that the record is unaltered, untruncated, attributable to that robot, and tied to the
+  certified configuration, while the payloads stay confidential.
+
+Implemented in the Python reference (`vouch.robotics.halos`) and the Rust core, exposed
+through the curated robotics C ABI.
+
 #### State Verifiability runtime (Specification §11, §15)
 
 First-class implementation of the State Verifiability layer the spec

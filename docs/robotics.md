@@ -452,3 +452,87 @@ managed consent-registry orchestration, are commercial.
 Sections 5.7 to 5.21 are implemented in Python, TypeScript, Go, and the Rust core
 (which flows to the Swift, Kotlin/JVM, .NET, C/C++, and WebAssembly wrappers),
 byte-identical and pinned by `test-vectors/robotics/vector.json`.
+
+## Disconnected operation and bounded-staleness revocation
+
+The primitives above already verify authority offline against pre-distributed
+trust anchors: a delegation lease (5.11), a passport (5.6), and the robot-to-robot
+handshake (5.4) all complete with no network call. The one part of a trust
+decision that is inherently a *freshness* problem rather than a *signature*
+problem is revocation — an offline verifier holds a status-list snapshot synced at
+last contact, and a credential revoked after that sync still looks valid to it.
+
+[docs/dtn-bounded-staleness-revocation.md](dtn-bounded-staleness-revocation.md)
+specifies a verifier-side policy that binds the acceptable *age* of a revocation
+snapshot to the *consequence* of the action being authorized: a routine beacon
+tolerates a stale view, a physical maneuver does not, and every ambiguous state
+(no snapshot, expired snapshot, unusable clock) fails closed. It adds no new
+cryptography — only consequence tiers and a freshness gate on top of
+`vouch.status_list`.
+
+[`examples/disconnected_exchange_demo.py`](../examples/disconnected_exchange_demo.py)
+runs the whole flow end to end: two nodes in different trust domains provision
+anchors while in contact, then — with the socket layer disabled to prove it is
+offline — complete the handshake, present and authorize a lease, scan a passport,
+and apply the bounded-staleness gate across all three consequence tiers.
+
+Two further primitives harden trust for moving nodes at the edge:
+
+- **Channel-geometry proof of presence** (`vouch.robotics.presence`, PAD-108) fuses a
+  measured physical predicate — signal time-of-flight/range or Doppler shift — into the
+  handshake, so a credential replayed from a different location fails.
+  `build_presence_attestation` binds a nonce, the peer's claimed position, and the
+  verifier's measured range and tolerance; `verify_presence_attestation` rejects a
+  measurement the committed geometry cannot explain. No shared secret, no live authority.
+- **Ephemeris-scoped authority** (`vouch.robotics.geoscope`, PAD-109) expresses a grant's
+  validity as a geometric predicate (a bounding sphere, box, or altitude band) evaluated
+  by the holder against its own navigation state, instead of a wall-clock window a
+  long-disconnected node cannot trust. `build_geoscoped_grant` / `verify_geoscoped_grant`
+  / `geoscope_permits` verify offline and enforce shrink-only nesting over regions.
+
+Both are disclosed as PAD-108 and PAD-109.
+
+The full disconnected-edge / DTN set (disclosed PAD-106 through PAD-124) ships as
+open-layer formats and verifier predicates across these modules; hardware/platform
+acquisition (real ranging, TPM, orbital propagators) is the caller's concern:
+
+| Module | Capabilities | PADs |
+| --- | --- | --- |
+| `vouch.status_list.evaluate_freshness` | consequence-tiered revocation staleness gate | 106 |
+| `vouch.robotics.freshness` | presenter freshness token (epoch-bound); graded trust decay | 107, 119 |
+| `vouch.robotics.presence` | channel-geometry (range/Doppler) proof of presence | 108 |
+| `vouch.robotics.geoscope` | ephemeris/geometric-scoped authority, shrink-only regions | 109 |
+| `vouch.robotics.quorum_trust` | swarm-consensus quarantine; quorum-of-orbits update acceptance; offline threshold key continuity | 110, 111, 116 |
+| `vouch.robotics.dtn_revocation` | conditional dead-man revocation; carried validity witness; dynamic revocation accumulator (`vouch.robotics.accumulator` sparse Merkle tree, non-membership proofs) | 112, 120 |
+| `vouch.robotics.localization` | triangulated proof-of-location; kinematic plausibility (two-body propagation via `vouch.robotics.orbital`); narrow-beam presence | 113, 114, 121 |
+| `vouch.robotics.edge_trust` | attested time-quality; connectivity-scaled autonomy envelope; integrity-risk authority narrowing | 115, 117, 118 |
+| `vouch.robotics.perception_consensus` | Byzantine sensor agreement; mutual-attestation mesh standing | 122, 123 |
+| `vouch.robotics.bundle` | DTN Bundle Protocol custody + credential/freshness binding | 124 |
+
+All are `eddsa-jcs-2022` credentials or deterministic predicates over the existing
+primitives, verified with the shared Data Integrity path.
+
+### Hardware-facing seam (`vouch.robotics.hardware`)
+
+The predicates above consume *measurements* (a range, a pointing solution, a
+position, a clock, an epoch, an integrity reading). `vouch.robotics.hardware`
+defines that seam as typed Protocols — `NavigationSource`, `RangeSensor`,
+`DopplerSensor`, `PointingSource`, `ClockSource`, `EpochSource`,
+`IntegrityMonitor` — that a platform implements with its own drivers. It ships
+`Simulated*` reference implementations for tests and demos, and capture/verify-live
+adapters (`capture_presence_attestation`, `verify_presence_live`,
+`capture_range_observation`, `capture_beam_presence`, `capture_time_quality`,
+`capture_integrity_risk`, `issue_freshness_token`, `check_kinematics_live`) that
+read a sensor and feed the existing build/verify functions unchanged. Integrating
+real hardware is implementing an interface, not rewriting the trust logic — a
+driver need only duck-type the Protocol.
+
+```python
+from vouch.robotics import capture_presence_attestation, verify_presence_live, SimulatedRangeSensor, SimulatedNavigation
+
+# on the presenting node: range its peer and commit the geometry
+att = capture_presence_attestation(node, peer_did=peer, nonce=n,
+    claimed_position=[100, 0, 0], range_sensor=my_radio, tolerance_m=1.0)
+# on the verifier: check against its own live position
+ok, subject = verify_presence_live(att, peer_key, nav=my_gnss, expected_nonce=n)
+```

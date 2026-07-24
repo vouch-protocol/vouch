@@ -316,6 +316,26 @@ char *vouch_robotics_verify_continuity_chain(const char *params_json,
  */
 char *vouch_robotics_verify_handoff_chain(const char *params_json, char **err_out);
 
+/**
+ * Seal a robot's Halos safety-event record into a signed
+ * HalosSafetyEvidenceCredential. params_json carries {halosStack, window,
+ * blackboxHead, entryCount, robotIdentity?, validSeconds?, validFrom, created}.
+ * The robot DID is derived from the signer seed. Returns the signed credential JSON.
+ */
+char *vouch_robotics_build_safety_evidence(const char *signer_seed_b64,
+                                           const char *params_json,
+                                           char **err_out);
+
+/**
+ * Verify a Halos safety-evidence credential. Pass the robot public key (base64)
+ * and, optionally, the black-box entries as a JSON array (or NULL) to check the
+ * chain against the sealed head and entry count. Returns JSON {ok, subject}.
+ */
+char *vouch_robotics_verify_safety_evidence(const char *credential_json,
+                                            const char *robot_public_b64,
+                                            const char *entries_json,
+                                            char **err_out);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

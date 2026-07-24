@@ -312,6 +312,19 @@ export type {
   VerifyDecommissionOptions,
 } from './robotics/lifecycle';
 
+// Halos safety-evidence recorder (NVIDIA Halos integration): a robot-signed
+// credential sealing a tamper-evident black-box of Halos safety events to the
+// robot's identity and certified stack, byte-identical with the Python module.
+export {
+  HALOS_SAFETY_EVIDENCE_TYPE,
+  HALOS_EVENT_SOURCES,
+  HalosError,
+  SafetyEventRecorder,
+  buildSafetyEvidence,
+  verifySafetyEvidence,
+} from './robotics/halos';
+export type { BuildSafetyEvidenceOptions } from './robotics/halos';
+
 // Regulatory conformance profiles, deterministic checker, and signed
 // point-in-time attestation, byte-identical with the Python module.
 export {
@@ -502,6 +515,10 @@ export type {
   BuildRobotIdentityOptions,
   VerifyRobotIdentityChainOptions,
 } from './robotics/root-identity';
+
+// Disconnected-edge / DTN trust primitives (PAD-106 to PAD-124), byte-identical
+// with the Python vouch.robotics disconnected-edge modules and the Rust core.
+export * from './robotics/dtn';
 
 // ---------------------------------------------------------------------------
 // Daemon Client

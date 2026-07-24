@@ -114,6 +114,85 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-102](./PAD-102-handover-acknowledgement.md) | Recipient Acknowledgement Bound to a Specific Robot-to-Human Handover | 2026-07-06 | Published |
 | [PAD-103](./PAD-103-root-anchored-hardware-rooted-robot-identity.md) | Root-Anchored, Hardware-Rooted Robot Identity Binding | 2026-07-12 | Published |
 | [PAD-104](./PAD-104-per-tool-call-continuous-trust-authorization.md) | Per-Tool-Call Continuous-Trust Authorization with Resource-Bound Delegation | 2026-07-12 | Published |
+| [PAD-105](./PAD-105-safety-island-evidence-record.md) | Signed Tamper-Evident Safety-Evidence Record Bound to a Robot's Identity and Certified Stack | 2026-07-12 | Published |
+| [PAD-106](./PAD-106-dtn-bounded-staleness-revocation.md) | DTN-Aware Bounded-Staleness Revocation for Disconnected Verifiers | 2026-07-19 | Published |
+| [PAD-107](./PAD-107-presenter-proof-of-freshness-dtn-epochs.md) | Presenter-Side Proof of Freshness Bound to Monotonic Delay-Tolerant Network Epochs | 2026-07-19 | Published |
+| [PAD-108](./PAD-108-channel-geometry-proof-of-presence.md) | Channel-Geometry Proof of Presence as a Freshness Factor in DID Handshakes | 2026-07-19 | Published |
+| [PAD-109](./PAD-109-ephemeris-scoped-delegation-authority.md) | Ephemeris-Scoped Delegation Authority Bound to a Trajectory or Geometric Predicate | 2026-07-19 | Published |
+| [PAD-110](./PAD-110-swarm-consensus-revocation-quarantine.md) | Swarm-Consensus Revocation: Local Peer-Observation Quarantine Under an Honest-Majority Assumption | 2026-07-19 | Published |
+| [PAD-111](./PAD-111-quorum-of-orbits-trust-anchoring.md) | Quorum-of-Orbits Trust Anchoring via Independent-Failure-Domain Corroboration | 2026-07-19 | Published |
+| [PAD-112](./PAD-112-conditional-dead-man-offline-revocation.md) | Conditional Dead-Man Revocation via Pre-Signed Self-Revoking Credentials | 2026-07-19 | Published |
+| [PAD-113](./PAD-113-distributed-proof-of-location-triangulation.md) | Distributed Proof of Location via Multi-Verifier Range Triangulation | 2026-07-19 | Published |
+| [PAD-114](./PAD-114-kinematic-plausibility-anti-spoof.md) | Kinematic-Plausibility Checking of Position and Velocity Claims | 2026-07-19 | Published |
+| [PAD-115](./PAD-115-attested-time-quality-trust-input.md) | Attested Time-Quality as an Input to Offline Trust Decisions | 2026-07-19 | Published |
+| [PAD-116](./PAD-116-offline-threshold-key-continuity.md) | Offline Threshold Key Continuity and Re-Issuance for Autonomous Missions | 2026-07-19 | Published |
+| [PAD-117](./PAD-117-connectivity-scaled-autonomy-envelope.md) | Connectivity-Scaled Autonomy Envelope | 2026-07-19 | Published |
+| [PAD-118](./PAD-118-radiation-fault-aware-key-attestation.md) | Radiation- and Fault-Aware Key Attestation with Authority Narrowing | 2026-07-19 | Published |
+| [PAD-119](./PAD-119-graded-trust-decay-long-disconnection.md) | Graded Continuous Trust Decay for Long-Duration Disconnection | 2026-07-19 | Published |
+| [PAD-120](./PAD-120-aggregated-proof-of-non-revocation.md) | Carried Aggregated Proof of Non-Revocation for Offline Presentation | 2026-07-19 | Published |
+| [PAD-121](./PAD-121-optical-beam-alignment-presence.md) | Narrow-Beam Optical Alignment as an Implicit Proof of Presence | 2026-07-19 | Published |
+| [PAD-122](./PAD-122-byzantine-sensor-agreement-provenance.md) | Byzantine Sensor Agreement via Cross-Checked Signed Perception Provenance | 2026-07-19 | Published |
+| [PAD-123](./PAD-123-mutual-attestation-mesh-trust-graph.md) | Mutual-Attestation Mesh: A Live Offline Trust Graph | 2026-07-19 | Published |
+| [PAD-124](./PAD-124-dtn-bundle-custody-credential-binding.md) | Binding Verifiable-Credential Trust to DTN Bundle Custody | 2026-07-19 | Published |
+
+
+## July 19, 2026: Disconnected-Edge Trust, Full Set (PAD-112 to PAD-124)
+
+Thirteen further disclosures completing the disconnected-edge / DDIL trust portfolio on
+top of PAD-106–111, all building on the shipped offline primitives rather than inventing
+parallel mechanisms. Revocation and freshness: PAD-112 pre-signed dead-man revocation
+that fires offline on a missed renewal; PAD-119 continuous graded trust decay; PAD-120 a
+presenter-carried non-revocation witness a verifier checks holding no status list.
+Physics-bound trust: PAD-113 multi-verifier triangulated proof-of-location; PAD-114
+kinematic/orbital-mechanics plausibility filtering of position claims; PAD-121 narrow-beam
+optical alignment as implicit presence; PAD-115 attested time-quality as a signed trust
+input. Autonomy and hardware: PAD-117 an autonomy envelope that narrows with time since
+contact; PAD-118 radiation/fault-aware key attestation with authority narrowing; PAD-116
+offline threshold key continuity for long missions. Multi-node: PAD-122 Byzantine sensor
+agreement over cross-checked perception provenance; PAD-123 a mutual-attestation mesh
+trust graph. Transport: PAD-124 binds credential trust and freshness to DTN Bundle
+Protocol custody. Each differentiates honestly against its prior art (fixed-window
+revocation, multilateration, accumulators, web-of-trust, BPSec) rather than claiming the
+general mechanisms.
+
+
+## July 19, 2026: Offline Peer Revocation and Trust Distribution (PAD-110 to PAD-111)
+
+Two disclosures for the revocation cases that bounded-staleness (PAD-106) cannot reach
+on its own. PAD-110 lets a local cluster of hardware-attested peers quarantine a node
+that turns malicious *between* contacts, by a threshold of evidence-bound distress
+attestations, sound under a stated local honest-majority assumption and deliberately
+bounded and reversible so collusion or error degrades to a temporary, appealable,
+cluster-local effect rather than a permanent kill. PAD-111 hardens how a disconnected
+mobile node accepts trust-state updates: an anchor change, revocation delta, or freshness
+advance is admitted only on corroboration by a threshold of anchors from *distinct
+independent failure domains* (different orbits, operators, or authorities), with monotonic
+epochs preventing rollback to a stale, more permissive state.
+
+
+## July 19, 2026: Disconnected-Edge and Space Trust (PAD-106 to PAD-109)
+
+Four disclosures for trust at the disconnected edge — space, subsea, subterranean, and
+denied-connectivity (DDIL) environments — building on the offline primitives (PAD-070,
+PAD-076, PAD-087). PAD-106 makes revocation honest about time: a disconnected verifier
+weighs the age of its last-synced status snapshot against the consequence of the action
+and fails closed when the view is too old. PAD-107 adds the presenter-side dual, a
+relay-issued freshness token bound to a monotonic network epoch so recency survives clock
+drift. PAD-108 fuses a measured channel-geometry predicate (time-of-flight, range, or
+Doppler) into the DID handshake so a credential replayed from a different location fails.
+PAD-109 scopes delegated authority to a trajectory or geometric predicate (an orbital arc,
+a footprint, a geofence) evaluated by the holder against its own navigation state rather
+than a clock it cannot trust.
+
+
+## July 12, 2026: Safety-Island Evidence Record (PAD-105)
+
+PAD-105 seals the event stream from a robot's functional-safety subsystem into an
+encrypted, hash-linked log, then has the robot sign a credential fixing the log's chain
+head and entry count and binding them to its identity and to the certified safety-stack
+elements it ran on. A verifier confirms the record is unaltered, untruncated, attributable
+to that robot, and tied to the certified configuration, all without the log's
+confidentiality key. It is the evidence layer beneath a design-time safety certification.
 
 
 ## July 12, 2026: Root-Anchored Hardware-Rooted Robot Identity (PAD-103)

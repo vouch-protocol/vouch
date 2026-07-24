@@ -487,8 +487,191 @@ def verify_status(
     return status_list.get_status(index)
 
 
+# --------------------------------------------------------------------------- #
+# DTN-aware bounded-staleness revocation freshness.
+#
+# `verify_status` answers "is this credential revoked, per the status list I am
+# holding". A disconnected verifier holds a *snapshot* synced at last contact, so
+# that answer is only as trustworthy as the snapshot is fresh. `evaluate_freshness`
+# decides whether the snapshot is fresh ENOUGH for the consequence of the action
+# being authorized, and fails closed when it is not. It is the verifier-side gate
+# specified in docs/dtn-bounded-staleness-revocation.md.
+# --------------------------------------------------------------------------- #
+
+# Consequence tiers, ordered by how much a stale revocation view is tolerated.
+CONSEQUENCE_ROUTINE = "routine"
+CONSEQUENCE_SENSITIVE = "sensitive"
+CONSEQUENCE_CRITICAL = "critical"
+
+VALID_CONSEQUENCE_TIERS = (
+    CONSEQUENCE_ROUTINE,
+    CONSEQUENCE_SENSITIVE,
+    CONSEQUENCE_CRITICAL,
+)
+
+# Default maximum snapshot age each tier will accept. These are policy defaults,
+# not protocol constants: a deployment tightens or loosens them per its threat
+# model. The tiers and their ordering are the normative part; the numbers are not.
+DEFAULT_STALENESS_BUDGETS: Dict[str, timedelta] = {
+    CONSEQUENCE_ROUTINE: timedelta(days=30),
+    CONSEQUENCE_SENSITIVE: timedelta(hours=24),
+    CONSEQUENCE_CRITICAL: timedelta(hours=1),
+}
+
+
+@dataclass(frozen=True)
+class FreshnessVerdict:
+    """
+    Outcome of a bounded-staleness freshness evaluation.
+
+    Attributes:
+      allow: Whether the snapshot is fresh enough for the requested tier. This is
+        the freshness judgement ONLY; a caller still denies on a set revocation
+        bit (`verify_status`) regardless of this verdict.
+      tier: The consequence tier the decision was made against (after coercing an
+        unknown tier to `critical`).
+      reason: Human-readable explanation, suitable for an audit log.
+      staleness: Age of the snapshot (now − validFrom), or None when there was no
+        usable snapshot.
+      budget: The staleness budget applied for `tier`.
+    """
+
+    allow: bool
+    tier: str
+    reason: str
+    staleness: Optional[timedelta] = None
+    budget: Optional[timedelta] = None
+
+
+def _snapshot_as_of(snapshot: Dict[str, Any], now: datetime) -> Optional[datetime]:
+    """
+    Return the snapshot's freshness anchor (`validFrom`), or None if the snapshot
+    is unusable: malformed timestamps, or expired past its own `validUntil`. An
+    unusable snapshot is treated as absent by the caller (fail-closed).
+    """
+    vf_raw = snapshot.get("validFrom")
+    if not vf_raw:
+        return None
+    try:
+        valid_from = _parse_iso(vf_raw)
+    except (ValueError, TypeError):
+        return None
+
+    vu_raw = snapshot.get("validUntil")
+    if vu_raw:
+        try:
+            if now > _parse_iso(vu_raw):
+                return None  # publisher's own expiry: unusable
+        except (ValueError, TypeError):
+            return None
+    return valid_from
+
+
+def evaluate_freshness(
+    *,
+    tier: str,
+    snapshot: Optional[Dict[str, Any]],
+    now: Optional[datetime] = None,
+    budgets: Optional[Dict[str, timedelta]] = None,
+) -> FreshnessVerdict:
+    """
+    Decide whether a locally-held revocation `snapshot` is fresh enough to
+    authorize an action of the given consequence `tier`.
+
+    This is the freshness gate of the DTN bounded-staleness procedure. It does
+    NOT verify the snapshot's Data Integrity proof or the target revocation bit;
+    the caller MUST do both first (`data_integrity.verify_proof` then
+    `verify_status`). This function judges only the snapshot's age against the
+    tier budget, and fails closed on every ambiguous state.
+
+    Args:
+      tier: One of `routine`, `sensitive`, `critical`. An unknown tier is coerced
+        to `critical` (fail-closed by default).
+      snapshot: The fetched-at-last-contact `BitstringStatusListCredential` dict,
+        whose `validFrom` is the freshness anchor. `None` means the verifier holds
+        no revocation view at all. A snapshot past its own `validUntil`, or with a
+        malformed/missing `validFrom`, is treated as absent.
+      now: Verifier's trusted clock. Defaults to current UTC. A verifier without a
+        trusted clock cannot compute staleness and SHOULD NOT rely on this gate
+        for anything above `routine`.
+      budgets: Optional per-tier staleness budgets overriding
+        `DEFAULT_STALENESS_BUDGETS`. Missing tiers fall back to the default.
+
+    Returns:
+      A `FreshnessVerdict`. `allow` is True only when the snapshot is present,
+      usable, and within budget, OR when the tier is `routine` and no usable
+      snapshot exists.
+
+    Decision table (snapshot present ≡ present AND usable):
+
+        bit set (checked by caller) → always DENY, independent of this gate
+        snapshot present, age ≤ budget         → ALLOW
+        snapshot present, age > budget         → DENY (fail-closed)
+        snapshot absent, tier == routine       → ALLOW
+        snapshot absent, tier  > routine       → DENY (fail-closed)
+    """
+    if tier not in VALID_CONSEQUENCE_TIERS:
+        # An unrecognized consequence is treated as the most consequential.
+        tier = CONSEQUENCE_CRITICAL
+
+    budget = DEFAULT_STALENESS_BUDGETS[tier]
+    if budgets is not None and tier in budgets:
+        budget = budgets[tier]
+
+    moment = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+
+    as_of = _snapshot_as_of(snapshot, moment) if snapshot is not None else None
+    if as_of is None:
+        if tier == CONSEQUENCE_ROUTINE:
+            return FreshnessVerdict(
+                True,
+                tier,
+                "no usable revocation snapshot; routine tier tolerates it",
+                None,
+                budget,
+            )
+        return FreshnessVerdict(
+            False,
+            tier,
+            f"no usable revocation snapshot; {tier} tier fails closed",
+            None,
+            budget,
+        )
+
+    staleness = moment - as_of
+    if staleness <= budget:
+        return FreshnessVerdict(
+            True,
+            tier,
+            f"snapshot age {_fmt_delta(staleness)} within {tier} budget {_fmt_delta(budget)}",
+            staleness,
+            budget,
+        )
+    return FreshnessVerdict(
+        False,
+        tier,
+        f"snapshot age {_fmt_delta(staleness)} exceeds {tier} budget "
+        f"{_fmt_delta(budget)}; fails closed",
+        staleness,
+        budget,
+    )
+
+
 def _iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _parse_iso(s: str) -> datetime:
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+
+def _fmt_delta(td: timedelta) -> str:
+    total = int(td.total_seconds())
+    if total < 3600:
+        return f"{total // 60}m"
+    if total < 86400:
+        return f"{total // 3600}h"
+    return f"{total // 86400}d"
 
 
 __all__ = [
@@ -501,10 +684,17 @@ __all__ = [
     "BITSTRING_STATUS_LIST_SUBJECT_TYPE",
     "BITSTRING_STATUS_LIST_ENTRY_TYPE",
     "MULTIBASE_BASE64URL_PREFIX",
+    "CONSEQUENCE_ROUTINE",
+    "CONSEQUENCE_SENSITIVE",
+    "CONSEQUENCE_CRITICAL",
+    "VALID_CONSEQUENCE_TIERS",
+    "DEFAULT_STALENESS_BUDGETS",
+    "FreshnessVerdict",
     "StatusList",
     "StatusListError",
     "FilesystemStatusListStore",
     "build_status_list_credential",
     "build_status_list_entry",
     "verify_status",
+    "evaluate_freshness",
 ]

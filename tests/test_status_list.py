@@ -3,7 +3,9 @@ Unit tests for the BitstringStatusList implementation (Specification §11.2).
 """
 
 import base64
+import dataclasses
 import gzip
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -11,7 +13,12 @@ from vouch.status_list import (
     BITSTRING_STATUS_LIST_CREDENTIAL_TYPE,
     BITSTRING_STATUS_LIST_ENTRY_TYPE,
     BITSTRING_STATUS_LIST_SUBJECT_TYPE,
+    CONSEQUENCE_CRITICAL,
+    CONSEQUENCE_ROUTINE,
+    CONSEQUENCE_SENSITIVE,
     DEFAULT_BITSTRING_LENGTH,
+    DEFAULT_STALENESS_BUDGETS,
+    FreshnessVerdict,
     MULTIBASE_BASE64URL_PREFIX,
     STATUS_PURPOSE_REVOCATION,
     STATUS_PURPOSE_SUSPENSION,
@@ -19,6 +26,7 @@ from vouch.status_list import (
     StatusListError,
     build_status_list_credential,
     build_status_list_entry,
+    evaluate_freshness,
     verify_status,
 )
 from vouch.vc import build_vouch_credential
@@ -348,6 +356,101 @@ class TestVouchCredentialIntegration:
         assert verify_status(credential_status=entry_b, status_list_credential=status_vc) is True
 
 
+def _snapshot(*, valid_from, valid_until=None):
+    """A minimal status list credential shape carrying just the freshness fields."""
+    snap = {
+        "type": [BITSTRING_STATUS_LIST_CREDENTIAL_TYPE],
+        "validFrom": valid_from.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    if valid_until is not None:
+        snap["validUntil"] = valid_until.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return snap
+
+
+class TestEvaluateFreshness:
+    def setup_method(self):
+        self.now = datetime(2026, 7, 19, 12, 0, 0, tzinfo=timezone.utc)
+
+    def test_fresh_snapshot_allows_every_tier(self):
+        snap = _snapshot(valid_from=self.now - timedelta(minutes=10))
+        for tier in (CONSEQUENCE_ROUTINE, CONSEQUENCE_SENSITIVE, CONSEQUENCE_CRITICAL):
+            verdict = evaluate_freshness(tier=tier, snapshot=snap, now=self.now)
+            assert isinstance(verdict, FreshnessVerdict)
+            assert verdict.allow is True
+            assert verdict.tier == tier
+            assert verdict.staleness == timedelta(minutes=10)
+
+    def test_over_budget_denies_and_fails_closed(self):
+        # 5 days old: within routine's 30d, past sensitive's 24h and critical's 1h.
+        snap = _snapshot(valid_from=self.now - timedelta(days=5))
+        assert evaluate_freshness(tier=CONSEQUENCE_ROUTINE, snapshot=snap, now=self.now).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_SENSITIVE, snapshot=snap, now=self.now).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now).allow
+
+    def test_boundary_is_inclusive(self):
+        budget = DEFAULT_STALENESS_BUDGETS[CONSEQUENCE_CRITICAL]
+        exactly = _snapshot(valid_from=self.now - budget)
+        just_over = _snapshot(valid_from=self.now - budget - timedelta(seconds=1))
+        assert evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=exactly, now=self.now).allow
+        assert not evaluate_freshness(
+            tier=CONSEQUENCE_CRITICAL, snapshot=just_over, now=self.now
+        ).allow
+
+    def test_absent_snapshot_allows_routine_only(self):
+        assert evaluate_freshness(tier=CONSEQUENCE_ROUTINE, snapshot=None, now=self.now).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_SENSITIVE, snapshot=None, now=self.now).allow
+        assert not evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=None, now=self.now).allow
+
+    def test_expired_snapshot_is_treated_as_absent(self):
+        # validFrom is recent, but the publisher's own validUntil has passed.
+        snap = _snapshot(
+            valid_from=self.now - timedelta(minutes=5),
+            valid_until=self.now - timedelta(minutes=1),
+        )
+        # Recent enough by age, but unusable -> fails closed above routine.
+        assert not evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now).allow
+        assert evaluate_freshness(tier=CONSEQUENCE_ROUTINE, snapshot=snap, now=self.now).allow
+
+    def test_malformed_validfrom_is_treated_as_absent(self):
+        for bad in ({}, {"validFrom": "not-a-date"}, {"validFrom": ""}):
+            assert not evaluate_freshness(
+                tier=CONSEQUENCE_CRITICAL, snapshot=bad, now=self.now
+            ).allow
+
+    def test_unknown_tier_coerced_to_critical(self):
+        # 2h old: fine for sensitive, too old for critical. An unknown tier must
+        # behave like critical (fail-closed).
+        snap = _snapshot(valid_from=self.now - timedelta(hours=2))
+        verdict = evaluate_freshness(tier="wild-guess", snapshot=snap, now=self.now)
+        assert verdict.tier == CONSEQUENCE_CRITICAL
+        assert verdict.allow is False
+
+    def test_custom_budgets_override_defaults(self):
+        snap = _snapshot(valid_from=self.now - timedelta(hours=2))
+        # Default critical budget (1h) would deny; a 6h override allows.
+        loosened = {CONSEQUENCE_CRITICAL: timedelta(hours=6)}
+        assert evaluate_freshness(
+            tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now, budgets=loosened
+        ).allow
+        # A tier missing from the override falls back to its default.
+        assert evaluate_freshness(
+            tier=CONSEQUENCE_SENSITIVE, snapshot=snap, now=self.now, budgets=loosened
+        ).allow
+
+    def test_defaults_now_when_omitted(self):
+        # A snapshot stamped ~now should be fresh for critical without passing now.
+        snap = _snapshot(valid_from=datetime.now(timezone.utc) - timedelta(seconds=1))
+        assert evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snap).allow
+
+    def test_verdict_is_immutable_and_carries_budget(self):
+        snap = _snapshot(valid_from=self.now - timedelta(minutes=1))
+        verdict = evaluate_freshness(tier=CONSEQUENCE_CRITICAL, snapshot=snap, now=self.now)
+        assert verdict.budget == DEFAULT_STALENESS_BUDGETS[CONSEQUENCE_CRITICAL]
+        assert isinstance(verdict.reason, str) and verdict.reason
+        with pytest.raises(dataclasses.FrozenInstanceError):
+            verdict.allow = False  # frozen dataclass
+
+
 class TestPackageExports:
     def test_lazy_imports_resolve(self):
         import vouch
@@ -360,6 +463,10 @@ class TestPackageExports:
         assert callable(vouch.build_status_list_credential)
         assert callable(vouch.build_status_list_entry)
         assert callable(vouch.verify_status)
+        assert callable(vouch.evaluate_freshness)
+        assert vouch.FreshnessVerdict.__name__ == "FreshnessVerdict"
+        assert vouch.CONSEQUENCE_CRITICAL == "critical"
+        assert isinstance(vouch.DEFAULT_STALENESS_BUDGETS, dict)
 
 
 class TestStateDictPersistence:

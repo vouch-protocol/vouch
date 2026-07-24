@@ -713,3 +713,39 @@ pub extern "C" fn vouch_robotics_verify_handoff_chain(
         vouch_core::robotics_json::verify_handoff_chain(&params).map_err(|e| e.to_string())
     })
 }
+
+/// Seal a robot's Halos safety-event record into a signed
+/// HalosSafetyEvidenceCredential. params_json carries {halosStack, window,
+/// blackboxHead, entryCount, robotIdentity?, validSeconds?, validFrom, created}.
+/// The robot DID is derived from the signer seed. Returns the signed credential JSON.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_build_safety_evidence(
+    signer_seed_b64: *const c_char,
+    params_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let seed = unb64(&cstr_in(signer_seed_b64)?)?;
+        let params = cstr_in(params_json)?;
+        vouch_core::robotics_json::build_safety_evidence(&seed, &params).map_err(|e| e.to_string())
+    })
+}
+
+/// Verify a Halos safety-evidence credential. Pass the robot public key (base64)
+/// and, optionally, the black-box entries as a JSON array (or NULL) to check the
+/// chain against the sealed head and entry count. Returns JSON {ok, subject}.
+#[no_mangle]
+pub extern "C" fn vouch_robotics_verify_safety_evidence(
+    credential_json: *const c_char,
+    robot_public_b64: *const c_char,
+    entries_json: *const c_char,
+    err_out: *mut *mut c_char,
+) -> *mut c_char {
+    guard(err_out, move || {
+        let cred = cstr_in(credential_json)?;
+        let pk = unb64(&cstr_in(robot_public_b64)?)?;
+        let entries = cstr_in_opt(entries_json)?.unwrap_or_default();
+        vouch_core::robotics_json::verify_safety_evidence(&cred, &pk, &entries)
+            .map_err(|e| e.to_string())
+    })
+}

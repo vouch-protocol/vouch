@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 15183,
-  "verifiable": 181,
-  "cannot": 15002,
-  "gradeA": 77,
-  "pctVerifiable": 1.2,
-  "pctCannot": 98.8,
+  "total": 16393,
+  "verifiable": 188,
+  "cannot": 16205,
+  "gradeA": 80,
+  "pctVerifiable": 1.1,
+  "pctCannot": 98.9,
   "pctCard": 0.8,
   "pctRev": 0.5,
   "pctPq": 0.0,
-  "cardCount": 129,
-  "revCount": 81,
+  "cardCount": 139,
+  "revCount": 83,
   "pqCount": 0,
-  "generated": "6 July 2026"
+  "generated": "13 July 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -47,6 +47,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.chaot-kit/euearth",
+    "domains": "euearth-api.chaot-kit.com",
+    "method": "did:key, key",
+    "did": "did:key:z"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.entidex/entidex",
     "domains": "entidex.com",
     "method": "did:web, Ed25519 (JWK)",
@@ -67,6 +75,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.carbon-cashmere.de",
     "method": "did:web, secp256k1 (JWK)",
     "did": "did:web:api.carbon-cashmere.de"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "eco.reeco/reecopedia",
+    "domains": "ia.reeco.eco",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:ia.reeco.eco"
   },
   {
     "grade": "A",
@@ -99,6 +115,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.quantsynth.net",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:api.quantsynth.net"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.XRPDomains/xrpname-mcp-server",
+    "domains": "xrpdomains.xyz",
+    "method": "did:web, X25519 (JWK)",
+    "did": "did:web:xrpdomains.xyz"
   },
   {
     "grade": "A",
@@ -719,10 +743,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.publora/mcp-server",
+    "domains": "mcp.publora.com",
+    "method": "did:web",
+    "did": "did:web:mcp.publora.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.tkawen/intelligence-gateway",
     "domains": "mcp.tkawen.com",
     "method": "did:web",
     "did": "did:web:mcp.tkawen.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "dev.busymate/busymate-devtools",
+    "domains": "mcp.busymate.dev",
+    "method": "did:web",
+    "did": "did:web:mcp.busymate.dev"
   },
   {
     "grade": "C",
@@ -791,6 +831,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.JadeSparrow/sqlai-dev-sql-verifier",
+    "domains": "mcp.sqlai.dev",
+    "method": "did:web",
+    "did": "did:web:mcp.sqlai.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.ShieldZCash/mcp",
     "domains": "shieldz.cash",
     "method": "did:web",
@@ -811,6 +859,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "mcp.onelens.cloud",
     "method": "did:web",
     "did": "did:web:mcp.onelens.cloud"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.jackfieldman/buildercheck",
+    "domains": "buildercheck-mcp.jaco-veldsman.workers.dev",
+    "method": "did:web",
+    "did": "did:web:buildercheck-mcp.jaco-veldsman.workers.dev"
   },
   {
     "grade": "C",
@@ -1271,14 +1327,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.mambaventures/nzxplorer-mcp",
-    "domains": "mcp.nzxplorer.co.nz",
-    "method": "did:web",
-    "did": "did:web:mcp.nzxplorer.co.nz"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.mikeslone/storylayer",
     "domains": "app.storylayer.ai",
     "method": "did:web",
@@ -1451,6 +1499,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "hivetrust.onrender.com",
     "method": "did:web",
     "did": "did:web:hivetrust.onrender.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "net.glyt/glyt",
+    "domains": "glyt.net",
+    "method": "did:web",
+    "did": "did:web:glyt.net"
   },
   {
     "grade": "C",
