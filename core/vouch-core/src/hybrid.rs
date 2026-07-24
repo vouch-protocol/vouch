@@ -123,8 +123,11 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
         .ok_or_else(|| CoreError::Json("dual proof requires a proof array".into()))?;
     let base = strip_proof(credential)?;
 
-    let mut ed_ok = false;
-    let mut ml_ok = false;
+    // Every proof present in the set must verify. A proof that fails fails the
+    // whole set immediately, so a later proof of the same cryptosuite can never
+    // overwrite an earlier failure.
+    let mut ed_seen = false;
+    let mut ml_seen = false;
 
     for p in proofs {
         let cs = p.get("cryptosuite").and_then(|v| v.as_str());
@@ -132,7 +135,10 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
             Some(EDDSA_CRYPTOSUITE_ID) => {
                 let mut c = base.clone();
                 c.as_object_mut().unwrap().insert("proof".into(), p.clone());
-                ed_ok = data_integrity::verify_proof(&c, ed25519_public)?;
+                if !data_integrity::verify_proof(&c, ed25519_public)? {
+                    return Ok(false);
+                }
+                ed_seen = true;
             }
             Some(MLDSA44_CRYPTOSUITE_ID) | Some(MLDSA44_LEGACY_CRYPTOSUITE_ID) => {
                 let proof_obj = p
@@ -158,16 +164,22 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
                 let mut unsigned = proof_obj.clone();
                 unsigned.remove("proofValue");
                 let signing_input = data_integrity::hash_data(&base, &unsigned)?;
-                ml_ok = pq::verify(mldsa_public, &signing_input, &sig)?;
-                if !ml_ok {
+                let mut ok = pq::verify(mldsa_public, &signing_input, &sig)?;
+                if !ok {
                     let legacy = data_integrity::legacy_proof_digest(&base, &unsigned)?;
-                    ml_ok = pq::verify(mldsa_public, &legacy, &sig)?;
+                    ok = pq::verify(mldsa_public, &legacy, &sig)?;
                 }
+                if !ok {
+                    return Ok(false);
+                }
+                ml_seen = true;
             }
             _ => {}
         }
     }
-    Ok(ed_ok && ml_ok)
+    // Both members of the set must be present, so a credential cannot drop the
+    // post-quantum proof and still be accepted as a proof set.
+    Ok(ed_seen && ml_seen)
 }
 
 fn composite_unsigned_proof(verification_method: &str, created: &str) -> Map<String, Value> {
@@ -344,5 +356,57 @@ mod tests {
         signed["credentialSubject"]["intent"]["action"] = json!("delete");
         let ed_pub = ed25519_public_from_seed(&seed).unwrap();
         assert!(!verify_dual(&signed, &ed_pub, &ml.public_key()).unwrap());
+    }
+
+    /// A failing proof cannot be masked by appending a second, valid proof of
+    /// the same cryptosuite after it.
+    #[test]
+    fn appended_valid_proof_cannot_mask_a_failing_one() {
+        let seed = [4u8; 32];
+        let ml = MlDsa44KeyPair::generate().unwrap();
+        let signed = sign_dual(
+            &cred(),
+            &seed,
+            &ml,
+            "did:web:agent.example.com#key-1",
+            "did:web:agent.example.com#key-2",
+            "2026-04-26T10:00:00Z",
+        )
+        .unwrap();
+        let ed_pub = ed25519_public_from_seed(&seed).unwrap();
+        let proofs = signed["proof"].as_array().unwrap().clone();
+
+        // Corrupt the classical proof, then append the untouched valid one.
+        let mut broken = proofs[0].clone();
+        broken["proofValue"] = json!("z2SkKQBFXKcxxHbEnDaZjXPRWzHnbe1ZgArebQmqQ1Rf6H3nJa4vp3rzYaC5nnrFVFTL6wPMuJUAQGf7oEENy4vX");
+
+        let mut attacked = signed.clone();
+        attacked["proof"] = json!([broken, proofs[0].clone(), proofs[1].clone()]);
+        assert!(
+            !verify_dual(&attacked, &ed_pub, &ml.public_key()).unwrap(),
+            "a failing proof must fail the set even when a valid proof follows it"
+        );
+    }
+
+    /// A proof set that drops the post-quantum member must not verify.
+    #[test]
+    fn proof_set_without_the_post_quantum_member_fails() {
+        let seed = [4u8; 32];
+        let ml = MlDsa44KeyPair::generate().unwrap();
+        let signed = sign_dual(
+            &cred(),
+            &seed,
+            &ml,
+            "did:web:agent.example.com#key-1",
+            "did:web:agent.example.com#key-2",
+            "2026-04-26T10:00:00Z",
+        )
+        .unwrap();
+        let ed_pub = ed25519_public_from_seed(&seed).unwrap();
+        let classical_only = signed["proof"].as_array().unwrap()[0].clone();
+
+        let mut stripped = signed.clone();
+        stripped["proof"] = json!([classical_only]);
+        assert!(!verify_dual(&stripped, &ed_pub, &ml.public_key()).unwrap());
     }
 }
