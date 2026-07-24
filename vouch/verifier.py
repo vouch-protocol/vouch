@@ -341,6 +341,23 @@ class Verifier:
         if not isinstance(cred, dict):
             return False, None
 
+        # A `proof` array is a post-quantum proof set (an Ed25519 proof
+        # alongside an ML-DSA-44 proof). This generic verifier checks only the
+        # classical eddsa-jcs-2022 proof and has no ML-DSA-44 key to check the
+        # post-quantum half, so it cannot validate a proof set. Fail closed with
+        # a clear reason here instead of letting data_integrity.verify_proof
+        # raise an incidental "no proof object" error that reads like a bad
+        # signature. Post-quantum credentials must be verified with
+        # vouch.data_integrity_hybrid.verify_dual or
+        # vouch.robotics.verify_robot_credential, which take the ML-DSA-44 key.
+        if isinstance(cred.get("proof"), list):
+            logger.debug(
+                "Credential carries a proof set (post-quantum); verify it with "
+                "verify_dual or verify_robot_credential, which take an "
+                "ML-DSA-44 key"
+            )
+            return False, None
+
         # Verify the Data Integrity proof if a key was provided
         if public_key is not None:
             try:

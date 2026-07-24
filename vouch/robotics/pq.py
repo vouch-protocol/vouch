@@ -146,6 +146,13 @@ def verify_robot_credential(
         if mldsa44_public_key is None:
             return False
         return verify_pq(credential, ed25519_public_key, mldsa44_public_key)
+    # Supplying an ML-DSA-44 key means the caller requires the post-quantum
+    # proof. A credential that is not a post-quantum proof set is rejected here
+    # rather than verified under Ed25519 alone, so a post-quantum credential
+    # whose ML-DSA proof was stripped cannot be accepted as a classical one. A
+    # caller that intends to accept classical credentials passes no ML-DSA key.
+    if mldsa44_public_key is not None:
+        return False
     resolved_ed = _coerce_ed25519_public_key(ed25519_public_key)
     if resolved_ed is None:
         return False
