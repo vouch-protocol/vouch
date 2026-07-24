@@ -1,0 +1,130 @@
+{
+  "description": "Merkle tree vectors (Specification 11.3, RFC 6962 domain separation). Leaves are UTF-8 byte strings; raw 32-byte hashes are hex, the tree root and proof siblings are multibase base64url-no-pad (prefix 'u'). The three-leaf case exercises odd-level duplication.",
+  "module": "vouch.merkle",
+  "spec_reference": "Specification 11.3",
+  "version": "1.0",
+  "cases": [
+    {
+      "name": "hash_leaf_empty",
+      "function": "hash_leaf",
+      "input": {
+        "utf8": ""
+      },
+      "expected": {
+        "hash_hex": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d"
+      }
+    },
+    {
+      "name": "hash_leaf_action0",
+      "function": "hash_leaf",
+      "input": {
+        "utf8": "action-0"
+      },
+      "expected": {
+        "hash_hex": "75ce06ff0d7b9fa5bf80b2e87e38dc28cb82b56f092ab657a6423764fdd922f0"
+      }
+    },
+    {
+      "name": "hash_node",
+      "function": "hash_node",
+      "input": {
+        "left_hex": "75ce06ff0d7b9fa5bf80b2e87e38dc28cb82b56f092ab657a6423764fdd922f0",
+        "right_hex": "e4f9ded40f14b458bcb03afd8ace3a0bb95fb10338e178b41157e66136e84179"
+      },
+      "expected": {
+        "hash_hex": "8c3b08e8fec751cee2475fed406e001afc6f32dabe21f8932d97ef76054fe3e9"
+      }
+    },
+    {
+      "name": "merkle_root_three_leaves",
+      "function": "MerkleTree.root",
+      "input": {
+        "leaves_utf8": [
+          "action-0",
+          "action-1",
+          "action-2"
+        ]
+      },
+      "expected": {
+        "root_multibase": "u8ZnWd7DAt-isiDoOpzNhNHJX1q0H3BLTczerk0MKNOI",
+        "root_hex": "f199d677b0c0b7e8ac883a0ea73361347257d6ad07dc12d37337ab93430a34e2"
+      }
+    },
+    {
+      "name": "inclusion_proof_leaf_1_verifies",
+      "function": "MerkleTree.proof + verify_inclusion",
+      "input": {
+        "leaves_utf8": [
+          "action-0",
+          "action-1",
+          "action-2"
+        ],
+        "leaf_index": 1
+      },
+      "expected": {
+        "proof": {
+          "leaf_index": 1,
+          "steps": [
+            {
+              "sibling": "udc4G_w17n6W_gLLofjjcKMuCtW8JKrZXpkI3ZP3ZIvA",
+              "is_right": false
+            },
+            {
+              "sibling": "uIgxIIMP55RHmoJ4cTZcySxG4wdr1Ua-BLf2-23LAX6A",
+              "is_right": true
+            }
+          ]
+        },
+        "verifies": true
+      }
+    },
+    {
+      "name": "inclusion_proof_wrong_leaf_fails",
+      "function": "verify_inclusion",
+      "input": {
+        "leaf_utf8": "not-in-tree",
+        "proof": {
+          "leaf_index": 1,
+          "steps": [
+            {
+              "sibling": "udc4G_w17n6W_gLLofjjcKMuCtW8JKrZXpkI3ZP3ZIvA",
+              "is_right": false
+            },
+            {
+              "sibling": "uIgxIIMP55RHmoJ4cTZcySxG4wdr1Ua-BLf2-23LAX6A",
+              "is_right": true
+            }
+          ]
+        },
+        "leaf_index": 1
+      },
+      "expected": {
+        "verifies": false
+      }
+    },
+    {
+      "name": "action_merkle_root_empty",
+      "function": "compute_action_merkle_root",
+      "input": {
+        "actions_utf8": []
+      },
+      "expected": {
+        "root_multibase": "ubjQLnP-zepicpUTmu3gKLHiQHT-zNzh2hRGjBhevoB0"
+      }
+    },
+    {
+      "name": "action_merkle_root_populated",
+      "function": "compute_action_merkle_root",
+      "input": {
+        "actions_utf8": [
+          "action-0",
+          "action-1",
+          "action-2"
+        ]
+      },
+      "expected": {
+        "root_multibase": "u8ZnWd7DAt-isiDoOpzNhNHJX1q0H3BLTczerk0MKNOI"
+      }
+    }
+  ]
+}

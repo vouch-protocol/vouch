@@ -1,0 +1,93 @@
+{
+  "description": "Canary commit/reveal chain vectors (Specification 11.7). Commitments and reveals are multibase base64url-no-pad (prefix 'u'). The chain case advances three intervals with pinned secrets; the verifier case stays intact for two heartbeats then rejects a non-matching reveal.",
+  "module": "vouch.canary",
+  "spec_reference": "Specification 11.7",
+  "version": "1.0",
+  "pinned": {
+    "os_urandom": "os.urandom is pinned: the nth call (0-indexed) returns the single byte (n + 1) repeated to the requested length. The counter resets per vector."
+  },
+  "cases": [
+    {
+      "name": "compute_commitment",
+      "function": "compute_commitment",
+      "input": {
+        "secret_b64": "oaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE="
+      },
+      "expected": {
+        "commitment": "uUv5glHQ7_U-b5DIdmK3H4jwatiKwuoMOJx0e4cv9eFA"
+      }
+    },
+    {
+      "name": "verify_reveal_match",
+      "function": "verify_reveal",
+      "input": {
+        "revealed": "uoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE",
+        "prior_commitment": "uUv5glHQ7_U-b5DIdmK3H4jwatiKwuoMOJx0e4cv9eFA"
+      },
+      "expected": {
+        "matches": true
+      }
+    },
+    {
+      "name": "verify_reveal_mismatch",
+      "function": "verify_reveal",
+      "input": {
+        "revealed": "uoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaE",
+        "prior_commitment": "u8U38h1sa51eEES96k6l6I2hnplZQL_5NfO-rYM_nrtI"
+      },
+      "expected": {
+        "matches": false
+      }
+    },
+    {
+      "name": "canary_chain_three_intervals",
+      "function": "CanaryChain.next_heartbeat",
+      "input": {
+        "secret_bytes": 32,
+        "intervals": 3
+      },
+      "expected": {
+        "heartbeats": [
+          {
+            "canaryCommitment": "ucs1uhCLEB_ttCYaQ8RMLfe1-wvf14dML2dUh8BU2N5M"
+          },
+          {
+            "canaryCommitment": "udYd7tB05O1-4RVzmDs2N2gAdBjFklrFN-n-JVlbuyko",
+            "canaryReveal": "uAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+          },
+          {
+            "canaryCommitment": "uZIqlxXn7MPOK90TZfW7IQMepEnekmaDXgPPnMU7KCQs",
+            "canaryReveal": "uAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI"
+          }
+        ]
+      }
+    },
+    {
+      "name": "canary_verifier_intact_then_broken",
+      "function": "CanaryVerifier.observe",
+      "input": {
+        "observations": [
+          {
+            "commitment": "ucs1uhCLEB_ttCYaQ8RMLfe1-wvf14dML2dUh8BU2N5M",
+            "reveal": null
+          },
+          {
+            "commitment": "udYd7tB05O1-4RVzmDs2N2gAdBjFklrFN-n-JVlbuyko",
+            "reveal": "uAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+          },
+          {
+            "commitment": "uZIqlxXn7MPOK90TZfW7IQMepEnekmaDXgPPnMU7KCQs",
+            "reveal": "u__________________________________________8"
+          }
+        ]
+      },
+      "expected": {
+        "results": [
+          true,
+          true,
+          false
+        ]
+      }
+    }
+  ]
+}

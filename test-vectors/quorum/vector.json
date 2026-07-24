@@ -1,0 +1,187 @@
+{
+  "description": "Validator-quorum vectors (Specification 11.6). A 2-of-3 quorum over three validators with differing trust params and scopes. On approval the aggregate SessionVoucher uses min(initialTrust), max(decayLambda) and the intersection of scopes, with issuer set to the approving DIDs; its id/validFrom/validUntil come from the pinned clock and UUID. The rejection case breaks the canary chain so votes fall below the threshold.",
+  "module": "vouch.quorum",
+  "spec_reference": "Specification 11.6",
+  "version": "1.0",
+  "pinned": {
+    "now": "2026-01-01T00:00:00Z",
+    "uuid": "urn:uuid:00000000-0000-4000-8000-000000000001",
+    "os_urandom": "os.urandom is pinned: the nth call (0-indexed) returns the single byte (n + 1) repeated to the requested length. The counter resets per vector."
+  },
+  "cases": [
+    {
+      "name": "quorum_2_of_3_approves",
+      "function": "HeartbeatQuorum.validate",
+      "input": {
+        "threshold": 2,
+        "validators": [
+          {
+            "validator_did": "did:web:policy.example.com",
+            "role": "policy",
+            "weight": 1.0,
+            "initial_trust": 1.0,
+            "decay_lambda": 0.01,
+            "scope": [
+              "agent_actions",
+              "read"
+            ]
+          },
+          {
+            "validator_did": "did:web:behavioral.example.com",
+            "role": "behavioral",
+            "weight": 1.0,
+            "initial_trust": 0.9,
+            "decay_lambda": 0.02,
+            "scope": [
+              "agent_actions",
+              "write"
+            ]
+          },
+          {
+            "validator_did": "did:web:budget.example.com",
+            "role": "budget",
+            "weight": 1.0,
+            "initial_trust": 0.8,
+            "decay_lambda": 0.03,
+            "scope": [
+              "agent_actions"
+            ]
+          }
+        ],
+        "request": {
+          "version": "1.0",
+          "type": "heartbeat_request",
+          "subject_did": "did:web:agent.example.com",
+          "session_id": "urn:uuid:00000000-0000-4000-8000-0000000000c1",
+          "interval_index": 0,
+          "issued_at": "2026-01-01T00:00:00Z",
+          "actionMerkleRoot": "uYuQLsYdy4JKdVaFrYlu3EzfcCa0fPpzkfC68tyQzZU8",
+          "canaryCommitment": "ucs1uhCLEB_ttCYaQ8RMLfe1-wvf14dML2dUh8BU2N5M",
+          "behavioralDigest": {
+            "apiCalls": 1,
+            "tokensConsumed": 100,
+            "resourcesAccessed": [
+              "order:1"
+            ],
+            "intentDriftScore": 0.05
+          }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "threshold": 2,
+        "votes_for": 3.0,
+        "approving_dids": [
+          "did:web:policy.example.com",
+          "did:web:behavioral.example.com",
+          "did:web:budget.example.com"
+        ],
+        "rejections": {},
+        "session_voucher": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2",
+            "https://vouch-protocol.com/contexts/v1"
+          ],
+          "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+          "type": [
+            "VerifiableCredential",
+            "SessionVoucher"
+          ],
+          "issuer": [
+            "did:web:policy.example.com",
+            "did:web:behavioral.example.com",
+            "did:web:budget.example.com"
+          ],
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2026-01-01T00:02:00Z",
+          "credentialSubject": {
+            "id": "did:web:agent.example.com",
+            "decayLambda": 0.03,
+            "initialTrust": 0.8,
+            "maxTtl": 3600,
+            "scope": [
+              "agent_actions"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "quorum_rejects_below_threshold",
+      "function": "HeartbeatQuorum.validate",
+      "input": {
+        "threshold": 2,
+        "validators": [
+          {
+            "validator_did": "did:web:policy.example.com",
+            "role": "policy",
+            "weight": 1.0,
+            "initial_trust": 1.0,
+            "decay_lambda": 0.01,
+            "scope": [
+              "agent_actions",
+              "read"
+            ]
+          },
+          {
+            "validator_did": "did:web:behavioral.example.com",
+            "role": "behavioral",
+            "weight": 1.0,
+            "initial_trust": 0.9,
+            "decay_lambda": 0.02,
+            "scope": [
+              "agent_actions",
+              "write"
+            ]
+          },
+          {
+            "validator_did": "did:web:budget.example.com",
+            "role": "budget",
+            "weight": 1.0,
+            "initial_trust": 0.8,
+            "decay_lambda": 0.03,
+            "scope": [
+              "agent_actions"
+            ]
+          }
+        ],
+        "request": {
+          "version": "1.0",
+          "type": "heartbeat_request",
+          "subject_did": "did:web:agent.example.com",
+          "session_id": "urn:uuid:00000000-0000-4000-8000-0000000000c2",
+          "interval_index": 1,
+          "issued_at": "2026-01-01T00:01:00Z",
+          "actionMerkleRoot": "ubjQLnP-zepicpUTmu3gKLHiQHT-zNzh2hRGjBhevoB0",
+          "canaryCommitment": "uZIqlxXn7MPOK90TZfW7IQMepEnekmaDXgPPnMU7KCQs",
+          "behavioralDigest": {
+            "apiCalls": 0,
+            "tokensConsumed": 0,
+            "resourcesAccessed": [],
+            "intentDriftScore": 0.0
+          },
+          "canaryReveal": "u__________________________________________8"
+        },
+        "note": "validators already observed an intact interval-0 heartbeat"
+      },
+      "expected": {
+        "ok": false,
+        "threshold": 2,
+        "votes_for": 0,
+        "approving_dids": [],
+        "rejections": {
+          "did:web:policy.example.com": [
+            "canary_chain_broken"
+          ],
+          "did:web:behavioral.example.com": [
+            "canary_chain_broken"
+          ],
+          "did:web:budget.example.com": [
+            "canary_chain_broken"
+          ]
+        },
+        "session_voucher": null
+      }
+    }
+  ]
+}
