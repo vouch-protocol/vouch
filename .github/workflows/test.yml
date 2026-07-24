@@ -58,7 +58,7 @@ jobs:
     
     - name: Install linters
       run: |
-        pip install ruff black mypy
+        pip install ruff==0.15.17 black mypy
     
     - name: Check formatting with black
       run: |
