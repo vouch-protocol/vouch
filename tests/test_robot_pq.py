@@ -4,7 +4,9 @@ import unittest
 
 from vouch import Signer, generate_identity
 from vouch.robotics import (
+    CLASSICAL_CRYPTOSUITE,
     HYBRID_CRYPTOSUITE,
+    POST_QUANTUM_CRYPTOSUITE,
     SoftwareRootOfTrust,
     is_pq,
     migrate_to_pq,
@@ -32,11 +34,44 @@ class TestPQSigning(unittest.TestCase):
         )
         return sign_pq(classical, self.robot)
 
-    def test_sign_pq_uses_hybrid_cryptosuite(self):
+    def test_sign_pq_emits_a_proof_set(self):
         cred = self._identity_pq()
         self.assertTrue(is_pq(cred))
-        self.assertEqual(cred["proof"]["cryptosuite"], HYBRID_CRYPTOSUITE)
+        proofs = cred["proof"]
+        self.assertIsInstance(proofs, list)
+        self.assertEqual(
+            [p["cryptosuite"] for p in proofs],
+            [CLASSICAL_CRYPTOSUITE, POST_QUANTUM_CRYPTOSUITE],
+        )
+        self.assertTrue(proofs[0]["proofValue"].startswith("z"))
+        self.assertTrue(proofs[1]["proofValue"].startswith("u"))
         self.assertIn(ROBOT_IDENTITY_TYPE, cred["type"])
+
+    def test_sign_pq_never_emits_the_composite(self):
+        cred = self._identity_pq()
+        self.assertNotIn(HYBRID_CRYPTOSUITE, [p["cryptosuite"] for p in cred["proof"]])
+
+    def test_pre_alignment_composite_credential_is_still_recognized_and_verified(self):
+        """A robot credential fielded under the composite keeps verifying."""
+        from vouch import data_integrity_hybrid
+
+        classical = mint_robot_identity(
+            self.robot, self.root, make="Acme", model="AR-7", serial="SN-1"
+        )
+        ml_pub = self.robot.public_key_mldsa44()  # also generates the keypair
+        body = {k: v for k, v in classical.items() if k != "proof"}
+        body["proof"] = data_integrity_hybrid.build_hybrid_proof(
+            body,
+            ed25519_private_key=self.robot._raw_priv,
+            mldsa44_secret_key=self.robot._mldsa44_secret,
+            verification_method=self.robot.verification_method_id(),
+        )
+        self.assertEqual(body["proof"]["cryptosuite"], HYBRID_CRYPTOSUITE)
+        self.assertTrue(is_pq(body))
+        self.assertTrue(verify_pq(body, self.kp.public_key_jwk, ml_pub))
+        self.assertTrue(
+            verify_robot_credential(body, self.kp.public_key_jwk, mldsa44_public_key=ml_pub)
+        )
 
     def test_pq_credential_verifies(self):
         cred = self._identity_pq()

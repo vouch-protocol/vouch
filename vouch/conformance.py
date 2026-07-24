@@ -14,8 +14,8 @@ Levels are graded on byte-testable plus attested requirements:
   L2 Structural-Security   plus BitstringStatusList revocation, delegation
                            narrowing, the Identity Sidecar allow and deny
                            behaviour, a hash-linked audit trail
-  L3 State Verifiable + PQ plus hybrid dual-proof (eddsa-jcs-2022 and
-                           mldsa44-jcs-2026), Heartbeat renewal chain, and an
+  L3 State Verifiable + PQ plus the post-quantum proof set (eddsa-jcs-2022 and
+                           mldsa44-jcs-2024), Heartbeat renewal chain, and an
                            M-of-N validator quorum
 
 Robotics is a SEPARATE profile (Robotics Conformant), not part of L1 to L3.
@@ -329,13 +329,18 @@ def check_audit_trail() -> CheckResult:
 
 
 def check_hybrid_pq() -> CheckResult:
-    """Hybrid dual-proof: a credential carrying eddsa-jcs-2022 and mldsa44 proofs verifies under both."""
+    """Post-quantum proof set: a credential carrying an eddsa-jcs-2022 proof and an mldsa44-jcs-2024 proof verifies under both, and the pre-alignment composite still verifies."""
     try:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
         from vouch.data_integrity_hybrid import (
+            CRYPTOSUITE_EDDSA,
+            CRYPTOSUITE_HYBRID_EDDSA_MLDSA44,
+            CRYPTOSUITE_MLDSA44,
             build_hybrid_proof,
             generate_mldsa44_keypair,
+            sign_dual,
+            verify_dual,
             verify_hybrid_proof,
         )
     except ImportError as exc:  # post-quantum support is optional at runtime
@@ -344,7 +349,7 @@ def check_hybrid_pq() -> CheckResult:
     ed_priv = Ed25519PrivateKey.generate()
     ed_pub = ed_priv.public_key()
     ml_pub, ml_sec = generate_mldsa44_keypair()
-    credential = vc.build_vouch_credential(
+    unsigned = vc.build_vouch_credential(
         issuer_did="did:web:conformance.test",
         intent={
             "action": "conformance_probe",
@@ -352,22 +357,52 @@ def check_hybrid_pq() -> CheckResult:
             "resource": "https://conformance.test/probe",
         },
     )
-    credential["proof"] = build_hybrid_proof(
-        credential,
+    credential = sign_dual(
+        unsigned,
         ed25519_private_key=ed_priv,
         mldsa44_secret_key=ml_sec,
-        verification_method="did:web:conformance.test#key-1",
+        ed25519_verification_method="did:web:conformance.test#key-1",
     )
-    if credential["proof"].get("cryptosuite") != "hybrid-eddsa-mldsa44-jcs-2026":
-        return CheckResult("hybrid_pq", Status.FAIL, "the proof is not the hybrid cryptosuite")
-    if not verify_hybrid_proof(credential, ed25519_public_key=ed_pub, mldsa44_public_key=ml_pub):
+
+    proofs = credential.get("proof")
+    if not isinstance(proofs, list) or len(proofs) != 2:
+        return CheckResult("hybrid_pq", Status.FAIL, "the credential does not carry a proof set")
+    suites = [p.get("cryptosuite") for p in proofs]
+    if suites != [CRYPTOSUITE_EDDSA, CRYPTOSUITE_MLDSA44]:
+        return CheckResult(
+            "hybrid_pq", Status.FAIL, f"unexpected cryptosuites in the set: {suites}"
+        )
+    if not proofs[0].get("proofValue", "").startswith("z"):
+        return CheckResult("hybrid_pq", Status.FAIL, "the Ed25519 proofValue is not base58btc")
+    if not proofs[1].get("proofValue", "").startswith("u"):
+        return CheckResult("hybrid_pq", Status.FAIL, "the ML-DSA-44 proofValue is not base64url")
+    if not verify_dual(credential, ed25519_public_key=ed_pub, mldsa44_public_key=ml_pub):
         return CheckResult("hybrid_pq", Status.FAIL, "both proofs did not verify")
 
     tampered = json.loads(json.dumps(credential))
     tampered["credentialSubject"]["intent"]["action"] = "tampered"
-    if verify_hybrid_proof(tampered, ed25519_public_key=ed_pub, mldsa44_public_key=ml_pub):
-        return CheckResult("hybrid_pq", Status.FAIL, "a tampered hybrid credential verified")
-    return CheckResult("hybrid_pq", Status.PASS, "eddsa-jcs-2022 and mldsa44 proofs both verify")
+    if verify_dual(tampered, ed25519_public_key=ed_pub, mldsa44_public_key=ml_pub):
+        return CheckResult("hybrid_pq", Status.FAIL, "a tampered proof set verified")
+
+    # The pre-alignment composite is never issued, and credentials already
+    # carrying it MUST still verify.
+    composite = json.loads(json.dumps(unsigned))
+    composite["proof"] = build_hybrid_proof(
+        composite,
+        ed25519_private_key=ed_priv,
+        mldsa44_secret_key=ml_sec,
+        verification_method="did:web:conformance.test#key-1",
+    )
+    if composite["proof"].get("cryptosuite") != CRYPTOSUITE_HYBRID_EDDSA_MLDSA44:
+        return CheckResult("hybrid_pq", Status.FAIL, "the composite proof lost its cryptosuite")
+    if not verify_hybrid_proof(composite, ed25519_public_key=ed_pub, mldsa44_public_key=ml_pub):
+        return CheckResult("hybrid_pq", Status.FAIL, "a pre-alignment composite did not verify")
+
+    return CheckResult(
+        "hybrid_pq",
+        Status.PASS,
+        "eddsa-jcs-2022 and mldsa44-jcs-2024 proofs both verify, composite still accepted",
+    )
 
 
 def check_heartbeat() -> CheckResult:

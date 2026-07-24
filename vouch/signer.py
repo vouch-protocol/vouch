@@ -3,8 +3,9 @@ Vouch Protocol Signer.
 
 Issues Verifiable Credentials with Data Integrity proofs (eddsa-jcs-2022),
 the v1.0 format, via ``Signer.sign()``. A JSON-serialized form is available
-through ``Signer.sign_json()``, and the post-quantum hybrid profile
-(hybrid-eddsa-mldsa44-jcs-2026) through ``Signer.sign_hybrid()``.
+through ``Signer.sign_json()``, and the post-quantum profile (a proof set
+holding an eddsa-jcs-2022 proof and an mldsa44-jcs-2024 proof) through
+``Signer.sign_hybrid()``.
 """
 
 from __future__ import annotations
@@ -276,13 +277,15 @@ class Signer:
         valid_from: Optional[datetime] = None,
         credential_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Issue a Vouch Credential under the hybrid post-quantum profile
+        """Issue a Vouch Credential under the post-quantum profile
         (Specification §13.2).
 
-        The credential carries a hybrid-eddsa-mldsa44-jcs-2026 Data Integrity
-        proof containing both an Ed25519 signature and an ML-DSA-44 signature
-        over the same canonical form. Verification REQUIRES both signatures
-        to validate, providing safety against compromise of either algorithm.
+        The credential carries a `proof` ARRAY of two independent Data
+        Integrity proofs, an eddsa-jcs-2022 proof and an mldsa44-jcs-2024
+        proof, over the same unsecured document. Verification REQUIRES both
+        signatures to validate, providing safety against compromise of either
+        algorithm, and a verifier that understands only one of the two
+        cryptosuites can still check that proof on its own.
 
         Accepts the intent either as a dict or as the named `action`/`target`/
         `resource` arguments, exactly like :meth:`sign`.
@@ -325,13 +328,13 @@ class Signer:
         )
 
         self._ensure_mldsa44_keypair()
-        proof = data_integrity_hybrid.build_hybrid_proof(
+        credential["proof"] = data_integrity_hybrid.build_dual_proof(
             credential,
             ed25519_private_key=self._raw_priv,
             mldsa44_secret_key=self._mldsa44_secret,
-            verification_method=self.verification_method_id(),
+            ed25519_verification_method=self.verification_method_id(),
+            mldsa44_verification_method=self.mldsa44_verification_method_id(),
         )
-        credential["proof"] = proof
         return credential
 
     def public_key_mldsa44(self) -> bytes:
@@ -346,6 +349,33 @@ class Signer:
     def public_key_mldsa44_multikey(self) -> str:
         """Return the ML-DSA-44 public key in Multikey format."""
         return multikey.encode_mldsa44_public(self.public_key_mldsa44())
+
+    def mldsa44_verification_method_id(self) -> str:
+        """Return the verification method ID of this signer's ML-DSA-44 key,
+        the #key-2 slot alongside the Ed25519 #key-1 entry."""
+        _, mldsa_vm = data_integrity_hybrid.hybrid_verification_method_pair(
+            self.verification_method_id()
+        )
+        return mldsa_vm
+
+    def attach_hybrid_proof(self, credential: Dict[str, Any]) -> Dict[str, Any]:
+        """Attach a post-quantum proof set (an eddsa-jcs-2022 proof alongside an
+        mldsa44-jcs-2024 proof) to a pre-built credential, for custom credential
+        types the caller assembles directly rather than from an intent. Any
+        existing proof is replaced. Both keys live in this process, so this is
+        not available for a backend Signer."""
+        if self._raw_priv is None:
+            raise NotImplementedError(
+                "attach_hybrid_proof needs the raw keys and is not available for a backend Signer"
+            )
+        self._ensure_mldsa44_keypair()
+        return data_integrity_hybrid.sign_dual(
+            credential,
+            ed25519_private_key=self._raw_priv,
+            mldsa44_secret_key=self._mldsa44_secret,
+            ed25519_verification_method=self.verification_method_id(),
+            mldsa44_verification_method=self.mldsa44_verification_method_id(),
+        )
 
     def _ensure_mldsa44_keypair(self) -> None:
         """Generate an ML-DSA-44 keypair on first use and cache it."""
