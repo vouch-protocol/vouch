@@ -11,7 +11,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::{Map, Value};
 use std::fs;
 
-use vouch_core::data_integrity::proof_digest;
+use vouch_core::data_integrity::hash_data;
 
 #[test]
 fn jcs_sha256_digest_matches_shared_vector() {
@@ -32,7 +32,7 @@ fn jcs_sha256_digest_matches_shared_vector() {
     let mut cred = sc.clone();
     cred.as_object_mut().unwrap().remove("proof");
 
-    let digest = proof_digest(&cred, &unsigned).expect("digest");
+    let digest = hash_data(&cred, &unsigned).expect("digest");
     let got = STANDARD.encode(digest);
 
     assert_eq!(

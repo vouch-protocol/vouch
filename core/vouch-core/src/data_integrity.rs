@@ -1,14 +1,19 @@
 //! Data Integrity proofs, cryptosuite `eddsa-jcs-2022`.
 //!
-//! Byte-exact port of the TypeScript `buildProofPortable` / `verifyProofPortable`
-//! (packages/sdk-ts/src/data-integrity-portable.ts). Algorithm:
-//!   1. Attach an unsigned proof (no proofValue) to the credential.
-//!   2. JCS-canonicalize the whole object (RFC 8785).
-//!   3. SHA-256 the canonical bytes (32-byte digest).
-//!   4. Ed25519-sign the digest.
+//! Signing input follows the W3C Data Integrity hashing algorithm, so proofs
+//! issued here verify under any conformant `eddsa-jcs-2022` implementation:
+//!   1. Build the proof configuration (the unsigned proof plus the document's
+//!      `@context`) and JCS-canonicalize it (RFC 8785).
+//!   2. JCS-canonicalize the unsecured document (the credential with no proof).
+//!   3. hashData = SHA-256(canonical proof configuration)
+//!                 || SHA-256(canonical document)   (64 bytes, config first).
+//!   4. Ed25519-sign hashData.
 //!   5. proofValue = "z" + base58btc(signature).
 //!
-//! A proof built here verifies in the TS/Python SDKs and vice versa.
+//! Verification also accepts the pre-alignment signing input (a single SHA-256
+//! over the JCS form of the credential with the unsigned proof attached) so
+//! credentials issued before this alignment keep verifying. See
+//! [`legacy_proof_digest`].
 
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
@@ -59,9 +64,50 @@ fn unsigned_proof(opts: &BuildProofOptions) -> Map<String, Value> {
     proof
 }
 
-/// Compute the 32-byte signing digest: SHA-256 over the JCS canonical form of
-/// the credential with the unsigned proof attached.
-pub fn proof_digest(credential: &Value, unsigned: &Map<String, Value>) -> Result<[u8; 32]> {
+/// Strip any `proof` member, yielding the unsecured document.
+fn unsecured_document(credential: &Value) -> Result<Value> {
+    let mut doc = credential.clone();
+    doc.as_object_mut()
+        .ok_or_else(|| CoreError::Json("credential must be a JSON object".into()))?
+        .remove("proof");
+    Ok(doc)
+}
+
+/// Build the proof configuration: the unsigned proof carrying the document's
+/// `@context`, per the Data Integrity proof configuration algorithm.
+fn proof_configuration(
+    document: &Value,
+    unsigned: &Map<String, Value>,
+) -> Result<Map<String, Value>> {
+    let mut config = unsigned.clone();
+    config.remove("proofValue");
+    if let Some(ctx) = document.get("@context") {
+        config.insert("@context".into(), ctx.clone());
+    }
+    Ok(config)
+}
+
+/// Compute the 64-byte W3C Data Integrity signing input for a JCS cryptosuite:
+/// SHA-256 of the canonical proof configuration, joined with SHA-256 of the
+/// canonical unsecured document. This is the value that gets signed.
+pub fn hash_data(credential: &Value, unsigned: &Map<String, Value>) -> Result<[u8; 64]> {
+    let document = unsecured_document(credential)?;
+    let config = proof_configuration(&document, unsigned)?;
+
+    let config_hash = Sha256::digest(&jcs::canonicalize(&Value::Object(config)));
+    let document_hash = Sha256::digest(&jcs::canonicalize(&document));
+
+    let mut out = [0u8; 64];
+    out[..32].copy_from_slice(&config_hash);
+    out[32..].copy_from_slice(&document_hash);
+    Ok(out)
+}
+
+/// The pre-alignment signing input: a single SHA-256 over the JCS canonical form
+/// of the credential with the unsigned proof attached. Retained so credentials
+/// issued before the Data Integrity alignment continue to verify. Never used for
+/// new proofs.
+pub fn legacy_proof_digest(credential: &Value, unsigned: &Map<String, Value>) -> Result<[u8; 32]> {
     let mut with_proof = credential.clone();
     with_proof
         .as_object_mut()
@@ -81,8 +127,8 @@ pub fn build_proof(
 ) -> Result<Value> {
     let kp = Ed25519KeyPair::from_seed_slice(raw_private_seed)?;
     let mut proof = unsigned_proof(opts);
-    let digest = proof_digest(credential, &proof)?;
-    let signature = kp.sign(&digest);
+    let signing_input = hash_data(credential, &proof)?;
+    let signature = kp.sign(&signing_input);
     let proof_value = format!("z{}", bs58::encode(signature).into_string());
     proof.insert("proofValue".into(), Value::String(proof_value));
     Ok(Value::Object(proof))
@@ -145,8 +191,15 @@ pub fn verify_proof(credential: &Value, raw_public_key: &[u8]) -> Result<bool> {
 
     let mut unsigned = proof.clone();
     unsigned.remove("proofValue");
-    let digest = proof_digest(credential, &unsigned)?;
-    keys::verify(raw_public_key, &digest, &signature)
+
+    let signing_input = hash_data(credential, &unsigned)?;
+    if keys::verify(raw_public_key, &signing_input, &signature)? {
+        return Ok(true);
+    }
+    // Fall back to the pre-alignment signing input so credentials issued before
+    // the Data Integrity alignment still verify.
+    let legacy = legacy_proof_digest(credential, &unsigned)?;
+    keys::verify(raw_public_key, &legacy, &signature)
 }
 
 /// Convenience: derive the public key from a seed and verify (for self-checks).
@@ -174,6 +227,45 @@ pub fn proof_verification_method(credential: &Value) -> Result<String> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    /// A credential issued before the Data Integrity alignment, whose signature
+    /// covers the pre-alignment signing input, MUST still verify.
+    #[test]
+    fn verifies_pre_alignment_credential() {
+        let public_key = [
+            0x4c, 0xb5, 0xab, 0xf6, 0xad, 0x79, 0xfb, 0xf5, 0xab, 0xbc, 0xca, 0xfc, 0xc2, 0x69,
+            0xd8, 0x5c, 0xd2, 0x65, 0x1e, 0xd4, 0xb8, 0x85, 0xb5, 0x86, 0x9f, 0x24, 0x1a, 0xed,
+            0xf0, 0xa5, 0xba, 0x29,
+        ];
+        let credential = json!({
+            "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://vouch-protocol.com/contexts/v1"
+            ],
+            "type": ["VerifiableCredential", "VouchCredential"],
+            "issuer": "did:web:test.example.com",
+            "validFrom": "2026-04-26T10:00:00Z",
+            "validUntil": "2026-04-26T10:05:00Z",
+            "credentialSubject": {
+                "id": "did:web:test.example.com",
+                "vouchVersion": "1.0",
+                "intent": {
+                    "action": "read_database",
+                    "target": "users_table",
+                    "resource": "https://api.example.com/v1/users"
+                }
+            },
+            "proof": {
+                "type": "DataIntegrityProof",
+                "cryptosuite": "eddsa-jcs-2022",
+                "created": "2026-04-26T10:00:00Z",
+                "verificationMethod": "did:web:test.example.com#key-1",
+                "proofPurpose": "assertionMethod",
+                "proofValue": "z24FsZHuADF9uwHAfsjW3okmynrNCCN4QkQirEPfEy5MtcXzg4uhFqz4o3RVH57cFvVXg9oarC4m51YEmNu5UQRLQ"
+            }
+        });
+        assert!(verify_proof(&credential, &public_key).expect("verification error"));
+    }
 
     fn sample_credential() -> Value {
         json!({

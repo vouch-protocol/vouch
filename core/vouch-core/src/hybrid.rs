@@ -1,28 +1,30 @@
-//! Hybrid post-quantum credentials.
+//! Post-quantum credentials as a Data Integrity proof set.
 //!
-//! Two shapes are supported:
+//! The credential carries a `proof` ARRAY of two independent proofs,
+//! `eddsa-jcs-2022` and `mldsa44-jcs-2024`. Each proof is computed over the
+//! same unsecured document with only its own proof configuration, and each
+//! verifies on its own, so a verifier that understands only one of the two
+//! cryptosuites can still check that proof. Both must verify for
+//! [`verify_dual`] to succeed.
 //!
-//!   - Dual proof (the current/target design, per Manu Sporny's review): the
-//!     credential carries a `proof` ARRAY of two independent Data Integrity
-//!     proofs, `eddsa-jcs-2022` and `mldsa44-jcs-2026`. Each is computed over the
-//!     credential with only its own unsigned proof attached, and both MUST
-//!     verify. This is NOT a composite: each proof stands alone, so a verifier
-//!     that understands only Ed25519 can still check that proof.
-//!
-//!   - Composite (the v1.6.x transitional `hybrid-eddsa-mldsa44-jcs-2026`): a
-//!     single proof whose proofValue is base58btc(ed25519_sig || mldsa44_sig).
-//!     Provided as `verify_composite` so the core can still validate credentials
-//!     issued under the older wire format and the shared interop vector.
+//! Two pre-alignment shapes are accepted on verification and never emitted:
+//! the `mldsa44-jcs-2026` identifier, and the v1.6.x composite
+//! `hybrid-eddsa-mldsa44-jcs-2026` whose single proofValue was
+//! base58btc(ed25519_sig || mldsa44_sig).
 
 use serde_json::{Map, Value};
 
-use crate::data_integrity::{self, proof_digest, BuildProofOptions, PROOF_TYPE};
+use crate::data_integrity::{self, legacy_proof_digest, BuildProofOptions, PROOF_TYPE};
 use crate::error::{CoreError, Result};
 use crate::keys::{self, Ed25519KeyPair};
 use crate::pq::{self, MlDsa44KeyPair, MLDSA44_SIG_LEN};
 
 pub const EDDSA_CRYPTOSUITE_ID: &str = "eddsa-jcs-2022";
-pub const MLDSA44_CRYPTOSUITE_ID: &str = "mldsa44-jcs-2026";
+/// The W3C Quantum-Resistant Cryptosuites identifier for ML-DSA-44 over JCS.
+pub const MLDSA44_CRYPTOSUITE_ID: &str = "mldsa44-jcs-2024";
+/// Pre-alignment identifier, accepted on verification only.
+pub const MLDSA44_LEGACY_CRYPTOSUITE_ID: &str = "mldsa44-jcs-2026";
+/// The v1.6.x composite. Accepted on verification only; never emitted.
 pub const HYBRID_COMPOSITE_CRYPTOSUITE_ID: &str = "hybrid-eddsa-mldsa44-jcs-2026";
 
 const ED25519_SIG_LEN: usize = 64;
@@ -72,8 +74,8 @@ pub fn build_dual_proof(
     )?;
 
     let mut ml_proof = mldsa_unsigned_proof(mldsa_verification_method, created);
-    let ml_digest = proof_digest(&base, &ml_proof)?;
-    let ml_sig = mldsa.sign(&ml_digest)?;
+    let ml_signing_input = data_integrity::hash_data(&base, &ml_proof)?;
+    let ml_sig = mldsa.sign(&ml_signing_input)?;
     ml_proof.insert(
         "proofValue".into(),
         Value::String(format!("z{}", bs58::encode(ml_sig).into_string())),
@@ -128,7 +130,7 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
                 c.as_object_mut().unwrap().insert("proof".into(), p.clone());
                 ed_ok = data_integrity::verify_proof(&c, ed25519_public)?;
             }
-            Some(MLDSA44_CRYPTOSUITE_ID) => {
+            Some(MLDSA44_CRYPTOSUITE_ID) | Some(MLDSA44_LEGACY_CRYPTOSUITE_ID) => {
                 let proof_obj = p
                     .as_object()
                     .ok_or_else(|| CoreError::Json("ml-dsa proof must be an object".into()))?;
@@ -142,8 +144,12 @@ pub fn verify_dual(credential: &Value, ed25519_public: &[u8], mldsa_public: &[u8
                 let sig = crate::multikey::decode_base58_bounded(body)?;
                 let mut unsigned = proof_obj.clone();
                 unsigned.remove("proofValue");
-                let digest = proof_digest(&base, &unsigned)?;
-                ml_ok = pq::verify(mldsa_public, &digest, &sig)?;
+                let signing_input = data_integrity::hash_data(&base, &unsigned)?;
+                ml_ok = pq::verify(mldsa_public, &signing_input, &sig)?;
+                if !ml_ok {
+                    let legacy = data_integrity::legacy_proof_digest(&base, &unsigned)?;
+                    ml_ok = pq::verify(mldsa_public, &legacy, &sig)?;
+                }
             }
             _ => {}
         }
@@ -170,11 +176,13 @@ fn composite_unsigned_proof(verification_method: &str, created: &str) -> Map<Str
     p
 }
 
-/// Build a v1.6.x composite hybrid proof (a single proof whose proofValue is
-/// base58btc(ed25519_sig || mldsa44_sig)) for `credential`. Both signatures are
-/// computed over the same digest: SHA-256 of the JCS-canonical credential with
-/// the unsigned proof attached. Returns the proof object (the caller attaches it,
-/// or use [`sign_composite`]).
+/// Build a v1.6.x composite proof (a single proof whose proofValue is
+/// base58btc(ed25519_sig || mldsa44_sig)) for `credential`, using the
+/// pre-alignment signing input that format was issued under.
+///
+/// Retained only so the older wire format can be reproduced for regression
+/// checks. New credentials use [`build_dual_proof`], which emits a proof set.
+#[deprecated(note = "the composite wire format is verify-only; use build_dual_proof")]
 pub fn build_composite(
     credential: &Value,
     ed25519_seed: &[u8],
@@ -184,7 +192,7 @@ pub fn build_composite(
 ) -> Result<Value> {
     let base = strip_proof(credential)?;
     let mut proof = composite_unsigned_proof(verification_method, created);
-    let digest = proof_digest(&base, &proof)?;
+    let digest = legacy_proof_digest(&base, &proof)?;
 
     let kp = Ed25519KeyPair::from_seed_slice(ed25519_seed)?;
     let ed_sig = kp.sign(&digest);
@@ -200,8 +208,11 @@ pub fn build_composite(
     Ok(Value::Object(proof))
 }
 
-/// Build a composite hybrid proof and attach it to the credential under `proof`,
-/// replacing any existing proof.
+/// Build a composite proof and attach it to the credential under `proof`,
+/// replacing any existing proof. Verify-only wire format, retained for
+/// regression checks against credentials issued under v1.6.x.
+#[deprecated(note = "the composite wire format is verify-only; use sign_dual")]
+#[allow(deprecated)]
 pub fn sign_composite(
     credential: &Value,
     ed25519_seed: &[u8],
@@ -256,7 +267,7 @@ pub fn verify_composite(
     let mut unsigned = proof.clone();
     unsigned.remove("proofValue");
     let base = strip_proof(credential)?;
-    let digest = proof_digest(&base, &unsigned)?;
+    let digest = legacy_proof_digest(&base, &unsigned)?;
 
     Ok(
         keys::verify(ed25519_public, &digest, ed_sig)?
