@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Data Integrity proofs use the W3C hashing algorithm for their signing input:
+  the SHA-256 digest of the JCS-canonicalized proof configuration joined with
+  the SHA-256 digest of the JCS-canonicalized document, proof configuration
+  first. Proofs issued this way verify under conformant `eddsa-jcs-2022` and
+  `mldsa44-jcs-2024` implementations. Verification also accepts the earlier
+  signing input, so credentials issued before this change keep verifying.
 - The post-quantum profile is a Data Integrity proof set. A post-quantum
   credential's `proof` is an array of two independent proofs, one
   `eddsa-jcs-2022` and one `mldsa44-jcs-2024`, each computed over the same

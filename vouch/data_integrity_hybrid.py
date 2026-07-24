@@ -190,8 +190,8 @@ def verify_dual(
         raise ValueError("A dual proof requires a proof array")
     base = data_integrity.unsecured_document(credential)
 
-    # Every recognized proof in the set must verify, not just one of each kind,
-    # so a set carrying a good proof next to a bad one is rejected.
+    # Every recognized proof in the set must verify, so a set carrying a good
+    # proof next to a bad one of the same kind is rejected.
     ed_ok = False
     ml_ok = False
     for proof in proofs:

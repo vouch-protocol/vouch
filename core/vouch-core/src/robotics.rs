@@ -6611,7 +6611,10 @@ mod tests {
         assert!(is_pq(&signed));
         let proofs = signed["proof"].as_array().expect("proof set");
         assert_eq!(proofs.len(), 2);
-        assert_eq!(proofs[0]["cryptosuite"], json!(hybrid::EDDSA_CRYPTOSUITE_ID));
+        assert_eq!(
+            proofs[0]["cryptosuite"],
+            json!(hybrid::EDDSA_CRYPTOSUITE_ID)
+        );
         assert_eq!(
             proofs[1]["cryptosuite"],
             json!(hybrid::MLDSA44_CRYPTOSUITE_ID)
