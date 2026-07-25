@@ -969,6 +969,33 @@ Four subcommands drive the lifecycle:
 - \`vouch root verify-chain\` walks an agent identity back to a pinned root.
 
 Anyone can run \`vouch root init\` and publish the root DID for verifiers to pin. The layer ships in Python, TypeScript, Rust, and Go with a byte-identical wire format, so a chain can span languages and still verify.
+
+## Enroll once, then verify against a root
+
+For the everyday case, two commands wrap the whole flow so verifying an action also verifies the agent identity behind it, not the action alone.
+
+\`vouch agent enroll\` is the local self-host path: a recognized issuer you hold attests an agent DID and writes a portable identity bundle to a file. A bundle staples together the pieces a verifier needs, the agent identity credential, the recognized-issuer credential that proves the issuer is recognized by a root, and optionally an action credential, so you can hand off a single file.
+
+\`\`\`bash
+# Attest an agent DID and write a bundle. The issuer must already hold a
+# recognition (from 'vouch root recognize') proving a root recognizes it.
+vouch agent enroll \\
+  --agent-did did:key:z6MkAgent... \\
+  --attr owner="Example Inc." --attr model=claims-assistant-2 \\
+  --recognition recognition.json \\
+  --out identity-bundle.json
+
+# Omit --agent-did to mint a fresh did:key agent identity on the spot.
+\`\`\`
+
+\`vouch agent verify\` pins one root DID and checks the whole bundle against it, offline for \`did:key\`:
+
+\`\`\`bash
+vouch agent verify --bundle identity-bundle.json --root did:key:z6MkRoot...
+# The root DID can also come from the VOUCH_TRUSTED_ROOT environment variable.
+\`\`\`
+
+Under the hood \`build_identity_bundle\` packages the pieces and \`verify_bundle\` verifies them, so one check confirms the agent identity against the pinned root as well as any bundled action.
 `,
       },
     ],
@@ -1508,6 +1535,7 @@ Installable on their own, so the framework adapters no longer need the full SDK 
 | \`vouch-langchain\` | \`pip install vouch-langchain\` | A LangChain tool that signs each tool call before it leaves the agent |
 | \`vouch-crewai\` | \`pip install vouch-crewai\` | A CrewAI tool with supervisor-to-worker delegation that can only narrow authority |
 | \`vouch-a2a\` | \`pip install vouch-a2a\` | Binds an A2A (Agent2Agent) Agent Card to a Vouch identity so two agents can verify each other |
+| \`vouch-openai\` | \`pip install vouch-openai\` | Signs the tool calls an OpenAI agent makes, across the OpenAI SDK function calling (Chat Completions and the Responses API) and the OpenAI Agents SDK |
 | \`vouch-mlflow\` | \`pip install vouch-mlflow\` | Signs an MLflow model artifact at registration time, bound to its content digest |
 | \`vouch-safetensors\` | \`pip install vouch-safetensors\` | Embeds a credential in a .safetensors header, complementary to OpenSSF Model Signing |
 

@@ -30,6 +30,10 @@ deterministic path, then show lower-level APIs only if they ask:
   the model calling a signing tool.
 - For decorator frameworks (CrewAI, LangChain, LangGraph, AutoGPT, AutoGen),
   `<framework>.autosign()` signs every tool framework-wide.
+- For OpenAI (`pip install vouch-openai`), `protect([...])` and `signed_tool`
+  wrap the tool callables an OpenAI agent dispatches to, or `sign_tool_call(call)`
+  signs the model's requested function call. Works with the OpenAI SDK function
+  calling (Chat Completions and the Responses API) and the OpenAI Agents SDK.
 - Verify in one line with `vouch.verify(credential)`, or protect a web endpoint
   with the FastAPI `VouchGate` dependency.
 - Delegate in one line with `vouch.delegate(...)` plus `protect([...], parent=grant)`.
@@ -111,6 +115,14 @@ been removed. See `vouch-knowledge.md`.
   external certificate authority. Additive to the agent's own `vouch init`. CLI:
   `vouch root init` / `recognize` / `issue-identity` / `verify-chain`. Ships in
   Python, TypeScript, Rust, and Go with a byte-identical wire format. See
+  `vouch-knowledge.md`.
+- "How do I enroll an agent and verify it against a root in one step?" -> The
+  enroll-then-verify flow (`vouch.root_of_trust`): `build_identity_bundle`
+  staples an identity, its recognition, and an optional action into one portable
+  bundle, and `verify_bundle` checks the whole bundle against a single pinned
+  root, so verifying an action also verifies the agent identity behind it. CLI:
+  `vouch agent enroll` writes the bundle and `vouch agent verify --bundle FILE
+  --root DID` checks it, with a `VOUCH_TRUSTED_ROOT` fallback for the root. See
   `vouch-knowledge.md`.
 - "Single validator or quorum?" -> Single is fine for development. For
   regulated production, M-of-N with role-tagged validators.

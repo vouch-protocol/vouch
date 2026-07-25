@@ -145,6 +145,7 @@ const GROUPS: Group[] = [
             { name: 'vouch-crewai', blurb: 'A CrewAI tool, with supervisor-to-worker delegation that can only narrow authority, never widen it.', start: 'pip install vouch-crewai', tag: 'New' },
             { name: 'vouch-a2a', blurb: 'Binds an A2A (Agent2Agent) Agent Card to a Vouch identity, so two agents can verify each other before they collaborate.', start: 'pip install vouch-a2a', tag: 'New' },
             { name: 'vouch-goose', blurb: "Registers the Vouch MCP server as an extension for Block's Goose agent, so a Goose session can sign and verify out of the box.", start: 'pip install vouch-goose', tag: 'New' },
+            { name: 'vouch-openai', blurb: 'Signs the tool calls an OpenAI agent makes, so each function call carries a verifiable identity. Works with the OpenAI SDK function calling (Chat Completions and the Responses API) and the OpenAI Agents SDK.', start: 'pip install vouch-openai', tag: 'New' },
             { name: 'vouch-mlflow', blurb: 'Signs an MLflow model artifact at registration time, bound to a content digest so any change to the weights breaks the signature.', start: 'pip install vouch-mlflow', tag: 'New' },
             { name: 'vouch-safetensors', blurb: 'Embeds a credential in a .safetensors header, complementary to OpenSSF Model Signing, so a model carries who produced it.', start: 'pip install vouch-safetensors', tag: 'New' },
         ],

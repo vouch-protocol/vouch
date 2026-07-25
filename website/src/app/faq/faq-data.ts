@@ -294,6 +294,14 @@ When the root, issuer, and agent all use \`did:key\`, the whole chain verifies w
 
 The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch root issue-identity\`, and \`vouch root verify-chain\`. The layer ships in Python, TypeScript, Rust, and Go with a byte-identical wire format, so a chain can span languages and still verify.`,
       },
+      {
+        q: 'What is the enroll then verify flow?',
+        a: `It makes the everyday path enroll once, then verify against a root, so verifying an action also verifies the agent identity behind it.
+
+\`vouch agent enroll\` is the local self-host path: a recognized issuer you specify attests an agent DID and writes a portable identity bundle to a file. A bundle staples together the pieces a verifier needs, the agent identity credential, the recognized-issuer credential that proves the issuer is recognized by a root, and optionally an action credential, so an operator can hand off a single file.
+
+\`vouch agent verify --bundle FILE --root DID\` checks the whole bundle anchored to one pinned root. The root DID can also come from the \`VOUCH_TRUSTED_ROOT\` environment variable. Under the hood \`build_identity_bundle\` packages the pieces and \`verify_bundle\` verifies them, so one check confirms the agent identity against the pinned root as well as any bundled action.`,
+      },
     ],
   },
 
@@ -1247,11 +1255,33 @@ status_list = store.load()
 - **MCP** - Model Context Protocol server
 - **Goose** - registers the Vouch MCP server as an extension for Block's Goose agent
 
-**New standalone packages:** \`vouch-langchain\`, \`vouch-langgraph\` (signs LangGraph tool calls and graph nodes), \`vouch-crewai\`, \`vouch-a2a\` (binds an A2A Agent Card to a Vouch identity), \`vouch-goose\` (registers the Vouch MCP server as a Goose extension), \`vouch-mlflow\` (signs a model artifact at registration time, bound to its content digest), and \`vouch-safetensors\` (embeds a credential in the model header, complementary to OpenSSF Model Signing). Each issues a verifiable credential per tool call, with optional delegation back to a human principal.
+**New standalone packages:** \`vouch-langchain\`, \`vouch-langgraph\` (signs LangGraph tool calls and graph nodes), \`vouch-crewai\`, \`vouch-a2a\` (binds an A2A Agent Card to a Vouch identity), \`vouch-goose\` (registers the Vouch MCP server as a Goose extension), \`vouch-openai\` (signs the tool calls an OpenAI agent makes), \`vouch-mlflow\` (signs a model artifact at registration time, bound to its content digest), and \`vouch-safetensors\` (embeds a credential in the model header, complementary to OpenSSF Model Signing). Each issues a verifiable credential per tool call, with optional delegation back to a human principal.
 
 Examples for each are in [examples/05_integrations/](https://github.com/vouch-protocol/vouch/tree/main/examples/05_integrations).
 
 TypeScript currently has the Amnesia bridge in \`packages/sdk-ts/src/integrations/\`.`,
+        helpLinks: [{ label: 'Framework integration guides', href: '/help/#integrations' }],
+      },
+      {
+        q: 'How do I sign the tool calls an OpenAI agent makes?',
+        a: `Install \`vouch-openai\` (\`pip install vouch-openai\`). It signs the tool (function) calls an OpenAI agent makes, so every action carries a verifiable identity. It works with the OpenAI Python SDK function calling (Chat Completions and the Responses API) and with the OpenAI Agents SDK, since all of them dispatch to Python tool callables and expose a tool call as a name plus JSON arguments.
+
+Two entry points. \`sign_tool_call(call)\` signs the model's requested function call (its name and JSON arguments) before you dispatch it, giving you a credential to attach to the result or log. \`signed_tool\` and \`protect\` wrap the Python tool callables you dispatch to, so each execution issues its own Vouch Protocol credential:
+
+\`\`\`python
+from vouch.integrations.openai import signed_tool, protect, sign_tool_call
+
+@signed_tool
+def get_weather(city: str) -> str: ...
+
+tools = protect([get_weather, send_email])   # every invocation is signed
+
+# Or sign the model's requested call before dispatching it.
+for call in response.choices[0].message.tool_calls:
+    credential = sign_tool_call(call)
+\`\`\`
+
+Verify on the receiving side with \`verify_tool_call\`. Identity is resolved automatically from the keystore \`vouch init\` wrote (or from \`VOUCH_DID\` and \`VOUCH_PRIVATE_KEY\`), so agent code needs no key plumbing.`,
         helpLinks: [{ label: 'Framework integration guides', href: '/help/#integrations' }],
       },
       {

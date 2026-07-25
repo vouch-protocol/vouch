@@ -113,6 +113,41 @@ tools = protect([execute_trade])
 vg.autosign()  # patches autogpt.command_decorator.command
 ```
 
+## OpenAI
+
+The `vouch-openai` package signs the tool (function) calls an OpenAI agent
+makes, so each action carries a verifiable identity. It works with the OpenAI
+Python SDK function calling (Chat Completions and the Responses API) and with the
+OpenAI Agents SDK, because all of them dispatch to Python tool callables and
+expose a tool call as a name plus JSON arguments.
+
+```bash
+pip install vouch-openai
+```
+
+```python
+from vouch.integrations.openai import signed_tool, protect, sign_tool_call, verify_tool_call
+
+# Wrap the tool callables you dispatch to, so each execution is signed.
+@signed_tool
+def get_weather(city: str) -> str: ...
+
+tools = protect([get_weather, send_email])
+
+# Or sign the model's requested call (name plus JSON arguments) before you run it.
+for call in response.choices[0].message.tool_calls:
+    credential = sign_tool_call(call)
+    result = dispatch(call)
+
+# Verify on the receiving side.
+ok, passport = verify_tool_call(credential)
+```
+
+Identity is resolved automatically (an explicit signer, then `VOUCH_DID` and
+`VOUCH_PRIVATE_KEY`, then the keystore), so agent code needs no key plumbing. The
+reference lives at `vouch/integrations/openai.py`, and the standalone package
+declares the `openai` dependency for you.
+
 ## Google Vertex AI and Agent Builder
 
 Vertex tools are plain functions, so `protect([...])` is the one-line path.

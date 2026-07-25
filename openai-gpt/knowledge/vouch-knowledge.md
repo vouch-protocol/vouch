@@ -989,6 +989,43 @@ Four subcommands under `vouch root` drive the full lifecycle:
 The agent's own `vouch init` is unchanged. `vouch root` is the separate,
 additive authority surface.
 
+### Enroll once, then verify against a root
+
+The `vouch root` subcommands drive each credential on its own. For the everyday
+case, two `vouch agent` subcommands wrap the whole flow, so the standard path is
+enroll, then verify against a root. Verifying an action then also verifies the
+agent identity behind it, not the action alone.
+
+`vouch agent enroll` is the local self-host path: the operator holds the
+recognized issuer key, attests an agent DID, and writes a portable identity
+bundle to a file. A bundle staples together the pieces a verifier needs, the
+agent identity credential, the recognized-issuer credential that proves the
+issuer is recognized by a root, and optionally an action credential, so an
+operator can hand off a single file.
+
+```bash
+vouch agent enroll \
+  --agent-did did:key:z6MkAgent... \
+  --attr owner="Example Inc." --attr model=claims-assistant-2 \
+  --recognition recognition.json \
+  --out identity-bundle.json
+# Omit --agent-did to mint a fresh did:key agent identity on the spot.
+```
+
+`vouch agent verify` pins one root DID and checks the whole bundle against it:
+
+```bash
+vouch agent verify --bundle identity-bundle.json --root did:key:z6MkRoot...
+# The root DID can also come from the VOUCH_TRUSTED_ROOT environment variable.
+```
+
+In the library, `build_identity_bundle(identity=..., recognition=..., action=...)`
+packages the pieces into a portable bundle dict, and `verify_bundle(bundle,
+trusted_root=...)` reads the credentials back out and delegates to
+`verify_identity_chain`, so verifying a bundle verifies the agent identity
+against the pinned root as well as any bundled action. A malformed bundle returns
+a clean rejection with reason `bad_bundle`.
+
 ### Anyone can self-host a root
 
 There is no privileged central root. Anyone can run `vouch root init` to
@@ -2218,6 +2255,41 @@ tools = protect([execute_trade])
 ## Or sign every @command framework-wide.
 vg.autosign()  # patches autogpt.command_decorator.command
 ```
+
+### OpenAI
+
+The `vouch-openai` package signs the tool (function) calls an OpenAI agent
+makes, so each action carries a verifiable identity. It works with the OpenAI
+Python SDK function calling (Chat Completions and the Responses API) and with the
+OpenAI Agents SDK, because all of them dispatch to Python tool callables and
+expose a tool call as a name plus JSON arguments.
+
+```bash
+pip install vouch-openai
+```
+
+```python
+from vouch.integrations.openai import signed_tool, protect, sign_tool_call, verify_tool_call
+
+# Wrap the tool callables you dispatch to, so each execution is signed.
+@signed_tool
+def get_weather(city: str) -> str: ...
+
+tools = protect([get_weather, send_email])
+
+# Or sign the model's requested call (name plus JSON arguments) before you run it.
+for call in response.choices[0].message.tool_calls:
+    credential = sign_tool_call(call)
+    result = dispatch(call)
+
+# Verify on the receiving side.
+ok, passport = verify_tool_call(credential)
+```
+
+Identity is resolved automatically (an explicit signer, then `VOUCH_DID` and
+`VOUCH_PRIVATE_KEY`, then the keystore), so agent code needs no key plumbing. The
+reference lives at `vouch/integrations/openai.py`, and the standalone package
+declares the `openai` dependency for you.
 
 ### Google Vertex AI and Agent Builder
 
