@@ -210,6 +210,43 @@ Four subcommands under `vouch root` drive the full lifecycle:
 The agent's own `vouch init` is unchanged. `vouch root` is the separate,
 additive authority surface.
 
+## Enroll once, then verify against a root
+
+The `vouch root` subcommands drive each credential on its own. For the everyday
+case, two `vouch agent` subcommands wrap the whole flow, so the standard path is
+enroll, then verify against a root. Verifying an action then also verifies the
+agent identity behind it, not the action alone.
+
+`vouch agent enroll` is the local self-host path: the operator holds the
+recognized issuer key, attests an agent DID, and writes a portable identity
+bundle to a file. A bundle staples together the pieces a verifier needs, the
+agent identity credential, the recognized-issuer credential that proves the
+issuer is recognized by a root, and optionally an action credential, so an
+operator can hand off a single file.
+
+```bash
+vouch agent enroll \
+  --agent-did did:key:z6MkAgent... \
+  --attr owner="Example Inc." --attr model=claims-assistant-2 \
+  --recognition recognition.json \
+  --out identity-bundle.json
+# Omit --agent-did to mint a fresh did:key agent identity on the spot.
+```
+
+`vouch agent verify` pins one root DID and checks the whole bundle against it:
+
+```bash
+vouch agent verify --bundle identity-bundle.json --root did:key:z6MkRoot...
+# The root DID can also come from the VOUCH_TRUSTED_ROOT environment variable.
+```
+
+In the library, `build_identity_bundle(identity=..., recognition=..., action=...)`
+packages the pieces into a portable bundle dict, and `verify_bundle(bundle,
+trusted_root=...)` reads the credentials back out and delegates to
+`verify_identity_chain`, so verifying a bundle verifies the agent identity
+against the pinned root as well as any bundled action. A malformed bundle returns
+a clean rejection with reason `bad_bundle`.
+
 ## Anyone can self-host a root
 
 There is no privileged central root. Anyone can run `vouch root init` to
