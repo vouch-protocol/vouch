@@ -281,8 +281,10 @@ def test_delegation_chain_resource_narrowing_allows_sub_path():
     assert len(grand_cred["credentialSubject"]["delegationChain"]) == 1
 
 
-def test_delegation_chain_depth_limit_enforced():
-    """A chain of 5 parents should reject a 6th hop."""
+def test_delegation_chain_deep_chain_allowed_v17():
+    """v1.7 removes the fixed depth limit: a restate-only chain grows without a
+    cap. Authority is bounded by the non-expansion rule (each link restates or
+    narrows) and cost by a verifier-side budget, not a protocol depth ceiling."""
     common_resource = "https://api.example.com/v1/data"
     intent_template = {
         "action": "read",
@@ -293,15 +295,11 @@ def test_delegation_chain_depth_limit_enforced():
     signers = [_new_signer(f"did:web:agent{i}.example.com") for i in range(7)]
 
     cred = signers[0].sign(intent=intent_template)
-    # Build chain of length 5 (max allowed)
-    for s in signers[1:6]:
+    # Six hops: the sixth was previously rejected by the depth limit.
+    for s in signers[1:7]:
         cred = s.sign(intent=intent_template, parent_credential=cred)
 
-    assert len(cred["credentialSubject"]["delegationChain"]) == 5
-
-    # The 6th hop must fail
-    with pytest.raises(ValueError, match="max depth"):
-        signers[6].sign(intent=intent_template, parent_credential=cred)
+    assert len(cred["credentialSubject"]["delegationChain"]) == 6
 
 
 # ---------------------------------------------------------------------------

@@ -197,6 +197,13 @@ pub fn verify_chain_time_bound(
     delegation::verify_chain_time_bound(arr, now_iso, clock_skew_seconds as i64).map_err(jerr)
 }
 
+/// v1.7 capability-attenuation chain validation. Infallible JSON boundary:
+/// returns a `{"valid": bool, ...}` verdict string (see core::attenuation).
+#[wasm_bindgen(js_name = validateDelegationChain)]
+pub fn validate_delegation_chain(request_json: &str) -> String {
+    vouch_core::attenuation::validate_chain_json(request_json)
+}
+
 // --------------------------------------------------------------------------
 // FROST(Ed25519, SHA-512) threshold signing (RFC 9591). The aggregated
 // signature is a standard Ed25519 signature, verifiable with ed25519Verify

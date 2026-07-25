@@ -201,7 +201,8 @@ def check_revocation() -> CheckResult:
 
 
 def check_delegation_narrowing() -> CheckResult:
-    """Delegation: a child chains to its parent, and the five-link depth bound is enforced."""
+    """Delegation (v1.7 non-expansion): a child chains to its parent, a
+    broadening delegation is rejected, and there is no fixed depth bound."""
     root = keys.generate_identity("conformance.test")
     root_signer = Signer(private_key=root.private_key_jwk, did=root.did)
     parent = root_signer.sign(
@@ -229,30 +230,48 @@ def check_delegation_narrowing() -> CheckResult:
             "the child did not record its parent in the delegation chain",
         )
 
-    # Extend the chain link by link; the depth bound must reject a further link.
+    # Non-expansion: a child that broadens the parent's resource must be rejected.
+    widen_id = keys.generate_identity("conformance.test")
+    widen_signer = Signer(private_key=widen_id.private_key_jwk, did=widen_id.did)
+    rejected_widening = False
+    try:
+        widen_signer.sign(
+            intent={
+                "action": "read",
+                "target": "users_table",
+                "resource": "https://conformance.test",  # broader than the parent
+            },
+            parent_credential=parent,
+        )
+    except ValueError:
+        rejected_widening = True
+    if not rejected_widening:
+        return CheckResult(
+            "delegation_narrowing", Status.FAIL, "a broadening delegation was not rejected"
+        )
+
+    # No fixed depth bound (v1.7): a deep restate-only chain must be accepted.
     current = parent
-    depth_enforced = False
     for _ in range(8):
         link_id = keys.generate_identity("conformance.test")
         link_signer = Signer(private_key=link_id.private_key_jwk, did=link_id.did)
-        try:
-            current = link_signer.sign(
-                intent={
-                    "action": "read",
-                    "target": "users_table",
-                    "resource": "https://conformance.test/db/users",
-                },
-                parent_credential=current,
-            )
-        except ValueError:
-            depth_enforced = True
-            break
-    if not depth_enforced:
+        current = link_signer.sign(
+            intent={
+                "action": "manage",
+                "target": "all_tables",
+                "resource": "https://conformance.test/db",
+            },
+            parent_credential=current,
+        )
+    deep_chain = current.get("credentialSubject", {}).get("delegationChain") or []
+    if len(deep_chain) < 8:
         return CheckResult(
-            "delegation_narrowing", Status.FAIL, "the five-link depth bound was not enforced"
+            "delegation_narrowing", Status.FAIL, "a deep attenuating chain was not accepted"
         )
     return CheckResult(
-        "delegation_narrowing", Status.PASS, "child chains to parent, depth bound enforced"
+        "delegation_narrowing",
+        Status.PASS,
+        "child chains to parent, broadening is rejected, deep chains are allowed",
     )
 
 

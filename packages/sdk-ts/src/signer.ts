@@ -33,7 +33,7 @@ import {
   type VouchCredential,
 } from './vc';
 
-const MAX_CHAIN_DEPTH = 5;
+// v1.7 removes the fixed delegation depth limit (was 5).
 
 /**
  * The proofValue that binds a delegation link to its parent credential. A
@@ -454,11 +454,10 @@ export class Signer {
     const parentIntent = parentSubject.intent;
     const parentChain: DelegationLink[] = parentSubject.delegationChain ?? [];
 
-    if (parentChain.length >= MAX_CHAIN_DEPTH) {
-      throw new Error(
-        `Delegation chain exceeds max depth of ${MAX_CHAIN_DEPTH}`
-      );
-    }
+    // v1.7 removes the fixed depth limit; the non-expansion rule is enforced at
+    // verification by the shared attenuation validator, and cost is a
+    // verifier-side budget. The resource-narrowing guard below stays as a fast
+    // build-time check.
 
     const parentResource = parentIntent.resource ?? '';
     const childResource = currentIntent.resource ?? '';

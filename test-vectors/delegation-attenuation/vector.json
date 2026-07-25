@@ -1,0 +1,228 @@
+{
+  "description": "v1.7 capability-attenuation delegation-chain validation vectors. Each case is a request to the delegation validator and the expected verdict. Every conforming implementation (Rust core, Python, Go, TypeScript) MUST produce the expected verdict. Request/verdict schema is defined in core::attenuation::validate_chain_json.",
+  "spec": "w3c-cg-report v1.7 §9.3-9.6",
+  "now": "2026-04-26T10:00:00Z",
+  "cases": [
+    {
+      "name": "restate_unchanged_valid",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read","target":"t","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read","target":"t","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z","clockSkewSeconds":30
+      },
+      "expect": {"valid": true}
+    },
+    {
+      "name": "resource_narrowing_valid",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"resource":"https://x/a/b"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": true}
+    },
+    {
+      "name": "resource_widening_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"resource":"https://x/a/b"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "scope_exceeds_parent", "dimension": "resource"}
+    },
+    {
+      "name": "resource_sibling_prefix_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"resource":"https://x/a2"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "scope_exceeds_parent", "dimension": "resource"}
+    },
+    {
+      "name": "action_superset_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":["read","write"]},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "scope_exceeds_parent", "dimension": "action"}
+    },
+    {
+      "name": "action_subset_valid",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":["read","write"]},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": true}
+    },
+    {
+      "name": "target_widening_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"target":"claim:1"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"target":"claim:2"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "scope_exceeds_parent", "dimension": "target"}
+    },
+    {
+      "name": "time_widening_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"validFrom":"2026-04-26T10:00:00Z","validUntil":"2026-04-26T11:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:30:00Z"
+      },
+      "expect": {"valid": false, "code": "scope_exceeds_parent", "dimension": "time"}
+    },
+    {
+      "name": "rate_widening_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"rate":{"limit":100,"window":"PT1H"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"rate":{"limit":100,"window":"PT30M"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "scope_exceeds_parent", "dimension": "rate"}
+    },
+    {
+      "name": "rate_narrowing_valid",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"rate":{"limit":100,"window":"PT1H"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"rate":{"limit":50,"window":"PT1H"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": true}
+    },
+    {
+      "name": "policy_weakening_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"policy":{"minHeartbeatAgeSeconds":300},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"policy":{"minHeartbeatAgeSeconds":100},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "scope_exceeds_parent", "dimension": "policy"}
+    },
+    {
+      "name": "policy_strengthening_valid",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"policy":{"minHeartbeatAgeSeconds":300},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"policy":{"minHeartbeatAgeSeconds":600},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": true}
+    },
+    {
+      "name": "absent_child_dimension_inherits_valid",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"resource":"https://x/a/b"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": true}
+    },
+    {
+      "name": "subject_issuer_mismatch_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:WRONG","subject":"did:web:b","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "subject_issuer_mismatch", "linkIndex": 1}
+    },
+    {
+      "name": "untrusted_root_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "trustedRoots": ["did:web:other"],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "untrusted_principal"}
+    },
+    {
+      "name": "cascade_revocation_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:b","subject":"did:web:c","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "revokedIndices": [1],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "delegation_revoked", "linkIndex": 1}
+    },
+    {
+      "name": "budget_depth_exceeded",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:b","subject":"did:web:c","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "budget": {"maxDepth": 2},
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": false, "code": "verifier_budget_exceeded", "limit": "depth"}
+    },
+    {
+      "name": "deep_attenuating_chain_valid_no_depth_cap",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:h0","intent":{"action":"read","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:h0","subject":"did:web:h1","intent":{"action":"read","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:h1","subject":"did:web:h2","intent":{"action":"read","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:h2","subject":"did:web:h3","intent":{"action":"read","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:h3","subject":"did:web:h4","intent":{"action":"read","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"},
+          {"issuer":"did:web:h4","subject":"did:web:h5","intent":{"action":"read","resource":"https://x/a"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T10:00:00Z"
+      },
+      "expect": {"valid": true}
+    },
+    {
+      "name": "now_outside_effective_window_rejected",
+      "request": {
+        "chain": [
+          {"issuer":"did:web:root","subject":"did:web:a","intent":{"action":"read"},"validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T11:00:00Z"}
+        ],
+        "nowIso":"2026-04-26T20:00:00Z"
+      },
+      "expect": {"valid": false, "code": "outside_validity_window"}
+    },
+    {
+      "name": "empty_chain_malformed",
+      "request": {"chain": [], "nowIso":"2026-04-26T10:00:00Z"},
+      "expect": {"valid": false, "code": "malformed_delegation"}
+    }
+  ]
+}

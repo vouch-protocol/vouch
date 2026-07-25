@@ -466,7 +466,8 @@ func TestDelegationResourceNarrowingViolation(t *testing.T) {
 	}
 }
 
-func TestDelegationDepthLimit(t *testing.T) {
+func TestDelegationDeepChainAllowedV17(t *testing.T) {
+	// v1.7 removes the fixed depth limit: a restate-only chain grows without a cap.
 	intent := map[string]any{
 		"action":   "read",
 		"target":   "data",
@@ -482,7 +483,7 @@ func TestDelegationDepthLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 6; i++ {
 		cred, err = signers[i].Sign(SignOptions{
 			Intent:           intent,
 			ParentCredential: cred,
@@ -493,15 +494,8 @@ func TestDelegationDepthLimit(t *testing.T) {
 	}
 	subject := cred["credentialSubject"].(map[string]any)
 	chain := subject["delegationChain"].([]any)
-	if len(chain) != 5 {
-		t.Fatalf("expected 5 links, got %d", len(chain))
-	}
-
-	if _, err := signers[6].Sign(SignOptions{
-		Intent:           intent,
-		ParentCredential: cred,
-	}); err == nil {
-		t.Fatal("expected depth-limit error on 6th hop")
+	if len(chain) != 6 {
+		t.Fatalf("expected 6 links, got %d", len(chain))
 	}
 }
 

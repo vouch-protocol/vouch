@@ -466,7 +466,7 @@ A chain is a list of delegation-link credentials, ordered from root principal to
 
 \subsection{Capability Attenuation}
 
-Rather than capping the chain at a fixed number of links, each delegated capability MUST be a proper subset of its parent along at least one dimension (action, target, resource, time, rate, or policy) and broader along none. Authority therefore strictly narrows at every hop and cannot grow, which bounds the chain by construction: a link that fails to attenuate is rejected with \verb|capability_not_attenuated|. This rule replaces the earlier fixed depth limit, adopted following capability-security feedback from Alan Karp. Verification cost is bounded separately by verifier-side budgets (maximum depth, verification time, and cumulative time-to-live), which the verifier declares and enforces, returning \verb|verifier_budget_exceeded| when a chain exceeds them.
+Rather than capping the chain at a fixed number of links, each delegated capability MUST be a proper subset of its parent along at least one dimension (action, target, resource, time, rate, or policy) and broader along none. Authority therefore strictly narrows at every hop and cannot grow, which bounds the chain by construction: a link that broadens its parent on any dimension is rejected with \verb|scope_exceeds_parent|, naming the offending dimension. This rule replaces the earlier fixed depth limit, adopted following capability-security feedback from Alan Karp. Verification cost is bounded separately by verifier-side budgets (maximum depth, verification time, and cumulative time-to-live), which the verifier declares and enforces, returning \verb|verifier_budget_exceeded| when a chain exceeds them.
 
 \subsection{Chain Validation}
 
@@ -482,7 +482,7 @@ A verifier validating a leaf credential with an attached chain:
 \item Verifies the leaf credential's \verb|intent.resource| is a sub-URI of the deepest link's \verb|intent.resource|.
 \end{enumerate}
 
-Any failure produces a structured rejection reason: \verb|untrusted_principal|, \verb|capability_not_attenuated|, \verb|resource_not_narrowed|, \verb|verifier_budget_exceeded|, \verb|temporal_bounds_exceeded|, \verb|subject_issuer_mismatch|, or \verb|link_signature_invalid|.
+Any failure produces a structured rejection reason: \verb|untrusted_principal|, \verb|scope_exceeds_parent| (naming the broadened dimension), \verb|verifier_budget_exceeded|, \verb|subject_issuer_mismatch|, \verb|delegation_revoked| (a revoked link invalidates the whole chain below it), or \verb|outside_validity_window|.
 
 % ====================================================================
 \section{Revocation}

@@ -389,7 +389,7 @@ describe('Delegation chains', () => {
     ).rejects.toThrow(/resource-narrowing/);
   });
 
-  test('enforces the depth limit', async () => {
+  test('allows a deep restate-only chain (v1.7 removes the depth limit)', async () => {
     const commonResource = 'https://api.example.com/v1/data';
     const intentTpl: Intent = {
       action: 'read',
@@ -406,20 +406,14 @@ describe('Delegation chains', () => {
     let cred: VouchCredential = await signers[0].sign({
       intent: intentTpl,
     });
-    for (let i = 1; i < 6; i++) {
+    // Six hops: the sixth was previously rejected by the depth limit.
+    for (let i = 1; i < 7; i++) {
       cred = await signers[i].sign({
         intent: intentTpl,
         parentCredential: cred,
       });
     }
-    expect(cred.credentialSubject.delegationChain).toHaveLength(5);
-
-    await expect(
-      signers[6].sign({
-        intent: intentTpl,
-        parentCredential: cred,
-      })
-    ).rejects.toThrow(/max depth/);
+    expect(cred.credentialSubject.delegationChain).toHaveLength(6);
   });
 
   test('binds to a proof-set (post-quantum) parent via its classical proof member', async () => {

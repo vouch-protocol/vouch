@@ -7,6 +7,7 @@
 //! language. Behavior MUST match the TypeScript reference SDK byte-for-byte and
 //! pass the shared interop vectors in `test-vectors/`.
 
+pub mod attenuation;
 pub mod credentials;
 pub mod data_integrity;
 pub mod delegation;
