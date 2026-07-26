@@ -1,0 +1,119 @@
+{
+  "description": "Shared Authority Freshness interop vector. Reproduce proofValue byte-for-byte from (ed25519.seed_b64, unsigned_credential, verificationMethod, created); verify signed_credential against ed25519.public_key_b64; and evaluate every freshness case to the same allow/reason. This proves the AuthorityState credential and the epoch-collapse rule are identical across the Rust core, the TypeScript SDK, the Go sidecar, and Python.",
+  "cryptosuite": "eddsa-jcs-2022",
+  "ed25519": {
+    "seed_b64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE=",
+    "public_key_b64": "TLWr9q15+/WrvMr8wmnYXNJlHtS4hbWGnyQa7fCluik="
+  },
+  "verificationMethod": "did:web:treasury.example.com#key-1",
+  "created": "2026-07-26T10:00:00Z",
+  "unsigned_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:11111111-1111-4111-8111-111111111111",
+    "type": [
+      "VerifiableCredential",
+      "AuthorityState"
+    ],
+    "issuer": "did:web:treasury.example.com",
+    "validFrom": "2026-07-26T10:00:00Z",
+    "validUntil": "2026-07-26T10:05:00Z",
+    "credentialSubject": {
+      "id": "did:web:treasury.example.com",
+      "authorityEpoch": 5,
+      "status": "active"
+    }
+  },
+  "signed_credential": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://vouch-protocol.com/contexts/v1"
+    ],
+    "id": "urn:uuid:11111111-1111-4111-8111-111111111111",
+    "type": [
+      "VerifiableCredential",
+      "AuthorityState"
+    ],
+    "issuer": "did:web:treasury.example.com",
+    "validFrom": "2026-07-26T10:00:00Z",
+    "validUntil": "2026-07-26T10:05:00Z",
+    "credentialSubject": {
+      "id": "did:web:treasury.example.com",
+      "authorityEpoch": 5,
+      "status": "active"
+    },
+    "proof": {
+      "type": "DataIntegrityProof",
+      "cryptosuite": "eddsa-jcs-2022",
+      "created": "2026-07-26T10:00:00Z",
+      "verificationMethod": "did:web:treasury.example.com#key-1",
+      "proofPurpose": "assertionMethod",
+      "proofValue": "z3MUbMk9EHMtvKPX86cgyQngcdKHfttHTwCppur2KnJ1QQ7rHasrNufsgwACM2qUKaBGE4SUm8HQpr4aqRrVfNyfY"
+    }
+  },
+  "proofValue": "z3MUbMk9EHMtvKPX86cgyQngcdKHfttHTwCppur2KnJ1QQ7rHasrNufsgwACM2qUKaBGE4SUm8HQpr4aqRrVfNyfY",
+  "freshness": {
+    "description": "evaluate_authority_freshness(tier, voucher_epoch, last_seen_epoch, current_status, live_cosign_ok) -> (allow, reason)",
+    "cases": [
+      {
+        "name": "routine_ignores_stale_epoch",
+        "tier": "routine",
+        "voucher_epoch": 5,
+        "last_seen_epoch": 9,
+        "current_status": null,
+        "live_cosign_ok": null,
+        "expected_allow": true
+      },
+      {
+        "name": "sensitive_allows_current_epoch",
+        "tier": "sensitive",
+        "voucher_epoch": 9,
+        "last_seen_epoch": 9,
+        "current_status": null,
+        "live_cosign_ok": null,
+        "expected_allow": true
+      },
+      {
+        "name": "sensitive_rejects_stale_epoch",
+        "tier": "sensitive",
+        "voucher_epoch": 5,
+        "last_seen_epoch": 9,
+        "current_status": null,
+        "live_cosign_ok": null,
+        "expected_allow": false,
+        "expected_reason": "authority_epoch_stale:seen=9,voucher=5"
+      },
+      {
+        "name": "suspended_status_fails_closed",
+        "tier": "sensitive",
+        "voucher_epoch": 9,
+        "last_seen_epoch": 9,
+        "current_status": "suspended",
+        "live_cosign_ok": null,
+        "expected_allow": false,
+        "expected_reason": "authority_status_not_active:status=suspended"
+      },
+      {
+        "name": "critical_requires_live_cosign",
+        "tier": "critical",
+        "voucher_epoch": 9,
+        "last_seen_epoch": 9,
+        "current_status": null,
+        "live_cosign_ok": null,
+        "expected_allow": false,
+        "expected_reason": "live_cosign_required:tier=critical"
+      },
+      {
+        "name": "critical_allows_with_live_cosign",
+        "tier": "critical",
+        "voucher_epoch": 9,
+        "last_seen_epoch": 9,
+        "current_status": null,
+        "live_cosign_ok": true,
+        "expected_allow": true
+      }
+    ]
+  }
+}

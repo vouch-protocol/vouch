@@ -8,6 +8,7 @@
 //! pass the shared interop vectors in `test-vectors/`.
 
 pub mod attenuation;
+pub mod authority_state;
 pub mod credentials;
 pub mod data_integrity;
 pub mod delegation;
