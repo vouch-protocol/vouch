@@ -144,6 +144,34 @@ def __getattr__(name):
         from . import status_list_fetcher
 
         return getattr(status_list_fetcher, name)
+    # Authority Freshness: state change as a first-class freshness input
+    elif name in (
+        "AUTHORITY_STATE_TYPE",
+        "STATUS_ACTIVE",
+        "STATUS_SUSPENDED",
+        "STATUS_INCIDENT",
+        "STATUS_EXPOSURE_BREACHED",
+        "STATUS_REVOKED",
+        "VALID_AUTHORITY_STATUSES",
+        "LIVE_COSIGN_TYPE",
+        "DEFAULT_COSIGN_MAX_AGE_SECONDS",
+        "AuthorityStateError",
+        "AuthorityStatePassport",
+        "FreshnessRule",
+        "AUTHORITY_FRESHNESS_POLICY",
+        "AuthorityFreshnessVerdict",
+        "LiveCosignResult",
+        "build_authority_state",
+        "verify_authority_state",
+        "read_authority_epoch",
+        "evaluate_authority_freshness",
+        "cosign_signing_input",
+        "build_live_authority_cosign",
+        "verify_live_authority_cosign",
+    ):
+        from . import authority_state
+
+        return getattr(authority_state, name)
     # State Verifiability runtime (Specification §15)
     elif name in (
         "TrustEntropyError",
@@ -571,6 +599,29 @@ __all__ = [
     "CONSEQUENCE_ROUTINE",
     "CONSEQUENCE_SENSITIVE",
     "CONSEQUENCE_CRITICAL",
+    # Authority Freshness (state change as a freshness input)
+    "AUTHORITY_STATE_TYPE",
+    "STATUS_ACTIVE",
+    "STATUS_SUSPENDED",
+    "STATUS_INCIDENT",
+    "STATUS_EXPOSURE_BREACHED",
+    "STATUS_REVOKED",
+    "VALID_AUTHORITY_STATUSES",
+    "LIVE_COSIGN_TYPE",
+    "DEFAULT_COSIGN_MAX_AGE_SECONDS",
+    "AuthorityStateError",
+    "AuthorityStatePassport",
+    "FreshnessRule",
+    "AUTHORITY_FRESHNESS_POLICY",
+    "AuthorityFreshnessVerdict",
+    "LiveCosignResult",
+    "build_authority_state",
+    "verify_authority_state",
+    "read_authority_epoch",
+    "evaluate_authority_freshness",
+    "cosign_signing_input",
+    "build_live_authority_cosign",
+    "verify_live_authority_cosign",
     # Reputation
     "ReputationEngine",
     "ReputationScore",

@@ -83,6 +83,7 @@ class HeartbeatRequest:
     canary_commitment: str
     behavioral_digest: Dict[str, Any]
     canary_reveal: Optional[str] = None
+    authority_epoch: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         d: Dict[str, Any] = {
@@ -98,6 +99,8 @@ class HeartbeatRequest:
         }
         if self.canary_reveal is not None:
             d["canaryReveal"] = self.canary_reveal
+        if self.authority_epoch is not None:
+            d["authorityEpoch"] = self.authority_epoch
         return d
 
     @classmethod
@@ -112,6 +115,7 @@ class HeartbeatRequest:
             canary_commitment=d["canaryCommitment"],
             behavioral_digest=d["behavioralDigest"],
             canary_reveal=d.get("canaryReveal"),
+            authority_epoch=d.get("authorityEpoch"),
         )
 
 
@@ -137,6 +141,10 @@ def _validate_request_shape(d: Dict[str, Any]) -> None:
             raise HeartbeatError(f"{required} is required")
     if not isinstance(d["interval_index"], int) or d["interval_index"] < 0:
         raise HeartbeatError("interval_index must be a non-negative integer")
+    if "authorityEpoch" in d:
+        epoch = d["authorityEpoch"]
+        if not isinstance(epoch, int) or isinstance(epoch, bool) or epoch < 0:
+            raise HeartbeatError("authorityEpoch must be a non-negative integer")
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +179,7 @@ class HeartbeatSession:
     session_id: str = field(default_factory=lambda: f"urn:uuid:{uuid.uuid4()}")
     collector: BehavioralCollector = field(default_factory=BehavioralCollector)
     chain: CanaryChain = field(default_factory=CanaryChain)
+    authority_epoch: Optional[int] = None
     _interval_index: int = field(default=0, init=False)
     _actions: List[bytes] = field(default_factory=list, init=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
@@ -221,6 +230,7 @@ class HeartbeatSession:
                 canary_commitment=cm.commitment,
                 canary_reveal=cm.reveal,
                 behavioral_digest=digest,
+                authority_epoch=self.authority_epoch,
             )
             self._interval_index += 1
             self._actions.clear()
@@ -456,9 +466,21 @@ class HeartbeatValidator:
     scope: List[str] = field(default_factory=lambda: ["agent_actions"])
     store: HeartbeatStoreInterface = field(default_factory=MemoryHeartbeatStore)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
+    _highest_epoch: Dict[str, int] = field(default_factory=dict, init=False, repr=False)
 
     def _session_key(self, subject_did: str, session_id: str) -> str:
         return f"{subject_did}::{session_id}"
+
+    def highest_authority_epoch(self, subject_did: str) -> Optional[int]:
+        """
+        Return the highest `authorityEpoch` this validator has seen on the
+        heartbeat channel for `subject_did`, or None if it has seen none. This
+        is one of the two channels a verifier learns epochs from (the other is a
+        status-list refresh); it feeds `last_seen_epoch` in
+        `authority_state.evaluate_authority_freshness`.
+        """
+        with self._lock:
+            return self._highest_epoch.get(subject_did)
 
     def validate(self, request: Dict[str, Any]) -> HeartbeatValidationResult:
         """Validate a heartbeat request dict and emit a (possibly empty) result."""
@@ -507,6 +529,13 @@ class HeartbeatValidator:
             }
             self.store.put(key, new_state)
 
+            # Learn the authority epoch from the heartbeat channel. Track only the
+            # highest seen so a replayed older heartbeat cannot lower it.
+            if req.authority_epoch is not None:
+                prior = self._highest_epoch.get(req.subject_did)
+                if prior is None or req.authority_epoch > prior:
+                    self._highest_epoch[req.subject_did] = req.authority_epoch
+
         voucher = build_session_voucher(
             subject_did=req.subject_did,
             validator_dids=[self.validator_did],
@@ -515,6 +544,7 @@ class HeartbeatValidator:
             max_ttl_seconds=self.max_ttl_seconds,
             scope=list(self.scope),
             valid_seconds=self.voucher_valid_seconds,
+            authority_epoch=req.authority_epoch,
         )
 
         return HeartbeatValidationResult(ok=True, session_voucher=voucher)
