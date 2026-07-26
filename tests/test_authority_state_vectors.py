@@ -25,12 +25,7 @@ from vouch.authority_state import (
 )
 from vouch.multikey import encode_ed25519_public
 
-VECTOR = (
-    Path(__file__).resolve().parent.parent
-    / "test-vectors"
-    / "authority-state"
-    / "vector.json"
-)
+VECTOR = Path(__file__).resolve().parent.parent / "test-vectors" / "authority-state" / "vector.json"
 
 
 def _load():

@@ -452,6 +452,40 @@ export {
 } from './robotics/pq';
 export type { VerifyRobotCredentialOptions } from './robotics/pq';
 
+// Authority Freshness: authority state as a first-class input to trust
+// freshness. A signed AuthorityState credential (monotonic authorityEpoch +
+// status) plus the epoch-collapse rule, byte-identical with the Python module
+// and the Rust core.
+export {
+  AUTHORITY_STATE_TYPE,
+  STATUS_ACTIVE as AUTHORITY_STATUS_ACTIVE,
+  STATUS_SUSPENDED as AUTHORITY_STATUS_SUSPENDED,
+  STATUS_INCIDENT as AUTHORITY_STATUS_INCIDENT,
+  STATUS_EXPOSURE_BREACHED as AUTHORITY_STATUS_EXPOSURE_BREACHED,
+  STATUS_REVOKED as AUTHORITY_STATUS_REVOKED,
+  VALID_AUTHORITY_STATUSES,
+  CONSEQUENCE_ROUTINE,
+  CONSEQUENCE_SENSITIVE,
+  CONSEQUENCE_CRITICAL,
+  VALID_CONSEQUENCE_TIERS,
+  AUTHORITY_FRESHNESS_POLICY,
+  AuthorityStateError,
+  buildAuthorityState,
+  signAuthorityState,
+  verifyAuthorityState,
+  readAuthorityEpoch,
+  readAuthorityStatus,
+  evaluateAuthorityFreshness,
+} from './authority-state';
+export type {
+  AuthorityStateCredential,
+  AuthorityStateCredentialSubject,
+  BuildAuthorityStateOptions,
+  AuthorityVerifyResult,
+  FreshnessRule,
+  AuthorityFreshnessVerdict,
+} from './authority-state';
+
 // BitstringStatusList (VC-BITSTRING-STATUS-LIST, Specification §11.2)
 export {
   StatusList,
