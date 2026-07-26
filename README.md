@@ -95,6 +95,7 @@ Vouch is not one tool, it is a set of them. Here is the whole map.
 - **Identity Sidecar** keeps signing keys out of the model's context, so a prompt injection cannot read them.
 - **Vouch Shield** a runtime check that inspects every tool call against your rules, like a customs officer at the door.
 - **Continuous trust** heartbeats and session vouchers, so trust is a live signal that has to be renewed, not a badge that is issued once and trusted forever.
+- **Authority freshness** a signed authority state with a counter that only goes up, so a state change (a fraud signal, a suspended mandate) collapses the acceptable freshness window to now for a high-consequence action, even when time-decay trust still passes. See [docs/authority-freshness.md](docs/authority-freshness.md).
 
 ### Framework integrations (new in v1.6.2)
 Standalone packages that drop Vouch into the agent framework you already use. Each one issues a verifiable credential for a tool call, with optional delegation back to a human principal.
