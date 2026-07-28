@@ -123,6 +123,21 @@ def test_verify_rejects_expired():
     assert ok is False
 
 
+def test_sign_authority_state_with_a_signer():
+    # The one-call form, mirroring root_of_trust.build_root_of_trust.
+    from vouch import Signer, generate_identity
+    from vouch.authority_state import sign_authority_state
+
+    ident = generate_identity(domain="treasury.example.com")
+    signer = Signer(private_key=ident.private_key_jwk, did=ident.did)
+    cred = sign_authority_state(signer, 4, status=STATUS_SUSPENDED)
+    ok, passport = verify_authority_state(cred, signer.get_public_key_multikey())
+    assert ok is True
+    assert passport.authority_epoch == 4
+    assert passport.status == STATUS_SUSPENDED
+    assert passport.is_active is False
+
+
 def test_read_authority_epoch():
     cred = build_authority_state(AUTHORITY_DID, 42)
     assert read_authority_epoch(cred) == 42

@@ -172,6 +172,52 @@ def build_authority_state(
     }
 
 
+def sign_authority_state(
+    signer: Any,
+    authority_epoch: int,
+    *,
+    status: str = STATUS_ACTIVE,
+    valid_seconds: int = 300,
+    valid_from: Optional[datetime] = None,
+    subject_did: Optional[str] = None,
+    credential_id: Optional[str] = None,
+    created: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """
+    Build an AuthorityState credential and attach the authority's proof.
+
+    The one-call form, mirroring `root_of_trust.build_root_of_trust`. Works with
+    an in-process Signer (raw Ed25519 key) and with a backend Signer whose key
+    lives outside the process (a secure element, a sidecar, a KMS, or a quorum).
+
+    Args:
+      signer: The authority's Signer. Its DID becomes the issuer.
+      authority_epoch: Monotonic epoch counter for this state.
+      status: One of VALID_AUTHORITY_STATUSES. Defaults to "active".
+      created: Optional override for the proof timestamp, used to produce
+        reproducible test vectors.
+    """
+    credential = build_authority_state(
+        signer.did,
+        authority_epoch,
+        status=status,
+        valid_seconds=valid_seconds,
+        valid_from=valid_from,
+        subject_did=subject_did,
+        credential_id=credential_id,
+    )
+    if getattr(signer, "_raw_priv", None) is not None:
+        key = signer._raw_priv
+    elif getattr(signer, "_sign_func", None) is not None:
+        key = signer._sign_func
+    else:
+        raise AuthorityStateError("signer cannot sign: no private key or sign callback available")
+    credential["proof"] = data_integrity.build_proof(
+        credential, key, signer.verification_method_id(), created=created
+    )
+    return credential
+
+
 @dataclass(frozen=True)
 class AuthorityStatePassport:
     """The verified content of an AuthorityState credential."""
@@ -633,6 +679,7 @@ __all__ = [
     "AuthorityFreshnessVerdict",
     "LiveCosignResult",
     "build_authority_state",
+    "sign_authority_state",
     "verify_authority_state",
     "read_authority_epoch",
     "evaluate_authority_freshness",
