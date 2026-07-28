@@ -153,11 +153,19 @@ def test_sensitive_tier_rejects_stale_epoch():
 
 
 def test_sensitive_tier_rejects_unknown_epoch():
+    # An absent epoch renders as "?" so the reason code is identical in every
+    # language binding. Pinned by the shared interop vector.
     v = evaluate_authority_freshness(
         tier=CONSEQUENCE_SENSITIVE, voucher_epoch=None, last_seen_epoch=3
     )
     assert v.allow is False
-    assert v.reason.startswith("authority_epoch_unknown")
+    assert v.reason == "authority_epoch_unknown:voucher=?,seen=3"
+
+    v2 = evaluate_authority_freshness(
+        tier=CONSEQUENCE_SENSITIVE, voucher_epoch=5, last_seen_epoch=None
+    )
+    assert v2.allow is False
+    assert v2.reason == "authority_epoch_unknown:voucher=5,seen=?"
 
 
 def test_non_active_status_fails_closed():

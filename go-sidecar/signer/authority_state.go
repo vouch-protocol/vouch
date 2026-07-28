@@ -15,6 +15,7 @@ import (
 	"crypto/ed25519"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -33,6 +34,15 @@ const (
 	ConsequenceSensitive = "sensitive"
 	ConsequenceCritical  = "critical"
 )
+
+// epochStr renders an epoch for a reason code; "?" when absent, so the string
+// is identical across every language binding.
+func epochStr(epoch *int64) string {
+	if epoch == nil {
+		return "?"
+	}
+	return strconv.FormatInt(*epoch, 10)
+}
 
 func validAuthorityStatus(status string) bool {
 	switch status {
@@ -277,7 +287,12 @@ func EvaluateAuthorityFreshness(
 
 	if rule.EnforceEpoch {
 		if voucherEpoch == nil || lastSeenEpoch == nil {
-			return mk(false, "authority_epoch_unknown")
+			// An absent epoch renders as "?" so the reason code is identical in
+			// every language binding. Pinned by the interop vector.
+			return mk(false, fmt.Sprintf(
+				"authority_epoch_unknown:voucher=%s,seen=%s",
+				epochStr(voucherEpoch), epochStr(lastSeenEpoch),
+			))
 		}
 		if *voucherEpoch < *lastSeenEpoch {
 			return mk(false, fmt.Sprintf("authority_epoch_stale:seen=%d,voucher=%d", *lastSeenEpoch, *voucherEpoch))

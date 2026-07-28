@@ -105,6 +105,28 @@ def main() -> None:
             "expected_reason": "authority_status_not_active:status=suspended",
         },
         {
+            # An absent epoch renders as "?" in every language, so this reason
+            # code is byte-identical across Python, Rust, TypeScript, and Go.
+            "name": "sensitive_rejects_unknown_voucher_epoch",
+            "tier": "sensitive",
+            "voucher_epoch": None,
+            "last_seen_epoch": 9,
+            "current_status": None,
+            "live_cosign_ok": None,
+            "expected_allow": False,
+            "expected_reason": "authority_epoch_unknown:voucher=?,seen=9",
+        },
+        {
+            "name": "sensitive_rejects_unknown_last_seen_epoch",
+            "tier": "sensitive",
+            "voucher_epoch": 5,
+            "last_seen_epoch": None,
+            "current_status": None,
+            "live_cosign_ok": None,
+            "expected_allow": False,
+            "expected_reason": "authority_epoch_unknown:voucher=5,seen=?",
+        },
+        {
             "name": "critical_requires_live_cosign",
             "tier": "critical",
             "voucher_epoch": 9,

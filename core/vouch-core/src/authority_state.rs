@@ -46,6 +46,15 @@ fn is_valid_status(status: &str) -> bool {
     VALID_AUTHORITY_STATUSES.contains(&status)
 }
 
+/// Render an epoch for a reason code; "?" when absent, so the string is
+/// identical across every language binding.
+fn epoch_str(epoch: Option<i64>) -> String {
+    match epoch {
+        Some(e) => e.to_string(),
+        None => "?".to_string(),
+    }
+}
+
 /// Inputs to build an unsigned AuthorityState credential. Deterministic and
 /// clock-free: the caller supplies the id and validity window.
 #[derive(Debug, Clone)]
@@ -231,10 +240,14 @@ pub fn evaluate_authority_freshness(
                 }
             }
             _ => {
+                // An absent epoch renders as "?" so the reason code is identical
+                // in every language binding. Pinned by the interop vector.
                 return mk(
                     false,
                     format!(
-                        "authority_epoch_unknown:voucher={voucher_epoch:?},seen={last_seen_epoch:?}"
+                        "authority_epoch_unknown:voucher={},seen={}",
+                        epoch_str(voucher_epoch),
+                        epoch_str(last_seen_epoch)
                     ),
                 );
             }
@@ -299,6 +312,17 @@ mod tests {
         let v = evaluate_authority_freshness(CONSEQUENCE_SENSITIVE, Some(5), Some(7), None, None);
         assert!(!v.allow);
         assert_eq!(v.reason, "authority_epoch_stale:seen=7,voucher=5");
+    }
+
+    #[test]
+    fn sensitive_rejects_unknown_epoch() {
+        // An absent epoch renders as "?" so the reason code is identical in
+        // every language binding. Pinned by the shared interop vector.
+        let v = evaluate_authority_freshness(CONSEQUENCE_SENSITIVE, None, Some(3), None, None);
+        assert!(!v.allow);
+        assert_eq!(v.reason, "authority_epoch_unknown:voucher=?,seen=3");
+        let v2 = evaluate_authority_freshness(CONSEQUENCE_SENSITIVE, Some(5), None, None, None);
+        assert_eq!(v2.reason, "authority_epoch_unknown:voucher=5,seen=?");
     }
 
     #[test]

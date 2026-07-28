@@ -323,6 +323,14 @@ export interface AuthorityFreshnessVerdict {
  *   enforceEpoch, voucherEpoch < lastSeen      -> DENY  authority_epoch_stale
  *   otherwise                                  -> ALLOW
  */
+/**
+ * Render an epoch for a reason code; "?" when absent, so the string is
+ * identical across every language binding.
+ */
+function epochStr(epoch: number | null | undefined): string {
+  return epoch == null ? '?' : String(epoch);
+}
+
 export function evaluateAuthorityFreshness(
   tier: string,
   voucherEpoch: number | null | undefined,
@@ -356,9 +364,11 @@ export function evaluateAuthorityFreshness(
 
   if (rule.enforceEpoch) {
     if (voucherEpoch == null || lastSeenEpoch == null) {
+      // An absent epoch renders as "?" so the reason code is identical in every
+      // language binding. Pinned by the interop vector.
       return mk(
         false,
-        `authority_epoch_unknown:voucher=${voucherEpoch},seen=${lastSeenEpoch}`
+        `authority_epoch_unknown:voucher=${epochStr(voucherEpoch)},seen=${epochStr(lastSeenEpoch)}`
       );
     }
     if (voucherEpoch < lastSeenEpoch) {

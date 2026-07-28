@@ -54,6 +54,12 @@ authority is rejected, even when its time-decay trust still passes. That is the
 window collapsing to now instead of in five minutes. The verifier returns a
 clear reason code, for example `authority_epoch_stale:seen=7,voucher=5`.
 
+Reason codes are byte-identical across every language binding, so an audit log
+reads the same whichever SDK produced it. When an epoch is not available at all
+the verifier still fails closed, rendering the absent side as `?`, for example
+`authority_epoch_unknown:voucher=?,seen=9`. Every reason code is pinned by the
+shared interop vector.
+
 The consequence-to-policy map is:
 
 | Tier        | Behavior                                                              |

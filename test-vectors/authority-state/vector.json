@@ -96,6 +96,26 @@
         "expected_reason": "authority_status_not_active:status=suspended"
       },
       {
+        "name": "sensitive_rejects_unknown_voucher_epoch",
+        "tier": "sensitive",
+        "voucher_epoch": null,
+        "last_seen_epoch": 9,
+        "current_status": null,
+        "live_cosign_ok": null,
+        "expected_allow": false,
+        "expected_reason": "authority_epoch_unknown:voucher=?,seen=9"
+      },
+      {
+        "name": "sensitive_rejects_unknown_last_seen_epoch",
+        "tier": "sensitive",
+        "voucher_epoch": 5,
+        "last_seen_epoch": null,
+        "current_status": null,
+        "live_cosign_ok": null,
+        "expected_allow": false,
+        "expected_reason": "authority_epoch_unknown:voucher=5,seen=?"
+      },
+      {
         "name": "critical_requires_live_cosign",
         "tier": "critical",
         "voucher_epoch": 9,

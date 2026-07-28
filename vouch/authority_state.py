@@ -406,10 +406,15 @@ def evaluate_authority_freshness(
 
     if rule.enforce_epoch:
         if voucher_epoch is None or last_seen_epoch is None:
+            # An absent epoch renders as "?" so the reason code is identical in
+            # every language binding (Python None, Rust None, Go nil, and TS
+            # null would otherwise each print differently). Pinned by the
+            # interop vector.
             return AuthorityFreshnessVerdict(
                 False,
                 tier,
-                f"authority_epoch_unknown:voucher={voucher_epoch},seen={last_seen_epoch}",
+                f"authority_epoch_unknown:voucher={_epoch_str(voucher_epoch)},"
+                f"seen={_epoch_str(last_seen_epoch)}",
             )
         if voucher_epoch < last_seen_epoch:
             return AuthorityFreshnessVerdict(
@@ -582,6 +587,12 @@ def verify_live_authority_cosign(
 # --------------------------------------------------------------------------- #
 # helpers
 # --------------------------------------------------------------------------- #
+
+
+def _epoch_str(epoch: Optional[int]) -> str:
+    """Render an epoch for a reason code; "?" when absent, so the string is
+    identical across every language binding."""
+    return "?" if epoch is None else str(epoch)
 
 
 def _iso(dt: datetime) -> str:
