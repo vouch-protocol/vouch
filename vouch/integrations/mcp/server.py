@@ -35,6 +35,9 @@ Tools:
     check_action       Decide if an agent's capabilities permit a tool (Shield).
     check_trust        Recompute a session voucher's decayed trust vs a threshold.
     disclose_ai_origin Sign a disclosure that content is AI-generated.
+    create_authority_state    Publish this authority's signed epoch and status.
+    verify_authority_state    Verify an AuthorityState credential someone published.
+    check_authority_freshness Apply the Authority Freshness gate to an action.
     reputation         Compute an agent's reputation score from its outcomes.
     attribute          Attribute authorship from a signed attribution manifest.
 
@@ -680,6 +683,162 @@ def disclose_ai_origin(content_hash: str, content_ref: Optional[str] = None) -> 
         return json.dumps(credential, separators=(",", ":"))
     except Exception as e:
         return f"Error signing disclosure: {e}"
+
+
+# Authority Freshness tools. Time-decay trust answers "how long ago was this
+# trust established". These answer "has the authority changed state since", by
+# publishing a signed monotonic epoch and refusing a voucher minted under an
+# older one when the action's consequence tier calls for it.
+
+
+@mcp.tool()
+def create_authority_state(
+    authority_epoch: int,
+    status: str = "active",
+    valid_seconds: int = 300,
+    subject_did: Optional[str] = None,
+) -> str:
+    """Publish this authority's current epoch and status as a signed credential.
+
+    An AuthorityState credential carries a monotonic ``authorityEpoch`` counter
+    and a status. Bump the epoch on every authority-relevant transition (a
+    mandate suspended, an incident opened, a key exposure, a revocation) and
+    publish a fresh state. Verifiers that track the highest epoch they have seen
+    can then refuse a session voucher minted under an older epoch.
+
+    Args:
+        authority_epoch: The monotonic epoch counter, a non-negative integer.
+            It must strictly increase on every authority-relevant transition.
+        status: One of 'active', 'suspended', 'incident', 'exposure_breached',
+            or 'revoked'. Default 'active', the only status under which a
+            state-freshness action may proceed.
+        valid_seconds: Validity window of the published state in seconds
+            (default 300).
+        subject_did: The DID the state is about. Defaults to this server's DID,
+            an authority publishing its own state.
+
+    Returns:
+        A compact JSON AuthorityState credential with an eddsa-jcs-2022 proof.
+    """
+    signer = resolve_signer()
+    if signer is None:
+        return (
+            "Error: no Vouch identity configured. Set VOUCH_PRIVATE_KEY and "
+            "VOUCH_DID, or run 'vouch init'."
+        )
+    try:
+        from vouch.authority_state import sign_authority_state
+
+        credential = sign_authority_state(
+            signer,
+            authority_epoch,
+            status=status,
+            valid_seconds=valid_seconds,
+            subject_did=subject_did,
+        )
+        return json.dumps(credential, separators=(",", ":"))
+    except Exception as e:
+        return f"Error publishing authority state: {e}"
+
+
+@mcp.tool()
+def verify_authority_state(credential_json: str, public_key: str) -> str:
+    """Verify an AuthorityState credential an authority published.
+
+    Confirms the eddsa-jcs-2022 proof, that the signing key belongs to the
+    issuer, that the validity window covers now, and that the epoch and status
+    are well formed. On success it reports the epoch and status, which is what
+    a verifier records as the highest epoch it has seen for that authority.
+
+    Args:
+        credential_json: The AuthorityState credential as a JSON string.
+        public_key: The issuing authority's Ed25519 public key (Multikey or JWK).
+
+    Returns:
+        'VERIFIED' with the issuer, subject, epoch, and status, or a rejection
+        reason.
+    """
+    from vouch.authority_state import verify_authority_state as _verify_authority_state
+
+    try:
+        credential = json.loads(credential_json)
+    except json.JSONDecodeError as e:
+        return f"REJECTED: not valid JSON ({e})"
+
+    try:
+        is_valid, passport = _verify_authority_state(credential, public_key)
+    except Exception as e:
+        return f"REJECTED: verification error ({e})"
+
+    if not is_valid or passport is None:
+        return "REJECTED: signature, issuer binding, validity window, or state shape check failed."
+
+    return (
+        "VERIFIED\n"
+        f"  issuer:  {passport.issuer_did}\n"
+        f"  subject: {passport.subject_did}\n"
+        f"  epoch:   {passport.authority_epoch}\n"
+        f"  status:  {passport.status}\n"
+        f"  valid:   {passport.valid_from.isoformat()} to {passport.valid_until.isoformat()}"
+    )
+
+
+@mcp.tool()
+def check_authority_freshness(
+    tier: str = "critical",
+    voucher_epoch: Optional[int] = None,
+    last_seen_epoch: Optional[int] = None,
+    current_status: Optional[str] = None,
+    live_cosign_ok: bool = False,
+) -> str:
+    """Decide whether an action passes the Authority Freshness gate.
+
+    Compares the epoch a session voucher was minted under against the highest
+    epoch this verifier has learned for the authority, and weighs the result
+    against the action's consequence tier:
+
+    - 'routine': time-decay trust only, so this gate always allows.
+    - 'sensitive': the epoch comparison, applied locally against the epoch the
+      verifier already holds. No network call at action time.
+    - 'critical': the epoch comparison plus a live M-of-N quorum co-sign read at
+      action time. Verify that co-sign separately and pass the outcome in as
+      live_cosign_ok; this tool does not fetch or check one itself.
+
+    This is the authority-state judgement alone. Fold it in with identity,
+    revocation, and time-decay trust before honoring an action.
+
+    Args:
+        tier: Consequence tier: 'routine', 'sensitive', or 'critical' (default).
+            An unknown tier is treated as 'critical' (fail-closed).
+        voucher_epoch: The authorityEpoch the caller's session voucher was
+            minted under. Omit if the voucher carries no epoch.
+        last_seen_epoch: The highest epoch this verifier has learned for the
+            authority. Omit if it has never seen one.
+        current_status: The authority's current status if known, from a verified
+            AuthorityState. Any value other than 'active' fails closed on a tier
+            that enforces state freshness.
+        live_cosign_ok: For the 'critical' tier: whether a live quorum co-sign
+            was supplied and verified fresh. False fails closed on that tier.
+
+    Returns:
+        'ALLOW' or 'DENY' with the tier and a stable reason code, for example
+        'authority_epoch_stale:seen=7,voucher=5'.
+    """
+    from vouch.authority_state import evaluate_authority_freshness
+
+    try:
+        verdict = evaluate_authority_freshness(
+            tier=tier,
+            voucher_epoch=voucher_epoch,
+            last_seen_epoch=last_seen_epoch,
+            current_status=current_status,
+            live_cosign_ok=live_cosign_ok,
+        )
+    except Exception as e:
+        return f"Error evaluating authority freshness: {e}"
+
+    mark = "ALLOW" if verdict.allow else "DENY"
+    return f"{mark} (tier={verdict.tier}): {verdict.reason}"
 
 
 # Accountability tools: reputation scoring and post-hoc attribution.

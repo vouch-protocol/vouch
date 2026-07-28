@@ -113,6 +113,66 @@ def test_check_trust_passes_a_fresh_voucher(server_with_identity):
     assert server.check_trust(voucher, threshold=1.5).startswith("DENY")
 
 
+def test_authority_state_roundtrips_through_build_and_verify(server_with_identity):
+    server, kp = server_with_identity
+    out = server.create_authority_state(7)
+    credential = json.loads(out)
+    assert "AuthorityState" in credential["type"]
+    assert credential["credentialSubject"]["authorityEpoch"] == 7
+    assert credential["credentialSubject"]["status"] == "active"
+    assert credential["proof"]["cryptosuite"] == "eddsa-jcs-2022"
+
+    verdict = server.verify_authority_state(out, _multikey_for(kp))
+    assert "VERIFIED" in verdict
+    assert "epoch:   7" in verdict
+    assert "status:  active" in verdict
+
+
+def test_authority_state_rejects_a_foreign_key(server_with_identity):
+    server, _ = server_with_identity
+    out = server.create_authority_state(1)
+    other = generate_identity("other.example.com")
+    assert server.verify_authority_state(out, _multikey_for(other)).startswith("REJECTED")
+
+
+def test_check_authority_freshness_denies_a_stale_epoch(server_with_identity):
+    server, _ = server_with_identity
+    # The authority bumped its epoch to 7; a voucher minted under 5 is stale, so
+    # a sensitive action is refused even though its time-decay trust still passes.
+    out = server.check_authority_freshness(tier="sensitive", voucher_epoch=5, last_seen_epoch=7)
+    assert out.startswith("DENY")
+    assert "authority_epoch_stale:seen=7,voucher=5" in out
+
+
+def test_check_authority_freshness_allows_a_current_epoch(server_with_identity):
+    server, _ = server_with_identity
+    out = server.check_authority_freshness(tier="sensitive", voucher_epoch=7, last_seen_epoch=7)
+    assert out.startswith("ALLOW")
+    # A routine action never consults authority state at all.
+    assert server.check_authority_freshness(tier="routine").startswith("ALLOW")
+
+
+def test_check_authority_freshness_critical_needs_a_live_cosign(server_with_identity):
+    server, _ = server_with_identity
+    denied = server.check_authority_freshness(tier="critical", voucher_epoch=7, last_seen_epoch=7)
+    assert denied.startswith("DENY")
+    assert "live_cosign_required" in denied
+
+    allowed = server.check_authority_freshness(
+        tier="critical", voucher_epoch=7, last_seen_epoch=7, live_cosign_ok=True
+    )
+    assert allowed.startswith("ALLOW")
+
+
+def test_check_authority_freshness_denies_a_suspended_authority(server_with_identity):
+    server, _ = server_with_identity
+    out = server.check_authority_freshness(
+        tier="sensitive", voucher_epoch=7, last_seen_epoch=7, current_status="suspended"
+    )
+    assert out.startswith("DENY")
+    assert "authority_status_not_active:status=suspended" in out
+
+
 def test_disclose_ai_origin_signs_a_verifiable_credential(server_with_identity):
     server, _ = server_with_identity
     out = server.disclose_ai_origin("sha256:abc123", content_ref="doc://report")

@@ -19,9 +19,11 @@ pip install pytest
 pytest packages/vouch-mcp/tests -q
 ```
 
-Expect: 3 passed. They check the package exports, that the MCP server has
-`sign` / `create_session` / `get_identity` registered, and that the
-issued credential is `eddsa-jcs-2022` and verifies.
+Expect: 20 passed. They check the package exports, that the MCP server has its
+tools registered (`sign`, `create_session`, `get_identity`,
+`create_authority_state`, and the rest), that the issued credential is
+`eddsa-jcs-2022` and verifies, and that each tool's body returns the verdict it
+should.
 
 ## 3. Build the distribution
 
