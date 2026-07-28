@@ -14,10 +14,17 @@ be faked by replaying the public test vectors.
 - `GET /conformance/{id}` , the stored result and signed credential, for re-verification.
 - `GET /conformance/{id}/badge.svg` , the badge.
 
-Checks re-checked today (L1): canonicalization and sign/verify are verified
-cryptographically with the core; validity-window and nonce-replay are behavioural
-(the implementation reports, the worker holds the expected answer). L2 and L3
-challenges reuse the same shape and land next.
+Checks re-checked today, L1 and L2.
+
+L1: canonicalization and sign/verify are verified cryptographically with the
+core; validity-window and nonce-replay are behavioural, with the worker holding
+the expected answer.
+
+L2: the submitted status list is decoded with the core and both the revoked and
+the untouched index are checked, the delegated child's signature and its recorded
+parent are verified, the sidecar result must carry a signed allow and a
+structured deny, and every audit-trail entry hash and chain link is recomputed
+from the raw entries. L3 challenges reuse the same shape.
 
 ## Local check
 
