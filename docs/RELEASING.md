@@ -10,7 +10,7 @@ be run by hand from the Actions tab (workflow_dispatch).
 |---|---|---|
 | `rust-vX.Y.Z` | publish-crates.yml | `vouch-core`, `vouch-core-uniffi` to crates.io |
 | `dotnet-vX.Y.Z` | publish-nuget.yml | `VouchProtocol.Core` to NuGet.org |
-| `jvm-vX.Y.Z` | publish-maven.yml | `com.vouchprotocol:vouch-core` to Maven Central |
+| `jvm-vX.Y.Z` | publish-maven.yml | `io.github.vouch-protocol:vouch-core` to Maven Central |
 | `swift-vX.Y.Z` | swift-xcframework.yml | VouchCore XCFramework to GitHub Releases |
 | `c-vX.Y.Z` | publish-c.yml | native libs + `vouch_core.h` to GitHub Releases |
 | `npm-vX.Y.Z` | publish-npm.yml | `core-wasm`, `sdk`, `api-client` to npm |

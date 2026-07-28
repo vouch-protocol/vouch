@@ -159,7 +159,7 @@ const GROUPS: Group[] = [
             { name: 'TypeScript', blurb: 'For the browser and Node.', start: 'npm i @vouch-protocol-official/sdk' },
             { name: 'Go', blurb: 'A high-throughput signing sidecar.', start: 'go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest' },
             { name: 'Rust', blurb: 'The shared core that every wrapper is built on.', start: 'cargo add vouch-core' },
-            { name: 'Java and Kotlin', blurb: 'On the JVM.', start: 'com.vouchprotocol:vouch-core' },
+            { name: 'Java and Kotlin', blurb: 'On the JVM.', start: 'io.github.vouch-protocol:vouch-core' },
             { name: '.NET', blurb: 'For C#.', start: 'VouchProtocol.Core', tag: 'Preview' },
             { name: 'Swift', blurb: 'For iOS and macOS.', start: 'github.com/vouch-protocol/vouch-swift', tag: 'Preview' },
             { name: 'C and WebAssembly', blurb: 'For native, embedded, browser, and edge.', tag: 'Preview' },

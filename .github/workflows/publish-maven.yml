@@ -1,4 +1,4 @@
-# Publish the JVM SDK (com.vouchprotocol:vouch-core) to Maven Central.
+# Publish the JVM SDK (io.github.vouch-protocol:vouch-core) to Maven Central.
 #
 # Trigger: push a tag like `jvm-v0.1.0`, or run manually (workflow_dispatch).
 # Required repo secrets:

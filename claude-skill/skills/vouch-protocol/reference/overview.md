@@ -55,7 +55,7 @@ everywhere, byte for byte.
 - TypeScript and Go: the existing reference SDKs
 - Browser and Node.js (WebAssembly): `npm install @vouch-protocol-official/core-wasm`
 - Swift (iOS and macOS): the `VouchCore` Swift package, over the core via UniFFI
-- JVM (Java and Kotlin): the `com.vouchprotocol:vouch-core` Gradle module
+- JVM (Java and Kotlin): the `io.github.vouch-protocol:vouch-core` Gradle module
 - .NET: `VouchProtocol.Core` on NuGet, over the C ABI
 - C and C++: the C bindings shipped with the core (header plus prebuilt library)
 
