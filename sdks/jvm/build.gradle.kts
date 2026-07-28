@@ -5,7 +5,7 @@ plugins {
     kotlin("jvm") version "1.9.24"
 }
 
-group = "com.vouchprotocol"
+group = "io.github.vouch-protocol"
 version = "2.0.0"
 description = "Vouch Protocol JVM SDK (Kotlin + Java) over the canonical Rust core via JNA / UniFFI."
 

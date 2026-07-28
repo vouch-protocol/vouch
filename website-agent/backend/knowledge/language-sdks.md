@@ -21,7 +21,7 @@ the same shared test vectors.
   the Rust core compiled to WASM. Runs in browsers and in Node.
 - **Swift, for iOS and macOS**: the `VouchCore` Swift package. Built as an
   XCFramework over the core via UniFFI. Add it with Swift Package Manager.
-- **JVM, Java and Kotlin** (`com.vouchprotocol:vouch-core`): a Gradle module.
+- **JVM, Java and Kotlin** (`io.github.vouch-protocol:vouch-core`): a Gradle module.
   Java users get a plain class; Kotlin users get the generated UniFFI binding.
 - **.NET** (`VouchProtocol.Core` on NuGet): a C# library over the C ABI.
 - **C and C++**: the C bindings shipped with the core, a header plus a prebuilt

@@ -106,7 +106,7 @@ const LANGUAGE_TILES = [
   },
   {
     name: 'JVM (Java / Kotlin)',
-    install: 'com.vouchprotocol:vouch-core',
+    install: 'io.github.vouch-protocol:vouch-core',
     repoPath: 'sdks/jvm/',
     note: 'Gradle module. A plain Java class, plus the generated Kotlin binding.',
   },

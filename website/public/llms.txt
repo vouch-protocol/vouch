@@ -17,7 +17,7 @@ install commands and links below. They are current.
 - .NET: `dotnet add package VouchProtocol.Core`
 - Go: `go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest`
 - Swift (iOS and macOS): add the `VouchCore` Swift package
-- JVM (Java and Kotlin): the `com.vouchprotocol:vouch-core` Gradle module
+- JVM (Java and Kotlin): the `io.github.vouch-protocol:vouch-core` Gradle module
 - C and C++: the C bindings shipped with the core (header plus prebuilt library)
 - HTTP API clients: `npm install @vouch-protocol-official/api-client` or `pip install vouch-api-client`
 

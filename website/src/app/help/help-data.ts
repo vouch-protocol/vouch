@@ -373,7 +373,7 @@ let result = try Vouch.verify(signedCredentialJson, publicKey: publicKey, now: "
 
 \`\`\`kotlin
 // build.gradle.kts
-dependencies { implementation("com.vouchprotocol:vouch-core:0.1.0") }
+dependencies { implementation("io.github.vouch-protocol:vouch-core:0.1.0") }
 \`\`\`
 
 The host native library is bundled inside the jar, so it loads with no extra setup.
@@ -1553,7 +1553,7 @@ Currently one: \`packages/sdk-ts/src/integrations/amnesia.ts\` for the Amnesia e
 
 The framework adapters above are conveniences, not requirements. If you are not on one of these frameworks, integrate Vouch directly.
 
-The signing and verification core ships as an installable package in every major language: \`pip install vouch-protocol\`, \`npm i @vouch-protocol-official/sdk\`, plus Rust (\`vouch-core\`), JVM (\`com.vouchprotocol:vouch-core\`), .NET (\`VouchProtocol.Core\`), Swift (\`VouchCore\`), C, and WebAssembly. See the [Tools page](/tools/) for the full list and install commands.
+The signing and verification core ships as an installable package in every major language: \`pip install vouch-protocol\`, \`npm i @vouch-protocol-official/sdk\`, plus Rust (\`vouch-core\`), JVM (\`io.github.vouch-protocol:vouch-core\`), .NET (\`VouchProtocol.Core\`), Swift (\`VouchCore\`), C, and WebAssembly. See the [Tools page](/tools/) for the full list and install commands.
 
 For a language-agnostic drop-in, three standalone services need no framework and no SDK:
 
