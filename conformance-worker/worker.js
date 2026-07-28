@@ -81,7 +81,7 @@ async function submit(request, env, sessionId) {
 
   const body = await request.json();
   const responses = body.responses || [];
-  const checks = recheck(c, session, responses);
+  const checks = await recheck(c, session, responses);
   const level = deriveLevel(checks);
   const th = await transcriptHash(session, responses);
 

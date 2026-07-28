@@ -8,11 +8,33 @@
 
 const CANON_COUNT = 3;
 
-// The L1 checks a level requires. Extend with L2 / L3 as those challenges land.
+// The checks each level requires. Extend with L3 as those challenges land.
 export const LEVEL_CHECKS = {
   L1: ["canonicalization", "sign_verify", "validity_window", "nonce_replay"],
+  L2: ["revocation", "delegation_narrowing", "sidecar_allow_deny", "audit_trail"],
 };
-const LEVEL_ORDER = ["L1"];
+const LEVEL_ORDER = ["L1", "L2"];
+
+// Audit trail: SHA-256 over the JCS-canonical bytes of the entry content, with
+// each entry committing to the previous entry's hash. Matches the reference SDK.
+const GENESIS_HASH = "0".repeat(64);
+
+function hex(buffer) {
+  return [...new Uint8Array(buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Hex(text) {
+  return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
+}
+
+// The hashed content: every field except entry_hash, with null values dropped.
+function auditContent(entry) {
+  const content = {};
+  for (const key of ["seq", "timestamp", "action", "actor", "resource", "decision", "metadata", "prev_hash"]) {
+    if (entry[key] !== null && entry[key] !== undefined) content[key] = entry[key];
+  }
+  return content;
+}
 
 function randInt(max) {
   const a = new Uint32Array(1);
@@ -96,12 +118,94 @@ export function buildSession(core, implementation, nowIso) {
   });
   expected["nonce-0"] = { firstAccepted: true, secondAccepted: false };
 
+  // revocation: the implementation builds a BitstringStatusList credential with
+  // one index revoked and one left active, plus the matching status entries. The
+  // worker decodes the list with the canonical core and checks both readings.
+  const revokedIndex = randInt(4096);
+  let activeIndex = randInt(4096);
+  if (activeIndex === revokedIndex) activeIndex = (activeIndex + 1) % 4096;
+  challenges.push({
+    challengeId: "revocation-0",
+    check: "revocation",
+    level: "L2",
+    input: {
+      statusListId: `https://conformance.vouch-protocol.com/status/${randInt(1_000_000)}`,
+      revokedIndex,
+      activeIndex,
+      statusPurpose: "revocation",
+    },
+  });
+
+  // delegation_narrowing: the implementation issues a child credential chained to
+  // this parent, narrowed to the given intent. The worker verifies the child's
+  // signature and that the chain records the parent's issuer.
+  const pk = JSON.parse(core.generateEd25519());
+  const parent = credentialSkeleton(
+    pk.did_key,
+    { action: "manage", target: "all_records", resource: "https://conformance.vouch-protocol.com/db" },
+    nowIso,
+    "2100-01-01T00:00:00Z"
+  );
+  const parentSigned = JSON.parse(
+    core.sign(JSON.stringify(parent), pk.seed_b64, `${pk.did_key}#key-1`, nowIso)
+  );
+  challenges.push({
+    challengeId: "delegation-0",
+    check: "delegation_narrowing",
+    level: "L2",
+    input: {
+      parentCredential: parentSigned,
+      narrowedIntent: {
+        action: "read",
+        target: "one_record",
+        resource: "https://conformance.vouch-protocol.com/db/records/1",
+      },
+    },
+  });
+  expected["delegation-0"] = { parentIssuer: pk.did_key };
+
+  // sidecar_allow_deny: one intent the policy allows, one it does not. The
+  // allowed intent must be signed, the disallowed one refused with a reason.
+  const allowedAction = "read";
+  challenges.push({
+    challengeId: "sidecar-0",
+    check: "sidecar_allow_deny",
+    level: "L2",
+    input: {
+      policy: { allowedActions: [allowedAction] },
+      allowedIntent: {
+        action: allowedAction,
+        target: `vector:${randInt(1_000_000)}`,
+        resource: "https://conformance.vouch-protocol.com/allowed",
+      },
+      deniedIntent: {
+        action: "delete",
+        target: `vector:${randInt(1_000_000)}`,
+        resource: "https://conformance.vouch-protocol.com/denied",
+      },
+    },
+  });
+
+  // audit_trail: a fixed action sequence the implementation records as a
+  // hash-linked trail. The worker recomputes every entry hash and the linkage.
+  const actions = [
+    { action: "ALLOWED", actor: "did:web:conformance.vouch-protocol.com", resource: "read_file" },
+    { action: "BLOCKED", actor: "did:web:conformance.vouch-protocol.com", resource: "run_command", decision: "untrusted" },
+    { action: "ALLOWED", actor: "did:web:conformance.vouch-protocol.com", resource: "write_file" },
+  ].map((a, i) => ({ ...a, timestamp: `2026-01-0${i + 1}T00:00:00Z` }));
+  challenges.push({
+    challengeId: "audit-0",
+    check: "audit_trail",
+    level: "L2",
+    input: { actions },
+  });
+
   return { implementation, createdAt: nowIso, challenges, expected };
 }
 
 // Re-check every response against the server-held expected answers, using the
 // canonical core for the cryptographic checks.
-export function recheck(core, session, responses) {
+export async function recheck(core, session, responses) {
   const byId = Object.fromEntries((responses || []).map((r) => [r.challengeId, r]));
   const checks = [];
   for (const ch of session.challenges) {
@@ -123,6 +227,60 @@ export function recheck(core, session, responses) {
         const out = resp?.output || {};
         pass = out.firstAccepted === true && out.secondAccepted === false;
         detail = pass ? "replay rejected on the second presentation" : "replay was not detected";
+      } else if (ch.check === "revocation") {
+        // Decode the submitted status list with the canonical core: the revoked
+        // index must read as revoked and the untouched index as active.
+        const out = resp?.output || {};
+        const listCredential = JSON.stringify(out.statusListCredential);
+        const revoked = core.verifyStatus(JSON.stringify(out.revokedEntry), listCredential) === true;
+        const active = core.verifyStatus(JSON.stringify(out.activeEntry), listCredential) === false;
+        pass = revoked && active;
+        detail = pass
+          ? "revoked index reads revoked, untouched index reads active"
+          : `status readings wrong (revoked=${revoked}, active-clear=${active})`;
+      } else if (ch.check === "delegation_narrowing") {
+        // The child must carry a valid signature and record its parent in the chain.
+        const child = resp?.output;
+        const signed =
+          !!child && core.verifyProof(JSON.stringify(child), session.implementation.publicKeyB64) === true;
+        const chain = child?.credentialSubject?.delegationChain || [];
+        const linked = chain.some((link) => link.issuer === session.expected[ch.challengeId]?.parentIssuer);
+        pass = signed && linked;
+        detail = pass
+          ? "child verifies and records its parent in the delegation chain"
+          : `chain incomplete (signature=${signed}, parent recorded=${linked})`;
+      } else if (ch.check === "sidecar_allow_deny") {
+        const out = resp?.output || {};
+        const allowedOk =
+          !!out.allowed &&
+          core.verifyProof(JSON.stringify(out.allowed), session.implementation.publicKeyB64) === true;
+        const deniedOk = out.denied?.rejected === true && !!out.denied?.reason;
+        pass = allowedOk && deniedOk;
+        detail = pass
+          ? "allowed intent signed, disallowed intent refused with a reason"
+          : `policy not enforced (allowed signed=${allowedOk}, denial structured=${deniedOk})`;
+      } else if (ch.check === "audit_trail") {
+        // Recompute every entry hash and the chain linkage from the raw entries.
+        const entries = resp?.output?.entries || [];
+        let previous = GENESIS_HASH;
+        let ok = entries.length === ch.input.actions.length;
+        for (const entry of entries) {
+          if (!ok) break;
+          if (entry.prev_hash !== previous) {
+            ok = false;
+            break;
+          }
+          const canonical = core.canonicalize(JSON.stringify(auditContent(entry)));
+          if ((await sha256Hex(canonical)) !== entry.entry_hash) {
+            ok = false;
+            break;
+          }
+          previous = entry.entry_hash;
+        }
+        pass = ok;
+        detail = pass
+          ? `${entries.length} entries hash-linked and byte-correct`
+          : "entry hashes or chain linkage did not recompute";
       }
     } catch (err) {
       detail = `error: ${err && err.message ? err.message : err}`;
