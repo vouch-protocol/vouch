@@ -1201,6 +1201,14 @@ Credential format, so one verifier and one trust model cover all twenty-one.
   identity, a bystander can sign a `BystanderConsentToken` bound to that one capture
   so it cannot be replayed, and `verify_consent_evidence` confirms the basis (and,
   for explicit consent, the covering tokens) while only hashes are ever stored (21).
+- Can a robot on a certified safety stack such as NVIDIA Halos prove what it actually
+  did? Yes, Halos safety-evidence: `SafetyEventRecorder` records the safety-event stream
+  (the safety monitor, event integrator, decision maker, and sensor pipeline, plus
+  emergency stops and operator actions) into the tamper-evident encrypted black-box, and
+  `build_safety_evidence` signs a `HalosSafetyEvidenceCredential` sealing the black-box
+  head and entry count bound to the robot's identity and the certified stack elements it
+  ran on, so `verify_safety_evidence` confirms the record is unaltered, untruncated,
+  attributable, and tied to the certified configuration without the black-box key (22).
 
 ## Status
 
@@ -1242,6 +1250,7 @@ verifies and integrates with:
 - `verify_wear_attestation` with `attenuate_for_wear` for wear and the narrowed
   capability scope.
 - `verify_consent_evidence` for bystander-consent evidence.
+- `verify_safety_evidence` for Halos safety-evidence.
 - `verify_handoff_chain` for a physical custody chain.
 
 Output is byte-identical to the reference SDKs, so a robot credential produced in
