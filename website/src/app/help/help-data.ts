@@ -3005,6 +3005,30 @@ ok, subject = verify_consent_evidence(ev, robot_key, capture=frame, consent_toke
 Security boundary: the open layer is the cryptographic binding of a consent basis to a capture and its verification, holding only hashes. On-device biometric detection and redaction, and managed consent-registry orchestration, are commercial.
 `,
       },
+      {
+        id: 'robotics-halos',
+        title: 'Halos safety-evidence',
+        summary: 'A robot running a certified safety stack signs a tamper-evident record of what it did, bound to its identity and the certified configuration, verifiable without reading the payloads.',
+        body: `
+A robot may run a certified functional-safety stack such as NVIDIA Halos. The certification shows the stack is safe by design. This records what a specific robot actually did and binds that record to the robot's identity and the certified configuration it ran on.
+
+The problem it closes: a design-time safety certification produces no signed, verifiable account of a specific robot's events in service, and a plain log can be altered, truncated, or detached from the robot.
+
+How it works: \`SafetyEventRecorder\` writes each safety event, tagged by its source (the safety monitor, the event integrator, the decision maker, and the sensor pipeline, plus emergency stops and operator actions), into the encrypted, hash-linked black-box. \`build_safety_evidence\` has the robot sign a \`HalosSafetyEvidenceCredential\` sealing the black-box head and entry count, bound to its identity and the certified stack elements (the compute module, the safety operating system version, and the safety-application set). \`verify_safety_evidence\` checks the robot's proof and, when given the entries, that the chain is intact, its length matches the sealed count, and its head matches the sealed head, so a tampered, truncated, extended, or reordered record is rejected.
+
+\`\`\`python
+from vouch.robotics import SafetyEventRecorder, build_safety_evidence, verify_safety_evidence
+
+rec = SafetyEventRecorder(blackbox_key)
+rec.record("SAIM", "camera_blockage_cleared", {"cam": 2})
+rec.record("SDM", "slow_stop", {"reason": "out_of_distribution"})
+ev = build_safety_evidence(robot, halos_stack={"igxSom": "...", "halosCore": "...", "blueprint": ["SAIM", "SEI", "SDM"]}, window={"from": t0, "to": t1}, recorder=rec)
+ok, subject = verify_safety_evidence(ev, robot_key, entries=rec.entries())
+\`\`\`
+
+Security boundary: the open layer is the recorder and the signed evidence credential, composing the existing black-box and robot-identity primitives. The entries stay encrypted, so integrity, completeness, attribution, and configuration verify without the black-box key.
+`,
+      },
     ],
   },
   {

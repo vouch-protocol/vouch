@@ -962,6 +962,25 @@ The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch
       },
     ],
   },
+  {
+    id: 'robotics-halos',
+    audience: 'Robotics: Halos evidence',
+    title: 'Safety-evidence for a certified stack',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A robot runs a certified safety stack like NVIDIA Halos. Can it prove what it actually did?',
+        a: `Yes. A safety certification shows a robot's stack is safe by design, it does not record what a specific robot did. \`SafetyEventRecorder\` captures the safety-event stream, the safety monitor, event integrator, decision maker, and sensor pipeline, plus emergency stops and operator actions, into the tamper-evident encrypted black-box. \`build_safety_evidence\` has the robot sign a \`HalosSafetyEvidenceCredential\` that seals the black-box head and entry count and binds them to the robot's identity and the certified stack elements it ran on.`,
+        helpLinks: [{ label: 'Halos safety-evidence guide', href: '/help/#robotics-halos' }],
+        meta: 'Shipped - vouch.robotics.halos',
+      },
+      {
+        q: 'Can someone check that record without being able to read what the robot captured?',
+        a: `Yes. \`verify_safety_evidence\` confirms the record is unaltered, has not been truncated or extended since it was sealed, is attributable to that robot, and is tied to the named certified configuration, all from the encrypted entries and without the black-box key. Only a holder of the key can open the payloads, so a certifier or an insurer verifies the record while its contents stay confidential.`,
+        meta: 'Shipped - vouch.robotics.halos',
+      },
+    ],
+  },
 
   // =====================================================================
   // FOR DEVELOPERS
