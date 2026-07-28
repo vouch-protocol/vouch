@@ -25,7 +25,13 @@ import sys
 import urllib.request
 
 from vouch import jcs, keys
+from vouch.audit_trail import AuditTrail
 from vouch.signer import Signer
+from vouch.status_list import (
+    StatusList,
+    build_status_list_credential,
+    build_status_list_entry,
+)
 from vouch.verifier import Verifier
 
 
@@ -63,12 +69,12 @@ def respond_canonicalization(challenge: dict, _signer: Signer) -> str:
 
 
 def respond_sign_verify(challenge: dict, signer: Signer) -> dict:
-    return signer.sign_credential(intent=challenge["input"]["intent"])
+    return signer.sign(intent=challenge["input"]["intent"])
 
 
 def respond_validity_window(challenge: dict, _signer: Signer) -> dict:
     inp = challenge["input"]
-    valid, _ = Verifier.verify_credential(
+    valid, _ = Verifier.verify(
         inp["credential"], public_key=public_jwk_from_b64(inp["publicKeyB64"])
     )
     return {"valid": bool(valid)}
@@ -84,11 +90,60 @@ def respond_nonce_replay(challenge: dict, _signer: Signer) -> dict:
     return {"firstAccepted": first, "secondAccepted": second}
 
 
+def respond_revocation(challenge: dict, _signer: Signer) -> dict:
+    inp = challenge["input"]
+    status_list = StatusList(status_list_id=inp["statusListId"])
+    status_list.set_status(inp["revokedIndex"], True)
+    entry = lambda index: build_status_list_entry(  # noqa: E731
+        status_list_credential=inp["statusListId"], status_list_index=index
+    )
+    return {
+        "statusListCredential": build_status_list_credential(
+            issuer_did="did:web:conformance.vouch-protocol.com", status_list=status_list
+        ),
+        "revokedEntry": entry(inp["revokedIndex"]),
+        "activeEntry": entry(inp["activeIndex"]),
+    }
+
+
+def respond_delegation_narrowing(challenge: dict, signer: Signer) -> dict:
+    inp = challenge["input"]
+    return signer.sign(intent=inp["narrowedIntent"], parent_credential=inp["parentCredential"])
+
+
+def respond_sidecar_allow_deny(challenge: dict, signer: Signer) -> dict:
+    inp = challenge["input"]
+    allowed_actions = inp.get("policy", {}).get("allowedActions", [])
+    denied_action = inp["deniedIntent"]["action"]
+    if denied_action in allowed_actions:  # a policy that allows it is not a denial case
+        denial = {"rejected": False, "reason": ""}
+    else:
+        denial = {"rejected": True, "reason": f"policy_denied:{denied_action}"}
+    return {"allowed": signer.sign(intent=inp["allowedIntent"]), "denied": denial}
+
+
+def respond_audit_trail(challenge: dict, _signer: Signer) -> dict:
+    trail = AuditTrail()
+    for action in challenge["input"]["actions"]:
+        trail.append(
+            action=action["action"],
+            actor=action.get("actor"),
+            resource=action.get("resource"),
+            decision=action.get("decision"),
+            timestamp=action.get("timestamp"),
+        )
+    return {"entries": [entry.to_dict() for entry in trail.entries]}
+
+
 RESPONDERS = {
     "canonicalization": respond_canonicalization,
     "sign_verify": respond_sign_verify,
     "validity_window": respond_validity_window,
     "nonce_replay": respond_nonce_replay,
+    "revocation": respond_revocation,
+    "delegation_narrowing": respond_delegation_narrowing,
+    "sidecar_allow_deny": respond_sidecar_allow_deny,
+    "audit_trail": respond_audit_trail,
 }
 
 
