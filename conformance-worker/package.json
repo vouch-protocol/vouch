@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@vouch-protocol-official/core-wasm": "^0.1.0"
+    "@vouch-protocol-official/core-wasm": "^2.0.0"
   }
 }
