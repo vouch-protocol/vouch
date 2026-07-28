@@ -1,0 +1,39 @@
+name: "Vouch conformance"
+description: "Run the Vouch conformance test in CI and report the level plus a re-checkable badge."
+
+inputs:
+  worker:
+    description: "Conformance worker base URL"
+    required: false
+    default: "https://conformance.vouch-protocol.com"
+  package:
+    description: "Python package to install as the implementation under test"
+    required: false
+    default: "vouch-protocol"
+
+outputs:
+  level:
+    description: "Highest conformance level achieved (L1/L2/L3), empty if none"
+    value: "${{ steps.run.outputs.level }}"
+  badge_url:
+    description: "Badge SVG URL for a passing result"
+    value: "${{ steps.run.outputs.badge_url }}"
+  verify_url:
+    description: "Re-verifiable result URL"
+    value: "${{ steps.run.outputs.verify_url }}"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+    - name: Install the implementation under test
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install "${{ inputs.package }}"
+    - name: Run the conformance test
+      id: run
+      shell: bash
+      run: python "${{ github.action_path }}/client.py" --worker "${{ inputs.worker }}"
