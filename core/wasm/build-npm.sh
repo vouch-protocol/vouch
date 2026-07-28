@@ -7,14 +7,19 @@
 # (web target, runs in browser + Node) and re-applies the npm publish metadata +
 # README + LICENSE, so `cd pkg && npm publish` produces a correct package.
 #
-# Usage:  ./build-npm.sh [version]      # default version: 0.1.0
+# Usage:  ./build-npm.sh [version]
+#
+# The version defaults to the crate version in Cargo.toml, which is what the
+# compiled `version()` reports. Keeping one source of truth means the published
+# package and the version baked into the WASM can never disagree.
 #
 set -euo pipefail
 cd "$(dirname "$0")"
 export PATH="$HOME/.cargo/bin:$PATH"
 
 NPM_NAME="@vouch-protocol-official/core-wasm"
-NPM_VERSION="${1:-0.1.0}"
+CRATE_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
+NPM_VERSION="${1:-$CRATE_VERSION}"
 
 echo "==> wasm-pack build (target=web, release)"
 wasm-pack build --target web --release
