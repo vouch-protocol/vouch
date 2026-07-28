@@ -49,7 +49,9 @@ export default function DemosPage() {
               <a href="/demos/root-of-trust/" className="prose-link">Root of Trust demo</a> signs and verifies a machine
               identity chain in your browser, pinning one root DID. The{' '}
               <a href="/demos/transparency/" className="prose-link">AI transparency marking demo</a> signs a
-              machine-readable disclosure of an output's AI origin and verifies it live.
+              machine-readable disclosure of an output's AI origin and verifies it live. The{' '}
+              <a href="/demos/halos/" className="prose-link">Halos safety-evidence demo</a> records a robot's safety
+              events into a tamper-evident black-box, seals and verifies the record, and rejects a tampered one.
             </p>
           </div>
         </div>
