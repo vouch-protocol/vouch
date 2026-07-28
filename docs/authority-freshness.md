@@ -21,7 +21,36 @@ elapsed-time freshness keeps accepting that voucher and authorizes the transfer.
 The gap is that a real change in authority state has no way to instantly shrink
 the acceptable freshness window for the actions that matter most.
 
-## 2. The idea
+## 2. Why an epoch rather than a fresher timestamp
+
+A timestamp tells you when a voucher was minted. It never tells you whether the
+authority behind it has changed since. Those are different questions, and only
+the first one has an answer written on the credential, so a verifier working
+from time alone has to guess a staleness window that is short enough to be safe
+and long enough to be usable. It is guessing because it has no signal for the
+thing it actually cares about. A monotonic epoch carries what a clock cannot. A
+new epoch is not an opinion about elapsed time, it is proof that a real
+transition occurred, published and signed by the authority itself. Walk it
+through a treasury agent: at 10:00:00 the agent holds a voucher minted under
+epoch 7 and everything about it is valid. At 10:00:04 a fraud signal fires and
+the authority republishes its state at epoch 8. At 10:00:06 the agent presents
+that voucher for a transfer. It is six seconds old and its time-decay trust is
+still comfortably above threshold, so on elapsed time alone the transfer would
+go through. Because the verifier has seen epoch 8, it rejects a voucher minted
+under epoch 7 as stale, and the window that was notionally five minutes wide
+closes in the moment the authority changed. The honest limit is that this only
+works once the verifier has learned about the newer epoch, so a verifier that
+has not yet refreshed still holds the old view. That is exactly why the
+zero-tolerance tier does not rely on a cached epoch at all and falls back to a
+live M-of-N co-sign read at the moment of the action.
+
+This framing came out of a public discussion with Sudip Chatterjee, who argued
+that freshness has to be a function of both elapsed time and authority state
+change, with the consequence of the action setting the threshold, and who
+supplied the treasury and trading scenario above where a credential stays
+cryptographically valid while no longer representing current authority.
+
+## 3. The idea
 
 Authority Freshness treats the freshness of an action as a function of three
 inputs instead of one:
@@ -46,7 +75,7 @@ learned from a status-list refresh or from the heartbeat channel. When an
 authority-relevant transition bumps the epoch, the verifier learns the new,
 higher epoch, and any voucher minted under the old one is now stale.
 
-## 3. The collapse rule
+## 4. The collapse rule
 
 For an action whose consequence tier requires state-freshness, a voucher whose
 `authorityEpoch` is lower than the highest epoch the verifier has seen for that
@@ -68,7 +97,7 @@ The consequence-to-policy map is:
 | `sensitive` | The epoch-collapse rule, enforced locally.                           |
 | `critical`  | The epoch-collapse rule and a live M-of-N co-sign, read at action time. |
 
-## 4. Enforced locally vs. checked live
+## 5. Enforced locally vs. checked live
 
 Being explicit about what needs a network call matters for offline verifiers:
 
@@ -86,7 +115,7 @@ Being explicit about what needs a network call matters for offline verifiers:
   is a standard Ed25519 signature, so a verifier checks it with the ordinary
   verifier and needs no threshold-signing code of its own.
 
-## 5. The AuthorityState credential
+## 6. The AuthorityState credential
 
 `AuthorityState` is a plain VC Data Model 2.0 credential:
 
@@ -113,7 +142,7 @@ credential is signed with `eddsa-jcs-2022`, so it canonicalizes byte-identically
 across the Rust core and the Python, TypeScript, and Go bindings, pinned by the
 shared interop vector in `test-vectors/authority-state/`.
 
-## 6. Using it
+## 7. Using it
 
 The gate is folded into the one composed trust check, `verify_agent_call`:
 

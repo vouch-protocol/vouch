@@ -451,6 +451,14 @@ def evaluate_authority_freshness(
         return AuthorityFreshnessVerdict(False, tier, f"live_cosign_required:tier={tier}")
 
     if rule.enforce_epoch:
+        # Why an epoch and not a fresher timestamp: a timestamp says when the
+        # voucher was minted, never whether authority has changed since, so time
+        # alone forces the verifier to guess a safe staleness window. A new epoch
+        # is proof that a real transition happened, published and signed by the
+        # authority. A voucher minted under epoch 7 is refused once this verifier
+        # has seen epoch 8, even six seconds later with time-decay trust still
+        # passing. The limit: this only bites once the verifier has learned of the
+        # newer epoch, which is why the critical tier falls back to a live co-sign.
         if voucher_epoch is None or last_seen_epoch is None:
             # An absent epoch renders as "?" so the reason code is identical in
             # every language binding (Python None, Rust None, Go nil, and TS

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Authority Freshness treats a change in authority state as a first-class input
+  to trust freshness, alongside elapsed time and the consequence of the action.
+  An authority publishes a signed `AuthorityState` credential carrying a
+  monotonic `authorityEpoch` and a status. SessionVouchers and heartbeat
+  requests record the epoch they were minted under, and for an action that calls
+  for state freshness a verifier refuses a voucher minted under an older epoch,
+  even when its time-decay trust still passes. The epoch comparison is local and
+  needs no network call at action time; the top consequence tier stops trusting
+  cached state and requires a live M-of-N co-sign read at the moment of the
+  action. Available in the Rust core and the Python, TypeScript, Go, and
+  WebAssembly bindings, signed with `eddsa-jcs-2022` and pinned by a shared
+  interop vector. The design came out of a public discussion with Sudip
+  Chatterjee, who argued that freshness has to account for both elapsed time and
+  authority state change, and who supplied the treasury and trading scenario
+  where a credential stays cryptographically valid while no longer representing
+  current authority.
+
 ### Changed
 
 - Data Integrity proofs use the W3C hashing algorithm for their signing input:

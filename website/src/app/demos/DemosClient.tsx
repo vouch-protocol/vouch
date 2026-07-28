@@ -386,12 +386,19 @@ function AuthorityFreshness() {
   return (
     <div className="grid md:grid-cols-2 gap-8 items-start">
       <div>
+        <p className="text-ink-soft leading-relaxed mb-4">
+          Freshness is <b className="text-ink">time and state and consequence</b>, not time alone. A timestamp tells you when a
+          voucher was minted. It never tells you whether the authority behind it has changed since, so a verifier working from
+          time alone has to guess a staleness window. A counter that only goes up carries what a clock cannot, because a new
+          value is proof that a real transition happened, published and signed by the authority.
+        </p>
         <p className="text-ink-soft leading-relaxed mb-5">
-          Freshness is <b className="text-ink">time and state and consequence</b>, not time alone. A treasury agent can hold a
-          voucher whose time-decay trust is still high the instant its mandate is suspended for fraud. The authority publishes a
-          signed state with a counter that only goes up; any transition bumps it. Once the verifier has seen the newer counter,
-          the <b className="text-ink">same time-valid voucher</b> minted under the old one is refused, so the acceptable window
-          collapses to now instead of in five minutes.
+          Walk it through a treasury agent. At 10:00:00 it holds a voucher minted under epoch 7 and everything is valid. At
+          10:00:04 a fraud signal fires and the authority republishes at epoch 8. At 10:00:06 the agent asks for a transfer. The
+          voucher is six seconds old and its time-decay trust still passes, so on time alone the money moves. Because this
+          verifier has seen epoch 8, it refuses the <b className="text-ink">same time-valid voucher</b> as stale. The honest
+          limit is that this only bites once the verifier has learned of the newer epoch, which is why the top tier stops
+          trusting cached state and reads a live quorum co-sign instead.
         </p>
         <div className="eyebrow-faint mb-2">Try it as the verifier</div>
         <label className="demo-switch mb-4"><input type="checkbox" checked={fired} onChange={(e) => setFired(e.target.checked)} /> fraud signal fires · mandate suspended</label>
