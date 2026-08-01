@@ -47,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ML-DSA proof values use base64url-nopad Multibase (`u`), the encoding the
   Quantum-Resistant Cryptosuites specification defines. The classical
   `eddsa-jcs-2022` proof value stays base58btc (`z`).
+- The MCP server's `verify` tool resolves the issuer's key from the
+  credential's DID (`did:key` offline, `did:web` over the network) and confirms
+  the signature before returning a verdict. Callers that already hold the
+  issuer key can pass it directly for fully offline verification.
 
 ### Deprecated
 
