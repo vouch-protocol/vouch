@@ -367,7 +367,7 @@ heartbeat and recently enough for the action's consequence tier (0 to 4, high an
 critical tiers demand a fresh seal), rejecting a too-early seal with the stable
 reason `intent_seal_stale`; routine actions are unaffected. It reuses
 `eddsa-jcs-2022` signing and composes with the Reasoned Action Proofs and the
-Heartbeat Protocol. Available in the Python SDK and the core (Rust and WASM) with
+Heartbeat Protocol. Available in the Python SDK, the Go sidecar, and the core (Rust and WASM) with
 shared interop vectors; other SDKs to follow. See `reference/accountable-autonomy.md`.
 
 ### "How do I integrate Vouch with LangChain / CrewAI / MCP?"

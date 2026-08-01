@@ -2179,7 +2179,7 @@ The recheck lives in \`vouch.reasoning\` / \`vouch.intent_recheck\` (and the Rus
 
 ## Availability
 
-Event-triggered intent recheck ships in the Python SDK and the core (Rust and WASM), with shared cross-language interop vectors. The Go sidecar, the native bindings (Swift, Kotlin/JVM, .NET, C), and the idiomatic TypeScript wrapper are on the roadmap for this feature.
+Event-triggered intent recheck ships in the Python SDK, the Go sidecar, and the core (Rust and WASM), with shared cross-language interop vectors. The native bindings (Swift, Kotlin/JVM, .NET, C), and the idiomatic TypeScript wrapper are on the roadmap for this feature.
 `,
       },
     ],

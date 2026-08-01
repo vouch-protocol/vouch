@@ -151,7 +151,7 @@ is the adversarial mirror of authority freshness: authority freshness asks
 whether the grant is still current, the secondary seal asks whether the intent
 is still current.
 
-Availability: it ships in the Python SDK and the core (Rust and WASM), with
-shared cross-language interop vectors. The Go sidecar, the native bindings
+Availability: it ships in the Python SDK, the Go sidecar, and the core (Rust and WASM), with
+shared cross-language interop vectors. The native bindings
 (Swift, Kotlin/JVM, .NET, C), and the idiomatic TypeScript wrapper are on the
 roadmap for this feature.
