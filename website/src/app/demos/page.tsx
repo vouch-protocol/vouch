@@ -26,8 +26,9 @@ export default function DemosPage() {
             {' '}<code className="font-mono text-[0.85em]">vouch.reasoning</code>,
             {' '}<code className="font-mono text-[0.85em]">vouch.deliberation</code>,
             {' '}<code className="font-mono text-[0.85em]">vouch.caveats</code>,
-            {' '}<code className="font-mono text-[0.85em]">vouch.provenance</code>, and
-            {' '}<code className="font-mono text-[0.85em]">vouch.transparency</code>. Disclosed as PAD-043, PAD-045, PAD-085, and PAD-086.
+            {' '}<code className="font-mono text-[0.85em]">vouch.provenance</code>,
+            {' '}<code className="font-mono text-[0.85em]">vouch.transparency</code>, and
+            {' '}<code className="font-mono text-[0.85em]">vouch.authority_state</code>. Disclosed as PAD-043, PAD-045, PAD-085, and PAD-086.
           </p>
         </div>
       </section>
@@ -40,8 +41,9 @@ export default function DemosPage() {
             <p className="text-ink-soft text-[0.95rem] leading-relaxed">
               <strong className="text-ink">Run it yourself.</strong> Each demo maps to a runnable example in the repo:
               {' '}<code className="font-mono text-[0.85em]">examples/reasoned_action_demo.py</code>,
-              {' '}<code className="font-mono text-[0.85em]">examples/deliberation_demo.py</code>, and
-              {' '}<code className="font-mono text-[0.85em]">examples/caveats_demo.py</code>. See the{' '}
+              {' '}<code className="font-mono text-[0.85em]">examples/deliberation_demo.py</code>,
+              {' '}<code className="font-mono text-[0.85em]">examples/caveats_demo.py</code>, and
+              {' '}<code className="font-mono text-[0.85em]">examples/authority_freshness_demo.py</code>. See the{' '}
               <a href="/help/" className="prose-link">guides</a> for the full walkthrough.
             </p>
             <p className="text-ink-soft text-[0.95rem] leading-relaxed mt-3">

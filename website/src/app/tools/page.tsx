@@ -90,6 +90,10 @@ const GROUPS: Group[] = [
                 blurb: 'Heartbeats and session vouchers, so trust is a live signal that has to be renewed, not a badge issued once and trusted forever.',
             },
             {
+                name: 'Authority freshness',
+                blurb: 'A signed authority state with a counter that only goes up. The instant a mandate is suspended the counter moves, and a verifier that has seen the new one refuses a session voucher minted under the old one for a high-consequence action, even while its time-decay trust still passes. The check is a local comparison, and the highest tier adds a live M-of-N co-sign read at the moment of the action.',
+            },
+            {
                 name: 'Outcome evidence',
                 blurb: "Commit an agent's verdict or prediction before the result is known, then settle it later against what actually happened. A salted commitment keeps the call private until settlement, and a backdated settlement is rejected, so a track record cannot be cherry-picked. The settler can be a neutral third party.",
                 start: 'python examples/accountability_demo.py',

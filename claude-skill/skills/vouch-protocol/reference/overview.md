@@ -29,7 +29,12 @@ present in the registry of trusted principals and not revoked."
 2. **State Verifiability layer**: SessionVoucher credentials that
    carry a decaying trust score. Agents renew with a Heartbeat
    Protocol that includes behavioral attestation and a canary
-   commitment chain (silent-failure detection).
+   commitment chain (silent-failure detection). Authority Freshness
+   folds authority state into the same judgement: an authority
+   publishes a signed `AuthorityState` carrying a counter that only
+   goes up, and a verifier refuses a voucher minted under an older
+   counter for a high-consequence action, even when its time-decay
+   trust still passes.
 3. **Delegation layer**: chains of credentials proving an action was
    authorized down a chain of principals. Resource scope must narrow
    at each link; depth capped at five.

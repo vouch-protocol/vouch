@@ -126,6 +126,27 @@ been removed. See `vouch-knowledge.md`.
   `vouch-knowledge.md`.
 - "Single validator or quorum?" -> Single is fine for development. For
   regulated production, M-of-N with role-tagged validators.
+- "How do I stop an agent the instant its mandate is suspended, instead of
+  waiting for trust to decay?" -> Authority Freshness (`vouch.authority_state`):
+  freshness becomes a function of elapsed time, authority state version, and
+  consequence. The authority publishes a signed `AuthorityState` credential
+  carrying `authorityEpoch` (a counter that only goes up) and a `status`
+  (`active`, `suspended`, `incident`, `exposure_breached`, `revoked`, of which
+  only `active` lets a state-freshness action proceed), and every
+  authority-relevant transition bumps the epoch. A verifier tracks the highest
+  epoch it has seen and rejects a voucher minted under an older one, even when
+  its time-decay trust still passes. The consequence tiers are the same
+  `routine` / `sensitive` / `critical` vocabulary used for bounded-staleness
+  revocation: `routine` is time-decay only, `sensitive` applies the
+  epoch-collapse rule locally with no network call at action time, and
+  `critical` applies the epoch rule and also requires a live M-of-N co-sign
+  (FROST over Ed25519) read at action time, because a cached epoch is not good
+  enough when the window is near zero; the aggregate is a standard Ed25519
+  signature, so a verifier needs no threshold-signing code. Entry point:
+  `verify_agent_call(..., consequence=..., last_seen_authority_epoch=...)`, with
+  `routine` as the default so existing callers are unaffected. Reason codes such
+  as `authority_epoch_stale:seen=7,voucher=5` are identical in every language.
+  See `vouch-knowledge.md`.
 - "How do I prove an agent was right, or track a record I cannot fake?" ->
   Outcome evidence (`vouch.accountability`): commit the verdict before the
   outcome with `commit_outcome`, settle it later with `attest_outcome`. See

@@ -1776,7 +1776,7 @@ Separate executables, run directly (not as vouch subcommands):
   {
     id: 'state-verifiability',
     title: 'State Verifiability Runtime',
-    description: 'Hands-on quickstart for the Heartbeat Protocol, trust entropy decay, behavioral attestation, canary commitments, and validator quorum.',
+    description: 'Hands-on quickstart for the Heartbeat Protocol, trust entropy decay, behavioral attestation, canary commitments, validator quorum, and authority freshness.',
     articles: [
       {
         id: 'state-verifiability-quickstart',
@@ -1942,6 +1942,163 @@ Validator state is small (one string per agent), so it survives restarts via \`l
 - Custom drift scorers beyond \`mean_drift_scorer\`, \`max_drift_scorer\`, \`ewma_drift_scorer\`: subclass \`BehavioralCollector\` to add your own.
 
 See [PAD-016](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-016-dynamic-credential-renewal.md) for the full Heartbeat Protocol disclosure and [PAD-022](https://github.com/vouch-protocol/vouch/blob/main/docs/disclosures/PAD-022-swarm-limits-protocol.md) for the rate-limiting companion.
+`,
+      },
+      {
+        id: 'authority-freshness',
+        title: 'Authority Freshness',
+        summary: 'Refuse a still-time-valid voucher the moment the authority behind it changes state, and pick the tier that fits the action.',
+        body: `
+Time-decay trust answers one question: how long ago was this voucher issued. Authority Freshness adds the other two: what state is the authority in right now, and how much does this particular action cost if you get it wrong.
+
+\`\`\`
+freshness(action) = f(elapsed time, authority state version, consequence)
+\`\`\`
+
+The case it is built for is a treasury or trading agent. Its mandate is suspended for fraud one second after a perfectly valid SessionVoucher was minted. The time-decay trust on that voucher is still nowhere near the threshold, so on elapsed time alone the transfer goes through. Authority Freshness collapses the acceptable window to now.
+
+## Step 1 - The authority publishes its state
+
+The authority signs an \`AuthorityState\` credential holding a counter that only ever goes up, plus its current status. Every authority-relevant transition (a fraud signal, a suspended mandate, an exposure breach, an incident) bumps the counter and republishes.
+
+\`\`\`python
+from vouch import Signer, sign_authority_state
+
+authority = Signer(private_key=authority_private_key_jwk, did="did:web:treasury.example.com")
+
+state = sign_authority_state(
+    authority,
+    authority_epoch=6,          # was 5; the suspension bumped it
+    status="suspended",         # active | suspended | incident | exposure_breached | revoked
+    valid_seconds=300,
+)
+# state is signed and ready to publish.
+\`\`\`
+
+If the authority's key lives outside the process, in a secure element, a sidecar, a cloud KMS, or a quorum, pass a backend \`Signer\` here and the same call works. To build the credential and attach the proof yourself, \`build_authority_state\` returns the unsigned credential for \`data_integrity.build_proof\`.
+
+\`active\` is the only status under which an action that calls for state freshness may proceed. It is a plain VC Data Model 2.0 credential signed with \`eddsa-jcs-2022\`, so it canonicalizes to identical bytes in every SDK.
+
+## Step 2 - The verifier tracks the highest counter it has seen
+
+A verifier learns the current counter from a status-list refresh or over the heartbeat channel, and keeps the highest value per authority. Verifying the published credential gives you both fields:
+
+\`\`\`python
+from vouch import verify_authority_state
+
+ok, passport = verify_authority_state(state, authority_public_key)
+if ok:
+    last_seen_epoch = passport.authority_epoch   # 6
+    current_status = passport.status             # "suspended"
+\`\`\`
+
+## Step 3 - Gate the action on its consequence tier
+
+The tiers are the same \`routine\`, \`sensitive\`, \`critical\` vocabulary Vouch Protocol already uses for bounded-staleness revocation, so a deployment carries one consequence vocabulary rather than two.
+
+| Tier | What it does |
+|------|--------------|
+| \`routine\` | Time-decay only. Authority Freshness adds nothing. |
+| \`sensitive\` | Refuse a voucher minted under a counter lower than the highest one seen. Enforced locally. |
+| \`critical\` | The same counter rule, plus a live M-of-N co-sign read at action time. |
+
+The gate is folded into the one composed trust check, so you pass the tier and the counters and get a single verdict back:
+
+\`\`\`python
+from vouch.trust_check import verify_agent_call
+from vouch import CONSEQUENCE_SENSITIVE
+
+verdict = verify_agent_call(
+    credential,
+    public_key=caller_key,
+    session_voucher=voucher,            # minted under authorityEpoch 5
+    trust_threshold=0.9,
+    consequence=CONSEQUENCE_SENSITIVE,
+    last_seen_authority_epoch=6,        # the suspension already bumped it
+)
+
+verdict.ok                # False
+verdict.trust_ok          # True: time-decay still passes
+verdict.authority_reason  # "authority_epoch_stale:seen=6,voucher=5"
+\`\`\`
+
+\`routine\` is the default, so an existing call site behaves exactly as it did until you opt a higher tier in. The voucher's own counter is read from \`credentialSubject.authorityEpoch\` unless you pass \`voucher_authority_epoch\` yourself.
+
+If you want the gate on its own, without identity and trust folded in, call it directly:
+
+\`\`\`python
+from vouch import evaluate_authority_freshness
+
+v = evaluate_authority_freshness(
+    tier="sensitive",
+    voucher_epoch=5,
+    last_seen_epoch=6,
+)
+v.allow   # False
+v.reason  # "authority_epoch_stale:seen=6,voucher=5"
+\`\`\`
+
+An unknown tier coerces to \`critical\`, and a missing counter on either side fails closed with \`authority_epoch_unknown:voucher=?,seen=9\`. The reason codes are byte-identical across every binding, so an audit log reads the same whichever SDK wrote it, and they are pinned by the shared interop vector in \`test-vectors/authority-state/\`.
+
+## Local check vs. live check
+
+Be clear with yourself about which of your actions needs a network call:
+
+- \`routine\` and \`sensitive\` are enforced **locally**. Comparing the two counters is comparing two integers the verifier already holds. Nothing is fetched at action time, which is what makes the tier usable on a disconnected verifier.
+- \`critical\` is the honest limit of a local check. When the acceptable window is near zero, a cached counter is not good enough, because the authority could have changed state between the last refresh and this action. So the verifier trusts no cached counter and demands a live co-sign from an M-of-N quorum, produced at action time and bound to the action by a nonce.
+
+## Step 4 - The live co-sign for critical actions
+
+The verifier challenges with a nonce, the quorum signs the authority's current state, and the verifier checks it and feeds the result into the gate. The quorum has to be reachable and willing to sign at that instant, which is what actually reads the authority's state at the moment of the action.
+
+\`\`\`python
+from vouch import build_live_authority_cosign, verify_live_authority_cosign
+from vouch import CONSEQUENCE_CRITICAL
+import uuid
+
+nonce = uuid.uuid4().hex        # the verifier's challenge
+
+# Quorum side: wire threshold_signer.sign here so the signature is a FROST
+# M-of-N aggregate over Ed25519.
+cosign = build_live_authority_cosign(
+    authority_did="did:web:treasury.example.com",
+    authority_epoch=6,
+    status="active",
+    nonce=nonce,
+    sign=threshold_signer.sign,
+)
+
+# Verifier side.
+res = verify_live_authority_cosign(
+    cosign,
+    group_public_key,
+    expected_nonce=nonce,
+    max_age_seconds=30,
+)
+
+verdict = verify_agent_call(
+    credential,
+    public_key=caller_key,
+    session_voucher=voucher,
+    consequence=CONSEQUENCE_CRITICAL,
+    last_seen_authority_epoch=6,
+    live_cosign_ok=res.ok,
+)
+\`\`\`
+
+The aggregated co-sign is an ordinary Ed25519 signature, so the verifying side needs no threshold-signing code of its own. \`verify_live_authority_cosign\` rejects a replayed nonce, a co-sign older than \`max_age_seconds\` (30 by default), a future-dated one, and any status other than \`active\`.
+
+## Across the SDKs
+
+The \`AuthorityState\` credential, the counter rule, and the tier evaluation ship in the Rust core and in the Python, TypeScript, and Go bindings, all signed with \`eddsa-jcs-2022\` and all pinned by one shared interop vector. The names follow each language's conventions: \`build_authority_state\` and \`evaluate_authority_freshness\` in Python and Rust, \`buildAuthorityState\` and \`evaluateAuthorityFreshness\` in TypeScript, \`BuildAuthorityState\` and \`EvaluateAuthorityFreshness\` in Go. The live co-sign builder and verifier ship in the Python SDK.
+
+## Choosing a tier
+
+- Read-only queries, status checks, telemetry: \`routine\`.
+- Anything that writes, spends inside a budget, or touches regulated data: \`sensitive\`. It costs you one integer comparison.
+- Moving funds, an irreversible external commitment, a physical maneuver: \`critical\`, and make sure your quorum is actually reachable on the path where you enforce it.
+
+See [the Authority Freshness design note](https://github.com/vouch-protocol/vouch/blob/main/docs/authority-freshness.md) for the full write-up, and try it as the verifier in the [authority freshness demo](/demos/#authority-freshness).
 `,
       },
     ],

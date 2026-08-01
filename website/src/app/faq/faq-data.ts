@@ -154,6 +154,21 @@ The fix: run a small separate process (the "sidecar") that owns the key. When th
 The credential format for these renewals ships today (it is called SessionVoucher). The runtime that actually drives the heartbeats and coordinates with multiple validators is on the roadmap, not built yet.`,
       },
       {
+        q: 'A voucher can still be time-valid the second an agent loses its mandate. What catches that?',
+        a: `Authority freshness. A verifier used to decide freshness from elapsed time alone: a SessionVoucher carries a starting trust and a decay rate, and the verifier checks the decayed value against a threshold for the action. That holds up until an authority changes its mind quickly. A treasury or trading agent can be holding a voucher whose time-decay trust is still high one second after its mandate is suspended for fraud, and a verifier refreshes its cached revocation view on an interval.
+
+Vouch Protocol now makes freshness a function of three things: elapsed time, the authority's state, and the consequence of the action. The authority publishes a signed \`AuthorityState\` credential carrying a counter (\`authorityEpoch\`) that only ever goes up, plus a status (\`active\`, \`suspended\`, \`incident\`, \`exposure_breached\`, or \`revoked\`). Any authority-relevant transition bumps the counter. A voucher records the counter it was minted under. Once the verifier has learned a higher counter for that authority, the same time-valid voucher minted under the older one is refused, and the verifier returns a stable reason code such as \`authority_epoch_stale:seen=7,voucher=5\`. The acceptable window collapses to now instead of in five minutes.
+
+Consequence reuses the tiers Vouch Protocol already uses elsewhere. \`routine\` is time-decay only, so nothing changes. \`sensitive\` applies the counter rule, and it is enforced locally: the verifier compares two integers it already holds, with no network call at action time. \`critical\` applies the counter rule and also requires a live M-of-N co-sign read at the moment of the action, because when the acceptable window is near zero a cached counter is not good enough on its own. \`routine\` is the default, so existing callers see no change until they opt a higher tier in.
+
+The credential is signed with \`eddsa-jcs-2022\` like every other Vouch Protocol credential, and the counter rule and tier evaluation ship in the Rust core and in the Python, TypeScript, and Go bindings, pinned by one shared cross-language interop vector so a reason code in an audit log reads the same whichever SDK produced it.`,
+        helpLinks: [
+          { label: 'See it: authority freshness', href: '/demos/#authority-freshness' },
+          { label: 'Authority freshness guide', href: '/help/#authority-freshness' },
+        ],
+        meta: 'Shipped - vouch.authority_state, folded into vouch.trust_check.verify_agent_call',
+      },
+      {
         q: 'What is a delegation chain?',
         a: `A chain of permission slips that tracks "who let whom do what." Imagine you tell your assistant "please book my flight." Your assistant tells an AI travel agent "please find flights." The travel agent tells a payment agent "please charge this card." Three steps, three permission grants.
 

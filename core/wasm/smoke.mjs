@@ -81,5 +81,37 @@ const signatureB64 = core.thresholdAggregate(
   thresholdMessage, commitmentsJson, sharesJson, JSON.stringify(generated.group_public_key));
 ok('threshold_aggregate produces a self-verified 64-byte signature', Buffer.from(signatureB64, 'base64').length === 64);
 
+// Authority Freshness: reproduce the shared vector's proof in the browser core,
+// verify the shared credential, and reach the same freshness verdicts.
+const authority = rd('../../test-vectors/authority-state/vector.json');
+const aSubject = authority.unsigned_credential.credentialSubject;
+const aSigned = JSON.parse(core.signAuthorityState(
+  authority.unsigned_credential.issuer,
+  authority.unsigned_credential.id,
+  aSubject.authorityEpoch,
+  aSubject.status,
+  authority.unsigned_credential.validFrom,
+  authority.unsigned_credential.validUntil,
+  aSubject.id,
+  authority.ed25519.seed_b64,
+  authority.verificationMethod,
+  authority.created,
+));
+ok('authority state reproduces the shared proofValue', aSigned.proof.proofValue === authority.proofValue);
+ok('authority state verifies the shared credential', JSON.parse(core.verifyAuthorityState(
+  JSON.stringify(authority.signed_credential), authority.ed25519.public_key_b64,
+  '2026-07-26T10:02:00Z', 30)).valid === true);
+ok('authority epoch reads back', core.readAuthorityEpoch(JSON.stringify(authority.signed_credential)) === aSubject.authorityEpoch);
+ok('authority status reads back', core.readAuthorityStatus(JSON.stringify(authority.signed_credential)) === aSubject.status);
+
+let freshnessFailures = 0;
+for (const c of authority.freshness.cases) {
+  const v = JSON.parse(core.evaluateAuthorityFreshness(
+    c.tier, c.voucher_epoch, c.last_seen_epoch, c.current_status, c.live_cosign_ok));
+  if (v.allow !== c.expected_allow) freshnessFailures++;
+  if (c.expected_reason !== undefined && v.reason !== c.expected_reason) freshnessFailures++;
+}
+ok(`authority freshness matches all ${authority.freshness.cases.length} shared cases`, freshnessFailures === 0);
+
 console.log(`\nTOTAL: ${pass} pass, ${fail} fail`);
 process.exit(fail ? 1 : 0);

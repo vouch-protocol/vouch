@@ -95,13 +95,33 @@ def build_session_voucher(
     max_ttl_seconds: int,
     scope: List[str],
     valid_seconds: int = 60,
+    authority_epoch: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Construct an unsigned SessionVoucher credential (Specification §11.4).
     Each validator in `validator_dids` will attach a separate proof.
+
+    When `authority_epoch` is supplied, the voucher records the authority-state
+    epoch it was minted under (Authority Freshness, `vouch.authority_state`). A
+    verifier compares it against the highest epoch it has seen and collapses the
+    freshness window on a stale epoch. Omitting it keeps the pre-Authority-
+    Freshness wire shape unchanged.
     """
     issued_at = datetime.now(timezone.utc)
     expires_at = issued_at + timedelta(seconds=valid_seconds)
+    subject: Dict[str, Any] = {
+        "id": subject_did,
+        "decayLambda": decay_lambda,
+        "initialTrust": initial_trust,
+        "maxTtl": max_ttl_seconds,
+        "scope": scope,
+    }
+    if authority_epoch is not None:
+        if not isinstance(authority_epoch, int) or isinstance(authority_epoch, bool):
+            raise ValueError("authority_epoch must be an integer")
+        if authority_epoch < 0:
+            raise ValueError("authority_epoch must be non-negative")
+        subject["authorityEpoch"] = authority_epoch
     return {
         "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
         "id": _new_uuid_urn(),
@@ -109,13 +129,7 @@ def build_session_voucher(
         "issuer": validator_dids,
         "validFrom": _iso(issued_at),
         "validUntil": _iso(expires_at),
-        "credentialSubject": {
-            "id": subject_did,
-            "decayLambda": decay_lambda,
-            "initialTrust": initial_trust,
-            "maxTtl": max_ttl_seconds,
-            "scope": scope,
-        },
+        "credentialSubject": subject,
     }
 
 

@@ -10,8 +10,8 @@ use serde_json::{json, Value};
 use wasm_bindgen::prelude::*;
 
 use vouch_core::{
-    credentials, data_integrity, delegation, hybrid, keys, multikey, pq, robotics_json as rjson,
-    status_list, threshold_json,
+    authority_state, credentials, data_integrity, delegation, hybrid, keys, multikey, pq,
+    robotics_json as rjson, status_list, threshold_json,
 };
 
 // --------------------------------------------------------------------------
@@ -371,6 +371,124 @@ pub fn verify_status(
         &parse(status_list_credential_json)?,
     )
     .map_err(jerr)
+}
+
+// --------------------------------------------------------------------------
+// Authority Freshness (state change as an input to trust freshness)
+// --------------------------------------------------------------------------
+
+/// Build an unsigned AuthorityState credential. Pass null/undefined for the
+/// optional subjectDid, which defaults to the issuer. Returns the credential as
+/// a JSON string.
+#[wasm_bindgen(js_name = buildAuthorityState)]
+pub fn build_authority_state(
+    issuer_did: &str,
+    credential_id: &str,
+    authority_epoch: i32,
+    status: &str,
+    valid_from: &str,
+    valid_until: &str,
+    subject_did: Option<String>,
+) -> Result<String, JsError> {
+    let opts = authority_state::BuildAuthorityStateOptions {
+        issuer_did: issuer_did.to_string(),
+        credential_id: credential_id.to_string(),
+        authority_epoch: authority_epoch as i64,
+        status: status.to_string(),
+        valid_from: valid_from.to_string(),
+        valid_until: valid_until.to_string(),
+        subject_did,
+    };
+    Ok(authority_state::build_authority_state(&opts)
+        .map_err(jerr)?
+        .to_string())
+}
+
+/// Build and sign an AuthorityState credential in one step (eddsa-jcs-2022).
+#[wasm_bindgen(js_name = signAuthorityState)]
+pub fn sign_authority_state(
+    issuer_did: &str,
+    credential_id: &str,
+    authority_epoch: i32,
+    status: &str,
+    valid_from: &str,
+    valid_until: &str,
+    subject_did: Option<String>,
+    seed_b64: &str,
+    verification_method: &str,
+    created: &str,
+) -> Result<String, JsError> {
+    let opts = authority_state::BuildAuthorityStateOptions {
+        issuer_did: issuer_did.to_string(),
+        credential_id: credential_id.to_string(),
+        authority_epoch: authority_epoch as i64,
+        status: status.to_string(),
+        valid_from: valid_from.to_string(),
+        valid_until: valid_until.to_string(),
+        subject_did,
+    };
+    let proof_opts = data_integrity::BuildProofOptions::new(verification_method, created);
+    Ok(
+        authority_state::sign_authority_state(&opts, &b64d(seed_b64)?, &proof_opts)
+            .map_err(jerr)?
+            .to_string(),
+    )
+}
+
+/// Verify an AuthorityState credential's proof and validity window.
+/// Returns {proofValid, timeValid, valid}.
+#[wasm_bindgen(js_name = verifyAuthorityState)]
+pub fn verify_authority_state(
+    credential_json: &str,
+    public_b64: &str,
+    now_iso: &str,
+    clock_skew_seconds: i32,
+) -> Result<String, JsError> {
+    let r = authority_state::verify(
+        &parse(credential_json)?,
+        &b64d(public_b64)?,
+        now_iso,
+        clock_skew_seconds as i64,
+    )
+    .map_err(jerr)?;
+    Ok(
+        json!({ "proofValid": r.proof_valid, "timeValid": r.time_valid, "valid": r.is_valid() })
+            .to_string(),
+    )
+}
+
+/// Read credentialSubject.authorityEpoch without verifying the proof.
+#[wasm_bindgen(js_name = readAuthorityEpoch)]
+pub fn read_authority_epoch(credential_json: &str) -> Result<i32, JsError> {
+    let epoch = authority_state::read_authority_epoch(&parse(credential_json)?).map_err(jerr)?;
+    Ok(epoch as i32)
+}
+
+/// Read credentialSubject.status without verifying the proof.
+#[wasm_bindgen(js_name = readAuthorityStatus)]
+pub fn read_authority_status(credential_json: &str) -> Result<String, JsError> {
+    authority_state::read_authority_status(&parse(credential_json)?).map_err(jerr)
+}
+
+/// Evaluate the Authority Freshness gate for an action. Pass null/undefined for
+/// an unknown epoch, an unknown status, or an unevaluated live co-sign. Returns
+/// {allow, tier, reason}, where reason is the shared cross-language reason code.
+#[wasm_bindgen(js_name = evaluateAuthorityFreshness)]
+pub fn evaluate_authority_freshness(
+    tier: &str,
+    voucher_epoch: Option<i32>,
+    last_seen_epoch: Option<i32>,
+    current_status: Option<String>,
+    live_cosign_ok: Option<bool>,
+) -> String {
+    let verdict = authority_state::evaluate_authority_freshness(
+        tier,
+        voucher_epoch.map(|e| e as i64),
+        last_seen_epoch.map(|e| e as i64),
+        current_status.as_deref(),
+        live_cosign_ok,
+    );
+    json!({ "allow": verdict.allow, "tier": verdict.tier, "reason": verdict.reason }).to_string()
 }
 
 /// Library version (matches the crate version).

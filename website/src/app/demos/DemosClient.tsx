@@ -348,6 +348,93 @@ function Transparency() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Section VI - Authority freshness (vouch.freshness)                  */
+/* ------------------------------------------------------------------ */
+
+function AuthorityFreshness() {
+  const [fired, setFired] = useState(false);
+  const [tier, setTier] = useState<'sensitive' | 'critical'>('sensitive');
+
+  // The voucher never changes: it is time-valid the whole time, minted under
+  // authority epoch 5. Only the authority's state moves. These verdicts mirror
+  // the reason codes the real verifier emits (vouch.authority_state).
+  const voucherEpoch = 5;
+  const seenEpoch = fired ? 6 : 5; // a mandate suspension bumps the epoch
+  const status = fired ? 'suspended' : 'active';
+
+  let ok: boolean;
+  let reason: string;
+  if (tier === 'sensitive') {
+    if (fired) {
+      ok = false;
+      reason = `authority_epoch_stale:seen=${seenEpoch},voucher=${voucherEpoch}`;
+    } else {
+      ok = true;
+      reason = `epoch ${voucherEpoch} ≥ last-seen ${seenEpoch} · authority state fresh`;
+    }
+  } else {
+    // critical: never trusts the cached epoch; reads a live M-of-N co-sign now.
+    if (fired) {
+      ok = false;
+      reason = 'authority_status_not_active:status=suspended · live co-sign refused';
+    } else {
+      ok = true;
+      reason = 'live M-of-N co-sign fresh · authority active at action time';
+    }
+  }
+
+  return (
+    <div className="grid md:grid-cols-2 gap-8 items-start">
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-4">
+          Freshness is <b className="text-ink">time and state and consequence</b>, not time alone. A timestamp tells you when a
+          voucher was minted. It never tells you whether the authority behind it has changed since, so a verifier working from
+          time alone has to guess a staleness window. A counter that only goes up carries what a clock cannot, because a new
+          value is proof that a real transition happened, published and signed by the authority.
+        </p>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          Walk it through a treasury agent. At 10:00:00 it holds a voucher minted under epoch 7 and everything is valid. At
+          10:00:04 a fraud signal fires and the authority republishes at epoch 8. At 10:00:06 the agent asks for a transfer. The
+          voucher is six seconds old and its time-decay trust still passes, so on time alone the money moves. Because this
+          verifier has seen epoch 8, it refuses the <b className="text-ink">same time-valid voucher</b> as stale. The honest
+          limit is that this only bites once the verifier has learned of the newer epoch, which is why the top tier stops
+          trusting cached state and reads a live quorum co-sign instead.
+        </p>
+        <div className="eyebrow-faint mb-2">Try it as the verifier</div>
+        <label className="demo-switch mb-4"><input type="checkbox" checked={fired} onChange={(e) => setFired(e.target.checked)} /> fraud signal fires · mandate suspended</label>
+        <div className="flex flex-col gap-2">
+          <button className={`demo-radio${tier === 'sensitive' ? ' on' : ''}`} onClick={() => setTier('sensitive')}>Sensitive action · checked locally against the last-seen epoch</button>
+          <button className={`demo-radio${tier === 'critical' ? ' on' : ''}`} onClick={() => setTier('critical')}>Critical action · reads a live M-of-N co-sign at action time</button>
+        </div>
+      </div>
+      <div>
+        <div className="demo-ledger" style={{ minHeight: '150px' }}>
+          <div className="demo-line"><span className="k">voucher</span> transfer_funds · usd:5000 · time-decay trust 0.98 ✓</div>
+          <div className="demo-line"><span className="k">mintedUnder</span> authorityEpoch {voucherEpoch}</div>
+          <div className="demo-line"><span className="k">verifier</span> last-seen epoch {seenEpoch} {fired ? '· suspension bumped it ✗' : '✓'}</div>
+          <div className="demo-line"><span className="k">authority</span> status {status} {fired ? '✗' : '✓'}</div>
+          {tier === 'critical' && <div className="demo-line"><span className="k">cosign</span> {fired ? 'quorum reads suspended · refuses to sign' : 'quorum signs · read at action time'}</div>}
+        </div>
+        <div className="demo-verdict mt-4" style={{ borderColor: ok ? ALLOW : DENY }}>
+          <span className="demo-badge" style={{ color: ok ? ALLOW : DENY, borderColor: ok ? ALLOW : DENY }}>{ok ? 'ACCEPTED' : 'REJECTED'}</span>
+          <span className="font-mono text-[0.85rem] text-ink-soft">{reason}</span>
+        </div>
+        <p className="text-ink-faint text-[0.8rem] mt-3 leading-relaxed">
+          The epoch comparison is enforced locally with no network call. The critical tier is the honest limit: when the window
+          is near zero the verifier does not trust any cached state and requires a live quorum co-sign, read at the moment of the action.
+        </p>
+        <p className="text-ink-faint text-[0.8rem] mt-2 leading-relaxed">
+          The framing behind this capability, that freshness has to account for authority state change as well as elapsed time,
+          came from a public discussion with Sudip Chatterjee (
+          <a href="https://github.com/aiconsulting4future" className="prose-link" target="_blank" rel="noopener noreferrer">@aiconsulting4future</a>
+          ), who also supplied the treasury scenario above.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export default function DemosClient() {
   return (
@@ -396,7 +483,7 @@ export default function DemosClient() {
         </div>
       </section>
 
-      <section id="transparency" className="scroll-mt-24">
+      <section id="transparency" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ V</span>
@@ -404,6 +491,17 @@ export default function DemosClient() {
           </div>
           <p className="eyebrow mb-6">An action can&apos;t be hidden or rewritten · vouch.transparency</p>
           <Transparency />
+        </div>
+      </section>
+
+      <section id="authority-freshness" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ VI</span>
+            <h2>Authority freshness</h2>
+          </div>
+          <p className="eyebrow mb-6">A change in authority collapses the window to now, not in five minutes · vouch.freshness</p>
+          <AuthorityFreshness />
         </div>
       </section>
     </>

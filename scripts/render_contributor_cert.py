@@ -120,12 +120,25 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
         if pr_url
         else "Contribution merged"
     )
-    sections = [
-        section(
-            "Contribution",
+    # A design contributor did not author the pull request, so the certificate
+    # says what they contributed and which pull request implemented it, rather
+    # than implying they wrote the code.
+    is_design = intent.get("contributionType") == "design"
+    if is_design:
+        contribution_caption = esc(intent.get("contribution", "")) or (
+            f"Design implemented in {repo_link}"
+        )
+        contribution_body = (
+            f'      <div class="mono-text">Design implemented in {pr_html}</div>\n'
+            f'      <div class="signer-caption">{contribution_caption}</div>'
+        )
+    else:
+        contribution_body = (
             f'      <div class="mono-text">{pr_html}</div>\n'
-            f'      <div class="signer-caption">Merged into {repo_link}</div>',
-        ),
+            f'      <div class="signer-caption">Merged into {repo_link}</div>'
+        )
+    sections = [
+        section("Contribution", contribution_body),
         section(
             "Issued by",
             f'      <div class="mono-text">{esc(issuer)}</div>\n'

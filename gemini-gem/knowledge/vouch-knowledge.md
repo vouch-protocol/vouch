@@ -62,7 +62,12 @@ present in the registry of trusted principals and not revoked."
 2. **State Verifiability layer**: SessionVoucher credentials that
    carry a decaying trust score. Agents renew with a Heartbeat
    Protocol that includes behavioral attestation and a canary
-   commitment chain (silent-failure detection).
+   commitment chain (silent-failure detection). Authority Freshness
+   folds authority state into the same judgement: an authority
+   publishes a signed `AuthorityState` carrying a counter that only
+   goes up, and a verifier refuses a voucher minted under an older
+   counter for a high-consequence action, even when its time-decay
+   trust still passes.
 3. **Delegation layer**: chains of credentials proving an action was
    authorized down a chain of principals. Resource scope must narrow
    at each link; depth capped at five.
@@ -2689,9 +2694,10 @@ The State Verifiability layer answers: "Is this agent still behaving
 correctly RIGHT NOW, after we let it through the door?" Built on top of
 the credential layer; uses the SessionVoucher credential format.
 
-Six composable modules shipped in the Python SDK:
+Seven composable modules shipped in the Python SDK:
 
 - `vouch.trust_entropy` - decay computation
+- `vouch.authority_state` - authority state as an input to freshness
 - `vouch.behavioral_attestation` - per-interval signal collection
 - `vouch.canary` - commit/reveal chain (silent-failure detection)
 - `vouch.merkle` - Merkle tree primitives
@@ -2700,6 +2706,8 @@ Six composable modules shipped in the Python SDK:
 
 TypeScript and Go ports are work-in-progress; data formats are
 cross-language but the runtime orchestration is Python-only today.
+`vouch.authority_state` is the exception: it ships in the Rust core
+and in Python, TypeScript, and Go.
 
 ### Trust Entropy decay
 
@@ -2734,6 +2742,94 @@ else:
 `half_life_seconds(decay_lambda)` returns `ln(2) / decay_lambda`. Set
 heartbeat intervals less than the half-life so renewal stays ahead of
 decay.
+
+### Authority Freshness
+
+Time-decay answers "how long ago was this trust established". That is
+necessary but not sufficient for a treasury or trading agent, whose
+mandate can be suspended seconds after a perfectly valid SessionVoucher
+was issued. The voucher's decayed trust is still well above threshold,
+and the revocation cache may not refresh for minutes. Authority
+Freshness closes that window by treating a change in authority state as
+a first-class input to freshness:
+
+```
+freshness(action) = f(elapsed_time, authority_state_version, consequence)
+```
+
+An authority publishes a signed `AuthorityState` credential carrying
+`authorityEpoch`, a counter that only goes up, and a `status`. Any
+authority-relevant transition (a fraud signal, a suspended mandate, an
+exposure breach, an incident) bumps the epoch. A SessionVoucher records
+the epoch it was minted under, and a verifier tracks the highest epoch
+it has seen for that authority, learned from a status-list refresh or
+from the heartbeat channel.
+
+The collapse rule: for an action whose consequence tier requires
+state-freshness, a voucher whose `authorityEpoch` is lower than the
+highest epoch the verifier has seen for that authority is rejected, even
+when its time-decay trust still passes.
+
+`status` is one of `active`, `suspended`, `incident`,
+`exposure_breached`, or `revoked`. `active` is the only value under
+which a state-freshness action may proceed.
+
+#### Consequence tiers
+
+The tiers are the same `routine` / `sensitive` / `critical` vocabulary
+already used for bounded-staleness revocation, so a deployment carries
+one consequence vocabulary rather than two.
+
+| Tier | Behavior |
+|---|---|
+| `routine` | Time-decay only. Authority Freshness adds nothing. |
+| `sensitive` | The epoch-collapse rule, enforced locally. |
+| `critical` | The epoch-collapse rule and a live M-of-N co-sign, read at action time. |
+
+`routine` and `sensitive` are enforced locally. The epoch comparison is
+a comparison of two integers the verifier already holds, so there is no
+network call at action time.
+
+`critical` is the tier that needs a live quorum. When the acceptable
+window is near zero a cached epoch is not good enough, because the
+authority could have changed state between the last refresh and this
+action. So the verifier requires a co-sign from an M-of-N quorum
+(`vouch.threshold`, FROST over Ed25519), produced at action time and
+bound to the action by a nonce. The aggregate is a standard Ed25519
+signature, so a verifier checks it with the ordinary verifier and needs
+no threshold-signing code of its own.
+
+#### Using it
+
+The gate is folded into the one composed trust check:
+
+```python
+from vouch.trust_check import verify_agent_call
+from vouch import CONSEQUENCE_SENSITIVE
+
+verdict = verify_agent_call(
+    credential,
+    public_key=caller_key,
+    session_voucher=voucher,          # carries authorityEpoch 5
+    trust_threshold=0.9,
+    consequence=CONSEQUENCE_SENSITIVE,
+    last_seen_authority_epoch=7,      # a suspension already bumped it
+)
+# verdict.ok is False; verdict.authority_reason is
+# "authority_epoch_stale:seen=7,voucher=5", even though verdict.trust_ok is True.
+```
+
+The default tier is `routine`, so existing callers see no change until
+they opt a higher tier in.
+
+Reason codes are identical across every language binding, so an audit
+log reads the same whichever SDK produced it. An absent epoch renders as
+`?` and the check fails closed, for example
+`authority_epoch_unknown:voucher=?,seen=9`. Every reason code is pinned
+by the shared interop vector at `test-vectors/authority-state/`.
+
+Implemented in the Rust core and in Python, TypeScript, and Go, signed
+with `eddsa-jcs-2022` like every other credential.
 
 ### Behavioral Attestation
 
@@ -3009,6 +3105,18 @@ issue a new SessionVoucher; the existing voucher expires naturally.
   the schema before sending.
 - **`schema_invalid`**: heartbeat request shape doesn't match §11.3.
   Check `HeartbeatRequest.from_dict` validation.
+- **`authority_epoch_stale:seen=N,voucher=M`**: the voucher was minted
+  under an older authority epoch than the highest the verifier has seen.
+  Re-mint the voucher under the current epoch.
+- **`authority_epoch_unknown:voucher=?,seen=N`**: an epoch is missing on
+  one side, so the check fails closed. Confirm the voucher carries
+  `authorityEpoch` and that the verifier has learned an epoch for the
+  authority.
+- **`authority_status_not_active:status=suspended`**: the authority's
+  current status is something other than `active`.
+- **`live_cosign_required:tier=critical`**: a `critical` action needs a
+  live M-of-N co-sign read at action time; none was supplied or it did
+  not verify.
 
 ---
 

@@ -44,6 +44,9 @@ def test_registered_tool_names():
         "check_action",
         "check_trust",
         "disclose_ai_origin",
+        "create_authority_state",
+        "verify_authority_state",
+        "check_authority_freshness",
         "reputation",
         "attribute",
     } <= names
