@@ -2157,6 +2157,31 @@ See \`examples/reasoned_action_demo.py\` and the [reasoned-action demo](/demos/#
 None of these verify an agent's mind. Together they make harm hard to hide even for a misaligned agent: it must state a reason on the record, wait out a window a human can veto, stay inside an authority that cannot be broadened, against a decision that is reproducible, in front of a public append-only log.
 `,
       },
+      {
+        id: 'intent-recheck',
+        title: 'Event-Triggered Intent Recheck',
+        summary:
+          'Close the gap between two heartbeats by re-locking and signing the agent\'s intent at the moment a sensitive action runs.',
+        body: `
+## The gap a heartbeat leaves open
+
+A heartbeat proves an agent is still running. It does not prove the agent still means to do what it is about to do. Vouch Protocol renews an agent session on a fixed interval, so there is a window between two heartbeats where nothing is re-checked. Someone who knows the interval could line up a sensitive action to land in that gap, riding on an intent that was locked in earlier.
+
+Event-triggered intent recheck (the secondary seal) closes this. When a sensitive action is about to run, the agent locks its current intent again at that moment and signs it, rather than leaning on the last heartbeat's assurance.
+
+## What the verifier checks
+
+A verifier accepts the action only when the intent seal was made after the most recent heartbeat and recently enough for how sensitive the action is. Consequence tiers 0 to 4 map to a freshness requirement, and the high and critical tiers require a fresh seal. A seal made too early is rejected with a stable reason string, \`intent_seal_stale\`. Routine, low-consequence actions are unaffected, so ordinary work does not pay for the extra seal.
+
+## How it fits
+
+The recheck lives in \`vouch.reasoning\` / \`vouch.intent_recheck\` (and the Rust core \`reasoning.rs\`). It composes with the existing Reasoned Action Proofs and Heartbeat Protocol, and it adds no new cryptography: it reuses the \`eddsa-jcs-2022\` signing already there. Think of it as the adversarial mirror of authority freshness: authority freshness asks whether the grant is still current, and the secondary seal asks whether the intent is still current.
+
+## Availability
+
+Event-triggered intent recheck ships in the Python SDK, the Go sidecar, and the core (Rust and WASM), with shared cross-language interop vectors. The native bindings (Swift, Kotlin/JVM, .NET, C), and the idiomatic TypeScript wrapper are on the roadmap for this feature.
+`,
+      },
     ],
   },
 

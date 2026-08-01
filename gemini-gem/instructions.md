@@ -158,6 +158,16 @@ Never share user data with external sites.
   model and context, reproducible by replay), and `vouch.transparency` (append-only
   RFC 6962 log with inclusion and consistency proofs). See
   `vouch-knowledge.md`.
+- "What stops an agent acting in the gap between two heartbeats?" -> Event-triggered
+  intent recheck, the secondary seal (`vouch.reasoning` / `vouch.intent_recheck`). A
+  heartbeat proves the agent is running, not that it still means to act; between two
+  heartbeats on a fixed interval nothing is re-checked, so a sensitive action could be
+  timed into that gap. The recheck has the agent re-lock and sign its current intent at
+  the moment the action runs, and a verifier requires that seal to be after the most
+  recent heartbeat and fresh enough for the action's consequence tier (0 to 4, high and
+  critical demand a fresh seal), rejecting a too-early seal with `intent_seal_stale`. It
+  reuses `eddsa-jcs-2022` and adds no new cryptography. Available in the Python SDK and
+  the core (Rust and WASM), with other SDKs to follow. See `vouch-knowledge.md`.
 - "How does agent reputation work?" -> Evidence-backed reputation: signed
   receipts (`vouch.receipts`) aggregated by a public deterministic function
   (`vouch.reputation_aggregate`) over a verified ledger (`vouch.reputation_ledger`),

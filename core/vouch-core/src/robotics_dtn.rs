@@ -174,7 +174,10 @@ pub fn build_freshness_token(
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", FRESHNESS_TOKEN_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", FRESHNESS_TOKEN_TYPE]),
+    );
     cred.insert("issuer".into(), json!(relay_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -230,7 +233,9 @@ pub fn verify_freshness_token(
 /// (half-life) or "linear" (zero at 2*half_life).
 pub fn decay_weight(elapsed_epochs: i64, half_life_epochs: f64, form: &str) -> Result<f64> {
     if elapsed_epochs < 0 {
-        return Err(CoreError::Json("elapsed_epochs must be non-negative".into()));
+        return Err(CoreError::Json(
+            "elapsed_epochs must be non-negative".into(),
+        ));
     }
     if half_life_epochs <= 0.0 {
         return Err(CoreError::Json("half_life_epochs must be positive".into()));
@@ -284,7 +289,11 @@ pub fn expected_range_m(a: [f64; 3], b: [f64; 3]) -> f64 {
 /// Radial velocity of the peer along the line of sight from the verifier (positive
 /// when receding). Zero range returns 0.
 pub fn radial_velocity_mps(verifier: [f64; 3], peer: [f64; 3], peer_vel: [f64; 3]) -> f64 {
-    let los = [peer[0] - verifier[0], peer[1] - verifier[1], peer[2] - verifier[2]];
+    let los = [
+        peer[0] - verifier[0],
+        peer[1] - verifier[1],
+        peer[2] - verifier[2],
+    ];
     let dist = (los[0].powi(2) + los[1].powi(2) + los[2].powi(2)).sqrt();
     if dist == 0.0 {
         return 0.0;
@@ -344,7 +353,10 @@ pub fn build_presence_attestation(
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", PRESENCE_ATTESTATION_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", PRESENCE_ATTESTATION_TYPE]),
+    );
     cred.insert("issuer".into(), json!(issuer_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -415,7 +427,9 @@ pub fn region_contains(region: &Value, position: [f64; 3]) -> Result<bool> {
                 .and_then(|v| v.as_f64())
                 .ok_or_else(|| CoreError::Json("region.radiusM required".into()))?;
             if radius < 0.0 {
-                return Err(CoreError::Json("region.radiusM must be non-negative".into()));
+                return Err(CoreError::Json(
+                    "region.radiusM must be non-negative".into(),
+                ));
             }
             Ok(expected_range_m(position, center) <= radius)
         }
@@ -531,7 +545,10 @@ pub fn build_geoscoped_grant(
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", GEOSCOPED_GRANT_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", GEOSCOPED_GRANT_TYPE]),
+    );
     cred.insert("issuer".into(), json!(issuer_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -664,7 +681,9 @@ pub fn propagate_two_body(
         }
     }
     if !converged {
-        return Err(CoreError::Json("two-body propagation did not converge".into()));
+        return Err(CoreError::Json(
+            "two-body propagation did not converge".into(),
+        ));
     }
 
     let z = alpha * chi * chi;
@@ -703,7 +722,9 @@ pub fn reachable_two_body(
     tolerance_m: f64,
 ) -> Result<bool> {
     if elapsed_seconds < 0.0 {
-        return Err(CoreError::Json("elapsed_seconds must be non-negative".into()));
+        return Err(CoreError::Json(
+            "elapsed_seconds must be non-negative".into(),
+        ));
     }
     let (r_pred, _) = propagate_two_body(prior_position, prior_velocity, elapsed_seconds, mu)?;
     let d = expected_range_m(claimed_position, r_pred);
@@ -722,21 +743,41 @@ pub fn kinematically_reachable(
     tolerance_m: f64,
 ) -> Result<bool> {
     if elapsed_seconds < 0.0 {
-        return Err(CoreError::Json("elapsed_seconds must be non-negative".into()));
+        return Err(CoreError::Json(
+            "elapsed_seconds must be non-negative".into(),
+        ));
     }
     if envelope.get("model").and_then(|v| v.as_str()) == Some("two-body") {
         let v0 = prior_velocity
             .ok_or_else(|| CoreError::Json("two-body model requires prior_velocity".into()))?;
-        let mu = envelope.get("muM3S2").and_then(|v| v.as_f64()).unwrap_or(MU_EARTH);
-        let dv = envelope.get("maxDeltaVMps").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        return reachable_two_body(prior_position, v0, claimed_position, elapsed_seconds, mu, dv, tolerance_m);
+        let mu = envelope
+            .get("muM3S2")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(MU_EARTH);
+        let dv = envelope
+            .get("maxDeltaVMps")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        return reachable_two_body(
+            prior_position,
+            v0,
+            claimed_position,
+            elapsed_seconds,
+            mu,
+            dv,
+            tolerance_m,
+        );
     }
     let d = expected_range_m(prior_position, claimed_position);
     let reach = if let Some(dv) = envelope.get("maxDeltaVMps").and_then(|v| v.as_f64()) {
         let v0 = prior_velocity.map(norm).unwrap_or(0.0);
         (v0 + dv) * elapsed_seconds
     } else {
-        envelope.get("maxSpeedMps").and_then(|v| v.as_f64()).unwrap_or(0.0) * elapsed_seconds
+        envelope
+            .get("maxSpeedMps")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0)
+            * elapsed_seconds
     };
     Ok(d <= reach + tolerance_m)
 }
@@ -766,7 +807,10 @@ pub fn build_range_observation(
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", RANGE_OBSERVATION_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", RANGE_OBSERVATION_TYPE]),
+    );
     cred.insert("issuer".into(), json!(observer_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -774,7 +818,10 @@ pub fn build_range_observation(
     data_integrity::sign(&Value::Object(cred), observer_seed, &opts)
 }
 
-pub fn verify_range_observation(observation: &Value, observer_public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_range_observation(
+    observation: &Value,
+    observer_public_key: &[u8],
+) -> Result<Option<Value>> {
     if !has_type(observation.get("type"), RANGE_OBSERVATION_TYPE) {
         return Ok(None);
     }
@@ -800,7 +847,12 @@ pub fn count_consistent(subjects: &[Value], claimed_position: [f64; 3], toleranc
 }
 
 /// True if at least `threshold` observations are consistent with the claimed position.
-pub fn location_confirmed(subjects: &[Value], claimed_position: [f64; 3], tolerance_m: f64, threshold: usize) -> bool {
+pub fn location_confirmed(
+    subjects: &[Value],
+    claimed_position: [f64; 3],
+    tolerance_m: f64,
+    threshold: usize,
+) -> bool {
     threshold > 0 && count_consistent(subjects, claimed_position, tolerance_m) >= threshold
 }
 
@@ -821,7 +873,10 @@ pub fn build_proof_of_location(
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", PROOF_OF_LOCATION_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", PROOF_OF_LOCATION_TYPE]),
+    );
     cred.insert("issuer".into(), json!(combiner_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -864,7 +919,10 @@ pub fn build_beam_presence(
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", BEAM_PRESENCE_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", BEAM_PRESENCE_TYPE]),
+    );
     cred.insert("issuer".into(), json!(issuer_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -923,17 +981,25 @@ pub fn build_conditional_revocation(
         return Err(CoreError::Json("target_credential_id is required".into()));
     }
     if deadline_epoch < 0 {
-        return Err(CoreError::Json("deadline_epoch must be non-negative".into()));
+        return Err(CoreError::Json(
+            "deadline_epoch must be non-negative".into(),
+        ));
     }
     let mut subject = Map::new();
     subject.insert("id".into(), json!(subject_did));
     subject.insert("targetCredentialId".into(), json!(target_credential_id));
     subject.insert("deadlineEpoch".into(), json!(deadline_epoch));
-    subject.insert("renewalPredicate".into(), json!("renewal_epoch_gte_deadline"));
+    subject.insert(
+        "renewalPredicate".into(),
+        json!("renewal_epoch_gte_deadline"),
+    );
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", CONDITIONAL_REVOCATION_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", CONDITIONAL_REVOCATION_TYPE]),
+    );
     cred.insert("issuer".into(), json!(authority_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -941,7 +1007,10 @@ pub fn build_conditional_revocation(
     data_integrity::sign(&Value::Object(cred), authority_seed, &opts)
 }
 
-pub fn verify_conditional_revocation(credential: &Value, authority_public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_conditional_revocation(
+    credential: &Value,
+    authority_public_key: &[u8],
+) -> Result<Option<Value>> {
     if !has_type(credential.get("type"), CONDITIONAL_REVOCATION_TYPE) {
         return Ok(None);
     }
@@ -1076,7 +1145,11 @@ impl SparseMerkleTree {
 /// Verify a non-membership proof against `root` (assuming an empty leaf: not revoked).
 pub fn verify_non_revocation_proof(credential_id: &str, proof: &Value, root: &[u8; 32]) -> bool {
     let key = smt_key(credential_id);
-    let bitmap = match proof.get("bitmap").and_then(|v| v.as_str()).and_then(|s| unmb64(s).ok()) {
+    let bitmap = match proof
+        .get("bitmap")
+        .and_then(|v| v.as_str())
+        .and_then(|s| unmb64(s).ok())
+    {
         Some(b) if b.len() == SMT_DEPTH / 8 => b,
         _ => return false,
     };
@@ -1144,7 +1217,10 @@ pub fn build_revocation_accumulator_root(
 
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
-    cred.insert("type".into(), json!(["VerifiableCredential", REVOCATION_ACCUMULATOR_TYPE]));
+    cred.insert(
+        "type".into(),
+        json!(["VerifiableCredential", REVOCATION_ACCUMULATOR_TYPE]),
+    );
     cred.insert("issuer".into(), json!(authority_did));
     cred.insert("credentialSubject".into(), Value::Object(subject));
 
@@ -1159,7 +1235,10 @@ pub fn verify_non_revocation(
     signed_root_credential: &Value,
     authority_public_key: &[u8],
 ) -> Result<bool> {
-    if !has_type(signed_root_credential.get("type"), REVOCATION_ACCUMULATOR_TYPE) {
+    if !has_type(
+        signed_root_credential.get("type"),
+        REVOCATION_ACCUMULATOR_TYPE,
+    ) {
         return Ok(false);
     }
     if !data_integrity::verify_proof(signed_root_credential, authority_public_key)? {
@@ -1198,7 +1277,9 @@ pub fn build_distress_attestation(
     created: &str,
 ) -> Result<Value> {
     if target_did.is_empty() || reason.is_empty() || evidence_ref.is_empty() {
-        return Err(CoreError::Json("target_did, reason, evidence_ref required".into()));
+        return Err(CoreError::Json(
+            "target_did, reason, evidence_ref required".into(),
+        ));
     }
     let mut subject = Map::new();
     subject.insert("id".into(), json!(target_did));
@@ -1209,7 +1290,10 @@ pub fn build_distress_attestation(
     sign_subject(observer_seed, observer_did, DISTRESS_TYPE, subject, created)
 }
 
-pub fn verify_distress_attestation(attestation: &Value, observer_public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_distress_attestation(
+    attestation: &Value,
+    observer_public_key: &[u8],
+) -> Result<Option<Value>> {
     verify_typed(attestation, observer_public_key, DISTRESS_TYPE)
 }
 
@@ -1263,16 +1347,29 @@ pub fn build_trust_state_update(
     subject.insert("change".into(), change.clone());
     subject.insert("epoch".into(), json!(epoch));
     subject.insert("failureDomain".into(), json!(failure_domain));
-    sign_subject(anchor_seed, anchor_did, TRUST_STATE_UPDATE_TYPE, subject, created)
+    sign_subject(
+        anchor_seed,
+        anchor_did,
+        TRUST_STATE_UPDATE_TYPE,
+        subject,
+        created,
+    )
 }
 
-pub fn verify_trust_state_update(update: &Value, anchor_public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_trust_state_update(
+    update: &Value,
+    anchor_public_key: &[u8],
+) -> Result<Option<Value>> {
     verify_typed(update, anchor_public_key, TRUST_STATE_UPDATE_TYPE)
 }
 
 /// Accept a change only when at least `threshold` corroborations agree on the same
 /// (scope, change, epoch) from DISTINCT failure domains, with no epoch rollback.
-pub fn accept_trust_state_update(corroborating_subjects: &[Value], current_epoch: i64, threshold: usize) -> bool {
+pub fn accept_trust_state_update(
+    corroborating_subjects: &[Value],
+    current_epoch: i64,
+    threshold: usize,
+) -> bool {
     if threshold == 0 || corroborating_subjects.is_empty() {
         return false;
     }
@@ -1285,7 +1382,10 @@ pub fn accept_trust_state_update(corroborating_subjects: &[Value], current_epoch
     };
     let mut domains: HashSet<&str> = HashSet::new();
     for s in corroborating_subjects {
-        if s.get("scope") != scope || s.get("change") != change || s.get("epoch").and_then(|v| v.as_i64()) != Some(epoch) {
+        if s.get("scope") != scope
+            || s.get("change") != change
+            || s.get("epoch").and_then(|v| v.as_i64()) != Some(epoch)
+        {
             continue;
         }
         if let Some(fd) = s.get("failureDomain").and_then(|v| v.as_str()) {
@@ -1303,17 +1403,30 @@ pub fn build_key_continuity_predelegation(
     threshold: usize,
     created: &str,
 ) -> Result<Value> {
-    let mut members: Vec<String> = member_dids.iter().cloned().collect::<HashSet<_>>().into_iter().collect();
+    let mut members: Vec<String> = member_dids
+        .iter()
+        .cloned()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
     members.sort();
     if threshold == 0 || threshold > members.len() {
-        return Err(CoreError::Json("threshold must be in 1..=len(members)".into()));
+        return Err(CoreError::Json(
+            "threshold must be in 1..=len(members)".into(),
+        ));
     }
     let mut subject = Map::new();
     subject.insert("id".into(), json!(mission_credential_id));
     subject.insert("members".into(), json!(members));
     subject.insert("threshold".into(), json!(threshold));
     subject.insert("bound".into(), json!("preserve_or_narrow"));
-    sign_subject(authority_seed, authority_did, KEY_CONTINUITY_PREDELEGATION_TYPE, subject, created)
+    sign_subject(
+        authority_seed,
+        authority_did,
+        KEY_CONTINUITY_PREDELEGATION_TYPE,
+        subject,
+        created,
+    )
 }
 
 pub fn build_continuity_approval(
@@ -1329,7 +1442,13 @@ pub fn build_continuity_approval(
     subject.insert("member".into(), json!(member_did));
     subject.insert("supersedes".into(), json!(supersedes));
     subject.insert("epoch".into(), json!(epoch));
-    sign_subject(member_seed, member_did, CONTINUITY_APPROVAL_TYPE, subject, created)
+    sign_subject(
+        member_seed,
+        member_did,
+        CONTINUITY_APPROVAL_TYPE,
+        subject,
+        created,
+    )
 }
 
 /// Confirm an offline re-issuance: pre-delegation authorized the group and at least
@@ -1345,7 +1464,10 @@ pub fn verify_key_continuity(
         .and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|v| v.as_str()).collect())
         .unwrap_or_default();
-    let threshold = match predelegation_subject.get("threshold").and_then(|v| v.as_u64()) {
+    let threshold = match predelegation_subject
+        .get("threshold")
+        .and_then(|v| v.as_u64())
+    {
         Some(t) if t > 0 => t as usize,
         _ => return false,
     };
@@ -1393,7 +1515,9 @@ pub fn build_time_quality_attestation(
     created: &str,
 ) -> Result<Value> {
     if uncertainty_s < 0.0 || since_discipline_s < 0.0 {
-        return Err(CoreError::Json("uncertainty_s and since_discipline_s must be non-negative".into()));
+        return Err(CoreError::Json(
+            "uncertainty_s and since_discipline_s must be non-negative".into(),
+        ));
     }
     let mut subject = Map::new();
     subject.insert("id".into(), json!(signer_did));
@@ -1403,7 +1527,10 @@ pub fn build_time_quality_attestation(
     sign_subject(signer_seed, signer_did, TIME_QUALITY_TYPE, subject, created)
 }
 
-pub fn verify_time_quality_attestation(attestation: &Value, public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_time_quality_attestation(
+    attestation: &Value,
+    public_key: &[u8],
+) -> Result<Option<Value>> {
     verify_typed(attestation, public_key, TIME_QUALITY_TYPE)
 }
 
@@ -1440,14 +1567,18 @@ pub fn build_autonomy_schedule(
             .and_then(|v| v.as_i64())
             .ok_or_else(|| CoreError::Json("maxStalenessEpochs must be an integer".into()))?;
         if thresh <= prev_thresh {
-            return Err(CoreError::Json("maxStalenessEpochs must be strictly ascending".into()));
+            return Err(CoreError::Json(
+                "maxStalenessEpochs must be strictly ascending".into(),
+            ));
         }
         let scope = st
             .get("physicalScope")
             .ok_or_else(|| CoreError::Json("each step needs a physicalScope".into()))?;
         if let Some(prev) = prev_scope {
             if !attenuates(prev, scope) {
-                return Err(CoreError::Json("each step's scope must attenuate the previous".into()));
+                return Err(CoreError::Json(
+                    "each step's scope must attenuate the previous".into(),
+                ));
             }
         }
         prev_thresh = thresh;
@@ -1456,10 +1587,19 @@ pub fn build_autonomy_schedule(
     let mut subject = Map::new();
     subject.insert("id".into(), json!(subject_did));
     subject.insert("steps".into(), steps.clone());
-    sign_subject(authority_seed, authority_did, AUTONOMY_SCHEDULE_TYPE, subject, created)
+    sign_subject(
+        authority_seed,
+        authority_did,
+        AUTONOMY_SCHEDULE_TYPE,
+        subject,
+        created,
+    )
 }
 
-pub fn verify_autonomy_schedule(schedule: &Value, authority_public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_autonomy_schedule(
+    schedule: &Value,
+    authority_public_key: &[u8],
+) -> Result<Option<Value>> {
     verify_typed(schedule, authority_public_key, AUTONOMY_SCHEDULE_TYPE)
 }
 
@@ -1477,7 +1617,11 @@ pub fn select_envelope(schedule_subject: &Value, staleness_epochs: i64) -> Optio
     steps.last().and_then(|st| st.get("physicalScope").cloned())
 }
 
-pub fn autonomy_permits(schedule_subject: &Value, staleness_epochs: i64, action: &PhysicalAction) -> bool {
+pub fn autonomy_permits(
+    schedule_subject: &Value,
+    staleness_epochs: i64,
+    action: &PhysicalAction,
+) -> bool {
     match select_envelope(schedule_subject, staleness_epochs) {
         Some(scope) => check_physical_action(&scope, action).ok,
         None => false,
@@ -1493,7 +1637,9 @@ pub fn build_integrity_risk_attestation(
     created: &str,
 ) -> Result<Value> {
     if cumulative_risk < 0.0 {
-        return Err(CoreError::Json("cumulative_risk must be non-negative".into()));
+        return Err(CoreError::Json(
+            "cumulative_risk must be non-negative".into(),
+        ));
     }
     let mut subject = Map::new();
     subject.insert("id".into(), json!(signer_did));
@@ -1504,15 +1650,28 @@ pub fn build_integrity_risk_attestation(
     if let Some(p) = prev_hash {
         subject.insert("prevHash".into(), json!(p));
     }
-    sign_subject(signer_seed, signer_did, INTEGRITY_RISK_TYPE, subject, created)
+    sign_subject(
+        signer_seed,
+        signer_did,
+        INTEGRITY_RISK_TYPE,
+        subject,
+        created,
+    )
 }
 
-pub fn verify_integrity_risk_attestation(attestation: &Value, public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_integrity_risk_attestation(
+    attestation: &Value,
+    public_key: &[u8],
+) -> Result<Option<Value>> {
     verify_typed(attestation, public_key, INTEGRITY_RISK_TYPE)
 }
 
 /// Deterministic risk-to-authority mapping (defaults: narrow 0.3, suspect 0.7).
-pub fn integrity_authority_level(cumulative_risk: f64, narrow_threshold: f64, suspect_threshold: f64) -> &'static str {
+pub fn integrity_authority_level(
+    cumulative_risk: f64,
+    narrow_threshold: f64,
+    suspect_threshold: f64,
+) -> &'static str {
     if cumulative_risk >= suspect_threshold {
         INTEGRITY_SUSPECT
     } else if cumulative_risk >= narrow_threshold {
@@ -1547,7 +1706,13 @@ pub fn build_perception_claim(
     subject.insert("feature".into(), json!(feature));
     subject.insert("value".into(), value.clone());
     subject.insert("epoch".into(), json!(epoch));
-    sign_subject(signer_seed, signer_did, PERCEPTION_CLAIM_TYPE, subject, created)
+    sign_subject(
+        signer_seed,
+        signer_did,
+        PERCEPTION_CLAIM_TYPE,
+        subject,
+        created,
+    )
 }
 
 pub fn verify_perception_claim(claim: &Value, public_key: &[u8]) -> Result<Option<Value>> {
@@ -1574,7 +1739,11 @@ fn value_distance(a: &Value, b: &Value) -> Option<f64> {
 /// Cross-check perception claims of one shared feature. Returns (corroborated,
 /// flagged) DIDs (each sorted). A node is corroborated when at least `threshold`
 /// OTHER nodes agree within `tolerance`.
-pub fn cross_check_perception(claim_subjects: &[Value], tolerance: f64, threshold: usize) -> (Vec<String>, Vec<String>) {
+pub fn cross_check_perception(
+    claim_subjects: &[Value],
+    tolerance: f64,
+    threshold: usize,
+) -> (Vec<String>, Vec<String>) {
     let entries: Vec<(&str, &Value)> = claim_subjects
         .iter()
         .filter_map(|s| Some((s.get("id")?.as_str()?, s.get("value")?)))
@@ -1620,11 +1789,24 @@ pub fn build_interaction_attestation(
     subject.insert("attestor".into(), json!(signer_did));
     subject.insert("outcome".into(), json!(outcome));
     subject.insert("epoch".into(), json!(epoch));
-    sign_subject(signer_seed, signer_did, INTERACTION_ATTESTATION_TYPE, subject, created)
+    sign_subject(
+        signer_seed,
+        signer_did,
+        INTERACTION_ATTESTATION_TYPE,
+        subject,
+        created,
+    )
 }
 
-pub fn verify_interaction_attestation(attestation: &Value, attestor_public_key: &[u8]) -> Result<Option<Value>> {
-    verify_typed(attestation, attestor_public_key, INTERACTION_ATTESTATION_TYPE)
+pub fn verify_interaction_attestation(
+    attestation: &Value,
+    attestor_public_key: &[u8],
+) -> Result<Option<Value>> {
+    verify_typed(
+        attestation,
+        attestor_public_key,
+        INTERACTION_ATTESTATION_TYPE,
+    )
 }
 
 /// Decay-weighted sum of the freshest positive interaction attestation per distinct
@@ -1653,7 +1835,14 @@ pub fn node_standing(
             Some(e) if e <= current_epoch => e,
             _ => continue,
         };
-        freshest.entry(attestor).and_modify(|cur| { if e > *cur { *cur = e; } }).or_insert(e);
+        freshest
+            .entry(attestor)
+            .and_modify(|cur| {
+                if e > *cur {
+                    *cur = e;
+                }
+            })
+            .or_insert(e);
     }
     let mut total = 0.0;
     for e in freshest.values() {
@@ -1680,18 +1869,34 @@ pub fn bind_credential_to_bundle(
     created: &str,
 ) -> Result<Value> {
     if bundle_id.is_empty() || payload_hash.is_empty() {
-        return Err(CoreError::Json("bundle_id and payload_hash required".into()));
+        return Err(CoreError::Json(
+            "bundle_id and payload_hash required".into(),
+        ));
     }
     let mut subject = Map::new();
     subject.insert("id".into(), json!(bundle_id));
     subject.insert("originator".into(), json!(originator_did));
     subject.insert("payloadHash".into(), json!(payload_hash));
     subject.insert("intent".into(), intent.clone());
-    sign_subject(originator_seed, originator_did, BUNDLE_CREDENTIAL_TYPE, subject, created)
+    sign_subject(
+        originator_seed,
+        originator_did,
+        BUNDLE_CREDENTIAL_TYPE,
+        subject,
+        created,
+    )
 }
 
-pub fn verify_bundle_trust(bundle_credential: &Value, originator_public_key: &[u8], payload_hash: &str) -> Result<Option<Value>> {
-    match verify_typed(bundle_credential, originator_public_key, BUNDLE_CREDENTIAL_TYPE)? {
+pub fn verify_bundle_trust(
+    bundle_credential: &Value,
+    originator_public_key: &[u8],
+    payload_hash: &str,
+) -> Result<Option<Value>> {
+    match verify_typed(
+        bundle_credential,
+        originator_public_key,
+        BUNDLE_CREDENTIAL_TYPE,
+    )? {
         Some(subject) => {
             if subject.get("payloadHash").and_then(|v| v.as_str()) != Some(payload_hash) {
                 return Ok(None);
@@ -1713,15 +1918,27 @@ pub fn build_custody_transfer(
     let mut subject = Map::new();
     subject.insert("id".into(), json!(bundle_id));
     subject.insert("custodian".into(), json!(relay_did));
-    subject.insert("previousCustodian".into(), match previous_custodian {
-        Some(p) => json!(p),
-        None => Value::Null,
-    });
+    subject.insert(
+        "previousCustodian".into(),
+        match previous_custodian {
+            Some(p) => json!(p),
+            None => Value::Null,
+        },
+    );
     subject.insert("epoch".into(), json!(epoch));
-    sign_subject(relay_seed, relay_did, CUSTODY_TRANSFER_TYPE, subject, created)
+    sign_subject(
+        relay_seed,
+        relay_did,
+        CUSTODY_TRANSFER_TYPE,
+        subject,
+        created,
+    )
 }
 
-pub fn verify_custody_transfer(transfer: &Value, custodian_public_key: &[u8]) -> Result<Option<Value>> {
+pub fn verify_custody_transfer(
+    transfer: &Value,
+    custodian_public_key: &[u8],
+) -> Result<Option<Value>> {
     verify_typed(transfer, custodian_public_key, CUSTODY_TRANSFER_TYPE)
 }
 
@@ -1752,7 +1969,13 @@ pub fn custody_chain_ok(transfer_subjects: &[Value], bundle_id: &str, originator
 // Shared helpers for the build/verify pattern above.
 // ---------------------------------------------------------------------------
 
-fn sign_subject(seed: &[u8], issuer_did: &str, cred_type: &str, subject: Map<String, Value>, created: &str) -> Result<Value> {
+fn sign_subject(
+    seed: &[u8],
+    issuer_did: &str,
+    cred_type: &str,
+    subject: Map<String, Value>,
+    created: &str,
+) -> Result<Value> {
     let mut cred = Map::new();
     cred.insert("@context".into(), json!([VC_CONTEXT_V2, VOUCH_CONTEXT_V1]));
     cred.insert("type".into(), json!(["VerifiableCredential", cred_type]));
@@ -1787,29 +2010,85 @@ mod tests {
     #[test]
     fn freshness_gate_tiers_and_fail_closed() {
         let now = "2026-07-19T12:00:00Z";
-        let snap = json!({"type": ["BitstringStatusListCredential"], "validFrom": "2026-07-19T11:40:00Z"});
-        assert!(evaluate_freshness(CONSEQUENCE_CRITICAL, Some(&snap), now, None).unwrap().allow);
+        let snap =
+            json!({"type": ["BitstringStatusListCredential"], "validFrom": "2026-07-19T11:40:00Z"});
+        assert!(
+            evaluate_freshness(CONSEQUENCE_CRITICAL, Some(&snap), now, None)
+                .unwrap()
+                .allow
+        );
         // 5 days old
-        let stale = json!({"type": ["BitstringStatusListCredential"], "validFrom": "2026-07-14T12:00:00Z"});
-        assert!(evaluate_freshness(CONSEQUENCE_ROUTINE, Some(&stale), now, None).unwrap().allow);
-        assert!(!evaluate_freshness(CONSEQUENCE_CRITICAL, Some(&stale), now, None).unwrap().allow);
+        let stale =
+            json!({"type": ["BitstringStatusListCredential"], "validFrom": "2026-07-14T12:00:00Z"});
+        assert!(
+            evaluate_freshness(CONSEQUENCE_ROUTINE, Some(&stale), now, None)
+                .unwrap()
+                .allow
+        );
+        assert!(
+            !evaluate_freshness(CONSEQUENCE_CRITICAL, Some(&stale), now, None)
+                .unwrap()
+                .allow
+        );
         // absent snapshot
-        assert!(evaluate_freshness(CONSEQUENCE_ROUTINE, None, now, None).unwrap().allow);
-        assert!(!evaluate_freshness(CONSEQUENCE_SENSITIVE, None, now, None).unwrap().allow);
+        assert!(
+            evaluate_freshness(CONSEQUENCE_ROUTINE, None, now, None)
+                .unwrap()
+                .allow
+        );
+        assert!(
+            !evaluate_freshness(CONSEQUENCE_SENSITIVE, None, now, None)
+                .unwrap()
+                .allow
+        );
         // unknown tier -> critical
-        assert!(!evaluate_freshness("wild", Some(&stale), now, None).unwrap().allow);
+        assert!(
+            !evaluate_freshness("wild", Some(&stale), now, None)
+                .unwrap()
+                .allow
+        );
     }
 
     #[test]
     fn freshness_token_roundtrip_and_gap() {
         let (pk, did) = identity(&[7u8; 32]);
-        let tok = build_freshness_token(&[7u8; 32], &did, "did:web:node", 100, "n", "2026-07-19T12:00:00Z").unwrap();
-        assert!(verify_freshness_token(&tok, &pk, 100, CONSEQUENCE_CRITICAL, None, None, None).unwrap().is_some());
+        let tok = build_freshness_token(
+            &[7u8; 32],
+            &did,
+            "did:web:node",
+            100,
+            "n",
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
+        assert!(
+            verify_freshness_token(&tok, &pk, 100, CONSEQUENCE_CRITICAL, None, None, None)
+                .unwrap()
+                .is_some()
+        );
         // 4 behind: fails critical (gap 1), passes routine (gap 100)
-        assert!(verify_freshness_token(&tok, &pk, 104, CONSEQUENCE_CRITICAL, None, None, None).unwrap().is_none());
-        assert!(verify_freshness_token(&tok, &pk, 104, CONSEQUENCE_ROUTINE, None, None, None).unwrap().is_some());
+        assert!(
+            verify_freshness_token(&tok, &pk, 104, CONSEQUENCE_CRITICAL, None, None, None)
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            verify_freshness_token(&tok, &pk, 104, CONSEQUENCE_ROUTINE, None, None, None)
+                .unwrap()
+                .is_some()
+        );
         // rollback
-        assert!(verify_freshness_token(&tok, &pk, 100, CONSEQUENCE_CRITICAL, None, None, Some(200)).unwrap().is_none());
+        assert!(verify_freshness_token(
+            &tok,
+            &pk,
+            100,
+            CONSEQUENCE_CRITICAL,
+            None,
+            None,
+            Some(200)
+        )
+        .unwrap()
+        .is_none());
     }
 
     #[test]
@@ -1824,23 +2103,57 @@ mod tests {
     fn presence_roundtrip_and_replay_rejection() {
         let (pk, did) = identity(&[9u8; 32]);
         let att = build_presence_attestation(
-            &[9u8; 32], &did, "did:web:peer", "n1", [100.0, 0.0, 0.0], 100.4, 1.0, None, "2026-07-19T12:00:00Z",
+            &[9u8; 32],
+            &did,
+            "did:web:peer",
+            "n1",
+            [100.0, 0.0, 0.0],
+            100.4,
+            1.0,
+            None,
+            "2026-07-19T12:00:00Z",
         )
         .unwrap();
-        assert!(verify_presence_attestation(&att, &pk, [0.0, 0.0, 0.0], Some("n1")).unwrap().is_some());
+        assert!(
+            verify_presence_attestation(&att, &pk, [0.0, 0.0, 0.0], Some("n1"))
+                .unwrap()
+                .is_some()
+        );
         // imposter: measured range inconsistent with the claimed position
         let spoof = build_presence_attestation(
-            &[9u8; 32], &did, "did:web:peer", "n", [100.0, 0.0, 0.0], 480.0, 1.0, None, "2026-07-19T12:00:00Z",
+            &[9u8; 32],
+            &did,
+            "did:web:peer",
+            "n",
+            [100.0, 0.0, 0.0],
+            480.0,
+            1.0,
+            None,
+            "2026-07-19T12:00:00Z",
         )
         .unwrap();
-        assert!(verify_presence_attestation(&spoof, &pk, [0.0, 0.0, 0.0], None).unwrap().is_none());
+        assert!(
+            verify_presence_attestation(&spoof, &pk, [0.0, 0.0, 0.0], None)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]
     fn geoscope_regions_and_grant() {
         let (pk, did) = identity(&[11u8; 32]);
         let region = json!({"type": "sphere", "centerM": [0.0, 0.0, 0.0], "radiusM": 50.0});
-        let grant = build_geoscoped_grant(&[11u8; 32], &did, "did:web:rover", "g1", &region, None, None, "2026-07-19T12:00:00Z").unwrap();
+        let grant = build_geoscoped_grant(
+            &[11u8; 32],
+            &did,
+            "did:web:rover",
+            "g1",
+            &region,
+            None,
+            None,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
         let sub = verify_geoscoped_grant(&grant, &pk, None).unwrap().unwrap();
         assert!(geoscope_permits(&sub, [10.0, 10.0, 0.0]));
         assert!(!geoscope_permits(&sub, [40.0, 40.0, 0.0]));
@@ -1857,7 +2170,8 @@ mod tests {
         let radius = 7.0e6;
         let v = (MU_EARTH / radius).sqrt();
         let period = 2.0 * std::f64::consts::PI * (radius.powi(3) / MU_EARTH).sqrt();
-        let (r, _) = propagate_two_body([radius, 0.0, 0.0], [0.0, v, 0.0], period / 4.0, MU_EARTH).unwrap();
+        let (r, _) =
+            propagate_two_body([radius, 0.0, 0.0], [0.0, v, 0.0], period / 4.0, MU_EARTH).unwrap();
         // quarter period: +x rotates to +y, radius conserved
         assert!((norm(r) - radius).abs() / radius < 1e-6);
         assert!(r[0].abs() < 1.0);
@@ -1868,11 +2182,28 @@ mod tests {
     fn kinematic_two_body_dispatch() {
         let radius = 7.0e6;
         let v = (MU_EARTH / radius).sqrt();
-        let (r_pred, _) = propagate_two_body([radius, 0.0, 0.0], [0.0, v, 0.0], 120.0, MU_EARTH).unwrap();
+        let (r_pred, _) =
+            propagate_two_body([radius, 0.0, 0.0], [0.0, v, 0.0], 120.0, MU_EARTH).unwrap();
         let env = json!({"model": "two-body", "maxDeltaVMps": 0.5});
-        assert!(kinematically_reachable([radius, 0.0, 0.0], r_pred, 120.0, &env, Some([0.0, v, 0.0]), 1.0).unwrap());
+        assert!(kinematically_reachable(
+            [radius, 0.0, 0.0],
+            r_pred,
+            120.0,
+            &env,
+            Some([0.0, v, 0.0]),
+            1.0
+        )
+        .unwrap());
         let off = [r_pred[0], r_pred[1] + 10_000.0, r_pred[2]];
-        assert!(!kinematically_reachable([radius, 0.0, 0.0], off, 120.0, &env, Some([0.0, v, 0.0]), 0.0).unwrap());
+        assert!(!kinematically_reachable(
+            [radius, 0.0, 0.0],
+            off,
+            120.0,
+            &env,
+            Some([0.0, v, 0.0]),
+            0.0
+        )
+        .unwrap());
     }
 
     #[test]
@@ -1891,15 +2222,36 @@ mod tests {
     fn beam_presence_roundtrip() {
         let (pk, did) = identity(&[13u8; 32]);
         let bw = 10.0_f64.to_radians();
-        let att = build_beam_presence(&[13u8; 32], &did, "did:web:peer", "n", [1.0, 0.0, 0.0], bw, "2026-07-19T12:00:00Z").unwrap();
-        assert!(verify_beam_presence(&att, &pk, [1.0, 0.02, 0.0], Some("n")).unwrap().is_some());
-        assert!(verify_beam_presence(&att, &pk, [0.0, 1.0, 0.0], None).unwrap().is_none());
+        let att = build_beam_presence(
+            &[13u8; 32],
+            &did,
+            "did:web:peer",
+            "n",
+            [1.0, 0.0, 0.0],
+            bw,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
+        assert!(verify_beam_presence(&att, &pk, [1.0, 0.02, 0.0], Some("n"))
+            .unwrap()
+            .is_some());
+        assert!(verify_beam_presence(&att, &pk, [0.0, 1.0, 0.0], None)
+            .unwrap()
+            .is_none());
     }
 
     #[test]
     fn dead_man_revocation_fires() {
         let (pk, did) = identity(&[15u8; 32]);
-        let cr = build_conditional_revocation(&[15u8; 32], &did, "cred-1", "did:web:node", 100, "2026-07-19T12:00:00Z").unwrap();
+        let cr = build_conditional_revocation(
+            &[15u8; 32],
+            &did,
+            "cred-1",
+            "did:web:node",
+            100,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
         let sub = verify_conditional_revocation(&cr, &pk).unwrap().unwrap();
         assert!(!conditional_revocation_active(&sub, 100, None).unwrap());
         assert!(conditional_revocation_active(&sub, 101, None).unwrap());
@@ -1909,7 +2261,17 @@ mod tests {
     #[test]
     fn range_observation_roundtrip() {
         let (pk, did) = identity(&[17u8; 32]);
-        let o = build_range_observation(&[17u8; 32], &did, "did:web:t", [1.0, 2.0, 3.0], 10.0, "n", 1, "2026-07-19T12:00:00Z").unwrap();
+        let o = build_range_observation(
+            &[17u8; 32],
+            &did,
+            "did:web:t",
+            [1.0, 2.0, 3.0],
+            10.0,
+            "n",
+            1,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
         assert!(verify_range_observation(&o, &pk).unwrap().is_some());
     }
 
@@ -1919,9 +2281,17 @@ mod tests {
         smt.revoke("cred-x");
         smt.revoke("cred-y");
         let root = smt.root();
-        assert!(verify_non_revocation_proof("cred-z", &smt.non_revocation_proof("cred-z"), &root));
+        assert!(verify_non_revocation_proof(
+            "cred-z",
+            &smt.non_revocation_proof("cred-z"),
+            &root
+        ));
         // a revoked credential's proof must NOT verify
-        assert!(!verify_non_revocation_proof("cred-x", &smt.non_revocation_proof("cred-x"), &root));
+        assert!(!verify_non_revocation_proof(
+            "cred-x",
+            &smt.non_revocation_proof("cred-x"),
+            &root
+        ));
         // incremental update changes the root
         let mut smt2 = SparseMerkleTree::new();
         smt2.revoke("a");
@@ -1929,7 +2299,11 @@ mod tests {
         smt2.revoke("z");
         assert_ne!(smt2.root(), r1);
         smt2.unrevoke("z");
-        assert!(verify_non_revocation_proof("z", &smt2.non_revocation_proof("z"), &smt2.root()));
+        assert!(verify_non_revocation_proof(
+            "z",
+            &smt2.non_revocation_proof("z"),
+            &smt2.root()
+        ));
     }
 
     #[test]
@@ -1937,7 +2311,9 @@ mod tests {
         let (pk, did) = identity(&[19u8; 32]);
         let mut smt = SparseMerkleTree::new();
         smt.revoke("compromised");
-        let signed = build_revocation_accumulator_root(&[19u8; 32], &did, &smt, 42, "2026-07-19T12:00:00Z").unwrap();
+        let signed =
+            build_revocation_accumulator_root(&[19u8; 32], &did, &smt, 42, "2026-07-19T12:00:00Z")
+                .unwrap();
         let proof = smt.non_revocation_proof("good");
         assert!(verify_non_revocation("good", &proof, &signed, &pk).unwrap());
         let bad = smt.non_revocation_proof("compromised");
@@ -1947,9 +2323,21 @@ mod tests {
     #[test]
     fn quarantine_and_quorum() {
         let (pk, did) = identity(&[21u8; 32]);
-        let d = build_distress_attestation(&[21u8; 32], &did, "did:web:bad", "out_of_envelope", "frame:abc", 5, "2026-07-19T12:00:00Z").unwrap();
+        let d = build_distress_attestation(
+            &[21u8; 32],
+            &did,
+            "did:web:bad",
+            "out_of_envelope",
+            "frame:abc",
+            5,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
         assert!(verify_distress_attestation(&d, &pk).unwrap().is_some());
-        let members: HashSet<String> = ["did:web:m0", "did:web:m1", "did:web:m2", "did:web:m3"].iter().map(|s| s.to_string()).collect();
+        let members: HashSet<String> = ["did:web:m0", "did:web:m1", "did:web:m2", "did:web:m3"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
         let mut subs = vec![
             json!({"id": "did:web:bad", "observer": "did:web:m0", "epoch": 5}),
             json!({"id": "did:web:bad", "observer": "did:web:m1", "epoch": 5}),
@@ -1966,7 +2354,9 @@ mod tests {
             json!({"scope": "rev", "change": change, "epoch": 10, "failureDomain": "orbit-A"}),
         ];
         assert!(!accept_trust_state_update(&ups, 9, 2));
-        ups.push(json!({"scope": "rev", "change": change, "epoch": 10, "failureDomain": "orbit-B"}));
+        ups.push(
+            json!({"scope": "rev", "change": change, "epoch": 10, "failureDomain": "orbit-B"}),
+        );
         assert!(accept_trust_state_update(&ups, 9, 2));
         assert!(!accept_trust_state_update(&ups, 11, 2)); // rollback
     }
@@ -1975,24 +2365,64 @@ mod tests {
     fn key_continuity_threshold() {
         let (pk, did) = identity(&[23u8; 32]);
         let members: Vec<String> = (0..3).map(|i| format!("did:web:m{i}")).collect();
-        let pre = build_key_continuity_predelegation(&[23u8; 32], &did, "mission-1", &members, 2, "2026-07-19T12:00:00Z").unwrap();
-        let pre_sub = verify_typed(&pre, &pk, KEY_CONTINUITY_PREDELEGATION_TYPE).unwrap().unwrap();
+        let pre = build_key_continuity_predelegation(
+            &[23u8; 32],
+            &did,
+            "mission-1",
+            &members,
+            2,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
+        let pre_sub = verify_typed(&pre, &pk, KEY_CONTINUITY_PREDELEGATION_TYPE)
+            .unwrap()
+            .unwrap();
         let approvals = vec![
             json!({"id": "reissue-1", "member": "did:web:m0", "supersedes": "mission-1", "epoch": 20}),
             json!({"id": "reissue-1", "member": "did:web:m1", "supersedes": "mission-1", "epoch": 20}),
         ];
-        assert!(verify_key_continuity(&pre_sub, "reissue-1", "mission-1", &approvals));
-        assert!(!verify_key_continuity(&pre_sub, "reissue-1", "mission-1", &approvals[..1]));
+        assert!(verify_key_continuity(
+            &pre_sub,
+            "reissue-1",
+            "mission-1",
+            &approvals
+        ));
+        assert!(!verify_key_continuity(
+            &pre_sub,
+            "reissue-1",
+            "mission-1",
+            &approvals[..1]
+        ));
     }
 
     #[test]
     fn edge_trust_gates() {
         let (pk, did) = identity(&[25u8; 32]);
-        let good = build_time_quality_attestation(&[25u8; 32], &did, "gnss", 5.0, 0.5, "2026-07-19T12:00:00Z").unwrap();
-        let sub = verify_time_quality_attestation(&good, &pk).unwrap().unwrap();
+        let good = build_time_quality_attestation(
+            &[25u8; 32],
+            &did,
+            "gnss",
+            5.0,
+            0.5,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
+        let sub = verify_time_quality_attestation(&good, &pk)
+            .unwrap()
+            .unwrap();
         assert!(time_quality_permits(&sub, CONSEQUENCE_CRITICAL, None));
-        let poor = build_time_quality_attestation(&[25u8; 32], &did, "rc", 1e6, 120.0, "2026-07-19T12:00:00Z").unwrap();
-        let psub = verify_time_quality_attestation(&poor, &pk).unwrap().unwrap();
+        let poor = build_time_quality_attestation(
+            &[25u8; 32],
+            &did,
+            "rc",
+            1e6,
+            120.0,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
+        let psub = verify_time_quality_attestation(&poor, &pk)
+            .unwrap()
+            .unwrap();
         assert!(!time_quality_permits(&psub, CONSEQUENCE_CRITICAL, None));
         assert!(time_quality_permits(&psub, CONSEQUENCE_ROUTINE, None));
         // integrity levels
@@ -2008,11 +2438,38 @@ mod tests {
             {"maxStalenessEpochs": 10, "physicalScope": {"maxSpeedMps": 2.0, "allowedZones": ["a", "b"]}},
             {"maxStalenessEpochs": 100, "physicalScope": {"maxSpeedMps": 0.5, "allowedZones": ["a"]}}
         ]);
-        let sched = build_autonomy_schedule(&[27u8; 32], &did, "did:web:node", &steps, "2026-07-19T12:00:00Z").unwrap();
+        let sched = build_autonomy_schedule(
+            &[27u8; 32],
+            &did,
+            "did:web:node",
+            &steps,
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
         let sub = verify_autonomy_schedule(&sched, &pk).unwrap().unwrap();
-        assert_eq!(select_envelope(&sub, 5).unwrap().get("maxSpeedMps").unwrap().as_f64(), Some(2.0));
-        assert_eq!(select_envelope(&sub, 50).unwrap().get("maxSpeedMps").unwrap().as_f64(), Some(0.5));
-        let action = PhysicalAction { force_n: None, speed_mps: Some(1.5), near_humans: false, zone: Some("b".into()), time_hm: None };
+        assert_eq!(
+            select_envelope(&sub, 5)
+                .unwrap()
+                .get("maxSpeedMps")
+                .unwrap()
+                .as_f64(),
+            Some(2.0)
+        );
+        assert_eq!(
+            select_envelope(&sub, 50)
+                .unwrap()
+                .get("maxSpeedMps")
+                .unwrap()
+                .as_f64(),
+            Some(0.5)
+        );
+        let action = PhysicalAction {
+            force_n: None,
+            speed_mps: Some(1.5),
+            near_humans: false,
+            zone: Some("b".into()),
+            time_hm: None,
+        };
         assert!(autonomy_permits(&sub, 5, &action));
         assert!(!autonomy_permits(&sub, 50, &action));
         // widening schedule rejected
@@ -2020,7 +2477,14 @@ mod tests {
             {"maxStalenessEpochs": 10, "physicalScope": {"maxSpeedMps": 0.5}},
             {"maxStalenessEpochs": 100, "physicalScope": {"maxSpeedMps": 2.0}}
         ]);
-        assert!(build_autonomy_schedule(&[27u8; 32], &did, "did:web:node", &bad, "2026-07-19T12:00:00Z").is_err());
+        assert!(build_autonomy_schedule(
+            &[27u8; 32],
+            &did,
+            "did:web:node",
+            &bad,
+            "2026-07-19T12:00:00Z"
+        )
+        .is_err());
     }
 
     #[test]
@@ -2040,16 +2504,34 @@ mod tests {
             json!({"id": "did:web:n", "attestor": "did:web:p2", "outcome": "ok", "epoch": 90}),
             json!({"id": "did:web:n", "attestor": "did:web:p1", "outcome": "ok", "epoch": 80}),
         ];
-        let st = node_standing(&att, "did:web:n", 100, 10.0, &["ok", "success", "authenticated"]);
+        let st = node_standing(
+            &att,
+            "did:web:n",
+            100,
+            10.0,
+            &["ok", "success", "authenticated"],
+        );
         assert!((st - 1.5).abs() < 1e-9);
     }
 
     #[test]
     fn bundle_trust_and_custody() {
         let (pk, did) = identity(&[29u8; 32]);
-        let bc = bind_credential_to_bundle(&[29u8; 32], &did, "b-1", "sha256:abc", &json!({"action": "deliver"}), "2026-07-19T12:00:00Z").unwrap();
-        assert!(verify_bundle_trust(&bc, &pk, "sha256:abc").unwrap().is_some());
-        assert!(verify_bundle_trust(&bc, &pk, "sha256:TAMPER").unwrap().is_none());
+        let bc = bind_credential_to_bundle(
+            &[29u8; 32],
+            &did,
+            "b-1",
+            "sha256:abc",
+            &json!({"action": "deliver"}),
+            "2026-07-19T12:00:00Z",
+        )
+        .unwrap();
+        assert!(verify_bundle_trust(&bc, &pk, "sha256:abc")
+            .unwrap()
+            .is_some());
+        assert!(verify_bundle_trust(&bc, &pk, "sha256:TAMPER")
+            .unwrap()
+            .is_none());
         let transfers = vec![
             json!({"id": "b-1", "custodian": "did:web:relay1", "previousCustodian": did, "epoch": 1}),
             json!({"id": "b-1", "custodian": "did:web:relay2", "previousCustodian": "did:web:relay1", "epoch": 2}),

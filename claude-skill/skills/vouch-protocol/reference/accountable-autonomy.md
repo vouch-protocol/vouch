@@ -129,3 +129,29 @@ unhidable even for a misaligned agent: it must state a reason on the record
 (reasoning), wait out a window a human can veto (deliberation), stay inside an
 authority that cannot be broadened (caveats), against a decision that is
 reproducible (provenance), in front of a public append-only log (transparency).
+
+## Event-Triggered Intent Recheck (`vouch.reasoning` / `vouch.intent_recheck`)
+
+A heartbeat proves an agent is still running. It does not prove the agent still
+means to do what it is about to do. A session renews on a fixed interval, so
+there is a window between two heartbeats where nothing is re-checked, and someone
+who knows the interval could line up a sensitive action to land in that gap,
+riding on an intent that was locked in earlier. Event-triggered intent recheck
+(the secondary seal) closes this: when a sensitive action is about to run, the
+agent locks its current intent again at that moment and signs it, rather than
+leaning on the last heartbeat's assurance.
+
+A verifier checks that the seal was made after the most recent heartbeat and
+recently enough for the action's consequence tier (0 to 4, where the high and
+critical tiers require a fresh seal); a seal made too early is rejected with a
+stable reason string, `intent_seal_stale`. Routine, low-consequence actions are
+unaffected. The recheck reuses `eddsa-jcs-2022` signing and composes with the
+Reasoned Action Proofs and the Heartbeat Protocol, adding no new cryptography. It
+is the adversarial mirror of authority freshness: authority freshness asks
+whether the grant is still current, the secondary seal asks whether the intent
+is still current.
+
+Availability: it ships in the Python SDK, the Go sidecar, and the core (Rust and WASM), with
+shared cross-language interop vectors. The native bindings
+(Swift, Kotlin/JVM, .NET, C), and the idiomatic TypeScript wrapper are on the
+roadmap for this feature.

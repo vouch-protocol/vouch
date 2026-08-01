@@ -836,6 +836,41 @@ TTL is dynamically computed based on trust history:
 | Veteran | 2000 | ~45 seconds |
 | Anomaly Detected | Any | Instant reset to 5 seconds |
 
+### 11.9 Event-Triggered Intent Recheck
+
+The Heartbeat Protocol proves an agent is alive across an interval. It does not
+prove the agent's intent is current at the moment of a specific action. A
+justification sealed early in an interval still passes for an action executed
+much later in the same interval. A sophisticated actor who knows the pulse
+interval can therefore time a sensitive action to land in the gap between two
+heartbeats, riding on an intent that was locked in earlier while nothing is
+re-verified.
+
+Event-triggered intent recheck binds seal freshness to the action. Each reasoned
+action carries a seal timestamp (`sealedAt` in the justification block, or, when
+an escrow receipt is attached, the receipt's `depositedAt`). A verifier maps the
+action's consequence tier to a freshness requirement:
+
+| Consequence tier | Fresh seal required | Reference max age |
+|---|---|---|
+| Routine, Low, Medium (0..2) | No | not applicable |
+| High (3) | Yes | 300 seconds |
+| Critical (4) | Yes | 60 seconds |
+
+For a tier that requires a fresh seal, the verifier checks that the seal was made
+after the most recent heartbeat boundary and within the tier's max age. A seal
+made before the last boundary is rejected with the stable reason string
+`intent_seal_stale:sealed_at=<t>,last_pulse=<t>`; a seal within the window but
+older than the max age is rejected with `intent_seal_expired:sealed_at=<t>,max_age=<n>s`;
+a sensitive action carrying no seal timestamp is rejected with
+`intent_seal_missing:tier=<n>`. An agent produces a fresh seal by re-locking its
+current intent at execution time (the reseal helper). Routine actions inherit the
+last pulse's assurance and are unaffected. This mechanism reuses the existing
+justification and escrow primitives (Section 11.5 and the Reasoned Action Proofs)
+and adds no new cryptography. It is the adversarial mirror of authority-freshness,
+which addresses the same interval gap from the principal's side. The reference
+values above are deployment-tunable; a deployment substitutes its own tier policy.
+
 ---
 
 ## 12. Security Considerations

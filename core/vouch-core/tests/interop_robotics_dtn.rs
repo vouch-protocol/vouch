@@ -14,13 +14,20 @@ use std::fs;
 use vouch_core::robotics_dtn as dtn;
 
 fn vector() -> Value {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../test-vectors/robotics/dtn_vector.json");
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../test-vectors/robotics/dtn_vector.json"
+    );
     serde_json::from_str(&fs::read_to_string(path).expect("read dtn_vector.json")).expect("parse")
 }
 
 fn vec3(v: &Value) -> [f64; 3] {
     let a = v.as_array().expect("array");
-    [a[0].as_f64().unwrap(), a[1].as_f64().unwrap(), a[2].as_f64().unwrap()]
+    [
+        a[0].as_f64().unwrap(),
+        a[1].as_f64().unwrap(),
+        a[2].as_f64().unwrap(),
+    ]
 }
 
 #[test]
@@ -38,36 +45,59 @@ fn python_signed_dtn_credentials_verify_in_rust() {
 
         let ok = match kind {
             "freshness_token" => dtn::verify_freshness_token(
-                cred, &pk, v["verifierEpoch"].as_i64().unwrap(), v["tier"].as_str().unwrap(),
-                None, None, None,
+                cred,
+                &pk,
+                v["verifierEpoch"].as_i64().unwrap(),
+                v["tier"].as_str().unwrap(),
+                None,
+                None,
+                None,
             )
             .unwrap()
             .is_some(),
             "presence" => dtn::verify_presence_attestation(
-                cred, &pk, vec3(&v["verifierPosition"]), v["expectedNonce"].as_str(),
+                cred,
+                &pk,
+                vec3(&v["verifierPosition"]),
+                v["expectedNonce"].as_str(),
             )
             .unwrap()
             .is_some(),
             "geoscope" => {
                 let sub = dtn::verify_geoscoped_grant(cred, &pk, None).unwrap();
-                sub.as_ref().map(|s| dtn::geoscope_permits(s, vec3(&v["position"]))).unwrap_or(false)
+                sub.as_ref()
+                    .map(|s| dtn::geoscope_permits(s, vec3(&v["position"])))
+                    .unwrap_or(false)
             }
-            "conditional_revocation" => dtn::verify_conditional_revocation(cred, &pk).unwrap().is_some(),
+            "conditional_revocation" => dtn::verify_conditional_revocation(cred, &pk)
+                .unwrap()
+                .is_some(),
             "range_observation" => dtn::verify_range_observation(cred, &pk).unwrap().is_some(),
             "beam_presence" => dtn::verify_beam_presence(
-                cred, &pk, vec3(&v["peerDirection"]), v["expectedNonce"].as_str(),
+                cred,
+                &pk,
+                vec3(&v["peerDirection"]),
+                v["expectedNonce"].as_str(),
             )
             .unwrap()
             .is_some(),
-            "distress" => dtn::verify_distress_attestation(cred, &pk).unwrap().is_some(),
+            "distress" => dtn::verify_distress_attestation(cred, &pk)
+                .unwrap()
+                .is_some(),
             "trust_state_update" => dtn::verify_trust_state_update(cred, &pk).unwrap().is_some(),
             "time_quality" => {
                 let sub = dtn::verify_time_quality_attestation(cred, &pk).unwrap();
-                sub.as_ref().map(|s| dtn::time_quality_permits(s, v["tier"].as_str().unwrap(), None)).unwrap_or(false)
+                sub.as_ref()
+                    .map(|s| dtn::time_quality_permits(s, v["tier"].as_str().unwrap(), None))
+                    .unwrap_or(false)
             }
-            "integrity_risk" => dtn::verify_integrity_risk_attestation(cred, &pk).unwrap().is_some(),
+            "integrity_risk" => dtn::verify_integrity_risk_attestation(cred, &pk)
+                .unwrap()
+                .is_some(),
             "perception_claim" => dtn::verify_perception_claim(cred, &pk).unwrap().is_some(),
-            "bundle" => dtn::verify_bundle_trust(cred, &pk, v["payloadHash"].as_str().unwrap()).unwrap().is_some(),
+            "bundle" => dtn::verify_bundle_trust(cred, &pk, v["payloadHash"].as_str().unwrap())
+                .unwrap()
+                .is_some(),
             other => panic!("unknown verify kind: {other}"),
         };
         assert!(ok, "Rust failed to verify Python-signed credential: {name}");

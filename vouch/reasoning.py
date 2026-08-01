@@ -300,6 +300,7 @@ def sign_reasoned_action(
     escrow_receipt: Optional[Dict[str, Any]] = None,
     include_reasoning: bool = True,
     valid_from: Optional[datetime] = None,
+    sealed_at: Optional[datetime] = None,
     credential_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -323,6 +324,11 @@ def sign_reasoned_action(
             revealing anchors out of band at audit time.
         valid_from: Execution time (defaults to now, UTC). Must not precede the
             escrow deposit when a receipt is attached.
+        sealed_at: The moment the intent was sealed, recorded as ``sealedAt`` in
+            the justification block. Read by the intent recheck
+            (:mod:`vouch.intent_recheck`) to bind seal freshness to the action.
+            When escrow is used this SHOULD equal the receipt's ``depositedAt``.
+            Omitted by default, so existing callers are unaffected.
         credential_id: Optional credential id (defaults to a ``urn:uuid``).
     """
     if not isinstance(intent, dict) or not intent.get("action") or not intent.get("target"):
@@ -334,6 +340,8 @@ def sign_reasoned_action(
     jblock: Dict[str, Any] = {
         "commitment": {"algorithm": JUSTIFICATION_ALGORITHM, "digest": digest},
     }
+    if sealed_at is not None:
+        jblock["sealedAt"] = _iso(sealed_at.astimezone(timezone.utc))
     if "commitmentLevel" in justification:
         jblock["commitmentLevel"] = justification["commitmentLevel"]
     if escrow_receipt is not None:

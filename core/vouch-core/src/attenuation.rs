@@ -121,13 +121,17 @@ fn string_set(v: Option<&Value>) -> Result<Option<BTreeSet<String>>> {
                         set.insert(s.to_string());
                     }
                     None => {
-                        return Err(CoreError::Json("action/target array must be strings".into()))
+                        return Err(CoreError::Json(
+                            "action/target array must be strings".into(),
+                        ))
                     }
                 }
             }
             Ok(Some(set))
         }
-        Some(_) => Err(CoreError::Json("action/target must be a string or array".into())),
+        Some(_) => Err(CoreError::Json(
+            "action/target must be a string or array".into(),
+        )),
     }
 }
 
@@ -287,9 +291,14 @@ pub fn non_expansion(parent: &Value, child: &Value) -> std::result::Result<(), D
     }
 
     // resource: child resource must be a sub-resource of the parent's.
-    let c_res = c_intent.and_then(|v| v.get("resource")).and_then(|v| v.as_str());
+    let c_res = c_intent
+        .and_then(|v| v.get("resource"))
+        .and_then(|v| v.as_str());
     if let Some(cr) = c_res {
-        if let Some(pr) = p_intent.and_then(|v| v.get("resource")).and_then(|v| v.as_str()) {
+        if let Some(pr) = p_intent
+            .and_then(|v| v.get("resource"))
+            .and_then(|v| v.as_str())
+        {
             if !is_sub_resource(cr, pr) {
                 return Err(Dimension::Resource);
             }
@@ -509,12 +518,20 @@ pub fn validate_chain_json(request_json: &str) -> String {
     let trusted_roots: Vec<String> = req
         .get("trustedRoots")
         .and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_default();
     let revoked: Vec<usize> = req
         .get("revokedIndices")
         .and_then(|v| v.as_array())
-        .map(|a| a.iter().filter_map(|x| x.as_u64().map(|n| n as usize)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_u64().map(|n| n as usize))
+                .collect()
+        })
         .unwrap_or_default();
     let budget = VerifierBudget {
         max_depth: req
@@ -595,8 +612,16 @@ mod tests {
     #[test]
     fn resource_narrowing_is_valid() {
         let chain = vec![
-            link("did:web:root", "did:web:a", json!({"resource":"https://x/a"})),
-            link("did:web:a", "did:web:b", json!({"resource":"https://x/a/b"})),
+            link(
+                "did:web:root",
+                "did:web:a",
+                json!({"resource":"https://x/a"}),
+            ),
+            link(
+                "did:web:a",
+                "did:web:b",
+                json!({"resource":"https://x/a/b"}),
+            ),
         ];
         assert!(validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).is_ok());
     }
@@ -604,12 +629,22 @@ mod tests {
     #[test]
     fn resource_widening_rejected_naming_dimension() {
         let chain = vec![
-            link("did:web:root", "did:web:a", json!({"resource":"https://x/a/b"})),
+            link(
+                "did:web:root",
+                "did:web:a",
+                json!({"resource":"https://x/a/b"}),
+            ),
             link("did:web:a", "did:web:b", json!({"resource":"https://x/a"})),
         ];
-        let err = validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
+        let err =
+            validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
         assert_eq!(err.code(), "scope_exceeds_parent");
-        assert_eq!(err, DelegationReject::ScopeExceedsParent { dimension: Dimension::Resource });
+        assert_eq!(
+            err,
+            DelegationReject::ScopeExceedsParent {
+                dimension: Dimension::Resource
+            }
+        );
     }
 
     #[test]
@@ -625,14 +660,24 @@ mod tests {
             link("did:web:root", "did:web:a", json!({"action":"read"})),
             link("did:web:a", "did:web:b", json!({"action":["read","write"]})),
         ];
-        let err = validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
-        assert_eq!(err, DelegationReject::ScopeExceedsParent { dimension: Dimension::Action });
+        let err =
+            validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
+        assert_eq!(
+            err,
+            DelegationReject::ScopeExceedsParent {
+                dimension: Dimension::Action
+            }
+        );
     }
 
     #[test]
     fn action_subset_ok() {
         let chain = vec![
-            link("did:web:root", "did:web:a", json!({"action":["read","write"]})),
+            link(
+                "did:web:root",
+                "did:web:a",
+                json!({"action":["read","write"]}),
+            ),
             link("did:web:a", "did:web:b", json!({"action":"read"})),
         ];
         assert!(validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).is_ok());
@@ -645,8 +690,14 @@ mod tests {
         let mut b = link("did:web:a", "did:web:b", json!({"action":"read"}));
         b["rate"] = json!({"limit":100,"window":"PT30M"}); // twice the events/sec
         let chain = vec![a, b];
-        let err = validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
-        assert_eq!(err, DelegationReject::ScopeExceedsParent { dimension: Dimension::Rate });
+        let err =
+            validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
+        assert_eq!(
+            err,
+            DelegationReject::ScopeExceedsParent {
+                dimension: Dimension::Rate
+            }
+        );
     }
 
     #[test]
@@ -666,8 +717,14 @@ mod tests {
         let mut b = link("did:web:a", "did:web:b", json!({"action":"read"}));
         b["policy"] = json!({"minHeartbeatAgeSeconds":100}); // weaker
         let chain = vec![a, b];
-        let err = validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
-        assert_eq!(err, DelegationReject::ScopeExceedsParent { dimension: Dimension::Policy });
+        let err =
+            validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
+        assert_eq!(
+            err,
+            DelegationReject::ScopeExceedsParent {
+                dimension: Dimension::Policy
+            }
+        );
     }
 
     #[test]
@@ -688,8 +745,21 @@ mod tests {
             json!({"issuer":"did:web:a","subject":"did:web:b","intent":{"action":"read"},
                    "validFrom":"2026-04-26T09:00:00Z","validUntil":"2026-04-26T12:00:00Z"}),
         ];
-        let err = validate_chain(&chain, &[], &[], &VerifierBudget::default(), "2026-04-26T10:30:00Z", 30).unwrap_err();
-        assert_eq!(err, DelegationReject::ScopeExceedsParent { dimension: Dimension::Time });
+        let err = validate_chain(
+            &chain,
+            &[],
+            &[],
+            &VerifierBudget::default(),
+            "2026-04-26T10:30:00Z",
+            30,
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            DelegationReject::ScopeExceedsParent {
+                dimension: Dimension::Time
+            }
+        );
     }
 
     #[test]
@@ -699,15 +769,27 @@ mod tests {
             link("did:web:root", "did:web:a", i.clone()),
             link("did:web:WRONG", "did:web:b", i.clone()),
         ];
-        let err = validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
-        assert_eq!(err, DelegationReject::SubjectIssuerMismatch { link_index: 1 });
+        let err =
+            validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
+        assert_eq!(
+            err,
+            DelegationReject::SubjectIssuerMismatch { link_index: 1 }
+        );
     }
 
     #[test]
     fn untrusted_root_rejected() {
         let i = json!({"action":"read"});
         let chain = vec![link("did:web:root", "did:web:a", i)];
-        let err = validate_chain(&chain, &["did:web:other".into()], &[], &VerifierBudget::default(), now(), 30).unwrap_err();
+        let err = validate_chain(
+            &chain,
+            &["did:web:other".into()],
+            &[],
+            &VerifierBudget::default(),
+            now(),
+            30,
+        )
+        .unwrap_err();
         assert_eq!(err, DelegationReject::UntrustedPrincipal);
     }
 
@@ -720,7 +802,8 @@ mod tests {
             link("did:web:b", "did:web:c", i.clone()),
         ];
         // middle link revoked
-        let err = validate_chain(&chain, &[], &[1], &VerifierBudget::default(), now(), 30).unwrap_err();
+        let err =
+            validate_chain(&chain, &[], &[1], &VerifierBudget::default(), now(), 30).unwrap_err();
         assert_eq!(err, DelegationReject::DelegationRevoked { link_index: 1 });
     }
 
@@ -732,9 +815,17 @@ mod tests {
             link("did:web:a", "did:web:b", i.clone()),
             link("did:web:b", "did:web:c", i.clone()),
         ];
-        let budget = VerifierBudget { max_depth: Some(2), max_cumulative_ttl_seconds: None };
+        let budget = VerifierBudget {
+            max_depth: Some(2),
+            max_cumulative_ttl_seconds: None,
+        };
         let err = validate_chain(&chain, &[], &[], &budget, now(), 30).unwrap_err();
-        assert_eq!(err, DelegationReject::VerifierBudgetExceeded { limit: "depth".into() });
+        assert_eq!(
+            err,
+            DelegationReject::VerifierBudgetExceeded {
+                limit: "depth".into()
+            }
+        );
     }
 
     #[test]
@@ -744,7 +835,11 @@ mod tests {
         let mut chain = Vec::new();
         let i = json!({"action":"read","resource":"https://x/a"});
         for n in 0..10 {
-            let issuer = if n == 0 { "did:web:root".to_string() } else { format!("did:web:h{}", n - 1) };
+            let issuer = if n == 0 {
+                "did:web:root".to_string()
+            } else {
+                format!("did:web:h{}", n - 1)
+            };
             let subject = format!("did:web:h{n}");
             chain.push(link(&issuer, &subject, i.clone()));
         }
@@ -754,15 +849,31 @@ mod tests {
     #[test]
     fn now_outside_effective_window_rejected() {
         let chain = vec![link("did:web:root", "did:web:a", json!({"action":"read"}))];
-        let err = validate_chain(&chain, &[], &[], &VerifierBudget::default(), "2026-04-26T20:00:00Z", 30).unwrap_err();
+        let err = validate_chain(
+            &chain,
+            &[],
+            &[],
+            &VerifierBudget::default(),
+            "2026-04-26T20:00:00Z",
+            30,
+        )
+        .unwrap_err();
         assert_eq!(err, DelegationReject::OutsideValidityWindow);
     }
 
     #[test]
     fn absent_child_dimension_inherits_and_passes() {
         let chain = vec![
-            link("did:web:root", "did:web:a", json!({"action":"read","resource":"https://x/a"})),
-            link("did:web:a", "did:web:b", json!({"resource":"https://x/a/b"})), // action omitted => inherit
+            link(
+                "did:web:root",
+                "did:web:a",
+                json!({"action":"read","resource":"https://x/a"}),
+            ),
+            link(
+                "did:web:a",
+                "did:web:b",
+                json!({"resource":"https://x/a/b"}),
+            ), // action omitted => inherit
         ];
         assert!(validate_chain(&chain, &[], &[], &VerifierBudget::default(), now(), 30).is_ok());
     }
