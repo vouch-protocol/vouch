@@ -48,5 +48,10 @@
     "login": "kautilyaa",
     "pr": 345,
     "title": "152 test vector"
+  },
+  {
+    "login": "aiconsulting4future",
+    "pr": 375,
+    "title": "Authority freshness: treat a change in authority state as an input to trust freshness"
   }
 ]
