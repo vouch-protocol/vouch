@@ -353,6 +353,23 @@ proofs so an action cannot be omitted or rewritten). See
 `reference/accountable-autonomy.md`; each has a runnable `examples/*_demo.py` and a
 live section on the interactive demos page.
 
+### "How do I stop an agent acting in the gap between two heartbeats?"
+
+A heartbeat proves an agent is still running, not that it still means to do what
+it is about to do. Because a session renews on a fixed interval, there is a window
+between two heartbeats where nothing is re-checked, and someone who knows the
+interval could time a sensitive action to land in that gap on an intent locked in
+earlier. Event-triggered intent recheck (the secondary seal) closes it: when a
+sensitive action is about to run, the agent locks its current intent again at that
+moment and signs it (`vouch.reasoning` / `vouch.intent_recheck`, and the Rust core
+`reasoning.rs`). A verifier requires the seal to be made after the most recent
+heartbeat and recently enough for the action's consequence tier (0 to 4, high and
+critical tiers demand a fresh seal), rejecting a too-early seal with the stable
+reason `intent_seal_stale`; routine actions are unaffected. It reuses
+`eddsa-jcs-2022` signing and composes with the Reasoned Action Proofs and the
+Heartbeat Protocol. Available in the Python SDK and the core (Rust and WASM) with
+shared interop vectors; other SDKs to follow. See `reference/accountable-autonomy.md`.
+
 ### "How do I integrate Vouch with LangChain / CrewAI / MCP?"
 
 Reference implementations under `vouch/integrations/`. See

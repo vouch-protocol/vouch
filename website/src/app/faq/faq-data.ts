@@ -237,6 +237,11 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
         a: `\`vouch.transparency\` submits consequential actions to an append-only RFC 6962 Merkle log that signs its size and root as a Signed Tree Head. A verifier can demand an inclusion proof that a specific action is in the log, and a monitor can demand a consistency proof that an older tree head is a strict prefix of a newer one. So the log cannot silently omit an action or rewrite history, and comparing tree heads across observers catches a split view. It is the same discipline Certificate Transparency brought to misissuance.`,
         helpLinks: [{ label: 'See it: the transparency log', href: '/demos/#transparency' }],
       },
+      {
+        q: 'A heartbeat says the agent is still running. What stops it acting in the gap between two heartbeats?',
+        a: `A heartbeat proves an agent is still alive. It does not prove the agent still means to do what it is about to do. Because a session renews on a fixed interval, there is a window between two heartbeats where nothing is re-checked, and someone who knows the interval could line up a sensitive action to land in that gap, riding on an intent that was locked in earlier. Event-triggered intent recheck (the secondary seal) closes this: when a sensitive action is about to run, the agent locks its current intent again at that moment and signs it, rather than leaning on the last heartbeat's assurance. A verifier checks that the seal was made after the most recent heartbeat and recently enough for how sensitive the action is (consequence tiers 0 to 4 map to a freshness requirement, and the high and critical tiers demand a fresh seal); a seal made too early is rejected with a stable reason like \`intent_seal_stale\`. Routine, low-consequence actions are unaffected. It adds no new cryptography, reusing the \`eddsa-jcs-2022\` signing already there, and composes with Reasoned Action Proofs and the Heartbeat Protocol. It ships today in the Python SDK and the core (Rust and WASM), with the other SDKs to follow.`,
+        meta: 'Shipped - vouch.reasoning / vouch.intent_recheck (Python, Rust core, WASM)',
+      },
     ],
   },
 
