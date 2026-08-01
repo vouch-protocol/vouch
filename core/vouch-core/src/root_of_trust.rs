@@ -695,7 +695,11 @@ mod tests {
             NOW,
             30,
         );
-        assert!(result.ok, "self-built chain must verify: {:?}", result.reason);
+        assert!(
+            result.ok,
+            "self-built chain must verify: {:?}",
+            result.reason
+        );
         assert_eq!(result.agent_did.as_deref(), Some(agent_did.as_str()));
         assert_eq!(result.issuer_did.as_deref(), Some(issuer_did.as_str()));
         assert_eq!(result.attributes, Some(agent_attributes()));
@@ -706,7 +710,10 @@ mod tests {
     fn tampered_identity_proof_is_rejected() {
         let vector = load_vector();
         let mut identity = vector["agentIdentity"].clone();
-        let original = identity["proof"]["proofValue"].as_str().unwrap().to_string();
+        let original = identity["proof"]["proofValue"]
+            .as_str()
+            .unwrap()
+            .to_string();
         // Flip one base58 character so the value still decodes but the signature
         // no longer matches.
         let mut chars: Vec<char> = original.chars().collect();
@@ -770,11 +777,7 @@ mod tests {
     #[test]
     fn ambiguous_type_is_rejected() {
         let (_root, recognition, mut identity) = build_all();
-        identity["type"] = json!([
-            VC_TYPE,
-            AGENT_IDENTITY_TYPE,
-            RECOGNIZED_ISSUER_TYPE
-        ]);
+        identity["type"] = json!([VC_TYPE, AGENT_IDENTITY_TYPE, RECOGNIZED_ISSUER_TYPE]);
         let root_did = did_of_seed(&ROOT_SEED).unwrap();
         let result = verify_identity_chain(
             &identity,
