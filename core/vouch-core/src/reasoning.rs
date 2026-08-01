@@ -533,7 +533,7 @@ where
 }
 
 // ---------------------------------------------------------------------------
-// Intent recheck: bind seal freshness to the action, not just the interval
+// Intent recheck: bind seal freshness to the action, not the interval alone
 // ---------------------------------------------------------------------------
 
 /// Where an action's execution time falls relative to the current pulse window
