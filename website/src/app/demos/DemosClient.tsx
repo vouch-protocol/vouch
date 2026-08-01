@@ -435,6 +435,73 @@ function AuthorityFreshness() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Section VII - Intent recheck (vouch.reasoning)                      */
+/* ------------------------------------------------------------------ */
+
+function IntentRecheck() {
+  // A heartbeat pulse at 10:00:00, one-minute interval. A high-consequence tier
+  // requires a seal made after the last pulse boundary and within 300s. The
+  // verdict below is the real intent-recheck policy computation over timestamps;
+  // the reason string is the one the SDK returns.
+  const [inGap, setInGap] = useState(false); // false: inside the window, true: in the gap
+  const [resealed, setResealed] = useState(false);
+
+  const PULSE0 = Date.parse('2026-08-02T10:00:00Z');
+  const INTERVAL = 60_000;
+  const MAX_AGE = 300_000; // high tier
+  const execMs = PULSE0 + (inGap ? 80_000 : 20_000);
+  const lastPulse = PULSE0 + Math.floor((execMs - PULSE0) / INTERVAL) * INTERVAL;
+  const sealedMs = resealed ? execMs : PULSE0 - 10_000;
+  const iso = (ms: number) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+  let reason: string | null = null;
+  if (sealedMs < lastPulse) {
+    reason = `intent_seal_stale:sealed_at=${iso(sealedMs)},last_pulse=${iso(lastPulse)}`;
+  } else if (execMs - sealedMs > MAX_AGE) {
+    reason = `intent_seal_expired:sealed_at=${iso(sealedMs)},max_age=300s`;
+  }
+  const ok = reason === null;
+
+  return (
+    <div className="grid md:grid-cols-2 gap-8 items-start">
+      <div>
+        <div className="eyebrow-faint mb-2">Try it as the verifier</div>
+        <p className="font-serif text-[1.05rem] mb-4">
+          The agent runs a <span className="text-burgundy font-semibold">high-consequence transfer</span>.
+          A heartbeat proves it is alive, not that its intent is current.
+        </p>
+        <div className="mb-3">
+          <div className="eyebrow-faint mb-1">When does the action run?</div>
+          <div className="flex gap-2 flex-wrap">
+            <button className={`demo-radio${!inGap ? ' on' : ''}`} onClick={() => setInGap(false)}>Inside the pulse window</button>
+            <button className={`demo-radio${inGap ? ' on' : ''}`} onClick={() => setInGap(true)}>In the gap after a pulse</button>
+          </div>
+        </div>
+        <div>
+          <div className="eyebrow-faint mb-1">Did the agent reseal its intent at execution time?</div>
+          <div className="flex gap-2 flex-wrap">
+            <button className={`demo-radio${resealed ? ' on' : ''}`} onClick={() => setResealed(true)}>Resealed now</button>
+            <button className={`demo-radio${!resealed ? ' on' : ''}`} onClick={() => setResealed(false)}>Reused the earlier seal</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="demo-ledger" style={{ minHeight: '150px' }}>
+          <div className="demo-line"><span className="k">pulse</span> {iso(lastPulse)} · interval 60s</div>
+          <div className="demo-line"><span className="k">exec</span> {iso(execMs)} · tier high (fresh seal required)</div>
+          <div className="demo-line"><span className="k">seal</span> {iso(sealedMs)} {resealed ? '· resealed at execution' : '· locked before the pulse'}</div>
+          <div className="demo-line"><span className="k">rule</span> seal must be after the last pulse and within 300s</div>
+        </div>
+        <div className="demo-verdict mt-4" style={{ borderColor: ok ? ALLOW : DENY }}>
+          <span className="demo-badge" style={{ color: ok ? ALLOW : DENY, borderColor: ok ? ALLOW : DENY }}>{ok ? 'verified' : 'rejected'}</span>
+          <span className="font-mono text-[0.85rem] text-ink-soft">{ok ? 'intent seal is current for this action' : reason}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export default function DemosClient() {
   return (
@@ -494,7 +561,7 @@ export default function DemosClient() {
         </div>
       </section>
 
-      <section id="authority-freshness" className="scroll-mt-24">
+      <section id="authority-freshness" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ VI</span>
@@ -502,6 +569,17 @@ export default function DemosClient() {
           </div>
           <p className="eyebrow mb-6">A change in authority collapses the window to now, not in five minutes · vouch.freshness</p>
           <AuthorityFreshness />
+        </div>
+      </section>
+
+      <section id="intent-recheck" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ VII</span>
+            <h2>The intent recheck</h2>
+          </div>
+          <p className="eyebrow mb-6">Timing the gap between heartbeats does not help · vouch.reasoning</p>
+          <IntentRecheck />
         </div>
       </section>
     </>
