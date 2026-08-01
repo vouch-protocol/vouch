@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   justification build, the canonical JCS justification digest, reasoned-action
   sign and verify, and escrow receipt build and verify. The core matches the
   Python reference (`vouch/reasoning.py`) byte for byte, including the stable
-  reason strings, and is mirrored to the WASM build.
+  reason strings, and is mirrored to the WASM build and the Go sidecar.
 - Event-triggered intent recheck (the secondary seal). A heartbeat proves an
   agent is still running; it does not prove the agent's intent is current at the
   moment of a sensitive action. Someone who knows the pulse interval could line
@@ -41,8 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configurable max age, and rejects a stale seal with a stable reason string
   (`intent_seal_stale:...`). Routine actions are unaffected. This composes with
   the existing justification and escrow primitives and adds no new cryptography.
-  Shipped in the Rust core, the Python SDK (`vouch.intent_recheck`), and the WASM
-  build, with shared cross-language interop vectors under
+  Shipped in the Rust core, the Python SDK (`vouch.intent_recheck`), the WASM
+  build, and the Go sidecar, with shared cross-language interop vectors under
   `test-vectors/intent-recheck/`. The idea came from a public discussion
   contribution by Sriram Iyer, who described how a sophisticated actor could time
   malicious behavior to land between two heartbeats and proposed re-locking the
