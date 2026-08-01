@@ -53,5 +53,10 @@
     "login": "aiconsulting4future",
     "pr": 375,
     "title": "Authority freshness: treat a change in authority state as an input to trust freshness"
+  },
+  {
+    "login": "sriram14-cdrom",
+    "pr": 377,
+    "title": "Event-triggered intent recheck (secondary seal)"
   }
 ]
