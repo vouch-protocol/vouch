@@ -113,5 +113,30 @@ for (const c of authority.freshness.cases) {
 }
 ok(`authority freshness matches all ${authority.freshness.cases.length} shared cases`, freshnessFailures === 0);
 
+// Reasoned Action Proofs + event-triggered intent recheck: verify a Python-signed
+// seal in WASM, recompute the JCS digest byte-for-byte, and return the SAME
+// accept/reject verdict for every case in the shared intent-recheck vector.
+const intent = rd('../../test-vectors/intent-recheck/vector.json');
+const intentPubB64 = Buffer.from(intent.public_key_hex, 'hex').toString('base64');
+ok(
+  'intent-recheck justification digest matches reference',
+  core.reasoningJustificationDigest(JSON.stringify(intent.reference_justification)) ===
+    intent.expected_justification_digest,
+);
+for (const c of intent.cases) {
+  const cj = JSON.stringify(c.credential);
+  ok(`intent-recheck signature verifies: ${c.name}`, core.verifyProof(cj, intentPubB64) === true);
+  const reason = core.reasoningVerifyIntentFreshness(cj, c.tier, c.last_pulse) ?? null;
+  ok(`intent-recheck verdict matches: ${c.name}`, reason === c.expected_reason);
+}
+// Execution-time reseal produces an accepted fresh seal in a later interval.
+const irSeed = Buffer.from(new Uint8Array(32).fill(7)).toString('base64');
+const irIntent = JSON.stringify({ action: 'transfer_funds', target: 'account:9911', resource: 'https://bank.example/v1/xfer' });
+const irHash = core.reasoningArtifactDigest(JSON.stringify({ text: 'please move $500 to savings' }));
+const irAnchors = JSON.stringify([{ type: 'user_message', claim: 'user asked', ref: 'urn:msg:42', evidenceHash: irHash }]);
+const resealed = core.reasoningResealIntent(irSeed, 'did:web:agent.example', 'did:web:agent.example#key-1', irIntent, irAnchors, 3, '2026-08-02T10:05:00Z', 'urn:uuid:aaaa', true);
+ok('intent-recheck reseal signature verifies', core.verifyProof(resealed, intentPubB64) === true);
+ok('intent-recheck reseal is accepted as fresh', (core.reasoningVerifyIntentFreshness(resealed, 3, '2026-08-02T10:05:00Z') ?? null) === null);
+
 console.log(`\nTOTAL: ${pass} pass, ${fail} fail`);
 process.exit(fail ? 1 : 0);

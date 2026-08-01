@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 
 use vouch_core::{
     authority_state, credentials, data_integrity, delegation, hybrid, keys, multikey, pq,
-    robotics_json as rjson, status_list, threshold_json,
+    reasoning, robotics_json as rjson, status_list, threshold_json,
 };
 
 // --------------------------------------------------------------------------
@@ -1227,5 +1227,171 @@ pub fn robotics_verify_safety_evidence(
     robot_public_b64: &str,
     entries_json: &str,
 ) -> Result<String, JsError> {
-    rjson::verify_safety_evidence(credential_json, &b64d(robot_public_b64)?, entries_json).map_err(jerr)
+    rjson::verify_safety_evidence(credential_json, &b64d(robot_public_b64)?, entries_json)
+        .map_err(jerr)
+}
+
+// --------------------------------------------------------------------------
+// Reasoned Action Proofs + event-triggered intent recheck
+// --------------------------------------------------------------------------
+
+/// Multibase SHA-256 of an evidence artifact (JSON object or string).
+#[wasm_bindgen(js_name = reasoningArtifactDigest)]
+pub fn reasoning_artifact_digest(artifact_json: &str) -> Result<String, JsError> {
+    reasoning::artifact_digest(&parse(artifact_json)?).map_err(jerr)
+}
+
+/// Build a justification from an intent object, an anchors array, and an optional
+/// commitment level. Returns the justification as a JSON string.
+#[wasm_bindgen(js_name = reasoningBuildJustification)]
+pub fn reasoning_build_justification(
+    intent_json: &str,
+    anchors_json: &str,
+    commitment_level: Option<i32>,
+) -> Result<String, JsError> {
+    let anchors = match parse(anchors_json)? {
+        Value::Array(a) => a,
+        _ => return Err(JsError::new("anchors must be a JSON array")),
+    };
+    let just = reasoning::build_justification(
+        &parse(intent_json)?,
+        &anchors,
+        commitment_level.map(|l| l as i64),
+    )
+    .map_err(jerr)?;
+    Ok(just.to_string())
+}
+
+/// Multibase SHA-256 over the JCS-canonical justification.
+#[wasm_bindgen(js_name = reasoningJustificationDigest)]
+pub fn reasoning_justification_digest(justification_json: &str) -> Result<String, JsError> {
+    reasoning::justification_digest(&parse(justification_json)?).map_err(jerr)
+}
+
+/// Sign a ReasonedActionCredential. Pass null for the optional sealed_at and
+/// escrow_receipt_json. Returns the signed credential as a JSON string.
+#[wasm_bindgen(js_name = reasoningSignReasonedAction)]
+pub fn reasoning_sign_reasoned_action(
+    seed_b64: &str,
+    issuer_did: &str,
+    verification_method: &str,
+    intent_json: &str,
+    justification_json: &str,
+    valid_from: &str,
+    credential_id: &str,
+    include_reasoning: bool,
+    sealed_at: Option<String>,
+    escrow_receipt_json: Option<String>,
+) -> Result<String, JsError> {
+    let escrow_receipt = match escrow_receipt_json {
+        Some(s) => Some(parse(&s)?),
+        None => None,
+    };
+    let opts = reasoning::SignReasonedActionOptions {
+        include_reasoning,
+        escrow_receipt,
+        sealed_at,
+    };
+    let cred = reasoning::sign_reasoned_action(
+        &b64d(seed_b64)?,
+        issuer_did,
+        verification_method,
+        &parse(intent_json)?,
+        &parse(justification_json)?,
+        valid_from,
+        credential_id,
+        &opts,
+    )
+    .map_err(jerr)?;
+    Ok(cred.to_string())
+}
+
+/// Verify a ReasonedActionCredential. Returns null on success, else the stable
+/// reason string. Pass null for escrow_public_b64 when no escrow is required.
+#[wasm_bindgen(js_name = reasoningCheckReasonedAction)]
+pub fn reasoning_check_reasoned_action(
+    credential_json: &str,
+    public_b64: &str,
+    escrow_public_b64: Option<String>,
+    require_escrow: bool,
+) -> Result<Option<String>, JsError> {
+    let escrow_key = match escrow_public_b64 {
+        Some(s) => Some(b64d(&s)?),
+        None => None,
+    };
+    Ok(reasoning::check_reasoned_action(
+        &parse(credential_json)?,
+        &b64d(public_b64)?,
+        escrow_key.as_deref(),
+        require_escrow,
+    ))
+}
+
+/// Classify an execution time against the pulse schedule. Returns
+/// {in_window, in_gap, seconds_into_window} as a JSON string.
+#[wasm_bindgen(js_name = reasoningPulseWindow)]
+pub fn reasoning_pulse_window(
+    last_pulse: &str,
+    interval_seconds: i32,
+    exec_time: &str,
+) -> Result<String, JsError> {
+    let w =
+        reasoning::pulse_window(last_pulse, interval_seconds as i64, exec_time).map_err(jerr)?;
+    Ok(json!({
+        "in_window": w.in_window,
+        "in_gap": w.in_gap,
+        "seconds_into_window": w.seconds_into_window,
+    })
+    .to_string())
+}
+
+/// Verify intent freshness for a credential at a consequence tier, using the
+/// reference tier policy. Returns null when accepted, else the stable reason
+/// string (e.g. "intent_seal_stale:...").
+#[wasm_bindgen(js_name = reasoningVerifyIntentFreshness)]
+pub fn reasoning_verify_intent_freshness(
+    credential_json: &str,
+    tier: i32,
+    last_pulse: &str,
+) -> Result<Option<String>, JsError> {
+    reasoning::verify_intent_freshness(
+        &parse(credential_json)?,
+        tier as i64,
+        last_pulse,
+        reasoning::default_requirement(tier as i64),
+    )
+    .map_err(jerr)
+}
+
+/// Execution-time reseal: seal the intent at `now` and issue a fresh
+/// ReasonedActionCredential whose sealedAt and validFrom are both `now`.
+#[wasm_bindgen(js_name = reasoningResealIntent)]
+pub fn reasoning_reseal_intent(
+    seed_b64: &str,
+    issuer_did: &str,
+    verification_method: &str,
+    intent_json: &str,
+    anchors_json: &str,
+    commitment_level: Option<i32>,
+    now: &str,
+    credential_id: &str,
+    include_reasoning: bool,
+) -> Result<String, JsError> {
+    let anchors = match parse(anchors_json)? {
+        Value::Array(a) => a,
+        _ => return Err(JsError::new("anchors must be a JSON array")),
+    };
+    let cred = reasoning::reseal_intent(
+        &b64d(seed_b64)?,
+        issuer_did,
+        verification_method,
+        &parse(intent_json)?,
+        &anchors,
+        commitment_level.map(|l| l as i64),
+        now,
+        credential_id,
+        include_reasoning,
+    )
+    .map_err(jerr)?;
+    Ok(cred.to_string())
 }
