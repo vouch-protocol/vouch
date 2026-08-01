@@ -87,6 +87,7 @@ VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
 | `check_revocation(credential_json)` | Check a credential's `BitstringStatusList` entry: `ACTIVE`, `REVOKED`, or not individually revocable. |
 | `get_identity()` | Return the agent's DID. |
 | `evaluate_freshness(tier, snapshot_json=None, now_iso=None)` | Bounded-staleness revocation gate for offline/DTN use: decide if a last-synced revocation snapshot is fresh enough for the action's consequence tier, failing closed when too old. |
+| `check_intent_freshness(credential_json, last_pulse, tier='high')` | Event-triggered intent recheck: decide if a reasoned action's intent seal is fresh for its tier, requiring a sensitive action to be sealed after the last heartbeat boundary so timing the gap between heartbeats does not help. |
 | `verify_disconnected_edge(credential_json, public_key)` | Authenticate any disconnected-edge (DTN) credential type (freshness token, presence, ephemeris grant, revocation, bundle custody, …); returns its type and subject. |
 | `scan(text)` | Scan text (a diff, log, message, or file) for leaked Ed25519/hybrid private keys, seed env vars, and DID documents that embed a private key, before it crosses a trust boundary. |
 | `decode_did(key)` | Decode a `did:key:z...` identifier or bare Multikey and report its algorithm and public-key size, so you can confirm a peer's key is the algorithm you expect before trusting it. |

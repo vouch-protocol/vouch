@@ -367,6 +367,62 @@ def evaluate_freshness(
 
 
 @mcp.tool()
+def check_intent_freshness(
+    credential_json: str,
+    last_pulse: str,
+    tier: str = "high",
+) -> str:
+    """Decide if a reasoned action's intent seal is fresh enough for its tier.
+
+    Event-triggered intent recheck (the secondary seal). A heartbeat proves an
+    agent is still running; it does not prove the agent's intent is current at the
+    moment of a sensitive action. Someone who knows the pulse interval could time a
+    sensitive action to land in the gap between two heartbeats, riding on an intent
+    sealed earlier. For a sensitive tier this gate requires a seal made after the
+    last heartbeat boundary and recently enough, and rejects a stale seal.
+
+    Args:
+        credential_json: A ReasonedActionCredential as a JSON string. It carries a
+            'sealedAt' in its justification block (or an escrow receipt whose
+            'depositedAt' is used as the seal time).
+        last_pulse: The most recent heartbeat boundary as 'YYYY-MM-DDTHH:MM:SSZ'.
+        tier: Consequence tier: 'routine', 'low', 'medium', 'high' (default), or
+            'critical'. Routine, low, and medium do not require a fresh seal.
+
+    Returns:
+        'FRESH' when the seal is current for the tier, or 'STALE' with the stable
+        reason string (for example 'intent_seal_stale:...').
+    """
+    from vouch.intent_recheck import (
+        TIER_CRITICAL,
+        TIER_HIGH,
+        TIER_LOW,
+        TIER_MEDIUM,
+        TIER_ROUTINE,
+        verify_intent_freshness,
+    )
+
+    tiers = {
+        "routine": TIER_ROUTINE,
+        "low": TIER_LOW,
+        "medium": TIER_MEDIUM,
+        "high": TIER_HIGH,
+        "critical": TIER_CRITICAL,
+    }
+    tier_value = tiers.get(tier.lower(), TIER_HIGH)
+
+    try:
+        credential = json.loads(credential_json)
+    except json.JSONDecodeError as e:
+        return f"Error: credential_json is not valid JSON ({e})"
+
+    reason = verify_intent_freshness(credential, tier_value, last_pulse)
+    if reason is None:
+        return f"FRESH (tier={tier}): intent seal is current for this action"
+    return f"STALE (tier={tier}): {reason}"
+
+
+@mcp.tool()
 def verify_disconnected_edge(credential_json: str, public_key: str) -> str:
     """Authenticate a disconnected-edge (DTN) credential's signature.
 
