@@ -18,6 +18,7 @@ pub mod jcs;
 pub mod keys;
 pub mod multikey;
 pub mod pq;
+pub mod reasoning;
 pub mod recovery;
 pub mod recovery_json;
 pub mod robotics;
