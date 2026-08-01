@@ -21,10 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   action. Available in the Rust core and the Python, TypeScript, Go, and
   WebAssembly bindings, signed with `eddsa-jcs-2022` and pinned by a shared
   interop vector. The design came out of a public discussion with Sudip
-  Chatterjee, who argued that freshness has to account for both elapsed time and
-  authority state change, and who supplied the treasury and trading scenario
-  where a credential stays cryptographically valid while no longer representing
-  current authority.
+  Chatterjee ([@aiconsulting4future](https://github.com/aiconsulting4future)),
+  who argued that freshness has to account for both elapsed time and authority
+  state change, and who supplied the treasury and trading scenario where a
+  credential stays cryptographically valid while no longer representing current
+  authority.
 
 ### Changed
 

@@ -423,6 +423,12 @@ function AuthorityFreshness() {
           The epoch comparison is enforced locally with no network call. The critical tier is the honest limit: when the window
           is near zero the verifier does not trust any cached state and requires a live quorum co-sign, read at the moment of the action.
         </p>
+        <p className="text-ink-faint text-[0.8rem] mt-2 leading-relaxed">
+          The framing behind this capability, that freshness has to account for authority state change as well as elapsed time,
+          came from a public discussion with Sudip Chatterjee (
+          <a href="https://github.com/aiconsulting4future" className="prose-link" target="_blank" rel="noopener noreferrer">@aiconsulting4future</a>
+          ), who also supplied the treasury scenario above.
+        </p>
       </div>
     </div>
   );

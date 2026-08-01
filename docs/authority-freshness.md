@@ -44,7 +44,8 @@ has not yet refreshed still holds the old view. That is exactly why the
 zero-tolerance tier does not rely on a cached epoch at all and falls back to a
 live M-of-N co-sign read at the moment of the action.
 
-This framing came out of a public discussion with Sudip Chatterjee, who argued
+This framing came out of a public discussion with Sudip Chatterjee
+([@aiconsulting4future](https://github.com/aiconsulting4future)), who argued
 that freshness has to be a function of both elapsed time and authority state
 change, with the consequence of the action setting the threshold, and who
 supplied the treasury and trading scenario above where a credential stays
