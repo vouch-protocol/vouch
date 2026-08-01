@@ -109,7 +109,7 @@ def main():
             "return expected_reason for each case (null == accepted)."
         ),
         "module": "vouch.intent_recheck",
-        "spec_reference": "Specification 11.6",
+        "spec_reference": "Specification 11.9",
         "version": "1.0",
         "public_key_hex": raw_pub.hex(),
         "did": DID,

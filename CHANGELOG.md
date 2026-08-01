@@ -26,6 +26,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   state change, and who supplied the treasury and trading scenario where a
   credential stays cryptographically valid while no longer representing current
   authority.
+- Reasoned Action Proofs are now in the Rust core (`core/vouch-core/src/reasoning.rs`):
+  justification build, the canonical JCS justification digest, reasoned-action
+  sign and verify, and escrow receipt build and verify. The core matches the
+  Python reference (`vouch/reasoning.py`) byte for byte, including the stable
+  reason strings, and is mirrored to the WASM build.
+- Event-triggered intent recheck (the secondary seal). A heartbeat proves an
+  agent is still running; it does not prove the agent's intent is current at the
+  moment of a sensitive action. Someone who knows the pulse interval could line
+  up a sensitive action to land in the gap between two heartbeats, riding on an
+  intent sealed earlier in the interval. A sensitive action now reseals its
+  stated intent at execution time: for a sensitive consequence tier a verifier
+  requires a seal made after the last heartbeat boundary and within a
+  configurable max age, and rejects a stale seal with a stable reason string
+  (`intent_seal_stale:...`). Routine actions are unaffected. This composes with
+  the existing justification and escrow primitives and adds no new cryptography.
+  Shipped in the Rust core, the Python SDK (`vouch.intent_recheck`), and the WASM
+  build, with shared cross-language interop vectors under
+  `test-vectors/intent-recheck/`. The idea came from a public discussion
+  contribution by Sriram Iyer, who described how a sophisticated actor could time
+  malicious behavior to land between two heartbeats and proposed re-locking the
+  current intent at execution time.
 
 ### Changed
 

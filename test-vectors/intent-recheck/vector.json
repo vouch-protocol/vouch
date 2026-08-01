@@ -1,7 +1,7 @@
 {
   "description": "Event-triggered intent recheck. A ReasonedActionCredential carries a sealedAt timestamp; verify_intent_freshness binds seal freshness to the action for sensitive tiers. Every SDK must verify the signature, recompute justification_digest to expected_justification_digest, and return expected_reason for each case (null == accepted).",
   "module": "vouch.intent_recheck",
-  "spec_reference": "Specification 11.6",
+  "spec_reference": "Specification 11.9",
   "version": "1.0",
   "public_key_hex": "ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c",
   "did": "did:web:agent.example",
@@ -68,10 +68,10 @@
         "proof": {
           "type": "DataIntegrityProof",
           "cryptosuite": "eddsa-jcs-2022",
-          "created": "2026-08-01T19:17:01Z",
+          "created": "2026-08-01T19:32:02Z",
           "verificationMethod": "did:web:agent.example#key-1",
           "proofPurpose": "assertionMethod",
-          "proofValue": "z2yGQYNkcfeZiuYhQq5zZfyyWQDFRGSqk7xrAKqJdCTjoHgFLUd5AQ93cM92PEkvaR1aToJYNGdkEyqBKsXLAFHai"
+          "proofValue": "zBH85P7xXf9ZHkkaAgAEYH2kkri6CyuGfYp121jk8jRf9orRskzGxeBN4kcVVAK48WRyAAnHuZANjBxB6oMYJDhn"
         }
       },
       "expected_reason": null
@@ -119,10 +119,10 @@
         "proof": {
           "type": "DataIntegrityProof",
           "cryptosuite": "eddsa-jcs-2022",
-          "created": "2026-08-01T19:17:01Z",
+          "created": "2026-08-01T19:32:02Z",
           "verificationMethod": "did:web:agent.example#key-1",
           "proofPurpose": "assertionMethod",
-          "proofValue": "z625hTPr1qcKM19uCtphQaY9VtLCykTd8iXQ8KEmt8Zt2grAATmJjD7rtFff32Yb96JzMSzr5jD6HuSzboVxcckzE"
+          "proofValue": "z5y7e54zCcMJqvajLcnk2Qpk8DVpUSUYEe8yv5qKhPsgeeN9A2ZBToUt1iqS8pAS1mL2zDiw2orkZv9u1jG4k1Vu2"
         }
       },
       "expected_reason": "intent_seal_stale:sealed_at=2026-08-02T09:59:50Z,last_pulse=2026-08-02T10:00:00Z"
@@ -170,10 +170,10 @@
         "proof": {
           "type": "DataIntegrityProof",
           "cryptosuite": "eddsa-jcs-2022",
-          "created": "2026-08-01T19:17:01Z",
+          "created": "2026-08-01T19:32:02Z",
           "verificationMethod": "did:web:agent.example#key-1",
           "proofPurpose": "assertionMethod",
-          "proofValue": "z2uFSZPyQRjrHTFj9aSzJVMMW3HtnH76hsMPrxaUzGpn1BnPzU8jy1hoNY8SZKLUwNLTHbXAdqcKFfjsSegyJCfH6"
+          "proofValue": "z2jjSHyRzu6AVwUASRN6oN93gu9vrhkCXCqTFGmuPn7ZoPFxTNM2gCK3qbcvEUD2pEQsb2HbcWQZQUCtdK8Tjr5F9"
         }
       },
       "expected_reason": null
@@ -220,10 +220,10 @@
         "proof": {
           "type": "DataIntegrityProof",
           "cryptosuite": "eddsa-jcs-2022",
-          "created": "2026-08-01T19:17:01Z",
+          "created": "2026-08-01T19:32:02Z",
           "verificationMethod": "did:web:agent.example#key-1",
           "proofPurpose": "assertionMethod",
-          "proofValue": "z5JtsS2xgUydvyywupAgEeN3h7QcJ2UcUbxgLRa3U5ykpq1FRP591nvrUpvqF1xxRmRxrkWSVcEsdqymiAuWXJHCc"
+          "proofValue": "z4ZVTvcz4dAGmP9qEG86j1fj7CJdWBbRckvtkFHBuWJfnaCQBCtqzwEJcP8vMbQZoy1yXgJkNEZfeWgM3vaRnUGzz"
         }
       },
       "expected_reason": "intent_seal_missing:tier=3"
