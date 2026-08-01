@@ -105,8 +105,17 @@ VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
 
 Signing proves *you* acted. Verifying is how *everyone else* benefits: any
 MCP-capable agent, in any framework, can confirm another agent's credential with
-a single tool call and no SDK. That is what turns Vouch from a per-app library
-into an interoperable trust layer.
+a single tool call and no SDK. That is what turns Vouch Protocol from a per-app
+library into an interoperable trust layer.
+
+### Verifying without a key
+
+`verify` checks the cryptographic signature, so a credential that only looks
+well-formed will not pass. When you do not pass a key, it resolves the issuer's
+key from the credential's DID: `did:key` is
+self-certifying and resolves offline, while `did:web` is fetched over HTTPS from
+the issuer's own domain. If the key cannot be resolved, the credential is
+rejected. To verify fully offline, pass the issuer's key as `public_key`.
 
 ## Registry
 
