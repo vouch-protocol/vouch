@@ -152,13 +152,21 @@ def verify(credential_json: str, public_key: Optional[str] = None) -> str:
     Args:
         credential_json: The credential as a JSON string.
         public_key: Optional Multikey public key of the issuer. If omitted,
-            the issuer's DID is resolved to fetch its key.
+            the issuer's DID is resolved to fetch its key (did:key offline,
+            did:web over the network). If the key cannot be obtained, the
+            credential is rejected rather than accepted.
 
     Returns:
         A human-readable verdict: the issuer DID and authorized intent when
         valid, or a rejection reason.
     """
-    from vouch import Verifier
+    # Use the module-level resolver-enabled verify(). When no public_key is
+    # supplied it resolves the issuer's key from the credential's DID and
+    # checks the signature. Critically, it fails closed: an unresolvable key
+    # yields (False, None), so a forged or tampered credential is rejected
+    # instead of passing on structural checks alone. (The static
+    # Verifier.verify skips the signature check entirely when given no key.)
+    from vouch import verify as verify_credential
 
     try:
         credential = json.loads(credential_json)
@@ -166,7 +174,7 @@ def verify(credential_json: str, public_key: Optional[str] = None) -> str:
         return f"REJECTED: not valid JSON ({e})"
 
     try:
-        is_valid, passport = Verifier.verify(credential, public_key=public_key)
+        is_valid, passport = verify_credential(credential, public_key=public_key)
     except Exception as e:
         return f"REJECTED: verification error ({e})"
 

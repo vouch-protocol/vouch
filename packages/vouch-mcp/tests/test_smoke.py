@@ -52,16 +52,22 @@ def test_registered_tool_names():
     } <= names
 
 
-def test_sign_and_verify_roundtrip():
-    kp = generate_identity("agent.example.com")
+def _configure(kp):
     os.environ["VOUCH_PRIVATE_KEY"] = kp.private_key_jwk
     os.environ["VOUCH_DID"] = kp.did
-
     from vouch.autosign import reset_default_signer
 
     reset_default_signer()
-
     from vouch.integrations.mcp import server
+
+    return server
+
+
+def test_sign_and_verify_roundtrip_offline_key():
+    # did:web cannot be resolved offline in a test, so supply the issuer key
+    # directly (the offline verification path).
+    kp = generate_identity("agent.example.com")
+    server = _configure(kp)
 
     out = server.sign("read", "https://api.example.com", "customer:123")
     cred = json.loads(out)
@@ -71,5 +77,45 @@ def test_sign_and_verify_roundtrip():
     ok, _ = Verifier.verify(cred, public_key=pub)
     assert ok is True
 
-    verdict = server.verify(out, public_key=None)
-    assert "VERIFIED" in verdict or "REJECTED" in verdict
+    # The verify tool accepts the genuine credential when given the key...
+    assert "VERIFIED" in server.verify(out, public_key=kp.public_key_jwk)
+    # ...and rejects a tampered one.
+    bad = json.loads(out)
+    bad["proof"]["proofValue"] = "z" + ("2" * (len(bad["proof"]["proofValue"]) - 1))
+    assert "REJECTED" in server.verify(json.dumps(bad), public_key=kp.public_key_jwk)
+
+
+def test_verify_resolves_did_key_and_rejects_forgery():
+    # did:key is self-certifying (the key is in the DID), so the no-key path
+    # resolves it offline. This is the regression guard for the fail-open bug:
+    # a forged or tampered credential must be REJECTED, not VERIFIED.
+    from vouch.root_of_trust import generate_did_key_identity
+
+    kp = generate_did_key_identity()
+    assert kp.did.startswith("did:key:")
+    server = _configure(kp)
+
+    out = server.sign("read", "https://api.example.com", "customer:123")
+
+    # Genuine credential, no key passed -> resolver fetches it from the DID.
+    assert "VERIFIED" in server.verify(out)
+
+    # Corrupted signature, no key passed -> must be rejected.
+    bad_sig = json.loads(out)
+    bad_sig["proof"]["proofValue"] = "z" + ("2" * (len(bad_sig["proof"]["proofValue"]) - 1))
+    assert "REJECTED" in server.verify(json.dumps(bad_sig))
+
+    # Tampered intent, no key passed -> must be rejected.
+    bad_intent = json.loads(out)
+    bad_intent["credentialSubject"]["intent"]["action"] = "delete"
+    assert "REJECTED" in server.verify(json.dumps(bad_intent))
+
+
+def test_verify_fails_closed_when_key_unresolvable():
+    # A did:web that cannot be resolved must yield REJECTED on the no-key path,
+    # never VERIFIED on structural checks alone.
+    kp = generate_identity("unresolvable.example.invalid")
+    server = _configure(kp)
+
+    out = server.sign("read", "https://api.example.com", "customer:123")
+    assert "REJECTED" in server.verify(out)
