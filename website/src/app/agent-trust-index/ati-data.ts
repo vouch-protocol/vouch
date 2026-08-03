@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 18688,
-  "verifiable": 198,
-  "cannot": 18490,
-  "gradeA": 86,
-  "pctVerifiable": 1.1,
-  "pctCannot": 98.9,
-  "pctCard": 0.8,
+  "total": 19800,
+  "verifiable": 205,
+  "cannot": 19595,
+  "gradeA": 96,
+  "pctVerifiable": 1.0,
+  "pctCannot": 99.0,
+  "pctCard": 0.9,
   "pctRev": 0.5,
   "pctPq": 0.0,
-  "cardCount": 154,
-  "revCount": 89,
+  "cardCount": 172,
+  "revCount": 97,
   "pqCount": 0,
-  "generated": "27 July 2026"
+  "generated": "3 August 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -95,6 +95,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.gadgethumans.api/api-hub",
+    "domains": "api.gadgethumans.com",
+    "method": "did:key, Ed25519",
+    "did": "did:key:z6MkjdjQBbm4T3ZGeAuddRPzJs8KuKUbLBhaVkqML2z9hQjj"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.hemmabo/hemmabo-mcp-server",
     "domains": "www.hemmabo.com",
     "method": "did:web, Ed25519 (JWK)",
@@ -139,6 +147,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "agent-guild-5d5r.onrender.com",
     "method": "did:web, Ed25519 (Multikey)",
     "did": "did:web:agent-guild-5d5r.onrender.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.CHANGCHINFU/mcp-gauge",
+    "domains": "aeml-x402.zeabur.app",
+    "method": "did:key, Ed25519",
+    "did": "did:key:z6MkjSqVEigLT2eyFzJ9Vhb3DJD2wmwGosSbk1PJ1GTnuABV"
   },
   {
     "grade": "A",
@@ -195,6 +211,62 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "www.skilimone.com",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:www.skilimone.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.nirholas/ibm-x402-mcp-remote",
+    "domains": "three.ws",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:three.ws"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.nirholas/three.ws",
+    "domains": "three.ws",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:three.ws"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.nirholas/threews-3d-studio",
+    "domains": "three.ws",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:three.ws"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.nirholas/threews-3d-studio-free",
+    "domains": "three.ws",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:three.ws"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.nirholas/threews-agent",
+    "domains": "three.ws",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:three.ws"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.nirholas/threews-pumpfun",
+    "domains": "three.ws",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:three.ws"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.nirholas/threews-x402-bazaar",
+    "domains": "three.ws",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:three.ws"
   },
   {
     "grade": "A",
@@ -709,6 +781,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "did": "did:web:tooloracle.io"
   },
   {
+    "grade": "A",
+    "score": 100,
+    "name": "store.scvd/general-store",
+    "domains": "scvd.store",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:scvd.store"
+  },
+  {
     "grade": "C",
     "score": 60,
     "name": "ai.law.mcp/lawyer-search",
@@ -783,6 +863,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.anots/directory",
+    "domains": "api.anots.com",
+    "method": "did:web",
+    "did": "did:web:api.anots.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.bushdrum/events",
     "domains": "bushdrum.com",
     "method": "did:web",
@@ -799,14 +887,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "com.hergertsynthora/synthora-x402",
-    "domains": "mcp.hergertsynthora.com",
-    "method": "did:web",
-    "did": "did:web:mcp.hergertsynthora.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "com.melvea/local-discovery",
     "domains": "mcp.melvea.com",
     "method": "did:web",
@@ -815,18 +895,18 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "com.tkawen/intelligence-gateway",
-    "domains": "mcp.tkawen.com",
+    "name": "com.secondopinionx402/second-opinion",
+    "domains": "secondopinionx402.com",
     "method": "did:web",
-    "did": "did:web:mcp.tkawen.com"
+    "did": "did:web:secondopinionx402.com"
   },
   {
     "grade": "C",
     "score": 60,
-    "name": "dev.busymate/busymate-devtools",
-    "domains": "mcp.busymate.dev",
+    "name": "com.tkawen/intelligence-gateway",
+    "domains": "mcp.tkawen.com",
     "method": "did:web",
-    "did": "did:web:mcp.busymate.dev"
+    "did": "did:web:mcp.tkawen.com"
   },
   {
     "grade": "C",
@@ -1423,14 +1503,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.mirabello-consultancy/mcp-server",
-    "domains": "mcp.mirabelloconsultancy.com",
-    "method": "did:web",
-    "did": "did:web:mcp.mirabelloconsultancy.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.nao1234g/calibration-routing",
     "domains": "nowpattern.com",
     "method": "did:web",
@@ -1515,22 +1587,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "hive-mcp-connector.onrender.com",
     "method": "did:web",
     "did": "did:web:hive-mcp-connector.onrender.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.srotzin/hive-mcp-swap",
-    "domains": "hive-mcp-swap.onrender.com",
-    "method": "did:web",
-    "did": "did:web:hive-mcp-swap.onrender.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.srotzin/hive-mcp-vault",
-    "domains": "hive-mcp-vault.onrender.com",
-    "method": "did:web",
-    "did": "did:web:hive-mcp-vault.onrender.com"
   },
   {
     "grade": "C",
