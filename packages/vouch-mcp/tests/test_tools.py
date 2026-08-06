@@ -233,3 +233,161 @@ def test_attribute_summarizes_and_blames(server_with_identity):
     blame = server.attribute(manifest_json, path="hello.py")
     assert "BLAME hello.py" in blame
     assert "ai-assistant" in blame
+
+
+# --- Tier 8: robotics verify-side tools --------------------------------------
+
+
+SCOPE_JSON = json.dumps(
+    {
+        "maxForceN": 80.0,
+        "maxSpeedMps": 1.5,
+        "maxSpeedNearHumansMps": 0.5,
+        "allowedZones": ["cell-3"],
+    }
+)
+
+CONFORMANCE_CREDENTIALS = json.dumps(
+    [
+        {
+            "type": ["VerifiableCredential", "RobotIdentityCredential"],
+            "credentialSubject": {
+                "id": "did:web:r",
+                "make": "Acme",
+                "model": "AR-7",
+                "serial": "SN-1",
+                "hardwareRoot": {"kind": "TPM"},
+            },
+        },
+        {
+            "type": ["VerifiableCredential", "ModelProvenanceAttestation"],
+            "credentialSubject": {
+                "id": "did:web:r",
+                "vla": {
+                    "modelName": "M",
+                    "weightsHash": "uW",
+                    "safetyPolicy": "uP",
+                    "configHash": "uC",
+                },
+            },
+        },
+        {
+            "type": ["VerifiableCredential", "PhysicalCapabilityScope"],
+            "credentialSubject": {
+                "id": "did:web:r",
+                "physicalScope": {
+                    "maxForceN": 80.0,
+                    "maxSpeedMps": 1.5,
+                    "maxSpeedNearHumansMps": 0.5,
+                    "allowedZones": ["cell-3"],
+                },
+            },
+        },
+        {
+            "type": ["VerifiableCredential", "RobotSafetyRecordCredential"],
+            "credentialSubject": {"id": "did:web:r", "totalEvents": 2, "logHead": "uHEAD"},
+        },
+    ]
+)
+
+
+def test_robot_check_action_allows_and_denies(server_with_identity):
+    server, _ = server_with_identity
+
+    ok = server.robot_check_action(
+        SCOPE_JSON,
+        json.dumps({"forceN": 20.0, "speedMps": 0.3, "nearHumans": True, "zone": "cell-3"}),
+    )
+    assert ok.startswith("ALLOW")
+
+    sprint = server.robot_check_action(
+        SCOPE_JSON, json.dumps({"speedMps": 2.5, "nearHumans": True, "zone": "cell-3"})
+    )
+    assert sprint.startswith("DENY")
+    assert "speed_exceeded" in sprint
+
+    zone = server.robot_check_action(
+        SCOPE_JSON, json.dumps({"speedMps": 0.5, "zone": "loading-bay"})
+    )
+    assert zone.startswith("DENY")
+    assert "zone_not_allowed" in zone
+
+
+def test_robot_check_action_accepts_a_whole_scope_credential(server_with_identity):
+    server, _ = server_with_identity
+    credential = json.dumps(
+        {
+            "type": ["VerifiableCredential", "PhysicalCapabilityScope"],
+            "credentialSubject": {"id": "did:web:r", "physicalScope": json.loads(SCOPE_JSON)},
+        }
+    )
+    out = server.robot_check_action(
+        credential, json.dumps({"speedMps": 2.5, "nearHumans": True, "zone": "cell-3"})
+    )
+    assert out.startswith("DENY")
+
+
+def test_robot_check_conformance_reports_conforms_and_gaps(server_with_identity):
+    server, _ = server_with_identity
+
+    out = server.robot_check_conformance(CONFORMANCE_CREDENTIALS, "eu-ai-act-high-risk")
+    assert out.startswith("CONFORMS: 4/4")
+
+    # The same set carries no heartbeat motion digest, so ISO/TS 15066 reports
+    # the open monitoring clause.
+    gaps = server.robot_check_conformance(CONFORMANCE_CREDENTIALS, "iso-ts-15066")
+    assert gaps.startswith("GAPS: 2/3")
+    assert "[GAP]" in gaps
+
+    assert server.robot_check_conformance(CONFORMANCE_CREDENTIALS, "no-such-profile").startswith(
+        "Error"
+    )
+
+
+def test_robot_conformance_attestation_roundtrip(server_with_identity):
+    server, _ = server_with_identity
+    from vouch.robotics import build_conformance_attestation, check_conformance
+    from vouch.signer import Signer
+
+    assessor = generate_identity("assessor.example.com")
+    other = generate_identity("other.example.com")
+    report = check_conformance(json.loads(CONFORMANCE_CREDENTIALS), "eu-ai-act-high-risk")
+    attestation = build_conformance_attestation(
+        Signer.from_keypair(assessor), robot_did="did:web:r", report=report
+    )
+
+    out = server.robot_verify_conformance_attestation(
+        json.dumps(attestation), assessor.public_key_jwk
+    )
+    assert out.startswith("VALID")
+    assert "eu-ai-act-high-risk" in out
+
+    wrong = server.robot_verify_conformance_attestation(
+        json.dumps(attestation), other.public_key_jwk
+    )
+    assert wrong.startswith("INVALID")
+
+    tampered = json.loads(json.dumps(attestation))
+    tampered["credentialSubject"]["report"]["conforms"] = False
+    assert server.robot_verify_conformance_attestation(
+        json.dumps(tampered), assessor.public_key_jwk
+    ).startswith("INVALID")
+
+
+def test_robot_verify_credential(server_with_identity):
+    server, _ = server_with_identity
+    from vouch.robotics import build_physical_scope_credential
+    from vouch.signer import Signer
+
+    robot = generate_identity("robot.example.com")
+    other = generate_identity("other.example.com")
+    credential = build_physical_scope_credential(
+        Signer.from_keypair(robot), subject_did=robot.did, max_force_n=80.0
+    )
+
+    ok = server.robot_verify_credential(json.dumps(credential), robot.public_key_jwk)
+    assert ok.startswith("VALID")
+    assert "PhysicalCapabilityScope" in ok
+
+    bad = server.robot_verify_credential(json.dumps(credential), other.public_key_jwk)
+    assert bad.startswith("INVALID")
