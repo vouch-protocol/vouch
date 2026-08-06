@@ -2,3 +2,4 @@ Show me a Python quickstart for signing a Vouch credential.
 How do I set up a did:web for my agent on my own domain?
 Walk me through enabling the post-quantum signature profile.
 My verifier returns "signature_invalid". How do I debug this?
+Build an EU AI Act evidence pack for my robot from its Vouch credentials.

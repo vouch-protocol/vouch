@@ -4,7 +4,12 @@ Vouch conformance proves that an implementation, an SDK, a fork, or a
 port, produces byte-correct protocol output and supports the required
 feature sets. It is implementation-level, and distinct from robotics
 regulatory conformance (`check_conformance`, the ISO and EU profiles),
-which grades a robot against a regulation.
+which grades a robot against a regulation. For the robotics side, the
+regulatory evidence pack (`examples/robotics_ai_act_evidence_pack.py`)
+assembles a robot's credentials and checks them against all five built-in
+profiles (EU AI Act high-risk, ISO 10218, ISO/TS 15066, EU Machinery
+Regulation 2023/1230, UL 3300), signing one verifiable conformance
+attestation per profile; see the robotics reference.
 
 Levels are cumulative: a level is achieved only when every check at that
 level and all lower levels passes.

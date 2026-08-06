@@ -376,6 +376,33 @@ investigate within five business days.
 
 ---
 
+## Robotics worked flows (evidence pack and VLA loop)
+
+**Q: Can the assistants walk me through proving EU AI Act conformance
+for a robot?**
+A: Yes. All four assistants carry the regulatory evidence pack: a robot
+assembles its signed credentials (hardware-rooted identity, model
+provenance, physical capability scope, safety record, a heartbeat with
+a motion digest, and perception provenance) and `check_conformance`
+maps them onto all five built-in profiles (EU AI Act high-risk,
+ISO 10218, ISO/TS 15066, EU Machinery Regulation 2023/1230, UL 3300),
+citing each clause or naming the exact gap. One signed conformance
+attestation per profile verifies offline. The runnable flow is
+`examples/robotics_ai_act_evidence_pack.py`, with TypeScript, Go, and
+Rust ports.
+
+**Q: What about keeping a VLA model accountable while it drives a
+robot?**
+A: Ask any of the assistants about the VLA accountability loop
+(`examples/robotics_vla_accountability_loop.py`): verified model
+provenance on load (no verified weights and config, no autonomy), a
+pre-actuation `check_physical_action` gate that denies over-speed and
+out-of-zone actions against the signed physical scope, and a
+tamper-evident encrypted black box recording every allowed and denied
+decision.
+
+---
+
 ## Reaching agents by identity (transport)
 
 **Q: How does an agent reach another agent that has no domain or IP?**

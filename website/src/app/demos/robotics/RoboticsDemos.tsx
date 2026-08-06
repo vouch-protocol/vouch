@@ -5,12 +5,15 @@ import React, { useState } from 'react';
 import styles from './RoboticsDemos.module.css';
 
 /**
- * Interactive demos for eight robotics capabilities: infrastructure access
+ * Interactive demos for ten robotics capabilities: infrastructure access
  * (vouch.robotics.access), fused-sensor provenance (vouch.robotics.fusion), wear
  * and degradation (vouch.robotics.wear), bystander consent (vouch.robotics.consent),
  * teleoperation handoff (vouch.robotics.teleop), operating-domain conformance
- * (vouch.robotics.odd), swarm accountability (vouch.robotics.swarm), and safe human
- * handover (vouch.robotics.handover). Each mirrors the real credential shapes and the
+ * (vouch.robotics.odd), swarm accountability (vouch.robotics.swarm), safe human
+ * handover (vouch.robotics.handover), the regulatory evidence pack
+ * (vouch.robotics.conformance across all five built-in profiles), and the VLA
+ * accountability loop (provenance on load, the pre-actuation scope gate, and the
+ * tamper-evident black box). Each mirrors the real credential shapes and the
  * real verification logic, rendered as an on-brand illustration rather than a live
  * signature so it runs with no network call. Burgundy doubles as refuse, a
  * parchment-harmonized green marks allow, and both read on either theme.
@@ -636,6 +639,225 @@ function DisconnectedEdge() {
 
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* EvidencePack: five regulatory profiles checked over one credential  */
+/* set, with per-clause CONFORMS/GAPS verdicts.                        */
+/* ------------------------------------------------------------------ */
+
+type PackScenario = 'full' | 'base' | 'noscope';
+
+const PACK_SCENARIOS: Array<{ id: PackScenario; label: string }> = [
+  { id: 'full', label: 'Present the full six-credential evidence pack' },
+  { id: 'base', label: 'Omit the heartbeat and perception credentials' },
+  { id: 'noscope', label: 'Omit the physical capability scope' },
+];
+
+const PACK_PROFILES: Array<{
+  id: string;
+  regime: string;
+  results: Record<PackScenario, { satisfied: number; total: number; gap?: string }>;
+}> = [
+  {
+    id: 'eu-ai-act-high-risk',
+    regime: 'EU AI Act high-risk',
+    results: {
+      full: { satisfied: 4, total: 4 },
+      base: { satisfied: 4, total: 4 },
+      noscope: { satisfied: 3, total: 4, gap: 'Art. 14 human oversight: no enforced near-human speed cap' },
+    },
+  },
+  {
+    id: 'iso-10218',
+    regime: 'ISO 10218-1/-2',
+    results: {
+      full: { satisfied: 4, total: 4 },
+      base: { satisfied: 4, total: 4 },
+      noscope: { satisfied: 3, total: 4, gap: '5.6 limiting of speed, force, and workspace: no scope credential' },
+    },
+  },
+  {
+    id: 'iso-ts-15066',
+    regime: 'ISO/TS 15066 collaborative',
+    results: {
+      full: { satisfied: 3, total: 3 },
+      base: { satisfied: 2, total: 3, gap: '5.2 continuous monitoring: no heartbeat motion digest' },
+      noscope: { satisfied: 1, total: 3, gap: '5.5.4 power and force limiting: no scope credential' },
+    },
+  },
+  {
+    id: 'eu-machinery-2023-1230',
+    regime: 'EU Machinery Regulation',
+    results: {
+      full: { satisfied: 4, total: 4 },
+      base: { satisfied: 4, total: 4 },
+      noscope: { satisfied: 3, total: 4, gap: 'Annex III 1.2.1 control-system limits: no scope credential' },
+    },
+  },
+  {
+    id: 'ul-3300',
+    regime: 'UL 3300 service robots',
+    results: {
+      full: { satisfied: 4, total: 4 },
+      base: { satisfied: 3, total: 4, gap: 'sensing integrity: no perception provenance' },
+      noscope: { satisfied: 3, total: 4, gap: 'operating limits: no scope credential' },
+    },
+  },
+];
+
+function EvidencePack() {
+  const [scenario, setScenario] = useState<PackScenario>('full');
+  const conformCount = PACK_PROFILES.filter(
+    (p) => p.results[scenario].satisfied === p.results[scenario].total
+  ).length;
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          The robot assembles the credentials it already holds, identity, model provenance, physical scope, safety
+          record, a heartbeat carrying a motion digest, and perception provenance, and the conformance checker maps them
+          onto all five built-in regulatory profiles, clause by clause. An assessor signs one point-in-time conformance
+          attestation per profile, verifiable offline.
+        </p>
+        <div className="eyebrow-faint mb-2">Choose what the robot presents</div>
+        <div className={styles.controls}>
+          {PACK_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.radio}${scenario === s.id ? ' ' + styles.on : ''}`}
+              onClick={() => setScenario(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={styles.stage}>
+        {PACK_PROFILES.map((p) => {
+          const r = p.results[scenario];
+          const conforms = r.satisfied === r.total;
+          return (
+            <div key={p.id} className={styles.card}>
+              <div className={styles.cardLabel}>{p.regime}</div>
+              <div className={styles.verdict}>
+                <span
+                  className={styles.badge}
+                  style={{ color: conforms ? ALLOW : DENY, borderColor: conforms ? ALLOW : DENY }}
+                >
+                  {conforms ? `✓ CONFORMS ${r.satisfied}/${r.total}` : `✕ GAPS ${r.satisfied}/${r.total}`}
+                </span>
+                <span className={styles.reason}>{conforms ? 'every clause satisfied' : r.gap}</span>
+              </div>
+            </div>
+          );
+        })}
+        <div className={styles.verdict}>
+          <span className={styles.reason}>
+            {conformCount === 5
+              ? 'All five attestations sign and verify offline; each binds the full report by digest.'
+              : `${conformCount}/5 profiles conform; a signed attestation records the gaps for the rest.`}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* VlaLoop: provenance on load, the pre-actuation gate, and the black  */
+/* box, around a VLA planner.                                          */
+/* ------------------------------------------------------------------ */
+
+type VlaScenario = 'pick' | 'sprint' | 'zone' | 'tamper';
+
+const VLA_SCENARIOS: Array<{ id: VlaScenario; label: string }> = [
+  { id: 'pick', label: 'The planner proposes: pick up the cup (0.3 m/s, near a person)' },
+  { id: 'sprint', label: 'The planner proposes: sprint to the dock (2.5 m/s, near a person)' },
+  { id: 'zone', label: 'The planner proposes: fetch from the loading bay (outside the zone)' },
+  { id: 'tamper', label: 'Someone rewrites a denied decision in the black box' },
+];
+
+function VlaLoop() {
+  const [scenario, setScenario] = useState<VlaScenario>('pick');
+
+  const gate = {
+    pick: { ok: true, action: 'speed 0.3 m/s · nearHumans · zone cell-3', reason: 'inside the envelope' },
+    sprint: { ok: false, action: 'speed 2.5 m/s · nearHumans · zone cell-3', reason: 'near_humans speed_exceeded: 2.5 m/s > 0.5 m/s' },
+    zone: { ok: false, action: 'speed 0.5 m/s · zone loading-bay', reason: 'zone_not_allowed: loading-bay' },
+    tamper: { ok: false, action: 'speed 2.5 m/s · nearHumans · zone cell-3', reason: 'near_humans speed_exceeded: 2.5 m/s > 0.5 m/s' },
+  }[scenario];
+
+  const tampered = scenario === 'tamper';
+
+  return (
+    <div className={styles.demo}>
+      <div>
+        <p className="text-ink-soft leading-relaxed mb-5">
+          A vision-language-action model (here Gemini Robotics ER 2) plans the robot&apos;s next move. Before autonomy,
+          the robot verifies the model&apos;s signed provenance. Before every actuation, the proposed action is checked
+          against the signed physical scope. Every decision, allowed or denied, lands in the encrypted, hash-linked
+          black box.
+        </p>
+        <div className="eyebrow-faint mb-2">Choose what happens next</div>
+        <div className={styles.controls}>
+          {VLA_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              className={`${styles.radio}${scenario === s.id ? ' ' + styles.on : ''}`}
+              onClick={() => setScenario(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className={styles.stage}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Provenance on load (verified)</div>
+          <div className={styles.mono}>
+            model: Gemini Robotics ER 2 · v2.0
+            <br />
+            weightsHash: uK3v…9Qw · configHash: uk1sX…dSg ✓
+          </div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Pre-actuation scope gate</div>
+          <div className={styles.mono}>{gate.action}</div>
+          <div className={styles.verdict}>
+            <span
+              className={styles.badge}
+              style={{ color: gate.ok ? ALLOW : DENY, borderColor: gate.ok ? ALLOW : DENY }}
+            >
+              {gate.ok ? '✓ ALLOW' : '✕ DENY'}
+            </span>
+            <span className={styles.reason}>{gate.reason}</span>
+          </div>
+        </div>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>Black box (encrypted, hash-linked)</div>
+          <div className={styles.mono}>
+            seq 2 · {tampered ? 'actuation_allowed' : gate.ok ? 'actuation_allowed' : 'actuation_denied'} · prevHash
+            uk9Yt… · entryHash {tampered ? 'uZjM4… (recomputed: u1fQx…)' : 'uZjM4…'}
+          </div>
+          <div className={styles.verdict}>
+            <span
+              className={styles.badge}
+              style={{ color: tampered ? DENY : ALLOW, borderColor: tampered ? DENY : ALLOW }}
+            >
+              {tampered ? '✕ CHAIN BROKEN' : '✓ CHAIN VERIFIES'}
+            </span>
+            <span className={styles.reason}>
+              {tampered
+                ? 'entry 2 entryHash mismatch (tampered): the denial cannot be rewritten as an allow'
+                : 'every decision is recorded; anyone can verify the chain without the key'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RoboticsDemos() {
   return (
     <>
@@ -727,7 +949,7 @@ export default function RoboticsDemos() {
         </div>
       </section>
 
-      <section id="disconnected" className="scroll-mt-24">
+      <section id="disconnected" className="border-b border-rule scroll-mt-24">
         <div className="container-wide py-16">
           <div className="section-heading">
             <span className="num">§ IX</span>
@@ -735,6 +957,28 @@ export default function RoboticsDemos() {
           </div>
           <p className="eyebrow mb-6">Revocation that is honest about time, offline · vouch.status_list.evaluate_freshness</p>
           <DisconnectedEdge />
+        </div>
+      </section>
+
+      <section id="evidence-pack" className="border-b border-rule scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ X</span>
+            <h2>Regulatory evidence pack</h2>
+          </div>
+          <p className="eyebrow mb-6">One credential set, five regulations, per-clause verdicts · vouch.robotics.conformance</p>
+          <EvidencePack />
+        </div>
+      </section>
+
+      <section id="vla-loop" className="scroll-mt-24">
+        <div className="container-wide py-16">
+          <div className="section-heading">
+            <span className="num">§ XI</span>
+            <h2>VLA accountability loop</h2>
+          </div>
+          <p className="eyebrow mb-6">Provenance on load, a pre-actuation gate, a tamper-evident black box · vouch.robotics</p>
+          <VlaLoop />
         </div>
       </section>
     </>

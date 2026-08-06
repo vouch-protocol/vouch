@@ -9,3 +9,5 @@ My verifier returns "verificationMethod not found." Walk me through the likely c
 Draft a Google Doc that explains the agent-identity threat model to a non-technical stakeholder.
 
 Compare did:web and did:key for a production agent with a long-running session.
+
+Walk me through the VLA accountability loop for a robot driven by Gemini Robotics ER 2, and how its evidence pack maps to the EU AI Act.
