@@ -176,14 +176,23 @@ class TestOpenVlaGatedLoop(unittest.TestCase):
         self.assertAlmostEqual(rotating.speed_mps, 2.5)
 
     def test_force_comes_from_the_gripper_axis_and_is_clamped(self):
+        # Pin the convention (0 = closed) so this asserts the ramp itself. The
+        # default is deliberately NOT this ramp: see TestOpenVlaGripperConvention.
         max_n = openvla_loop.MAX_GRIP_FORCE_N
-        self.assertAlmostEqual(self._mapped([0, 0, 0, 0, 0, 0, 1.0]).force_n, 0.0)
-        self.assertAlmostEqual(self._mapped([0, 0, 0, 0, 0, 0, 0.0]).force_n, max_n)
-        self.assertAlmostEqual(self._mapped([0, 0, 0, 0, 0, 0, 0.5]).force_n, max_n / 2)
+        closed_at_zero = {"gripper_closed_at": 0.0}
+        self.assertAlmostEqual(self._mapped([0, 0, 0, 0, 0, 0, 1.0], **closed_at_zero).force_n, 0.0)
+        self.assertAlmostEqual(
+            self._mapped([0, 0, 0, 0, 0, 0, 0.0], **closed_at_zero).force_n, max_n
+        )
+        self.assertAlmostEqual(
+            self._mapped([0, 0, 0, 0, 0, 0, 0.5], **closed_at_zero).force_n, max_n / 2
+        )
         # Out-of-range de-normalisation must not produce a negative force that
         # slips past the force check, nor one above the calibration constant.
-        self.assertAlmostEqual(self._mapped([0, 0, 0, 0, 0, 0, 1.7]).force_n, 0.0)
-        self.assertAlmostEqual(self._mapped([0, 0, 0, 0, 0, 0, -0.5]).force_n, max_n)
+        self.assertAlmostEqual(self._mapped([0, 0, 0, 0, 0, 0, 1.7], **closed_at_zero).force_n, 0.0)
+        self.assertAlmostEqual(
+            self._mapped([0, 0, 0, 0, 0, 0, -0.5], **closed_at_zero).force_n, max_n
+        )
 
     def test_zone_and_near_humans_come_from_the_caller_not_the_vector(self):
         vector = [0.0] * 6 + [1.0]
@@ -335,3 +344,54 @@ class TestOpenVlaGatedLoop(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestOpenVlaGripperConvention(unittest.TestCase):
+    """
+    Which end of OpenVLA's gripper axis means "closed" is not confirmed against
+    the checkpoint, and getting it backwards would make the force estimate
+    backwards -- a fully closed gripper would score as exerting no force and the
+    gate would allow it. The default must therefore be fail-safe: never below
+    either convention.
+    """
+
+    def _force(self, gripper, **kw):
+        action = openvla_loop.action_vector_to_physical_action(
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, gripper], **kw
+        )
+        return action.force_n
+
+    def test_unverified_default_never_underestimates_either_convention(self):
+        for g in (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0):
+            unverified = self._force(g)
+            closed_at_zero = self._force(g, gripper_closed_at=0.0)
+            closed_at_one = self._force(g, gripper_closed_at=1.0)
+            self.assertGreaterEqual(
+                unverified + 1e-9,
+                max(closed_at_zero, closed_at_one),
+                f"gripper={g}: default under-estimates force",
+            )
+
+    def test_each_pinned_convention_is_the_expected_ramp(self):
+        self.assertAlmostEqual(
+            self._force(0.0, gripper_closed_at=0.0), openvla_loop.MAX_GRIP_FORCE_N
+        )
+        self.assertAlmostEqual(self._force(1.0, gripper_closed_at=0.0), 0.0)
+        self.assertAlmostEqual(
+            self._force(1.0, gripper_closed_at=1.0), openvla_loop.MAX_GRIP_FORCE_N
+        )
+        self.assertAlmostEqual(self._force(0.0, gripper_closed_at=1.0), 0.0)
+
+    def test_out_of_range_gripper_is_clamped_not_negative(self):
+        self.assertGreaterEqual(self._force(-0.5), 0.0)
+        self.assertLessEqual(self._force(1.7), openvla_loop.MAX_GRIP_FORCE_N)
+
+    def test_an_unknown_convention_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self._force(0.5, gripper_closed_at=0.5)
+
+    def test_the_assumed_convention_is_recorded_in_the_attested_config(self):
+        self.assertIn("gripperClosedAt", openvla_loop.vla_config())
+        self.assertEqual(
+            openvla_loop.vla_config()["gripperClosedAt"], openvla_loop.GRIPPER_CLOSED_AT
+        )

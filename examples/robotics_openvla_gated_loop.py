@@ -87,6 +87,12 @@ CONTROL_PERIOD_S = 0.2
 # `action_vector_to_physical_action`.
 MAX_GRIP_FORCE_N = 40.0
 
+# Which end of OpenVLA's gripper axis means "fully closed": 0.0, 1.0, or None
+# when it has not been confirmed against the checkpoint in use. None selects the
+# fail-safe both-ways reading in action_vector_to_physical_action, which can only
+# over-estimate grip force. Pin this once verified.
+GRIPPER_CLOSED_AT = None
+
 WEIGHT_SUFFIXES = (".safetensors", ".bin", ".pt", ".pth")
 
 # (module to import, distribution to install) for the optional `openvla` extra.
@@ -171,6 +177,11 @@ def vla_config(revision: Optional[str] = None) -> Dict[str, Any]:
         "unnormKey": UNNORM_KEY,
         "controlPeriodS": CONTROL_PERIOD_S,
         "maxGripForceN": MAX_GRIP_FORCE_N,
+        # Which end of the gripper axis means "closed". null records that the
+        # convention was not verified against the checkpoint and the fail-safe
+        # both-ways reading was used, so a verifier can tell an assumed run from
+        # a pinned one.
+        "gripperClosedAt": GRIPPER_CLOSED_AT,
         "doSample": False,
     }
     if revision is not None:
@@ -373,6 +384,7 @@ def action_vector_to_physical_action(
     near_humans: bool = False,
     control_period_s: float = CONTROL_PERIOD_S,
     max_grip_force_n: float = MAX_GRIP_FORCE_N,
+    gripper_closed_at: Optional[float] = GRIPPER_CLOSED_AT,
 ) -> PhysicalAction:
     """
     Map one OpenVLA action vector into a Vouch PhysicalAction.
@@ -399,7 +411,7 @@ def action_vector_to_physical_action(
           not of a mobile base: gating a base-speed cap with this number would
           be comparing two different things.
 
-      force_n = (1 - gripper) * max_grip_force_n
+      force_n = closure(gripper) * max_grip_force_n
           OpenVLA's gripper axis is an aperture/position command, not a force
           command. Converting it to newtons needs a per-gripper calibration
           constant, which is what `max_grip_force_n` is: the force the gripper
@@ -409,6 +421,29 @@ def action_vector_to_physical_action(
           delivered depends on the compliance of what is grasped. The result is
           a conservative estimate for gating, never a measurement; a robot with
           a load cell should gate on the measured value instead.
+
+          WHICH END OF THE AXIS MEANS "CLOSED" IS NOT SAFE TO GUESS. OpenVLA's
+          documentation describes the gripper axis as normalised to [0, 1], and
+          the widely used reading is 0 = closed, 1 = open -- but a fine-tune, a
+          different `unnorm_key`, or a binarised gripper can inverate that, and
+          getting it backwards means the force estimate is backwards: the gate
+          would read a fully closed gripper as exerting no force and allow it.
+
+          So `gripper_closed_at` selects the convention explicitly, and its
+          DEFAULT IS FAIL-SAFE rather than a guess:
+
+            None (default)  convention unverified -> closure = max(g, 1 - g),
+                            the larger of the two readings. This can only ever
+                            OVER-estimate force, so the gate may deny an action
+                            it need not, and can never allow one it should deny.
+            0.0             0 means closed -> closure = 1 - g
+            1.0             1 means closed -> closure = g
+
+          Pin `gripper_closed_at` once the convention is confirmed against the
+          actual checkpoint; until then the default trades false denials for the
+          guarantee that a closed gripper is never scored as harmless. The value
+          in use is recorded in the attested config, so a verifier can see which
+          convention the run assumed.
 
       near_humans, zone
           Not derivable from the vector, and not model outputs. OpenVLA has no
@@ -442,7 +477,18 @@ def action_vector_to_physical_action(
     translation_m = math.sqrt(dx * dx + dy * dy + dz * dz)
     speed_mps = translation_m / control_period_s
 
-    closure = min(1.0, max(0.0, 1.0 - gripper))
+    clamped = min(1.0, max(0.0, gripper))
+    if gripper_closed_at is None:
+        # Convention unverified: take the larger of both readings, which can
+        # only over-estimate force. Over-denying is recoverable; scoring a
+        # closed gripper as harmless is not.
+        closure = max(clamped, 1.0 - clamped)
+    elif gripper_closed_at == 0.0:
+        closure = 1.0 - clamped
+    elif gripper_closed_at == 1.0:
+        closure = clamped
+    else:
+        raise ValueError("gripper_closed_at must be 0.0, 1.0, or None (unverified)")
     force_n = closure * max_grip_force_n
 
     return PhysicalAction(
