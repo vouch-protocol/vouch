@@ -397,34 +397,47 @@
     "conforms": true,
     "satisfiedCount": 4,
     "totalCount": 4,
+    "citations": {
+      "verified-primary": 0,
+      "unverified-secondary": 4,
+      "descriptive": 0
+    },
     "requirements": [
       {
         "id": "eu-aia-record-keeping",
         "clause": "Reg (EU) 2024/1689, Art. 12",
         "title": "Automatic recording of events (logging)",
-        "satisfied": true
+        "satisfied": true,
+        "citation": "unverified-secondary",
+        "citationNote": "Article number taken from a third-party reproduction of the Official Journal text, not from EUR-Lex itself."
       },
       {
         "id": "eu-aia-transparency",
         "clause": "Reg (EU) 2024/1689, Art. 13",
         "title": "Model and configuration transparency",
-        "satisfied": true
+        "satisfied": true,
+        "citation": "unverified-secondary",
+        "citationNote": "Article number taken from a third-party reproduction of the Official Journal text, not from EUR-Lex itself."
       },
       {
         "id": "eu-aia-human-oversight",
         "clause": "Reg (EU) 2024/1689, Art. 14",
         "title": "Human oversight through enforced operating limits",
-        "satisfied": true
+        "satisfied": true,
+        "citation": "unverified-secondary",
+        "citationNote": "Article number taken from a third-party reproduction of the Official Journal text, not from EUR-Lex itself. Art. 14 also requires a means for the overseer to intervene or stop the system, which an operating-limit scope alone does not evidence."
       },
       {
         "id": "eu-aia-accuracy-robustness",
         "clause": "Reg (EU) 2024/1689, Art. 15",
         "title": "Accuracy and robustness traceable to a known build",
-        "satisfied": true
+        "satisfied": true,
+        "citation": "unverified-secondary",
+        "citationNote": "Article number taken from a third-party reproduction of the Official Journal text, not from EUR-Lex itself."
       }
     ]
   },
-  "expected_conformance_report_digest": "uMuWAsxwdw8uZVkWugGE5LTh6hHB0NVvqGm-fcXaO6zs",
+  "expected_conformance_report_digest": "u3UyS_2gIlWA89dQ7nQBYLBV2vV2ls3PQMM4jyhnVZu4",
   "pq_robot_identity_credential": {
     "@context": [
       "https://www.w3.org/ns/credentials/v2",

@@ -216,6 +216,24 @@ fn build_monitoring_credentials(scope_credential: &Value) -> Vec<Value> {
     vec![heartbeat, perception]
 }
 
+/// Render the report's clause-citation provenance, worst first.
+///
+/// CONFORMS answers "does the evidence cover the clauses this profile maps?",
+/// which is a different and weaker claim than "does the robot comply with the
+/// regulation". Printing the provenance beside the verdict keeps the two apart:
+/// a profile whose clause numbers came from secondary sources, or which only
+/// names topics, says so on the same line as the result.
+fn citation_summary(report: &Value) -> String {
+    ["descriptive", "unverified-secondary", "verified-primary"]
+        .iter()
+        .filter_map(|status| match report["citations"][status].as_i64() {
+            Some(n) if n > 0 => Some(format!("{n} {status}")),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 fn print_summary(reports: &[(String, Value)]) {
     for (pid, report) in reports {
         let verdict = if report["conforms"].as_bool().unwrap_or(false) {
@@ -231,6 +249,7 @@ fn print_summary(reports: &[(String, Value)]) {
             report["totalCount"],
             report["regime"].as_str().unwrap_or("")
         );
+        println!("    citations: {}", citation_summary(report));
         for req in report["requirements"].as_array().into_iter().flatten() {
             if !req["satisfied"].as_bool().unwrap_or(false) {
                 println!(

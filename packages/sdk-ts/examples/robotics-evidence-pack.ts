@@ -187,6 +187,24 @@ export async function signAttestations(
   return attestations;
 }
 
+/**
+ * Render the report's clause-citation provenance, worst first.
+ *
+ * CONFORMS answers "does the evidence cover the clauses this profile maps?",
+ * which is a different and weaker claim than "does the robot comply with the
+ * regulation". Printing the provenance beside the verdict keeps the two apart:
+ * a profile whose clause numbers came from secondary sources, or which only
+ * names topics, says so on the same line as the result.
+ */
+function citationSummary(report: ConformanceReport): string {
+  const counts = report.citations ?? ({} as Record<string, number>);
+  const order = ['descriptive', 'unverified-secondary', 'verified-primary'] as const;
+  return order
+    .filter((status) => counts[status])
+    .map((status) => `${counts[status]} ${status}`)
+    .join(', ');
+}
+
 function printSummary(reports: Record<string, ConformanceReport>): void {
   for (const [pid, report] of Object.entries(reports)) {
     const verdict = report.conforms ? 'CONFORMS' : 'GAPS';
@@ -194,6 +212,7 @@ function printSummary(reports: Record<string, ConformanceReport>): void {
       `  ${pid.padEnd(24)} ${verdict.padEnd(8)} ` +
         `(${report.satisfiedCount}/${report.totalCount})  ${report.regime}`
     );
+    console.log(`    citations: ${citationSummary(report)}`);
     for (const req of report.requirements) {
       if (!req.satisfied) console.log(`    gap: ${req.clause}: ${req.title}`);
     }

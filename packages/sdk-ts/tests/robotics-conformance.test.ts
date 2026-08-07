@@ -20,6 +20,9 @@ import {
   buildConformanceAttestation,
   verifyConformanceAttestation,
   CONFORMANCE_ATTESTATION_TYPE,
+  CITATION_STATUSES,
+  CITATION_DESCRIPTIVE,
+  PROFILES,
   type ConformanceReport,
 } from '../src';
 
@@ -175,5 +178,26 @@ describe('conformance attestation round-trip', () => {
     embedded.conforms = false;
     const res = verifyConformanceAttestation(cred, authority.pub);
     expect(res.ok).toBe(false);
+  });
+
+  it('carries the clause-citation provenance of every requirement', () => {
+    for (const profileId of Object.keys(PROFILES)) {
+      const report = checkConformance([], profileId);
+      const counted = Object.values(report.citations).reduce((a, b) => a + b, 0);
+      expect(counted).toBe(report.totalCount);
+      expect(Object.keys(report.citations).sort()).toEqual([...CITATION_STATUSES].sort());
+      for (const req of report.requirements) {
+        expect(CITATION_STATUSES).toContain(req.citation);
+      }
+    }
+  });
+
+  it('reports ul-3300 clauses as descriptive, not citable', () => {
+    // UL 3300 is paywalled and no clause numbering was available, so the
+    // profile must not present its topic names as clauses an assessor can
+    // look up -- even when the report says CONFORMS.
+    const report = checkConformance([], 'ul-3300');
+    expect(report.citations[CITATION_DESCRIPTIVE]).toBe(report.totalCount);
+    expect(report.citations['verified-primary']).toBe(0);
   });
 });

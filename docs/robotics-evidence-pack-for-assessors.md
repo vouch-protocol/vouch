@@ -67,33 +67,53 @@ rather than only successes:
 ```
 base credential set (identity, provenance, scope, safety record):
   eu-ai-act-high-risk      CONFORMS (4/4)  EU AI Act high-risk systems
+    citations: 4 unverified-secondary
   iso-10218                CONFORMS (4/4)  ISO 10218-1/-2 industrial robots
+    citations: 4 unverified-secondary
   iso-ts-15066             GAPS     (2/3)  ISO/TS 15066 collaborative robots
+    citations: 3 unverified-secondary
     gap: ISO/TS 15066:2016, 5.2: Continuous monitoring of the collaborative operation
   eu-machinery-2023-1230   CONFORMS (4/4)  EU Machinery Regulation 2023/1230
+    citations: 4 unverified-secondary
   ul-3300                  GAPS     (3/4)  UL 3300 service, communication, and mobile robots
+    citations: 4 descriptive
     gap: UL 3300, sensing integrity: Integrity of perception used for safe operation
 
 full evidence pack (6 credentials):
   eu-ai-act-high-risk      CONFORMS (4/4)  EU AI Act high-risk systems
+    citations: 4 unverified-secondary
   iso-10218                CONFORMS (4/4)  ISO 10218-1/-2 industrial robots
+    citations: 4 unverified-secondary
   iso-ts-15066             CONFORMS (3/3)  ISO/TS 15066 collaborative robots
+    citations: 3 unverified-secondary
   eu-machinery-2023-1230   CONFORMS (4/4)  EU Machinery Regulation 2023/1230
+    citations: 4 unverified-secondary
   ul-3300                  CONFORMS (4/4)  UL 3300 service, communication, and mobile robots
+    citations: 4 descriptive
 
 signed attestations (5 profiles):
-  eu-ai-act-high-risk      verifies=True  reportDigest=uMuWAsxwdw8uZVkW...
-  iso-10218                verifies=True  reportDigest=uVAP1stf9MCglXYl...
-  iso-ts-15066             verifies=True  reportDigest=uoSx4OGx6X-CuC8O...
-  eu-machinery-2023-1230   verifies=True  reportDigest=u-Niyinnn4ZQ_9AA...
-  ul-3300                  verifies=True  reportDigest=u7tslKJ4LRSBotZZ...
+  eu-ai-act-high-risk      verifies=True  reportDigest=u3UyS_2gIlWA89dQ...
+  iso-10218                verifies=True  reportDigest=uUFYccEpaDKzBw-G...
+  iso-ts-15066             verifies=True  reportDigest=uTYVY2iZHmUGszKP...
+  eu-machinery-2023-1230   verifies=True  reportDigest=uZnybk05gi8lUBCE...
+  ul-3300                  verifies=True  reportDigest=u2g1UzA3DItc_6bk...
 ```
 
-Two things worth noticing. The tool **names the specific open clause** rather
+Three things worth noticing. The tool **names the specific open clause** rather
 than failing silently — a missing motion digest is reported as the ISO/TS 15066
 continuous-monitoring clause, and missing perception provenance as the UL 3300
-sensing-integrity clause. And `reportDigest` binds each attestation to one exact
+sensing-integrity clause. `reportDigest` binds each attestation to one exact
 report; a later edit to the report invalidates it.
+
+And every result states **how well-sourced its clause references are**, on the
+line directly beneath the verdict. `unverified-secondary` means the mapping is
+believed sound but the clause number came from secondary sources rather than
+the standard or Official Journal itself; `descriptive` means the entry names a
+topic and cannot be looked up at all, which is why every UL 3300 line reads
+that way. A UL 3300 result that says CONFORMS (4/4) and, immediately below,
+`4 descriptive`, is telling an assessor exactly how far to trust it. The
+provenance travels inside the signed attestation too, so it cannot be dropped
+in transit.
 
 ## What this does not prove
 
@@ -118,10 +138,15 @@ Stated plainly, because an overstated claim here would be worse than no claim.
   non-repudiable and traceable to a key, not that it is true.
 - **Absence of evidence is not covered.** The ledger proves recorded entries
   were not tampered with. It cannot prove nothing was omitted before recording.
-- **Standards coverage is uneven.** The EU AI Act and Machinery Regulation texts
-  are public and the mapping is against them directly. ISO 10218, ISO/TS 15066
-  and UL 3300 are paywalled; those mappings are built from clause structure and
-  publicly available summaries, and are flagged accordingly in the crosswalk.
+- **Standards coverage is uneven, and every report says so.** ISO 10218,
+  ISO/TS 15066 and UL 3300 are paywalled, and the EU texts were read from a
+  third-party reproduction rather than EUR-Lex, so no clause in any built-in
+  profile is currently marked `verified-primary`. The per-requirement
+  `citation` field and the report's `citations` summary carry this into every
+  result and every signed attestation; the crosswalk records the specific
+  doubts, including an unresolved conflict over the ISO/TS 15066
+  power-and-force-limiting clause number and the fact that ISO 10218-1/-2:2011
+  were superseded by the 2025 editions.
 
 ## Maturity, honestly
 

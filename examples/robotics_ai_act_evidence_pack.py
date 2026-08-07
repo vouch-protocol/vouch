@@ -165,6 +165,25 @@ def sign_attestations(assessor, robot_did, reports):
     }
 
 
+def citation_summary(report):
+    """
+    Render the report's clause-citation provenance, worst first.
+
+    CONFORMS answers "does the evidence cover the clauses this profile maps?",
+    which is a different and weaker claim than "does the robot comply with the
+    regulation". Printing the provenance beside the verdict keeps the two
+    apart: a profile whose clause numbers came from secondary sources, or which
+    only names topics, says so on the same line as the result.
+    """
+    counts = report.get("citations") or {}
+    parts = [
+        f"{counts[status]} {status}"
+        for status in ("descriptive", "unverified-secondary", "verified-primary")
+        if counts.get(status)
+    ]
+    return ", ".join(parts)
+
+
 def print_summary(reports):
     for pid, report in reports.items():
         verdict = "CONFORMS" if report["conforms"] else "GAPS"
@@ -172,6 +191,7 @@ def print_summary(reports):
             f"  {pid:24s} {verdict:8s} "
             f"({report['satisfiedCount']}/{report['totalCount']})  {report['regime']}"
         )
+        print(f"    citations: {citation_summary(report)}")
         for req in report["requirements"]:
             if not req["satisfied"]:
                 print(f"    gap: {req['clause']}: {req['title']}")

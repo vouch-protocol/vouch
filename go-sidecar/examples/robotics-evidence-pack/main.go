@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/vouch-protocol/vouch/go-sidecar/robotics"
 	"github.com/vouch-protocol/vouch/go-sidecar/signer"
@@ -194,6 +195,24 @@ func checkAllProfiles(credentials []map[string]any) (map[string]map[string]any, 
 	return reports, nil
 }
 
+// citationSummary renders the report's clause-citation provenance, worst first.
+//
+// CONFORMS answers "does the evidence cover the clauses this profile maps?",
+// which is a different and weaker claim than "does the robot comply with the
+// regulation". Printing the provenance beside the verdict keeps the two apart:
+// a profile whose clause numbers came from secondary sources, or which only
+// names topics, says so on the same line as the result.
+func citationSummary(report map[string]any) string {
+	counts, _ := report["citations"].(map[string]any)
+	parts := make([]string, 0, 3)
+	for _, status := range []string{"descriptive", "unverified-secondary", "verified-primary"} {
+		if n, ok := counts[status].(int); ok && n > 0 {
+			parts = append(parts, fmt.Sprintf("%d %s", n, status))
+		}
+	}
+	return strings.Join(parts, ", ")
+}
+
 func printSummary(reports map[string]map[string]any) {
 	for _, pid := range allProfileIDs {
 		report := reports[pid]
@@ -203,6 +222,7 @@ func printSummary(reports map[string]map[string]any) {
 		}
 		fmt.Printf("  %-24s %-8s (%v/%v)  %v\n",
 			pid, verdict, report["satisfiedCount"], report["totalCount"], report["regime"])
+		fmt.Printf("    citations: %s\n", citationSummary(report))
 		for _, raw := range report["requirements"].([]any) {
 			r := raw.(map[string]any)
 			if !r["satisfied"].(bool) {
