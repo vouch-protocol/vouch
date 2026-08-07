@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>vouch_ros2</name>
+  <version>2.1.0</version>
+  <description>
+    Vouch accountability gate for ROS 2: signs a model-provenance attestation on
+    startup, checks every planner-proposed action against a signed
+    PhysicalCapabilityScope before it can reach the actuators, and records every
+    allow/deny decision in a tamper-evident black box.
+  </description>
+  <maintainer email="hello@vouch-protocol.com">Vouch Protocol Contributors</maintainer>
+  <license>Apache-2.0</license>
+
+  <url type="website">https://vouch-protocol.com</url>
+  <url type="repository">https://github.com/vouch-protocol/vouch</url>
+  <url type="bugtracker">https://github.com/vouch-protocol/vouch/issues</url>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <!-- vouch-protocol is a PyPI distribution, not a ROS package: install it with
+       pip (or rosdep via a rosdep rule) into the same interpreter ROS uses. -->
+  <exec_depend>python3-cryptography</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

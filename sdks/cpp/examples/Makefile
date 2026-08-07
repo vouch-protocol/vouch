@@ -17,7 +17,13 @@ robotics_verify_example: robotics_verify_example.cpp
 run-robotics: robotics_verify_example
 	LD_LIBRARY_PATH=../lib ./robotics_verify_example
 
-clean:
-	rm -f example robotics_verify_example
+robotics_example: robotics_example.c
+	$(CC) $(CFLAGS) robotics_example.c -o robotics_example $(LDFLAGS)
 
-.PHONY: run run-robotics clean
+run-robotics-c: robotics_example
+	LD_LIBRARY_PATH=../lib ./robotics_example
+
+clean:
+	rm -f example robotics_verify_example robotics_example
+
+.PHONY: run run-robotics run-robotics-c clean

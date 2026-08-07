@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
  * <ul>
  *   <li>Regulatory evidence pack: {@code checkConformance} maps the shared
  *       interop vector's Python-signed credential set onto all five built-in
- *       profiles, reporting CONFORMS for the EU AI Act, ISO 10218, and the EU
+ *       profiles, reporting CONFORMS for the EU AI Act and the EU
  *       Machinery Regulation and the exact open clause for the two profiles the
  *       set leaves gaps in; {@code buildConformanceAttestation} then signs a
  *       point-in-time attestation per profile and
@@ -46,6 +46,10 @@ class RoboticsVerifyExampleTest {
             "iso-ts-15066",
             "eu-machinery-2023-1230",
             "ul-3300");
+
+    /** The profiles the vector's four-credential set fully satisfies. */
+    private static final java.util.Set<String> CONFORMING_PROFILE_IDS =
+            java.util.Set.of("eu-ai-act-high-risk", "eu-machinery-2023-1230");
 
     // A fixed assessor signing seed (0x03 x 32) and its Ed25519 public key, so
     // the attestation round-trip is deterministic like the Rust core tests.
@@ -99,13 +103,14 @@ class RoboticsVerifyExampleTest {
             assertEquals(pid, report.get("profileId"));
 
             boolean conforms = Boolean.TRUE.equals(report.get("conforms"));
-            if (pid.equals("iso-ts-15066") || pid.equals("ul-3300")) {
-                // The vector's four-credential set carries no heartbeat motion
-                // digest and no perception provenance, so exactly these two
-                // profiles must report the open clause.
-                assertFalse(conforms, pid + " should report gaps: " + report);
-            } else {
+            if (CONFORMING_PROFILE_IDS.contains(pid)) {
                 assertTrue(conforms, pid + " should conform: " + report);
+            } else {
+                // The vector's four-credential set carries no heartbeat motion
+                // digest and no perception provenance, and its identity
+                // credential names a hardware root without carrying the root's
+                // attestation, so these profiles report the open clause.
+                assertFalse(conforms, pid + " should report gaps: " + report);
             }
         }
     }

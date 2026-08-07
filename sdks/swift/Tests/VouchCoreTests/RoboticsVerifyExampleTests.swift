@@ -9,7 +9,7 @@ import XCTest
 ///
 /// - Regulatory evidence pack: `checkConformance` maps the shared interop
 ///   vector's Python-signed credential set onto all five built-in profiles,
-///   reporting CONFORMS for the EU AI Act, ISO 10218, and the EU Machinery
+///   reporting CONFORMS for the EU AI Act and the EU Machinery
 ///   Regulation and the exact open clause for the two profiles the set leaves
 ///   gaps in; `buildConformanceAttestation` then signs a point-in-time
 ///   attestation per profile and `verifyConformanceAttestation` checks it
@@ -63,7 +63,7 @@ final class RoboticsVerifyExampleTests: XCTestCase {
                 profileId: pid
             )
             XCTAssertTrue(report.contains("\"profileId\":\"\(pid)\""))
-            if pid == "iso-ts-15066" || pid == "ul-3300" {
+            if pid != "eu-ai-act-high-risk" && pid != "eu-machinery-2023-1230" {
                 // The vector's four-credential set carries no heartbeat motion
                 // digest and no perception provenance, so exactly these two
                 // profiles must report the open clause.

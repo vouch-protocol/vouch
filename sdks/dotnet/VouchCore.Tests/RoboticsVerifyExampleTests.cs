@@ -15,7 +15,7 @@ namespace VouchProtocol.Core.Tests;
 ///
 /// Regulatory evidence pack: CheckConformance maps the shared interop vector's
 /// Python-signed credential set onto all five built-in profiles, reporting
-/// CONFORMS for the EU AI Act, ISO 10218, and the EU Machinery Regulation and
+/// CONFORMS for the EU AI Act and the EU Machinery Regulation and
 /// the exact open clause for the two profiles the set leaves gaps in;
 /// BuildConformanceAttestation then signs a point-in-time attestation per
 /// profile and VerifyConformanceAttestation checks it offline.
@@ -96,16 +96,17 @@ public class RoboticsVerifyExampleTests
             Assert.Equal(pid, report.RootElement.GetProperty("profileId").GetString());
 
             bool conforms = report.RootElement.GetProperty("conforms").GetBoolean();
-            if (pid == "iso-ts-15066" || pid == "ul-3300")
+            if (pid == "eu-ai-act-high-risk" || pid == "eu-machinery-2023-1230")
             {
-                // The vector's four-credential set carries no heartbeat motion
-                // digest and no perception provenance, so exactly these two
-                // profiles must report the open clause.
-                Assert.False(conforms);
+                Assert.True(conforms);
             }
             else
             {
-                Assert.True(conforms);
+                // The vector's four-credential set carries no heartbeat motion
+                // digest and no perception provenance, and its identity names a
+                // hardware root without the root's attestation, so these
+                // profiles report the open clause.
+                Assert.False(conforms);
             }
         }
     }

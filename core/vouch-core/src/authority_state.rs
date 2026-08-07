@@ -72,7 +72,9 @@ pub struct BuildAuthorityStateOptions {
 /// Construct an unsigned AuthorityState credential.
 pub fn build_authority_state(opts: &BuildAuthorityStateOptions) -> Result<Value> {
     if opts.authority_epoch < 0 {
-        return Err(CoreError::Json("authorityEpoch must be non-negative".into()));
+        return Err(CoreError::Json(
+            "authorityEpoch must be non-negative".into(),
+        ));
     }
     if !is_valid_status(&opts.status) {
         return Err(CoreError::Json(format!(
@@ -83,7 +85,10 @@ pub fn build_authority_state(opts: &BuildAuthorityStateOptions) -> Result<Value>
         return Err(CoreError::Json("issuer_did is required".into()));
     }
 
-    let subject_did = opts.subject_did.clone().unwrap_or_else(|| opts.issuer_did.clone());
+    let subject_did = opts
+        .subject_did
+        .clone()
+        .unwrap_or_else(|| opts.issuer_did.clone());
 
     let mut subject = Map::new();
     subject.insert("id".into(), json!(subject_did));
@@ -125,7 +130,9 @@ pub fn verify(
         .map(|arr| arr.iter().any(|t| t.as_str() == Some(AUTHORITY_STATE_TYPE)))
         .unwrap_or(false);
     if !is_authority_state {
-        return Err(CoreError::Json("credential is not an AuthorityState".into()));
+        return Err(CoreError::Json(
+            "credential is not an AuthorityState".into(),
+        ));
     }
     let proof_valid = data_integrity::verify_proof(credential, raw_public_key)?;
     let time_valid = verify_temporal(credential, now_iso, clock_skew_seconds)?;
@@ -221,7 +228,10 @@ pub fn evaluate_authority_freshness(
 
     if let Some(status) = current_status {
         if status != STATUS_ACTIVE {
-            return mk(false, format!("authority_status_not_active:status={status}"));
+            return mk(
+                false,
+                format!("authority_status_not_active:status={status}"),
+            );
         }
     }
 
@@ -262,7 +272,10 @@ pub fn evaluate_authority_freshness(
         }
     }
 
-    mk(true, format!("{canonical_tier} tier: authority state fresh"))
+    mk(
+        true,
+        format!("{canonical_tier} tier: authority state fresh"),
+    )
 }
 
 #[cfg(test)]
@@ -284,7 +297,10 @@ mod tests {
     #[test]
     fn builds_expected_shape() {
         let vc = build_authority_state(&opts()).unwrap();
-        assert_eq!(vc["type"], json!(["VerifiableCredential", "AuthorityState"]));
+        assert_eq!(
+            vc["type"],
+            json!(["VerifiableCredential", "AuthorityState"])
+        );
         assert_eq!(vc["credentialSubject"]["authorityEpoch"], json!(7));
         assert_eq!(vc["credentialSubject"]["status"], json!("active"));
     }

@@ -24,6 +24,7 @@ import (
 	"crypto/ed25519"
 	"crypto/sha256"
 	"errors"
+	"reflect"
 	"strings"
 	"time"
 
@@ -52,6 +53,10 @@ type conformanceRequirement struct {
 	Title      string
 	Credential string
 	Fields     []string
+	// Expect maps a subject path to the exact value it must hold, for
+	// requirements where mere presence is not evidence: a heartbeat reporting
+	// an envelope breach is not evidence of staying inside the envelope.
+	Expect map[string]any
 }
 
 // conformanceProfile is a named crosswalk from a regulation to the credentials
@@ -69,6 +74,18 @@ func req(id, clause, title, credential string, fields ...string) conformanceRequ
 	return conformanceRequirement{ID: id, Clause: clause, Title: title, Credential: credential, Fields: fields}
 }
 
+// expecting returns a copy of the requirement that additionally requires an
+// exact value at a subject path.
+func (r conformanceRequirement) expecting(path string, want any) conformanceRequirement {
+	expect := make(map[string]any, len(r.Expect)+1)
+	for k, v := range r.Expect {
+		expect[k] = v
+	}
+	expect[path] = want
+	r.Expect = expect
+	return r
+}
+
 // conformanceProfiles are the built-in profiles, keyed by profile id. The
 // contents (ids, regime strings, versions, and every per-requirement id, clause,
 // title, credential type, and field path) match the Python and TypeScript
@@ -83,7 +100,7 @@ var conformanceProfiles = map[string]conformanceProfile{
 				"ISO 10218-1:2011, 5.2",
 				"Robot identification bound to its hardware",
 				"RobotIdentityCredential",
-				"hardwareRoot.kind",
+				"hardwareRoot.kind", "hardwareRoot.attestation",
 			),
 			req(
 				"iso10218-software-integrity",
@@ -97,14 +114,14 @@ var conformanceProfiles = map[string]conformanceProfile{
 				"ISO 10218-1:2011, 5.6",
 				"Limiting of speed, force, and workspace",
 				"PhysicalCapabilityScope",
-				"physicalScope.maxForceN", "physicalScope.maxSpeedMps",
+				"physicalScope.maxForceN", "physicalScope.maxSpeedMps", "physicalScope.allowedZones",
 			),
 			req(
 				"iso10218-records",
 				"ISO 10218-2:2011, 5.2",
 				"Records of safety-relevant events",
 				"RobotSafetyRecordCredential",
-				"totalEvents",
+				"totalEvents", "logHead",
 			),
 		},
 	},
@@ -132,7 +149,7 @@ var conformanceProfiles = map[string]conformanceProfile{
 				"Continuous monitoring of the collaborative operation",
 				"RobotHeartbeatCredential",
 				"motionDigest",
-			),
+			).expecting("motionDigest.withinEnvelope", true),
 		},
 	},
 	"eu-machinery-2023-1230": {
@@ -165,7 +182,7 @@ var conformanceProfiles = map[string]conformanceProfile{
 				"Reg (EU) 2023/1230, Annex III 1.2.1",
 				"Recording of safety-relevant data",
 				"RobotSafetyRecordCredential",
-				"totalEvents",
+				"totalEvents", "logHead",
 			),
 		},
 	},
@@ -212,7 +229,7 @@ var conformanceProfiles = map[string]conformanceProfile{
 				"UL 3300, identification",
 				"Robot identity bound to its hardware",
 				"RobotIdentityCredential",
-				"hardwareRoot.kind",
+				"hardwareRoot.kind", "hardwareRoot.attestation",
 			),
 			req(
 				"ul3300-operating-limits",
@@ -233,7 +250,7 @@ var conformanceProfiles = map[string]conformanceProfile{
 				"UL 3300, incident records",
 				"Records of safety-relevant incidents",
 				"RobotSafetyRecordCredential",
-				"totalEvents",
+				"totalEvents", "logHead",
 			),
 		},
 	},
@@ -295,6 +312,11 @@ func credentialSatisfies(credential map[string]any, requirement conformanceRequi
 	subject, _ := credential["credentialSubject"].(map[string]any)
 	for _, path := range requirement.Fields {
 		if emptyValue(pathValue(subject, path)) {
+			return false
+		}
+	}
+	for path, want := range requirement.Expect {
+		if !reflect.DeepEqual(pathValue(subject, path), want) {
 			return false
 		}
 	}

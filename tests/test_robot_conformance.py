@@ -167,3 +167,97 @@ class TestAttestation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRequirementStrength(unittest.TestCase):
+    """
+    Regression guards for three checker weaknesses: presence alone is not
+    evidence. Each of these satisfied its requirement before the fix.
+    """
+
+    def _satisfied(self, credentials, profile_id, requirement_id):
+        report = check_conformance(credentials, profile_id)
+        return next(r for r in report["requirements"] if r["id"] == requirement_id)["satisfied"]
+
+    def test_zero_events_without_a_log_head_is_not_a_record(self):
+        # totalEvents == 0 is "present" (the checker rejects None/[]/{}, not 0),
+        # so a robot that recorded nothing used to evidence a records clause.
+        creds = [
+            {
+                "type": ["VerifiableCredential", "RobotSafetyRecordCredential"],
+                "credentialSubject": {"id": "did:web:r", "totalEvents": 0},
+            }
+        ]
+        for profile_id, req_id in (
+            ("iso-10218", "iso10218-records"),
+            ("eu-machinery-2023-1230", "eu-mr-records"),
+            ("ul-3300", "ul3300-records"),
+        ):
+            self.assertFalse(self._satisfied(creds, profile_id, req_id), profile_id)
+
+    def test_records_requirement_is_met_when_anchored_to_the_chain(self):
+        creds = [
+            {
+                "type": ["VerifiableCredential", "RobotSafetyRecordCredential"],
+                "credentialSubject": {"id": "did:web:r", "totalEvents": 2, "logHead": "uHEAD"},
+            }
+        ]
+        self.assertTrue(self._satisfied(creds, "iso-10218", "iso10218-records"))
+
+    def test_a_breaching_heartbeat_does_not_evidence_monitoring(self):
+        def heartbeat(within_envelope):
+            return [
+                {
+                    "type": ["VerifiableCredential", "RobotHeartbeatCredential"],
+                    "credentialSubject": {
+                        "id": "did:web:r",
+                        "motionDigest": {
+                            "samples": 3,
+                            "maxForceN": 9.0,
+                            "maxSpeedMps": 9.0,
+                            "maxSpeedNearHumansMps": 9.0,
+                            "zoneBreaches": 0 if within_envelope else 7,
+                            "breachCount": 0 if within_envelope else 7,
+                            "withinEnvelope": within_envelope,
+                        },
+                    },
+                }
+            ]
+
+        self.assertFalse(self._satisfied(heartbeat(False), "iso-ts-15066", "iso15066-monitoring"))
+        self.assertTrue(self._satisfied(heartbeat(True), "iso-ts-15066", "iso15066-monitoring"))
+
+    def test_identity_without_an_attestation_is_not_hardware_bound(self):
+        kind_only = [
+            {
+                "type": ["VerifiableCredential", "RobotIdentityCredential"],
+                "credentialSubject": {"id": "did:web:r", "hardwareRoot": {"kind": "TPM"}},
+            }
+        ]
+        attested = [
+            {
+                "type": ["VerifiableCredential", "RobotIdentityCredential"],
+                "credentialSubject": {
+                    "id": "did:web:r",
+                    "hardwareRoot": {"kind": "TPM", "attestation": "uSIG"},
+                },
+            }
+        ]
+        for profile_id, req_id in (
+            ("iso-10218", "iso10218-identification"),
+            ("ul-3300", "ul3300-identity"),
+        ):
+            self.assertFalse(self._satisfied(kind_only, profile_id, req_id), profile_id)
+            self.assertTrue(self._satisfied(attested, profile_id, req_id), profile_id)
+
+    def test_workspace_limb_of_the_limits_requirement_is_checked(self):
+        no_zones = [
+            {
+                "type": ["VerifiableCredential", "PhysicalCapabilityScope"],
+                "credentialSubject": {
+                    "id": "did:web:r",
+                    "physicalScope": {"maxForceN": 80.0, "maxSpeedMps": 1.5},
+                },
+            }
+        ]
+        self.assertFalse(self._satisfied(no_zones, "iso-10218", "iso10218-limits"))
