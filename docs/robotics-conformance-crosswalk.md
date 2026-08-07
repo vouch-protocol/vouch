@@ -232,8 +232,8 @@ See "Why nothing was changed in code" below.
 
 ## Status of the proposals
 
-**P2, P3, P4 and P5 have since been implemented** (branch
-`claude/robotics-conformance-checker-fixes-x7eng6`). Requirements gained an
+**P2, P3, P4 and P5 have since been implemented** (commit `30cc6344`).
+Requirements gained an
 `expect` map so a requirement can assert a *value* and not merely presence; the
 continuous-monitoring requirement now requires `motionDigest.withinEnvelope` to
 be true; the three records requirements require `logHead`; the two
