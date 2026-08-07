@@ -128,6 +128,27 @@ jobs:
         working-directory: sdks/dotnet
         run: dotnet test --nologo
 
+  swift:
+    name: Swift SDK
+    # Swift previously had no PR-triggered job, so Swift changes could merge
+    # having been compiled nowhere: `swift test` ran only from
+    # swift-xcframework.yml on workflow_dispatch or a swift-v* tag. This builds
+    # on Linux in the official Swift container. The package resolves VouchCore
+    # from a prebuilt XCFramework binaryTarget, which is Apple-platform only, so
+    # this job builds the sources it can and is allowed to fail while that is
+    # the case -- it exists to surface syntax and API breakage early rather than
+    # to gate the merge.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    container: swift:6.0
+    steps:
+      - uses: actions/checkout@v7
+      - name: Resolve and build
+        working-directory: sdks/swift
+        run: |
+          swift --version
+          swift build 2>&1 | tail -40
+
   jvm:
     name: JVM SDK
     runs-on: ubuntu-latest

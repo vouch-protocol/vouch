@@ -1,5 +1,15 @@
 # vouch_ros2 — the Vouch accountability loop as a ROS 2 node
 
+> **Status: unbuilt — not yet verified against a ROS runtime.** The package is
+> complete and its decision logic is covered by tests that need neither ROS nor
+> a robot, but `colcon build`, `ros2 launch` and `ros2 run` have not been
+> executed against it. A first real build should confirm: dotted parameter
+> names (`scope.max_force_n`) declaring and reading back under rclpy, the
+> `ParameterValue(..., value_type=...)` coercion in the launch file, the
+> nested-YAML to dotted-parameter mapping, and transient-local QoS delivering
+> the startup attestation to late joiners. Treat it as reviewed source, not as
+> a running node, until that has happened.
+
 `vouch_ros2` puts the Vouch accountability loop between a planner and a robot's
 actuators. It is the ROS 2 packaging of
 [`examples/robotics_vla_accountability_loop.py`](../../examples/robotics_vla_accountability_loop.py):
