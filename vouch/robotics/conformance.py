@@ -47,13 +47,27 @@ CONFORMANCE_ATTESTATION_TYPE = "RobotConformanceAttestation"
 # Profiles are plain data so every language reproduces them identically.
 
 
-def _req(rid: str, clause: str, title: str, credential: str, fields: Optional[List[str]] = None):
+def _req(
+    rid: str,
+    clause: str,
+    title: str,
+    credential: str,
+    fields: Optional[List[str]] = None,
+    expect: Optional[Dict[str, Any]] = None,
+):
+    """
+    One requirement. `fields` must all be present and non-empty; `expect` maps a
+    path to the exact value it must hold, for requirements where mere presence
+    is not evidence (a heartbeat that reports an envelope breach is not evidence
+    of staying inside the envelope).
+    """
     return {
         "id": rid,
         "clause": clause,
         "title": title,
         "credential": credential,
         "fields": fields or [],
+        "expect": expect or {},
     }
 
 
@@ -67,7 +81,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "ISO 10218-1:2011, 5.2",
                 "Robot identification bound to its hardware",
                 "RobotIdentityCredential",
-                ["hardwareRoot.kind"],
+                ["hardwareRoot.kind", "hardwareRoot.attestation"],
             ),
             _req(
                 "iso10218-software-integrity",
@@ -81,14 +95,18 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "ISO 10218-1:2011, 5.6",
                 "Limiting of speed, force, and workspace",
                 "PhysicalCapabilityScope",
-                ["physicalScope.maxForceN", "physicalScope.maxSpeedMps"],
+                [
+                    "physicalScope.maxForceN",
+                    "physicalScope.maxSpeedMps",
+                    "physicalScope.allowedZones",
+                ],
             ),
             _req(
                 "iso10218-records",
                 "ISO 10218-2:2011, 5.2",
                 "Records of safety-relevant events",
                 "RobotSafetyRecordCredential",
-                ["totalEvents"],
+                ["totalEvents", "logHead"],
             ),
         ],
     },
@@ -116,6 +134,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Continuous monitoring of the collaborative operation",
                 "RobotHeartbeatCredential",
                 ["motionDigest"],
+                expect={"motionDigest.withinEnvelope": True},
             ),
         ],
     },
@@ -149,7 +168,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Reg (EU) 2023/1230, Annex III 1.2.1",
                 "Recording of safety-relevant data",
                 "RobotSafetyRecordCredential",
-                ["totalEvents"],
+                ["totalEvents", "logHead"],
             ),
         ],
     },
@@ -196,7 +215,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "UL 3300, identification",
                 "Robot identity bound to its hardware",
                 "RobotIdentityCredential",
-                ["hardwareRoot.kind"],
+                ["hardwareRoot.kind", "hardwareRoot.attestation"],
             ),
             _req(
                 "ul3300-operating-limits",
@@ -217,7 +236,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "UL 3300, incident records",
                 "Records of safety-relevant incidents",
                 "RobotSafetyRecordCredential",
-                ["totalEvents"],
+                ["totalEvents", "logHead"],
             ),
         ],
     },
@@ -258,6 +277,9 @@ def _credential_satisfies(credential: Dict[str, Any], requirement: Dict[str, Any
     for path in requirement["fields"]:
         value = _path_value(subject, path)
         if value is None or value == [] or value == {}:
+            return False
+    for path, want in (requirement.get("expect") or {}).items():
+        if _path_value(subject, path) != want:
             return False
     return True
 

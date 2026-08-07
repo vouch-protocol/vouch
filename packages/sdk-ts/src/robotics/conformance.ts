@@ -52,6 +52,12 @@ export interface Requirement {
   title: string;
   credential: string;
   fields: string[];
+  /**
+   * Paths that must hold an exact value. For requirements where mere presence
+   * is not evidence: a heartbeat reporting an envelope breach is not evidence
+   * of having stayed inside the envelope.
+   */
+  expect: Record<string, unknown>;
 }
 
 export interface Profile {
@@ -65,7 +71,8 @@ function req(
   clause: string,
   title: string,
   credential: string,
-  fields?: string[]
+  fields?: string[],
+  expect?: Record<string, unknown>
 ): Requirement {
   return {
     id: rid,
@@ -73,6 +80,7 @@ function req(
     title,
     credential,
     fields: fields ?? [],
+    expect: expect ?? {},
   };
 }
 
@@ -86,7 +94,7 @@ export const PROFILES: Record<string, Profile> = {
         'ISO 10218-1:2011, 5.2',
         'Robot identification bound to its hardware',
         'RobotIdentityCredential',
-        ['hardwareRoot.kind']
+        ['hardwareRoot.kind', 'hardwareRoot.attestation']
       ),
       req(
         'iso10218-software-integrity',
@@ -100,14 +108,14 @@ export const PROFILES: Record<string, Profile> = {
         'ISO 10218-1:2011, 5.6',
         'Limiting of speed, force, and workspace',
         'PhysicalCapabilityScope',
-        ['physicalScope.maxForceN', 'physicalScope.maxSpeedMps']
+        ['physicalScope.maxForceN', 'physicalScope.maxSpeedMps', 'physicalScope.allowedZones']
       ),
       req(
         'iso10218-records',
         'ISO 10218-2:2011, 5.2',
         'Records of safety-relevant events',
         'RobotSafetyRecordCredential',
-        ['totalEvents']
+        ['totalEvents', 'logHead']
       ),
     ],
   },
@@ -134,7 +142,8 @@ export const PROFILES: Record<string, Profile> = {
         'ISO/TS 15066:2016, 5.2',
         'Continuous monitoring of the collaborative operation',
         'RobotHeartbeatCredential',
-        ['motionDigest']
+        ['motionDigest'],
+        { 'motionDigest.withinEnvelope': true }
       ),
     ],
   },
@@ -168,7 +177,7 @@ export const PROFILES: Record<string, Profile> = {
         'Reg (EU) 2023/1230, Annex III 1.2.1',
         'Recording of safety-relevant data',
         'RobotSafetyRecordCredential',
-        ['totalEvents']
+        ['totalEvents', 'logHead']
       ),
     ],
   },
@@ -215,7 +224,7 @@ export const PROFILES: Record<string, Profile> = {
         'UL 3300, identification',
         'Robot identity bound to its hardware',
         'RobotIdentityCredential',
-        ['hardwareRoot.kind']
+        ['hardwareRoot.kind', 'hardwareRoot.attestation']
       ),
       req(
         'ul3300-operating-limits',
@@ -236,7 +245,7 @@ export const PROFILES: Record<string, Profile> = {
         'UL 3300, incident records',
         'Records of safety-relevant incidents',
         'RobotSafetyRecordCredential',
-        ['totalEvents']
+        ['totalEvents', 'logHead']
       ),
     ],
   },
@@ -308,6 +317,9 @@ function credentialSatisfies(
   const subject = (credential.credentialSubject ?? {}) as Record<string, unknown>;
   for (const path of requirement.fields) {
     if (isEmpty(pathValue(subject, path))) return false;
+  }
+  for (const [path, want] of Object.entries(requirement.expect ?? {})) {
+    if (pathValue(subject, path) !== want) return false;
   }
   return true;
 }
