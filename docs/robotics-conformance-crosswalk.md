@@ -230,7 +230,26 @@ See "Why nothing was changed in code" below.
 | **P7** | Replace the four UL 3300 pseudo-citations with real clause numbers from the purchased standard. | Ungrounded citations cannot be checked by an assessor. |
 | **P8** | Decide the edition question for `iso-10218` (map to :2025, or state explicitly that the profile targets the withdrawn :2011 edition) and whether `iso-ts-15066` should persist as a standalone profile now that its content sits in ISO 10218-2:2025. | Currently the profile silently targets a superseded edition. |
 
-## Why nothing was changed in code
+## Status of the proposals
+
+**P2, P3, P4 and P5 have since been implemented** (branch
+`claude/robotics-conformance-checker-fixes-x7eng6`). Requirements gained an
+`expect` map so a requirement can assert a *value* and not merely presence; the
+continuous-monitoring requirement now requires `motionDigest.withinEnvelope` to
+be true; the three records requirements require `logHead`; the two
+hardware-binding requirements require `hardwareRoot.attestation`; and the
+ISO 10218 limits requirement requires `allowedZones`. All three
+`[demonstrated]` weaknesses above are closed, in Python, TypeScript, Go and the
+Rust core alike, with the pinned interop digest unchanged.
+
+**The tables above describe the profiles as they stood when audited**, not as
+they stand now.
+
+P1 is now supported by the operative text (Art. 14(4)(e), quoted above) and
+remains open. P6, P7 and P8 remain open: each still needs a text that could not
+be reached from here.
+
+## Why the regulatory citations are still unchanged
 
 The brief permitted changing `conformance.py` "where a mapping is clearly wrong
 or clearly missing". Three candidates initially looked to qualify — the ISO/TS
