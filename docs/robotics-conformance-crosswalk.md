@@ -19,7 +19,7 @@ every conclusion below.
 
 | Source | Status | Consequence |
 |---|---|---|
-| EU AI Act, Reg (EU) 2024/1689 | **Not consulted.** Freely published on EUR-Lex, but EUR-Lex and every mirror tried (`artificialintelligenceact.eu`, `ai-act-law.eu`, Wikipedia) were unreachable from this environment. | Article-level assessments rest on general knowledge plus search-result corroboration, not on read text. |
+| EU AI Act, Reg (EU) 2024/1689 | **Consulted, via a third-party reproduction.** EUR-Lex and every mirror tried are blocked by this environment's egress proxy (verified: `CONNECT ... 403`). The operative text of Arts. 12-15 was instead read from a public reproduction of the Official Journal text, [`bojkovski-cpu/ai-act-annotated`](https://github.com/bojkovski-cpu/ai-act-annotated) (`src/data/articles_en.json`, all 113 articles). | Article-level assessments below are quoted from that reproduction and marked `[text]`. It is **not** the Official Journal: a reproduction can contain transcription errors, so a notified body should re-check against EUR-Lex. It is nonetheless a large improvement on recollection. |
 | EU Machinery Reg 2023/1230 | **Not consulted.** Same reason. | As above. Annex III 1.1.9 and 1.2.1 assessments are corroborated by secondary sources cited inline. |
 | ISO 10218-1/-2 | **Not consulted — paywalled.** ISO texts are not free. | Clause *content* is not asserted anywhere below. Only clause *numbering and edition status* are discussed, from secondary sources. |
 | ISO/TS 15066 | **Not consulted — paywalled.** | As above. One likely-incorrect clause number is flagged, not corrected. |
@@ -34,6 +34,8 @@ because none is. Every row carries a provenance marker:
 - `[structural]` — a conclusion that needs no regulation text, because it follows
   from the profile's own data (e.g. a citation that is not a clause reference,
   or two requirements citing the same clause).
+- `[text]` — quoted from the operative text of the article (EU AI Act only, via
+  the third-party reproduction named above).
 - `[demonstrated]` — executed against this branch's `check_conformance` and
   observed. These are the only claims here backed by evidence rather than
   reading, and they are all claims about the *checker*, never about a regulation.
@@ -77,24 +79,22 @@ right type carries a non-empty field at a path. It does not verify signatures
 
 ## 1. `eu-ai-act-high-risk` — EU AI Act high-risk systems
 
+Assessed against the operative text of Arts. 12-15 `[text]`.
+
 | Clause | Credential → field | Strength | Notes |
 |---|---|---|---|
-| Art. 12 — Automatic recording of events | `RobotSafetyRecordCredential` → `logHead` | **partial** | `[unverified]` Art. 12 requires high-risk systems to *technically allow* automatic recording of events over the lifetime of the system. `logHead` is the head of a hash-linked ledger, which is strong evidence that recorded entries are complete and unaltered. It is **not** evidence that logging is enabled, that it covers the lifetime, or that the recorded event set matches what Art. 12 contemplates. A ledger with one entry satisfies this check. |
-| Art. 13 — Transparency | `ModelProvenanceAttestation` → `vla.modelName`, `vla.configHash` | **partial** | `[unverified]` Art. 13 is about transparency *toward the deployer* — instructions for use, characteristics, limitations. A model name and a config hash are provenance facts, not user-facing instructions. This evidences *traceability of what ran*, which supports but does not constitute Art. 13 compliance. |
-| Art. 14 — Human oversight | `PhysicalCapabilityScope` → `physicalScope.maxSpeedNearHumansMps` | **partial** | `[unverified]` Art. 14 requires that systems be designed so humans can effectively oversee them — including the ability to intervene and to interrupt. A declared near-human speed cap is one *enforced operating limit*, which is genuinely relevant, but oversight in Art. 14 centres on human intervention capability. Vouch has a `KillSwitchCredential` primitive that speaks far more directly to interruption and is **not** referenced by this profile. See proposal P1. |
-| Art. 15 — Accuracy, robustness, cybersecurity | `ModelProvenanceAttestation` → `vla.weightsHash` | **partial** | `[unverified]` A weights hash pins *which* build ran, so a claimed accuracy figure can be tied to an artifact. It is no evidence of accuracy or robustness itself. Art. 15 also covers cybersecurity and resilience, untouched here. |
+| Art. 12 — Record-keeping | `RobotSafetyRecordCredential` → `logHead` | **partial** | `[text]` Art. 12(1): systems "shall technically allow for the **automatic recording of events (logs) over the lifetime of the system**". Art. 12(2) requires logging to enable recording of events relevant for (a) identifying risk situations or substantial modification, (b) facilitating post-market monitoring under Art. 72, (c) monitoring operation under Art. 26(5). `logHead` is strong evidence that recorded entries are **complete and unaltered**, which is more than a plain log offers. It is not evidence that logging is enabled, that it spans the lifetime, or that the recorded events cover the three categories in 12(2). |
+| Art. 13 — Transparency and provision of information to deployers | `ModelProvenanceAttestation` → `vla.modelName`, `vla.configHash` | **partial** | `[text]` The title itself is decisive: Art. 13(2)-(3) require the system to be **accompanied by instructions for use** containing an enumerated list — provider identity, characteristics/capabilities/limitations, accuracy metrics, foreseeable misuse, the human-oversight measures of Art. 14, expected lifetime and maintenance. A model name and config hash are provenance facts, not instructions for use. Notably **Art. 13(3)(f)** asks for "a description of the mechanisms ... that allows deployers to properly collect, store and interpret the **logs** in accordance with Article 12" — the closest fit to what Vouch produces, and the profile does not target it. |
+| Art. 14 — Human oversight | `PhysicalCapabilityScope` → `physicalScope.maxSpeedNearHumansMps` | **partial** | `[text]` **Art. 14(4)(e)** requires oversight to enable a person "to **intervene** in the operation of the high-risk AI system or **interrupt the system through a 'stop' button** or a similar procedure that allows the system to come to a halt in a safe state", and 14(4)(d) to "disregard, override or reverse the output". A near-human speed cap is a relevant enforced limit but addresses none of that. This text **confirms proposal P1**: Vouch's `KillSwitchCredential` maps directly onto 14(4)(e), and the profile ignores it. |
+| Art. 15 — Accuracy, robustness and cybersecurity | `ModelProvenanceAttestation` → `vla.weightsHash` | **partial** | `[text]` Art. 15(1) requires an appropriate level of accuracy, robustness and cybersecurity, performing consistently "throughout their lifecycle"; **15(3)** puts the accuracy metrics in the instructions for use; **15(5)** requires resilience against unauthorised third parties altering use, outputs or performance, naming data poisoning, model poisoning, adversarial examples and model flaws. A weights hash pins *which build ran*, so a claimed accuracy figure can be bound to an artifact and model-poisoning after the fact becomes detectable — genuinely relevant to 15(5). It is no evidence of accuracy, robustness, or the other attack classes. |
 
 **What the EU AI Act requires that Vouch does not cover at all** `[unverified]`:
-risk management system (Art. 9); data and data governance, including training-data
-quality and bias examination (Art. 10); the technical documentation package
-(Art. 11); quality management system (Art. 17); conformity assessment procedure
-(Art. 43); registration in the EU database (Art. 49); post-market monitoring
-(Art. 72); and serious-incident reporting (Art. 73). Several of these are the
-substance of a high-risk conformity assessment. **The profile covers four
-articles of a regime whose obligations run across roughly a dozen.** A
-`CONFORMS` result on this profile should never be read as "AI Act compliant".
-
----
+risk management system (Art. 9); data and data governance (Art. 10); technical
+documentation (Art. 11); quality management system (Art. 17); conformity
+assessment (Art. 43); registration (Art. 49); post-market monitoring (Art. 72);
+serious-incident reporting (Art. 73). **The profile covers four articles of a
+regime whose obligations run across roughly a dozen.** A `CONFORMS` result on
+this profile should never be read as "AI Act compliant".
 
 ## 2. `iso-10218` — ISO 10218-1/-2 industrial robots
 
