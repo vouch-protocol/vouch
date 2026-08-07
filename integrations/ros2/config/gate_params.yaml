@@ -1,0 +1,60 @@
+# Example parameters for the vouch_action_gate node.
+#
+#   ros2 launch vouch_ros2 vouch_action_gate.launch.py params_file:=gate_params.yaml
+#   ros2 run vouch_ros2 vouch_action_gate --ros-args --params-file gate_params.yaml
+#
+# "/**" applies to the node under any name or namespace.
+/**:
+  ros__parameters:
+    # --- topics -------------------------------------------------------------
+    proposed_action_topic: "planner/proposed_action"
+    allowed_action_topic: "actuator/action"
+    denial_topic: "vouch/denials"
+    provenance_topic: "vouch/provenance"
+    blackbox_head_topic: "vouch/blackbox_head"
+    queue_depth: 10
+
+    # --- physical capability scope -----------------------------------------
+    # The envelope every proposed action is checked against. A negative number
+    # means "leave this dimension unbounded"; an empty allowed_zones list means
+    # "do not restrict zones". At least one dimension must be bounded.
+    scope:
+      max_force_n: 80.0
+      max_speed_mps: 1.5
+      max_speed_near_humans_mps: 0.5
+      allowed_zones: ["cell-3"]
+      # JSON, because ROS 2 parameters have no list-of-dict type. Checked only
+      # when an action carries a time (or stamp_time_from_clock is true).
+      shift_windows_json: '[{"start": "06:00", "end": "18:00"}]'
+
+    # --- robot key material -------------------------------------------------
+    # The Ed25519 key that signs the provenance attestation. Leave both empty
+    # for a bench run and the node generates an ephemeral identity, logging a
+    # warning: nothing signed with it is verifiable after the process exits.
+    identity:
+      did: ""
+      private_key_jwk: ""
+
+    # --- black box ----------------------------------------------------------
+    # 32-byte AES-256 key as 64 hex chars, inline or in a file. Anyone can
+    # verify the hash chain without it; only a key holder can read payloads.
+    blackbox:
+      key_hex: ""
+      key_file: ""
+      log_path: ""
+
+    # --- planner / model provenance ----------------------------------------
+    model:
+      name: "Gemini Robotics ER 2"
+      version: "2.0"
+      # Set weights_hash directly, or point weights_file at the artifact and
+      # the node hashes the bytes actually on disk.
+      weights_hash: ""
+      weights_file: ""
+      safety_policy: "factory-floor-safety-policy-v3"
+      config_json: '{"planner": "er-2", "temperature": 0.0, "max_plan_steps": 8}'
+
+    # --- behaviour ----------------------------------------------------------
+    # Stamp actions that carry no time with the ROS clock, so shift windows are
+    # enforced even when the planner does not send one.
+    stamp_time_from_clock: false
