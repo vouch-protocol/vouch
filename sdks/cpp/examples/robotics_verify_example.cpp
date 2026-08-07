@@ -154,10 +154,16 @@ int main(int argc, char** argv) {
   //    per profile, then one signed attestation per profile.
   std::printf("\nconformance across the five profiles:\n");
   int attested = 0;
+  int cited = 0;
   for (const char* pid : kAllProfileIds) {
     const std::string report = vouch::robotics::check_conformance(credentials, pid);
     const bool conforms = contains(report, "\"conforms\":true");
     std::printf("  %-24s %s\n", pid, conforms ? "CONFORMS" : "GAPS");
+
+    // CONFORMS says the evidence covers the clauses this profile maps, which
+    // is weaker than compliance with the regulation. Every report states how
+    // well-sourced its clause references are.
+    if (contains(report, "\"citations\":")) cited++;
 
     const std::string params =
         std::string("{\"issuerDid\":\"did:web:assessor.example.com\",") +
@@ -170,6 +176,7 @@ int main(int argc, char** argv) {
     if (att_subject != "null" && contains(att_subject, pid)) attested++;
   }
   std::printf("signed attestations verified: %d/5\n", attested);
+  std::printf("reports carrying clause-citation provenance: %d/5\n", cited);
 
   // 3. The VLA pre-actuation scope gate: allow the safe actions, deny the
   //    over-speed and out-of-zone ones.
@@ -202,7 +209,7 @@ int main(int argc, char** argv) {
     std::printf("  [%s] %s\n", ok ? "ALLOW" : "DENY ", c.task);
   }
 
-  const bool all_ok = identity_ok && proof_ok && attested == 5 && gate_ok;
+  const bool all_ok = identity_ok && proof_ok && attested == 5 && cited == 5 && gate_ok;
   std::printf("\n%s\n", all_ok ? "ALL ROBOTICS VERIFY EXAMPLE CHECKS PASSED"
                                : "SOME CHECKS FAILED");
   return all_ok ? 0 : 1;

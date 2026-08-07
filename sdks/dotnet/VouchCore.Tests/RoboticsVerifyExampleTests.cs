@@ -108,7 +108,34 @@ public class RoboticsVerifyExampleTests
                 // profiles report the open clause.
                 Assert.False(conforms);
             }
+
+            // CONFORMS says the evidence covers the clauses this profile maps,
+            // which is weaker than compliance with the regulation. Every report
+            // states how well-sourced its clause references are, and the counts
+            // must add up to the number of requirements checked.
+            JsonElement citations = report.RootElement.GetProperty("citations");
+            int counted = 0;
+            foreach (JsonProperty bucket in citations.EnumerateObject())
+            {
+                counted += bucket.Value.GetInt32();
+            }
+            Assert.Equal(report.RootElement.GetProperty("totalCount").GetInt32(), counted);
         }
+    }
+
+    [Fact]
+    public void Ul3300ClausesAreDescriptiveNotCitable()
+    {
+        // UL 3300 is paywalled and no clause numbering was available, so the
+        // profile must never present its topic names as clauses an assessor
+        // can look up.
+        using var report = JsonDocument.Parse(
+            VouchRobotics.CheckConformance(CredentialsJson(), "ul-3300"));
+        JsonElement citations = report.RootElement.GetProperty("citations");
+        Assert.Equal(
+            report.RootElement.GetProperty("totalCount").GetInt32(),
+            citations.GetProperty("descriptive").GetInt32());
+        Assert.Equal(0, citations.GetProperty("verified-primary").GetInt32());
     }
 
     [Fact]

@@ -47,6 +47,22 @@ CONFORMANCE_ATTESTATION_TYPE = "RobotConformanceAttestation"
 # Profiles are plain data so every language reproduces them identically.
 
 
+# How well-sourced a requirement's clause citation is. A profile can be a
+# useful crosswalk while its citations are only as good as the sources that
+# were available, and a reader is entitled to know which. Every report and
+# every signed attestation carries these, so a conformance result never implies
+# more authority over the regulation than it has.
+CITATION_VERIFIED_PRIMARY = "verified-primary"
+CITATION_UNVERIFIED_SECONDARY = "unverified-secondary"
+CITATION_DESCRIPTIVE = "descriptive"
+
+CITATION_STATUSES = (
+    CITATION_VERIFIED_PRIMARY,
+    CITATION_UNVERIFIED_SECONDARY,
+    CITATION_DESCRIPTIVE,
+)
+
+
 def _req(
     rid: str,
     clause: str,
@@ -54,27 +70,73 @@ def _req(
     credential: str,
     fields: Optional[List[str]] = None,
     expect: Optional[Dict[str, Any]] = None,
+    citation: str = CITATION_UNVERIFIED_SECONDARY,
+    citation_note: Optional[str] = None,
 ):
     """
-    One requirement. `fields` must all be present and non-empty; `expect` maps a
-    path to the exact value it must hold, for requirements where mere presence
-    is not evidence (a heartbeat that reports an envelope breach is not evidence
-    of staying inside the envelope).
+    One requirement.
+
+    `fields` must all be present and non-empty; `expect` maps a path to the
+    exact value it must hold, for requirements where mere presence is not
+    evidence (a heartbeat that reports an envelope breach is not evidence of
+    staying inside the envelope).
+
+    `citation` records how well-sourced the clause reference is:
+
+      verified-primary       the clause text was read from the official
+                             published source.
+      unverified-secondary   the mapping is believed sound, but the clause
+                             number comes from secondary sources rather than
+                             the standard or official journal itself. The
+                             default, because it is the honest default.
+      descriptive            not a clause reference at all, only a description
+                             of the topic. An assessor cannot look it up.
+
+    `citation_note` records anything a reader should know about the citation,
+    such as a known conflict between sources.
     """
-    return {
+    if citation not in CITATION_STATUSES:
+        raise RoboticsError(f"citation must be one of {CITATION_STATUSES}, got {citation!r}")
+    requirement = {
         "id": rid,
         "clause": clause,
         "title": title,
         "credential": credential,
         "fields": fields or [],
         "expect": expect or {},
+        "citation": citation,
     }
+    if citation_note is not None:
+        requirement["citationNote"] = citation_note
+    return requirement
+
+
+_ISO_10218_EDITION_NOTE = (
+    "ISO 10218-1/-2:2011 were superseded by the 2025 editions (in force "
+    "1 April 2025); this mapping still cites the 2011 clause numbering and has "
+    "not been migrated."
+)
+
+_ISO_PAYWALL_NOTE = (
+    "Clause number taken from secondary sources; the standard is paywalled and "
+    "the text has not been read."
+)
+
+_OJ_NOTE = (
+    "Article number taken from a third-party reproduction of the Official "
+    "Journal text, not from EUR-Lex itself."
+)
+
+_UL_NOTE = (
+    "UL 3300 (now ANSI/CAN/UL 3300:2024) is paywalled and no clause numbering "
+    "was available; this names the topic only and cannot be looked up."
+)
 
 
 PROFILES: Dict[str, Dict[str, Any]] = {
     "iso-10218": {
         "regime": "ISO 10218-1/-2 industrial robots",
-        "version": "2011",
+        "version": "2011 (superseded by the 2025 editions; mapping not yet migrated)",
         "requirements": [
             _req(
                 "iso10218-identification",
@@ -82,6 +144,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Robot identification bound to its hardware",
                 "RobotIdentityCredential",
                 ["hardwareRoot.kind", "hardwareRoot.attestation"],
+                citation_note=f"{_ISO_PAYWALL_NOTE} {_ISO_10218_EDITION_NOTE}",
             ),
             _req(
                 "iso10218-software-integrity",
@@ -89,6 +152,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Control software and configuration integrity",
                 "ModelProvenanceAttestation",
                 ["vla.weightsHash"],
+                citation_note=f"{_ISO_PAYWALL_NOTE} {_ISO_10218_EDITION_NOTE}",
             ),
             _req(
                 "iso10218-limits",
@@ -100,6 +164,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                     "physicalScope.maxSpeedMps",
                     "physicalScope.allowedZones",
                 ],
+                citation_note=f"{_ISO_PAYWALL_NOTE} {_ISO_10218_EDITION_NOTE}",
             ),
             _req(
                 "iso10218-records",
@@ -107,6 +172,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Records of safety-relevant events",
                 "RobotSafetyRecordCredential",
                 ["totalEvents", "logHead"],
+                citation_note=f"{_ISO_PAYWALL_NOTE} {_ISO_10218_EDITION_NOTE}",
             ),
         ],
     },
@@ -120,6 +186,11 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Power and force limiting near humans",
                 "PhysicalCapabilityScope",
                 ["physicalScope.maxSpeedNearHumansMps", "physicalScope.maxForceN"],
+                citation_note=(
+                    f"{_ISO_PAYWALL_NOTE} Secondary sources disagree on whether "
+                    "power and force limiting is 5.5.4 or 5.5.2; confirm against "
+                    "the published table of contents before relying on the number."
+                ),
             ),
             _req(
                 "iso15066-collaborative-workspace",
@@ -127,6 +198,10 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Defined collaborative workspace",
                 "PhysicalCapabilityScope",
                 ["physicalScope.allowedZones"],
+                citation_note=(
+                    f"{_ISO_PAYWALL_NOTE} Shares the unresolved 5.5.2/5.5.4 "
+                    "numbering conflict with iso15066-power-force-limiting."
+                ),
             ),
             _req(
                 "iso15066-monitoring",
@@ -135,6 +210,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "RobotHeartbeatCredential",
                 ["motionDigest"],
                 expect={"motionDigest.withinEnvelope": True},
+                citation_note=_ISO_PAYWALL_NOTE,
             ),
         ],
     },
@@ -148,6 +224,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Machinery identification and traceability",
                 "RobotIdentityCredential",
                 ["make", "model", "serial"],
+                citation_note=_OJ_NOTE,
             ),
             _req(
                 "eu-mr-software-integrity",
@@ -155,6 +232,11 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Protection against corruption of safety software",
                 "ModelProvenanceAttestation",
                 ["vla.weightsHash", "vla.safetyPolicy"],
+                citation_note=(
+                    f"{_OJ_NOTE} The Annex III subclause for protection against "
+                    "corruption has not been confirmed and may need to be "
+                    "re-pointed."
+                ),
             ),
             _req(
                 "eu-mr-safe-limits",
@@ -162,6 +244,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Safety and reliability of control systems and limits",
                 "PhysicalCapabilityScope",
                 ["physicalScope.maxForceN"],
+                citation_note=_OJ_NOTE,
             ),
             _req(
                 "eu-mr-records",
@@ -169,6 +252,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Recording of safety-relevant data",
                 "RobotSafetyRecordCredential",
                 ["totalEvents", "logHead"],
+                citation_note=_OJ_NOTE,
             ),
         ],
     },
@@ -182,6 +266,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Automatic recording of events (logging)",
                 "RobotSafetyRecordCredential",
                 ["logHead"],
+                citation_note=_OJ_NOTE,
             ),
             _req(
                 "eu-aia-transparency",
@@ -189,6 +274,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Model and configuration transparency",
                 "ModelProvenanceAttestation",
                 ["vla.modelName", "vla.configHash"],
+                citation_note=_OJ_NOTE,
             ),
             _req(
                 "eu-aia-human-oversight",
@@ -196,6 +282,11 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Human oversight through enforced operating limits",
                 "PhysicalCapabilityScope",
                 ["physicalScope.maxSpeedNearHumansMps"],
+                citation_note=(
+                    f"{_OJ_NOTE} Art. 14 also requires a means for the overseer "
+                    "to intervene or stop the system, which an operating-limit "
+                    "scope alone does not evidence."
+                ),
             ),
             _req(
                 "eu-aia-accuracy-robustness",
@@ -203,12 +294,13 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Accuracy and robustness traceable to a known build",
                 "ModelProvenanceAttestation",
                 ["vla.weightsHash"],
+                citation_note=_OJ_NOTE,
             ),
         ],
     },
     "ul-3300": {
         "regime": "UL 3300 service, communication, and mobile robots",
-        "version": "2022",
+        "version": "2022 (see ANSI/CAN/UL 3300:2024)",
         "requirements": [
             _req(
                 "ul3300-identity",
@@ -216,6 +308,8 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Robot identity bound to its hardware",
                 "RobotIdentityCredential",
                 ["hardwareRoot.kind", "hardwareRoot.attestation"],
+                citation=CITATION_DESCRIPTIVE,
+                citation_note=_UL_NOTE,
             ),
             _req(
                 "ul3300-operating-limits",
@@ -223,6 +317,8 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Enforced speed and zone limits",
                 "PhysicalCapabilityScope",
                 ["physicalScope.maxSpeedMps", "physicalScope.allowedZones"],
+                citation=CITATION_DESCRIPTIVE,
+                citation_note=_UL_NOTE,
             ),
             _req(
                 "ul3300-perception-integrity",
@@ -230,6 +326,8 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Integrity of perception used for safe operation",
                 "PerceptionProvenanceCredential",
                 ["frameHash"],
+                citation=CITATION_DESCRIPTIVE,
+                citation_note=_UL_NOTE,
             ),
             _req(
                 "ul3300-records",
@@ -237,6 +335,8 @@ PROFILES: Dict[str, Dict[str, Any]] = {
                 "Records of safety-relevant incidents",
                 "RobotSafetyRecordCredential",
                 ["totalEvents", "logHead"],
+                citation=CITATION_DESCRIPTIVE,
+                citation_note=_UL_NOTE,
             ),
         ],
     },
@@ -295,28 +395,40 @@ def check_conformance(
     expected to have verified the credentials' signatures first; this checks
     structure and coverage, not proofs.
 
+    Every requirement carries the provenance of its clause citation, and the
+    report totals them, so a result never reads as more authoritative about the
+    regulation than its sources are.
+
     The report is:
       {
         "profileId", "regime", "version",
         "conforms": bool, "satisfiedCount", "totalCount",
-        "requirements": [{"id", "clause", "title", "satisfied"}],
+        "citations": {"verified-primary", "unverified-secondary", "descriptive"},
+        "requirements": [
+          {"id", "clause", "title", "satisfied", "citation", "citationNote"?}
+        ],
       }
     """
     prof = profile(profile_id)
     results: List[Dict[str, Any]] = []
     satisfied = 0
+    citations = {status: 0 for status in CITATION_STATUSES}
     for requirement in prof["requirements"]:
         ok = any(_credential_satisfies(c, requirement) for c in credentials)
         if ok:
             satisfied += 1
-        results.append(
-            {
-                "id": requirement["id"],
-                "clause": requirement["clause"],
-                "title": requirement["title"],
-                "satisfied": ok,
-            }
-        )
+        citation = requirement.get("citation", CITATION_UNVERIFIED_SECONDARY)
+        citations[citation] += 1
+        result = {
+            "id": requirement["id"],
+            "clause": requirement["clause"],
+            "title": requirement["title"],
+            "satisfied": ok,
+            "citation": citation,
+        }
+        if requirement.get("citationNote") is not None:
+            result["citationNote"] = requirement["citationNote"]
+        results.append(result)
     total = len(prof["requirements"])
     return {
         "profileId": profile_id,
@@ -325,6 +437,7 @@ def check_conformance(
         "conforms": satisfied == total,
         "satisfiedCount": satisfied,
         "totalCount": total,
+        "citations": citations,
         "requirements": results,
     }
 
@@ -365,6 +478,7 @@ def build_conformance_attestation(
         "conforms": report["conforms"],
         "satisfiedCount": report["satisfiedCount"],
         "totalCount": report["totalCount"],
+        "citations": report.get("citations", {}),
         "reportDigest": report_digest(report),
         "report": report,
     }
@@ -418,6 +532,10 @@ def _iso(dt: datetime) -> str:
 
 __all__ = [
     "CONFORMANCE_ATTESTATION_TYPE",
+    "CITATION_VERIFIED_PRIMARY",
+    "CITATION_UNVERIFIED_SECONDARY",
+    "CITATION_DESCRIPTIVE",
+    "CITATION_STATUSES",
     "PROFILES",
     "profile",
     "check_conformance",

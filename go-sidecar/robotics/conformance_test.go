@@ -277,3 +277,59 @@ func TestUnknownProfile(t *testing.T) {
 		t.Fatal("expected an error for an unknown profile")
 	}
 }
+
+// TestConformanceCitationProvenance checks that every requirement declares
+// where its clause number came from, and that the report totals them, so
+// CONFORMS never reads as more authoritative about the regulation than its
+// sources are.
+func TestConformanceCitationProvenance(t *testing.T) {
+	for _, pid := range []string{
+		"iso-10218", "iso-ts-15066", "eu-machinery-2023-1230",
+		"eu-ai-act-high-risk", "ul-3300",
+	} {
+		report, err := CheckConformance(nil, pid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		citations := report["citations"].(map[string]any)
+		if len(citations) != len(CitationStatuses) {
+			t.Fatalf("%s: want %d citation buckets, got %d", pid, len(CitationStatuses), len(citations))
+		}
+		counted := 0
+		for _, v := range citations {
+			counted += v.(int)
+		}
+		if counted != report["totalCount"].(int) {
+			t.Fatalf("%s: citation counts total %d, want %d", pid, counted, report["totalCount"])
+		}
+		for _, raw := range report["requirements"].([]any) {
+			got := raw.(map[string]any)["citation"].(string)
+			known := false
+			for _, status := range CitationStatuses {
+				if got == status {
+					known = true
+				}
+			}
+			if !known {
+				t.Fatalf("%s: unknown citation status %q", pid, got)
+			}
+		}
+	}
+}
+
+// TestUL3300CitationsAreDescriptive checks that the paywalled UL 3300 profile,
+// for which no clause numbering was available, never presents its topic names
+// as clauses an assessor can look up.
+func TestUL3300CitationsAreDescriptive(t *testing.T) {
+	report, err := CheckConformance(nil, "ul-3300")
+	if err != nil {
+		t.Fatal(err)
+	}
+	citations := report["citations"].(map[string]any)
+	if citations[CitationDescriptive].(int) != report["totalCount"].(int) {
+		t.Fatalf("want every ul-3300 clause descriptive, got %v", citations)
+	}
+	if citations[CitationVerifiedPrimary].(int) != 0 {
+		t.Fatalf("no ul-3300 clause was read from the standard, got %v", citations)
+	}
+}

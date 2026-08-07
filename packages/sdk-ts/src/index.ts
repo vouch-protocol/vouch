@@ -329,6 +329,10 @@ export type { BuildSafetyEvidenceOptions } from './robotics/halos';
 // point-in-time attestation, byte-identical with the Python module.
 export {
   CONFORMANCE_ATTESTATION_TYPE,
+  CITATION_VERIFIED_PRIMARY,
+  CITATION_UNVERIFIED_SECONDARY,
+  CITATION_DESCRIPTIVE,
+  CITATION_STATUSES,
   PROFILES,
   profile,
   checkConformance,
@@ -337,6 +341,7 @@ export {
   verifyConformanceAttestation,
 } from './robotics/conformance';
 export type {
+  CitationStatus,
   Requirement,
   Profile,
   RequirementResult,

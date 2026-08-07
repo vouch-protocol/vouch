@@ -233,14 +233,20 @@ See "Why nothing was changed in code" below.
 ## Status of the proposals
 
 **P2, P3, P4 and P5 have since been implemented** (commit `30cc6344`).
-Requirements gained an
-`expect` map so a requirement can assert a *value* and not merely presence; the
+Requirements gained an `expect` map so a requirement can assert a *value* and not merely presence; the
 continuous-monitoring requirement now requires `motionDigest.withinEnvelope` to
 be true; the three records requirements require `logHead`; the two
 hardware-binding requirements require `hardwareRoot.attestation`; and the
 ISO 10218 limits requirement requires `allowedZones`. All three
-`[demonstrated]` weaknesses above are closed, in Python, TypeScript, Go and the
-Rust core alike, with the pinned interop digest unchanged.
+`[demonstrated]` weaknesses above are closed, with the pinned interop digest
+unchanged.
+
+P5 shipped incomplete and has since been finished. The Rust core carried the
+`expect_true` data but its checker never read it, so the value assertion held
+in Python, TypeScript and Go while Rust — and therefore the C ABI, WASM, Swift,
+JVM, .NET and C++ surfaces built on it — still accepted a heartbeat reporting
+an envelope breach as evidence of continuous monitoring. The Rust checker now
+enforces it, with a regression test that fails without the fix.
 
 **The tables above describe the profiles as they stood when audited**, not as
 they stand now.
@@ -268,13 +274,52 @@ Each was left alone on the same reasoning:
 - The **UL 3300 citations** need real clause numbers, which require the standard.
 
 Where a change would have to rest on text that could not be read, flagging beats
-editing. Each is written up above so it can be fixed in one pass by someone with
-the documents in hand.
+editing.
+
+## Citation provenance is now machine-readable
+
+The three doubts above were, until recently, recorded only here — in a document
+a consumer of a conformance report never sees. A report that read
+`ul-3300 CONFORMS (4/4)` looked exactly as authoritative as one grounded in
+clause text that had actually been read, and the signed attestation carried
+that appearance offline with it.
+
+Every requirement now declares the provenance of its clause reference, and it
+travels in the report and inside the signed attestation:
+
+| Status | Meaning |
+|---|---|
+| `verified-primary` | The clause text was read from the official published source. |
+| `unverified-secondary` | The mapping is believed sound, but the clause number comes from secondary sources rather than the standard or Official Journal itself. |
+| `descriptive` | Not a clause reference at all, only a description of the topic. An assessor cannot look it up. |
+
+Each report carries a `citations` summary counting its requirements by status,
+and each requirement carries an optional `citationNote` recording what a reader
+should know — the unresolved 5.5.2/5.5.4 conflict, the superseded ISO 10218
+editions, the unconfirmed Machinery Annex III subclause, and the fact that
+Art. 14 also requires a means to intervene that an operating-limit scope alone
+does not evidence.
+
+As of this document, **no built-in requirement is `verified-primary`.** The
+fifteen ISO, Machinery and AI Act requirements are `unverified-secondary`; the
+four UL 3300 requirements are `descriptive`. Reaching `verified-primary`
+requires the purchased standards and the EUR-Lex texts — the same blockers P6,
+P7 and P8 name. The difference is that a reader of the report now learns this
+from the report, not from a document they may never open.
+
+The two `version` strings that were misleading on their own are now explicit:
+`iso-10218` reads `"2011 (superseded by the 2025 editions; mapping not yet
+migrated)"` and `ul-3300` reads `"2022 (see ANSI/CAN/UL 3300:2024)"`. Neither
+asserts a mapping that was not checked; both stop the profile from silently
+looking current.
 
 ## Recommended next steps
 
 1. Buy ISO 10218-1/-2:2025, ISO/TS 15066:2016 and UL 3300, and settle P7, P8 and
-   the 15066 clause numbering against the real text.
+   the 15066 clause numbering against the real text. Each requirement settled
+   against the published clause moves from `unverified-secondary` (or
+   `descriptive`) to `verified-primary`, which is visible in every report from
+   that point on.
 2. Apply P2, P3 and P4 — these need no paywalled text; they are internal
    consistency fixes, each currently lets an empty or degenerate credential
    satisfy a requirement, and each is a small, testable change.

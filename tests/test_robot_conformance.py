@@ -15,7 +15,12 @@ from vouch.robotics import (
     report_digest,
     verify_conformance_attestation,
 )
-from vouch.robotics.conformance import _path_value
+from vouch.robotics.conformance import (
+    CITATION_DESCRIPTIVE,
+    CITATION_STATUSES,
+    _path_value,
+    _req,
+)
 from vouch.robotics.identity import RoboticsError, SoftwareRootOfTrust
 from vouch.robotics.safety_record import SafetyEventLog
 
@@ -64,9 +69,26 @@ class TestProfiles(unittest.TestCase):
                     self.assertIn(key, req)
 
     def test_profile_lookup_and_unknown(self):
-        self.assertEqual(profile("iso-10218")["version"], "2011")
+        self.assertTrue(profile("iso-10218")["version"].startswith("2011"))
         with self.assertRaises(RoboticsError):
             profile("does-not-exist")
+
+    def test_every_requirement_declares_its_citation_provenance(self):
+        # A crosswalk is only as authoritative as its sources, so every
+        # requirement says where its clause number came from.
+        for prof in PROFILES.values():
+            for req in prof["requirements"]:
+                self.assertIn(req["citation"], CITATION_STATUSES)
+
+    def test_ul_3300_citations_are_descriptive_not_clauses(self):
+        # UL 3300 is paywalled and no clause numbering was available, so the
+        # profile must not present its topic names as citable clauses.
+        for req in PROFILES["ul-3300"]["requirements"]:
+            self.assertEqual(req["citation"], CITATION_DESCRIPTIVE)
+
+    def test_unknown_citation_status_is_rejected(self):
+        with self.assertRaises(RoboticsError):
+            _req("x", "clause", "title", "SomeCredential", citation="looks-official")
 
 
 class TestChecker(unittest.TestCase):
@@ -117,6 +139,20 @@ class TestChecker(unittest.TestCase):
         b = check_conformance(self.creds, "iso-ts-15066")
         self.assertEqual(report_digest(a), report_digest(b))
 
+    def test_report_totals_the_citation_provenance_of_its_requirements(self):
+        report = check_conformance(self.creds, "eu-ai-act-high-risk")
+        self.assertEqual(sum(report["citations"].values()), report["totalCount"])
+        self.assertEqual(set(report["citations"]), set(CITATION_STATUSES))
+        for result in report["requirements"]:
+            self.assertIn(result["citation"], CITATION_STATUSES)
+
+    def test_a_conforming_ul_3300_report_still_says_its_clauses_are_descriptive(self):
+        # The point of the summary: a reader sees CONFORMS and, right beside
+        # it, that no clause in the profile can actually be looked up.
+        report = check_conformance(self.creds, "ul-3300")
+        self.assertEqual(report["citations"][CITATION_DESCRIPTIVE], report["totalCount"])
+        self.assertEqual(report["citations"]["verified-primary"], 0)
+
     def test_path_value_helper(self):
         subject = {"physicalScope": {"maxForceN": 80.0, "allowedZones": []}}
         self.assertEqual(_path_value(subject, "physicalScope.maxForceN"), 80.0)
@@ -140,6 +176,9 @@ class TestAttestation(unittest.TestCase):
         self.assertTrue(subject["conforms"])
         self.assertEqual(subject["profileId"], "iso-10218")
         self.assertEqual(subject["reportDigest"], report_digest(report))
+        # The citation summary travels with the signed attestation, so a
+        # consumer reading only the subject still sees how well-sourced it is.
+        self.assertEqual(subject["citations"], report["citations"])
 
     def test_wrong_key_rejected(self):
         report = check_conformance(self.creds, "iso-10218")
