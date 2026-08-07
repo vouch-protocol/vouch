@@ -5,7 +5,7 @@
 //
 //   1. Regulatory evidence pack: check_conformance maps the shared interop
 //      vector's Python-signed credential set onto all five built-in profiles,
-//      reporting CONFORMS for the EU AI Act, ISO 10218, and the EU Machinery
+//      reporting CONFORMS for the EU AI Act and the EU Machinery
 //      Regulation and the exact open clause for the two profiles the set
 //      leaves gaps in; build_conformance_attestation then signs a
 //      point-in-time attestation per profile and
