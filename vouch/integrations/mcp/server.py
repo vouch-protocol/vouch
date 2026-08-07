@@ -81,7 +81,6 @@ except ImportError:
 
 from vouch.autosign import resolve_signer, sign_intent
 
-
 _HOST = os.getenv("VOUCH_MCP_HOST", "127.0.0.1")
 _PORT = int(os.getenv("VOUCH_MCP_PORT", "8080"))
 
@@ -996,6 +995,192 @@ def attribute(manifest_json: str, path: Optional[str] = None) -> str:
         return "SUMMARY\n" + json.dumps(summary, indent=2)
     except Exception as e:
         return f"Error attributing: {e}"
+
+
+# Robotics tools: the verify-side surface of the vouch.robotics primitives.
+
+
+@mcp.tool()
+def robot_check_action(scope_json: str, action_json: str) -> str:
+    """Check a robot's proposed physical action against its capability scope.
+
+    The pre-actuation gate of the VLA accountability loop: given the
+    physicalScope from a signed PhysicalCapabilityScope credential and a
+    proposed action, decide deterministically whether the action stays inside
+    the envelope. An over-speed motion near a human or a move outside an
+    allowed zone is denied with the exact reason.
+
+    Args:
+        scope_json: The physicalScope object as JSON (or a whole
+            PhysicalCapabilityScope credential; its credentialSubject
+            .physicalScope is used), e.g. '{"maxForceN":80,"maxSpeedMps":1.5,
+            "maxSpeedNearHumansMps":0.5,"allowedZones":["cell-3"]}'.
+        action_json: The proposed action as JSON, e.g. '{"forceN":20,
+            "speedMps":0.3,"nearHumans":true,"zone":"cell-3"}'.
+
+    Returns:
+        'ALLOW' when the action is inside the scope, or 'DENY' with the
+        reasons (which limits were exceeded).
+    """
+    from vouch.robotics import PhysicalAction, check_physical_action
+
+    try:
+        scope = json.loads(scope_json)
+    except json.JSONDecodeError as e:
+        return f"Error: scope_json is not valid JSON ({e})"
+    if isinstance(scope, dict) and "physicalScope" in scope.get("credentialSubject", {}):
+        scope = scope["credentialSubject"]["physicalScope"]
+    try:
+        raw = json.loads(action_json)
+    except json.JSONDecodeError as e:
+        return f"Error: action_json is not valid JSON ({e})"
+    if not isinstance(raw, dict):
+        return "Error: action_json must be a JSON object"
+
+    action = PhysicalAction(
+        force_n=raw.get("forceN", raw.get("force_n")),
+        speed_mps=raw.get("speedMps", raw.get("speed_mps")),
+        near_humans=bool(raw.get("nearHumans", raw.get("near_humans", False))),
+        zone=raw.get("zone"),
+        time_hm=raw.get("timeHm", raw.get("time_hm")),
+    )
+    try:
+        result = check_physical_action(scope, action)
+    except Exception as e:
+        return f"Error checking action: {e}"
+    if result.ok:
+        return "ALLOW: the action is inside the physical capability scope."
+    return "DENY: " + "; ".join(result.reasons)
+
+
+@mcp.tool()
+def robot_check_conformance(credentials_json: str, profile_id: str) -> str:
+    """Check a robot's credentials against a regulatory conformance profile.
+
+    The evidence-pack check: given the credentials a robot presents (a JSON
+    array) and a built-in profile id (eu-ai-act-high-risk, iso-10218,
+    iso-ts-15066, eu-machinery-2023-1230, or ul-3300), report per clause
+    whether the set satisfies the regulation, CONFORMS or the exact gaps.
+    The caller is expected to have verified the credentials' signatures; this
+    checks structure and coverage.
+
+    Args:
+        credentials_json: A JSON array of the robot's credentials.
+        profile_id: One of the built-in profile ids listed above.
+
+    Returns:
+        'CONFORMS' or 'GAPS' with the satisfied count and one line per
+        requirement clause.
+    """
+    from vouch.robotics import check_conformance
+
+    try:
+        credentials = json.loads(credentials_json)
+    except json.JSONDecodeError as e:
+        return f"Error: credentials_json is not valid JSON ({e})"
+    if not isinstance(credentials, list):
+        return "Error: credentials_json must be a JSON array of credentials"
+
+    try:
+        report = check_conformance(credentials, profile_id)
+    except Exception as e:
+        return f"Error checking conformance: {e}"
+
+    verdict = "CONFORMS" if report["conforms"] else "GAPS"
+    lines = [
+        f"{verdict}: {report['satisfiedCount']}/{report['totalCount']} requirements "
+        f"of {report['regime']} ({report['profileId']})."
+    ]
+    for req in report["requirements"]:
+        mark = "satisfied" if req["satisfied"] else "GAP"
+        lines.append(f"  [{mark}] {req['clause']}: {req['title']}")
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def robot_verify_conformance_attestation(attestation_json: str, issuer_public_key_jwk: str) -> str:
+    """Verify a signed robot conformance attestation offline.
+
+    Checks the assessor's proof over a RobotConformanceAttestation and that the
+    embedded report matches its bound digest, so a tampered report (for
+    example a flipped 'conforms') is rejected.
+
+    Args:
+        attestation_json: The RobotConformanceAttestation credential as JSON.
+        issuer_public_key_jwk: The assessor's Ed25519 public key as a JWK JSON
+            string.
+
+    Returns:
+        'VALID' with the profile and verdict, or 'INVALID'.
+    """
+    from vouch.robotics import verify_conformance_attestation
+
+    try:
+        attestation = json.loads(attestation_json)
+    except json.JSONDecodeError as e:
+        return f"Error: attestation_json is not valid JSON ({e})"
+
+    try:
+        ok, subject = verify_conformance_attestation(attestation, issuer_public_key_jwk)
+    except Exception as e:
+        return f"Error verifying attestation: {e}"
+    if not ok:
+        return (
+            "INVALID: the attestation does not verify (wrong key, tampered report, or wrong type)."
+        )
+    verdict = "conforms" if subject.get("conforms") else "does not conform"
+    return (
+        f"VALID: {subject.get('id')} {verdict} to {subject.get('regime')} "
+        f"({subject.get('profileId')}), {subject.get('satisfiedCount')}/{subject.get('totalCount')} "
+        f"requirements, report digest {subject.get('reportDigest')}."
+    )
+
+
+@mcp.tool()
+def robot_verify_credential(
+    credential_json: str,
+    ed25519_public_key_jwk: str,
+    mldsa44_public_key: Optional[str] = None,
+) -> str:
+    """Verify a robot credential, classical or post-quantum, auto-detected.
+
+    The provenance-on-load check of the VLA accountability loop, and the
+    general verify for any vouch.robotics credential: verifies the proof (or
+    post-quantum proof set) a robot credential carries under the robot's key.
+    A post-quantum credential requires the ML-DSA-44 public key; a classical
+    credential ignores it.
+
+    Args:
+        credential_json: The robot credential as JSON.
+        ed25519_public_key_jwk: The robot's Ed25519 public key as a JWK JSON
+            string.
+        mldsa44_public_key: Optional ML-DSA-44 public key (multikey string)
+            for a post-quantum proof set.
+
+    Returns:
+        'VALID' with the credential type, or 'INVALID'.
+    """
+    from vouch.robotics import verify_robot_credential
+
+    try:
+        credential = json.loads(credential_json)
+    except json.JSONDecodeError as e:
+        return f"Error: credential_json is not valid JSON ({e})"
+
+    try:
+        ok = verify_robot_credential(
+            credential, ed25519_public_key_jwk, mldsa44_public_key=mldsa44_public_key
+        )
+    except Exception as e:
+        return f"Error verifying credential: {e}"
+
+    types = credential.get("type") or []
+    if isinstance(types, str):
+        types = [types]
+    label = next((t for t in types if t != "VerifiableCredential"), "credential")
+    if ok:
+        return f"VALID: the {label} verifies under the robot's key."
+    return f"INVALID: the {label} does not verify under the supplied key(s)."
 
 
 def main() -> None:

@@ -113,6 +113,25 @@ already use; all four route to the same canonical documentation.
 - Your team lives in ChatGPT → **OpenAI Custom GPT**
 - Your team lives in Google Workspace → **Gemini Gem**
 
+## What the assistants can walk you through (robotics)
+
+All four assistants carry the same robotics knowledge, including the two
+worked accountability flows:
+
+- **Regulatory evidence pack** — assemble a robot's signed credentials
+  and check them against all five built-in conformance profiles (EU AI
+  Act high-risk, ISO 10218, ISO/TS 15066, EU Machinery Regulation
+  2023/1230, UL 3300), then sign one verifiable conformance attestation
+  per profile. Runnable: `examples/robotics_ai_act_evidence_pack.py`
+  (TypeScript, Go, and Rust ports included).
+- **VLA accountability loop** — wrap a vision-language-action planner
+  (such as Gemini Robotics ER 2) in verified model provenance on load, a
+  pre-actuation physical scope gate, and a tamper-evident black box.
+  Runnable: `examples/robotics_vla_accountability_loop.py`.
+
+Ask, for example: "Build an EU AI Act evidence pack for my robot from
+its Vouch credentials."
+
 ---
 
 ## Walkthrough: Claude Skill

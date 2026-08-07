@@ -3211,6 +3211,52 @@ ok, subject = verify_safety_evidence(ev, robot_key, entries=rec.entries())
 Security boundary: the open layer is the recorder and the signed evidence credential, composing the existing black-box and robot-identity primitives. The entries stay encrypted, so integrity, completeness, attribution, and configuration verify without the black-box key.
 `,
       },
+      {
+        id: 'robotics-evidence-pack',
+        title: 'Regulatory evidence pack',
+        summary: 'A robot assembles its signed credentials into a machine-checked evidence pack across all five built-in regulatory profiles, with one verifiable conformance attestation per profile.',
+        body: `
+A robot facing the EU AI Act, ISO 10218, ISO/TS 15066, the EU Machinery Regulation 2023/1230, or UL 3300 assembles the credentials it already holds into one evidence pack, and the conformance checker maps them onto each regulation clause by clause.
+
+The problem it closes: proving regulatory conformance today means assembling documents by hand, and a claimed control cannot be checked against what the robot actually presents; a machine-checkable mapping makes the same credential set verifiable evidence under five regimes at once.
+
+How it works: the pack carries the hardware-rooted identity, the model provenance attestation, the physical capability scope, a safety record anchored to the tamper-evident ledger, a heartbeat whose \`MotionCollector\` motion digest proves the last interval stayed inside the envelope (ISO/TS 15066 continuous monitoring), and perception provenance for a captured frame (UL 3300 sensing integrity). \`check_conformance\` reports each clause as satisfied or names the exact gap, \`build_conformance_attestation\` signs a point-in-time attestation per profile binding the full report by digest, and \`verify_conformance_attestation\` checks it offline. The full flow runs in Python, TypeScript, Go, and Rust with byte-identical report digests; the Swift, JVM, .NET, and C++ wrappers verify packs through their curated surface.
+
+\`\`\`python
+from vouch.robotics import check_conformance, build_conformance_attestation, verify_conformance_attestation
+
+for pid in ["eu-ai-act-high-risk", "iso-10218", "iso-ts-15066", "eu-machinery-2023-1230", "ul-3300"]:
+    report = check_conformance(credentials, pid)
+    att = build_conformance_attestation(assessor, robot_did=robot_did, report=report)
+    ok, subject = verify_conformance_attestation(att, assessor_key)
+\`\`\`
+
+Security boundary: the open layer is the declarative profiles, the deterministic checker, and the signed point-in-time attestation, demonstrated end to end in \`examples/robotics_ai_act_evidence_pack.py\`. Hosted continuous monitoring, maintained and certified profiles, and auditor evidence portals are commercial.
+`,
+      },
+      {
+        id: 'robotics-vla-loop',
+        title: 'VLA accountability loop',
+        summary: 'A VLA-driven robot verifies model provenance before autonomy, gates every planned action against its signed physical scope, and black-boxes every decision.',
+        body: `
+A robot handing control to a vision-language-action model (such as Gemini Robotics ER 2) composes three primitives into one accountable control loop: provenance on load, a pre-actuation scope gate, and a tamper-evident black box.
+
+The problem it closes: a VLA planner is a black box that can propose anything, and without a loop around it there is no proof of which model was in control, no enforced physical bound on what it tried, and no trustworthy record of what was allowed or denied.
+
+How it works: on load, the robot verifies the signed \`ModelProvenanceAttestation\` for the exact weights, safety policy, and config it is about to run, and refuses autonomy otherwise. Before each actuation, \`check_physical_action\` evaluates the planner's proposed action against the signed \`PhysicalCapabilityScope\`, so an over-speed motion near a human or a move outside an allowed zone is denied rather than attempted, with the reasons recorded. Every decision, allowed or denied, is appended to the encrypted, hash-linked \`BlackBoxLog\`; \`verify_blackbox_chain\` later proves the decision record is unaltered, and altering even one entry is detected.
+
+\`\`\`python
+from vouch.robotics import check_physical_action, BlackBoxLog, verify_blackbox_chain
+
+ok, _, _ = load_model_with_provenance(robot, robot_did, robot_key)  # no provenance, no autonomy
+result = check_physical_action(scope, proposed_action)
+blackbox.append("actuation_allowed" if result.ok else "actuation_denied", {"reasons": result.reasons})
+chain_ok, error = verify_blackbox_chain(blackbox.entries())
+\`\`\`
+
+Security boundary: the open layer is the three composed primitives and the runnable loop in \`examples/robotics_vla_accountability_loop.py\` (with TypeScript, Go, and Rust ports, and the \`check_action\` gate in every wrapper SDK). The gate needs no cooperation from the model: a denied action never actuates. Hosted fleet dashboards over black-box records are commercial.
+`,
+      },
     ],
   },
   {

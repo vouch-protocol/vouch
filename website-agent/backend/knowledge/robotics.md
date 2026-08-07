@@ -1209,6 +1209,43 @@ Credential format, so one verifier and one trust model cover all twenty-one.
   head and entry count bound to the robot's identity and the certified stack elements it
   ran on, so `verify_safety_evidence` confirms the record is unaltered, untruncated,
   attributable, and tied to the certified configuration without the black-box key (22).
+- Can a robot turn its credentials into regulatory evidence a notified body can check?
+  Yes, the regulatory evidence pack: the robot assembles its hardware-rooted identity,
+  model provenance, physical capability scope, safety record, a heartbeat carrying a
+  `MotionCollector` motion digest, and perception provenance, and `check_conformance`
+  maps that set onto all five built-in profiles (the EU AI Act high-risk requirements,
+  ISO 10218, ISO/TS 15066, the EU Machinery Regulation 2023/1230, and UL 3300), citing
+  each clause as satisfied or naming the exact gap; `build_conformance_attestation`
+  then signs one point-in-time attestation per profile that
+  `verify_conformance_attestation` checks offline (14).
+- Can a VLA model such as Gemini Robotics ER 2 drive a robot accountably? Yes, the VLA
+  accountability loop: the robot verifies the signed `ModelProvenanceAttestation` for
+  the exact weights, safety policy, and config before enabling autonomy, gates every
+  action the planner proposes with `check_physical_action` against its signed
+  `PhysicalCapabilityScope` so an over-speed or out-of-zone action is denied before it
+  is attempted, and appends every decision to the encrypted, hash-linked `BlackBoxLog`
+  whose chain `verify_blackbox_chain` proves unaltered (2, 3, 5).
+
+## Worked accountability flows
+
+Two runnable examples compose the capabilities above into end-to-end flows and are
+ported across the SDKs:
+
+- The regulatory evidence pack (`examples/robotics_ai_act_evidence_pack.py`) builds
+  the six-credential evidence set, shows the gaps the base credentials leave open
+  (ISO/TS 15066 continuous monitoring and UL 3300 sensing integrity), closes them
+  with a heartbeat motion digest and perception provenance, prints a per-profile
+  CONFORMS/GAPS summary across all five profiles, and signs one verifiable
+  conformance attestation per profile. Full producer-and-verify ports run in
+  TypeScript (`packages/sdk-ts/examples/`), Go (`go-sidecar/examples/`), and the
+  Rust core (`core/vouch-core/examples/`), reproducing the same report digests byte
+  for byte.
+- The VLA accountability loop (`examples/robotics_vla_accountability_loop.py`) runs
+  provenance-on-load, the pre-actuation scope gate, and the tamper-evident black box
+  as one control loop around a vision-language-action planner. The same loop is
+  ported to TypeScript, Go, and Rust, and the Swift, JVM, .NET, and C++ wrappers
+  carry verify-side examples driving `check_action`, `check_conformance`, and
+  `verify_conformance_attestation` against the shared interop vector.
 
 ## Status
 

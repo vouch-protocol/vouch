@@ -1001,6 +1001,44 @@ The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch
       },
     ],
   },
+  {
+    id: 'robotics-evidence-pack',
+    audience: 'Robotics: evidence pack',
+    title: 'Regulatory evidence pack',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'A regulator asks how our robot meets the EU AI Act. Can Vouch turn its credentials into evidence?',
+        a: `Yes. A robot assembles the credentials it already holds, hardware-rooted identity, model provenance, physical capability scope, a safety record over its tamper-evident ledger, a heartbeat carrying a motion digest, and perception provenance, and \`check_conformance\` maps that set onto all five built-in profiles: the EU AI Act high-risk requirements, ISO 10218, ISO/TS 15066, the EU Machinery Regulation 2023/1230, and UL 3300. The report cites each clause and says CONFORMS or names the exact gap, for example a missing motion digest fails ISO/TS 15066 continuous monitoring. An assessor then signs one point-in-time conformance attestation per profile with \`build_conformance_attestation\`, and an auditor or notified body verifies it offline with \`verify_conformance_attestation\`.`,
+        helpLinks: [{ label: 'Regulatory evidence pack guide', href: '/help/#robotics-evidence-pack' }],
+        meta: 'Shipped - examples/robotics_ai_act_evidence_pack.py',
+      },
+      {
+        q: 'Which languages can produce and verify the evidence pack?',
+        a: `The full producer-and-verify flow ships in Python (\`examples/robotics_ai_act_evidence_pack.py\`), TypeScript, Go, and the Rust core, and all four reproduce the same report digests byte for byte. The Swift, JVM, .NET, and C++ wrappers cover the verify side through their curated surface: \`check_conformance\`, \`build_conformance_attestation\`, and \`verify_conformance_attestation\`, driven in each wrapper's verify-side example against the shared interop vector.`,
+        meta: 'Shipped - examples/robotics_ai_act_evidence_pack.py',
+      },
+    ],
+  },
+  {
+    id: 'robotics-vla-loop',
+    audience: 'Robotics: VLA loop',
+    title: 'VLA accountability loop',
+    domain: 'robotics',
+    items: [
+      {
+        q: 'We are putting a VLA model like Gemini Robotics ER 2 in control of a robot. How do we keep it accountable?',
+        a: `Compose three primitives into one control loop. Provenance on load: before autonomy is enabled, the robot verifies the signed \`ModelProvenanceAttestation\` for the exact weights, safety policy, and config it is about to run, no verified provenance, no autonomy. Pre-actuation scope gate: every action the planner proposes is checked with \`check_physical_action\` against the robot's signed \`PhysicalCapabilityScope\`, so an over-speed motion near a human or a move outside an allowed zone is denied before it is attempted, with the reason recorded. Tamper-evident black box: every decision, allowed or denied, is appended to the encrypted, hash-linked \`BlackBoxLog\`, and \`verify_blackbox_chain\` proves after the fact that no decision was altered or removed.`,
+        helpLinks: [{ label: 'VLA accountability loop guide', href: '/help/#robotics-vla-loop' }],
+        meta: 'Shipped - examples/robotics_vla_accountability_loop.py',
+      },
+      {
+        q: 'Does the planner or the model have to cooperate for the gate to work?',
+        a: `No. The gate sits between the planner and the actuators and evaluates the proposed action against the signed scope, so it needs nothing from the model: a denied action simply never actuates. That is the point of putting the bound in a credential rather than a prompt, the limit is cryptographically attributable to whoever signed the scope, the check is deterministic, and the black-box record of each denial is evidence the gate ran. The same loop runs in Python, TypeScript, Go, and Rust (\`examples/robotics_vla_accountability_loop.py\` and its ports), with the scope-gate verify side exposed as \`check_action\` in the Swift, JVM, .NET, and C++ wrappers.`,
+        meta: 'Shipped - examples/robotics_vla_accountability_loop.py',
+      },
+    ],
+  },
 
   // =====================================================================
   // FOR DEVELOPERS

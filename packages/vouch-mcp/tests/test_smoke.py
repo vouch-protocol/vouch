@@ -49,6 +49,10 @@ def test_registered_tool_names():
         "check_authority_freshness",
         "reputation",
         "attribute",
+        "robot_check_action",
+        "robot_check_conformance",
+        "robot_verify_conformance_attestation",
+        "robot_verify_credential",
     } <= names
 
 

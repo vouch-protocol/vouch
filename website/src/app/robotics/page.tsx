@@ -190,11 +190,61 @@ export default function RoboticsPage() {
                 </div>
             </section>
 
+            {/* Worked accountability flows */}
+            <section className="border-b border-rule">
+                <div className="container-wide py-16">
+                    <div className="section-heading mb-8">
+                        <span className="num">§ II</span>
+                        <h2>Two worked accountability flows</h2>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-10">
+                        <div className="border-t-2 border-ink pt-5">
+                            <h3 className="font-serif font-semibold text-[1.3rem] tracking-tight mb-3">
+                                Regulatory evidence pack
+                            </h3>
+                            <p className="text-ink-soft leading-relaxed mb-4">
+                                A robot assembles the credentials it already holds, identity, model
+                                provenance, physical scope, safety record, a heartbeat carrying a motion
+                                digest, and perception provenance, and the conformance checker maps them
+                                onto all five built-in profiles: EU AI Act high-risk, ISO 10218,
+                                ISO/TS 15066, EU Machinery Regulation 2023/1230, and UL 3300. Each clause
+                                reads CONFORMS or names the exact gap, and an assessor signs one
+                                point-in-time conformance attestation per profile that verifies offline.
+                                Runnable in Python, TypeScript, Go, and Rust with byte-identical report
+                                digests.
+                            </p>
+                            <span className="font-mono text-burgundy text-[0.72rem] tracking-wider">
+                                examples/robotics_ai_act_evidence_pack.py
+                            </span>
+                        </div>
+                        <div className="border-t-2 border-ink pt-5">
+                            <h3 className="font-serif font-semibold text-[1.3rem] tracking-tight mb-3">
+                                VLA accountability loop
+                            </h3>
+                            <p className="text-ink-soft leading-relaxed mb-4">
+                                A robot driven by a vision-language-action model (such as Gemini Robotics
+                                ER 2) composes three primitives into one control loop: model provenance
+                                verified on load, so autonomy never starts on unverified weights or
+                                config; a pre-actuation gate that checks every planned action against the
+                                signed physical capability scope, denying an over-speed motion near a
+                                human or a move outside an allowed zone before it is attempted; and an
+                                encrypted, hash-linked black box recording every decision, so the record
+                                is tamper-evident after the fact. The scope-gate verify side is callable
+                                from every wrapper SDK.
+                            </p>
+                            <span className="font-mono text-burgundy text-[0.72rem] tracking-wider">
+                                examples/robotics_vla_accountability_loop.py
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Guides and FAQ */}
             <section className="border-b border-rule">
                 <div className="container-wide py-16">
                     <div className="section-heading mb-6">
-                        <span className="num">§ II</span>
+                        <span className="num">§ III</span>
                         <h2>Guides and questions</h2>
                     </div>
                     <p className="text-ink-soft leading-relaxed max-w-prose mb-6">
@@ -217,7 +267,7 @@ export default function RoboticsPage() {
             <section className="border-b border-rule">
                 <div className="container-wide py-16">
                     <div className="section-heading mb-6">
-                        <span className="num">§ III</span>
+                        <span className="num">§ IV</span>
                         <h2>Open, and headed for the standards bodies</h2>
                     </div>
                     <p className="text-ink-soft leading-relaxed max-w-prose mb-6">
