@@ -46,6 +46,15 @@ get them and exits 0, so CI can run it unattended:
     pip install 'vouch-protocol[openvla]'
     huggingface-cli download openvla/openvla-7b
 
+Status: the OpenVLA code path is UNVERIFIED. It has never been executed
+against a real checkpoint. Before relying on it, confirm against real weights,
+in this order: `predict_action`'s return shape (a batched (1,7) array rather
+than 7 floats trips the arity guard), the processor `.to(device, dtype=...)`
+convention, the gripper convention for `bridge_orig` (see
+`action_vector_to_physical_action` -- the default is fail-safe until pinned),
+and CONTROL_PERIOD_S as the dataset's real control rate. Everything that does
+not need weights is covered by tests.
+
 Run it:  python examples/robotics_openvla_gated_loop.py
 """
 

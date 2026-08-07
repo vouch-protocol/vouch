@@ -4,7 +4,7 @@
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install-all build-all build-ts clean run-bridge test lint dev-setup publish-all
+.PHONY: help install-all build-all build-ts clean run-bridge test test-all-sdks lint dev-setup publish-all
 
 # Default target
 help: ## Show this help message
@@ -61,6 +61,23 @@ test: ## Run all tests
 	cd packages/bridge && pytest tests/ -v 2>/dev/null || echo "No bridge tests yet"
 	cd packages/sdk-py && pytest tests/ -v 2>/dev/null || echo "No SDK tests yet"
 	@echo "✅ Tests complete!"
+
+# Run every SDK's test suite.
+#
+# `make test` covers Python only. Conformance behaviour is asserted separately
+# in each wrapper SDK's suite -- the shared interop vector pins the report
+# FORMAT, not the BEHAVIOUR -- so a change to vouch/robotics/conformance.py can
+# pass every Python test and still break JVM, .NET or C++. Run this before
+# changing anything the profiles depend on.
+test-all-sdks: ## Run the test suite of every SDK (needs each toolchain)
+	@echo "🧪 Python..."      && pytest tests/ -q
+	@echo "🧪 TypeScript..."  && cd packages/sdk-ts && npm test
+	@echo "🧪 Go..."          && cd go-sidecar && go test ./...
+	@echo "🧪 Rust core..."   && cargo test --manifest-path core/vouch-core/Cargo.toml -q
+	@echo "🧪 JVM..."         && cd sdks/jvm && bash build-native.sh && ./gradlew test --no-daemon
+	@echo "🧪 .NET..."        && cd sdks/dotnet && bash build-native.sh && dotnet test --nologo
+	@echo "🧪 C/C++..."       && $(MAKE) -C sdks/cpp/examples run-robotics run-robotics-c
+	@echo "✅ All SDK suites complete!"
 
 # Run linters
 lint: ## Run linters on all packages

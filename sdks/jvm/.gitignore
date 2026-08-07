@@ -1,0 +1,4 @@
+build/
+.gradle/
+lib/
+src/main/resources/*/

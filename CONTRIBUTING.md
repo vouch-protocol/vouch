@@ -182,6 +182,32 @@ Types:
 - `refactor`: Code change that neither fixes a bug nor adds a feature
 - `chore`: Maintenance tasks
 
+## Changing cross-language behaviour
+
+Some behaviour is implemented separately in Python, TypeScript, Go and the Rust
+core, and then *asserted* again in the Swift, JVM, .NET and C++ wrapper test
+suites. The robotics conformance profiles
+(`vouch/robotics/conformance.py` and its three siblings) are the clearest case.
+
+Two things routinely catch people out:
+
+- **The shared interop vector pins the report FORMAT, not the BEHAVIOUR.**
+  Reproducing `expected_conformance_report` and its digest proves the languages
+  agree on serialisation. It does not prove a profile change is safe: the
+  vector exercises one profile, and behavioural assertions for the others live
+  in each wrapper's own tests.
+- **A change can pass the entire Python suite and still break JVM or .NET**,
+  because those suites encode expected conformance outcomes for the shared
+  vector's credential set.
+
+Before changing anything the profiles depend on:
+
+1. Grep the requirement id and every field path across all SDK test
+   directories to enumerate the consumers, e.g.
+   `grep -rn "iso10218-identification\|hardwareRoot.attestation" sdks/ packages/ go-sidecar/ core/`.
+2. Apply the change identically in all four implementations.
+3. Run `make test-all-sdks`, which runs every suite rather than Python alone.
+
 ## Coding Standards
 
 - **Python**: Follow [PEP 8](https://pep8.org/)
