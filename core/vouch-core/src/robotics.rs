@@ -3034,6 +3034,12 @@ struct ProfileRequirement {
     title: &'static str,
     credential: &'static str,
     fields: &'static [&'static str],
+    /// Subject paths that must hold boolean `true`, for requirements where mere
+    /// presence is not evidence: a heartbeat reporting an envelope breach is not
+    /// evidence of having stayed inside the envelope. This is the boolean subset
+    /// of the `expect` map the Python, TypeScript and Go profiles carry; the
+    /// built-in profiles use only boolean expectations.
+    expect_true: &'static [&'static str],
 }
 
 /// A built-in conformance profile: a regime, a version, and its requirements.
@@ -3049,7 +3055,8 @@ const ISO_10218_REQUIREMENTS: &[ProfileRequirement] = &[
         clause: "ISO 10218-1:2011, 5.2",
         title: "Robot identification bound to its hardware",
         credential: "RobotIdentityCredential",
-        fields: &["hardwareRoot.kind"],
+        fields: &["hardwareRoot.kind", "hardwareRoot.attestation"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "iso10218-software-integrity",
@@ -3057,20 +3064,27 @@ const ISO_10218_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Control software and configuration integrity",
         credential: "ModelProvenanceAttestation",
         fields: &["vla.weightsHash"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "iso10218-limits",
         clause: "ISO 10218-1:2011, 5.6",
         title: "Limiting of speed, force, and workspace",
         credential: "PhysicalCapabilityScope",
-        fields: &["physicalScope.maxForceN", "physicalScope.maxSpeedMps"],
+        fields: &[
+            "physicalScope.maxForceN",
+            "physicalScope.maxSpeedMps",
+            "physicalScope.allowedZones",
+        ],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "iso10218-records",
         clause: "ISO 10218-2:2011, 5.2",
         title: "Records of safety-relevant events",
         credential: "RobotSafetyRecordCredential",
-        fields: &["totalEvents"],
+        fields: &["totalEvents", "logHead"],
+        expect_true: &[],
     },
 ];
 
@@ -3084,6 +3098,7 @@ const ISO_TS_15066_REQUIREMENTS: &[ProfileRequirement] = &[
             "physicalScope.maxSpeedNearHumansMps",
             "physicalScope.maxForceN",
         ],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "iso15066-collaborative-workspace",
@@ -3091,6 +3106,7 @@ const ISO_TS_15066_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Defined collaborative workspace",
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.allowedZones"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "iso15066-monitoring",
@@ -3098,6 +3114,7 @@ const ISO_TS_15066_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Continuous monitoring of the collaborative operation",
         credential: "RobotHeartbeatCredential",
         fields: &["motionDigest"],
+        expect_true: &["motionDigest.withinEnvelope"],
     },
 ];
 
@@ -3108,6 +3125,7 @@ const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Machinery identification and traceability",
         credential: "RobotIdentityCredential",
         fields: &["make", "model", "serial"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "eu-mr-software-integrity",
@@ -3115,6 +3133,7 @@ const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Protection against corruption of safety software",
         credential: "ModelProvenanceAttestation",
         fields: &["vla.weightsHash", "vla.safetyPolicy"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "eu-mr-safe-limits",
@@ -3122,13 +3141,15 @@ const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Safety and reliability of control systems and limits",
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.maxForceN"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "eu-mr-records",
         clause: "Reg (EU) 2023/1230, Annex III 1.2.1",
         title: "Recording of safety-relevant data",
         credential: "RobotSafetyRecordCredential",
-        fields: &["totalEvents"],
+        fields: &["totalEvents", "logHead"],
+        expect_true: &[],
     },
 ];
 
@@ -3139,6 +3160,7 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Automatic recording of events (logging)",
         credential: "RobotSafetyRecordCredential",
         fields: &["logHead"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "eu-aia-transparency",
@@ -3146,6 +3168,7 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Model and configuration transparency",
         credential: "ModelProvenanceAttestation",
         fields: &["vla.modelName", "vla.configHash"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "eu-aia-human-oversight",
@@ -3153,6 +3176,7 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Human oversight through enforced operating limits",
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.maxSpeedNearHumansMps"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "eu-aia-accuracy-robustness",
@@ -3160,6 +3184,7 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Accuracy and robustness traceable to a known build",
         credential: "ModelProvenanceAttestation",
         fields: &["vla.weightsHash"],
+        expect_true: &[],
     },
 ];
 
@@ -3169,7 +3194,8 @@ const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
         clause: "UL 3300, identification",
         title: "Robot identity bound to its hardware",
         credential: "RobotIdentityCredential",
-        fields: &["hardwareRoot.kind"],
+        fields: &["hardwareRoot.kind", "hardwareRoot.attestation"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "ul3300-operating-limits",
@@ -3177,6 +3203,7 @@ const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Enforced speed and zone limits",
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.maxSpeedMps", "physicalScope.allowedZones"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "ul3300-perception-integrity",
@@ -3184,13 +3211,15 @@ const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
         title: "Integrity of perception used for safe operation",
         credential: "PerceptionProvenanceCredential",
         fields: &["frameHash"],
+        expect_true: &[],
     },
     ProfileRequirement {
         id: "ul3300-records",
         clause: "UL 3300, incident records",
         title: "Records of safety-relevant incidents",
         credential: "RobotSafetyRecordCredential",
-        fields: &["totalEvents"],
+        fields: &["totalEvents", "logHead"],
+        expect_true: &[],
     },
 ];
 

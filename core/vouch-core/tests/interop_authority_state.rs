@@ -27,7 +27,13 @@ fn verifies_shared_signed_credential() {
     let pub_key = STANDARD
         .decode(v["ed25519"]["public_key_b64"].as_str().unwrap())
         .unwrap();
-    let result = verify(&v["signed_credential"], &pub_key, "2026-07-26T10:02:00Z", 30).unwrap();
+    let result = verify(
+        &v["signed_credential"],
+        &pub_key,
+        "2026-07-26T10:02:00Z",
+        30,
+    )
+    .unwrap();
     assert!(
         result.is_valid(),
         "Rust must verify the shared AuthorityState credential"
@@ -89,7 +95,10 @@ fn freshness_cases_match() {
             "allow mismatch for {name}"
         );
         if let Some(expected_reason) = case.get("expected_reason").and_then(|r| r.as_str()) {
-            assert_eq!(verdict.reason, expected_reason, "reason mismatch for {name}");
+            assert_eq!(
+                verdict.reason, expected_reason,
+                "reason mismatch for {name}"
+            );
         }
     }
 }
