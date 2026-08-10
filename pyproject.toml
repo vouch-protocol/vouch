@@ -105,7 +105,7 @@ media = [
 # (trust_remote_code) that is written against exactly those APIs.
 openvla = [
     "torch>=2.2.0",
-    "transformers==4.40.1",
+    "transformers==5.14.1",
     "tokenizers==0.19.1",
     "timm==0.9.10",
     "accelerate>=0.25.0",
