@@ -106,7 +106,7 @@ media = [
 openvla = [
     "torch>=2.2.0",
     "transformers==4.40.1",
-    "tokenizers==0.19.1",
+    "tokenizers==0.23.1",
     "timm==0.9.10",
     "accelerate>=0.25.0",
     "huggingface-hub>=0.23.0",
