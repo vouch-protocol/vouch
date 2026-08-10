@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 19800,
-  "verifiable": 205,
-  "cannot": 19595,
+  "total": 20854,
+  "verifiable": 211,
+  "cannot": 20643,
   "gradeA": 96,
   "pctVerifiable": 1.0,
   "pctCannot": 99.0,
   "pctCard": 0.9,
   "pctRev": 0.5,
   "pctPq": 0.0,
-  "cardCount": 172,
+  "cardCount": 178,
   "revCount": 97,
   "pqCount": 0,
-  "generated": "3 August 2026"
+  "generated": "10 August 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -887,6 +887,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.handsofflinks/link-followability",
+    "domains": "handsofflinks-mcp.lipmichal.workers.dev",
+    "method": "did:web",
+    "did": "did:web:handsofflinks-mcp.lipmichal.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.melvea/local-discovery",
     "domains": "mcp.melvea.com",
     "method": "did:web",
@@ -907,6 +915,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "mcp.tkawen.com",
     "method": "did:web",
     "did": "did:web:mcp.tkawen.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.toolsthatrank/serp-metrics",
+    "domains": "toolsthatrank-mcp.lipmichal.workers.dev",
+    "method": "did:web",
+    "did": "did:web:toolsthatrank-mcp.lipmichal.workers.dev"
   },
   {
     "grade": "C",
@@ -1011,6 +1027,22 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.waysway.com",
     "method": "did:web",
     "did": "did:web:api.waysway.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.aidatatools-dev/data-quality-gate",
+    "domains": "www.aidatatools.dev",
+    "method": "did:web",
+    "did": "did:web:www.aidatatools.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.aruuhii2yo/maxion-mcp-gateway",
+    "domains": "5pu357jdkqc3qynzkjvu3okgqy0ncsiy.lambda-url.us-east-1.on.aws",
+    "method": "did:web",
+    "did": "did:web:5pu357jdkqc3qynzkjvu3okgqy0ncsiy.lambda-url.us-east-1.on.aws"
   },
   {
     "grade": "C",
@@ -1551,14 +1583,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.rootsbymenda/pharma-regulatory",
-    "domains": "pharma-mcp-server.rootsbybenda.workers.dev",
-    "method": "did:web",
-    "did": "did:web:pharma-mcp-server.rootsbybenda.workers.dev"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.ruvendors5-ops/content-intelligence-api",
     "domains": "content-intelligence-mcp.wajih-hyder55.workers.dev",
     "method": "did:web",
@@ -1639,6 +1663,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "org.ieunit/ieunit",
+    "domains": "ieunit.org",
+    "method": "did:web",
+    "did": "did:web:ieunit.org"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "space.0/space0",
     "domains": "mcp.0.space",
     "method": "did:web",
@@ -1659,5 +1691,21 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "aiagent.tessa.tech",
     "method": "did:web",
     "did": "did:web:aiagent.tessa.tech"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "tools.extrabold/gridfinity",
+    "domains": "mcp.extrabold.tools",
+    "method": "did:web",
+    "did": "did:web:mcp.extrabold.tools"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "world.wheelofheaven.mcp/corpus",
+    "domains": "mcp.wheelofheaven.world",
+    "method": "did:web",
+    "did": "did:web:mcp.wheelofheaven.world"
   }
 ];
