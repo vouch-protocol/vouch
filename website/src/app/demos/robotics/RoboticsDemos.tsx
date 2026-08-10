@@ -652,14 +652,33 @@ const PACK_SCENARIOS: Array<{ id: PackScenario; label: string }> = [
   { id: 'noscope', label: 'Omit the physical capability scope' },
 ];
 
+/* How well-sourced a profile's clause references are, mirroring the `citations`
+ * summary every conformance report and signed attestation now carries. No
+ * built-in profile is verified-primary today: the ISO standards and UL 3300 are
+ * paywalled, and the EU texts were read from a third-party reproduction rather
+ * than EUR-Lex. Showing this beside CONFORMS keeps the demo from implying an
+ * authority over the regulation that the mapping does not have. */
+const CITATIONS: Record<string, { label: string; note: string }> = {
+  'unverified-secondary': {
+    label: 'unverified-secondary',
+    note: 'clause numbers from secondary sources, not the standard or Official Journal itself',
+  },
+  descriptive: {
+    label: 'descriptive',
+    note: 'topic names only; the standard is paywalled and no clause numbering was available',
+  },
+};
+
 const PACK_PROFILES: Array<{
   id: string;
   regime: string;
+  citation: keyof typeof CITATIONS;
   results: Record<PackScenario, { satisfied: number; total: number; gap?: string }>;
 }> = [
   {
     id: 'eu-ai-act-high-risk',
     regime: 'EU AI Act high-risk',
+    citation: 'unverified-secondary',
     results: {
       full: { satisfied: 4, total: 4 },
       base: { satisfied: 4, total: 4 },
@@ -669,6 +688,7 @@ const PACK_PROFILES: Array<{
   {
     id: 'iso-10218',
     regime: 'ISO 10218-1/-2',
+    citation: 'unverified-secondary',
     results: {
       full: { satisfied: 4, total: 4 },
       base: { satisfied: 4, total: 4 },
@@ -678,6 +698,7 @@ const PACK_PROFILES: Array<{
   {
     id: 'iso-ts-15066',
     regime: 'ISO/TS 15066 collaborative',
+    citation: 'unverified-secondary',
     results: {
       full: { satisfied: 3, total: 3 },
       base: { satisfied: 2, total: 3, gap: '5.2 continuous monitoring: no heartbeat motion digest' },
@@ -687,6 +708,7 @@ const PACK_PROFILES: Array<{
   {
     id: 'eu-machinery-2023-1230',
     regime: 'EU Machinery Regulation',
+    citation: 'unverified-secondary',
     results: {
       full: { satisfied: 4, total: 4 },
       base: { satisfied: 4, total: 4 },
@@ -696,6 +718,7 @@ const PACK_PROFILES: Array<{
   {
     id: 'ul-3300',
     regime: 'UL 3300 service robots',
+    citation: 'descriptive',
     results: {
       full: { satisfied: 4, total: 4 },
       base: { satisfied: 3, total: 4, gap: 'sensing integrity: no perception provenance' },
@@ -736,6 +759,7 @@ function EvidencePack() {
         {PACK_PROFILES.map((p) => {
           const r = p.results[scenario];
           const conforms = r.satisfied === r.total;
+          const cite = CITATIONS[p.citation];
           return (
             <div key={p.id} className={styles.card}>
               <div className={styles.cardLabel}>{p.regime}</div>
@@ -748,6 +772,11 @@ function EvidencePack() {
                 </span>
                 <span className={styles.reason}>{conforms ? 'every clause satisfied' : r.gap}</span>
               </div>
+              <div className={styles.mono}>
+                citations: {r.total} {cite.label}
+                <br />
+                {cite.note}
+              </div>
             </div>
           );
         })}
@@ -756,6 +785,14 @@ function EvidencePack() {
             {conformCount === 5
               ? 'All five attestations sign and verify offline; each binds the full report by digest.'
               : `${conformCount}/5 profiles conform; a signed attestation records the gaps for the rest.`}
+          </span>
+        </div>
+        <div className={styles.verdict}>
+          <span className={styles.reason}>
+            CONFORMS means the evidence covers the clauses this profile maps, which is a weaker claim than
+            compliance with the regulation. Every report and every signed attestation carries the provenance of
+            its clause references, so a result never implies an authority over the regulation that the mapping
+            does not have. No built-in profile is verified-primary today.
           </span>
         </div>
       </div>
