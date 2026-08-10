@@ -809,6 +809,16 @@ The four CLI commands are \`vouch root init\`, \`vouch root recognize\`, \`vouch
         a: `No. The profiles are a reference crosswalk to make conformance verifiable in the open. A deployment confirms each mapping against the current text of the regulation for its market before relying on it.`,
         meta: 'Shipped - vouch.robotics.conformance',
       },
+      {
+        q: 'How do I know the clause numbers in a profile are right?',
+        a: `The report tells you. Every requirement declares the provenance of its clause reference, and the report totals them under \`citations\`: \`verified-primary\` means the clause text was read from the official published source, \`unverified-secondary\` means the clause number comes from secondary sources rather than the standard or Official Journal itself, and \`descriptive\` means the entry names a topic an assessor cannot look up. No built-in requirement is verified-primary today, because the ISO standards and UL 3300 are paywalled and the EU texts were read from a third-party reproduction; the four UL 3300 entries are descriptive. The summary travels inside the signed attestation, so a CONFORMS result never implies more authority over the regulation than its sources give it.`,
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
+      {
+        q: 'Does CONFORMS mean my robot is compliant?',
+        a: `No. CONFORMS means the evidence covers the clauses this profile maps, which is a weaker claim than compliance with the regulation. It is not a certification and does not authorise CE marking; it produces evidence a conformity-assessment process can consume. A notified body's reading of the regulation governs.`,
+        meta: 'Shipped - vouch.robotics.conformance',
+      },
     ],
   },
 

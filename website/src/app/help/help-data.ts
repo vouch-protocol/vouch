@@ -2995,11 +2995,14 @@ The problem it closes: regulators and operators need to know a robot meets ISO 1
 
 How it works: \`check_conformance(credentials, profile_id)\` walks the named profile and reports, for each requirement, whether the presented credentials satisfy it, citing the clause. An assessing party then signs an attestation over that report.
 
+Each requirement also declares how well-sourced its clause reference is, and the report totals them under \`citations\`: \`verified-primary\` (the clause text was read from the official published source), \`unverified-secondary\` (the clause number comes from secondary sources), or \`descriptive\` (a topic name an assessor cannot look up). No built-in profile is verified-primary today; the four UL 3300 requirements are descriptive. The summary travels inside the signed attestation, so CONFORMS never reads as more authoritative about the regulation than its sources are.
+
 \`\`\`python
 from vouch.robotics import check_conformance, build_conformance_attestation
 
 report = check_conformance([identity, provenance, scope, safety_record], "eu-ai-act-high-risk")
 print(report["conforms"], report["satisfiedCount"], "/", report["totalCount"])
+print(report["citations"])   # {'verified-primary': 0, 'unverified-secondary': 4, 'descriptive': 0}
 
 attestation = build_conformance_attestation(assessor_signer, robot_did=robot, report=report)
 \`\`\`
@@ -3227,9 +3230,12 @@ from vouch.robotics import check_conformance, build_conformance_attestation, ver
 
 for pid in ["eu-ai-act-high-risk", "iso-10218", "iso-ts-15066", "eu-machinery-2023-1230", "ul-3300"]:
     report = check_conformance(credentials, pid)
+    print(pid, report["conforms"], report["citations"])
     att = build_conformance_attestation(assessor, robot_did=robot_did, report=report)
     ok, subject = verify_conformance_attestation(att, assessor_key)
 \`\`\`
+
+What CONFORMS does and does not say: it means the evidence covers the clauses this profile maps, which is a weaker claim than compliance with the regulation. Every report carries a \`citations\` summary of how well-sourced its clause references are, and so does the signed attestation. The ISO standards and UL 3300 are paywalled and the EU texts were read from a third-party reproduction, so no built-in requirement is \`verified-primary\` today; \`docs/robotics-conformance-crosswalk.md\` records the specific doubts, clause by clause.
 
 Security boundary: the open layer is the declarative profiles, the deterministic checker, and the signed point-in-time attestation, demonstrated end to end in \`examples/robotics_ai_act_evidence_pack.py\`. Hosted continuous monitoring, maintained and certified profiles, and auditor evidence portals are commercial.
 `,
