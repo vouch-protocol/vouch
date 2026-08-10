@@ -3026,6 +3026,65 @@ pub fn verify_decommission(
 
 pub const CONFORMANCE_ATTESTATION_TYPE: &str = "RobotConformanceAttestation";
 
+/// How well-sourced a requirement's clause citation is. A profile can be a
+/// useful crosswalk while its citations are only as good as the sources that
+/// were available, and a reader is entitled to know which. Every report and
+/// every signed attestation carries these, so a conformance result never
+/// implies more authority over the regulation than it has.
+///
+/// The clause text was read from the official published source.
+pub const CITATION_VERIFIED_PRIMARY: &str = "verified-primary";
+/// The mapping is believed sound, but the clause number comes from secondary
+/// sources rather than the standard or official journal itself. The default,
+/// because it is the honest default.
+pub const CITATION_UNVERIFIED_SECONDARY: &str = "unverified-secondary";
+/// Not a clause reference at all, only a description of the topic. An assessor
+/// cannot look it up.
+pub const CITATION_DESCRIPTIVE: &str = "descriptive";
+
+/// Every citation provenance value, in report order.
+pub const CITATION_STATUSES: &[&str] = &[
+    CITATION_VERIFIED_PRIMARY,
+    CITATION_UNVERIFIED_SECONDARY,
+    CITATION_DESCRIPTIVE,
+];
+
+// Citation notes shared by several requirements. Macros rather than consts so
+// they can be `concat!`-ed into the longer per-requirement notes, byte-for-byte
+// identical with the Python, TypeScript and Go profiles.
+macro_rules! iso_paywall_note {
+    () => {
+        "Clause number taken from secondary sources; the standard is paywalled \
+         and the text has not been read."
+    };
+}
+
+macro_rules! iso_10218_note {
+    () => {
+        concat!(
+            iso_paywall_note!(),
+            " ISO 10218-1/-2:2011 were superseded by the 2025 editions (in \
+             force 1 April 2025); this mapping still cites the 2011 clause \
+             numbering and has not been migrated."
+        )
+    };
+}
+
+macro_rules! oj_note {
+    () => {
+        "Article number taken from a third-party reproduction of the Official \
+         Journal text, not from EUR-Lex itself."
+    };
+}
+
+macro_rules! ul_note {
+    () => {
+        "UL 3300 (now ANSI/CAN/UL 3300:2024) is paywalled and no clause \
+         numbering was available; this names the topic only and cannot be \
+         looked up."
+    };
+}
+
 /// One requirement in a profile: a clause of a regulation mapped to the
 /// credential type and field paths that satisfy it.
 struct ProfileRequirement {
@@ -3040,6 +3099,11 @@ struct ProfileRequirement {
     /// of the `expect` map the Python, TypeScript and Go profiles carry; the
     /// built-in profiles use only boolean expectations.
     expect_true: &'static [&'static str],
+    /// Provenance of the `clause` reference above, one of [`CITATION_STATUSES`].
+    citation: &'static str,
+    /// Anything a reader should know about the citation, such as a known
+    /// conflict between sources.
+    citation_note: Option<&'static str>,
 }
 
 /// A built-in conformance profile: a regime, a version, and its requirements.
@@ -3057,6 +3121,8 @@ const ISO_10218_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotIdentityCredential",
         fields: &["hardwareRoot.kind", "hardwareRoot.attestation"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(iso_10218_note!()),
     },
     ProfileRequirement {
         id: "iso10218-software-integrity",
@@ -3065,6 +3131,8 @@ const ISO_10218_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "ModelProvenanceAttestation",
         fields: &["vla.weightsHash"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(iso_10218_note!()),
     },
     ProfileRequirement {
         id: "iso10218-limits",
@@ -3077,6 +3145,8 @@ const ISO_10218_REQUIREMENTS: &[ProfileRequirement] = &[
             "physicalScope.allowedZones",
         ],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(iso_10218_note!()),
     },
     ProfileRequirement {
         id: "iso10218-records",
@@ -3085,6 +3155,8 @@ const ISO_10218_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotSafetyRecordCredential",
         fields: &["totalEvents", "logHead"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(iso_10218_note!()),
     },
 ];
 
@@ -3099,6 +3171,13 @@ const ISO_TS_15066_REQUIREMENTS: &[ProfileRequirement] = &[
             "physicalScope.maxForceN",
         ],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(concat!(
+            iso_paywall_note!(),
+            " Secondary sources disagree on whether power and force limiting \
+             is 5.5.4 or 5.5.2; confirm against the published table of \
+             contents before relying on the number."
+        )),
     },
     ProfileRequirement {
         id: "iso15066-collaborative-workspace",
@@ -3107,6 +3186,12 @@ const ISO_TS_15066_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.allowedZones"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(concat!(
+            iso_paywall_note!(),
+            " Shares the unresolved 5.5.2/5.5.4 numbering conflict with \
+             iso15066-power-force-limiting."
+        )),
     },
     ProfileRequirement {
         id: "iso15066-monitoring",
@@ -3115,6 +3200,8 @@ const ISO_TS_15066_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotHeartbeatCredential",
         fields: &["motionDigest"],
         expect_true: &["motionDigest.withinEnvelope"],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(iso_paywall_note!()),
     },
 ];
 
@@ -3126,6 +3213,8 @@ const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotIdentityCredential",
         fields: &["make", "model", "serial"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(oj_note!()),
     },
     ProfileRequirement {
         id: "eu-mr-software-integrity",
@@ -3134,6 +3223,12 @@ const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "ModelProvenanceAttestation",
         fields: &["vla.weightsHash", "vla.safetyPolicy"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(concat!(
+            oj_note!(),
+            " The Annex III subclause for protection against corruption has \
+             not been confirmed and may need to be re-pointed."
+        )),
     },
     ProfileRequirement {
         id: "eu-mr-safe-limits",
@@ -3142,6 +3237,8 @@ const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.maxForceN"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(oj_note!()),
     },
     ProfileRequirement {
         id: "eu-mr-records",
@@ -3150,6 +3247,8 @@ const EU_MACHINERY_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotSafetyRecordCredential",
         fields: &["totalEvents", "logHead"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(oj_note!()),
     },
 ];
 
@@ -3161,6 +3260,8 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotSafetyRecordCredential",
         fields: &["logHead"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(oj_note!()),
     },
     ProfileRequirement {
         id: "eu-aia-transparency",
@@ -3169,6 +3270,8 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "ModelProvenanceAttestation",
         fields: &["vla.modelName", "vla.configHash"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(oj_note!()),
     },
     ProfileRequirement {
         id: "eu-aia-human-oversight",
@@ -3177,6 +3280,13 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.maxSpeedNearHumansMps"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(concat!(
+            oj_note!(),
+            " Art. 14 also requires a means for the overseer to intervene or \
+             stop the system, which an operating-limit scope alone does not \
+             evidence."
+        )),
     },
     ProfileRequirement {
         id: "eu-aia-accuracy-robustness",
@@ -3185,6 +3295,8 @@ const EU_AI_ACT_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "ModelProvenanceAttestation",
         fields: &["vla.weightsHash"],
         expect_true: &[],
+        citation: CITATION_UNVERIFIED_SECONDARY,
+        citation_note: Some(oj_note!()),
     },
 ];
 
@@ -3196,6 +3308,8 @@ const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotIdentityCredential",
         fields: &["hardwareRoot.kind", "hardwareRoot.attestation"],
         expect_true: &[],
+        citation: CITATION_DESCRIPTIVE,
+        citation_note: Some(ul_note!()),
     },
     ProfileRequirement {
         id: "ul3300-operating-limits",
@@ -3204,6 +3318,8 @@ const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "PhysicalCapabilityScope",
         fields: &["physicalScope.maxSpeedMps", "physicalScope.allowedZones"],
         expect_true: &[],
+        citation: CITATION_DESCRIPTIVE,
+        citation_note: Some(ul_note!()),
     },
     ProfileRequirement {
         id: "ul3300-perception-integrity",
@@ -3212,6 +3328,8 @@ const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "PerceptionProvenanceCredential",
         fields: &["frameHash"],
         expect_true: &[],
+        citation: CITATION_DESCRIPTIVE,
+        citation_note: Some(ul_note!()),
     },
     ProfileRequirement {
         id: "ul3300-records",
@@ -3220,6 +3338,8 @@ const UL_3300_REQUIREMENTS: &[ProfileRequirement] = &[
         credential: "RobotSafetyRecordCredential",
         fields: &["totalEvents", "logHead"],
         expect_true: &[],
+        citation: CITATION_DESCRIPTIVE,
+        citation_note: Some(ul_note!()),
     },
 ];
 
@@ -3231,7 +3351,7 @@ fn conformance_profile(profile_id: &str) -> Option<ConformanceProfile> {
     match profile_id {
         "iso-10218" => Some(ConformanceProfile {
             regime: "ISO 10218-1/-2 industrial robots",
-            version: "2011",
+            version: "2011 (superseded by the 2025 editions; mapping not yet migrated)",
             requirements: ISO_10218_REQUIREMENTS,
         }),
         "iso-ts-15066" => Some(ConformanceProfile {
@@ -3251,7 +3371,7 @@ fn conformance_profile(profile_id: &str) -> Option<ConformanceProfile> {
         }),
         "ul-3300" => Some(ConformanceProfile {
             regime: "UL 3300 service, communication, and mobile robots",
-            version: "2022",
+            version: "2022 (see ANSI/CAN/UL 3300:2024)",
             requirements: UL_3300_REQUIREMENTS,
         }),
         _ => None,
@@ -3295,8 +3415,10 @@ fn value_present(value: &Value) -> bool {
 }
 
 /// True when `credential` satisfies `requirement`: its type array includes the
-/// requirement's credential type and its credentialSubject has a non-null,
-/// non-empty value at every field path.
+/// requirement's credential type, its credentialSubject has a non-null,
+/// non-empty value at every field path, and every `expect_true` path holds
+/// boolean `true`. Presence alone is not evidence: a heartbeat that reports an
+/// envelope breach does not evidence having stayed inside the envelope.
 fn credential_satisfies(credential: &Value, requirement: &ProfileRequirement) -> bool {
     if !credential_types(credential).contains(&requirement.credential) {
         return false;
@@ -3309,6 +3431,11 @@ fn credential_satisfies(credential: &Value, requirement: &ProfileRequirement) ->
             _ => return false,
         }
     }
+    for path in requirement.expect_true {
+        if path_value(subject, path) != Some(&Value::Bool(true)) {
+            return false;
+        }
+    }
     true
 }
 
@@ -3318,14 +3445,23 @@ fn credential_satisfies(credential: &Value, requirement: &ProfileRequirement) ->
 /// expected to have verified the credentials' signatures first; this checks
 /// structure and coverage, not proofs.
 ///
+/// Every requirement carries the provenance of its clause citation, and the
+/// report totals them, so a result never reads as more authoritative about the
+/// regulation than its sources are.
+///
 /// The report has exactly `{profileId, regime, version, conforms,
-/// satisfiedCount, totalCount, requirements:[{id, clause, title, satisfied}]}`.
+/// satisfiedCount, totalCount, citations:{...},
+/// requirements:[{id, clause, title, satisfied, citation, citationNote?}]}`.
 pub fn check_conformance(credentials: &[Value], profile_id: &str) -> Result<Value> {
     let prof = conformance_profile(profile_id)
         .ok_or_else(|| CoreError::Json(format!("unknown conformance profile: {profile_id}")))?;
 
     let mut results: Vec<Value> = Vec::with_capacity(prof.requirements.len());
     let mut satisfied = 0i64;
+    let mut citations = Map::new();
+    for status in CITATION_STATUSES {
+        citations.insert((*status).into(), json!(0i64));
+    }
     for requirement in prof.requirements {
         let ok = credentials
             .iter()
@@ -3333,12 +3469,21 @@ pub fn check_conformance(credentials: &[Value], profile_id: &str) -> Result<Valu
         if ok {
             satisfied += 1;
         }
-        results.push(json!({
-            "id": requirement.id,
-            "clause": requirement.clause,
-            "title": requirement.title,
-            "satisfied": ok,
-        }));
+        let seen = citations
+            .get(requirement.citation)
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        citations.insert(requirement.citation.into(), json!(seen + 1));
+        let mut result = Map::new();
+        result.insert("id".into(), json!(requirement.id));
+        result.insert("clause".into(), json!(requirement.clause));
+        result.insert("title".into(), json!(requirement.title));
+        result.insert("satisfied".into(), json!(ok));
+        result.insert("citation".into(), json!(requirement.citation));
+        if let Some(note) = requirement.citation_note {
+            result.insert("citationNote".into(), json!(note));
+        }
+        results.push(Value::Object(result));
     }
     let total = prof.requirements.len() as i64;
 
@@ -3349,6 +3494,7 @@ pub fn check_conformance(credentials: &[Value], profile_id: &str) -> Result<Valu
     report.insert("conforms".into(), json!(satisfied == total));
     report.insert("satisfiedCount".into(), json!(satisfied));
     report.insert("totalCount".into(), json!(total));
+    report.insert("citations".into(), Value::Object(citations));
     report.insert("requirements".into(), Value::Array(results));
     Ok(Value::Object(report))
 }
@@ -3414,6 +3560,13 @@ pub fn build_conformance_attestation(
     subject.insert(
         "totalCount".into(),
         report.get("totalCount").cloned().unwrap_or(Value::Null),
+    );
+    subject.insert(
+        "citations".into(),
+        report
+            .get("citations")
+            .cloned()
+            .unwrap_or_else(|| Value::Object(Map::new())),
     );
     subject.insert("reportDigest".into(), json!(report_digest(&params.report)));
     subject.insert("report".into(), params.report.clone());
@@ -6741,6 +6894,69 @@ mod tests {
                 .as_str()
                 .unwrap()
         );
+    }
+
+    // Presence alone is not evidence. A heartbeat that reports an envelope
+    // breach must not satisfy the continuous-monitoring requirement just by
+    // carrying a motionDigest.
+    #[test]
+    fn a_breaching_heartbeat_does_not_evidence_monitoring() {
+        let breaching = json!({
+            "type": ["VerifiableCredential", "RobotHeartbeatCredential"],
+            "credentialSubject": {
+                "motionDigest": {"withinEnvelope": false, "samples": 120}
+            }
+        });
+        let report = check_conformance(&[breaching.clone()], "iso-ts-15066").unwrap();
+        let monitoring = report["requirements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == json!("iso15066-monitoring"))
+            .expect("monitoring requirement present");
+        assert_eq!(monitoring["satisfied"], json!(false));
+
+        // The same heartbeat reporting no breach does satisfy it.
+        let mut clean = breaching;
+        clean["credentialSubject"]["motionDigest"]["withinEnvelope"] = json!(true);
+        let report = check_conformance(&[clean], "iso-ts-15066").unwrap();
+        let monitoring = report["requirements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == json!("iso15066-monitoring"))
+            .unwrap();
+        assert_eq!(monitoring["satisfied"], json!(true));
+    }
+
+    // Every requirement declares where its clause number came from, and the
+    // report totals them, so CONFORMS never reads as more authoritative about
+    // the regulation than its sources are.
+    #[test]
+    fn conformance_report_carries_citation_provenance() {
+        for profile_id in [
+            "iso-10218",
+            "iso-ts-15066",
+            "eu-machinery-2023-1230",
+            "eu-ai-act-high-risk",
+            "ul-3300",
+        ] {
+            let report = check_conformance(&[], profile_id).unwrap();
+            let citations = report["citations"].as_object().unwrap();
+            assert_eq!(citations.len(), CITATION_STATUSES.len());
+            let counted: i64 = citations.values().map(|v| v.as_i64().unwrap()).sum();
+            assert_eq!(counted, report["totalCount"].as_i64().unwrap());
+            for result in report["requirements"].as_array().unwrap() {
+                let citation = result["citation"].as_str().unwrap();
+                assert!(CITATION_STATUSES.contains(&citation));
+            }
+        }
+
+        // UL 3300 is paywalled with no clause numbering available, so none of
+        // its "clauses" are citable.
+        let ul = check_conformance(&[], "ul-3300").unwrap();
+        assert_eq!(ul["citations"][CITATION_DESCRIPTIVE], ul["totalCount"]);
+        assert_eq!(ul["citations"][CITATION_VERIFIED_PRIMARY], json!(0));
     }
 
     #[test]

@@ -280,6 +280,13 @@ int main(int argc, char **argv) {
     free(satisfied);
     free(total);
 
+    /* CONFORMS says the evidence covers the clauses this profile maps, which is
+     * a weaker claim than compliance with the regulation. Every report carries
+     * how well-sourced its clause numbers are, so the two never get conflated. */
+    char *citations = json_value(report, "citations");
+    printf("  citations: %s\n", citations);
+    free(citations);
+
     /* Sign a point-in-time attestation over that report, then verify it. */
     size_t att_len = strlen(report) + 512;
     char *att_params = malloc(att_len);

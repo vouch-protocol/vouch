@@ -210,6 +210,28 @@ int main() {
     std::string report = vouch::robotics::check_conformance(credentials, "eu-ai-act-high-risk");
     check(report.find("\"conforms\":true") != std::string::npos, "profile conforms");
     check(report.find("\"totalCount\":4") != std::string::npos, "four requirements counted");
+    // CONFORMS says the evidence covers the clauses this profile maps, which
+    // is weaker than compliance with the regulation. Every report states how
+    // well-sourced its clause references are.
+    check(report.find("\"unverified-secondary\":4") != std::string::npos,
+          "clause-citation provenance reported");
+
+    // A heartbeat that reports an envelope breach is not evidence of having
+    // stayed inside the envelope: presence alone must not satisfy the
+    // continuous-monitoring requirement.
+    std::string breaching =
+        "[{\"type\":[\"VerifiableCredential\",\"RobotHeartbeatCredential\"],"
+        "\"credentialSubject\":{\"motionDigest\":{\"withinEnvelope\":false}}}]";
+    std::string breach_report =
+        vouch::robotics::check_conformance(breaching, "iso-ts-15066");
+    check(breach_report.find("\"conforms\":true") == std::string::npos,
+          "a breaching heartbeat does not evidence monitoring");
+
+    // UL 3300 is paywalled with no clause numbering available, so its entries
+    // must never present as clauses an assessor can look up.
+    std::string ul = vouch::robotics::check_conformance(credentials, "ul-3300");
+    check(ul.find("\"descriptive\":4") != std::string::npos,
+          "ul-3300 clauses are descriptive, not citable");
   }
 
   // The remaining checks drive the curated robotics C ABI against the shared

@@ -71,7 +71,26 @@ final class RoboticsVerifyExampleTests: XCTestCase {
             } else {
                 XCTAssertTrue(report.contains("\"conforms\":true"), "\(pid): \(report)")
             }
+
+            // CONFORMS says the evidence covers the clauses this profile maps,
+            // which is weaker than compliance with the regulation. Every report
+            // states how well-sourced its clause references are.
+            XCTAssertTrue(report.contains("\"citations\":"), "\(pid): \(report)")
         }
+    }
+
+    func testUl3300ClausesAreDescriptiveNotCitable() throws {
+        // UL 3300 is paywalled and no clause numbering was available, so the
+        // profile must never present its topic names as clauses an assessor
+        // can look up.
+        let v = try vector()
+        let credentials = try jsonString(v["conformance_credentials"]!)
+        let report = try VouchRobotics.checkConformance(
+            credentialsJson: credentials,
+            profileId: "ul-3300"
+        )
+        XCTAssertTrue(report.contains("\"descriptive\":4"), report)
+        XCTAssertTrue(report.contains("\"verified-primary\":0"), report)
     }
 
     func testSignsAndVerifiesOneAttestationPerProfile() throws {

@@ -3,6 +3,7 @@ package com.vouchprotocol.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -112,7 +113,36 @@ class RoboticsVerifyExampleTest {
                 // attestation, so these profiles report the open clause.
                 assertFalse(conforms, pid + " should report gaps: " + report);
             }
+
+            // CONFORMS says the evidence covers the clauses this profile maps,
+            // which is weaker than compliance with the regulation. Every report
+            // states how well-sourced its clause references are, and the counts
+            // must add up to the number of requirements checked.
+            @SuppressWarnings("unchecked")
+            Map<String, Object> citations = (Map<String, Object>) report.get("citations");
+            assertNotNull(citations, pid + " must report its clause-citation provenance");
+            int counted = 0;
+            for (Object n : citations.values()) {
+                counted += ((Number) n).intValue();
+            }
+            assertEquals(((Number) report.get("totalCount")).intValue(), counted,
+                    pid + " citation counts must total its requirements: " + citations);
         }
+    }
+
+    @Test
+    void ul3300ClausesAreDescriptiveNotCitable() {
+        // UL 3300 is paywalled and no clause numbering was available, so the
+        // profile must never present its topic names as clauses an assessor
+        // can look up.
+        Map<String, Object> report = Json.parseObject(
+                VouchRobotics.checkConformance(credentialsJson(), "ul-3300"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> citations = (Map<String, Object>) report.get("citations");
+        assertEquals(((Number) report.get("totalCount")).intValue(),
+                ((Number) citations.get("descriptive")).intValue(), citations.toString());
+        assertEquals(0, ((Number) citations.get("verified-primary")).intValue(),
+                citations.toString());
     }
 
     @Test

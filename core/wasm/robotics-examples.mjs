@@ -171,14 +171,36 @@ const full = [...base, JSON.parse(heartbeat), JSON.parse(perception)];
 
 ok('full evidence pack carries six credentials', full.length === 6);
 
-let allConform = true;
+// CONFORMS answers "does the evidence cover the clauses this profile maps?",
+// which is a different and weaker claim than "does the robot comply with the
+// regulation". The citation summary prints beside the verdict so a profile
+// whose clause numbers came from secondary sources, or which only names
+// topics, says so on the same line as the result.
+const citationSummary = (report) =>
+  ['descriptive', 'unverified-secondary', 'verified-primary']
+    .filter((status) => report.citations?.[status])
+    .map((status) => `${report.citations[status]} ${status}`)
+    .join(', ');
+
+let allConform = true, citationsCarried = true;
 for (const pid of ALL_PROFILE_IDS) {
   const report = JSON.parse(core.roboticsCheckConformance(JSON.stringify(full), pid));
   if (!report.conforms) allConform = false;
+  const counted = Object.values(report.citations ?? {}).reduce((a, b) => a + b, 0);
+  if (counted !== report.totalCount) citationsCarried = false;
   console.log(`    ${pid.padEnd(24)} ${report.conforms ? 'CONFORMS' : 'GAPS'} ` +
     `(${report.satisfiedCount}/${report.totalCount})  ${report.regime}`);
+  console.log(`      citations: ${citationSummary(report)}`);
 }
 ok('all five profiles conform on the full pack', allConform);
+ok('every report totals its clause-citation provenance', citationsCarried);
+
+// UL 3300 is paywalled with no clause numbering available, so a conforming
+// UL 3300 report must still say none of its "clauses" can be looked up.
+const ul = JSON.parse(core.roboticsCheckConformance(JSON.stringify(full), 'ul-3300'));
+ok('a conforming ul-3300 report still reports descriptive-only citations',
+  ul.conforms === true && ul.citations.descriptive === ul.totalCount &&
+  ul.citations['verified-primary'] === 0);
 
 // The base four credentials leave exactly the two documented gaps.
 const baseGaps = ALL_PROFILE_IDS.filter((pid) =>

@@ -1069,8 +1069,8 @@ def robot_check_conformance(credentials_json: str, profile_id: str) -> str:
         profile_id: One of the built-in profile ids listed above.
 
     Returns:
-        'CONFORMS' or 'GAPS' with the satisfied count and one line per
-        requirement clause.
+        'CONFORMS' or 'GAPS' with the satisfied count, how well-sourced the
+        profile's clause references are, and one line per requirement clause.
     """
     from vouch.robotics import check_conformance
 
@@ -1091,6 +1091,17 @@ def robot_check_conformance(credentials_json: str, profile_id: str) -> str:
         f"{verdict}: {report['satisfiedCount']}/{report['totalCount']} requirements "
         f"of {report['regime']} ({report['profileId']})."
     ]
+    # CONFORMS means the evidence covers the clauses this profile maps, which is
+    # weaker than compliance with the regulation. Reporting how well-sourced the
+    # clause references are keeps a model from overstating the result.
+    citations = report.get("citations") or {}
+    summary = ", ".join(
+        f"{citations[status]} {status}"
+        for status in ("descriptive", "unverified-secondary", "verified-primary")
+        if citations.get(status)
+    )
+    if summary:
+        lines.append(f"Clause citations: {summary}.")
     for req in report["requirements"]:
         mark = "satisfied" if req["satisfied"] else "GAP"
         lines.append(f"  [{mark}] {req['clause']}: {req['title']}")
