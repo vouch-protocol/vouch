@@ -20,8 +20,7 @@
     "url": "https://vouch-protocol.com"
    },
    "repositoryUrl": {
-    "url": "https://github.com/vouch-protocol/vouch",
-    "wellKnown": "https://github.com/vouch-protocol/vouch/blob/main/.well-known/funding-manifest-urls"
+    "url": "https://github.com/vouch-protocol/vouch"
    },
    "licenses": [
     "spdx:Apache-2.0"
