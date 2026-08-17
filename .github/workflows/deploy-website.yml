@@ -3,8 +3,9 @@ name: Deploy Website
 # Auto-builds the Next.js site in website/ and commits the static output
 # into docs/ so GitHub Pages serves it from main:/docs.
 #
-# Trigger only on changes inside website/. Commits to docs/ from this
-# workflow do NOT re-trigger it because docs/** is not in the paths filter.
+# Trigger on changes inside website/, plus the root funding manifest that the
+# build copies into the site. Commits to docs/ from this workflow do NOT
+# re-trigger it because docs/** is not in the paths filter.
 
 on:
   push:
@@ -12,6 +13,7 @@ on:
     paths:
       - 'website/**'
       - '.github/workflows/deploy-website.yml'
+      - 'funding.json'
   workflow_dispatch:
 
 # Allow the workflow to push commits back to the repository.
