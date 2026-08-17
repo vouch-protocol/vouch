@@ -502,7 +502,9 @@ def test_composite_proof_value_is_over_the_legacy_digest():
     digest = data_integrity.legacy_proof_digest(cred, unsigned)
     assert len(digest) == 32
     ed_pub.verify(combined[: data_integrity_hybrid.ED25519_SIGNATURE_SIZE], digest)
-    assert pqcrypto.verify(ml_pub, digest, combined[data_integrity_hybrid.ED25519_SIGNATURE_SIZE :])
+    assert data_integrity_hybrid._mldsa44_verify(
+        pqcrypto, ml_pub, digest, combined[data_integrity_hybrid.ED25519_SIGNATURE_SIZE :]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -599,3 +601,97 @@ def test_verify_dual_rejects_a_set_missing_the_classical_proof():
         )
         is False
     )
+
+
+# ---------------------------------------------------------------------------
+# pqcrypto API contracts: 0.4.x and 1.0.0 differ in how they report a verdict
+# ---------------------------------------------------------------------------
+
+
+class _BoolVerify:
+    """The pqcrypto 0.4.x contract: verify() returns a bool."""
+
+    def __init__(self, verdict):
+        self.verdict = verdict
+
+    def verify(self, public_key, message, signature):
+        return self.verdict
+
+
+class _RaisingVerify:
+    """The pqcrypto 1.0.0 contract: verify() returns None on success and
+    raises on failure."""
+
+    def __init__(self, error=None):
+        self.error = error
+
+    def verify(self, public_key, message, signature):
+        if self.error is not None:
+            raise self.error
+        return None
+
+
+def test_verify_reads_the_bool_returning_contract():
+    assert data_integrity_hybrid._mldsa44_verify(_BoolVerify(True), b"pub", b"msg", b"sig") is True
+    assert (
+        data_integrity_hybrid._mldsa44_verify(_BoolVerify(False), b"pub", b"msg", b"sig") is False
+    )
+
+
+def test_verify_reads_the_raising_contract():
+    """A None return means success under pqcrypto 1.0.0. Reading it as a bool
+    would reject every valid post-quantum proof."""
+    assert data_integrity_hybrid._mldsa44_verify(_RaisingVerify(), b"pub", b"msg", b"sig") is True
+
+
+def test_verify_rejects_when_the_library_raises():
+    for error in (
+        ValueError("signature verification failed"),
+        RuntimeError("truncated input"),
+        TypeError("wrong key type"),
+    ):
+        assert (
+            data_integrity_hybrid._mldsa44_verify(_RaisingVerify(error), b"pub", b"msg", b"sig")
+            is False
+        )
+
+
+def test_keygen_accepts_either_entry_point_name():
+    """pqcrypto 1.0.0 renamed generate_keypair() to keygen()."""
+
+    class _Keygen:
+        def keygen(self):
+            return b"pub-new", b"sec-new"
+
+    class _GenerateKeypair:
+        def generate_keypair(self):
+            return b"pub-old", b"sec-old"
+
+    class _Neither:
+        pass
+
+    assert data_integrity_hybrid._mldsa44_keygen(_Keygen()) == (b"pub-new", b"sec-new")
+    assert data_integrity_hybrid._mldsa44_keygen(_GenerateKeypair()) == (b"pub-old", b"sec-old")
+    with pytest.raises(RuntimeError):
+        data_integrity_hybrid._mldsa44_keygen(_Neither())
+
+
+def test_a_tampered_signature_is_rejected_under_the_installed_library():
+    """End-to-end against whichever pqcrypto is actually installed: a real
+    signature verifies and a flipped byte does not."""
+    ml_pub, ml_sec = data_integrity_hybrid.generate_mldsa44_keypair()
+    message = b"vouch protocol ml-dsa-44 contract check"
+    signature = pqcrypto.sign(ml_sec, message)
+
+    assert data_integrity_hybrid._mldsa44_verify(pqcrypto, ml_pub, message, signature) is True
+
+    tampered = bytearray(signature)
+    tampered[0] ^= 0x01
+    assert (
+        data_integrity_hybrid._mldsa44_verify(pqcrypto, ml_pub, message, bytes(tampered)) is False
+    )
+    assert (
+        data_integrity_hybrid._mldsa44_verify(pqcrypto, ml_pub, b"other message", signature)
+        is False
+    )
+    assert data_integrity_hybrid._mldsa44_verify(pqcrypto, ml_pub, message, b"short") is False

@@ -89,7 +89,7 @@ def _import_pqcrypto():
 def generate_mldsa44_keypair() -> Tuple[bytes, bytes]:
     """Generate a fresh ML-DSA-44 keypair. Returns (public_key, secret_key)."""
     ml_dsa_44 = _import_pqcrypto()
-    return ml_dsa_44.generate_keypair()
+    return _mldsa44_keygen(ml_dsa_44)
 
 
 def build_dual_proof(
@@ -364,13 +364,41 @@ def _b64u_decode(body: str) -> bytes:
         raise ValueError(f"bad base64url proofValue: {exc}") from exc
 
 
+def _mldsa44_keygen(ml_dsa_44: Any) -> Tuple[bytes, bytes]:
+    """Generate an ML-DSA-44 keypair across pqcrypto's two entry point names.
+
+    pqcrypto 1.0.0 renamed `generate_keypair()` to `keygen()`. Both return
+    (public_key, secret_key) of the same FIPS 204 sizes, so either name gives
+    keys that the other release can use.
+    """
+    keygen = getattr(ml_dsa_44, "keygen", None)
+    if keygen is None:
+        keygen = getattr(ml_dsa_44, "generate_keypair", None)
+    if keygen is None:
+        raise RuntimeError(
+            "The installed pqcrypto exposes no ML-DSA-44 key generation entry point "
+            "(expected keygen or generate_keypair)"
+        )
+    public_key, secret_key = keygen()
+    return bytes(public_key), bytes(secret_key)
+
+
 def _mldsa44_verify(ml_dsa_44: Any, public_key: bytes, message: bytes, signature: bytes) -> bool:
-    # pqcrypto's verify raises on an invalid signature in some builds; treat
-    # any exception as a verification failure.
+    """Verify an ML-DSA-44 signature across pqcrypto's two verify contracts.
+
+    pqcrypto 0.4.x returns a bool. pqcrypto 1.0.0 returns None on success and
+    signals failure by raising. Reading the 1.0.0 return value as a bool would
+    call every valid signature invalid, so a None return is read as the success
+    that release defines it to be, and only an exception or a falsy bool is a
+    rejection.
+    """
     try:
-        return bool(ml_dsa_44.verify(public_key, message, signature))
+        result = ml_dsa_44.verify(public_key, message, signature)
     except Exception:
         return False
+    if result is None:
+        return True
+    return bool(result)
 
 
 def _format_iso8601(dt: datetime) -> str:

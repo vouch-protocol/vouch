@@ -37,7 +37,11 @@ dependencies = [
     # credential. Bundled by default: pqcrypto ships
     # prebuilt wheels for all mainstream platforms (~80 KB, no compiler needed)
     # and the PQ story is core to Vouch, so we do not gate it behind an extra.
-    "pqcrypto>=0.4.0",
+    # 0.4.x and 1.0.x are both supported: they differ in the ML-DSA-44 entry
+    # point names and in how verify() reports a verdict, and
+    # vouch/data_integrity_hybrid.py handles both. The major version is capped
+    # so a future release cannot change those contracts underneath a verifier.
+    "pqcrypto>=0.4.0,<2.0.0",
 ]
 
 [project.optional-dependencies]
