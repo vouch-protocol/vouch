@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "copy-wasm": "node scripts/copy-wasm.mjs",
-    "predev": "npm run copy-wasm",
+    "copy-funding": "node scripts/copy-funding.mjs",
+    "copy-static": "npm run copy-wasm && npm run copy-funding",
+    "predev": "npm run copy-static",
     "dev": "next dev",
-    "prebuild": "npm run copy-wasm",
+    "prebuild": "npm run copy-static",
     "build": "next build",
-    "prestart": "npm run copy-wasm",
+    "prestart": "npm run copy-static",
     "start": "next start",
     "lint": "next lint",
     "export-to-docs": "next build && cp -r out/. ../docs/ && echo 'Exported to ../docs/. Commit and push to deploy via GH Pages. CI handles this automatically on push to main.'"
