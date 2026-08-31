@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 24498,
-  "verifiable": 495,
-  "cannot": 24003,
-  "gradeA": 98,
-  "pctVerifiable": 2.0,
-  "pctCannot": 98.0,
-  "pctCard": 0.8,
+  "total": 25931,
+  "verifiable": 532,
+  "cannot": 25399,
+  "gradeA": 103,
+  "pctVerifiable": 2.1,
+  "pctCannot": 97.9,
+  "pctCard": 0.9,
   "pctRev": 0.4,
   "pctPq": 0.0,
-  "cardCount": 205,
-  "revCount": 103,
+  "cardCount": 231,
+  "revCount": 110,
   "pqCount": 1,
-  "generated": "24 August 2026"
+  "generated": "31 August 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -63,6 +63,22 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "co.itseasy/easy-mcp",
+    "domains": "mcp.itseasy.co, www.itseasy.co",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:www.itseasy.co"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.aicontentdrop/ai-content-drop",
+    "domains": "aicontentdrop.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:aicontentdrop.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.dominionobservatory/observatory",
     "domains": "dominionobservatory.com",
     "method": "did:web, Ed25519 (JWK)",
@@ -103,6 +119,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.scriptmasterlabs/squeezeos",
+    "domains": "www.scriptmasterlabs.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:www.scriptmasterlabs.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "de.carbon-cashmere.api/crypto-intelligence",
     "domains": "api.carbon-cashmere.de",
     "method": "did:web, secp256k1 (JWK)",
@@ -123,6 +147,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "feedoracle.io",
     "method": "did:web, secp256k1 (JWK)",
     "did": "did:web:feedoracle.io"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Abracadabrastartup/deusproof-mcp",
+    "domains": "deusproof.com",
+    "method": "did:key, key",
+    "did": "did:key:z6Mk..."
   },
   {
     "grade": "A",
@@ -805,6 +837,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "did": "did:web:scvd.store"
   },
   {
+    "grade": "A",
+    "score": 100,
+    "name": "tech.vrsai/mcp",
+    "domains": "api.vrsai.tech",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:api.vrsai.tech"
+  },
+  {
     "grade": "C",
     "score": 60,
     "name": "ai.law.mcp/lawyer-search",
@@ -943,10 +983,42 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.neurobird/search",
+    "domains": "search.neurobird.com",
+    "method": "did:web",
+    "did": "did:web:search.neurobird.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.payforapi/saymon-ru-data-api",
+    "domains": "payforapi.com",
+    "method": "did:web",
+    "did": "did:web:payforapi.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.secondopinionx402/second-opinion",
     "domains": "secondopinionx402.com",
     "method": "did:web",
     "did": "did:web:secondopinionx402.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.shipshapedata/shipshape-data",
+    "domains": "shipshapedata.com",
+    "method": "did:web",
+    "did": "did:web:shipshapedata.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.shipshapedata/shipshape-data-docs",
+    "domains": "shipshapedata.com",
+    "method": "did:web",
+    "did": "did:web:shipshapedata.com"
   },
   {
     "grade": "C",
@@ -983,6 +1055,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "dev.fly.obol-x402/obol",
+    "domains": "obol-mcp.fly.dev",
+    "method": "did:web",
+    "did": "did:web:obol-mcp.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "dev.workers.3labsio.policy-gate/policy-gate",
     "domains": "policy-gate.3labsio.workers.dev",
     "method": "did:web",
@@ -999,10 +1079,10 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "fun.oaia/arena",
-    "domains": "api.oaia.fun",
+    "name": "eu.ansvar/us-law-mcp",
+    "domains": "us-law-mcp.vercel.app",
     "method": "did:web",
-    "did": "did:web:api.oaia.fun"
+    "did": "did:web:us-law-mcp.vercel.app"
   },
   {
     "grade": "C",
@@ -1047,10 +1127,34 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.AEGISGOVDAO/aegisgov-contracts-mcp",
+    "domains": "aegisgov-contracts.vercel.app",
+    "method": "did:web",
+    "did": "did:web:aegisgov-contracts.vercel.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.Br0ski777/image-generator",
+    "domains": "image-generator-x402-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:image-generator-x402-production.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.BricePourLe13/merx",
     "domains": "mcp.merxprotocol.eu",
     "method": "did:web",
     "did": "did:web:mcp.merxprotocol.eu"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.Elemzir/kta-oracle",
+    "domains": "kta-oracle.vercel.app",
+    "method": "did:web",
+    "did": "did:web:kta-oracle.vercel.app"
   },
   {
     "grade": "C",
@@ -3263,6 +3367,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.Evozim/organic-text",
+    "domains": "organic-text-mcp.vercel.app",
+    "method": "did:web",
+    "did": "did:web:organic-text-mcp.vercel.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.GaetanGermain/emotion-dictionary",
     "domains": "mcp.emotioninside.org",
     "method": "did:web",
@@ -3275,6 +3387,38 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "mcp.sqlai.dev",
     "method": "did:web",
     "did": "did:web:mcp.sqlai.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.Larshiensch99/flowvolt",
+    "domains": "flowvolt-strike-engine.vercel.app",
+    "method": "did:web",
+    "did": "did:web:flowvolt-strike-engine.vercel.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.MastadoonPrime/agent-memory",
+    "domains": "agent-memory-production-6506.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:agent-memory-production-6506.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.MastadoonPrime/sylex-search",
+    "domains": "mcp-server-production-38c9.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:mcp-server-production-38c9.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.Rishav0123/sentimatix",
+    "domains": "sentimatix-mcp.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:sentimatix-mcp.up.railway.app"
   },
   {
     "grade": "C",
@@ -3303,10 +3447,18 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.aidatatools-dev/data-quality-gate",
-    "domains": "www.aidatatools.dev",
+    "name": "io.github.aezizhu/model-id-cheatsheet",
+    "domains": "universal-model-registry-production.up.railway.app",
     "method": "did:web",
-    "did": "did:web:www.aidatatools.dev"
+    "did": "did:web:universal-model-registry-production.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.ahmedEid1/atlas-research",
+    "domains": "atlas-sooty-delta.vercel.app",
+    "method": "did:web",
+    "did": "did:web:atlas-sooty-delta.vercel.app"
   },
   {
     "grade": "C",
@@ -3335,10 +3487,58 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.benseverndev-oss/goldenflow",
+    "domains": "goldenflow-mcp-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:goldenflow-mcp-production.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.benseverndev-oss/goldenpipe",
+    "domains": "goldenpipe-mcp-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:goldenpipe-mcp-production.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.benseverndev-oss/infermap",
+    "domains": "infermap-mcp-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:infermap-mcp-production.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.dan24ou-cpu/agent-signal",
+    "domains": "agent-signal-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:agent-signal-production.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.danielasalgadov/fiscal",
     "domains": "menteorama-fiscal-mcp.menteorama.workers.dev",
     "method": "did:web",
     "did": "did:web:menteorama-fiscal-mcp.menteorama.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.hycore220/k-work-trust",
+    "domains": "k-work-trust-api.fly.dev",
+    "method": "did:web",
+    "did": "did:web:k-work-trust-api.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.imoldyoung/e-invoice",
+    "domains": "e-invoice-mcp.601096790.workers.dev",
+    "method": "did:web",
+    "did": "did:web:e-invoice-mcp.601096790.workers.dev"
   },
   {
     "grade": "C",
@@ -3355,6 +3555,30 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "dealsync-mcp-server.jaymiller.workers.dev",
     "method": "did:web",
     "did": "did:web:dealsync-mcp-server.jaymiller.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.johnanleitner1-Coder/lastminute-booking",
+    "domains": "web-production-dc74b.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:web-production-dc74b.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.jongko54/web-embedding",
+    "domains": "webembedding-mcp.vercel.app",
+    "method": "did:web",
+    "did": "did:web:webembedding-mcp.vercel.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.josephibra/handoff-mcp-server",
+    "domains": "handoff-mcp-server-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:handoff-mcp-server-production.up.railway.app"
   },
   {
     "grade": "C",
@@ -3831,6 +4055,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.nach-dakwale/domaincheckr",
+    "domains": "domaincheckr.fly.dev",
+    "method": "did:web",
+    "did": "did:web:domaincheckr.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.nao1234g/calibration-routing",
     "domains": "nowpattern.com",
     "method": "did:web",
@@ -3839,10 +4071,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.nexus-mcp-infra/useful-data-source-for-agents-doing-product-price-sdk",
+    "domains": "useful-data-source-for-agents-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:useful-data-source-for-agents-production.up.railway.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.nexusforge-tools/mcp-eu-finance",
     "domains": "api.nexusforge.tools",
     "method": "did:web",
     "did": "did:web:api.nexusforge.tools"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.nicofains1/agentic-ads",
+    "domains": "agentic-ads-production.up.railway.app",
+    "method": "did:web",
+    "did": "did:web:agentic-ads-production.up.railway.app"
   },
   {
     "grade": "C",
@@ -3859,6 +4107,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "hs-webmcp.oga-surf-project.workers.dev",
     "method": "did:web",
     "did": "did:web:hs-webmcp.oga-surf-project.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.r2hb-assistant/propscorer",
+    "domains": "mcp.propscorer.com",
+    "method": "did:web",
+    "did": "did:web:mcp.propscorer.com"
   },
   {
     "grade": "C",
@@ -3927,6 +4183,38 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.tankstellen/firmenliste-mcp",
+    "domains": "firmenliste-mcp.cf-firmenliste.workers.dev",
+    "method": "did:web",
+    "did": "did:web:firmenliste-mcp.cf-firmenliste.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.tony8713/casa",
+    "domains": "casa-agents.fly.dev",
+    "method": "did:web",
+    "did": "did:web:casa-agents.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.vassiliylakhonin/agenda-intelligence-md",
+    "domains": "agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev, agent-output-verification-a2a.vassiliy-lakhonin.workers.dev, agentic-interaction-trust-a2a.vassiliy-lakhonin.workers.dev, cis-secondary-sanctions-a2a.vassiliy-lakhonin.workers.dev, corridor-sanctions-assistant-a2a.vassiliy-lakhonin.workers.dev, critical-minerals-due-diligence-a2a.vassiliy-lakhonin.workers.dev, dual-use-technology-export-a2a.vassiliy-lakhonin.workers.dev, gulf-maritime-exposure-a2a.vassiliy-lakhonin.workers.dev, kazakhstan-market-entry-readiness-a2a.vassiliy-lakhonin.workers.dev, middle-corridor-deal-risk-gate-a2a.vassiliy-lakhonin.workers.dev",
+    "method": "did:web",
+    "did": "did:web:agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.vndpal/sentinelscan-cloud-mcp",
+    "domains": "sentinelscan-cloud-mcp.vercel.app",
+    "method": "did:web",
+    "did": "did:web:sentinelscan-cloud-mcp.vercel.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.yyphilo/openfab",
     "domains": "openfab-22100483453.us-central1.run.app",
     "method": "did:web",
@@ -3947,6 +4235,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "glyt.net",
     "method": "did:web",
     "did": "did:web:glyt.net"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "org.aviationhs/private-jet-charter",
+    "domains": "mcp.aviationhs.org",
+    "method": "did:web",
+    "did": "did:web:mcp.aviationhs.org"
   },
   {
     "grade": "C",
