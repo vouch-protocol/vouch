@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 25931,
-  "verifiable": 532,
-  "cannot": 25399,
-  "gradeA": 103,
-  "pctVerifiable": 2.1,
-  "pctCannot": 97.9,
-  "pctCard": 0.9,
-  "pctRev": 0.4,
-  "pctPq": 0.0,
-  "cardCount": 231,
-  "revCount": 110,
-  "pqCount": 1,
-  "generated": "31 August 2026"
+  "total": 28278,
+  "verifiable": 538,
+  "cannot": 27740,
+  "gradeA": 382,
+  "pctVerifiable": 1.9,
+  "pctCannot": 98.1,
+  "pctCard": 2.4,
+  "pctRev": 1.4,
+  "pctPq": 1.0,
+  "cardCount": 677,
+  "revCount": 389,
+  "pqCount": 277,
+  "generated": "7 September 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -59,6 +59,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "www.upgradeagent.ai",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:www.upgradeagent.ai"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "cloud.bisque/presentations",
+    "domains": "bisque.cloud",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:bisque.cloud"
   },
   {
     "grade": "A",
@@ -115,14 +123,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "www.hemmabo.com",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:www.hemmabo.com"
-  },
-  {
-    "grade": "A",
-    "score": 100,
-    "name": "com.scriptmasterlabs/squeezeos",
-    "domains": "www.scriptmasterlabs.com",
-    "method": "did:web, Ed25519 (JWK)",
-    "did": "did:web:www.scriptmasterlabs.com"
   },
   {
     "grade": "A",
@@ -199,10 +199,2226 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "io.github.Evozim/3d-meshweaver-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/3d-pallet-packing-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/4-20ma-analog-converter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/5g-core-nfv-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/90-percent-liquidity-advance-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/accounts-receivable-ledger-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/acoustic-reverb-simulator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/active-seat-metering-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/actuarial-life-table-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ad-fraud-click-detector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ad-sniper-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ad-spend-auditor-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/adsb-flight-tracker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/adversarial-prompt-shield-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/adversarial-suffix-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/aegis-policy-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/affiliate-link-attribution-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/afforestation-satellite-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-collision-preventer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-collusion-detector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-council-voting-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-credit-history-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-phone-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-reputation-zk-shield-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-slashing-protocol-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agent-telephony-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agentic-credit-line-issuer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agentic-ip-reputation-guard-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agentic-payroll-processor-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agentphone-ai-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/agile-sprint-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ai-fleet-cards-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ai-humanizer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ai-right-to-opt-out-gate-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ai-safety-incident-logger-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ai-watermark-provenance-verifier-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/air-freight-waybill-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/airbnb-host-analyzer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/airbnb-smart-lock-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/airport-slot-allocator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ais-vessel-tracker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/akamai-bot-manager-bypass-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/albedo-delighter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/algorithmic-bias-scrubber-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/alibaba-supplier-intel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/aliexpress-dropship-finder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/amazon-price-tracker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ambient-occlusion-map-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ambisonics-b-format-encoder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/amr-fleet-dispatcher-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/angellist-startup-jobs-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/anomaly-detection-sentinel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/anonymous-credential-issuer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/anti-collusion-detector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/anti-sandwich-slippage-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/anti-stuxnet-plc-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/api-key-load-balancer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/api-quota-balancer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/api-rate-limit-enforcer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/apify-native-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/apollo-io-lead-gen-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/app-store-builder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/apple-vision-pro-optimizer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ar-kit-blendshape-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ar-plane-detector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/arabic-calligraphy-parser-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/arbitration-fee-splitter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/architecture-dna-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ashrae-compliance-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/atomic-swap-coordinator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/audio-anonymizer-voice-scrambler-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/audio-description-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/audio-watermarking-detector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/auth-sentinel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/auto-telematics-policy-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/automated-amendment-negotiator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/automated-debt-collector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/automated-dpia-reporter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/automated-invoice-factoring-gate-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/automated-xml-invoicing-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/automation-weaver-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/autonomous-haul-truck-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/autonomous-tractor-path-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/aws-builder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/aws-key-revoker-webhook-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/b2b-contract-renewal-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/b2b-lead-closer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/b2b-legal-contract-parser-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/backhaul-empty-return-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/backrun-arbitrage-blocker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bacnet-ip-discovery-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/baidu-china-search-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bandwidth-micro-marketplace-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bankruptcy-asset-liquidator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/barcode-qr-decoder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/base-to-polygon-relayer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/base64-payload-decoder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/batch-request-bundler-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/battery-return-home-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/battery-swap-station-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/behance-portfolio-scraper-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/best-and-final-offer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bestbuy-deal-alerter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bft-swarm-vote-aggregator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bias-auditor-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bias-drift-monitor-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bid-clarification-q-and-a-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bidding-strategy-optimizer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/binance-orderbook-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/binary-exploitation-shield-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bing-ai-results-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bio-data-parser-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bio-safe-audit-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/blendshape-mapper-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/blind-signature-voting-gate-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/blinded-macaroon-signer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bms-schedule-override-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/body-gesture-synthesizer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/boids-flocking-algorithm-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/boiler-water-temp-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bone-rig-retargeter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/booking-hotel-prices-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/botnet-behavior-analyzer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/breach-of-contract-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/brotli-prompt-compressor-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bug-bounty-hunter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bulk-shipping-negotiator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bulletproofs-range-check-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/bunker-fuel-prices-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/can-bus-decoder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/captcha-bypass-attestation-gate-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/carbon-aware-inference-router-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/carbon-tax-auto-withholder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/carbon-tax-compliance-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cargo-insurance-broker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cargo-load-balancer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/catalog-engine-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ccs-chademo-protocol-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cdn-cache-warmup-agent-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cell-balancing-algorithm-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cell-tower-handoff-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/certora-rule-generator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cgroup-cpu-throttler-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chain-agnostic-escrow-reader-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chainalysis-aml-risk-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/charge-curve-optimizer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chargeback-insurance-pool-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cheap-compute-sniper-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chembl-affinity-oracle-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chicago-grain-prices-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chiller-cop-efficiency-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chinese-scroll-digitizer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chirpstack-lorawan-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/chroot-filesystem-jail-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/claim-denial-appeal-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/clarity-gate-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/clause-risk-score-evaluator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/clawback-prevention-sentinel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cleancode-ai-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/clinical-phase-analyzer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/clinical-trial-matcher-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cloth-physics-solver-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cloudflare-turnstile-bypass-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cloudscale-sim-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/co2-inference-calculator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cobot-safety-zone-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/codevulnerability-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/coingecko-historical-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/coinmarketcap-prices-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cold-chain-reefer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cold-vault-migrator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/collusion-detection-sentinel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/commodity-futures-oracle-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/computer-vision-damage-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/computer-vision-defect-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/conflict-minerals-audit-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/consensus-voter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/container-ship-router-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/context-deduplicator-oracle-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/context-targeting-oracle-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/context-window-optimizer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/context-window-overflow-router-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/contractoracle-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cookie-stuffing-detector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cooperative-dividend-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cooperative-swarm-incentiver-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/copyrighted-music-fingerprint-matcher-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/coq-proof-assistant-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/coral-tpu-delegate-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/corporate-kyc-registry-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/corporate-tax-bracket-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/corporate-tax-jurisdiction-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/corporate-treasury-multisig-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cost-optimal-model-selector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/counter-offer-bot-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cpm-cpa-arbitrage-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/craigslist-local-deals-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/credit-risk-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crispr-cas9-offtarget-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crop-pest-diagnostic-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crop-yield-insurance-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-chain-contract-relayer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-chain-escrow-bridge-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-chain-l402-verifier-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-company-agent-dispute-court-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-device-attribution-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-docking-coordinator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-modal-embedding-aligner-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cross-shard-state-sync-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crunchbase-funding-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crypto-capital-gains-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crypto-dispute-mediator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crypto-price-oracle-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/crypto-tax-loss-harvester-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cuneiform-tablet-reader-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/customs-clearance-bot-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/customs-duty-calculator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/cyber-breach-liability-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/damaged-text-inpainter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dan-jailbreak-filter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dark-pool-liquidity-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/darknet-address-filter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/darkweb-breach-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/darkweb-threat-feed-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/darwin-ideation-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/data-diode-unidirectional-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/data-observability-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/data-poisoning-detector-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/datadome-bypass-agent-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/datahealth-observer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ddos-mitigation-shield-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/ddos-scrubbing-proxy-node-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/deadlock-resolver-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/debt-collection-bot-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/decentralized-credit-bureau-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/deepfake-lens-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/deepfake-sentinel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/deepsort-object-tracker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/deepvoice-guard-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/default-probability-model-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/default-risk-oracle-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/defi-sentinel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/defi-yield-tax-reporter-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/defillama-tvl-tracker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/delegatecall-vulnerability-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/depreciation-value-calculator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/depth-map-estimator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/devrel-amplifier-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dex-arbitrage-router-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dhl-shipment-tracker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dialogue-distiller-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dicom-imaging-analyzer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/diesel-anti-theft-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dilithium-signature-verifier-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/direct-air-capture-bidder-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/discount-coupon-validator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/displacement-height-map-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dispute-penalty-calculator-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/distributed-lock-service-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dnp3-protocol-analyzer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/docdigest-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dockerfile-credential-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/document-layout-analyzer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dolby-atmos-metadata-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/domain-authority-checker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/domain-dnssec-trust-verifier-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/draco-mesh-compressor-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/drayage-port-scheduler-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/dribbble-designer-intel-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/drill-core-logger-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/driver-fatigue-camera-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/drone-crop-sprayer-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/drone-delivery-router-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/drone-map-stitcher-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/drug-interaction-checker-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Evozim/duckduckgo-privacy-search-mcp",
+    "domains": "api.m2mcent.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.m2mcent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "io.github.MarkovianProtocol/provenance",
     "domains": "api.quantsynth.net",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:api.quantsynth.net"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.Vortx-AI/emem",
+    "domains": "emem.dev",
+    "method": "did:web, Ed25519 (Multikey)",
+    "did": "did:web:emem.dev"
   },
   {
     "grade": "A",
@@ -259,6 +2475,22 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "www.skilimone.com",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:www.skilimone.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.moelayyan90/xguard",
+    "domains": "xguardgate.com",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:xguardgate.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.moelayyan90/xguard-control-plane",
+    "domains": "api.xguardgate.com",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:api.xguardgate.com"
   },
   {
     "grade": "A",
@@ -919,6 +3151,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.angelmoncada/consulting",
+    "domains": "mcp.angelmoncada.com",
+    "method": "did:web",
+    "did": "did:web:mcp.angelmoncada.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.anots/directory",
     "domains": "api.anots.com",
     "method": "did:web",
@@ -987,6 +3227,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "search.neurobird.com",
     "method": "did:web",
     "did": "did:web:search.neurobird.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.neuronto/agents-tools-search-discovery-ard-registry",
+    "domains": "neuronto.com",
+    "method": "did:web",
+    "did": "did:web:neuronto.com"
   },
   {
     "grade": "C",
@@ -1063,6 +3311,22 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "dev.fly.solidus-x402/solidus",
+    "domains": "solidus-mcp.fly.dev",
+    "method": "did:web",
+    "did": "did:web:solidus-mcp.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "dev.jobspipe/mcp",
+    "domains": "jobspipe.dev",
+    "method": "did:web",
+    "did": "did:web:jobspipe.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "dev.workers.3labsio.policy-gate/policy-gate",
     "domains": "policy-gate.3labsio.workers.dev",
     "method": "did:web",
@@ -1135,6 +3399,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.ArtyKOMarkets/warda",
+    "domains": "mcp.wardaprotocol.com",
+    "method": "did:web",
+    "did": "did:web:mcp.wardaprotocol.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.Br0ski777/image-generator",
     "domains": "image-generator-x402-production.up.railway.app",
     "method": "did:web",
@@ -1155,2214 +3427,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "kta-oracle.vercel.app",
     "method": "did:web",
     "did": "did:web:kta-oracle.vercel.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/3d-meshweaver-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/3d-pallet-packing-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/4-20ma-analog-converter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/5g-core-nfv-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/90-percent-liquidity-advance-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/accounts-receivable-ledger-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/acoustic-reverb-simulator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/active-seat-metering-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/actuarial-life-table-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ad-fraud-click-detector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ad-sniper-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ad-spend-auditor-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/adsb-flight-tracker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/adversarial-prompt-shield-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/adversarial-suffix-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/aegis-policy-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/affiliate-link-attribution-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/afforestation-satellite-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-collision-preventer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-collusion-detector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-council-voting-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-credit-history-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-phone-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-reputation-zk-shield-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-slashing-protocol-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agent-telephony-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agentic-credit-line-issuer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agentic-ip-reputation-guard-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agentic-payroll-processor-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agentphone-ai-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/agile-sprint-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ai-fleet-cards-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ai-humanizer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ai-right-to-opt-out-gate-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ai-safety-incident-logger-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ai-watermark-provenance-verifier-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/air-freight-waybill-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/airbnb-host-analyzer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/airbnb-smart-lock-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/airport-slot-allocator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ais-vessel-tracker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/akamai-bot-manager-bypass-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/albedo-delighter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/algorithmic-bias-scrubber-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/alibaba-supplier-intel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/aliexpress-dropship-finder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/amazon-price-tracker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ambient-occlusion-map-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ambisonics-b-format-encoder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/amr-fleet-dispatcher-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/angellist-startup-jobs-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/anomaly-detection-sentinel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/anonymous-credential-issuer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/anti-collusion-detector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/anti-sandwich-slippage-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/anti-stuxnet-plc-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/api-key-load-balancer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/api-quota-balancer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/api-rate-limit-enforcer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/apify-native-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/apollo-io-lead-gen-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/app-store-builder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/apple-vision-pro-optimizer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ar-kit-blendshape-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ar-plane-detector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/arabic-calligraphy-parser-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/arbitration-fee-splitter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/architecture-dna-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ashrae-compliance-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/atomic-swap-coordinator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/audio-anonymizer-voice-scrambler-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/audio-description-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/audio-watermarking-detector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/auth-sentinel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/auto-telematics-policy-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/automated-amendment-negotiator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/automated-debt-collector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/automated-dpia-reporter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/automated-invoice-factoring-gate-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/automated-xml-invoicing-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/automation-weaver-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/autonomous-haul-truck-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/autonomous-tractor-path-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/aws-builder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/aws-key-revoker-webhook-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/b2b-contract-renewal-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/b2b-lead-closer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/b2b-legal-contract-parser-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/backhaul-empty-return-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/backrun-arbitrage-blocker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bacnet-ip-discovery-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/baidu-china-search-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bandwidth-micro-marketplace-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bankruptcy-asset-liquidator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/barcode-qr-decoder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/base-to-polygon-relayer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/base64-payload-decoder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/batch-request-bundler-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/battery-return-home-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/battery-swap-station-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/behance-portfolio-scraper-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/best-and-final-offer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bestbuy-deal-alerter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bft-swarm-vote-aggregator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bias-auditor-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bias-drift-monitor-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bid-clarification-q-and-a-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bidding-strategy-optimizer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/binance-orderbook-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/binary-exploitation-shield-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bing-ai-results-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bio-data-parser-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bio-safe-audit-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/blendshape-mapper-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/blind-signature-voting-gate-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/blinded-macaroon-signer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bms-schedule-override-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/body-gesture-synthesizer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/boids-flocking-algorithm-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/boiler-water-temp-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bone-rig-retargeter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/booking-hotel-prices-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/botnet-behavior-analyzer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/breach-of-contract-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/brotli-prompt-compressor-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bug-bounty-hunter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bulk-shipping-negotiator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bulletproofs-range-check-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/bunker-fuel-prices-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/can-bus-decoder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/captcha-bypass-attestation-gate-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/carbon-aware-inference-router-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/carbon-tax-auto-withholder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/carbon-tax-compliance-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cargo-insurance-broker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cargo-load-balancer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/catalog-engine-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ccs-chademo-protocol-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cdn-cache-warmup-agent-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cell-balancing-algorithm-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cell-tower-handoff-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/certora-rule-generator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cgroup-cpu-throttler-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chain-agnostic-escrow-reader-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chainalysis-aml-risk-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/charge-curve-optimizer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chargeback-insurance-pool-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cheap-compute-sniper-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chembl-affinity-oracle-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chicago-grain-prices-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chiller-cop-efficiency-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chinese-scroll-digitizer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chirpstack-lorawan-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/chroot-filesystem-jail-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/claim-denial-appeal-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/clarity-gate-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/clause-risk-score-evaluator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/clawback-prevention-sentinel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cleancode-ai-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/clinical-phase-analyzer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/clinical-trial-matcher-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cloth-physics-solver-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cloudflare-turnstile-bypass-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cloudscale-sim-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/co2-inference-calculator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cobot-safety-zone-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/codevulnerability-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/coingecko-historical-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/coinmarketcap-prices-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cold-chain-reefer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cold-vault-migrator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/collusion-detection-sentinel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/commodity-futures-oracle-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/computer-vision-damage-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/computer-vision-defect-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/conflict-minerals-audit-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/consensus-voter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/container-ship-router-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/context-deduplicator-oracle-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/context-targeting-oracle-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/context-window-optimizer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/context-window-overflow-router-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/contractoracle-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cookie-stuffing-detector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cooperative-dividend-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cooperative-swarm-incentiver-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/copyrighted-music-fingerprint-matcher-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/coq-proof-assistant-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/coral-tpu-delegate-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/corporate-kyc-registry-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/corporate-tax-bracket-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/corporate-tax-jurisdiction-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/corporate-treasury-multisig-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cost-optimal-model-selector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/counter-offer-bot-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cpm-cpa-arbitrage-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/craigslist-local-deals-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/credit-risk-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crispr-cas9-offtarget-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crop-pest-diagnostic-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crop-yield-insurance-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-chain-contract-relayer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-chain-escrow-bridge-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-chain-l402-verifier-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-company-agent-dispute-court-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-device-attribution-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-docking-coordinator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-modal-embedding-aligner-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cross-shard-state-sync-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crunchbase-funding-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crypto-capital-gains-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crypto-dispute-mediator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crypto-price-oracle-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/crypto-tax-loss-harvester-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cuneiform-tablet-reader-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/customs-clearance-bot-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/customs-duty-calculator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/cyber-breach-liability-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/damaged-text-inpainter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dan-jailbreak-filter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dark-pool-liquidity-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/darknet-address-filter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/darkweb-breach-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/darkweb-threat-feed-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/darwin-ideation-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/data-diode-unidirectional-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/data-observability-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/data-poisoning-detector-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/datadome-bypass-agent-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/datahealth-observer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ddos-mitigation-shield-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/ddos-scrubbing-proxy-node-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/deadlock-resolver-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/debt-collection-bot-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/decentralized-credit-bureau-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/deepfake-lens-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/deepfake-sentinel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/deepsort-object-tracker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/deepvoice-guard-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/default-probability-model-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/default-risk-oracle-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/defi-sentinel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/defi-yield-tax-reporter-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/defillama-tvl-tracker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/delegatecall-vulnerability-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/depreciation-value-calculator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/depth-map-estimator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/devrel-amplifier-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dex-arbitrage-router-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dhl-shipment-tracker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dialogue-distiller-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dicom-imaging-analyzer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/diesel-anti-theft-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dilithium-signature-verifier-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/direct-air-capture-bidder-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/discount-coupon-validator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/displacement-height-map-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dispute-penalty-calculator-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/distributed-lock-service-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dnp3-protocol-analyzer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/docdigest-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dockerfile-credential-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/document-layout-analyzer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dolby-atmos-metadata-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/domain-authority-checker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/domain-dnssec-trust-verifier-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/draco-mesh-compressor-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/drayage-port-scheduler-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/dribbble-designer-intel-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/drill-core-logger-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/driver-fatigue-camera-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/drone-crop-sprayer-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/drone-delivery-router-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/drone-map-stitcher-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/drug-interaction-checker-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/duckduckgo-privacy-search-mcp",
-    "domains": "api.m2mcent.com",
-    "method": "did:web",
-    "did": "did:web:api.m2mcent.com"
   },
   {
     "grade": "C",
@@ -3415,14 +3479,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.Rishav0123/sentimatix",
-    "domains": "sentimatix-mcp.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:sentimatix-mcp.up.railway.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.ShieldZCash/mcp",
     "domains": "shieldz.cash",
     "method": "did:web",
@@ -3443,14 +3499,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.waysway.com",
     "method": "did:web",
     "did": "did:web:api.waysway.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.aezizhu/model-id-cheatsheet",
-    "domains": "universal-model-registry-production.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:universal-model-registry-production.up.railway.app"
   },
   {
     "grade": "C",
@@ -3487,14 +3535,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.benseverndev-oss/goldenflow",
-    "domains": "goldenflow-mcp-production.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:goldenflow-mcp-production.up.railway.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.benseverndev-oss/goldenpipe",
     "domains": "goldenpipe-mcp-production.up.railway.app",
     "method": "did:web",
@@ -3507,14 +3547,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "infermap-mcp-production.up.railway.app",
     "method": "did:web",
     "did": "did:web:infermap-mcp-production.up.railway.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.dan24ou-cpu/agent-signal",
-    "domains": "agent-signal-production.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:agent-signal-production.up.railway.app"
   },
   {
     "grade": "C",
@@ -3559,6 +3591,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.jmrplens/gitlab-mcp-server",
+    "domains": "gitlab-mcp-server.fly.dev, {host}",
+    "method": "did:web",
+    "did": "did:web:gitlab-mcp-server.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.johnanleitner1-Coder/lastminute-booking",
     "domains": "web-production-dc74b.up.railway.app",
     "method": "did:web",
@@ -3575,10 +3615,10 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.josephibra/handoff-mcp-server",
-    "domains": "handoff-mcp-server-production.up.railway.app",
+    "name": "io.github.kadopi/x402-mcp-starter",
+    "domains": "x402-mcp-starter.kadopi.workers.dev",
     "method": "did:web",
-    "did": "did:web:handoff-mcp-server-production.up.railway.app"
+    "did": "did:web:x402-mcp-starter.kadopi.workers.dev"
   },
   {
     "grade": "C",
@@ -4031,18 +4071,18 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.majorelalexis-stack/maxia",
-    "domains": "maxiaworld.app",
-    "method": "did:web",
-    "did": "did:web:maxiaworld.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.mambaventures/nzxplorer-mcp",
     "domains": "mcp.nzxplorer.co.nz",
     "method": "did:web",
     "did": "did:web:mcp.nzxplorer.co.nz"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.michu5696/agora402",
+    "domains": "agora402.fly.dev",
+    "method": "did:web",
+    "did": "did:web:agora402.fly.dev"
   },
   {
     "grade": "C",
@@ -4087,14 +4127,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.nicofains1/agentic-ads",
-    "domains": "agentic-ads-production.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:agentic-ads-production.up.railway.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.nikhilgogulwar/universalbench",
     "domains": "universalbench-mcp.penantiaglobal.workers.dev",
     "method": "did:web",
@@ -4107,6 +4139,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "hs-webmcp.oga-surf-project.workers.dev",
     "method": "did:web",
     "did": "did:web:hs-webmcp.oga-surf-project.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.pain2hustle/cloudflare-ops-mcp",
+    "domains": "cfops.nothingunseen.com",
+    "method": "did:web",
+    "did": "did:web:cfops.nothingunseen.com"
   },
   {
     "grade": "C",
@@ -4219,6 +4259,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "openfab-22100483453.us-central1.run.app",
     "method": "did:web",
     "did": "did:web:openfab-22100483453.us-central1.run.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.sslip.128.221.67.45.agent-exec/agent-exec",
+    "domains": "agent-exec.45.67.221.128.sslip.io",
+    "method": "did:web",
+    "did": "did:web:agent-exec.45.67.221.128.sslip.io"
   },
   {
     "grade": "C",
