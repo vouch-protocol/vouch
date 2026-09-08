@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-09-08
+
+### Fixed
+
+- `vouch.mcp` works against both lines of the MCP Python SDK. It imported only
+  `FastMCP`, which mcp 2.x renamed to `MCPServer`, so a fresh
+  `pip install 'vouch-protocol[mcp]'` that resolved to mcp 2.x could not import
+  it at all. The base class is now chosen from whichever SDK is installed, and
+  `vouch.mcp.MCPServer` is exported alongside `vouch.mcp.FastMCP` as the name
+  the newer SDK uses. Both refer to the same protected server.
+
 ## [2.2.0] - 2026-09-08
 
 ### BREAKING

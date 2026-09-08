@@ -53,20 +53,33 @@ from ._guard import (
 
 logger = logging.getLogger(__name__)
 
+# The official MCP Python SDK renamed its high-level server class for the
+# 2026-07-28 protocol revision: mcp>=2.0 ships ``mcp.server.MCPServer`` while
+# mcp 1.x ships ``mcp.server.fastmcp.FastMCP``. Their ``tool()`` decorators take
+# the same shape, so one subclass covers both and the installed SDK decides
+# which protocol revisions are spoken on the wire.
 try:
-    from mcp.server.fastmcp import FastMCP as _BaseFastMCP
-except ImportError as exc:  # pragma: no cover
-    raise ImportError(
-        "vouch.mcp needs the MCP SDK. Install it with:\n"
-        "    pip install 'vouch-protocol[mcp]'\n"
-        "or\n"
-        "    pip install mcp\n"
-        f"(import error: {exc})"
-    ) from exc
+    from mcp.server import MCPServer as _BaseServer  # mcp >= 2.0
+
+    _MCP_SDK_V2 = True
+except ImportError:
+    try:
+        from mcp.server.fastmcp import FastMCP as _BaseServer  # mcp 1.x
+
+        _MCP_SDK_V2 = False
+    except ImportError as exc:  # pragma: no cover
+        raise ImportError(
+            "vouch.mcp needs the MCP SDK. Install it with:\n"
+            "    pip install 'vouch-protocol[mcp]'\n"
+            "or\n"
+            "    pip install mcp\n"
+            f"(import error: {exc})"
+        ) from exc
 
 
 __all__ = [
     "FastMCP",
+    "MCPServer",
     "protect",
     "GuardConfig",
     "Refusal",
@@ -77,7 +90,7 @@ __all__ = [
 ]
 
 
-class FastMCP(_BaseFastMCP):
+class FastMCP(_BaseServer):
     """An MCP server whose tools are protected by default.
 
     A thin subclass. The constructor takes everything the SDK's ``FastMCP``
@@ -249,3 +262,8 @@ def protect(server: Any, *, guard: Optional[ToolGuard] = None, **config: Any) ->
     server.call_tool = guarded_call_tool  # type: ignore[assignment]
     server.vouch_guard = guard  # type: ignore[attr-defined]
     return server
+
+
+#: The name the 2026-07-28 SDK uses for the same class. Both names refer to the
+#: one subclass; which base it extends depends on the installed SDK.
+MCPServer = FastMCP
