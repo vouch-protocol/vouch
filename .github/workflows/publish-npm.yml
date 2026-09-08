@@ -43,3 +43,10 @@ jobs:
         run: |
           npm install
           npm publish --access public || echo "api-client: version may already be published, continuing"
+      - name: Publish mcp
+        working-directory: packages/vouch-mcp-ts
+        run: |
+          # The SDK is a peer dependency and is resolved from the sibling
+          # source by the tsconfig path mapping, so it is not fetched here.
+          npm install --legacy-peer-deps
+          npm publish --access public || echo "mcp: version may already be published, continuing"
