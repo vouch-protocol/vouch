@@ -94,34 +94,59 @@ def _load_library() -> ctypes.CDLL:
         raise ThresholdError(_not_found_message())
     _LIB_LOAD_ATTEMPTED = True
 
+    # A candidate is only usable if it both loads *and* exports every symbol we
+    # bind. A stale build - one predating a symbol this module needs - loads
+    # fine and then fails on attribute lookup, so AttributeError is caught here
+    # alongside OSError and treated the same way: not usable, try the next one.
+    #
+    # _LIB is assigned only once configuration has succeeded. Publishing a
+    # partially-configured handle would make the failure sticky, because the
+    # early-return at the top of this function would hand it back to every
+    # later caller.
+    stale: List[str] = []
+
     for path in _candidate_paths():
         if path and os.path.exists(path):
             try:
-                _LIB = ctypes.CDLL(path)
-                _configure_signatures(_LIB)
-                return _LIB
+                candidate = ctypes.CDLL(path)
+                _configure_signatures(candidate)
             except OSError:
                 continue
+            except AttributeError as exc:
+                stale.append(f"{path} ({exc})")
+                continue
+            _LIB = candidate
+            return _LIB
 
     found = ctypes.util.find_library("vouch_core_uniffi")
     if found:
         try:
-            _LIB = ctypes.CDLL(found)
-            _configure_signatures(_LIB)
-            return _LIB
+            candidate = ctypes.CDLL(found)
+            _configure_signatures(candidate)
         except OSError:
             pass
+        except AttributeError as exc:
+            stale.append(f"{found} ({exc})")
+        else:
+            _LIB = candidate
+            return _LIB
 
-    raise ThresholdError(_not_found_message())
+    raise ThresholdError(_not_found_message(stale))
 
 
-def _not_found_message() -> str:
-    return (
+def _not_found_message(stale: Optional[List[str]] = None) -> str:
+    message = (
         "vouch.threshold requires the native vouch_core_uniffi library "
         "(the audited FROST-Ed25519 core shared with the Go/JVM/.NET/C++/Swift "
         "SDKs). Build it with `cargo build --release` in core/uniffi, or set "
         "VOUCH_CORE_LIB to the shared library path."
     )
+    if stale:
+        message += (
+            " A library was found but is missing symbols this module binds, "
+            "which means it predates them and needs rebuilding: " + "; ".join(stale)
+        )
+    return message
 
 
 def _configure_signatures(lib: ctypes.CDLL) -> None:
