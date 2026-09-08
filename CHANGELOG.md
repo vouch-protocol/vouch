@@ -16,6 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   format; see `docs/design/shield-v2-and-protected-mcp.md` for the schema and a
   worked example.
 
+### Added
+
+- `vouch.mcp.FastMCP`, a drop-in replacement for the MCP SDK's `FastMCP` in
+  which every registered tool is protected by default. Changing one import makes
+  a server refuse to run any tool unless the call arrives with a Vouch
+  Credential that verifies, comes from a trusted issuer, authorises that exact
+  call, and passes Shield. A tool opts out with `@mcp.tool(unprotected=True)`,
+  which warns at registration and on every call. By default a credential
+  authorises one call with one set of arguments; `@mcp.tool(resource=...)`
+  loosens that to a chosen value when a coarser policy unit such as a path or a
+  table name is wanted. A server missing `VOUCH_RULES` or
+  `VOUCH_TRUSTED_ISSUERS` refuses to start rather than starting unprotected.
+  `vouch.mcp.protect(server)` applies the same checks to a low-level `Server`.
+- `examples/mcp_server/`, a Vouch-protected MCP server over the filesystem, and
+  `examples/mcp_server_sqlite/`, the same one-line integration where the
+  resource is a table name rather than a path.
+
 ### Changed
 
 - The AAT interop adapter maps a leaf's path constraints onto Shield resource
