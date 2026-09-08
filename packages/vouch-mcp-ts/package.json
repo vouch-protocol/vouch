@@ -1,6 +1,6 @@
 {
   "name": "@vouch-protocol-official/mcp",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Vouch-protected MCP servers. Change one import and every tool checks a credential before it acts.",
   "license": "Apache-2.0",
   "repository": {
