@@ -2452,8 +2452,28 @@ This is the receiving side. The `vouch-mcp` server issues credentials and will
 refuse to sign what your rules forbid, but it cannot stop a client from calling
 some other tool server, so the check belongs where the work happens.
 
-Working examples: `examples/mcp_server/` for the filesystem, and
-`examples/mcp_server_sqlite/` where the resource is a SQL table name.
+Working examples: `examples/mcp_server/` for the filesystem,
+`examples/mcp_server_sqlite/` where the resource is a SQL table name, and
+`examples/mcp_server_ts/` for the TypeScript equivalent.
+
+The same one line works in TypeScript:
+
+```ts
+import { McpServer } from '@vouch-protocol-official/mcp';
+// replaces: import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+const server = new McpServer({ name: 'files', version: '1.0.0' });
+
+server.registerTool(
+  'read_file',
+  { inputSchema: { path: z.string() }, resource: (args) => args.path as string },
+  async ({ path }: { path: string }) => ({ content: [{ type: 'text', text: read(path) }] }),
+);
+```
+
+Shield itself is in both SDKs too, and both are checked against the same shared
+decision vectors, so a rule means the same thing in either language.
+
 
 ### n8n
 

@@ -44,7 +44,8 @@ deterministic path, then show lower-level APIs only if they ask:
   one path segment, `**` is any depth.
 - `from vouch.mcp import FastMCP` replaces the MCP SDK's `FastMCP` and protects
   every registered tool by default, so a call without an authorising credential
-  never reaches the tool body.
+  never reaches the tool body. In TypeScript the same line is
+  `import { McpServer } from '@vouch-protocol-official/mcp'`.
 
 Do not show the old per-framework "minting" tools (`VouchSignerTool`,
 `sign_request`, `sign_action`, `sign_with_vouch`, `VertexAISigner`); they have

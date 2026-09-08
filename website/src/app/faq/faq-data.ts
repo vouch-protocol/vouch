@@ -13,7 +13,6 @@
  *  vouch-protocol/vouch/ (Python SDK)
  *  vouch-protocol/packages/sdk-ts/ (TypeScript SDK)
  *  vouch-protocol/go-sidecar/ (Go sidecar)
- *  vouch-protocol/vouch-shield (sibling repo)
  *  vouch-protocol/docs/specs/ (local-only spec drafts)
  */
 
@@ -1702,10 +1701,15 @@ The two complement each other. The Vouch repo ships a small Certificate Authorit
         q: 'How does Vouch fit with the Model Context Protocol (MCP)?',
         a: `Vouch is framework-agnostic, so it works with MCP servers and clients without anything special. An MCP tool-call envelope can carry a Vouch credential alongside the tool arguments, and the server verifies that credential before letting the tool run.
 
-In Python you get that by changing one import. \`vouch.mcp.FastMCP\` is a drop-in replacement for the MCP SDK's \`FastMCP\`, and every tool registered on it is protected by default:
+You get that by changing one import, in either language. Every tool registered on the resulting server is protected by default:
 
 \`\`\`python
 from vouch.mcp import FastMCP          # replaces: from mcp.server.fastmcp import FastMCP
+\`\`\`
+
+\`\`\`ts
+import { McpServer } from '@vouch-protocol-official/mcp';
+// replaces: import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 \`\`\`
 
 A call then has to arrive with a credential that verifies, comes from an issuer you trust, authorises that exact call, and passes your rules, before the tool body runs. A tool can opt out explicitly, and a server started without rules refuses to start rather than running unprotected.
@@ -1812,16 +1816,27 @@ The credential comes back with two Data Integrity proofs in its \`proof\` array,
     items: [
       {
         q: 'What is Vouch Shield?',
-        a: `Vouch Shield is a small TypeScript library that sits between your AI agent and the tools it tries to call. Before any tool runs, Shield checks: is this call signed? Is the signer on my trust list? Does this DID have permission to call this specific tool? If anything is off, the call is blocked and logged. If everything checks out, the call runs.
+        a: `Vouch Shield sits between your AI agent and the tools it tries to call. Before any tool runs, Shield checks whether this DID may take this action on this exact resource. If anything is off, the call is blocked and the reason is logged. If everything checks out, the call runs.
 
-\`npm install @vouch-protocol/shield\`. Source: [vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield).`,
+Rules match the same three fields a credential binds: an action, a target, and a resource. Resource patterns glob, where \`*\` is one path segment and \`**\` is any depth:
+
+\`\`\`yaml
+version: 2
+rules:
+  - did: did:web:agent.example.com
+    allow:
+      - { action: read_file, target: files, resource: "reports/**" }
+deny_default: true
+\`\`\`
+
+Shield ships inside the SDK in both languages: \`pip install vouch-protocol\` and \`npm i @vouch-protocol-official/sdk\`. Both are checked against the same shared decision vectors, so a rule means the same thing in either.`,
         helpLinks: [{ label: 'Vouch Shield setup', href: '/help/#vouch-shield' }],
       },
       {
         q: 'How is Vouch Shield different from the Vouch Protocol itself?',
         a: `Think of Vouch Protocol as the passport: it defines how an agent proves who it is and what it intends to do. Vouch Shield is the customs officer: it inspects passports at the door and decides who gets through.
 
-You can use Vouch Protocol without Shield (just sign and verify credentials in your own code). Shield is a convenience layer for teams who want the gatekeeping done for them.`,
+You can use Vouch Protocol without Shield, signing and verifying credentials in your own code. Shield is the policy layer for teams who want the gatekeeping done for them, and it is what a Vouch-protected MCP server consults before it runs a tool.`,
       },
       {
         q: 'Where does Shield fit in my agent stack?',
