@@ -1,0 +1,75 @@
+# Shared Vouch Shield rule set for the cross-language vectors.
+#
+# Every implementation must load this file and produce the verdicts in
+# cases.json. Actions are deliberately named after the glob behaviour they
+# exercise so a failing case names its own cause.
+
+version: 2
+rules:
+  - did: did:web:agent.example.com
+    allow:
+      # '**' matches any depth, including zero segments, so a trailing '/**'
+      # also matches the bare prefix.
+      - id: deep
+        action: deep
+        target: files
+        resource: "reports/**"
+
+      # '*' matches exactly one segment and never crosses a '/'.
+      - id: shallow
+        action: shallow
+        target: files
+        resource: "reports/*"
+
+      # '**' in the middle of a pattern.
+      - id: mid
+        action: mid
+        target: files
+        resource: "a/**/b"
+
+      # Matches anything that normalises.
+      - id: everything
+        action: everything
+        target: files
+        resource: "**"
+
+      # A resource with no '/' is a single segment, so '*' covers the rest of
+      # it. This is what makes a non-path resource such as a table name work.
+      - id: dotted
+        action: dotted
+        target: db
+        resource: "public.*"
+
+      # '.' is a literal character, not a wildcard.
+      - id: literal
+        action: literal
+        target: files
+        resource: "a.b"
+
+      # A pattern with no wildcard at all.
+      - id: exact
+        action: exact
+        target: files
+        resource: "reports/q3.txt"
+
+      # A leading '/' in a pattern normalises away, so this is the same rule as
+      # writing it without one.
+      - id: leading-slash
+        action: leadingslash
+        target: files
+        resource: "/reports/**"
+
+      # The same action on a second target, to prove target is matched exactly.
+      - id: deep-other-target
+        action: deep
+        target: db
+        resource: "reports/**"
+
+  - did: did:key:z6MkfrQ1example
+    allow:
+      - id: second-did
+        action: deep
+        target: files
+        resource: "logs/**"
+
+deny_default: true
