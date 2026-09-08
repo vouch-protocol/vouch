@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The `vouch-mcp` server consults Shield before it signs. An intent your rules
+  forbid never becomes a credential; the caller gets a structured refusal
+  instead, so a denied action is distinguishable from a signing error. Its
+  `check_action` tool now takes an action, a target, a resource, and a DID, and
+  reports the reason behind its decision. Rules come from `VOUCH_RULES`.
 - Vouch Shield rules now match `action`, `target`, and `resource`, the same
   three fields a credential binds in `credentialSubject.intent`, so the policy
   asks the question the evidence answers. `Shield.check(did, action, target,
