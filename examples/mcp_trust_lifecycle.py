@@ -40,7 +40,7 @@ from vouch.autosign import sign_intent
 from vouch.heartbeat import build_session_voucher
 from vouch.reputation import MemoryReputationStore, ReputationEngine
 from vouch.scan import scan_text
-from vouch.shield.permissions import Capabilities, PermissionManager
+from vouch.shield import Shield, ShieldConfig
 from vouch.trust_entropy import evaluate_trust
 
 
@@ -73,15 +73,21 @@ def main() -> None:
     )
     step(1, "delegate", f"granted write on report:2026-07 -> {grant['type']}")
 
-    # 2) check_action -- before the worker runs its write_report tool, the
-    #    capability gate confirms the worker's grant (filesystem: write) meets
-    #    what the tool requires. A read-only worker would be denied here.
-    manager = PermissionManager()
-    manager.register_tool("write_report", {"filesystem": "write"})
-    manager.set_capabilities(worker.get_did(), Capabilities.from_dict({"filesystem": "write"}))
-    allowed, reason = manager.check_permission(worker.get_did(), "write_report")
-    step(2, "check_action", "ALLOW" if allowed else f"DENY: {reason}")
-    if not allowed:
+    # 2) check_action -- before the worker runs its write_report tool, Shield
+    #    confirms the worker may take this action on this exact resource. A
+    #    write to anything outside reports/ would be denied here.
+    shield = Shield(ShieldConfig(require_signature=False))
+    shield.allow(
+        worker.get_did(), action="write_report", target="filesystem", resource="reports/**"
+    )
+    decision = shield.check(
+        worker.get_did(),
+        action="write_report",
+        target="filesystem",
+        resource="reports/q3.txt",
+    )
+    step(2, "check_action", "ALLOW" if decision.allow else f"DENY: {decision.reason}")
+    if not decision.allow:
         raise SystemExit("worker not permitted to write -- stopping")
 
     # 3) check_trust -- the worker holds a trust-decaying session voucher. A

@@ -5,19 +5,12 @@ narrowed authority, so there is nothing to intersect: the chain is verified for
 provenance, the leaf is what is enforced. See ``DESIGN.md``.
 
 The mapping is deliberately partial, and the partiality is the interesting part.
-Shield's permission check has the signature ``check_permission(did, tool)`` --
-it never sees the call's arguments, so it structurally cannot express an AAT
-argument constraint such as ``path`` matching ``reports/*``. Flattening those
-constraints into Shield's capability levels would silently widen authority: a
-leaf restricted to ``reports/*`` would become a blanket filesystem-read grant,
-and ``read_file /etc/passwd`` would pass. So this module does not flatten them.
 
-Instead:
-
-- **Tool scope** becomes Shield rules -- an explicit allowlist plus the least
-  capability set that admits exactly those tools.
+- **Tool scope** becomes Shield rules: one allow rule per tool the leaf names.
 - **Argument constraints** stay with the AAT reference implementation, and are
-  evaluated by ``Authorizer.check_chain`` in the same pre-execution step.
+  evaluated by ``Authorizer.check_chain`` in the same pre-execution step. Every
+  derived rule therefore carries ``resource: "**"``; Shield does not yet claim
+  to express what the token says about a call's arguments.
 
 Both must allow. Either refusing means the tool does not run.
 """
@@ -29,13 +22,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from vouch.shield.permissions import (
-    TOOL_REQUIREMENTS,
-    Capabilities,
-    NetworkLevel,
-    PermissionLevel,
-    ShellLevel,
-)
+from vouch.shield.rules import Rule, RuleSet, normalize_pattern
 
 from .aat_chain import VerifiedChain
 
@@ -50,27 +37,24 @@ except ImportError as exc:  # pragma: no cover
 __all__ = ["ShieldRules", "AatDecision", "AatGate", "leaf_to_shield_rules"]
 
 
-# Ordered weakest -> strongest, matching vouch.shield.permissions.
-_LEVELS = {
-    "filesystem": (["none", "read", "write", "full"], PermissionLevel),
-    "network": (["none", "internal", "outbound", "full"], NetworkLevel),
-    "shell": (["none", "sandboxed", "full"], ShellLevel),
-}
+#: Rule ``target`` used for AAT-derived rules unless the caller says otherwise.
+DEFAULT_TARGET = "filesystem"
 
 
 @dataclass(frozen=True)
 class ShieldRules:
     """Shield rules sourced from an AAT leaf.
 
-    ``allowed_tools`` is authoritative. ``capabilities`` alone would be too
-    permissive: Shield's capability levels are per-resource, not per-tool, so a
-    leaf granting ``read_file`` yields ``filesystem=read``, which would also
-    admit ``list_directory``. The allowlist is what pins enforcement to exactly
-    the tools the leaf names.
+    Tool scope maps directly: each tool the leaf authorises becomes one allow
+    rule. Argument constraints do not map yet, so every rule carries
+    ``resource: "**"`` and the reference implementation's evaluator remains the
+    only gate on a call's arguments. Both must allow.
     """
 
+    did: str
+    target: str
+    rules: tuple
     allowed_tools: frozenset
-    capabilities: Capabilities
     unmapped_tools: tuple = ()
     leaf_jti: str = ""
     root_jti: str = ""
@@ -79,46 +63,38 @@ class ShieldRules:
         """Exact-string match, per draft Section 3.3.1 -- no normalization."""
         return tool in self.allowed_tools
 
+    def as_rule_set(self) -> RuleSet:
+        return RuleSet(by_did={self.did: list(self.rules)})
 
-def leaf_to_shield_rules(chain: VerifiedChain) -> ShieldRules:
+
+def leaf_to_shield_rules(
+    chain: VerifiedChain,
+    *,
+    did: str = "did:vouch:aat-holder",
+    target: str = DEFAULT_TARGET,
+) -> ShieldRules:
     """Derive Shield rules from a verified chain's leaf.
 
-    The capability set is the least one that admits exactly the leaf's tools:
-    the per-resource maximum over each tool's entry in ``TOOL_REQUIREMENTS``.
-    Tools with no entry are reported in ``unmapped_tools`` -- Shield denies
-    unknown tools by default, which is the fail-closed behaviour we want, so
-    they are surfaced rather than silently granted a capability.
+    Each authorised tool becomes one allow rule. The resource is ``**``, because
+    Shield cannot yet express the leaf's argument constraints; those stay with
+    the reference implementation.
     """
-    tools = list(chain.tools)
-
-    levels: Dict[str, str] = {"filesystem": "none", "network": "none", "shell": "none"}
-    unmapped: List[str] = []
-
-    for tool in tools:
-        requirements = TOOL_REQUIREMENTS.get(tool.lower())
-        if requirements is None:
-            unmapped.append(tool)
-            continue
-        for resource, required in requirements.items():
-            order, _ = _LEVELS.get(resource, (None, None))
-            if order is None:
-                # An unrecognised resource dimension. Do not guess -- treat the
-                # tool as unmapped so it shows up rather than being waved through.
-                unmapped.append(tool)
-                continue
-            if order.index(required) > order.index(levels[resource]):
-                levels[resource] = required
-
-    capabilities = Capabilities(
-        filesystem=PermissionLevel(levels["filesystem"]),
-        network=NetworkLevel(levels["network"]),
-        shell=ShellLevel(levels["shell"]),
+    tools = sorted(chain.capabilities())
+    rules = tuple(
+        Rule(
+            action=tool,
+            target=target,
+            resource=normalize_pattern("**"),
+            id=f"aat:{chain.leaf_jti}:{tool}",
+        )
+        for tool in tools
     )
-
     return ShieldRules(
+        did=did,
+        target=target,
+        rules=rules,
         allowed_tools=frozenset(tools),
-        capabilities=capabilities,
-        unmapped_tools=tuple(sorted(set(unmapped))),
+        unmapped_tools=tuple(tools),
         leaf_jti=chain.leaf_jti,
         root_jti=chain.root_jti,
     )
@@ -177,8 +153,8 @@ class AatGate:
         self._chain = chain
         self._holder_key = holder_key
         self._shield = shield
-        self._did = did
-        self.rules = leaf_to_shield_rules(chain)
+        self._did = did or "did:vouch:aat-holder"
+        self.rules = leaf_to_shield_rules(chain, did=self._did)
 
     @property
     def chain(self) -> VerifiedChain:

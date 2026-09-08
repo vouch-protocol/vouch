@@ -24,24 +24,37 @@ logger = logging.getLogger(__name__)
 
 
 def _run(coro):
-    """Run a coroutine from synchronous code.
+    """Run a coroutine from synchronous code, leaving global state as found.
 
-    ``asyncio.get_event_loop()`` is deprecated and raises once anything in the
-    process has used ``asyncio.run()``, because that leaves no current loop set.
-    These calls are all short local revocation-store operations, so creating a
-    loop per call costs nothing worth optimising.
+    ``asyncio.get_event_loop()`` is deprecated and raises once nothing has a
+    current loop set. ``asyncio.run()`` would clear the current loop on exit,
+    which breaks any code elsewhere in the process that still relies on the
+    older accessor, so this restores whatever loop was set beforehand.
     """
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.run(coro)
+        pass
+    else:
+        # Already inside a running loop, which cannot be re-entered. Give the
+        # coroutine its own loop on a worker thread instead of failing.
+        import concurrent.futures
 
-    # Already inside a running loop, which cannot be re-entered. Give the
-    # coroutine its own loop on a worker thread instead of failing.
-    import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(asyncio.run, coro).result()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(asyncio.run, coro).result()
+    try:
+        previous = asyncio.get_event_loop_policy().get_event_loop()
+    except RuntimeError:
+        previous = None
+
+    loop = asyncio.new_event_loop()
+    try:
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+        asyncio.set_event_loop(previous)
 
 
 class TrustStatus(Enum):
