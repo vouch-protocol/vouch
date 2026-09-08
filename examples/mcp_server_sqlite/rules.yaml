@@ -1,0 +1,17 @@
+# Shield v2 rules for the SQLite example.
+#
+# The resource here is a table name, not a path. A table name contains no '/',
+# so the whole string is one segment and `public.*` matches `public.customers`.
+# The '.' is a literal character.
+
+version: 2
+rules:
+  - did: REPLACE_WITH_YOUR_AGENT_DID
+    allow:
+      - id: read-public-tables
+        action: run_query
+        target: sqlite
+        resource: "public.*"
+
+      # internal.salaries is not covered, so it is refused.
+deny_default: true

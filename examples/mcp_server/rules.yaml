@@ -1,0 +1,29 @@
+# Shield v2 rules for the Vouch-protected MCP server.
+#
+# Rules match the same three fields a Vouch Credential binds in
+# credentialSubject.intent: action, target, resource.
+#
+# Glob semantics on `resource`, where a segment is the text between '/':
+#   *   exactly one segment; never crosses '/'
+#   **  zero or more segments
+# So reports/** covers reports/q3.txt and reports/2026/q3.txt, but not
+# secrets/keys.txt. Paths are normalised before matching, so
+# reports/../etc/passwd becomes etc/passwd and does not match.
+
+version: 2
+rules:
+  - did: REPLACE_WITH_YOUR_AGENT_DID
+    allow:
+      - id: read-reports
+        action: read_file
+        target: files
+        resource: "reports/**"
+
+      - id: list-reports
+        action: list_dir
+        target: files
+        resource: "reports/**"
+
+      # Deliberately absent: write_file and delete_file. This agent can read
+      # reports and nothing else. Adding a rule is how you widen that.
+deny_default: true
