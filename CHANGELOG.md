@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   table name is wanted. A server missing `VOUCH_RULES` or
   `VOUCH_TRUSTED_ISSUERS` refuses to start rather than starting unprotected.
   `vouch.mcp.protect(server)` applies the same checks to a low-level `Server`.
+- `docs/Vouch-MCP-Demo-Guide.md`, a four-scene walkthrough whose commands are
+  the ones that actually run, and `docs/design/shield-v2-and-protected-mcp.md`,
+  the rule schema with the glob and normalisation rules written out.
 - `examples/mcp_server/`, a Vouch-protected MCP server over the filesystem, and
   `examples/mcp_server_sqlite/`, the same one-line integration where the
   resource is a table name rather than a path.

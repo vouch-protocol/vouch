@@ -1700,9 +1700,25 @@ The two complement each other. The Vouch repo ships a small Certificate Authorit
       },
       {
         q: 'How does Vouch fit with the Model Context Protocol (MCP)?',
-        a: `Vouch is framework-agnostic, so it works with MCP servers and clients without anything special. An MCP tool-call envelope can carry a Vouch credential alongside the tool arguments. The MCP server (or a Vouch Shield middleware in front of it) verifies the credential before letting the tool run.
+        a: `Vouch is framework-agnostic, so it works with MCP servers and clients without anything special. An MCP tool-call envelope can carry a Vouch credential alongside the tool arguments, and the server verifies that credential before letting the tool run.
 
-There is a reference MCP server integration in the Python SDK to make this concrete.`,
+In Python you get that by changing one import. \`vouch.mcp.FastMCP\` is a drop-in replacement for the MCP SDK's \`FastMCP\`, and every tool registered on it is protected by default:
+
+\`\`\`python
+from vouch.mcp import FastMCP          # replaces: from mcp.server.fastmcp import FastMCP
+\`\`\`
+
+A call then has to arrive with a credential that verifies, comes from an issuer you trust, authorises that exact call, and passes your rules, before the tool body runs. A tool can opt out explicitly, and a server started without rules refuses to start rather than running unprotected.
+
+There is also \`vouch-mcp\`, a server that issues credentials, and it will refuse to sign an action your rules forbid. The two are complementary: one hands out authority, the other demands it at the door.`,
+      },
+      {
+        q: 'Why does the check belong in the tool server rather than the model?',
+        a: `Because a model can be talked out of it. If the only thing standing between a prompt and a destructive action is the model deciding to consult a policy, then a convincing enough prompt is all an attacker needs.
+
+Moving the check to the tool server changes the shape of the problem. The server does not care what the model was told or why it decided to call something. It asks for a credential that authorises this exact call, checks the signature itself, and applies its own rules. If any of that fails, the tool never runs.
+
+A credential for reading one file does not authorise reading a different one, and a perfectly valid credential still gets refused if the server's rules do not cover that resource.`,
       },
       {
         q: 'What does "informative" vs "normative" mean in the Vouch spec?',

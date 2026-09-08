@@ -2377,7 +2377,7 @@ agent.tools = vouch.protect([charge_invoice], parent=grant)
 
 ### Zero-config runtime protection: Shield.guard
 
-The full `Shield` is configurable (trust registry, capability files). For the
+The full `Shield` is configurable (trust registry, a rules file). For the
 common case, `Shield.guard` needs no config files: it signs each call, checks a
 tool allowlist (default: exactly the tools you pass, so the agent cannot be
 steered into a tool you never granted), and writes a tamper-evident audit log.
@@ -2387,6 +2387,73 @@ from vouch.shield import Shield
 
 agent.tools = Shield.guard([charge_invoice, send_email])
 ```
+
+### Rules: action, target, resource
+
+Shield rules match the same three fields a Vouch Credential binds in its intent:
+`action`, `target`, and `resource`. Rules live in a YAML or JSON file:
+
+```yaml
+version: 2
+rules:
+  - did: did:web:agent.example.com
+    allow:
+      - { action: read_file, target: files, resource: "reports/**" }
+deny_default: true
+```
+
+In a resource pattern, `*` matches exactly one path segment and `**` matches any
+number. So `reports/**` covers `reports/q3.txt` and `reports/2026/q3.txt`, but
+not `secrets/keys.txt`. Resources are normalised before matching, so a path like
+`reports/../etc/passwd` cannot slip through a `reports/**` rule.
+
+Anything that does not match a rule is denied, and so is a missing or malformed
+rules file.
+
+```python
+decision = shield.check(
+    "did:web:agent.example.com",
+    action="read_file", target="files", resource="reports/q3.txt",
+)
+if decision.allow:
+    run_the_tool()
+```
+
+`decision.reason` is one of a small set of stable strings you can log and alert
+on: `no matching rule`, `resource outside scope`, `unknown did`,
+`invalid resource`, `malformed rules`.
+
+### A Vouch-protected MCP server
+
+`vouch.mcp.FastMCP` is a drop-in replacement for the MCP SDK's `FastMCP`. Every
+tool registered on it is protected by default: a call has to arrive with a Vouch
+Credential that verifies, comes from a trusted issuer, authorises that exact
+call, and passes Shield, before the tool body runs.
+
+```python
+from vouch.mcp import FastMCP          # replaces: from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("files")
+
+@mcp.tool(resource=lambda args: args["path"])
+def read_file(path: str) -> str:
+    return open(path).read()
+```
+
+A tool opts out with `@mcp.tool(unprotected=True)`, which logs a warning when it
+is registered and on every call. A server started without `VOUCH_RULES` and
+`VOUCH_TRUSTED_ISSUERS` refuses to start rather than running unprotected.
+
+By default a credential authorises one call with one set of arguments. The
+`resource=` argument above loosens that to a chosen value, which is what lets a
+rule glob over paths or table names.
+
+This is the receiving side. The `vouch-mcp` server issues credentials and will
+refuse to sign what your rules forbid, but it cannot stop a client from calling
+some other tool server, so the check belongs where the work happens.
+
+Working examples: `examples/mcp_server/` for the filesystem, and
+`examples/mcp_server_sqlite/` where the resource is a SQL table name.
 
 ### n8n
 
@@ -2449,11 +2516,14 @@ vouch-mcp
 The server exposes the full Vouch trust surface as MCP tools: issue and verify
 credentials (`sign`, `verify`); identity, sessions, and revocation
 (`get_identity`, `create_session`, `check_revocation`); key hygiene and DID
-inspection (`scan`, `decode_did`); delegated authority and the capability gate
+inspection (`scan`, `decode_did`); delegated authority and the rule check
 (`delegate`, `check_action`); trust-over-time and AI-origin disclosure
 (`check_trust`, `disclose_ai_origin`); reputation and authorship attribution
 (`reputation`, `attribute`); and offline / disconnected-edge decisions
 (`evaluate_freshness`, `verify_disconnected_edge`).
+
+`sign` consults Shield before it signs. An intent your rules forbid never
+becomes a credential; the caller gets a structured refusal instead.
 
 ### Goose
 
