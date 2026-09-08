@@ -49,6 +49,9 @@ Run (Streamable HTTP, for remote / hosted use):
     VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
         VOUCH_PRIVATE_KEY=... VOUCH_DID=... vouch-mcp
 
+Run (with Shield rules, so the server refuses to sign what policy forbids):
+    VOUCH_RULES=rules.yaml VOUCH_PRIVATE_KEY=... VOUCH_DID=... vouch-mcp
+
 Run (sourcing authority from an AAT delegation chain):
     VOUCH_PRIVATE_KEY=... VOUCH_DID=... vouch-mcp --aat-chain leaf.json
 """
@@ -149,6 +152,26 @@ def sign(
             "VOUCH_DID, or run 'vouch init'."
         )
     resolved_resource = resource or target
+
+    # Consult Shield before signing. A credential is a statement this agent
+    # authorised the action; if policy says it may not, there is nothing to
+    # attest and no credential is issued. The refusal is structured so a caller
+    # can tell it apart from a signing error.
+    decision = _shield().check(
+        signer.get_did(), action=action, target=target, resource=resolved_resource
+    )
+    if not decision.allow:
+        return json.dumps(
+            {
+                "error": "refused",
+                "reason": decision.reason,
+                "action": action,
+                "target": target,
+                "resource": resolved_resource,
+            },
+            separators=(",", ":"),
+        )
+
     try:
         if post_quantum:
             credential = signer.sign_hybrid(
