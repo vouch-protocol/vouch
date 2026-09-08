@@ -65,13 +65,14 @@ it returns a decision and never executes anything, so a caller that runs a tool
 only on `decision.allowed` cannot execute an unauthorised call. That is the
 in-process path, and it is what the tests assert against with a mock tool.
 
-`check_action_aat` is a *decision* tool in the same shape as the existing
-`check_action`: it answers ALLOW or DENY and does not itself run the gated tool.
-Over MCP the decision therefore binds only as far as the client honours it,
-exactly as `check_action` does today. This adapter deliberately did not change
-that, since Shield semantics were out of scope. If you need enforcement that
-cannot be bypassed by a client, put `AatGate` in front of the tool in-process
-rather than relying on the MCP decision tool.
+`check_action_aat` is a *decision* tool in the same shape as `check_action`: it
+answers ALLOW or DENY and does not itself run the gated tool, so over MCP it
+binds only as far as the client honours it.
+
+For enforcement a client cannot bypass, put the check on the receiving side:
+either `AatGate` in front of the tool in-process, or build the tool server on
+[`vouch.mcp.FastMCP`](../../vouch/mcp/), which refuses to run any tool without a
+credential Shield permits.
 
 See [`DEMO.md`](DEMO.md) for the recordable walkthrough and
 [`DESIGN.md`](DESIGN.md) for the full mapping.
@@ -90,15 +91,20 @@ See [`DEMO.md`](DEMO.md) for the recordable walkthrough and
 This list is a deliverable, not a caveat section. Full detail in
 [`DESIGN.md`](DESIGN.md) §5.1.
 
-1. **Shield cannot express AAT argument constraints.** Its permission check is
-   `check_permission(did, tool)` - it never sees the call's arguments, and its
-   rule model is per-DID capability *levels*, not per-argument predicates.
-   Flattening AAT constraints into those levels would silently widen authority:
-   a leaf limited to `reports/*` would become a blanket filesystem-read grant
-   and `read_file /etc/passwd` would pass. So this adapter does not flatten
-   them. Tool scope becomes Shield rules; argument constraints stay with the
-   reference implementation and are evaluated in the same pre-execution step.
-   Both must allow.
+1. **Path constraints map exactly; other constraint shapes do not.** Shield
+   matches `action`/`target`/`resource` with globs on `resource`, so a leaf's
+   `Pattern("reports/*")` becomes a real Shield rule and Shield refuses
+   `read_file /etc/passwd` on its own, without consulting the reference
+   implementation.
+
+   The two glob languages are not the same, though: Tenuo's `*` crosses `/` and
+   Shield's does not. Patterns are therefore translated rather than copied
+   (`reports/*` becomes `reports/*/**`), and a differential test asserts the
+   Shield rule is never wider than the constraint it came from. Constraint forms
+   with no faithful translation - `Range`, `Regex`, `CEL`, `Cidr`, `Not`,
+   `NotOneOf`, and any mid-string `*` - fall back to `resource: "**"` and stay
+   with the reference implementation's evaluator alone. Shield never replaces
+   that evaluator; both must allow.
 
 2. **Vouch's `rate` and `policy` dimensions have no AAT equivalent** in the core
    constraint set. Carrying them would need registered extension constraint
@@ -142,7 +148,7 @@ This list is a deliverable, not a caveat section. Full detail in
 | `aat_to_shield.py` | Leaf authority → Shield rules; the pre-execution gate |
 | `credential_link.py` | Record the authorising AAT on the issued credential |
 | `demo_setup.py`, `demo_call.py` | Scene 4 |
-| `tests/` | 17 tests, each named for what it proves |
+| `tests/` | 22 tests, each named for what it proves |
 | `../../test-vectors/aat/` | Chain fixtures and their generator |
 
 Failures are typed so a caller can branch on them: `AatMalformedChain`,

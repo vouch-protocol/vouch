@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The AAT interop adapter maps a leaf's path constraints onto Shield resource
+  globs, so Shield refuses an out-of-scope path itself rather than leaving every
+  argument decision to the token's own evaluator. The two glob languages differ,
+  so patterns are translated rather than copied, and a test asserts the derived
+  Shield rule is never wider than the constraint it came from. Constraint forms
+  Shield cannot express fall back to the evaluator, and both must allow.
 - The `vouch-mcp` server consults Shield before it signs. An intent your rules
   forbid never becomes a credential; the caller gets a structured refusal
   instead, so a denied action is distinguishable from a signing error. Its
