@@ -6,7 +6,7 @@ Demonstrates the security features of Vouch Shield:
 1. Signed call from trusted DID → ALLOWED
 2. Unsigned call → BLOCKED
 3. Unknown DID → BLOCKED
-4. Permission exceeded → BLOCKED
+4. Resource outside scope → BLOCKED
 5. Blocked DID → BLOCKED
 
 Run: python -m vouch.shield.demo
@@ -14,7 +14,6 @@ Run: python -m vouch.shield.demo
 
 from vouch import Signer, generate_identity
 from vouch.shield import Shield, ShieldConfig
-from vouch.shield.permissions import Capabilities, PermissionLevel, NetworkLevel, ShellLevel
 
 
 def main():
@@ -41,15 +40,9 @@ def main():
 
     # Register and trust
     shield.trust_did(trusted_did, trusted_keys.public_key_jwk)
-    shield.set_capabilities(
-        trusted_did,
-        Capabilities(
-            filesystem=PermissionLevel.READ,
-            network=NetworkLevel.OUTBOUND,
-            shell=ShellLevel.NONE,
-        ),
-    )
-    print("   ✅ Identity trusted and capabilities set")
+    # May read anything under reports/, and nothing else.
+    shield.allow(trusted_did, action="read_file", target="filesystem", resource="reports/**")
+    print("   ✅ Identity trusted and rules set")
     print()
 
     # Step 2: Create a malicious identity
@@ -65,11 +58,13 @@ def main():
     print("🧪 Test 1: Signed call from TRUSTED DID")
     print("-" * 60)
 
-    token1 = trusted_signer.sign(action="read_file", target="filesystem", resource="/data/file.txt")
+    token1 = trusted_signer.sign(action="read_file", target="filesystem", resource="reports/q3.txt")
     result1 = shield.intercept(
         tool="read_file",
-        args={"path": "/data/file.txt"},
+        args={"path": "reports/q3.txt"},
         token=token1,
+        target="filesystem",
+        resource="reports/q3.txt",
     )
     print("   Tool: read_file")
     print(f"   DID: {trusted_did}")
@@ -87,6 +82,8 @@ def main():
         tool="read_file",
         args={"path": "/etc/passwd"},
         token=None,  # No token!
+        target="filesystem",
+        resource="/etc/passwd",
     )
     print("   Tool: read_file")
     print("   DID: (none)")
@@ -102,11 +99,13 @@ def main():
 
     # Register the key for verification but don't trust the DID
     shield.register_key(malicious_did, malicious_keys.public_key_jwk)
-    token3 = malicious_signer.sign(action="run_command", target="shell", resource="rm -rf /")
+    token3 = malicious_signer.sign(action="run_command", target="shell", resource="cmd")
     result3 = shield.intercept(
         tool="run_command",
         args={"cmd": "rm -rf /"},
         token=token3,
+        target="shell",
+        resource="cmd",
     )
     print("   Tool: run_command")
     print(f"   DID: {malicious_did}")
@@ -120,11 +119,13 @@ def main():
     print("🧪 Test 4: TRUSTED DID exceeding permissions")
     print("-" * 60)
 
-    token4 = trusted_signer.sign(action="run_command", target="shell", resource="sudo reboot")
+    token4 = trusted_signer.sign(action="run_command", target="shell", resource="cmd")
     result4 = shield.intercept(
         tool="run_command",
         args={"cmd": "sudo reboot"},
         token=token4,
+        target="shell",
+        resource="cmd",
     )
     print("   Tool: run_command")
     print(f"   DID: {trusted_did}")
@@ -144,6 +145,8 @@ def main():
         tool="read_file",
         args={"path": "innocent.txt"},
         token=token5,
+        target="filesystem",
+        resource="innocent.txt",
     )
     print("   Tool: read_file")
     print(f"   DID: {malicious_did} (BLOCKED)")

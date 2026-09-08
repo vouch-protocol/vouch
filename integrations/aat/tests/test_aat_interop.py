@@ -111,13 +111,11 @@ def test_valid_chain_leaf_rules_extracted(keys):
     assert rules.allowed_tools == frozenset({"read_file"})
     assert not rules.permits_tool("write_file")
 
-    # The least capability set admitting exactly read_file.
-    assert rules.capabilities.to_dict() == {
-        "filesystem": "read",
-        "network": "none",
-        "shell": "none",
-    }
-    assert rules.unmapped_tools == ()
+    # Tool scope maps; the leaf's argument constraint does not yet, so the
+    # rule is deliberately wide and the reference implementation still gates it.
+    assert [r.action for r in rules.rules] == ["read_file"]
+    assert rules.rules[0].resource == "**"
+    assert rules.unmapped_tools == ("read_file",)
 
 
 def test_widened_scope_rejected(keys):
@@ -334,16 +332,13 @@ def test_missing_proof_of_possession_is_denied(verified_chain):
 def test_shield_and_aat_must_both_allow(verified_chain):
     """Shield's verdict is combined with the AAT verdict, not replaced by it."""
     from vouch.shield import Shield, ShieldConfig
-    from vouch.shield.permissions import Capabilities, PermissionLevel
 
     chain, holder_key = verified_chain
     did = "did:vouch:test-agent"
 
     shield = Shield(ShieldConfig(require_signature=False, strict_mode=True))
     shield.trust_did(did)
-    # Shield grants nothing, so it must veto even though the AAT permits.
-    shield.set_capabilities(did, Capabilities(filesystem=PermissionLevel.NONE))
-
+    # Shield holds no rules, so it must veto even though the AAT permits.
     gate = AatGate(chain, holder_key=holder_key, shield=shield, did=did)
     decision = gate.check("read_file", {"path": "reports/q3.txt"})
 

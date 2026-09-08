@@ -32,7 +32,7 @@ Tools:
     scan               Scan text for leaked private keys and key material.
     decode_did         Decode a DID key / Multikey and report its algorithm.
     delegate           Issue a narrowed sub-delegation grant to another agent.
-    check_action       Decide if an agent's capabilities permit a tool (Shield).
+    check_action       Decide if a DID may act on a resource (Shield rules).
     check_action_aat   Decide if an AAT delegation chain permits a tool call.
     check_trust        Recompute a session voucher's decayed trust vs a threshold.
     disclose_ai_origin Sign a disclosure that content is AI-generated.
@@ -94,6 +94,21 @@ _PORT = int(os.getenv("VOUCH_MCP_PORT", "8080"))
 _AAT_CHAIN = os.getenv("VOUCH_AAT_CHAIN")
 _AAT_HOLDER_KEY = os.getenv("VOUCH_AAT_HOLDER_KEY")
 _aat_gate_cache: dict = {}
+
+# Shield rules. Without a rules file Shield holds no authority and denies all.
+_RULES_PATH = os.getenv("VOUCH_RULES")
+_shield_cache: dict = {}
+
+
+def _shield():
+    """The server's Shield, built once from VOUCH_RULES."""
+    if "shield" not in _shield_cache:
+        from vouch.shield import Shield, ShieldConfig
+
+        _shield_cache["shield"] = Shield(
+            ShieldConfig(rules_path=_RULES_PATH, require_signature=False)
+        )
+    return _shield_cache["shield"]
 
 
 if _MCP_SDK_V2:
@@ -624,50 +639,36 @@ def delegate(
 
 @mcp.tool()
 def check_action(
-    tool: str,
-    capabilities_json: str,
-    requirements_json: str,
+    action: str,
+    target: str,
+    resource: str,
+    did: str,
 ) -> str:
-    """Decide whether an agent's capabilities permit a tool call (Shield).
+    """Decide whether a DID may take one action on one resource (Shield).
 
-    A pure authorization check: given the capability grant an agent holds and
-    the requirements a tool demands, decide whether the call is allowed. This is
-    the gate Vouch Shield applies before a tool runs -- filesystem, network, and
-    shell levels must each meet or exceed what the tool requires.
+    A pure authorization check against this server's rules file. It matches on
+    the same three fields a Vouch Credential binds in ``credentialSubject.intent``,
+    so the policy asks exactly the question the evidence answers.
+
+    Requires VOUCH_RULES to point at a Shield rules file. Without it Shield
+    holds no authority and everything is denied.
 
     Args:
-        tool: The tool name being gated, e.g. 'write_file'.
-        capabilities_json: The agent's capabilities as JSON, e.g.
-            '{"filesystem":"read","network":"outbound","shell":"none"}'.
-        requirements_json: What the tool requires, same shape, e.g.
-            '{"filesystem":"write"}'.
+        action: The verb being gated, e.g. 'read_file'. Matched exactly.
+        target: The service or surface, e.g. 'filesystem'. Matched exactly.
+        resource: The specific object, e.g. 'reports/q3.txt'. Glob-matched:
+            '*' is one path segment, '**' is any depth.
+        did: The DID asking to act.
 
     Returns:
-        'ALLOW' or 'DENY' with the reason (which requirement was not met).
+        'ALLOW' or 'DENY' with the reason. Reasons are stable strings:
+        'no matching rule', 'resource outside scope', 'unknown did',
+        'invalid resource', 'malformed rules'.
     """
-    from vouch.shield.permissions import Capabilities, PermissionManager
-
-    try:
-        caps = Capabilities.from_dict(json.loads(capabilities_json))
-    except Exception as e:
-        return f"Error: capabilities_json invalid ({e})"
-    try:
-        requirements = json.loads(requirements_json)
-    except json.JSONDecodeError as e:
-        return f"Error: requirements_json is not valid JSON ({e})"
-
-    try:
-        manager = PermissionManager()
-        manager.register_tool(tool, requirements)
-        did = "did:vouch:subject"
-        manager.set_capabilities(did, caps)
-        allowed, reason = manager.check_permission(did, tool)
-    except Exception as e:
-        return f"Error checking action: {e}"
-
-    if allowed:
-        return f"ALLOW: '{tool}' is permitted by the agent's capabilities."
-    return f"DENY: {reason}"
+    decision = _shield().check(did, action=action, target=target, resource=resource)
+    if decision.allow:
+        return f"ALLOW: {action} on {resource} (rule {decision.rule_id})."
+    return f"DENY: {decision.reason}"
 
 
 def _load_aat_gate():

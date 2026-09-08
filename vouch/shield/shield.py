@@ -12,7 +12,12 @@ from dataclasses import dataclass
 from vouch.verifier import Verifier
 from vouch.signer import Signer
 from vouch.shield.trust_registry import TrustRegistry, TrustStatus
-from vouch.shield.permissions import PermissionManager, Capabilities
+from vouch.shield.rules import (
+    Decision,
+    RuleSet,
+    load_rules_file,
+    REASON_MALFORMED_RULES,
+)
 from vouch.shield.flight_recorder import FlightRecorder
 
 logger = logging.getLogger(__name__)
@@ -23,10 +28,13 @@ class ShieldConfig:
     """Configuration for Shield."""
 
     trust_config_path: Optional[str] = None
-    capabilities_config_path: Optional[str] = None
+    rules_path: Optional[str] = None
     log_path: Optional[str] = None
     strict_mode: bool = True  # Block unknown DIDs
     require_signature: bool = True  # Require signed requests
+    # `intent.target` assumed when a caller does not supply one. Rules match
+    # target exactly, so this has to be stated rather than guessed per call.
+    default_target: str = "tool"
 
 
 @dataclass
@@ -37,6 +45,7 @@ class InterceptResult:
     reason: Optional[str] = None
     did: Optional[str] = None
     warnings: Optional[list] = None
+    rule_id: Optional[str] = None
 
 
 class Shield:
@@ -46,25 +55,25 @@ class Shield:
     Intercepts tool calls and enforces:
     - Cryptographic signature verification (using vouch.Verifier)
     - Trust policies (using TrustRegistry built on vouch.revocation)
-    - Capability-based permissions
+    - action / target / resource rules, with globs on resource
     - Complete audit trail
 
+    Rules match the same three fields a Vouch credential binds in
+    ``credentialSubject.intent``, so policy and evidence ask the same question.
+
     Example:
-        >>> from vouch.shield import Shield
+        >>> from vouch.shield import Shield, ShieldConfig
         >>>
-        >>> shield = Shield()
-        >>> shield.trust_did("did:vouch:trusted-publisher")
-        >>> shield.set_capabilities("did:vouch:trusted-publisher", Capabilities(
-        ...     filesystem=PermissionLevel.READ,
-        ...     network=NetworkLevel.OUTBOUND
-        ... ))
+        >>> shield = Shield(ShieldConfig(rules_path="rules.yaml"))
+        >>> shield.trust_did("did:web:agent.example.com")
         >>>
-        >>> result = shield.intercept(
-        ...     tool="read_file",
-        ...     args={"path": "/data/file.txt"},
-        ...     token="eyJhbGc..."
+        >>> decision = shield.check(
+        ...     "did:web:agent.example.com",
+        ...     action="read_file",
+        ...     target="filesystem",
+        ...     resource="reports/q3.txt",
         ... )
-        >>> if result.allowed:
+        >>> if decision.allow:
         ...     execute_tool()
     """
 
@@ -83,7 +92,12 @@ class Shield:
             config_path=self._config.trust_config_path,
             strict_mode=self._config.strict_mode,
         )
-        self._permissions = PermissionManager(config_path=self._config.capabilities_config_path)
+        # No rules path means no authority: an empty RuleSet denies everything.
+        # Shield never starts in a state that is laxer than its configuration.
+        if self._config.rules_path:
+            self._rules = load_rules_file(self._config.rules_path)
+        else:
+            self._rules = RuleSet()
         self._flight_recorder = FlightRecorder(log_path=self._config.log_path)
 
         # Log session start
@@ -96,6 +110,8 @@ class Shield:
         args: Dict[str, Any],
         token: Optional[str] = None,
         did: Optional[str] = None,
+        target: Optional[str] = None,
+        resource: Optional[str] = None,
     ) -> InterceptResult:
         """
         Intercept and verify a tool call.
@@ -103,10 +119,16 @@ class Shield:
         This is the main entry point. Call before executing any tool.
 
         Args:
-            tool: Name of the tool being called.
+            tool: Name of the tool being called. Used as the rule `action`.
             args: Arguments to the tool.
             token: Vouch-Token (JWS) for verification.
             did: DID of the caller (extracted from token if not provided).
+            target: Rule `target`. Defaults to the config's `default_target`.
+            resource: Rule `resource`. Defaults to the JCS canonicalisation of
+                `args`, which binds the decision to these exact arguments. Pass
+                it explicitly when a coarser resource is the right policy unit
+                (a path, a table name), so rules can glob over something
+                meaningful.
 
         Returns:
             InterceptResult with allowed status and reason if denied.
@@ -120,7 +142,8 @@ class Shield:
                 self._flight_recorder.blocked("unknown", tool, reason, args)
                 return InterceptResult(allowed=False, reason=reason)
 
-            # Verify the token
+            # Verify the credential, resolving the issuer key from trusted
+            # roots, from did:key offline, or via did:web resolution.
             is_valid, passport = self._verifier.check_vouch_credential(token)
             if not is_valid or passport is None:
                 reason = "Invalid Vouch-Token signature"
@@ -149,11 +172,20 @@ class Shield:
             else:
                 warnings.append(f"DID not in allowlist: {did}")
 
-        # Step 3: Check permissions
-        allowed, perm_reason = self._permissions.check_permission(did, tool)
-        if not allowed:
-            self._flight_recorder.blocked(did, tool, perm_reason, args)
-            return InterceptResult(allowed=False, reason=perm_reason, did=did)
+        # Step 3: Check the rules. The tool name is the action; the resource is
+        # what the call actually touches, so this is the step that can tell
+        # 'reports/q3.txt' apart from '/etc/passwd'.
+        decision = self.check(
+            did,
+            action=tool,
+            target=target or self._config.default_target,
+            resource=resource if resource is not None else _resource_from_args(args),
+        )
+        if not decision.allow:
+            self._flight_recorder.blocked(did, tool, decision.reason, args)
+            return InterceptResult(
+                allowed=False, reason=decision.reason, did=did, rule_id=decision.rule_id
+            )
 
         # Step 4: Success - log and allow
         self._flight_recorder.allowed(did, tool, args)
@@ -161,7 +193,40 @@ class Shield:
             allowed=True,
             did=did,
             warnings=warnings if warnings else None,
+            rule_id=decision.rule_id,
         )
+
+    def check(self, did: str, action: str, target: str, resource: str) -> Decision:
+        """Decide whether a DID may take one action on one resource.
+
+        This is Shield's primary API. It matches on the same three fields a
+        Vouch credential binds in ``credentialSubject.intent``, so the policy
+        asks exactly the question the evidence answers.
+
+        Args:
+            did: The caller's DID.
+            action: The verb, e.g. 'read_file'. Matched exactly.
+            target: The service or surface, e.g. 'filesystem'. Matched exactly.
+            resource: The specific object. Glob-matched; see
+                :mod:`vouch.shield.rules` for the segment semantics.
+
+        Returns:
+            A :class:`~vouch.shield.rules.Decision`. ``reason`` is one of a
+            small set of stable strings that callers may branch on.
+        """
+        return self._rules.check(did, action, target, resource)
+
+    @property
+    def rules(self) -> RuleSet:
+        """The loaded rule set. Denies everything if the file failed to load."""
+        return self._rules
+
+    def load_rules(self, path: str) -> RuleSet:
+        """Replace the rule set from a file. A bad file denies everything."""
+        self._rules = load_rules_file(path)
+        if not self._rules.ok:
+            logger.error("Vouch Shield: %s", self._rules.malformed_reason)
+        return self._rules
 
     def trust_did(self, did: str, public_key_jwk: Optional[str] = None) -> None:
         """Add a DID to the trusted list."""
@@ -177,26 +242,43 @@ class Shield:
         """Block a DID."""
         self._trust_registry.block(did, reason)
 
-    def set_capabilities(self, did: str, capabilities: Capabilities) -> None:
-        """Set capabilities for a DID."""
-        self._permissions.set_capabilities(did, capabilities)
+    def allow(self, did: str, action: str, target: str, resource: str) -> None:
+        """Add one allow rule in memory, without a rules file.
+
+        For tests and small scripts. Production deployments should keep rules
+        in a file so the policy is reviewable and diffable.
+        """
+        from vouch.shield.rules import Rule, normalize_pattern
+
+        rules = self._rules.by_did.setdefault(did, [])
+        rules.append(
+            Rule(
+                action=action,
+                target=target,
+                resource=normalize_pattern(resource),
+                id=f"{did}#{len(rules)}",
+            )
+        )
 
     def get_trust_status(self, did: str) -> TrustStatus:
         """Get trust status for a DID."""
         return self._trust_registry.get_status(did)
 
-    def get_capabilities(self, did: str) -> Capabilities:
-        """Get capabilities for a DID."""
-        return self._permissions.get_capabilities(did)
+    def rules_for(self, did: str) -> list:
+        """The allow rules in force for a DID. Empty means it may do nothing."""
+        return list(self._rules.by_did.get(did, []))
 
     def get_stats(self) -> Dict[str, int]:
         """Get audit statistics."""
         return self._flight_recorder.get_stats()
 
     def save_config(self) -> None:
-        """Save all configuration to disk."""
+        """Save trust configuration to disk.
+
+        Rules are not written back: a rules file is authored and reviewed, not
+        mutated by the process it governs.
+        """
         self._trust_registry.save_config()
-        self._permissions.save_config()
 
     def shutdown(self) -> None:
         """Shutdown the shield (flush logs)."""
@@ -280,6 +362,26 @@ class Shield:
 
             wrapped.append(make(name, inner))
         return wrapped
+
+
+def _resource_from_args(args: Optional[Dict[str, Any]]) -> str:
+    """Default resource for a call: the JCS canonicalisation of its arguments.
+
+    This is the strict binding. A decision made for these arguments does not
+    carry to any other arguments, because the resource string differs.
+
+    Callers that want a coarser policy unit - a path, a table name - should pass
+    `resource` explicitly, so rules can glob over something meaningful. That is a
+    deliberate loosening, and it should be visible at the call site.
+    """
+    from vouch import jcs
+
+    try:
+        return jcs.canonicalize_str(args or {})
+    except Exception:
+        # An unserialisable argument cannot be bound to, so it cannot be
+        # authorised. Return a resource no rule can match.
+        return "\x00"
 
 
 def _tool_name(tool) -> str:

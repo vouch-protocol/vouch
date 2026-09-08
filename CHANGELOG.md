@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### BREAKING
+
+- Vouch Shield's capability-level rules are removed. `check_permission`,
+  `Capabilities`, `PermissionManager`, `TOOL_REQUIREMENTS`, and the
+  `vouch/shield/permissions.py` module are gone, replaced by rules that match
+  an action, a target, and a resource. Rules files must be rewritten in the new
+  format; see `docs/design/shield-v2-and-protected-mcp.md` for the schema and a
+  worked example.
+
+### Changed
+
+- Vouch Shield rules now match `action`, `target`, and `resource`, the same
+  three fields a credential binds in `credentialSubject.intent`, so the policy
+  asks the question the evidence answers. `Shield.check(did, action, target,
+  resource)` returns a decision carrying a stable reason string you can log and
+  alert on. Rules load from YAML or JSON. In a resource pattern, `*` matches
+  exactly one path segment and `**` matches any number, and resources are
+  normalised before matching, so a path that climbs above its root is refused
+  rather than resolved. Anything that does not match a rule is denied, and so
+  is a missing or malformed rules file.
+
 ## [2.1.0] - 2026-08-02
 
 ### Added
