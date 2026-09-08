@@ -121,7 +121,7 @@ class Shield:
                 return InterceptResult(allowed=False, reason=reason)
 
             # Verify the token
-            is_valid, passport = self._verifier.check_vouch(token)
+            is_valid, passport = self._verifier.check_vouch_credential(token)
             if not is_valid or passport is None:
                 reason = "Invalid Vouch-Token signature"
                 self._flight_recorder.blocked("unknown", tool, reason, args)
