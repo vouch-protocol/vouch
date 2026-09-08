@@ -5,6 +5,7 @@ Manages trusted and blocked DIDs using the existing revocation infrastructure.
 Extends RevocationStoreInterface to support allowlist mode.
 """
 
+import asyncio
 import os
 import json
 import logging
@@ -20,6 +21,27 @@ from vouch.revocation import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _run(coro):
+    """Run a coroutine from synchronous code.
+
+    ``asyncio.get_event_loop()`` is deprecated and raises once anything in the
+    process has used ``asyncio.run()``, because that leaves no current loop set.
+    These calls are all short local revocation-store operations, so creating a
+    loop per call costs nothing worth optimising.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+
+    # Already inside a running loop, which cannot be re-entered. Give the
+    # coroutine its own loop on a worker thread instead of failing.
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 
 class TrustStatus(Enum):
@@ -89,14 +111,10 @@ class TrustRegistry:
 
                     # Load blocked DIDs into revocation store
                     for did in config.get("blocked_dids", []):
-                        import asyncio
-
                         record = RevocationRecord(
                             did=did, revoked_at=0, reason="Loaded from config"
                         )
-                        asyncio.get_event_loop().run_until_complete(
-                            self._revocation_store.add_revocation(record)
-                        )
+                        _run(self._revocation_store.add_revocation(record))
 
                     logger.info(
                         f"Loaded trust config: {len(self._trusted_dids)} trusted, "
@@ -107,11 +125,7 @@ class TrustRegistry:
 
     def save_config(self) -> None:
         """Save trust config to file."""
-        import asyncio
-
-        blocked = asyncio.get_event_loop().run_until_complete(
-            self._revocation_store.list_revocations()
-        )
+        blocked = _run(self._revocation_store.list_revocations())
 
         config = {
             "trusted_dids": list(self._trusted_dids),
@@ -125,36 +139,27 @@ class TrustRegistry:
         """Add a DID to the trusted list."""
         self._trusted_dids.add(did)
         # Remove from blocked if present
-        import asyncio
-
-        asyncio.get_event_loop().run_until_complete(self._revocation_store.remove_revocation(did))
+        _run(self._revocation_store.remove_revocation(did))
         logger.info(f"Trusted DID: {did}")
 
     def block(self, did: str, reason: str = "Manually blocked") -> None:
         """Add a DID to the blocked list."""
         self._trusted_dids.discard(did)
-        import asyncio
         import time
 
         record = RevocationRecord(did=did, revoked_at=int(time.time()), reason=reason)
-        asyncio.get_event_loop().run_until_complete(self._revocation_store.add_revocation(record))
+        _run(self._revocation_store.add_revocation(record))
         logger.info(f"Blocked DID: {did} - {reason}")
 
     def remove(self, did: str) -> None:
         """Remove a DID from all lists (reset to unknown)."""
         self._trusted_dids.discard(did)
-        import asyncio
-
-        asyncio.get_event_loop().run_until_complete(self._revocation_store.remove_revocation(did))
+        _run(self._revocation_store.remove_revocation(did))
 
     def get_status(self, did: str) -> TrustStatus:
         """Get the trust status of a DID."""
-        import asyncio
-
         # Check blocked first (revocation takes precedence)
-        is_blocked = asyncio.get_event_loop().run_until_complete(
-            self._revocation_store.is_revoked(did)
-        )
+        is_blocked = _run(self._revocation_store.is_revoked(did))
         if is_blocked:
             return TrustStatus.BLOCKED
 
@@ -182,9 +187,5 @@ class TrustRegistry:
 
     def get_blocked(self) -> List[str]:
         """Get all blocked DIDs."""
-        import asyncio
-
-        records = asyncio.get_event_loop().run_until_complete(
-            self._revocation_store.list_revocations()
-        )
+        records = _run(self._revocation_store.list_revocations())
         return [r.did for r in records]
