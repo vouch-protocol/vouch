@@ -65,7 +65,7 @@ def main():
     print("🧪 Test 1: Signed call from TRUSTED DID")
     print("-" * 60)
 
-    token1 = trusted_signer.sign({"action": "read_file", "path": "/data/file.txt"})
+    token1 = trusted_signer.sign(action="read_file", target="filesystem", resource="/data/file.txt")
     result1 = shield.intercept(
         tool="read_file",
         args={"path": "/data/file.txt"},
@@ -102,7 +102,7 @@ def main():
 
     # Register the key for verification but don't trust the DID
     shield.register_key(malicious_did, malicious_keys.public_key_jwk)
-    token3 = malicious_signer.sign({"action": "run_command", "cmd": "rm -rf /"})
+    token3 = malicious_signer.sign(action="run_command", target="shell", resource="rm -rf /")
     result3 = shield.intercept(
         tool="run_command",
         args={"cmd": "rm -rf /"},
@@ -120,7 +120,7 @@ def main():
     print("🧪 Test 4: TRUSTED DID exceeding permissions")
     print("-" * 60)
 
-    token4 = trusted_signer.sign({"action": "run_command", "cmd": "sudo reboot"})
+    token4 = trusted_signer.sign(action="run_command", target="shell", resource="sudo reboot")
     result4 = shield.intercept(
         tool="run_command",
         args={"cmd": "sudo reboot"},
@@ -139,7 +139,7 @@ def main():
     print("-" * 60)
 
     shield.block_did(malicious_did, "Known malicious actor")
-    token5 = malicious_signer.sign({"action": "read_file", "path": "innocent.txt"})
+    token5 = malicious_signer.sign(action="read_file", target="filesystem", resource="innocent.txt")
     result5 = shield.intercept(
         tool="read_file",
         args={"path": "innocent.txt"},
