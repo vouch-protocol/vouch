@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-08
+
 ### BREAKING
 
 - Vouch Shield's capability-level rules are removed. `check_permission`,
@@ -73,6 +75,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   normalised before matching, so a path that climbs above its root is refused
   rather than resolved. Anything that does not match a rule is denied, and so
   is a missing or malformed rules file.
+
+### Removed
+
+- The AAT interop adapter's dependence on the removed capability model. It now
+  derives Shield rules directly, so nothing in it refers to capability levels.
+
+### Fixed
+
+- `Shield.intercept` called a `Verifier.check_vouch` method that does not exist,
+  so signature-checked interception always raised. It now calls
+  `check_vouch_credential`.
+- `vouch.threshold` raised `AttributeError` instead of `ThresholdError` when the
+  native library was present but too old to export a symbol it binds, which
+  aborted test collection rather than skipping cleanly. A stale library is now
+  detected, reported by name, and skipped in favour of a usable one.
+- The trust registry no longer assumes a preset event loop, so it works once
+  anything in the process has used `asyncio.run()`, and it leaves the loop as it
+  found it.
+- The Shield demo signed intents missing `target` and `resource`, so it raised on
+  its first credential. It now runs end to end.
+- The TypeScript SDK's `Verifier.checkVouchCredential` now resolves a `did:key`
+  issuer offline, as the Python reference and this SDK's own `verify()` already
+  did. It previously accepted only issuers pinned as trusted roots, so a
+  self-certifying `did:key` credential was rejected as an unknown issuer.
 
 ## [2.1.0] - 2026-08-02
 
