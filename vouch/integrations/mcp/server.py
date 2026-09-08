@@ -33,6 +33,7 @@ Tools:
     decode_did         Decode a DID key / Multikey and report its algorithm.
     delegate           Issue a narrowed sub-delegation grant to another agent.
     check_action       Decide if an agent's capabilities permit a tool (Shield).
+    check_action_aat   Decide if an AAT delegation chain permits a tool call.
     check_trust        Recompute a session voucher's decayed trust vs a threshold.
     disclose_ai_origin Sign a disclosure that content is AI-generated.
     create_authority_state    Publish this authority's signed epoch and status.
@@ -47,6 +48,9 @@ Run (stdio, for Claude Desktop / Cursor):
 Run (Streamable HTTP, for remote / hosted use):
     VOUCH_MCP_TRANSPORT=http VOUCH_MCP_HOST=0.0.0.0 VOUCH_MCP_PORT=8080 \
         VOUCH_PRIVATE_KEY=... VOUCH_DID=... vouch-mcp
+
+Run (sourcing authority from an AAT delegation chain):
+    VOUCH_PRIVATE_KEY=... VOUCH_DID=... vouch-mcp --aat-chain leaf.json
 """
 
 from __future__ import annotations
@@ -83,6 +87,14 @@ from vouch.autosign import resolve_signer, sign_intent
 
 _HOST = os.getenv("VOUCH_MCP_HOST", "127.0.0.1")
 _PORT = int(os.getenv("VOUCH_MCP_PORT", "8080"))
+
+# Optional AAT delegation source. When VOUCH_AAT_CHAIN points at a verified
+# Attenuating Authorization Token chain, ``check_action_aat`` sources its rules
+# from that chain's leaf. See integrations/aat/README.md.
+_AAT_CHAIN = os.getenv("VOUCH_AAT_CHAIN")
+_AAT_HOLDER_KEY = os.getenv("VOUCH_AAT_HOLDER_KEY")
+_aat_gate_cache: dict = {}
+
 
 if _MCP_SDK_V2:
     # mcp>=2.0 takes host/port per transport at run() time, not here.
@@ -658,6 +670,98 @@ def check_action(
     return f"DENY: {reason}"
 
 
+def _load_aat_gate():
+    """Build the AAT gate from VOUCH_AAT_CHAIN, or return a reason it is off.
+
+    Returns ``(gate, None)`` on success or ``(None, reason)`` on failure.
+    Any failure is fail-closed: no gate means no AAT-sourced authority, and
+    ``check_action_aat`` denies rather than falling back to something laxer.
+    """
+    if "result" in _aat_gate_cache:
+        return _aat_gate_cache["result"]
+
+    if not _AAT_CHAIN:
+        result = (None, "VOUCH_AAT_CHAIN is not set")
+        _aat_gate_cache["result"] = result
+        return result
+
+    try:
+        from integrations.aat import AatGate, verify_chain_file
+    except ImportError as exc:
+        result = (None, f"AAT adapter unavailable ({exc})")
+        _aat_gate_cache["result"] = result
+        return result
+
+    try:
+        chain = verify_chain_file(_AAT_CHAIN)
+    except Exception as exc:
+        result = (None, f"AAT chain did not verify: {type(exc).__name__}: {exc}")
+        _aat_gate_cache["result"] = result
+        return result
+
+    holder_key = None
+    if _AAT_HOLDER_KEY:
+        try:
+            from tenuo import SigningKey
+
+            holder_key = SigningKey.from_pem(open(_AAT_HOLDER_KEY).read())
+        except Exception as exc:
+            result = (None, f"AAT holder key could not be loaded: {exc}")
+            _aat_gate_cache["result"] = result
+            return result
+
+    result = (AatGate(chain, holder_key=holder_key), None)
+    _aat_gate_cache["result"] = result
+    return result
+
+
+@mcp.tool()
+def check_action_aat(tool: str, args_json: str = "{}") -> str:
+    """Decide whether an AAT delegation chain permits a tool call (Shield).
+
+    The counterpart to ``check_action`` for deployments that carry authority as
+    an Attenuating Authorization Token chain. Rules come from the verified
+    chain's **leaf** -- the authority after all narrowing -- rather than from a
+    static capability grant.
+
+    Unlike ``check_action``, this evaluates the call's *arguments* too: an AAT
+    leaf can restrict ``path`` to ``reports/*``, and a call outside that is
+    denied even though the tool itself is permitted.
+
+    Requires ``VOUCH_AAT_CHAIN`` to point at a chain file. Denies if it is
+    unset or if the chain does not verify -- there is no lax fallback.
+
+    Precedence: when a static allow-list is also in force, both must allow.
+    An AAT chain narrows what this server will do; it never widens it.
+
+    Args:
+        tool: The tool name being gated, e.g. 'read_file'.
+        args_json: The call's arguments as a JSON object, e.g.
+            '{"path": "reports/q3.txt"}'.
+
+    Returns:
+        'ALLOW' or 'DENY' with the reason.
+    """
+    gate, reason = _load_aat_gate()
+    if gate is None:
+        return f"DENY: AAT authority is not available ({reason})."
+
+    try:
+        args = json.loads(args_json) if args_json else {}
+    except json.JSONDecodeError as e:
+        return f"Error: args_json is not valid JSON ({e})"
+    if not isinstance(args, dict):
+        return "Error: args_json must be a JSON object"
+
+    decision = gate.check(tool, args)
+    if decision.allowed:
+        return (
+            f"ALLOW: '{tool}' is permitted by AAT leaf {decision.leaf_jti} "
+            f"(chain root {decision.root_jti})."
+        )
+    return f"DENY: {decision.reason}"
+
+
 # Trust-over-time and transparency tools.
 
 
@@ -1202,7 +1306,41 @@ def main() -> None:
     - 'sse': the HTTP+SSE transport, deprecated by the MCP specification;
       kept for existing clients during the deprecation window. Use
       Streamable HTTP for anything new.
+
+    ``--aat-chain`` (or VOUCH_AAT_CHAIN) points at an AAT delegation chain;
+    ``check_action_aat`` then sources its rules from that chain's leaf.
     """
+    global _AAT_CHAIN, _AAT_HOLDER_KEY
+
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="vouch-mcp", description="Vouch Protocol MCP server.")
+    parser.add_argument(
+        "--aat-chain",
+        metavar="PATH",
+        default=None,
+        help=(
+            "Path to an AAT delegation chain. Shield rules are then sourced "
+            "from the chain's leaf. Overrides VOUCH_AAT_CHAIN."
+        ),
+    )
+    parser.add_argument(
+        "--aat-holder-key",
+        metavar="PATH",
+        default=None,
+        help=(
+            "Path to the PEM holder key matching the AAT leaf, used to mint "
+            "proof-of-possession locally. Overrides VOUCH_AAT_HOLDER_KEY."
+        ),
+    )
+    args, _ = parser.parse_known_args()
+
+    if args.aat_chain:
+        _AAT_CHAIN = args.aat_chain
+    if args.aat_holder_key:
+        _AAT_HOLDER_KEY = args.aat_holder_key
+    _aat_gate_cache.clear()
+
     transport = os.getenv("VOUCH_MCP_TRANSPORT", "stdio").lower().replace("_", "-")
     if transport in ("http", "streamable-http"):
         if _MCP_SDK_V2:

@@ -1,0 +1,11 @@
+{
+  "aat_chain_version": 1,
+  "root_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=\n-----END PUBLIC KEY-----\n",
+  "warrants": [
+    "gwFY2aoAAQFQAaB33eMBfQO58kSKhBslbwIAA6JpcmVhZF9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuaXJlcG9ydHMvKmp3cml0ZV9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuaXJlcG9ydHMvKgSCAVgggTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5QFggFYIIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cBhpqnalxBxprFFBxCBhAEgCCAVhA9Rzs25rTPsf9xoWwbyb9bA5UVYyPTTwA9MoR1Acpjy-EsC7aaEaqLnSJ4uTsrrBtWzzP44EsjdwAhdX2vYyMDQ",
+    "gwFZAQWqAAEBUAGgd93jAX0DufJEoDinuxYCAAOja2RlbGV0ZV9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuYSppcmVhZF9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuaXJlcG9ydHMvKmp3cml0ZV9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuaXJlcG9ydHMvKgSCAVgggTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5QFggFYIO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRBhpqnalxBxprFFBxCBhAEgCCAVhACmKj45DegIKRf7H-WSQO7cVl0hQ4g_T3zV7oUoK1HtXKQCKfBRaGjmmiksU7lxlAe6US-m_HehDBNTb0qPs0Bw"
+  ],
+  "_comment": "A token minted by a third key claiming delete_file, spliced in behind a genuine root. MUST fail verification.",
+  "_generated_at": "2026-09-06T17:57:05Z",
+  "_generated_by": "test-vectors/aat/generate.py"
+}
