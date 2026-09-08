@@ -1,0 +1,98 @@
+{
+  "description": "Shared Vouch Shield decision vectors. Every implementation loads rules.yaml and must produce these verdicts exactly, including the reason string. A case carrying its own `rules` object uses that document instead of rules.yaml, which is how load-time behaviour is covered. `rule_id` is only checked when the case states it.",
+  "default_rules": "rules.yaml",
+  "did": "did:web:agent.example.com",
+  "cases": [
+    { "name": "deep: bare prefix matches a trailing /**", "action": "deep", "target": "files", "resource": "reports", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "deep: one segment below", "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "deep: two segments below", "action": "deep", "target": "files", "resource": "reports/2026/q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "deep: four segments below", "action": "deep", "target": "files", "resource": "reports/a/b/c/d", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "deep: a sibling directory is outside", "action": "deep", "target": "files", "resource": "secrets/keys.txt", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "deep: a prefix must match a whole segment, not a substring", "action": "deep", "target": "files", "resource": "reportsX/a", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "deep: a longer segment name is not the prefix", "action": "deep", "target": "files", "resource": "reports2", "expect": { "allow": false, "reason": "resource outside scope" } },
+
+    { "name": "shallow: * matches exactly one segment", "action": "shallow", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "shallow" } },
+    { "name": "shallow: * does not cross a slash", "action": "shallow", "target": "files", "resource": "reports/2026/q3.txt", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "shallow: * requires a segment to be present", "action": "shallow", "target": "files", "resource": "reports", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "shallow: unrelated prefix", "action": "shallow", "target": "files", "resource": "logs/a.txt", "expect": { "allow": false, "reason": "resource outside scope" } },
+
+    { "name": "mid: ** matches zero segments", "action": "mid", "target": "files", "resource": "a/b", "expect": { "allow": true, "reason": "allowed", "rule_id": "mid" } },
+    { "name": "mid: ** matches one segment", "action": "mid", "target": "files", "resource": "a/x/b", "expect": { "allow": true, "reason": "allowed", "rule_id": "mid" } },
+    { "name": "mid: ** matches several segments", "action": "mid", "target": "files", "resource": "a/x/y/z/b", "expect": { "allow": true, "reason": "allowed", "rule_id": "mid" } },
+    { "name": "mid: the suffix must still match", "action": "mid", "target": "files", "resource": "a/x/c", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "mid: the prefix must still match", "action": "mid", "target": "files", "resource": "z/x/b", "expect": { "allow": false, "reason": "resource outside scope" } },
+
+    { "name": "everything: a single segment", "action": "everything", "target": "files", "resource": "anything", "expect": { "allow": true, "reason": "allowed", "rule_id": "everything" } },
+    { "name": "everything: a deep path", "action": "everything", "target": "files", "resource": "a/b/c/d/e", "expect": { "allow": true, "reason": "allowed", "rule_id": "everything" } },
+    { "name": "everything: still refuses an unusable resource", "action": "everything", "target": "files", "resource": "../escape", "expect": { "allow": false, "reason": "invalid resource" } },
+
+    { "name": "dotted: * covers the rest of a single segment", "action": "dotted", "target": "db", "resource": "public.customers", "expect": { "allow": true, "reason": "allowed", "rule_id": "dotted" } },
+    { "name": "dotted: a different prefix does not match", "action": "dotted", "target": "db", "resource": "internal.salaries", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "dotted: * spans further dots inside one segment", "action": "dotted", "target": "db", "resource": "public.a.b", "expect": { "allow": true, "reason": "allowed", "rule_id": "dotted" } },
+    { "name": "dotted: the literal prefix must be present", "action": "dotted", "target": "db", "resource": "publicX.customers", "expect": { "allow": false, "reason": "resource outside scope" } },
+
+    { "name": "literal: . is not a wildcard", "action": "literal", "target": "files", "resource": "axb", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "literal: the exact string matches", "action": "literal", "target": "files", "resource": "a.b", "expect": { "allow": true, "reason": "allowed", "rule_id": "literal" } },
+
+    { "name": "exact: the exact resource matches", "action": "exact", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "exact" } },
+    { "name": "exact: a sibling file does not", "action": "exact", "target": "files", "resource": "reports/q4.txt", "expect": { "allow": false, "reason": "resource outside scope" } },
+
+    { "name": "normalisation: a leading slash is stripped", "action": "deep", "target": "files", "resource": "/reports/q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "normalisation: duplicate slashes collapse", "action": "deep", "target": "files", "resource": "reports//q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "normalisation: a single dot segment is dropped", "action": "deep", "target": "files", "resource": "reports/./q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "normalisation: a trailing slash is stripped", "action": "deep", "target": "files", "resource": "reports/", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "normalisation: an interior .. resolves", "action": "deep", "target": "files", "resource": "reports/2026/../q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep" } },
+    { "name": "normalisation: a pattern's leading slash normalises away too", "action": "leadingslash", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "leading-slash" } },
+
+    { "name": "traversal: .. cannot escape the rule's prefix", "action": "deep", "target": "files", "resource": "reports/../etc/passwd", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "traversal: .. cannot escape via a deeper path", "action": "deep", "target": "files", "resource": "reports/a/../../etc/passwd", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "traversal: climbing above the root is refused outright", "action": "deep", "target": "files", "resource": "../etc/passwd", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "traversal: a bare .. is refused", "action": "deep", "target": "files", "resource": "..", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "traversal: climbing past the root is refused, not clamped", "action": "deep", "target": "files", "resource": "reports/../..", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "traversal: a leading slash does not permit a climb", "action": "deep", "target": "files", "resource": "/../etc/passwd", "expect": { "allow": false, "reason": "invalid resource" } },
+
+    { "name": "invalid: an empty resource", "action": "deep", "target": "files", "resource": "", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "invalid: a resource that is only slashes", "action": "deep", "target": "files", "resource": "///", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "invalid: a resource that is only dot segments", "action": "deep", "target": "files", "resource": "./.", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "invalid: a NUL byte", "action": "deep", "target": "files", "resource": "reports/\u0000etc", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "invalid: a C0 control character", "action": "deep", "target": "files", "resource": "reports/\u001fetc", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "invalid: a newline", "action": "deep", "target": "files", "resource": "reports/\netc", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "invalid: a C1 control character", "action": "deep", "target": "files", "resource": "reports/\u009fetc", "expect": { "allow": false, "reason": "invalid resource" } },
+
+    { "name": "action: an action with no rule at all", "action": "nosuchaction", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "no matching rule" } },
+    { "name": "action: matching is case sensitive", "action": "DEEP", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "no matching rule" } },
+    { "name": "target: a target with no rule", "action": "deep", "target": "network", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "no matching rule" } },
+    { "name": "target: matching is case sensitive", "action": "deep", "target": "Files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "no matching rule" } },
+    { "name": "target: the same action on a second target is a separate rule", "action": "deep", "target": "db", "resource": "reports/q3.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "deep-other-target" } },
+    { "name": "target: that second rule does not widen the first", "action": "shallow", "target": "db", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "no matching rule" } },
+
+    { "name": "did: an unknown DID is refused before anything else", "did": "did:web:stranger.example.com", "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "unknown did" } },
+    { "name": "did: an unknown DID is refused even for an invalid resource", "did": "did:web:stranger.example.com", "action": "deep", "target": "files", "resource": "../escape", "expect": { "allow": false, "reason": "invalid resource" } },
+    { "name": "did: DID matching is exact, not prefix", "did": "did:web:agent.example.com.evil.com", "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "unknown did" } },
+    { "name": "did: a second DID has its own rules", "did": "did:key:z6MkfrQ1example", "action": "deep", "target": "files", "resource": "logs/today.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "second-did" } },
+    { "name": "did: the second DID does not inherit the first's scope", "did": "did:key:z6MkfrQ1example", "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "resource outside scope" } },
+    { "name": "did: the first DID does not inherit the second's scope", "action": "deep", "target": "files", "resource": "logs/today.txt", "expect": { "allow": false, "reason": "resource outside scope" } },
+
+    { "name": "load: an empty rule list permits nothing", "rules": { "version": 2, "rules": [], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "unknown did" } },
+    { "name": "load: a missing rules key permits nothing", "rules": { "version": 2, "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "unknown did" } },
+    { "name": "load: a DID with an empty allow list permits nothing", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "unknown did" } },
+
+    { "name": "load: no version is rejected", "rules": { "rules": [], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: version 1 is rejected", "rules": { "version": 1, "rules": [], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: deny_default false is rejected", "rules": { "version": 2, "rules": [], "deny_default": false }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: an unknown key inside a rule is rejected, not ignored", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "deep", "target": "files", "resourse": "reports/**" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: an unknown key on a rule block is rejected", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [], "deny": [] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: a rule missing resource is rejected", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "deep", "target": "files" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: a rule with an empty action is rejected", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "", "target": "files", "resource": "reports/**" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: a block missing did is rejected", "rules": { "version": 2, "rules": [ { "allow": [] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: rules as a mapping is rejected", "rules": { "version": 2, "rules": {}, "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: a pattern with ** inside a segment is rejected", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "deep", "target": "files", "resource": "a/**b" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "a/xb", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: a pattern containing .. is rejected", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "deep", "target": "files", "resource": "a/../b" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "b", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: a pattern containing a single dot segment is rejected", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "deep", "target": "files", "resource": "a/./b" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "a/b", "expect": { "allow": false, "reason": "malformed rules" } },
+    { "name": "load: an empty resource pattern is rejected", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "deep", "target": "files", "resource": "" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "a", "expect": { "allow": false, "reason": "malformed rules" } },
+
+    { "name": "load: a rule id is optional and a generated one is still returned", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "action": "deep", "target": "files", "resource": "reports/**" } ] } ], "deny_default": true }, "action": "deep", "target": "files", "resource": "reports/q3.txt", "expect": { "allow": true, "reason": "allowed" } },
+    { "name": "load: several rules for one DID are all considered", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "id": "one", "action": "deep", "target": "files", "resource": "reports/**" }, { "id": "two", "action": "shallow", "target": "files", "resource": "logs/*" } ] } ], "deny_default": true }, "action": "shallow", "target": "files", "resource": "logs/today.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "two" } },
+    { "name": "load: two blocks for the same DID accumulate", "rules": { "version": 2, "rules": [ { "did": "did:web:agent.example.com", "allow": [ { "id": "first", "action": "deep", "target": "files", "resource": "reports/**" } ] }, { "did": "did:web:agent.example.com", "allow": [ { "id": "second", "action": "shallow", "target": "files", "resource": "logs/*" } ] } ], "deny_default": true }, "action": "shallow", "target": "files", "resource": "logs/today.txt", "expect": { "allow": true, "reason": "allowed", "rule_id": "second" } }
+  ]
+}
