@@ -236,7 +236,20 @@ export class Verifier {
         };
       }
 
-      const rawKey = this.trustedRootsRaw.get(issuer);
+      // A trusted root wins, so a deployment can pin a key for an issuer.
+      // Verifier.verify accepts a KeyObject or a Multikey string, which is what
+      // lets the did:key branch below hand it the key straight from the DID.
+      let rawKey: crypto.KeyObject | string | undefined =
+        this.trustedRootsRaw.get(issuer);
+
+      // did:key is self-certifying: the multikey after the prefix is the key,
+      // so it resolves offline with no document to fetch and no root to pin.
+      // This mirrors the Python reference, whose check_vouch_credential does
+      // the same, and the module-level verify() in this file.
+      if (!rawKey && issuer.startsWith('did:key:')) {
+        rawKey = issuer.slice('did:key:'.length);
+      }
+
       if (!rawKey) {
         return {
           isValid: false,

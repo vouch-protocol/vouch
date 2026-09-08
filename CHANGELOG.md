@@ -18,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@vouch-protocol-official/mcp`, the TypeScript counterpart of
+  `vouch.mcp.FastMCP`. `McpServer` is a drop-in replacement for the MCP SDK's
+  own, in which every registered tool is protected by default: a call must
+  arrive with a Vouch Credential that verifies, comes from a trusted issuer,
+  authorises that exact call, and passes Shield, before the tool body runs. A
+  tool opts out with `unprotected: true`, and a server missing `VOUCH_RULES` or
+  `VOUCH_TRUSTED_ISSUERS` refuses to start. `examples/mcp_server_ts/` is a
+  working filesystem server built on it.
+- Vouch Shield rules in the TypeScript SDK: `RuleSet`, `loadRules`,
+  `parseRules`, and the normalisation and glob primitives, with reason strings
+  identical to the Python reference.
+- `test-vectors/shield/`, 77 shared decision vectors that both the Python and
+  TypeScript implementations run, covering glob depth, normalisation,
+  traversal, unusable resources, exact matching, and every load failure.
+
 - `vouch.mcp.FastMCP`, a drop-in replacement for the MCP SDK's `FastMCP` in
   which every registered tool is protected by default. Changing one import makes
   a server refuse to run any tool unless the call arrives with a Vouch
@@ -389,6 +404,11 @@ standards-aligned alignment with backward-compatible coexistence of the legacy v
 - Setuptools config excludes `vouch.pro` from published packages
 
 ### Fixed
+
+- The TypeScript SDK's `Verifier.checkVouchCredential` now resolves a `did:key`
+  issuer offline, as the Python reference and this SDK's own `verify()` already
+  did. It previously accepted only issuers pinned as trusted roots, so a
+  self-certifying `did:key` credential was rejected as an unknown issuer.
 - Legacy single-layer fallback preserved for backwards compatibility in watermark detection
 
 ## [1.4.0] - 2026-01-05

@@ -145,3 +145,6 @@ agent-trust-index/data/results.json
 
 # Build-time copy of the root funding manifest (website/scripts/copy-funding.mjs)
 website/public/funding.json
+
+# Local builds of the TypeScript example
+examples/mcp_server_ts/dist/

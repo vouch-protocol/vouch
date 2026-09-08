@@ -77,6 +77,25 @@ jobs:
           npm install --no-save --legacy-peer-deps ../../core/wasm/pkg
           npm test
 
+  vouch-mcp-ts:
+    name: MCP server wrapper (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+      - name: Install the SDK it builds on
+        working-directory: packages/sdk-ts
+        run: npm install --legacy-peer-deps
+      - name: Install and test
+        working-directory: packages/vouch-mcp-ts
+        run: |
+          # The SDK is a peer dependency, so npm does not fetch it here. Tests
+          # resolve it from the sibling source via the vitest alias.
+          npm install --legacy-peer-deps
+          npm test
+
   wasm:
     name: WASM core
     runs-on: ubuntu-latest
