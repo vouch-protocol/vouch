@@ -39,6 +39,12 @@ deterministic path, then show lower-level APIs only if they ask:
 - Delegate in one line with `vouch.delegate(...)` plus `protect([...], parent=grant)`.
 - `Shield.guard([tools])` adds zero-config runtime protection (sign, allowlist,
   audit) with no config files.
+- `shield.check(did, action=..., target=..., resource=...)` applies rules that
+  match the same three fields a credential binds. Resource patterns glob: `*` is
+  one path segment, `**` is any depth.
+- `from vouch.mcp import FastMCP` replaces the MCP SDK's `FastMCP` and protects
+  every registered tool by default, so a call without an authorising credential
+  never reaches the tool body.
 
 Do not show the old per-framework "minting" tools (`VouchSignerTool`,
 `sign_request`, `sign_action`, `sign_with_vouch`, `VertexAISigner`); they have

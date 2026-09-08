@@ -1660,6 +1660,93 @@ Between your framework's tool-call event and the actual tool function. If you us
 The \`FlightRecorder\` logs every allowed and blocked call. Pipe it to your SIEM or store it locally for after-the-fact audit.
 `,
       },
+      {
+        id: 'protected-mcp-server',
+        title: 'A Vouch-protected MCP server',
+        summary: 'Change one import so every tool on your MCP server refuses to run without a credential that authorises the call.',
+        body: `
+An MCP server built this way will not run a tool unless the call arrives with a Vouch Credential that verifies, comes from an issuer you trust, authorises that exact call, and passes your rules.
+
+## Install
+
+\`\`\`bash
+pip install "vouch-protocol[mcp]"
+\`\`\`
+
+## Change one import
+
+\`\`\`python
+from vouch.mcp import FastMCP          # replaces: from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("files")
+
+@mcp.tool(resource=lambda args: args["path"])
+def read_file(path: str) -> str:
+    return open(path).read()
+\`\`\`
+
+That is the whole integration. Every tool registered on this server is protected by default. The wrapper adds a required \`credential\` argument to each tool's schema and strips it before your function runs, so your function body is unchanged.
+
+## Write the rules
+
+Rules match the same three fields a credential binds: \`action\`, \`target\`, and \`resource\`.
+
+\`\`\`yaml
+version: 2
+rules:
+  - did: did:web:agent.example.com
+    allow:
+      - { action: read_file, target: files, resource: "reports/**" }
+deny_default: true
+\`\`\`
+
+In a resource pattern, \`*\` matches exactly one path segment and \`**\` matches any number. So \`reports/**\` covers \`reports/q3.txt\` and \`reports/2026/q3.txt\`, but not \`secrets/keys.txt\`. Paths are normalised first, so \`reports/../etc/passwd\` cannot slip through.
+
+## Configure and run
+
+\`\`\`bash
+export VOUCH_RULES=rules.yaml
+export VOUCH_TRUSTED_ISSUERS=did:key:z6Mk...
+export VOUCH_TARGET=files
+
+python3 server.py
+\`\`\`
+
+Without \`VOUCH_RULES\` and \`VOUCH_TRUSTED_ISSUERS\` the server refuses to start. It never starts unprotected.
+
+## What you see per call
+
+One line per decision, on stderr:
+
+\`\`\`
+ALLOW  did:key:z6Mk...  read_file  reports/q3.txt
+DENY   did:key:z6Mk...  read_file  secrets/keys.txt  resource outside scope
+DENY   did:key:z6Mk...  read_file  reports/q4.txt    credential does not match request
+\`\`\`
+
+The reasons are stable strings you can alert on.
+
+## Resource binding
+
+By default a credential authorises one call with one exact set of arguments, so a credential minted for one file will not open another. The \`resource=\` argument in the example above deliberately loosens that to the path alone, which is what lets a rule glob over directories. Treat that as a policy decision worth making on purpose.
+
+## Opting a tool out
+
+\`\`\`python
+@mcp.tool(unprotected=True)
+def health() -> str:
+    return "ok"
+\`\`\`
+
+This logs a warning when the tool is registered and on every call. Anything reachable without a credential should be something you are happy for anyone to call.
+
+## Why the server and not the model
+
+A model can be talked out of consulting a policy. A tool server cannot: it asks for a credential, checks the signature itself, applies its own rules, and runs nothing if any of that fails.
+
+Working examples live in \`examples/mcp_server/\` and \`examples/mcp_server_sqlite/\` in the repository.
+`,
+      },
     ],
   },
 
@@ -2800,7 +2887,7 @@ Security boundary: \`verify_robot_heartbeat\` fails closed on a wrong type, an i
         body: `
 Robot credentials get the same two-level revocation as the rest of Vouch: a surgical per-credential status, and a whole-DID kill.
 
-The problem it closes: the kill switch stops one running robot locally, but a compromised capability grant or a leaked identity key needs to be invalidated for every verifier, not just stopped once.
+The problem it closes: the kill switch stops one running robot locally, but a compromised capability grant or a leaked identity key needs to be invalidated for every verifier, rather than stopped once.
 
 How it works: \`attach_credential_status\` adds a BitstringStatusList \`credentialStatus\` entry to a robot credential and re-signs it; flipping the bit in the published status list revokes it, and \`check_credential_status\` reports the result. For key compromise or a captured robot, the existing \`RevocationRegistry\` (re-exported from \`vouch.robotics\`) revokes the robot DID wholesale.
 
