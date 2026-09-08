@@ -1,0 +1,11 @@
+{
+  "aat_chain_version": 1,
+  "root_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w=\n-----END PUBLIC KEY-----\n",
+  "warrants": [
+    "gwFY2aoAAQFQAaB33eMBfQO58kSKhBslbwIAA6JpcmVhZF9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuaXJlcG9ydHMvKmp3cml0ZV9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuaXJlcG9ydHMvKgSCAVgggTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5QFggFYIIqI4910CfGV_VLbLTy6XXLKZwm_HZQSG_N0iAG0D29cBhpqnalxBxprFFBxCBhAEgCCAVhA9Rzs25rTPsf9xoWwbyb9bA5UVYyPTTwA9MoR1Acpjy-EsC7aaEaqLnSJ4uTsrrBtWzzP44EsjdwAhdX2vYyMDQ",
+    "gwFY5KsAAQFQAaB33eMBfQO58kSWp2D7kAIAA6FpcmVhZF9maWxloWtjb25zdHJhaW50c6FkcGF0aIICoWdwYXR0ZXJuaXJlcG9ydHMvKgSCAVgggTl3Dqh9F19Wo1Rmw0x-zMuNipG07jeiXfYPW4_Js5QFggFYIIE5dw6ofRdfVqNUZsNMfszLjYqRtO43ol32D1uPybOUBhpqnalxBxprFFBxCBhACZggGMMYawcY2hhvGDQYlBhxGOkYWBgnGN0YHBiZDxjVGNcEAhjoGPkY6higGLEY0hhQGNsSGMIYQhhVGHUSAYIBWEDTPZfOJfM97hEK7XgljUI6Pwtk8MVc-MjoBUOGF32c_iBw-IBKLd3RsZhxyeLfFB54vzERQouCyeDrgZCxKpIM"
+  ],
+  "_comment": "Root grants read_file + write_file on reports/*; the leaf is derived offline by the holder and grants read_file only.",
+  "_generated_at": "2026-09-06T17:57:05Z",
+  "_generated_by": "test-vectors/aat/generate.py"
+}
