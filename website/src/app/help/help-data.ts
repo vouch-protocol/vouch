@@ -1545,9 +1545,9 @@ Each issues a verifiable credential per call, with optional delegation back to a
 
 Currently one: \`packages/sdk-ts/src/integrations/amnesia.ts\` for the Amnesia egress-decision bridge.
 
-## Vouch Shield (sibling repo)
+## Vouch Shield
 
-[vouch-protocol/vouch-shield](https://github.com/vouch-protocol/vouch-shield) is a TypeScript runtime middleware that intercepts tool calls and enforces signature verification, allowlist, capability permissions, and audit logging. Treat it as the enforcement layer that consumes Vouch credentials at execution time.
+Shield is the policy layer that decides whether a call may run. It ships inside the SDK in both languages, and a Vouch-protected MCP server consults it before running a tool. See the Shield guide below.
 
 ## No framework? Use the standalone packages
 
@@ -1605,59 +1605,71 @@ FastAPI service (\`github-app/main.py\`, ~1000 lines). Webhook endpoint at \`/we
       },
       {
         id: 'vouch-shield',
-        title: 'Adding Vouch Shield to Your Agent',
-        summary: 'Drop a small middleware in front of your agent so every tool call gets checked before it runs.',
+        title: 'Vouch Shield rules',
+        summary: 'Decide whether a DID may take an action on a resource, with the same rules in Python and TypeScript.',
         body: `
+Shield matches on the same three fields a credential binds in its intent: an action, a target, and a resource. The policy asks the question the evidence answers.
+
 ## Install
 
+Shield ships inside the SDK, so there is nothing extra to install.
+
 \`\`\`bash
-npm install @vouch-protocol/shield
+pip install vouch-protocol
+npm i @vouch-protocol-official/sdk
 \`\`\`
 
-## Basic usage
+## Write the rules
+
+\`\`\`yaml
+version: 2
+rules:
+  - did: did:web:agent.example.com
+    allow:
+      - { action: read_file, target: files, resource: "reports/**" }
+deny_default: true
+\`\`\`
+
+## Ask it
+
+\`\`\`python
+from vouch.shield import Shield, ShieldConfig
+
+shield = Shield(ShieldConfig(rules_path="rules.yaml"))
+decision = shield.check(did, action="read_file", target="files", resource="reports/q3.txt")
+if decision.allow:
+    run_the_tool()
+\`\`\`
 
 \`\`\`ts
-import { VouchShield, generateKeypair, signPayload } from '@vouch-protocol/shield';
+import { parseRules } from '@vouch-protocol-official/sdk';
+import { readFileSync } from 'node:fs';
+import { parse as parseYaml } from 'yaml';
 
-const shield = new VouchShield({ strictMode: true });
-
-// Trust a specific identity
-const identity = generateKeypair();
-shield.registerPublicKey(identity.did, identity.publicKey);
-shield.trustDid(identity.did);
-shield.setCapabilities(identity.did, {
-  filesystem: 'read',
-  network: 'outbound',
-  shell: 'none',
-});
-
-// Before executing a tool call, intercept
-const signedRequest = signPayload(
-  { file: '/data/input.txt' },
-  identity.secretKey,
-  identity.did,
-);
-
-const result = shield.interceptToolCall({
-  tool: 'read_file',
-  args: { file: '/data/input.txt' },
-  signedPayload: signedRequest,
-});
-
-if (result.allowed) {
-  // Execute the tool
-} else {
-  console.error('Blocked:', result.reason);
+const rules = parseRules(readFileSync('rules.yaml', 'utf8'), 'rules.yaml', parseYaml);
+const decision = rules.check(did, 'read_file', 'files', 'reports/q3.txt');
+if (decision.allow) {
+  runTheTool();
 }
 \`\`\`
 
-## Where Shield sits
+## Glob semantics
 
-Between your framework's tool-call event and the actual tool function. If you use LangChain in TypeScript, intercept in the \`AgentExecutor\` callback. If you use a custom orchestrator, intercept in your tool-dispatch loop.
+A segment is the text between \`/\` separators. \`*\` matches exactly one segment and never crosses a \`/\`; \`**\` matches any number, including zero, and a trailing \`/**\` also matches the bare prefix. So \`reports/**\` covers \`reports\`, \`reports/q3.txt\`, and \`reports/2026/q3.txt\`, but not \`secrets/keys.txt\`.
 
-## Audit trail
+A resource with no \`/\` is a single segment, which is what lets \`public.*\` match a table name. \`.\` is a literal character.
 
-The \`FlightRecorder\` logs every allowed and blocked call. Pipe it to your SIEM or store it locally for after-the-fact audit.
+## Reasons you can alert on
+
+A decision carries a stable reason string: \`allowed\`, \`unknown did\`, \`no matching rule\`, \`resource outside scope\`, \`invalid resource\`, or \`malformed rules\`. The difference between the middle two matters: one means you may not do this at all, the other means you may do this, but not there.
+
+## Fail closed
+
+Resources are normalised before matching, so \`reports/../etc/passwd\` becomes \`etc/passwd\` and falls outside a \`reports/**\` rule. A path climbing above its own root is refused outright rather than clamped. A missing rules file, a malformed one, an unknown key inside a rule, or simply no match all deny.
+
+That normalisation is lexical and cannot see a symlink, so a server mapping a resource onto a real path must also confine that path itself.
+
+Both implementations are checked against the same shared decision vectors, so a rule means the same thing in either language.
 `,
       },
       {

@@ -111,6 +111,30 @@ print(open('/tmp/vouch-demo/cred.json').read()[:120], '...')
 **Say:** *"The agent asked for permission for one action on one file, and got a
 signed credential saying so."*
 
+### The same scene against the TypeScript server
+
+The credential you just minted works unchanged against the TypeScript server,
+because both sides speak the same credential format and read the same rules
+file. Run it twice to show that.
+
+```bash
+cd examples/mcp_server_ts
+npm install && npm run build
+VOUCH_FS_ROOT=/tmp/vouch-demo \
+VOUCH_RULES=/tmp/vouch-demo/rules.yaml \
+VOUCH_TRUSTED_ISSUERS="$VOUCH_DID" \
+VOUCH_TARGET=files \
+npm start
+```
+
+Its one protecting line, worth showing on screen next to the Python one:
+
+```ts
+import { McpServer } from '@vouch-protocol-official/mcp';
+```
+
+**Say:** *"Same credential, different language, same answer."*
+
 ---
 
 ## Scene 2 - refused at the notary
