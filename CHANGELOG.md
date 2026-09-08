@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it at all. The base class is now chosen from whichever SDK is installed, and
   `vouch.mcp.MCPServer` is exported alongside `vouch.mcp.FastMCP` as the name
   the newer SDK uses. Both refer to the same protected server.
+- `@vouch-protocol-official/mcp` exposes `package.json` through its exports map,
+  so tooling that reads the package version at runtime no longer fails with
+  `ERR_PACKAGE_PATH_NOT_EXPORTED`. Published as npm 2.2.1.
 
 ## [2.2.0] - 2026-09-08
 
