@@ -232,7 +232,7 @@ change to the credential format, no change to the cryptosuite.
 | AAT concept | Vouch concept | Mapping | Lossy? |
 |---|---|---|---|
 | Tool name (`tools` key, exact-match) | Shield `action` / the `tool` argument to `intercept` | Direct 1:1, byte-exact string. Both sides already match tool names exactly with no normalization. | **No** |
-| Argument constraints (`{arg: {constraint_type, …}}`) | Shield `target` / `resource` constraints | **No native home.** Shield's `check_permission(did, tool)` never sees `args`. Enforced instead by delegating the argument decision back to the reference implementation's `Authorizer.check_chain(chain, tool, args, signature)`, in the same pre-execution step. | **Yes - see 5.1** |
+| Argument constraints (`{arg: {constraint_type, …}}`) | Shield `resource` glob | **Exact for path-shaped constraints.** Shield v2 matches `action`/`target`/`resource` with globs, so `Pattern`, `Exact` and `OneOf` over paths become real Shield rules and Shield refuses an out-of-scope path itself. Non-path forms (`Range`, `Regex`, `CEL`, `Cidr`, `Not`, …) have no Shield equivalent and stay with the reference implementation's evaluator. Both gates must allow either way. | **No** for path-shaped; **yes** otherwise - see 5.1 |
 | Chain parent reference (`par_hash`) | Delegation parent `id` | Both bind a child to exactly one parent instance. AAT binds by SHA-256 of the parent's signing input; Vouch binds by parent credential `id` plus proof binding. Provenance-equivalent, not byte-equivalent. | **Yes - representation only** |
 | Narrow-only derivation (§6, I4) | Attenuation MUST-rule (`non_expansion`) | Identical invariant: a child may only narrow. Different dimension sets (AAT: tools + per-arg constraints + exp + depth; Vouch: action/target/resource/time/rate/policy). | **No** (invariant), **yes** (dimensions - see 5.1) |
 | `jti` | External authorisation reference on the credential | Carried as `intent.authorizedBy` - an extra key inside the existing `intent` dict, covered by the proof. Records *which delegation authorised this action*. | **No** |
@@ -245,14 +245,22 @@ change to the credential format, no change to the cryptosuite.
 
 This list is a deliverable in its own right.
 
-1. **Shield cannot express AAT argument constraints.** Shield's rule model is
-   per-DID capability *levels*, not per-argument predicates. Nothing in
-   `Capabilities` can say "`path` must match `reports/*`". We therefore do not
-   flatten AAT constraints into Shield rules - that would silently widen
-   authority, allowing `read_file /etc/passwd` under a rule meant for
-   `reports/*`. Instead the argument decision stays with the reference
-   implementation and is composed with Shield's decision **before execution**.
-   Both must allow.
+1. **Path-shaped argument constraints now map exactly; other shapes do not.**
+   This row used to read "Shield cannot express AAT argument constraints",
+   because Shield's rule model was per-DID capability *levels* and its check
+   never saw a call's arguments. Shield v2 matches `action`/`target`/`resource`
+   with globs on `resource`, so a leaf's `Pattern("reports/*")` becomes a real
+   Shield rule and Shield refuses `read_file /etc/passwd` on its own.
+
+   Two cautions remain. First, the two glob languages differ: Tenuo's `*`
+   crosses `/` and Shield's does not, so patterns are **translated**, not
+   copied, and a differential test asserts the Shield rule is never wider than
+   the constraint it came from. Second, constraint forms with no faithful
+   translation (`Range`, `Regex`, `CEL`, `Cidr`, `Not`, `NotOneOf`, mid-string
+   `*`) fall back to `resource: "**"` and remain the reference implementation's
+   responsibility alone. Shield never *replaces* that evaluator; it adds a
+   second, independent refusal point for the subset it can express. Both must
+   allow.
 
 2. **The reverse direction is lossy too.** Vouch's `rate` and `policy`
    dimensions have no AAT equivalent in the core constraint set. AAT would need

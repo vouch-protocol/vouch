@@ -41,6 +41,8 @@ from integrations.aat import (  # noqa: E402
 
 VECTORS = Path(__file__).resolve().parents[3] / "test-vectors" / "aat"
 
+DID = "did:web:agent.example.com"
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -105,17 +107,18 @@ def test_valid_chain_leaf_rules_extracted(keys):
     assert chain.leaf_jti == str(leaf.id)
     assert chain.root_jti == str(root.id)
 
-    rules = leaf_to_shield_rules(chain)
+    rules = leaf_to_shield_rules(chain, did=DID)
 
     # The leaf's authority, not the root's: write_file was narrowed away.
     assert rules.allowed_tools == frozenset({"read_file"})
     assert not rules.permits_tool("write_file")
 
-    # Tool scope maps; the leaf's argument constraint does not yet, so the
-    # rule is deliberately wide and the reference implementation still gates it.
+    # The leaf's path constraint became a real Shield resource glob, so the
+    # rule is as fine-grained as the token it came from.
     assert [r.action for r in rules.rules] == ["read_file"]
-    assert rules.rules[0].resource == "**"
-    assert rules.unmapped_tools == ("read_file",)
+    assert rules.rules[0].resource == "reports/*/**"
+    assert rules.mapped_tools == ("read_file",)
+    assert rules.unmapped_tools == ()
 
 
 def test_widened_scope_rejected(keys):
@@ -315,7 +318,9 @@ def test_argument_constraint_enforced(verified_chain):
         read_file("/etc/passwd")
 
     assert not blocked.allowed
-    assert blocked.failure == "ConstraintViolation"
+    # Shield now expresses the leaf's path constraint itself, so it refuses
+    # first. Tenuo would also refuse; it simply never gets asked.
+    assert blocked.refused_by == "shield"
     assert invoked == [], "a constraint-violating call reached the tool"
 
 
@@ -329,8 +334,8 @@ def test_missing_proof_of_possession_is_denied(verified_chain):
     assert decision.failure in {"MissingSignature", "SignatureMismatch"}
 
 
-def test_shield_and_aat_must_both_allow(verified_chain):
-    """Shield's verdict is combined with the AAT verdict, not replaced by it."""
+def test_external_shield_and_aat_must_both_allow(verified_chain):
+    """An external Shield's verdict is combined with the AAT verdict."""
     from vouch.shield import Shield, ShieldConfig
 
     chain, holder_key = verified_chain
@@ -338,7 +343,8 @@ def test_shield_and_aat_must_both_allow(verified_chain):
 
     shield = Shield(ShieldConfig(require_signature=False, strict_mode=True))
     shield.trust_did(did)
-    # Shield holds no rules, so it must veto even though the AAT permits.
+    # The external Shield grants nothing, so it must veto even though both the
+    # AAT and the AAT-derived rules permit the call.
     gate = AatGate(chain, holder_key=holder_key, shield=shield, did=did)
     decision = gate.check("read_file", {"path": "reports/q3.txt"})
 
@@ -374,7 +380,7 @@ def test_valid_fixture_verifies():
 
     chain = verify_chain_file(path)
     assert chain.tools == ["read_file"]
-    assert leaf_to_shield_rules(chain).allowed_tools == frozenset({"read_file"})
+    assert leaf_to_shield_rules(chain, did=DID).allowed_tools == frozenset({"read_file"})
 
 
 def test_widening_fixture_is_rejected():
@@ -454,3 +460,136 @@ def test_mcp_denies_when_chain_does_not_verify(tmp_path, monkeypatch):
     out = server.check_action_aat("read_file", '{"path": "reports/q3.txt"}')
     assert out.startswith("DENY")
     server._aat_gate_cache.clear()
+
+
+# ---------------------------------------------------------------------------
+# Shield v2 mapping (Step 2 follow-through)
+# ---------------------------------------------------------------------------
+
+
+def test_aat_path_constraint_enforced_by_shield(verified_chain):
+    """`read_file /etc/passwd` is denied by Shield, not only by Tenuo.
+
+    The leaf constrains `path` to `reports/*`. Shield v2 can express that as a
+    resource glob, so it refuses on its own. This asserts against Shield's
+    verdict directly, with Tenuo's evaluator out of the picture entirely.
+    """
+    chain, _ = verified_chain
+    gate = AatGate(chain, did=DID)
+
+    assert gate.shield_check("read_file", {"path": "reports/q3.txt"}).allow
+
+    denied = gate.shield_check("read_file", {"path": "/etc/passwd"})
+    assert not denied.allow
+    assert denied.reason == "resource outside scope"
+
+    # Narrowed out of the leaf entirely: not a resource question.
+    assert gate.shield_check("write_file", {"path": "reports/q3.txt"}).reason == (
+        "no matching rule"
+    )
+
+    # And traversal cannot sneak back in.
+    assert not gate.shield_check("read_file", {"path": "reports/../etc/passwd"}).allow
+
+
+def test_shield_glob_is_never_wider_than_the_tenuo_constraint(verified_chain):
+    """Differential check: Shield must not allow what Tenuo would refuse.
+
+    Tenuo's `*` crosses `/`; Shield's does not. The translation has to account
+    for that. Narrower is safe here because both gates must allow; wider would
+    silently widen authority.
+    """
+    from tenuo import Pattern
+
+    from integrations.aat.aat_to_shield import tenuo_glob_to_shield
+    from vouch.shield.rules import normalize_pattern, normalize_resource, resource_matches
+
+    resources = [
+        "reports",
+        "reports/q3.txt",
+        "reports/2026/q3.txt",
+        "reports/a/b/c",
+        "secrets/keys.txt",
+        "reportsX/a",
+        "etc/passwd",
+    ]
+
+    for tenuo_pattern in ["reports/*", "reports/**", "reports/q3.txt"]:
+        shield_glob = tenuo_glob_to_shield(tenuo_pattern)
+        assert shield_glob is not None, tenuo_pattern
+        matcher = Pattern(tenuo_pattern)
+        for resource in resources:
+            normalised = normalize_resource(resource)
+            shield_allows = normalised is not None and resource_matches(
+                normalize_pattern(shield_glob), normalised
+            )
+            if shield_allows:
+                assert matcher.matches(resource), (
+                    f"Shield glob {shield_glob!r} allows {resource!r} but "
+                    f"Tenuo pattern {tenuo_pattern!r} does not - that is a widening"
+                )
+
+
+def test_untranslatable_constraints_fall_back_and_stay_with_tenuo(keys):
+    """A constraint Shield cannot express yields '**' and is reported."""
+    from tenuo import Range
+
+    from integrations.aat.aat_to_shield import tenuo_glob_to_shield
+
+    # Mid-string '*' has no faithful Shield equivalent: Tenuo matches across
+    # '/' through it, and Shield has no way to say that.
+    assert tenuo_glob_to_shield("rep*ts") is None
+    assert tenuo_glob_to_shield("a/*/b") is None
+
+    root_key, holder_key = keys
+    root = (
+        Warrant.mint_builder()
+        .capability("charge", amount=Range.max_value(100))
+        .ttl(3600)
+        .holder(holder_key.public_key)
+        .mint(root_key)
+    )
+    chain = verify_chain(document(root_key, [root]))
+    rules = leaf_to_shield_rules(chain, did=DID, target="payments")
+
+    assert rules.unmapped_tools == ("charge",)
+    assert rules.mapped_tools == ()
+    assert [r.resource for r in rules.rules] == ["**"]
+
+
+def test_numeric_constraint_still_enforced_by_tenuo(keys):
+    """Shield's fallback must not become a hole: Tenuo still refuses."""
+    from tenuo import Range
+
+    root_key, holder_key = keys
+    root = (
+        Warrant.mint_builder()
+        .capability("charge", amount=Range.max_value(100))
+        .ttl(3600)
+        .holder(holder_key.public_key)
+        .mint(root_key)
+    )
+    chain = verify_chain(document(root_key, [root]))
+    gate = AatGate(chain, holder_key=holder_key, did=DID, target="payments")
+
+    # Shield allows it (its rule is '**'), so the refusal must come from Tenuo.
+    assert gate.shield_check("charge", {"amount": 500}).allow
+
+    decision = gate.check("charge", {"amount": 500})
+    assert not decision.allowed
+    assert decision.refused_by == "tenuo"
+
+    assert gate.check("charge", {"amount": 50}).allowed
+
+
+def test_rules_render_as_a_v2_document(verified_chain):
+    """The derived rules load back through Shield's own loader."""
+    from vouch.shield.rules import load_rules
+
+    chain, _ = verified_chain
+    rules = leaf_to_shield_rules(chain, did=DID)
+
+    rule_set = load_rules(rules.as_document(), source="<aat>")
+    assert rule_set.ok
+    assert rule_set.check(DID, "read_file", "filesystem", "reports/q3.txt").allow
+    assert not rule_set.check(DID, "read_file", "filesystem", "/etc/passwd").allow
