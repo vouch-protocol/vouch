@@ -441,3 +441,28 @@ def test_every_decision_is_logged_once(server, env, caplog):
     deny_lines = [r for r in caplog.records if r.getMessage().startswith("DENY")]
     assert len(deny_lines) == 1
     assert "credential does not match request" in deny_lines[0].getMessage()
+
+
+# ---------------------------------------------------------------------------
+# SDK compatibility
+# ---------------------------------------------------------------------------
+
+
+def test_works_against_whichever_mcp_sdk_is_installed():
+    """The SDK renamed its server class; both names reach the same subclass.
+
+    mcp 1.x ships `FastMCP`, mcp 2.x renamed it to `MCPServer`. Importing only
+    one of them made this module fail outright on the other line, so the base
+    class is chosen at import time and both names are exported.
+    """
+    import vouch.mcp as module
+
+    assert module.MCPServer is module.FastMCP
+    assert isinstance(module._MCP_SDK_V2, bool)
+
+    # Whichever line is installed, the subclass really extends that SDK's class.
+    base = type(module.FastMCP).__mro__[0]
+    assert base is type
+    parents = [c.__name__ for c in module.FastMCP.__mro__]
+    assert parents[0] == "FastMCP"
+    assert any(name in parents for name in ("FastMCP", "MCPServer"))
