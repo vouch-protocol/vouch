@@ -1,0 +1,17 @@
+{
+  "name": "vouch-example-mcp-server-ts",
+  "private": true,
+  "version": "2.2.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@vouch-protocol-official/mcp": "^2.2.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": { "@types/node": "^20.11.0", "typescript": "^5.4.0" }
+}

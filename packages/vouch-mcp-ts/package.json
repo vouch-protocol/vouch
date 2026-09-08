@@ -1,0 +1,66 @@
+{
+  "name": "@vouch-protocol-official/mcp",
+  "version": "2.2.0",
+  "description": "Vouch-protected MCP servers. Change one import and every tool checks a credential before it acts.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vouch-protocol/vouch.git",
+    "directory": "packages/vouch-mcp-ts"
+  },
+  "homepage": "https://vouch-protocol.com",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "authorization",
+    "verifiable-credentials",
+    "ai-agents",
+    "vouch-protocol"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "yaml": "^2.4.0"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": ">=1.10.0",
+    "@vouch-protocol-official/sdk": ">=2.2.0",
+    "zod": "^3.23.0 || ^4.0.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@noble/post-quantum": "^0.4.0",
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0",
+    "zod": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
