@@ -580,4 +580,26 @@ export {
 // Package version
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Vouch Shield rules (action / target / resource, with globs on resource)
+// ---------------------------------------------------------------------------
+
+export {
+  ALLOWED,
+  REASON_INVALID_RESOURCE,
+  REASON_MALFORMED_RULES,
+  REASON_NO_MATCHING_RULE,
+  REASON_RESOURCE_OUTSIDE_SCOPE,
+  REASON_UNKNOWN_DID,
+  RuleError,
+  RuleSet,
+  loadRules,
+  normalizePattern,
+  normalizeResource,
+  parseRules,
+  resourceMatches,
+} from './shield';
+
+export type { Decision, Rule } from './shield';
+
 export const VERSION = '1.1.0';
