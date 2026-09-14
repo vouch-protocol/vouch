@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 28278,
-  "verifiable": 538,
-  "cannot": 27740,
-  "gradeA": 382,
-  "pctVerifiable": 1.9,
-  "pctCannot": 98.1,
-  "pctCard": 2.4,
-  "pctRev": 1.4,
-  "pctPq": 1.0,
-  "cardCount": 677,
-  "revCount": 389,
+  "total": 31871,
+  "verifiable": 540,
+  "cannot": 31331,
+  "gradeA": 388,
+  "pctVerifiable": 1.7,
+  "pctCannot": 98.3,
+  "pctCard": 2.3,
+  "pctRev": 1.2,
+  "pctPq": 0.9,
+  "cardCount": 728,
+  "revCount": 394,
   "pqCount": 277,
-  "generated": "7 September 2026"
+  "generated": "14 September 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -115,6 +115,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.gadgethumans.com",
     "method": "did:key, Ed25519",
     "did": "did:key:z6MkjdjQBbm4T3ZGeAuddRPzJs8KuKUbLBhaVkqML2z9hQjj"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.getacqpath/acqpath",
+    "domains": "api.getacqpath.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.getacqpath.com"
   },
   {
     "grade": "A",
@@ -2447,10 +2455,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "io.github.cloakmaster/pact0",
+    "domains": "pact0.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:pact0.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "io.github.craigmbrown/blindoracle",
     "domains": "craigmbrown.com",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:craigmbrown.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.edwinorange/emboss",
+    "domains": "api.getemboss.ai",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.getemboss.ai"
   },
   {
     "grade": "A",
@@ -3063,10 +3087,34 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "ltd.qianyuan/qy-evolution",
+    "domains": "qianyuan.ltd",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:qianyuan.ltd"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "ltd.qianyuan/qy-stream",
+    "domains": "qianyuan.ltd",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:qianyuan.ltd"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "store.scvd/general-store",
     "domains": "scvd.store",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:scvd.store"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "tech.flocore/flocore",
+    "domains": "fo.flocore.tech",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:fo.flocore.tech"
   },
   {
     "grade": "A",
@@ -3191,6 +3239,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.fieldrobin/fieldrobin",
+    "domains": "fieldrobin.com",
+    "method": "did:web",
+    "did": "did:web:fieldrobin.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.ghostavo/retail-media-measurement",
     "domains": "mcp.ghostavo.com",
     "method": "did:web",
@@ -3235,14 +3291,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "neuronto.com",
     "method": "did:web",
     "did": "did:web:neuronto.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "com.payforapi/saymon-ru-data-api",
-    "domains": "payforapi.com",
-    "method": "did:web",
-    "did": "did:web:payforapi.com"
   },
   {
     "grade": "C",
@@ -3299,14 +3347,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "toolsthatrank-mcp.lipmichal.workers.dev",
     "method": "did:web",
     "did": "did:web:toolsthatrank-mcp.lipmichal.workers.dev"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "dev.fly.obol-x402/obol",
-    "domains": "obol-mcp.fly.dev",
-    "method": "did:web",
-    "did": "did:web:obol-mcp.fly.dev"
   },
   {
     "grade": "C",
@@ -3399,18 +3439,18 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.ArtyKOMarkets/warda",
-    "domains": "mcp.wardaprotocol.com",
+    "name": "io.github.AETumiApp/aetumi",
+    "domains": "mcp.aetumi.app",
     "method": "did:web",
-    "did": "did:web:mcp.wardaprotocol.com"
+    "did": "did:web:mcp.aetumi.app"
   },
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.Br0ski777/image-generator",
-    "domains": "image-generator-x402-production.up.railway.app",
+    "name": "io.github.ArtyKOMarkets/warda",
+    "domains": "mcp.wardaprotocol.com",
     "method": "did:web",
-    "did": "did:web:image-generator-x402-production.up.railway.app"
+    "did": "did:web:mcp.wardaprotocol.com"
   },
   {
     "grade": "C",
@@ -3463,18 +3503,42 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.MastadoonPrime/agent-memory",
-    "domains": "agent-memory-production-6506.up.railway.app",
+    "name": "io.github.Nero-Engine/dataset-aggregate-pivot",
+    "domains": "dataset-aggregate-pivot.nerolabs.workers.dev",
     "method": "did:web",
-    "did": "did:web:agent-memory-production-6506.up.railway.app"
+    "did": "did:web:dataset-aggregate-pivot.nerolabs.workers.dev"
   },
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.MastadoonPrime/sylex-search",
-    "domains": "mcp-server-production-38c9.up.railway.app",
+    "name": "io.github.Nero-Engine/dataset-cleaner-exporter",
+    "domains": "dataset-cleaner-exporter.nerolabs.workers.dev",
     "method": "did:web",
-    "did": "did:web:mcp-server-production-38c9.up.railway.app"
+    "did": "did:web:dataset-cleaner-exporter.nerolabs.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.Nero-Engine/dataset-diff-detector",
+    "domains": "dataset-diff-detector.nerolabs.workers.dev",
+    "method": "did:web",
+    "did": "did:web:dataset-diff-detector.nerolabs.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.Nero-Engine/dataset-filter-transform",
+    "domains": "dataset-filter-transform.nerolabs.workers.dev",
+    "method": "did:web",
+    "did": "did:web:dataset-filter-transform.nerolabs.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.Nero-Engine/dataset-join-merge",
+    "domains": "dataset-join-merge.nerolabs.workers.dev",
+    "method": "did:web",
+    "did": "did:web:dataset-join-merge.nerolabs.workers.dev"
   },
   {
     "grade": "C",
@@ -3491,14 +3555,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "tcb-api.cloud.tencent.com",
     "method": "did:web",
     "did": "did:web:tcb-api.cloud.tencent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Waysway-app/waysway",
-    "domains": "api.waysway.com",
-    "method": "did:web",
-    "did": "did:web:api.waysway.com"
   },
   {
     "grade": "C",
@@ -3535,34 +3591,10 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.benseverndev-oss/goldenpipe",
-    "domains": "goldenpipe-mcp-production.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:goldenpipe-mcp-production.up.railway.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.benseverndev-oss/infermap",
-    "domains": "infermap-mcp-production.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:infermap-mcp-production.up.railway.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.danielasalgadov/fiscal",
     "domains": "menteorama-fiscal-mcp.menteorama.workers.dev",
     "method": "did:web",
     "did": "did:web:menteorama-fiscal-mcp.menteorama.workers.dev"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.hycore220/k-work-trust",
-    "domains": "k-work-trust-api.fly.dev",
-    "method": "did:web",
-    "did": "did:web:k-work-trust-api.fly.dev"
   },
   {
     "grade": "C",
@@ -3595,14 +3627,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "gitlab-mcp-server.fly.dev, {host}",
     "method": "did:web",
     "did": "did:web:gitlab-mcp-server.fly.dev"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.johnanleitner1-Coder/lastminute-booking",
-    "domains": "web-production-dc74b.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:web-production-dc74b.up.railway.app"
   },
   {
     "grade": "C",
@@ -4107,14 +4131,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "nowpattern.com",
     "method": "did:web",
     "did": "did:web:nowpattern.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.nexus-mcp-infra/useful-data-source-for-agents-doing-product-price-sdk",
-    "domains": "useful-data-source-for-agents-production.up.railway.app",
-    "method": "did:web",
-    "did": "did:web:useful-data-source-for-agents-production.up.railway.app"
   },
   {
     "grade": "C",
