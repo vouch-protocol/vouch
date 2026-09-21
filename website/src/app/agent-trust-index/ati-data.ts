@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 31871,
-  "verifiable": 540,
-  "cannot": 31331,
-  "gradeA": 388,
-  "pctVerifiable": 1.7,
-  "pctCannot": 98.3,
+  "total": 33906,
+  "verifiable": 543,
+  "cannot": 33363,
+  "gradeA": 393,
+  "pctVerifiable": 1.6,
+  "pctCannot": 98.4,
   "pctCard": 2.3,
   "pctRev": 1.2,
-  "pctPq": 0.9,
-  "cardCount": 728,
-  "revCount": 394,
+  "pctPq": 0.8,
+  "cardCount": 768,
+  "revCount": 399,
   "pqCount": 277,
-  "generated": "14 September 2026"
+  "generated": "21 September 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -79,6 +79,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.agentavow/agentavow-trust",
+    "domains": "agentavow.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:agentavow.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.aicontentdrop/ai-content-drop",
     "domains": "aicontentdrop.com",
     "method": "did:web, Ed25519 (JWK)",
@@ -135,10 +143,34 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.jenriks/photo-archive",
+    "domains": "jenriks.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:jenriks.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.kimchi-sushi/agent-mcp",
+    "domains": "kimchi-sushi.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:kimchi-sushi.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "de.carbon-cashmere.api/crypto-intelligence",
     "domains": "api.carbon-cashmere.de",
     "method": "did:web, secp256k1 (JWK)",
     "did": "did:web:api.carbon-cashmere.de"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "dev.fly.x402-accelerometer-feed/tokenized-stocks-agent-data",
+    "domains": "x402-accelerometer-feed.fly.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:x402-accelerometer-feed.fly.dev"
   },
   {
     "grade": "A",
@@ -2575,6 +2607,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "io.github.ogasurfproject-jpg/hs-verify-gate",
+    "domains": "hs-verify-gate.oga-surf-project.workers.dev",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:hs-verify-gate.oga-surf-project.workers.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "io.github.rnwy/mcp",
     "domains": "rnwy.com",
     "method": "did:web, P-256 (JWK)",
@@ -3159,6 +3199,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "app.quantcalc/retirement-engine",
+    "domains": "mcp.quantcalc.app",
+    "method": "did:web",
+    "did": "did:web:mcp.quantcalc.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "app.steadywrk/mcp-dispatch",
     "domains": "steadywrk.app",
     "method": "did:web",
@@ -3287,14 +3335,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "com.neuronto/agents-tools-search-discovery-ard-registry",
-    "domains": "neuronto.com",
-    "method": "did:web",
-    "did": "did:web:neuronto.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "com.secondopinionx402/second-opinion",
     "domains": "secondopinionx402.com",
     "method": "did:web",
@@ -3351,6 +3391,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "dev.fly.obol-x402/obol",
+    "domains": "obol-mcp.fly.dev",
+    "method": "did:web",
+    "did": "did:web:obol-mcp.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "dev.fly.solidus-x402/solidus",
     "domains": "solidus-mcp.fly.dev",
     "method": "did:web",
@@ -3379,14 +3427,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "unreasonable.eco",
     "method": "did:web",
     "did": "did:web:unreasonable.eco"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "eu.ansvar/us-law-mcp",
-    "domains": "us-law-mcp.vercel.app",
-    "method": "did:web",
-    "did": "did:web:us-law-mcp.vercel.app"
   },
   {
     "grade": "C",
@@ -3431,14 +3471,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.AEGISGOVDAO/aegisgov-contracts-mcp",
-    "domains": "aegisgov-contracts.vercel.app",
-    "method": "did:web",
-    "did": "did:web:aegisgov-contracts.vercel.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.AETumiApp/aetumi",
     "domains": "mcp.aetumi.app",
     "method": "did:web",
@@ -3463,22 +3495,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.Elemzir/kta-oracle",
-    "domains": "kta-oracle.vercel.app",
-    "method": "did:web",
-    "did": "did:web:kta-oracle.vercel.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.Evozim/organic-text",
-    "domains": "organic-text-mcp.vercel.app",
-    "method": "did:web",
-    "did": "did:web:organic-text-mcp.vercel.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "io.github.GaetanGermain/emotion-dictionary",
     "domains": "mcp.emotioninside.org",
     "method": "did:web",
@@ -3487,18 +3503,18 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.JadeSparrow/sqlai-dev-sql-verifier",
-    "domains": "mcp.sqlai.dev",
+    "name": "io.github.Galanai/aiwebsignals",
+    "domains": "aiwebsignals.com",
     "method": "did:web",
-    "did": "did:web:mcp.sqlai.dev"
+    "did": "did:web:aiwebsignals.com"
   },
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.Larshiensch99/flowvolt",
-    "domains": "flowvolt-strike-engine.vercel.app",
+    "name": "io.github.JadeSparrow/sqlai-dev-sql-verifier",
+    "domains": "mcp.sqlai.dev",
     "method": "did:web",
-    "did": "did:web:flowvolt-strike-engine.vercel.app"
+    "did": "did:web:mcp.sqlai.dev"
   },
   {
     "grade": "C",
@@ -3551,18 +3567,10 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "io.github.TencentCloudBase/cloudbase-mcp",
-    "domains": "tcb-api.cloud.tencent.com",
+    "name": "io.github.Waysway-app/waysway",
+    "domains": "api.waysway.com",
     "method": "did:web",
-    "did": "did:web:tcb-api.cloud.tencent.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.ahmedEid1/atlas-research",
-    "domains": "atlas-sooty-delta.vercel.app",
-    "method": "did:web",
-    "did": "did:web:atlas-sooty-delta.vercel.app"
+    "did": "did:web:api.waysway.com"
   },
   {
     "grade": "C",
@@ -3599,6 +3607,30 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.gosadu/loophole-tape",
+    "domains": "htrlhl3y49.execute-api.us-east-2.amazonaws.com",
+    "method": "did:web",
+    "did": "did:web:htrlhl3y49.execute-api.us-east-2.amazonaws.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.hardeyhemy/revnuvo-trust-mcp",
+    "domains": "api.revnuvo.site",
+    "method": "did:web",
+    "did": "did:web:api.revnuvo.site"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.hycore220/k-work-trust",
+    "domains": "k-work-trust-api.fly.dev",
+    "method": "did:web",
+    "did": "did:web:k-work-trust-api.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.imoldyoung/e-invoice",
     "domains": "e-invoice-mcp.601096790.workers.dev",
     "method": "did:web",
@@ -3627,14 +3659,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "gitlab-mcp-server.fly.dev, {host}",
     "method": "did:web",
     "did": "did:web:gitlab-mcp-server.fly.dev"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.jongko54/web-embedding",
-    "domains": "webembedding-mcp.vercel.app",
-    "method": "did:web",
-    "did": "did:web:webembedding-mcp.vercel.app"
   },
   {
     "grade": "C",
@@ -4191,6 +4215,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.soyeladice-svg/bursia-canary",
+    "domains": "phase1b-github-mcp-gateway-canary-20260918-bursia-interop-lab.soyeladice.workers.dev",
+    "method": "did:web",
+    "did": "did:web:phase1b-github-mcp-gateway-canary-20260918-bursia-interop-lab.soyeladice.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.squidcode/tapwatermap",
     "domains": "mcp.tapwatermap.com",
     "method": "did:web",
@@ -4256,17 +4288,9 @@ export const ATI_AGENTS: AtiAgent[] = [
     "grade": "C",
     "score": 60,
     "name": "io.github.vassiliylakhonin/agenda-intelligence-md",
-    "domains": "agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev, agent-output-verification-a2a.vassiliy-lakhonin.workers.dev, agentic-interaction-trust-a2a.vassiliy-lakhonin.workers.dev, cis-secondary-sanctions-a2a.vassiliy-lakhonin.workers.dev, corridor-sanctions-assistant-a2a.vassiliy-lakhonin.workers.dev, critical-minerals-due-diligence-a2a.vassiliy-lakhonin.workers.dev, dual-use-technology-export-a2a.vassiliy-lakhonin.workers.dev, gulf-maritime-exposure-a2a.vassiliy-lakhonin.workers.dev, kazakhstan-market-entry-readiness-a2a.vassiliy-lakhonin.workers.dev, middle-corridor-deal-risk-gate-a2a.vassiliy-lakhonin.workers.dev",
+    "domains": "agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev, agent-financial-guard-a2a.vassiliy-lakhonin.workers.dev, agent-output-verification-a2a.vassiliy-lakhonin.workers.dev, agentic-interaction-trust-a2a.vassiliy-lakhonin.workers.dev, cis-secondary-sanctions-a2a.vassiliy-lakhonin.workers.dev, corridor-sanctions-assistant-a2a.vassiliy-lakhonin.workers.dev, critical-minerals-due-diligence-a2a.vassiliy-lakhonin.workers.dev, dual-use-technology-export-a2a.vassiliy-lakhonin.workers.dev, gulf-maritime-exposure-a2a.vassiliy-lakhonin.workers.dev, kazakhstan-market-entry-readiness-a2a.vassiliy-lakhonin.workers.dev, m2m-escrow-arbiter-a2a.vassiliy-lakhonin.workers.dev, middle-corridor-deal-risk-gate-a2a.vassiliy-lakhonin.workers.dev",
     "method": "did:web",
     "did": "did:web:agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.github.vndpal/sentinelscan-cloud-mcp",
-    "domains": "sentinelscan-cloud-mcp.vercel.app",
-    "method": "did:web",
-    "did": "did:web:sentinelscan-cloud-mcp.vercel.app"
   },
   {
     "grade": "C",
@@ -4275,14 +4299,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "openfab-22100483453.us-central1.run.app",
     "method": "did:web",
     "did": "did:web:openfab-22100483453.us-central1.run.app"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "io.sslip.128.221.67.45.agent-exec/agent-exec",
-    "domains": "agent-exec.45.67.221.128.sslip.io",
-    "method": "did:web",
-    "did": "did:web:agent-exec.45.67.221.128.sslip.io"
   },
   {
     "grade": "C",
@@ -4303,6 +4319,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "org.448c.agent-exec/agent-exec",
+    "domains": "agent-exec.448c.org",
+    "method": "did:web",
+    "did": "did:web:agent-exec.448c.org"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "org.aviationhs/private-jet-charter",
     "domains": "mcp.aviationhs.org",
     "method": "did:web",
@@ -4311,10 +4335,10 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "space.0/space0",
-    "domains": "mcp.0.space",
+    "name": "space.arakelproof.proof/arakel",
+    "domains": "proof.arakelproof.space",
     "method": "did:web",
-    "did": "did:web:mcp.0.space"
+    "did": "did:web:proof.arakelproof.space"
   },
   {
     "grade": "C",
