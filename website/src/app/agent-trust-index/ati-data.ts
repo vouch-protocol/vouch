@@ -2,24 +2,32 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 46303,
-  "verifiable": 396,
-  "cannot": 45907,
-  "gradeA": 147,
+  "total": 50407,
+  "verifiable": 430,
+  "cannot": 49977,
+  "gradeA": 162,
   "pctVerifiable": 0.9,
   "pctCannot": 99.1,
   "pctCard": 1.6,
   "pctRev": 0.4,
   "pctPq": 0.0,
-  "cardCount": 738,
-  "revCount": 207,
+  "cardCount": 811,
+  "revCount": 224,
   "pqCount": 3,
-  "generated": "19 October 2026"
+  "generated": "26 October 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
 
 export const ATI_AGENTS: AtiAgent[] = [
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "ai.achromat/mcp-server",
+    "domains": "mom.achromat.ai",
+    "method": "did:web, Ed25519 (Multikey)",
+    "did": "did:web:mom.achromat.ai"
+  },
   {
     "grade": "A",
     "score": 100,
@@ -127,6 +135,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "co.leviathansystems/public-content",
+    "domains": "www.leviathansystems.co",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:www.leviathansystems.co"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.agentavow/agentavow-trust",
     "domains": "agentavow.com",
     "method": "did:web, Ed25519 (JWK)",
@@ -151,10 +167,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.assessall/catalogue",
+    "domains": "www.assessall.com",
+    "method": "did:web, RSA (JWK)",
+    "did": "did:web:www.assessall.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.carragent/carragent",
     "domains": "carragent.com",
     "method": "did:web, P-256 (JWK)",
     "did": "did:web:carragent.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.data-slconsulting/site",
+    "domains": "data-slconsulting.com",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:data-slconsulting.com"
   },
   {
     "grade": "A",
@@ -247,10 +279,50 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.mart402/docs",
+    "domains": "mart402.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:mart402.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.mart402/extract",
     "domains": "mart402.com",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:mart402.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.mart402/free",
+    "domains": "mart402.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:mart402.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.mart402/jp-statutory",
+    "domains": "mart402.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:mart402.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.mart402/vision",
+    "domains": "mart402.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:mart402.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.moltbotden/mcp",
+    "domains": "api.moltbotden.com",
+    "method": "did:web, Ed25519 (Multikey)",
+    "did": "did:web:api.moltbotden.com"
   },
   {
     "grade": "A",
@@ -287,6 +359,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "dev.pages.wayreceipt/wayreceipt",
+    "domains": "wayreceipt.pages.dev",
+    "method": "did:key, key",
+    "did": "did:key:z6Mk..."
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "eco.reeco/reecopedia",
     "domains": "ia.reeco.eco",
     "method": "did:web, Ed25519 (JWK)",
@@ -303,10 +383,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "io.aeroz/aeroz",
+    "domains": "api.aeroz.io",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:api.aeroz.io"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "io.agentsvc/services",
     "domains": "agentsvc.io",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:agentsvc.io"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.codeb/signing",
+    "domains": "phone.codeb.io",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:phone.codeb.io"
   },
   {
     "grade": "A",
@@ -624,9 +720,9 @@ export const ATI_AGENTS: AtiAgent[] = [
     "grade": "A",
     "score": 100,
     "name": "io.github.yonatangross/orchestkit",
-    "domains": "orchestkit.yonyon.ai",
+    "domains": "orchestkit.dev",
     "method": "did:web, Ed25519 (JWK)",
-    "did": "did:web:orchestkit.yonyon.ai"
+    "did": "did:web:orchestkit.dev"
   },
   {
     "grade": "A",
@@ -1119,6 +1215,22 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "is.did/mcp",
+    "domains": "did.is",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:did.is"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "link.aotrust/notary",
+    "domains": "api.aotrust.link",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:api.aotrust.link"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "link.neronewrecklive/haven",
     "domains": "neronewrecklive.link",
     "method": "did:web, Ed25519 (JWK)",
@@ -1151,6 +1263,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "si.humancollab/humancollab",
+    "domains": "humancollab.si",
+    "method": "did:web, Ed25519 (Multikey)",
+    "did": "did:web:humancollab.si"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "store.scvd/general-store",
     "domains": "scvd.store",
     "method": "did:web, Ed25519 (JWK)",
@@ -1175,10 +1295,10 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
-    "name": "us.srv.vehcdj664efetfrsolne5umanq/quoteproof-mcp",
-    "domains": "vehcdj664efetfrsolne5umanq.srv.us",
+    "name": "wiki.agenticweb/probe",
+    "domains": "agenticweb.wiki",
     "method": "did:web, Ed25519 (JWK)",
-    "did": "did:web:vehcdj664efetfrsolne5umanq.srv.us"
+    "did": "did:web:agenticweb.wiki"
   },
   {
     "grade": "A",
@@ -1195,6 +1315,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "agoreum.xyz",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:agoreum.xyz"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "ai.kanvo/kanvo",
+    "domains": "kanvo.ai",
+    "method": "did:web",
+    "did": "did:web:kanvo.ai"
   },
   {
     "grade": "C",
@@ -1327,6 +1455,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "bot.match/matchbot",
+    "domains": "match.bot",
+    "method": "did:web",
+    "did": "did:web:match.bot"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "ca.omniapps/sairen",
     "domains": "sairen.omniapps.ca",
     "method": "did:web",
@@ -1343,6 +1479,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "co.solidmade/hire-solidmade",
+    "domains": "solidmade-mcp.solidmade.workers.dev",
+    "method": "did:web",
+    "did": "did:web:solidmade-mcp.solidmade.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.530amodel/calculator",
     "domains": "mcp.530amodel.com",
     "method": "did:web",
@@ -1355,14 +1499,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "ai-for-av.com",
     "method": "did:web",
     "did": "did:web:ai-for-av.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "com.ai2fin/ai2fin-tax-mcp",
-    "domains": "taxmcp.ai2fin.com",
-    "method": "did:web",
-    "did": "did:web:taxmcp.ai2fin.com"
   },
   {
     "grade": "C",
@@ -1559,6 +1695,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.othermindset/campus",
+    "domains": "othermindset.com",
+    "method": "did:web",
+    "did": "did:web:othermindset.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.primesettlementrefund/prime-refund-tools",
     "domains": "mcp.primesettlementrefund.com",
     "method": "did:web",
@@ -1643,6 +1787,22 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "voxodds.com",
     "method": "did:web",
     "did": "did:web:voxodds.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.x402broker/marketplace",
+    "domains": "www.x402broker.com",
+    "method": "did:web",
+    "did": "did:web:www.x402broker.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.x402broker/mcp-gateway",
+    "domains": "x402broker.com",
+    "method": "did:web",
+    "did": "did:web:x402broker.com"
   },
   {
     "grade": "C",
@@ -1775,6 +1935,30 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "dev.agentdiet/mcp-gateway",
+    "domains": "mcp-gateway.agentdiet.dev",
+    "method": "did:web",
+    "did": "did:web:mcp-gateway.agentdiet.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "dev.agentdiet/mcp-security",
+    "domains": "mcp-security.agentdiet.dev",
+    "method": "did:web",
+    "did": "did:web:mcp-security.agentdiet.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "dev.agentdiet/mesh",
+    "domains": "mesh.agentdiet.dev",
+    "method": "did:web",
+    "did": "did:web:mesh.agentdiet.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "dev.agentdiet/onchain-risk",
     "domains": "onchain-risk.agentdiet.dev",
     "method": "did:web",
@@ -1791,10 +1975,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "dev.agentdiet/preflight",
+    "domains": "preflight.agentdiet.dev",
+    "method": "did:web",
+    "did": "did:web:preflight.agentdiet.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "dev.agentdiet/prompt-guard",
     "domains": "prompt-guard.agentdiet.dev",
     "method": "did:web",
     "did": "did:web:prompt-guard.agentdiet.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "dev.agentdiet/rag-diet",
+    "domains": "rag-diet.agentdiet.dev",
+    "method": "did:web",
+    "did": "did:web:rag-diet.agentdiet.dev"
   },
   {
     "grade": "C",
@@ -1843,6 +2043,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "whale-momentum.agentdiet.dev",
     "method": "did:web",
     "did": "did:web:whale-momentum.agentdiet.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "dev.agentdiet/workflows",
+    "domains": "workflows.agentdiet.dev",
+    "method": "did:web",
+    "did": "did:web:workflows.agentdiet.dev"
   },
   {
     "grade": "C",
@@ -1919,6 +2127,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "il.co.sabag3d/studio",
+    "domains": "sabag3d.co.il",
+    "method": "did:web",
+    "did": "did:web:sabag3d.co.il"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.dxbdata/dxb-data",
     "domains": "dxbdata.io",
     "method": "did:web",
@@ -1963,6 +2179,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "mcp.aetumi.app",
     "method": "did:web",
     "did": "did:web:mcp.aetumi.app"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.AgentLineHQ/agentline",
+    "domains": "api.agentline.cloud",
+    "method": "did:web",
+    "did": "did:web:api.agentline.cloud"
   },
   {
     "grade": "C",
@@ -2027,6 +2251,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.moltrust.ch",
     "method": "did:web",
     "did": "did:web:api.moltrust.ch"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.MvikManners/aw1-circuit-breaker",
+    "domains": "p20.laveto.net",
+    "method": "did:web",
+    "did": "did:web:p20.laveto.net"
   },
   {
     "grade": "C",
@@ -3007,6 +3239,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.solidmade-co/hire-solidmade",
+    "domains": "solidmade-mcp.solidmade.workers.dev",
+    "method": "did:web",
+    "did": "did:web:solidmade-mcp.solidmade.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.soyeladice-svg/bursia-canary",
     "domains": "phase1b-github-mcp-gateway-canary-20260918-bursia-interop-lab.soyeladice.workers.dev",
     "method": "did:web",
@@ -3063,6 +3303,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.tacticalnoot/agent-embassy",
+    "domains": "agent-embassy.fly.dev",
+    "method": "did:web",
+    "did": "did:web:agent-embassy.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.tankstellen/firmenliste-mcp",
     "domains": "firmenliste-mcp.cf-firmenliste.workers.dev",
     "method": "did:web",
@@ -3091,6 +3339,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev, agent-financial-guard-a2a.vassiliy-lakhonin.workers.dev, agent-output-verification-a2a.vassiliy-lakhonin.workers.dev, agentic-interaction-trust-a2a.vassiliy-lakhonin.workers.dev, cis-secondary-sanctions-a2a.vassiliy-lakhonin.workers.dev, corridor-sanctions-assistant-a2a.vassiliy-lakhonin.workers.dev, critical-minerals-due-diligence-a2a.vassiliy-lakhonin.workers.dev, dual-use-technology-export-a2a.vassiliy-lakhonin.workers.dev, gulf-maritime-exposure-a2a.vassiliy-lakhonin.workers.dev, kazakhstan-market-entry-readiness-a2a.vassiliy-lakhonin.workers.dev, m2m-escrow-arbiter-a2a.vassiliy-lakhonin.workers.dev, middle-corridor-deal-risk-gate-a2a.vassiliy-lakhonin.workers.dev",
     "method": "did:web",
     "did": "did:web:agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.yang7206/paletteget",
+    "domains": "paletteget-mcp.y7206062.workers.dev",
+    "method": "did:web",
+    "did": "did:web:paletteget-mcp.y7206062.workers.dev"
   },
   {
     "grade": "C",
@@ -3135,6 +3391,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "pro.aemb/agent-embassy",
+    "domains": "aemb.pro",
+    "method": "did:web",
+    "did": "did:web:aemb.pro"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "site.coze.page.dytsk9wrfv/groundtruth",
     "domains": "winter-river-47fc.contentforge-press.workers.dev",
     "method": "did:web",
@@ -3147,6 +3411,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "persona-mcp-server.onrender.com",
     "method": "did:web",
     "did": "did:web:persona-mcp-server.onrender.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "space.openplatform/open-platform",
+    "domains": "mcp.openplatform.space",
+    "method": "did:web",
+    "did": "did:web:mcp.openplatform.space"
   },
   {
     "grade": "C",
