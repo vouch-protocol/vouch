@@ -2,19 +2,19 @@
 // Do not edit by hand; regenerate with scripts/extract-ati.py.
 
 export const ATI_SUMMARY = {
-  "total": 55129,
-  "verifiable": 466,
-  "cannot": 54663,
-  "gradeA": 185,
+  "total": 60451,
+  "verifiable": 495,
+  "cannot": 59956,
+  "gradeA": 201,
   "pctVerifiable": 0.8,
   "pctCannot": 99.2,
-  "pctCard": 1.6,
+  "pctCard": 1.5,
   "pctRev": 0.4,
   "pctPq": 0.0,
-  "cardCount": 866,
-  "revCount": 248,
+  "cardCount": 921,
+  "revCount": 257,
   "pqCount": 4,
-  "generated": "2 November 2026"
+  "generated": "9 November 2026"
 } as const;
 
 export type AtiAgent = { grade: string; score: number; name: string; domains: string; method: string; did: string };
@@ -83,6 +83,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "www.snowsure.ai",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:www.snowsure.ai"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "ai.sosumi/sosumi",
+    "domains": "sosumi.ai",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:sosumi.ai"
   },
   {
     "grade": "A",
@@ -183,6 +191,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.agenticfinancegraph/agentic-finance-graph",
+    "domains": "agenticfinancegraph.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:agenticfinancegraph.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.agonna/agonna",
     "domains": "api.agonna.com",
     "method": "did:web, Ed25519 (JWK)",
@@ -195,6 +211,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "aicontentdrop.com",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:aicontentdrop.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.alalanet/check",
+    "domains": "alalanet.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:alalanet.com"
   },
   {
     "grade": "A",
@@ -383,6 +407,22 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.mybuba/public-discovery",
+    "domains": "mybuba.com",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:mybuba.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "com.osintverse/mcp",
+    "domains": "osintverse.com",
+    "method": "did:web, Ed25519 (Multikey)",
+    "did": "did:web:osintverse.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.patrickjv/profile",
     "domains": "patrickjv.com",
     "method": "did:web, P-256 (JWK)",
@@ -407,6 +447,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "com.travelacosta/trip-planning",
+    "domains": "travelacosta.com",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:travelacosta.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "com.wallet-connectors/wallet-verifier-mcp",
     "domains": "wallet-connectors.com",
     "method": "did:web, P-256 (JWK)",
@@ -427,6 +475,38 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "x402-accelerometer-feed.fly.dev",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:x402-accelerometer-feed.fly.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "dev.modelmarket/domains",
+    "domains": "modelmarket.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:modelmarket.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "dev.modelmarket/emporion",
+    "domains": "modelmarket.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:modelmarket.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "dev.modelmarket/mcp-security",
+    "domains": "modelmarket.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:modelmarket.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "dev.modelmarket/weather",
+    "domains": "modelmarket.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:modelmarket.dev"
   },
   {
     "grade": "A",
@@ -536,7 +616,15 @@ export const ATI_AGENTS: AtiAgent[] = [
     "grade": "A",
     "score": 100,
     "name": "io.github.CHANGCHINFU/mcp-gauge",
-    "domains": "aeml-x402.zeabur.app",
+    "domains": "api.truthbear.co",
+    "method": "did:key, Ed25519",
+    "did": "did:key:z6MkiGjPjUHhdcFaxe3Na22b2XpFEAc5Deih5fjxzSgHDm7h"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.CHANGCHINFU/truthbear-mcp",
+    "domains": "api.truthbear.co",
     "method": "did:key, Ed25519",
     "did": "did:key:z6MkiGjPjUHhdcFaxe3Na22b2XpFEAc5Deih5fjxzSgHDm7h"
   },
@@ -555,14 +643,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "mru-oracle.com",
     "method": "did:web, Ed25519 (Multikey)",
     "did": "did:web:mru-oracle.com"
-  },
-  {
-    "grade": "A",
-    "score": 100,
-    "name": "io.github.MarkovianProtocol/provenance",
-    "domains": "api.quantsynth.net",
-    "method": "did:web, Ed25519 (JWK)",
-    "did": "did:web:api.quantsynth.net"
   },
   {
     "grade": "A",
@@ -607,18 +687,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
-    "name": "io.github.XRPDomains/xrpname-mcp-server",
-    "domains": "xrpdomains.xyz",
-    "method": "did:web, X25519 (JWK)",
-    "did": "did:web:xrpdomains.xyz"
-  },
-  {
-    "grade": "A",
-    "score": 100,
     "name": "io.github.agentready-market/audit",
     "domains": "www.agentready.market",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:www.agentready.market"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.alexar76/aimarket-hub",
+    "domains": "modelmarket.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:modelmarket.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.alexar76/attested-memory",
+    "domains": "hub.attestedmemory.net",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:hub.attestedmemory.net"
   },
   {
     "grade": "A",
@@ -651,6 +739,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "craigmbrown.com",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:craigmbrown.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.dav3trad3r/agentpickup",
+    "domains": "web-production-3cfc1.up.railway.app",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:web-production-3cfc1.up.railway.app"
   },
   {
     "grade": "A",
@@ -743,6 +839,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "io.github.m2mfreedom/freedom-m2m-mcp-server",
+    "domains": "m2mfreedom.com",
+    "method": "did:web, P-256 (JWK)",
+    "did": "did:web:m2mfreedom.com"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "io.github.mikeslone/skilimone-travel",
     "domains": "www.skilimone.com",
     "method": "did:web, Ed25519 (JWK)",
@@ -823,6 +927,38 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "io.github.rezearcher/company-enrichment-mcp",
+    "domains": "assetfactory-jobs-x402.sigrunner.workers.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:assetfactory-jobs-x402.sigrunner.workers.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.rezearcher/jobs-mcp-server",
+    "domains": "assetfactory-jobs-x402.sigrunner.workers.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:assetfactory-jobs-x402.sigrunner.workers.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.rezearcher/unified-jobs-mcp",
+    "domains": "assetfactory-jobs-x402.sigrunner.workers.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:assetfactory-jobs-x402.sigrunner.workers.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
+    "name": "io.github.rezearcher/web-extract-mcp",
+    "domains": "assetfactory-jobs-x402.sigrunner.workers.dev",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:assetfactory-jobs-x402.sigrunner.workers.dev"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "io.github.rnwy/mcp",
     "domains": "rnwy.com",
     "method": "did:web, P-256 (JWK)",
@@ -835,14 +971,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "ais.agentsandswarms.ai",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:ais.agentsandswarms.ai"
-  },
-  {
-    "grade": "A",
-    "score": 100,
-    "name": "io.github.scotia1973-bot/gadgethumans-x402",
-    "domains": "api.gadgethumans.com",
-    "method": "did:key, Ed25519",
-    "did": "did:key:z6MkjdjQBbm4T3ZGeAuddRPzJs8KuKUbLBhaVkqML2z9hQjj"
   },
   {
     "grade": "A",
@@ -1423,6 +1551,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "A",
     "score": 100,
+    "name": "me.manylives/agent-exchange",
+    "domains": "manylives.me",
+    "method": "did:web, Ed25519 (JWK)",
+    "did": "did:web:manylives.me"
+  },
+  {
+    "grade": "A",
+    "score": 100,
     "name": "org.agentborn/agentborn",
     "domains": "mcp.agentborn.org",
     "method": "did:web, Ed25519 (JWK)",
@@ -1475,14 +1611,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "agenticweb.wiki",
     "method": "did:web, Ed25519 (JWK)",
     "did": "did:web:agenticweb.wiki"
-  },
-  {
-    "grade": "A",
-    "score": 100,
-    "name": "world.asks/asks",
-    "domains": "asks.world",
-    "method": "did:web, Ed25519 (JWK)",
-    "did": "did:web:asks.world"
   },
   {
     "grade": "A",
@@ -1687,10 +1815,26 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.agentstackdata/agentstack",
+    "domains": "agentstackdata.com",
+    "method": "did:web",
+    "did": "did:web:agentstackdata.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.ai-for-av/ai-for-av",
     "domains": "ai-for-av.com",
     "method": "did:web",
     "did": "did:web:ai-for-av.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.alohafungi/store",
+    "domains": "alohafungi.com",
+    "method": "did:web",
+    "did": "did:web:alohafungi.com"
   },
   {
     "grade": "C",
@@ -1747,14 +1891,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "bushdrum.com",
     "method": "did:web",
     "did": "did:web:bushdrum.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "com.cassandrawake/shop",
-    "domains": "cassandrawake.com",
-    "method": "did:web",
-    "did": "did:web:cassandrawake.com"
   },
   {
     "grade": "C",
@@ -1855,6 +1991,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.homegeneratorhq/generators",
+    "domains": "homegeneratorhq.com",
+    "method": "did:web",
+    "did": "did:web:homegeneratorhq.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.ifreework/content",
     "domains": "ifreework.com",
     "method": "did:web",
@@ -1871,10 +2015,34 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.jwatte/site",
+    "domains": "jwatte.com",
+    "method": "did:web",
+    "did": "did:web:jwatte.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.kresmion/kresmion",
+    "domains": "kresmion.com",
+    "method": "did:web",
+    "did": "did:web:kresmion.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.linkbreakers/docs-mcp",
     "domains": "linkbreakers.com",
     "method": "did:web",
     "did": "did:web:linkbreakers.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.lottiefiles/generative-icons",
+    "domains": "generativeicons.com",
+    "method": "did:web",
+    "did": "did:web:generativeicons.com"
   },
   {
     "grade": "C",
@@ -1935,6 +2103,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "com.provecart/provecart",
+    "domains": "api.provecart.com",
+    "method": "did:web",
+    "did": "did:web:api.provecart.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "com.shipshapedata/shipshape-data",
     "domains": "shipshapedata.com",
     "method": "did:web",
@@ -1955,6 +2131,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "dddc2d2qtq6jpgf3ucaorgozpe0lbqtj.lambda-url.us-east-1.on.aws",
     "method": "did:web",
     "did": "did:web:dddc2d2qtq6jpgf3ucaorgozpe0lbqtj.lambda-url.us-east-1.on.aws"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "com.tfrooms/tf-rooms",
+    "domains": "tfrooms.com",
+    "method": "did:web",
+    "did": "did:web:tfrooms.com"
   },
   {
     "grade": "C",
@@ -2391,6 +2575,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.aiverified/verify-business",
+    "domains": "aiverified.io",
+    "method": "did:web",
+    "did": "did:web:aiverified.io"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.dxbdata/dxb-data",
     "domains": "dxbdata.io",
     "method": "did:web",
@@ -2583,6 +2775,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.Nero-Engine/listing-location-toolkit",
+    "domains": "listing-location-toolkit.nerolabs.workers.dev",
+    "method": "did:web",
+    "did": "did:web:listing-location-toolkit.nerolabs.workers.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.Nero-Engine/pay-transparency-rules",
     "domains": "pay-transparency-rules.nerolabs.workers.dev",
     "method": "did:web",
@@ -2627,6 +2827,14 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "api.waysway.com",
     "method": "did:web",
     "did": "did:web:api.waysway.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "io.github.andy-chak/vendorindex",
+    "domains": "mcp.vendorindex.dev",
+    "method": "did:web",
+    "did": "did:web:mcp.vendorindex.dev"
   },
   {
     "grade": "C",
@@ -3511,6 +3719,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.sanhaoyoung/sanhao-global-experts",
+    "domains": "sanhaoyoung821208-d5dv139af0958c.service.tcloudbase.com",
+    "method": "did:web",
+    "did": "did:web:sanhaoyoung821208-d5dv139af0958c.service.tcloudbase.com"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.seasonsagents-art/webaz",
     "domains": "webaz.xyz",
     "method": "did:web",
@@ -3599,6 +3815,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "io.github.tony8713/casa",
+    "domains": "casa-agents.fly.dev",
+    "method": "did:web",
+    "did": "did:web:casa-agents.fly.dev"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "io.github.vassiliylakhonin/agenda-intelligence-md",
     "domains": "agenda-intelligence-a2a.vassiliy-lakhonin.workers.dev, agent-financial-guard-a2a.vassiliy-lakhonin.workers.dev, agent-output-verification-a2a.vassiliy-lakhonin.workers.dev, agentic-interaction-trust-a2a.vassiliy-lakhonin.workers.dev, cis-secondary-sanctions-a2a.vassiliy-lakhonin.workers.dev, corridor-sanctions-assistant-a2a.vassiliy-lakhonin.workers.dev, critical-minerals-due-diligence-a2a.vassiliy-lakhonin.workers.dev, dual-use-technology-export-a2a.vassiliy-lakhonin.workers.dev, gulf-maritime-exposure-a2a.vassiliy-lakhonin.workers.dev, kazakhstan-market-entry-readiness-a2a.vassiliy-lakhonin.workers.dev, m2m-escrow-arbiter-a2a.vassiliy-lakhonin.workers.dev, middle-corridor-deal-risk-gate-a2a.vassiliy-lakhonin.workers.dev",
     "method": "did:web",
@@ -3627,14 +3851,6 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "agents.crowdspark.me",
     "method": "did:web",
     "did": "did:web:agents.crowdspark.me"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "net.csclear/wire",
-    "domains": "mcp.csclear.net",
-    "method": "did:web",
-    "did": "did:web:mcp.csclear.net"
   },
   {
     "grade": "C",
@@ -3679,22 +3895,6 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
-    "name": "space.mysoma/kpn",
-    "domains": "persona-mcp-server.onrender.com",
-    "method": "did:web",
-    "did": "did:web:persona-mcp-server.onrender.com"
-  },
-  {
-    "grade": "C",
-    "score": 60,
-    "name": "space.openplatform/open-platform",
-    "domains": "mcp.openplatform.space",
-    "method": "did:web",
-    "did": "did:web:mcp.openplatform.space"
-  },
-  {
-    "grade": "C",
-    "score": 60,
     "name": "team.golem/context",
     "domains": "context.golem.team",
     "method": "did:web",
@@ -3735,6 +3935,14 @@ export const ATI_AGENTS: AtiAgent[] = [
   {
     "grade": "C",
     "score": 60,
+    "name": "tech.halfpoint/sports-odds",
+    "domains": "mcp.halfpoint.tech",
+    "method": "did:web",
+    "did": "did:web:mcp.halfpoint.tech"
+  },
+  {
+    "grade": "C",
+    "score": 60,
     "name": "tech.tessa/tessa-mcp-server",
     "domains": "aiagent.tessa.tech",
     "method": "did:web",
@@ -3747,5 +3955,29 @@ export const ATI_AGENTS: AtiAgent[] = [
     "domains": "mcp.extrabold.tools",
     "method": "did:web",
     "did": "did:web:mcp.extrabold.tools"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "uk.co.opengrant/opengrant",
+    "domains": "opengrant.co.uk",
+    "method": "did:web",
+    "did": "did:web:opengrant.co.uk"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "work.agentexchange.store/mcp",
+    "domains": "store.agentexchange.work",
+    "method": "did:web",
+    "did": "did:web:store.agentexchange.work"
+  },
+  {
+    "grade": "C",
+    "score": 60,
+    "name": "world.asks/asks",
+    "domains": "asks.world",
+    "method": "did:web",
+    "did": "did:web:asks.world"
   }
 ];
