@@ -2,15 +2,28 @@
 #   @vouch-protocol-official/core-wasm   (core/wasm, built with wasm-pack)
 #   @vouch-protocol-official/sdk         (packages/sdk-ts)
 #   @vouch-protocol-official/api-client  (sdks/clients/typescript)
+#   @vouch-protocol-official/mcp         (packages/vouch-mcp-ts)
 #
 # Trigger: push a tag like `npm-v0.1.0`, or run manually (workflow_dispatch).
-# Required repo secret: NPM_TOKEN (an npm Automation token, which bypasses 2FA).
+#
+# Authentication: npm trusted publishing. Each package names this repository
+# and this workflow file as its trusted publisher on npmjs.com, and npm swaps
+# the job's OIDC token for a short-lived publish credential, so no long-lived
+# token is needed. A package that has no trusted publisher set yet falls back
+# to the NPM_TOKEN secret. Every publish carries a provenance attestation.
+#
+# A version already on the registry is skipped; any other publish error fails
+# the job (see .github/scripts/npm-publish-once.sh).
 name: Publish npm
 
 on:
   push:
     tags: ["npm-v*"]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -23,6 +36,8 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
+      - name: Use an npm with trusted publishing
+        run: npm install -g npm@^11.5.1
       - uses: dtolnay/rust-toolchain@stable
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -31,22 +46,21 @@ jobs:
         run: bash build-npm.sh
       - name: Publish core-wasm
         working-directory: core/wasm/pkg
-        run: |
-          npm publish --access public || echo "core-wasm already published, continuing"
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/npm-publish-once.sh"
       - name: Publish sdk
         working-directory: packages/sdk-ts
         run: |
           npm install
-          npm publish --access public || echo "sdk: version may already be published, continuing"
+          bash "$GITHUB_WORKSPACE/.github/scripts/npm-publish-once.sh"
       - name: Publish api-client
         working-directory: sdks/clients/typescript
         run: |
           npm install
-          npm publish --access public || echo "api-client: version may already be published, continuing"
+          bash "$GITHUB_WORKSPACE/.github/scripts/npm-publish-once.sh"
       - name: Publish mcp
         working-directory: packages/vouch-mcp-ts
         run: |
           # The SDK is a peer dependency and is resolved from the sibling
           # source by the tsconfig path mapping, so it is not fetched here.
           npm install --legacy-peer-deps
-          npm publish --access public || echo "mcp: version may already be published, continuing"
+          bash "$GITHUB_WORKSPACE/.github/scripts/npm-publish-once.sh"
