@@ -102,7 +102,15 @@ function policyNotWeaker(parent: Json, child: Json): boolean {
     const pNum = typeof pv === 'number';
     const cNum = typeof cv === 'number';
     if (pNum && cNum) {
-      if (cv < pv) return false;
+      // Numeric values narrow by the key's name: "max*" is a ceiling, "min*" a
+      // floor, and any other numeric key must be restated unchanged.
+      if (k.startsWith('max')) {
+        if (cv > pv) return false;
+      } else if (k.startsWith('min')) {
+        if (cv < pv) return false;
+      } else if (cv !== pv) {
+        return false;
+      }
     } else if (pNum !== cNum) {
       return false;
     } else if (JSON.stringify(pv) !== JSON.stringify(cv)) {
@@ -110,6 +118,41 @@ function policyNotWeaker(parent: Json, child: Json): boolean {
     }
   }
   return true;
+}
+
+/**
+ * Map a signed Vouch credential onto the six-dimension link shape that
+ * `nonExpansion` compares (Specification 9.2): action / target / resource from
+ * `credentialSubject.intent`, time from `validFrom` / `validUntil`, rate and
+ * policy from `intent.rate` / `intent.policy`, subject from `intent.delegatee`.
+ * Mirrors `vouch.attenuation.capability_view` (Python reference).
+ */
+export function capabilityView(credential: Json, includeTime = true): Json {
+  const subject = credential?.credentialSubject;
+  const intent: Json =
+    subject && typeof subject === 'object' && subject.intent && typeof subject.intent === 'object'
+      ? subject.intent
+      : {};
+  let issuer = credential?.issuer;
+  if (Array.isArray(issuer)) issuer = issuer.length ? issuer[0] : null;
+  const dims: Json = {};
+  for (const k of ['action', 'target', 'resource', 'amount']) {
+    if (k in intent) dims[k] = intent[k];
+  }
+  const view: Json = {
+    issuer: issuer ?? null,
+    subject: intent.delegatee ?? null,
+    intent: dims,
+  };
+  if (includeTime) {
+    for (const k of ['validFrom', 'validUntil']) {
+      if (credential && k in credential) view[k] = credential[k];
+    }
+  }
+  for (const k of ['rate', 'policy']) {
+    if (k in intent) view[k] = intent[k];
+  }
+  return view;
 }
 
 function windowOf(link: Json): [number | null, number | null] {
@@ -184,7 +227,71 @@ export function nonExpansion(parent: Json, child: Json): string | null {
     }
   }
 
+  // spend: an action's intent.amount stays within the parent's maxSpend.
+  const pPol = parent.policy;
+  if (pPol && typeof pPol === 'object' && 'maxSpend' in pPol && cIntent && typeof cIntent === 'object') {
+    if ('amount' in cIntent) {
+      const amount = cIntent.amount;
+      const cap = pPol.maxSpend;
+      if (typeof amount !== 'number' || typeof cap !== 'number' || amount > cap) return 'policy';
+    }
+  }
+
   return null;
+}
+
+/**
+ * The child's effective capability: any dimension it omits is inherited
+ * unchanged from its parent's effective capability (Specification 9.2).
+ * `amount` is per action and is never inherited.
+ */
+export function inherit(parentEffective: Json, child: Json): Json {
+  const out: Json = { ...child };
+  const pIntent = parentEffective?.intent && typeof parentEffective.intent === 'object' ? parentEffective.intent : {};
+  const cIntent: Json = child?.intent && typeof child.intent === 'object' ? { ...child.intent } : {};
+  for (const k of ['action', 'target', 'resource']) {
+    if (!(k in cIntent) && k in pIntent) cIntent[k] = pIntent[k];
+  }
+  out.intent = cIntent;
+  for (const k of ['rate', 'policy', 'validFrom', 'validUntil']) {
+    if ((out[k] === undefined || out[k] === null) && parentEffective?.[k] !== undefined && parentEffective?.[k] !== null) {
+      out[k] = parentEffective[k];
+    }
+  }
+  return out;
+}
+
+/**
+ * Walk root to leaf comparing each step against its parent's EFFECTIVE
+ * capability (inherited dimensions included). Returns the first offending
+ * dimension, or null.
+ */
+export function firstBroaderStep(views: Json[]): string | null {
+  if (views.length === 0) return null;
+  let effective = views[0];
+  for (const child of views.slice(1)) {
+    const dim = nonExpansion(effective, child);
+    if (dim !== null) return dim;
+    effective = inherit(effective, child);
+  }
+  return null;
+}
+
+/** A grant's effective capability, inheriting from the grants in its own chain. */
+export function effectiveCapability(credential: Json, includeTime = true): Json {
+  const chain = credential?.credentialSubject?.delegationChain;
+  let effective: Json | null = null;
+  if (Array.isArray(chain)) {
+    for (const link of chain) {
+      const grant = link?.parentCredential;
+      if (grant && typeof grant === 'object') {
+        const view = capabilityView(grant, includeTime);
+        effective = effective === null ? view : inherit(effective, view);
+      }
+    }
+  }
+  const own = capabilityView(credential, includeTime);
+  return effective === null ? own : inherit(effective, own);
 }
 
 export function validateChain(
@@ -214,14 +321,16 @@ export function validateChain(
   if (revoked.length > 0) {
     return { valid: false, code: 'delegation_revoked', linkIndex: Math.min(...revoked) };
   }
+  let effective = chain[0];
   for (let i = 1; i < chain.length; i++) {
     const parent = chain[i - 1];
     const child = chain[i];
     if (parent.subject !== child.issuer) {
       return { valid: false, code: 'subject_issuer_mismatch', linkIndex: i };
     }
-    const dim = nonExpansion(parent, child);
+    const dim = nonExpansion(effective, child);
     if (dim !== null) return { valid: false, code: 'scope_exceeds_parent', dimension: dim };
+    effective = inherit(effective, child);
   }
 
   let effStart: number | null = null;

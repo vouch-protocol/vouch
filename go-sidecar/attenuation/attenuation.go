@@ -158,8 +158,21 @@ func policyNotWeaker(parent, child interface{}) bool {
 		pn, pIsNum := asFloat(pv)
 		cn, cIsNum := asFloat(cv)
 		if pIsNum && cIsNum {
-			if cn < pn {
-				return false
+			// Numeric values narrow by the key's name: "max*" is a ceiling,
+			// "min*" a floor, and any other numeric key must be restated.
+			switch {
+			case strings.HasPrefix(k, "max"):
+				if cn > pn {
+					return false
+				}
+			case strings.HasPrefix(k, "min"):
+				if cn < pn {
+					return false
+				}
+			default:
+				if cn != pn {
+					return false
+				}
 			}
 		} else if pIsNum != cIsNum {
 			return false
@@ -267,7 +280,106 @@ func nonExpansion(parent, child map[string]interface{}) string {
 		}
 	}
 
+	// spend: an action's intent.amount stays within the parent's maxSpend.
+	if pPol, ok := parent["policy"].(map[string]interface{}); ok {
+		if capRaw, hasCap := pPol["maxSpend"]; hasCap {
+			if amountRaw, hasAmount := cIntent["amount"]; hasAmount {
+				amount, aOK := asFloat(amountRaw)
+				limit, cOK := asFloat(capRaw)
+				if !aOK || !cOK || amount > limit {
+					return "policy"
+				}
+			}
+		}
+	}
+
 	return ""
+}
+
+// Inherit returns the child's effective capability: any dimension it omits is
+// inherited unchanged from its parent's effective capability (Specification
+// 9.2). amount is per action and is never inherited.
+func Inherit(parentEffective, child map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(child)+4)
+	for k, v := range child {
+		out[k] = v
+	}
+	cIntent := map[string]interface{}{}
+	if ci, ok := child["intent"].(map[string]interface{}); ok {
+		for k, v := range ci {
+			cIntent[k] = v
+		}
+	}
+	if pi, ok := parentEffective["intent"].(map[string]interface{}); ok {
+		for _, k := range []string{"action", "target", "resource"} {
+			if _, has := cIntent[k]; !has {
+				if v, ok := pi[k]; ok {
+					cIntent[k] = v
+				}
+			}
+		}
+	}
+	out["intent"] = cIntent
+	for _, k := range []string{"rate", "policy", "validFrom", "validUntil"} {
+		if v, has := out[k]; !has || v == nil {
+			if pv, ok := parentEffective[k]; ok && pv != nil {
+				out[k] = pv
+			}
+		}
+	}
+	return out
+}
+
+// FirstBroaderStep walks root to leaf comparing each step against its parent's
+// effective capability (inherited dimensions included) and returns the first
+// offending dimension, or "".
+func FirstBroaderStep(views []map[string]interface{}) string {
+	if len(views) == 0 {
+		return ""
+	}
+	effective := views[0]
+	for _, child := range views[1:] {
+		if dim := nonExpansion(effective, child); dim != "" {
+			return dim
+		}
+		effective = Inherit(effective, child)
+	}
+	return ""
+}
+
+// EffectiveCapability returns a grant's effective capability, inheriting from
+// the grants in its own embedded delegation chain.
+func EffectiveCapability(credential map[string]interface{}, includeTime bool) map[string]interface{} {
+	var effective map[string]interface{}
+	if subject, ok := credential["credentialSubject"].(map[string]interface{}); ok {
+		var links []interface{}
+		switch v := subject["delegationChain"].(type) {
+		case []interface{}:
+			links = v
+		case []map[string]interface{}:
+			for _, m := range v {
+				links = append(links, m)
+			}
+		}
+		for _, l := range links {
+			link, _ := l.(map[string]interface{})
+			grant, _ := link["parentCredential"].(map[string]interface{})
+			if grant == nil {
+				continue
+			}
+			view := CapabilityView(grant, includeTime)
+			if effective == nil {
+				effective = view
+			} else {
+				effective = Inherit(effective, view)
+			}
+		}
+	}
+	own := CapabilityView(credential, includeTime)
+	if effective == nil {
+		return own
+	}
+	return Inherit(effective, own)
 }
 
 // ValidateChain validates a delegation chain (root -> leaf) under v1.7 rules.
@@ -317,14 +429,16 @@ func ValidateChain(chain []interface{}, trustedRoots []string, revoked []int, bu
 		return Verdict{"valid": false, "code": "delegation_revoked", "linkIndex": minRevoked}
 	}
 
+	effective := links[0]
 	for i := 1; i < len(links); i++ {
 		parent, child := links[i-1], links[i]
 		if parent["subject"] != child["issuer"] {
 			return Verdict{"valid": false, "code": "subject_issuer_mismatch", "linkIndex": i}
 		}
-		if dim := nonExpansion(parent, child); dim != "" {
+		if dim := nonExpansion(effective, child); dim != "" {
 			return Verdict{"valid": false, "code": "scope_exceeds_parent", "dimension": dim}
 		}
+		effective = Inherit(effective, child)
 	}
 
 	var effStart, effEnd *int64
@@ -403,4 +517,58 @@ func ValidateChainJSON(requestJSON string) string {
 func marshalVerdict(v Verdict) string {
 	b, _ := json.Marshal(v)
 	return string(b)
+}
+
+// NonExpansion returns the offending dimension if child broadens parent, else
+// "". It is the exported form of the rule ValidateChain applies, so credential
+// verifiers and signers use the same comparison.
+func NonExpansion(parent, child map[string]interface{}) string {
+	return nonExpansion(parent, child)
+}
+
+// CapabilityView maps a signed Vouch credential onto the six-dimension link
+// shape NonExpansion compares (Specification 9.2): action / target / resource
+// from credentialSubject.intent, time from validFrom / validUntil, rate and
+// policy from intent.rate / intent.policy, subject from intent.delegatee.
+// Mirrors vouch.attenuation.capability_view (Python reference).
+func CapabilityView(credential map[string]interface{}, includeTime bool) map[string]interface{} {
+	intent := map[string]interface{}{}
+	if subject, ok := credential["credentialSubject"].(map[string]interface{}); ok {
+		if in, ok := subject["intent"].(map[string]interface{}); ok {
+			intent = in
+		}
+	}
+	var issuer interface{}
+	switch v := credential["issuer"].(type) {
+	case string:
+		issuer = v
+	case []interface{}:
+		if len(v) > 0 {
+			issuer = v[0]
+		}
+	}
+	dims := map[string]interface{}{}
+	for _, k := range []string{"action", "target", "resource", "amount"} {
+		if v, ok := intent[k]; ok {
+			dims[k] = v
+		}
+	}
+	view := map[string]interface{}{
+		"issuer":  issuer,
+		"subject": intent["delegatee"],
+		"intent":  dims,
+	}
+	if includeTime {
+		for _, k := range []string{"validFrom", "validUntil"} {
+			if v, ok := credential[k]; ok {
+				view[k] = v
+			}
+		}
+	}
+	for _, k := range []string{"rate", "policy"} {
+		if v, ok := intent[k]; ok {
+			view[k] = v
+		}
+	}
+	return view
 }

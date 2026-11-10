@@ -64,6 +64,18 @@
               "order:1"
             ],
             "intentDriftScore": 0.05
+          },
+          "actionLeafHashes": [
+            "uC4UoZWWmcYWDm0hYeMKZv1vG1vghW7vlrAApKQvVbbU",
+            "uMqMqGgdYgPMaR_FhOasbwI1Q_tcNQ8iuXswPtN3Mrg8"
+          ],
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:agent.example.com#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z4SYVmKkPdpaMB592tbvqHHLPBKST2SVo6owps5fFaVWzHR2AD9YBdSNmFJPm1E4xXaCNUU8QSMhUmt6q6CsBc59F"
           }
         }
       },
@@ -160,7 +172,16 @@
             "resourcesAccessed": [],
             "intentDriftScore": 0.0
           },
-          "canaryReveal": "u__________________________________________8"
+          "canaryReveal": "u__________________________________________8",
+          "actionLeafHashes": [],
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:01:00Z",
+            "verificationMethod": "did:web:agent.example.com#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z4iEWmoC2w4izZZX618WCtnWUxHFwEBDURnXGMfR2qyzyo9Nd318NVYRNWxuQ3khWQUVXHWmt5JnLb5RiyiRALQEQ"
+          }
         },
         "note": "validators already observed an intact interval-0 heartbeat"
       },

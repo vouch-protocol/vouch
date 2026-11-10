@@ -254,6 +254,8 @@ class HeartbeatQuorum:
             max_ttl_seconds=int(self.policy.max_ttl_aggregator(max_ttls)),
             scope=sorted(aggregated_scope),
             valid_seconds=int(self.policy.voucher_valid_seconds_aggregator(validity_windows)),
+            authority_epoch=req.authority_epoch,
+            issued_at=approving[0].validator.clock(),
         )
 
     @property

@@ -48,16 +48,23 @@ def charge_invoice(invoice_id: str, amount: float) -> str:
     return f"charged {amount} on {invoice_id}"
 
 
-tools = protect([charge_invoice], parent=grant)
+# The action and target restate the grant; the resource ("invoices/42", read
+# from the invoice_id argument) narrows it. Anything wider is never signed.
+tools = protect([charge_invoice], parent=grant, action="charge", target="api.payments.example.com")
 
 # When the agent acts, the signed credential carries the full delegation chain.
-tools[0]("invoices/42", 99.0)
+tools[0](invoice_id="invoices/42", amount=99.0)
 cred = current_credential()
 chain = cred["credentialSubject"]["delegationChain"]
 print("\nAgent acted. Its credential carries a delegation chain:")
 print(f"  {chain[0]['issuer']}  ->  {chain[0]['subject']}")
 
-ok, passport = Verifier.verify(cred, agent.public_key_jwk)
+# The verifier pins the principal as the trusted root of the chain.
+ok, passport = Verifier.verify(
+    cred,
+    agent.public_key_jwk,
+    trusted_roots={principal.did: principal.public_key_jwk},
+)
 print(f"\nVerifies: {ok} | agent intent: {passport.intent['resource']}")
 print("The verifier can see the action was authorized by the principal,")
 print("and that the agent stayed within the 'invoices' grant.")

@@ -139,6 +139,8 @@ pub fn verify(
     Ok(VerifyResult {
         proof_valid,
         time_valid,
+        // An AuthorityState credential carries no delegation chain.
+        chain_valid: true,
     })
 }
 

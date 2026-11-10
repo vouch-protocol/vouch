@@ -102,6 +102,34 @@ class DIDDocument:
                 return vm.public_key_multibase
         return None
 
+    def get_mldsa44_public_key_multibase(self, key_id: Optional[str] = None) -> Optional[str]:
+        """The `publicKeyMultibase` of the document's ML-DSA-44 Multikey
+        verification method (the post-quantum half of a dual-proof key pair),
+        or None. With `key_id`, only that verification method is considered."""
+        from . import multikey
+
+        for vm in self.verification_methods:
+            if key_id and vm.id != key_id:
+                continue
+            if vm.type != "Multikey" or not vm.public_key_multibase:
+                continue
+            try:
+                alg, _ = multikey.decode(vm.public_key_multibase)
+            except ValueError:
+                continue
+            if alg == "ML-DSA-44":
+                return vm.public_key_multibase
+        return None
+
+    def get_mldsa44_public_key(self, key_id: Optional[str] = None) -> Optional[bytes]:
+        """The raw ML-DSA-44 public key from this document, or None."""
+        from . import multikey
+
+        mk = self.get_mldsa44_public_key_multibase(key_id)
+        if mk is None:
+            return None
+        return multikey.decode(mk)[1]
+
     def get_ed25519_public_key(self, key_id: Optional[str] = None):
         """
         Resolve an Ed25519 public key from this DID Document.

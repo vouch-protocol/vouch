@@ -71,6 +71,41 @@ OS_URANDOM_RULE = (
 )
 
 
+class _VectorClock:
+    """A settable clock for validators, so a vector can step through time."""
+
+    def __init__(self) -> None:
+        self.now = FIXED_NOW
+
+    def __call__(self) -> datetime:
+        return self.now
+
+
+_CLOCK = _VectorClock()
+
+
+def _vector_signer(name: str, did: str):
+    """A fixed-seed signer: heartbeat requests are signed, and the vectors pin
+    the signature, so the key must be reproducible. Test-only key material."""
+    import hashlib
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from jwcrypto import jwk
+
+    from vouch import Signer
+
+    seed = hashlib.sha256(f"vouch-runtime-vector:{name}".encode()).digest()
+    priv = Ed25519PrivateKey.from_private_bytes(seed)
+    return Signer(private_key=jwk.JWK.from_pyca(priv).export_private(), did=did)
+
+
+_VECTOR_AGENT = _vector_signer("heartbeat-agent-1", "did:web:agent.example.com")
+
+
+def _vector_key_resolver(did: str):
+    return _VECTOR_AGENT.get_public_key_multikey() if did == _VECTOR_AGENT.did else None
+
+
 class _PinnedDateTime(datetime):
     """datetime subclass whose now() is fixed; arithmetic stays intact."""
 
@@ -315,7 +350,8 @@ def build_merkle_vector() -> dict:
             "Merkle tree vectors (Specification 11.3, RFC 6962 domain separation). "
             "Leaves are UTF-8 byte strings; raw 32-byte hashes are hex, the tree "
             "root and proof siblings are multibase base64url-no-pad (prefix 'u'). "
-            "The three-leaf case exercises odd-level duplication."
+            "The three-leaf case exercises odd-level promotion (RFC 6962 shape): the "
+            "unpaired node moves up unchanged, so a repeated last leaf changes the root."
         ),
         "module": "vouch.merkle",
         "spec_reference": "Specification 11.3",
@@ -520,7 +556,10 @@ def _heartbeat_session(session_id: str) -> hb.HeartbeatSession:
         "https://api.example.com/orders", tokens=100, resource="order:1", drift=0.05
     )
     session = hb.HeartbeatSession(
-        subject_did="did:web:agent.example.com", session_id=session_id, collector=collector
+        subject_did="did:web:agent.example.com",
+        session_id=session_id,
+        collector=collector,
+        signer=_VECTOR_AGENT,
     )
     session.record_action(b"submit_claim:HC-001")
     session.record_action(b"read:order:1")
@@ -536,11 +575,20 @@ def build_heartbeat_vector() -> dict:
     session.record_action(b"update:user:7")
     req1 = session.build_request(now=FIXED_NOW + timedelta(seconds=60)).to_dict()
 
-    validator = hb.HeartbeatValidator(validator_did="did:web:validator.example.com")
+    validator = hb.HeartbeatValidator(
+        validator_did="did:web:validator.example.com",
+        key_resolver=_vector_key_resolver,
+        clock=_CLOCK,
+    )
+    _CLOCK.now = FIXED_NOW
     accept = validator.validate(req0)
 
-    tampered = dict(req1)
-    tampered["canaryReveal"] = _multibase(bytes([0xFF]) * 32)
+    # The agent re-signs its own edited request, so the canary check is what
+    # rejects it.
+    edited = hb.HeartbeatRequest.from_dict(req1)
+    edited.canary_reveal = _multibase(bytes([0xFF]) * 32)
+    tampered = edited.to_dict(resign=_VECTOR_AGENT)
+    _CLOCK.now = FIXED_NOW + timedelta(seconds=60)
     reject = validator.validate(tampered)
 
     cases = [
@@ -597,18 +645,24 @@ def build_heartbeat_vector() -> dict:
 def _quorum_validators() -> list:
     v1 = hb.HeartbeatValidator(
         validator_did="did:web:policy.example.com",
+        key_resolver=_vector_key_resolver,
+        clock=_CLOCK,
         initial_trust=1.0,
         decay_lambda=0.01,
         scope=["agent_actions", "read"],
     )
     v2 = hb.HeartbeatValidator(
         validator_did="did:web:behavioral.example.com",
+        key_resolver=_vector_key_resolver,
+        clock=_CLOCK,
         initial_trust=0.9,
         decay_lambda=0.02,
         scope=["agent_actions", "write"],
     )
     v3 = hb.HeartbeatValidator(
         validator_did="did:web:budget.example.com",
+        key_resolver=_vector_key_resolver,
+        clock=_CLOCK,
         initial_trust=0.8,
         decay_lambda=0.03,
         scope=["agent_actions"],
@@ -640,6 +694,7 @@ def build_quorum_vector() -> dict:
     approve_quorum = quorum_mod.HeartbeatQuorum(validators=approve_qvs, threshold=2)
     approve_session = _heartbeat_session("urn:uuid:00000000-0000-4000-8000-0000000000c1")
     approve_request = approve_session.build_request(now=FIXED_NOW).to_dict()
+    _CLOCK.now = FIXED_NOW
     approve_result = approve_quorum.validate(approve_request)
 
     # Rejection: validators see an intact interval-0 heartbeat, then a tampered
@@ -648,10 +703,13 @@ def build_quorum_vector() -> dict:
     reject_quorum = quorum_mod.HeartbeatQuorum(validators=reject_qvs, threshold=2)
     reject_session = _heartbeat_session("urn:uuid:00000000-0000-4000-8000-0000000000c2")
     setup_request = reject_session.build_request(now=FIXED_NOW).to_dict()
+    _CLOCK.now = FIXED_NOW
     reject_quorum.validate(setup_request)
     follow_up = reject_session.build_request(now=FIXED_NOW + timedelta(seconds=60)).to_dict()
-    tampered = dict(follow_up)
-    tampered["canaryReveal"] = _multibase(bytes([0xFF]) * 32)
+    edited = hb.HeartbeatRequest.from_dict(follow_up)
+    edited.canary_reveal = _multibase(bytes([0xFF]) * 32)
+    tampered = edited.to_dict(resign=_VECTOR_AGENT)
+    _CLOCK.now = FIXED_NOW + timedelta(seconds=60)
     reject_result = reject_quorum.validate(tampered)
 
     cases = [

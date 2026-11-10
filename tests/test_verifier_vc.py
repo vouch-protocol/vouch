@@ -239,19 +239,25 @@ def test_verify_extracts_delegation_chain():
             "action": "read",
             "target": "users",
             "resource": "https://api.example.com/v1/users",
+            "delegatee": child.did,
         }
     )
     child_cred = child.sign(
         intent={
             "action": "read",
-            "target": "user_42",
+            "target": "users",
             "resource": "https://api.example.com/v1/users/42",
         },
         parent_credential=parent_cred,
     )
 
     pub_child = _ed25519_public_from_signer(child)
-    valid, passport = Verifier.verify(child_cred, public_key=pub_child)
+    # The grantor is did:web, so its key is supplied as the trusted root.
+    valid, passport = Verifier.verify(
+        child_cred,
+        public_key=pub_child,
+        trusted_roots={parent.did: _ed25519_public_from_signer(parent)},
+    )
     assert valid is True
     assert len(passport.delegation_chain) == 1
     link = passport.delegation_chain[0]

@@ -14,6 +14,7 @@ from vouch.quorum import (
     QuorumPolicy,
     QuorumValidator,
 )
+from _heartbeat_keys import resolve, signed_session  # noqa: E402
 
 
 AGENT_DID = "did:web:agent.example.com"
@@ -27,6 +28,7 @@ def _validator(did: str, **overrides) -> HeartbeatValidator:
         max_ttl_seconds=3600,
         voucher_valid_seconds=120,
         scope=["agent_actions"],
+        key_resolver=resolve,
     )
     defaults.update(overrides)
     return HeartbeatValidator(**defaults)
@@ -78,7 +80,7 @@ class TestQuorumValidation:
 
     def test_three_of_three_approve(self):
         quorum = self._build_2_of_3()
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         req = session.build_request().to_dict()
         result = quorum.validate(req)
         assert result.ok is True
@@ -90,10 +92,10 @@ class TestQuorumValidation:
         # Make the first validator process a prior chain that will then
         # disagree with the agent's actual chain.
         quorum = self._build_2_of_3()
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
 
         # Seed v1 with a different agent's chain to corrupt its view.
-        other_session = HeartbeatSession(subject_did=AGENT_DID)
+        other_session = signed_session(AGENT_DID)
         other_session.build_request()  # advance other_session's chain
         # Now feed v1 a heartbeat from other_session under the SAME (subject, session_id)
         # by manually setting session_id (simulating a competing emitter).
@@ -116,7 +118,7 @@ class TestQuorumValidation:
         v3 = QuorumValidator(validator=_validator("did:web:v3.example.com"))
         quorum = HeartbeatQuorum(validators=[v1, v2, v3], threshold=3)
 
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
 
         # Pre-poison v1 so it rejects the next request as stale.
         first_req = session.build_request().to_dict()
@@ -134,7 +136,7 @@ class TestWeightedQuorum:
         v2 = QuorumValidator(validator=_validator("did:web:junior.example.com"), weight=1.0)
         # Threshold 2 means the senior alone meets the quorum.
         quorum = HeartbeatQuorum(validators=[v1, v2], threshold=2)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
 
         # Poison v2 so it rejects (stale interval after first observation).
         first = session.build_request().to_dict()
@@ -167,7 +169,7 @@ class TestTrustAggregation:
             )
         )
         quorum = HeartbeatQuorum(validators=[v1, v2], threshold=2)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         result = quorum.validate(session.build_request().to_dict())
 
         assert result.ok is True
@@ -211,7 +213,7 @@ class TestTrustAggregation:
             decay_lambda_aggregator=avg,
         )
         quorum = HeartbeatQuorum(validators=[v1, v2], threshold=2, policy=policy)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         result = quorum.validate(session.build_request().to_dict())
 
         cs = result.session_voucher["credentialSubject"]
@@ -226,7 +228,7 @@ class TestQuorumIssuerField:
         v3 = QuorumValidator(validator=_validator("did:web:v3.example.com"))
         quorum = HeartbeatQuorum(validators=[v1, v2, v3], threshold=2)
 
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
 
         # Make v3 disagree by feeding it a stale (replayed) interval first.
         first = session.build_request().to_dict()
@@ -248,10 +250,35 @@ class TestEndToEndQuorum:
         v3 = QuorumValidator(validator=_validator("did:web:v3.example.com"), role=ROLE_BUDGET)
         quorum = HeartbeatQuorum(validators=[v1, v2, v3], threshold=2)
 
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         for i in range(5):
             session.record_action(f"action_{i}".encode())
             req = session.build_request().to_dict()
             result = quorum.validate(req)
             assert result.ok, f"interval {i} failed: {result.rejections}"
             assert len(result.approving_dids) == 3  # all three approve when chain intact
+
+
+class TestQuorumAuthorityEpoch:
+    def test_aggregate_voucher_carries_authority_epoch(self):
+        quorum = HeartbeatQuorum(
+            validators=[
+                QuorumValidator(validator=_validator(f"did:web:e{i}.example.com")) for i in range(3)
+            ],
+            threshold=2,
+        )
+        session = signed_session(AGENT_DID, authority_epoch=7)
+        result = quorum.validate(session.build_request().to_dict())
+        assert result.ok, result.rejections
+        assert result.session_voucher["credentialSubject"]["authorityEpoch"] == 7
+
+    def test_aggregate_voucher_without_epoch_omits_it(self):
+        quorum = HeartbeatQuorum(
+            validators=[
+                QuorumValidator(validator=_validator(f"did:web:f{i}.example.com")) for i in range(3)
+            ],
+            threshold=2,
+        )
+        result = quorum.validate(signed_session(AGENT_DID).build_request().to_dict())
+        assert result.ok
+        assert "authorityEpoch" not in result.session_voucher["credentialSubject"]

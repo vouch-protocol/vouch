@@ -192,6 +192,7 @@ def main() -> int:
                 "repo": args.repo,
                 "commit": args.commit,
                 "publicKeyB64": public_b64,
+                "did": identity.did,
             }
         },
     )

@@ -37,6 +37,7 @@ from vouch.status_list import (
 from vouch.heartbeat import HeartbeatRequest, HeartbeatSession, HeartbeatValidator
 from vouch.vc import build_session_voucher
 from vouch.trust_check import verify_agent_call
+from _heartbeat_keys import resolve, signed_session  # noqa: E402
 
 
 AUTHORITY_DID = "did:web:treasury.example.com"
@@ -312,7 +313,7 @@ def test_session_voucher_carries_epoch():
 
 
 def test_heartbeat_request_roundtrips_epoch():
-    session = HeartbeatSession(subject_did="did:web:agent.example.com", authority_epoch=6)
+    session = signed_session("did:web:agent.example.com", authority_epoch=6)
     req = session.build_request()
     assert req.authority_epoch == 6
     d = req.to_dict()
@@ -322,8 +323,8 @@ def test_heartbeat_request_roundtrips_epoch():
 
 
 def test_heartbeat_validator_tracks_highest_epoch_and_mints_voucher():
-    validator = HeartbeatValidator(validator_did="did:web:v.example.com")
-    session = HeartbeatSession(subject_did="did:web:agent.example.com", authority_epoch=2)
+    validator = HeartbeatValidator(key_resolver=resolve, validator_did="did:web:v.example.com")
+    session = signed_session("did:web:agent.example.com", authority_epoch=2)
     res = validator.validate(session.build_request().to_dict())
     assert res.ok
     assert res.session_voucher["credentialSubject"]["authorityEpoch"] == 2
@@ -349,21 +350,29 @@ def agent_call():
     intent = {"action": "transfer", "target": "vendor-1", "resource": "https://bank.example.com/x"}
     cred = signer.sign(intent=intent, valid_seconds=300)
     # A voucher minted under authority epoch 5, still well within its time window.
-    voucher = build_session_voucher(
-        subject_did=ident.did,
-        validator_dids=["did:web:v.example.com"],
-        decay_lambda=0.001,
-        initial_trust=1.0,
-        max_ttl_seconds=3600,
-        scope=["agent_actions"],
-        valid_seconds=300,
-        authority_epoch=5,
+    # The voucher is signed by its validator; an unsigned voucher never counts.
+    from vouch.vc import sign_session_voucher
+
+    v_ident = generate_identity(domain="v.example.com")
+    v_signer = Signer(private_key=v_ident.private_key_jwk, did=v_ident.did)
+    voucher = sign_session_voucher(
+        build_session_voucher(
+            subject_did=ident.did,
+            validator_dids=[v_signer.did],
+            decay_lambda=0.001,
+            initial_trust=1.0,
+            max_ttl_seconds=3600,
+            scope=["agent_actions"],
+            valid_seconds=300,
+            authority_epoch=5,
+        ),
+        v_signer,
     )
-    return signer, cred, voucher
+    return signer, cred, voucher, v_signer.get_public_key_multikey()
 
 
 def test_same_voucher_accepted_routine_rejected_when_epoch_moves(agent_call):
-    signer, cred, voucher = agent_call
+    signer, cred, voucher, vkey = agent_call
     pub = signer.get_public_key_multikey()
 
     # Routine: time-decay only. The voucher is time-valid, so the call passes.
@@ -371,6 +380,7 @@ def test_same_voucher_accepted_routine_rejected_when_epoch_moves(agent_call):
         cred,
         public_key=pub,
         session_voucher=voucher,
+        voucher_public_key=vkey,
         trust_threshold=0.5,
         consequence=CONSEQUENCE_ROUTINE,
     )
@@ -382,6 +392,7 @@ def test_same_voucher_accepted_routine_rejected_when_epoch_moves(agent_call):
         cred,
         public_key=pub,
         session_voucher=voucher,
+        voucher_public_key=vkey,
         trust_threshold=0.5,
         consequence=CONSEQUENCE_SENSITIVE,
         last_seen_authority_epoch=7,
@@ -394,12 +405,13 @@ def test_same_voucher_accepted_routine_rejected_when_epoch_moves(agent_call):
 
 
 def test_sensitive_passes_when_epoch_current(agent_call):
-    signer, cred, voucher = agent_call
+    signer, cred, voucher, vkey = agent_call
     pub = signer.get_public_key_multikey()
     v = verify_agent_call(
         cred,
         public_key=pub,
         session_voucher=voucher,
+        voucher_public_key=vkey,
         trust_threshold=0.5,
         consequence=CONSEQUENCE_SENSITIVE,
         last_seen_authority_epoch=5,
@@ -409,13 +421,14 @@ def test_sensitive_passes_when_epoch_current(agent_call):
 
 
 def test_critical_requires_live_cosign(agent_call):
-    signer, cred, voucher = agent_call
+    signer, cred, voucher, vkey = agent_call
     pub = signer.get_public_key_multikey()
     # Even with a current epoch, critical demands a live co-sign.
     without = verify_agent_call(
         cred,
         public_key=pub,
         session_voucher=voucher,
+        voucher_public_key=vkey,
         trust_threshold=0.5,
         consequence=CONSEQUENCE_CRITICAL,
         last_seen_authority_epoch=5,
@@ -427,6 +440,7 @@ def test_critical_requires_live_cosign(agent_call):
         cred,
         public_key=pub,
         session_voucher=voucher,
+        voucher_public_key=vkey,
         trust_threshold=0.5,
         consequence=CONSEQUENCE_CRITICAL,
         last_seen_authority_epoch=5,
@@ -437,13 +451,14 @@ def test_critical_requires_live_cosign(agent_call):
 
 
 def test_voucher_epoch_read_from_credential_subject(agent_call):
-    signer, cred, voucher = agent_call
+    signer, cred, voucher, vkey = agent_call
     pub = signer.get_public_key_multikey()
     # Do not pass voucher_authority_epoch explicitly; it is read from the voucher.
     v = verify_agent_call(
         cred,
         public_key=pub,
         session_voucher=voucher,
+        voucher_public_key=vkey,
         trust_threshold=0.5,
         consequence=CONSEQUENCE_SENSITIVE,
         last_seen_authority_epoch=6,

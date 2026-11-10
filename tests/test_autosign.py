@@ -217,10 +217,16 @@ class TestDelegation:
 
         kp, psigner = principal
         grant = vouch.delegate(
-            action="charge", target="api.bank", resource="invoices", signer=psigner
+            action="charge",
+            target="api.bank",
+            resource="invoices",
+            to=env_identity.did,
+            signer=psigner,
         )
 
-        @signed(parent=grant)
+        # The call's intent must sit inside the grant: same action and target,
+        # a sub-resource of the granted resource.
+        @signed(action="charge", target="api.bank", resource="invoices/42", parent=grant)
         def charge_invoice(invoice_id):
             return current_credential()
 
@@ -229,15 +235,21 @@ class TestDelegation:
         assert chain and len(chain) == 1
         assert chain[0]["issuer"] == kp.did
         assert chain[0]["subject"] == env_identity.did
-        # The agent's own credential still verifies under its own key.
-        assert _verify(cred, pubkey)[0]
+        # The agent's credential verifies under its own key, and its chain
+        # verifies against the principal's key.
+        ok, _ = Verifier.verify(cred, pubkey, trusted_roots={kp.did: kp.public_key_jwk})
+        assert ok
 
     def test_narrowing_is_enforced_no_widened_credential(self, env_identity, principal):
         kp, psigner = principal
         import vouch
 
         grant = vouch.delegate(
-            action="charge", target="api.bank", resource="invoices", signer=psigner
+            action="charge",
+            target="api.bank",
+            resource="invoices",
+            to=env_identity.did,
+            signer=psigner,
         )
 
         # Attempt to act OUTSIDE the granted resource. Signing fails the
@@ -257,7 +269,11 @@ class TestDelegation:
         import vouch
 
         grant = vouch.delegate(
-            action="charge", target="api.bank", resource="invoices", signer=psigner
+            action="charge",
+            target="api.bank",
+            resource="invoices",
+            to=env_identity.did,
+            signer=psigner,
         )
 
         @signed(action="charge", target="api.bank", resource="invoices/42", parent=grant)

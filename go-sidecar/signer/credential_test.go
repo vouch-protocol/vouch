@@ -352,17 +352,20 @@ func TestDelegationAppendsLinkFromParent(t *testing.T) {
 	parent := newTestSigner(t, "did:web:alice.example.com")
 	child := newTestSigner(t, "did:web:assistant.example.com")
 
+	// The grant names its delegatee; the child restates action and target and
+	// narrows the resource (Specification 9.3).
 	parentCred, _ := parent.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":   "plan_trip",
-			"target":   "destination:Paris",
-			"resource": "https://travel-api.example.com/v1/bookings",
+			"action":    "plan_trip",
+			"target":    "destination:Paris",
+			"resource":  "https://travel-api.example.com/v1/bookings",
+			"delegatee": child.DID(),
 		},
 	})
 	childCred, err := child.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":   "book_flight",
-			"target":   "flight:AF123",
+			"action":   "plan_trip",
+			"target":   "destination:Paris",
 			"resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
 		},
 		ParentCredential: parentCred,
@@ -392,11 +395,13 @@ func TestDelegationAppendsLinkFromParent(t *testing.T) {
 
 func TestDelegationFromProofSetParentBindsToClassicalMember(t *testing.T) {
 	parent := newTestSigner(t, "did:web:alice.example.com")
+	child := newTestSigner(t, "did:web:assistant.example.com")
 	parentCred, _ := parent.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":   "plan_trip",
-			"target":   "destination:Paris",
-			"resource": "https://travel-api.example.com/v1/bookings",
+			"action":    "plan_trip",
+			"target":    "destination:Paris",
+			"resource":  "https://travel-api.example.com/v1/bookings",
+			"delegatee": child.DID(),
 		},
 	})
 	classical := parentCred["proof"].(map[string]any)
@@ -416,11 +421,10 @@ func TestDelegationFromProofSetParentBindsToClassicalMember(t *testing.T) {
 		t.Fatalf("proof-set parent binding = %q, want the classical member %q", got, classicalPV)
 	}
 
-	child := newTestSigner(t, "did:web:assistant.example.com")
 	childCred, err := child.Sign(SignOptions{
 		Intent: map[string]any{
-			"action":   "book_flight",
-			"target":   "flight:AF123",
+			"action":   "plan_trip",
+			"target":   "destination:Paris",
 			"resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
 		},
 		ParentCredential: proofSetParent,
@@ -474,18 +478,27 @@ func TestDelegationDeepChainAllowedV17(t *testing.T) {
 		"resource": "https://api.example.com/v1/data",
 	}
 
-	signers := make([]*Signer, 7)
+	signers := make([]*Signer, 8)
 	for i := range signers {
 		signers[i] = newTestSigner(t, fmt.Sprintf("did:web:agent%d.example.com", i))
 	}
+	// Each hop restates the scope and names the next hop as its delegatee.
+	hop := func(next int) map[string]any {
+		m := map[string]any{}
+		for k, v := range intent {
+			m[k] = v
+		}
+		m["delegatee"] = signers[next].DID()
+		return m
+	}
 
-	cred, err := signers[0].Sign(SignOptions{Intent: intent})
+	cred, err := signers[0].Sign(SignOptions{Intent: hop(1)})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for i := 1; i <= 6; i++ {
 		cred, err = signers[i].Sign(SignOptions{
-			Intent:           intent,
+			Intent:           hop(i + 1),
 			ParentCredential: cred,
 		})
 		if err != nil {

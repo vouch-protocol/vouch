@@ -163,12 +163,14 @@ describe('Agent', () => {
 
   test('delegate and chain', async () => {
     const principal = await Agent.create('principal.example', { persist: false });
+    const worker = await Agent.create('worker.example', { persist: false });
+    // A grant names its delegatee; only that agent can chain under it.
     const grant = await principal.delegate({
       action: 'charge',
       target: 'api.bank',
       resource: 'https://api.bank/invoices',
+      to: worker.did,
     });
-    const worker = await Agent.create('worker.example', { persist: false });
     const child = await worker.sign({
       action: 'charge',
       target: 'api.bank',

@@ -10,6 +10,7 @@
 package signer
 
 import (
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"time"
@@ -71,6 +72,19 @@ func VerifyCredential(
 	clockSkewSeconds int64,
 	mldsa44PublicKey ...*mldsa44.PublicKey,
 ) (bool, *CredentialPassport, error) {
+	return verifyCredential(credential, publicKey, nowISO, clockSkewSeconds, nil, mldsa44PublicKey...)
+}
+
+// verifyCredential is VerifyCredential with keys for non-did:key delegation
+// chain grant issuers (chainKeys).
+func verifyCredential(
+	credential map[string]any,
+	publicKey []byte,
+	nowISO string,
+	clockSkewSeconds int64,
+	chainKeys map[string]ed25519.PublicKey,
+	mldsa44PublicKey ...*mldsa44.PublicKey,
+) (bool, *CredentialPassport, error) {
 	proofOK, err := VerifyProof(credential, publicKey, optionalMLDSA44(mldsa44PublicKey))
 	if err != nil {
 		if errors.Is(err, ErrMissingMLDSA44Key) {
@@ -106,6 +120,13 @@ func VerifyCredential(
 	}
 	intent, _ := subject["intent"].(map[string]any)
 	if intent == nil || asString(intent["resource"]) == "" {
+		return false, nil, nil
+	}
+
+	// Delegation chain (Specification 9.3): grant signatures, linkage, expiry,
+	// and non-expansion on every dimension. Chain issuers must be did:key here;
+	// call VerifyDelegationChain directly to supply other keys or pin roots.
+	if reason := VerifyDelegationChain(credential, nowISO, clockSkewSeconds, chainKeys, nil); reason != "" {
 		return false, nil, nil
 	}
 

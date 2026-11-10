@@ -11,6 +11,7 @@
  * the credential wire format is unchanged.
  */
 
+import { capabilityView, inherit, nonExpansion } from './attenuation';
 import * as crypto from 'crypto';
 
 import { Signer } from './signer';
@@ -103,6 +104,9 @@ export async function verifyDelegatedChain(
 
     const result: CredentialVerificationResult = await verify(cred, key, {
       clockSkewSeconds: skew,
+      // Grants embedded in a credential's own chain resolve from the trusted
+      // roots first (did:key issuers resolve offline).
+      keyResolver: (did: string) => trustedRoots[did],
     });
     if (!result.isValid || !result.passport) {
       return { ok: false, reason: `credential ${index} failed verification` };
@@ -117,6 +121,9 @@ export async function verifyDelegatedChain(
     passports.push(result.passport);
   }
 
+  // Each child is compared against its parent's effective capability
+  // (dimensions a grant omits are inherited).
+  let effective = capabilityView(passports[0].rawCredential as unknown as Record<string, unknown>, false);
   for (let i = 0; i < passports.length - 1; i++) {
     const parent = passports[i];
     const child = passports[i + 1];
@@ -135,12 +142,17 @@ export async function verifyDelegatedChain(
       };
     }
 
-    const parentResource = parent.resource ?? '';
-    const childResource = child.resource ?? '';
-    if (parentResource && childResource && !isSubResource(childResource, parentResource)) {
+    // No step may be broader than the one before it on action, target,
+    // resource, rate, or policy (the same rule as embedded chains).
+    const childView = capabilityView(child.rawCredential as unknown as Record<string, unknown>, false);
+    const dimension = nonExpansion(effective, childView);
+    effective = inherit(effective, childView);
+    if (dimension !== null) {
+      const granted = (parent.intent as Record<string, unknown>)?.[dimension];
+      const asked = (child.intent as Record<string, unknown>)?.[dimension];
       return {
         ok: false,
-        reason: `link ${i}: resource ${childResource} is not within the granted ${parentResource}`,
+        reason: `link ${i}: ${dimension} ${JSON.stringify(asked)} is not within the granted ${JSON.stringify(granted)}`,
       };
     }
 
@@ -203,11 +215,6 @@ function issuerOf(cred: VouchCredential | Record<string, unknown>): string | nul
   return (issuer as string) ?? null;
 }
 
-function isSubResource(child: string, parent: string): boolean {
-  if (child === parent) return true;
-  const trimmed = parent.replace(/\/+$/, '');
-  return child.startsWith(trimmed + '/');
-}
 
 function windowWithin(child: CredentialPassport, parent: CredentialPassport): boolean {
   const cFrom = Date.parse(child.validFrom);

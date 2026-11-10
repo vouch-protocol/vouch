@@ -17,6 +17,8 @@ import (
 	"time"
 
 	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
+
+	"github.com/vouch-protocol/vouch/go-sidecar/attenuation"
 )
 
 // v1.7 removes the fixed delegation depth limit (was 5).
@@ -112,6 +114,15 @@ func (s *Signer) Sign(opts SignOptions) (map[string]any, error) {
 	if validSeconds <= 0 {
 		validSeconds = s.defaultExpiry
 	}
+	validFrom := opts.ValidFrom
+	if opts.ParentCredential != nil {
+		// A child never outlives, or starts before, the grant it acts under.
+		var cerr error
+		validFrom, validSeconds, cerr = clampToParentWindow(opts.ParentCredential, validFrom, validSeconds)
+		if cerr != nil {
+			return nil, cerr
+		}
+	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
 		IssuerDID:        s.did,
@@ -120,7 +131,7 @@ func (s *Signer) Sign(opts SignOptions) (map[string]any, error) {
 		ReputationScore:  opts.ReputationScore,
 		DelegationChain:  chain,
 		CredentialID:     opts.CredentialID,
-		ValidFrom:        opts.ValidFrom,
+		ValidFrom:        validFrom,
 		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
@@ -268,6 +279,15 @@ func (s *Signer) SignHybrid(opts SignOptions) (map[string]any, error) {
 	if validSeconds <= 0 {
 		validSeconds = s.defaultExpiry
 	}
+	validFrom := opts.ValidFrom
+	if opts.ParentCredential != nil {
+		// A child never outlives, or starts before, the grant it acts under.
+		var cerr error
+		validFrom, validSeconds, cerr = clampToParentWindow(opts.ParentCredential, validFrom, validSeconds)
+		if cerr != nil {
+			return nil, cerr
+		}
+	}
 
 	cred, err := BuildVouchCredential(BuildVouchCredentialOptions{
 		IssuerDID:        s.did,
@@ -276,7 +296,7 @@ func (s *Signer) SignHybrid(opts SignOptions) (map[string]any, error) {
 		ReputationScore:  opts.ReputationScore,
 		DelegationChain:  chain,
 		CredentialID:     opts.CredentialID,
-		ValidFrom:        opts.ValidFrom,
+		ValidFrom:        validFrom,
 		CredentialStatus: opts.CredentialStatus,
 	})
 	if err != nil {
@@ -337,6 +357,34 @@ func (s *Signer) extendDelegationChain(
 		}
 	}
 
+	if issuerOf(parentCredential) == "" {
+		return nil, fmt.Errorf("delegation refused: the parent grant is not a signed credential")
+	}
+	switch parentCredential["proof"].(type) {
+	case map[string]any, []any, []map[string]any:
+	default:
+		return nil, fmt.Errorf("delegation refused: the parent grant is not a signed credential")
+	}
+	delegatee, _ := parentIntent["delegatee"].(string)
+	if delegatee == "" {
+		return nil, fmt.Errorf(
+			"delegation refused: the parent grant names no delegatee; issue it with the delegatee's DID",
+		)
+	}
+	if delegatee != s.did {
+		return nil, fmt.Errorf(
+			"delegation refused: the parent grant names delegatee %q, not this signer %q", delegatee, s.did,
+		)
+	}
+	childView := attenuation.CapabilityView(
+		map[string]any{"credentialSubject": map[string]any{"intent": currentIntent}}, false,
+	)
+	if dim := attenuation.NonExpansion(attenuation.EffectiveCapability(parentCredential, false), childView); dim != "" {
+		return nil, fmt.Errorf(
+			"delegation violates the non-expansion rule: the child is broader than the parent grant on %q", dim,
+		)
+	}
+
 	parentProofValue := parentProofBindingValue(parentCredential)
 	if len(parentProofValue) > 64 {
 		parentProofValue = parentProofValue[:64]
@@ -353,9 +401,35 @@ func (s *Signer) extendDelegationChain(
 		"validFrom":        parentValidFrom,
 		"validUntil":       parentValidUntil,
 		"parentProofValue": parentProofValue,
+		"parentCredential": parentCredential,
 	}
 
 	return append(parentChain, newLink), nil
+}
+
+// clampToParentWindow fits a child credential's window inside its parent
+// grant's window: the child starts no earlier and ends no later than the grant.
+func clampToParentWindow(parent map[string]any, validFrom time.Time, validSeconds int) (time.Time, int, error) {
+	pf, fErr := parseISO8601(asString(parent["validFrom"]))
+	pu, uErr := parseISO8601(asString(parent["validUntil"]))
+	if fErr != nil || uErr != nil {
+		return validFrom, validSeconds, fmt.Errorf("delegation refused: the parent grant has no validity window")
+	}
+	start := validFrom
+	if start.IsZero() {
+		start = time.Now().UTC()
+	}
+	if start.Before(pf) {
+		start = pf
+	}
+	remaining := int(pu.Sub(start).Seconds())
+	if remaining <= 0 {
+		return validFrom, validSeconds, fmt.Errorf("delegation refused: the parent grant has expired")
+	}
+	if validSeconds > remaining {
+		validSeconds = remaining
+	}
+	return start, validSeconds, nil
 }
 
 func isSubResource(child, parent string) bool {

@@ -70,11 +70,20 @@ describe('fleet: per-device delegation', () => {
       resource: 'https://api.bank/invoices',
     });
     const impostor = await Agent.create(undefined, { persist: false });
+    // The signer refuses to chain under a grant naming someone else ...
+    await expect(
+      impostor.sign({
+        action: 'charge',
+        target: 'api.bank',
+        resource: 'https://api.bank/invoices/42',
+        parentCredential: grant,
+      })
+    ).rejects.toThrow(/delegatee/);
+    // ... and the verifier rejects the impostor's credential presented after it.
     const action = await impostor.sign({
       action: 'charge',
       target: 'api.bank',
       resource: 'https://api.bank/invoices/42',
-      parentCredential: grant,
     });
     const result = await verifyDelegatedChain([grant, action], {
       trustedRoots: { [root.did]: root.publicKeyJwk },

@@ -214,9 +214,11 @@ fn rate_events_per_sec(rate: &Value) -> Result<f64> {
     Ok(limit / secs as f64)
 }
 
-/// Child policy must be equal to or stricter than the parent's. Numeric parent
-/// constraints are treated as minimum thresholds (higher child value = stricter).
-/// Non-numeric constraints require exact equality. A parent key the child omits
+/// Child policy must be equal to or stricter than the parent's. Numeric values
+/// narrow by the key's name: a key starting with "max" is a ceiling (the child
+/// may lower it, never raise it), a key starting with "min" is a floor (the
+/// child may raise it, never lower it), and any other numeric key must be
+/// restated unchanged. Non-numeric constraints require exact equality. A parent key the child omits
 /// means the child dropped a constraint, which is broader, and is rejected.
 /// Conservative by construction: anything not provably at-least-as-strict fails.
 fn policy_not_weaker(parent: &Value, child: &Value) -> bool {
@@ -229,8 +231,15 @@ fn policy_not_weaker(parent: &Value, child: &Value) -> bool {
             None => return false, // child dropped a parent constraint => weaker
             Some(cv) => match (pv.as_f64(), cv.as_f64()) {
                 (Some(pn), Some(cn)) => {
-                    if cn < pn {
-                        return false; // lower threshold => less strict
+                    let weaker = if k.starts_with("max") {
+                        cn > pn // a raised ceiling is broader
+                    } else if k.starts_with("min") {
+                        cn < pn // a lowered floor is broader
+                    } else {
+                        cn != pn // unknown direction: must be restated
+                    };
+                    if weaker {
+                        return false;
                     }
                 }
                 (Some(_), None) | (None, Some(_)) => return false, // type mismatch
@@ -363,6 +372,62 @@ pub fn non_expansion(parent: &Value, child: &Value) -> std::result::Result<(), D
         }
     }
 
+    // spend: an action's intent.amount stays within the parent's maxSpend.
+    if let Some(cap) = parent.get("policy").and_then(|p| p.get("maxSpend")) {
+        if let Some(amount) = c_intent.and_then(|i| i.get("amount")) {
+            match (amount.as_f64(), cap.as_f64()) {
+                (Some(a), Some(c)) if a <= c => {}
+                _ => return Err(Dimension::Policy),
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// The child's effective capability: any dimension it omits is inherited
+/// unchanged from its parent's effective capability (Specification 9.2).
+/// `amount` is per action and is never inherited.
+pub fn inherit(parent_effective: &Value, child: &Value) -> Value {
+    let mut out = child.as_object().cloned().unwrap_or_default();
+    let mut c_intent = child
+        .get("intent")
+        .and_then(|i| i.as_object())
+        .cloned()
+        .unwrap_or_default();
+    if let Some(p_intent) = parent_effective.get("intent").and_then(|i| i.as_object()) {
+        for k in ["action", "target", "resource"] {
+            if !c_intent.contains_key(k) {
+                if let Some(v) = p_intent.get(k) {
+                    c_intent.insert(k.into(), v.clone());
+                }
+            }
+        }
+    }
+    out.insert("intent".into(), Value::Object(c_intent));
+    for k in ["rate", "policy", "validFrom", "validUntil"] {
+        let absent = out.get(k).map(|v| v.is_null()).unwrap_or(true);
+        if absent {
+            if let Some(v) = parent_effective.get(k).filter(|v| !v.is_null()) {
+                out.insert(k.into(), v.clone());
+            }
+        }
+    }
+    Value::Object(out)
+}
+
+/// Walk root to leaf comparing each step against its parent's EFFECTIVE
+/// capability (inherited dimensions included). Returns the first offending
+/// dimension.
+pub fn first_broader_step(views: &[Value]) -> std::result::Result<(), Dimension> {
+    let Some(first) = views.first() else {
+        return Ok(());
+    };
+    let mut effective = first.clone();
+    for child in &views[1..] {
+        non_expansion(&effective, child)?;
+        effective = inherit(&effective, child);
+    }
     Ok(())
 }
 
@@ -435,15 +500,18 @@ pub fn validate_chain(
         }
     }
 
-    // Linkage and non-expansion for each adjacent pair.
+    // Linkage and non-expansion for each step against its parent's effective
+    // capability (dimensions a link omits are inherited).
+    let mut effective = chain[0].clone();
     for i in 1..chain.len() {
         let parent = &chain[i - 1];
         let child = &chain[i];
         if link_str(parent, "subject") != link_str(child, "issuer") {
             return Err(DelegationReject::SubjectIssuerMismatch { link_index: i });
         }
-        non_expansion(parent, child)
-            .map_err(|dimension| DelegationReject::ScopeExceedsParent { dimension })?;
+        let checked = non_expansion(&effective, child);
+        effective = inherit(&effective, child);
+        checked.map_err(|dimension| DelegationReject::ScopeExceedsParent { dimension })?;
     }
 
     // Effective validity window: the intersection of every link's window, i.e.

@@ -326,28 +326,34 @@ describe('Verifier.verify', () => {
 
 describe('Delegation chains', () => {
   test('appends a link from parent to child', async () => {
-    const { signer: parent } = await newSigner('did:web:alice.example.com');
+    const { signer: parent, publicKeyJwk: parentKey } = await newSigner(
+      'did:web:alice.example.com'
+    );
     const { signer: child, publicKeyJwk: childKey } = await newSigner(
       'did:web:assistant.example.com'
     );
 
+    // The grant names its delegatee; the child restates action and target and
+    // narrows the resource (Specification 9.3).
     const parentCred = await parent.sign({
       intent: {
         action: 'plan_trip',
         target: 'destination:Paris',
         resource: 'https://travel-api.example.com/v1/bookings',
+        delegatee: child.getDid(),
       },
     });
 
     const childCred = await child.sign({
       intent: {
-        action: 'book_flight',
-        target: 'flight:AF123',
+        action: 'plan_trip',
+        target: 'destination:Paris',
         resource:
           'https://travel-api.example.com/v1/bookings/flight-AF123',
       },
       parentCredential: parentCred,
     });
+    expect(childCred.credentialSubject.delegationChain![0].parentCredential).toEqual(parentCred);
 
     const chain = childCred.credentialSubject.delegationChain!;
     expect(chain).toHaveLength(1);
@@ -357,10 +363,10 @@ describe('Delegation chains', () => {
       'https://travel-api.example.com/v1/bookings/flight-AF123'
     );
 
-    const result = await Verifier.verify(
-      childCred,
-      publicKeyObject(childKey)
-    );
+    // The grantor is did:web, so its key is supplied as the trusted root.
+    const result = await Verifier.verify(childCred, publicKeyObject(childKey), 30, {
+      trustedRoots: { [parent.getDid()]: parentKey },
+    });
     expect(result.isValid).toBe(true);
     expect(result.passport!.delegationChain).toHaveLength(1);
   });
@@ -398,18 +404,19 @@ describe('Delegation chains', () => {
     };
 
     const signers = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       const s = await newSigner(`did:web:agent${i}.example.com`);
       signers.push(s.signer);
     }
 
+    // Each hop restates the scope and names the next hop as its delegatee.
     let cred: VouchCredential = await signers[0].sign({
-      intent: intentTpl,
+      intent: { ...intentTpl, delegatee: signers[1].getDid() },
     });
     // Six hops: the sixth was previously rejected by the depth limit.
     for (let i = 1; i < 7; i++) {
       cred = await signers[i].sign({
-        intent: intentTpl,
+        intent: { ...intentTpl, delegatee: signers[i + 1].getDid() },
         parentCredential: cred,
       });
     }
@@ -428,6 +435,7 @@ describe('Delegation chains', () => {
         action: 'plan_trip',
         target: 'destination:Paris',
         resource: 'https://travel-api.example.com/v1/bookings',
+        delegatee: child.getDid(),
       },
     });
     const proofSetParent = (await parent.attachProofHybrid(
@@ -438,8 +446,8 @@ describe('Delegation chains', () => {
 
     const childCred = await child.sign({
       intent: {
-        action: 'book_flight',
-        target: 'flight:AF123',
+        action: 'plan_trip',
+        target: 'destination:Paris',
         resource:
           'https://travel-api.example.com/v1/bookings/flight-AF123',
       },

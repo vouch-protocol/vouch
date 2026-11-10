@@ -794,6 +794,7 @@ def check_trust(
     voucher_json: str,
     threshold: float = 0.5,
     now_iso: Optional[str] = None,
+    validator_public_key: Optional[str] = None,
 ) -> str:
     """Recompute a session voucher's live trust and compare it to a threshold.
 
@@ -802,17 +803,24 @@ def check_trust(
     fallen below the threshold you require -- unless the session is refreshed.
     Pair this with create_session, which issues the voucher.
 
+    The voucher must also be authentic and current: its proof must verify and
+    it must be inside its validity window, otherwise the answer is DENY with a
+    reason, whatever its trust value.
+
     Args:
         voucher_json: The session voucher (from create_session) as a JSON string.
         threshold: Minimum trust in [0, 1] the action requires (default 0.5).
         now_iso: The verifier's clock as 'YYYY-MM-DDTHH:MM:SSZ'. Defaults to now.
+        validator_public_key: The issuing validator's Ed25519 key (Multikey or
+            JWK). Defaults to this server's own key, which verifies vouchers
+            issued by this server's create_session.
 
     Returns:
         'ALLOW' or 'DENY' with the current trust, threshold, and elapsed age.
     """
     from datetime import datetime, timezone
 
-    from vouch.trust_entropy import evaluate_trust
+    from vouch.trust_entropy import evaluate_trust, verify_session_voucher
 
     try:
         voucher = json.loads(voucher_json)
@@ -825,6 +833,14 @@ def check_trust(
             at_time = datetime.strptime(now_iso, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
         except ValueError as e:
             return f"Error: now_iso must be 'YYYY-MM-DDTHH:MM:SSZ' ({e})"
+
+    key = validator_public_key
+    if key is None:
+        own = resolve_signer()
+        key = own.get_public_key_multikey() if own is not None else None
+    voucher_ok, voucher_reason = verify_session_voucher(voucher, key, at_time=at_time)
+    if not voucher_ok:
+        return f"DENY\n  reason:    {voucher_reason}"
 
     try:
         result = evaluate_trust(voucher, threshold=threshold, at_time=at_time)

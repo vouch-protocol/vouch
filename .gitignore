@@ -148,3 +148,6 @@ website/public/funding.json
 
 # Local builds of the TypeScript example
 examples/mcp_server_ts/dist/
+
+# Release notes kept outside the repository
+BREAKING.md

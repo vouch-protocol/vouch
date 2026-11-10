@@ -175,10 +175,11 @@ def test_agent_verify_other_issuer_offline_key():
 
 def test_agent_delegate_and_chain():
     principal = Agent("principal.example", persist=False)
-    grant = principal.delegate(
-        action="charge", target="api.bank", resource="https://api.bank/invoices"
-    )
     worker = Agent("worker.example", persist=False)
+    # A grant names its delegatee; only that agent can chain under it.
+    grant = principal.delegate(
+        action="charge", target="api.bank", resource="https://api.bank/invoices", to=worker.did
+    )
     child = worker.sign(
         action="charge",
         target="api.bank",
@@ -479,3 +480,64 @@ def test_new_symbols_exported():
     ):
         assert hasattr(vouch, name), name
         assert name in vouch.__all__, name
+
+
+# ---------------------------------------------------------------------------
+# Widening through the public Agent API
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "intent",
+    [
+        {"action": "refund", "target": "api.bank", "resource": "https://api.bank/invoices/42"},
+        {"action": "charge", "target": "api.payroll", "resource": "https://api.bank/invoices/42"},
+        {"action": "charge", "target": "api.bank", "resource": "https://api.bank/payroll"},
+    ],
+    ids=["action", "target", "resource"],
+)
+def test_agent_cannot_sign_wider_than_its_grant(intent):
+    principal = Agent("principal.example", persist=False)
+    worker = Agent(persist=False)
+    grant = principal.delegate(
+        action="charge", target="api.bank", resource="https://api.bank/invoices", to=worker.did
+    )
+    with pytest.raises(ValueError):
+        worker.sign(parent_credential=grant, **intent)
+
+
+def test_agent_chain_verifies_and_widened_chain_does_not():
+    from vouch.verifier import verify_delegation_chain
+
+    principal = Agent("principal.example", persist=False)
+    worker = Agent(persist=False)
+    grant = principal.delegate(
+        action="charge", target="api.bank", resource="https://api.bank/invoices", to=worker.did
+    )
+    roots = {principal.did: principal.public_key_jwk}
+    good = worker.sign(
+        action="charge",
+        target="api.bank",
+        resource="https://api.bank/invoices/42",
+        parent_credential=grant,
+    )
+    assert verify_delegation_chain(good, trusted_roots=roots) is None
+    # The key resolves, but the root is not one the verifier trusts.
+    assert (
+        verify_delegation_chain(
+            good,
+            key_resolver=lambda did: roots.get(did),
+            trusted_roots=["did:web:someone.else"],
+        )
+        == "untrusted_principal"
+    )
+
+    # A hand-built chain that widens the action, signed by the worker itself.
+    links = good["credentialSubject"]["delegationChain"]
+    widened = worker.signer.sign(
+        action="refund",
+        target="api.bank",
+        resource="https://api.bank/invoices/42",
+        delegation_chain=links,
+    )
+    assert verify_delegation_chain(widened, trusted_roots=roots) == "scope_exceeds_parent:action"

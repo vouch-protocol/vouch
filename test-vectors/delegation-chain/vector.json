@@ -1,0 +1,3200 @@
+{
+  "description": "Delegation chain verification vectors (Specification 9.3). Each credential's delegationChain links embed the signed grant they came from (parentCredential). Evaluate verify_delegation_chain at `now`: `expected` is null for a valid chain, or the reason code. All identities are did:key, so every key resolves offline. Full credential verification at `now` must succeed exactly when `expected` is null.",
+  "spec": "Specification 9.3",
+  "version": "1.0",
+  "cases": [
+    {
+      "name": "valid_two_hop",
+      "note": "root -> a -> b, each step narrows",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000003",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z58goEu21P7TcArKNLddynynLzHriisKZsTpfp4Qc9LhB63KN2QdqoeSoWctRhiMRcKvW9JZD3QKbF78Jbx1PzNqi"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "forged_grant_signature",
+      "note": "the root grant carries a signature that is not the root's",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000010",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2uB23WEqgHKibqX4aBuYZ25SxjYCSbfBJVMd6Nen764rehvZQqEwpq7RkEBgJn9KiKYpeMpBDi1gWNrNLREdFLFg"
+        }
+      },
+      "expected": "delegation_signature_invalid"
+    },
+    {
+      "name": "tampered_root_grant",
+      "note": "the root grant's action set was edited after signing",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000011",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update",
+                      "delete"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update",
+                              "delete"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z3oUVzDoqrwXdCbB48UMpFWwAwyTwZ25KsRN7hRJv6VSqutfwqSJsb7s4DNUSKegGeUDGuCFQKe9zVRZM37fNr8DQ"
+        }
+      },
+      "expected": "delegation_signature_invalid"
+    },
+    {
+      "name": "tampered_intermediate_grant",
+      "note": "the a -> b grant was edited after signing",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000012",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "update",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "update",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "update",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "update",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2HaBHyx4PNDtEXFofEXpXAb8T7EKVJr3vsRzoppTr1S9yZ4VYfUSEKHZH9qcvhLXnjegTq3q11ZDZvjzGySG6ynX"
+        }
+      },
+      "expected": "delegation_signature_invalid"
+    },
+    {
+      "name": "widened_leaf_action",
+      "note": "a's own credential is broader than the root grant on action",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000204",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "delete",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "delete",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z3d8qM8o1qaAQGMAxLkgmQRB248m1AP7siwgZNrzKbSyokebuo1wikFaheztavrzVGro4SK3h5YijBakT3ds5FNsD"
+        }
+      },
+      "expected": "scope_exceeds_parent:action"
+    },
+    {
+      "name": "widened_leaf_target",
+      "note": "a's own credential is broader than the root grant on target",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000205",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "payroll",
+            "resource": "https://calendar.example.com/team"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "payroll",
+                "resource": "https://calendar.example.com/team"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z3RR43H2huSNuhmgDDH5QK6FrtgSPahycD9Nh3GYXC5bDMyQo4y68gzNeoabJu2JSwdnassEaLp5i1AnsK8afG3Ci"
+        }
+      },
+      "expected": "scope_exceeds_parent:target"
+    },
+    {
+      "name": "widened_leaf_resource",
+      "note": "a's own credential is broader than the root grant on resource",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000206",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "zv3tTTgRjJTkmosYKDsWQ3SH8NLQKyyA3roo6aryqfuURY66Qx74mAYJPrJdMS4vZ3GHUZFrztTpCpRicQfzPeSo"
+        }
+      },
+      "expected": "scope_exceeds_parent:resource"
+    },
+    {
+      "name": "widened_leaf_rate",
+      "note": "a's own credential is broader than the root grant on rate",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000207",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team",
+            "rate": {
+              "limit": 100,
+              "window": "PT1H"
+            }
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "rate": {
+                  "limit": 100,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z3sbyJEvEZxh7j78uG2t1KF5FDeQTjctpDAGE8BNjiRTGmHWLnN81P8UWjKBarebD8XS3zEqKkWF6e8K6DYnvxa3j"
+        }
+      },
+      "expected": "scope_exceeds_parent:rate"
+    },
+    {
+      "name": "widened_intermediate_grant",
+      "note": "a re-delegates more actions than it was granted",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000031",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "delete",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": [
+                  "read",
+                  "update",
+                  "delete"
+                ],
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "delete",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z3JY3dQZ1uQ2z9N4ebxVNXFh2ycNuPWyLHVuVUK53sBPXB6g5yCLB3MFdyn6cJno",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000030",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update",
+                      "delete"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG"
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": [
+                          "read",
+                          "update",
+                          "delete"
+                        ],
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG"
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z3JY3dQZ1uQ2z9N4ebxVNXFh2ycNuPWyLHVuVUK53sBPXB6g5yCLB3MFdyn6cJno32BqsjMLsnfxmbt1ZGTWM4kEo"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z5dADAJee8dLTv6EvnUgRYhUfyY4uFaCNFsWPLGVsf3RpSUn7Pd6Zev6s94hob9L2dfQpgk4vtuY1htGtuASSSibs"
+        }
+      },
+      "expected": "scope_exceeds_parent:action"
+    },
+    {
+      "name": "leaf_outlives_grant",
+      "note": "the leaf's validity runs past the grant's",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000041",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+        "validFrom": "2026-11-10T11:00:00Z",
+        "validUntil": "2026-11-11T11:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read"
+              },
+              "validFrom": "2026-11-10T11:00:00Z",
+              "validUntil": "2026-11-10T13:00:00Z",
+              "parentProofValue": "z21M7CJUGV9D4MGwV3Bjr4javJKXw1EpCjn3yMxdQgdANa4a1ndPSJdYCYrH4e5G",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000040",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T11:00:00Z",
+                "validUntil": "2026-11-10T13:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK"
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T11:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z21M7CJUGV9D4MGwV3Bjr4javJKXw1EpCjn3yMxdQgdANa4a1ndPSJdYCYrH4e5GYBjLWqfo6h8DBUJk2ExXoAfsU"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T11:00:00Z",
+          "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "zDyu9YdTCKnT3BuwWDgJu5pYMNWpbnizUxCQ6tgdZN7XimfkB8pMEDZ7hKAswKFCvRbrggk3oLXnF1yzoxp7kbvE"
+        }
+      },
+      "expected": "scope_exceeds_parent:time"
+    },
+    {
+      "name": "stolen_chain",
+      "note": "mallory presents b's chain under her own credential",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000050",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkfTuU6eN5CBXYG5fFRtyPrTUUM7Gm6RrxaL9Yi6AYriu5",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkfTuU6eN5CBXYG5fFRtyPrTUUM7Gm6RrxaL9Yi6AYriu5",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkfTuU6eN5CBXYG5fFRtyPrTUUM7Gm6RrxaL9Yi6AYriu5#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z2AicmhC94pWkq1UBzuMXbT1YwwQ88g2KUEZzbxwzVQhcsY3n7wvfXNBzLmj4kFXWaZQ5Lkgb3HMBFSPd5vCxtncw"
+        }
+      },
+      "expected": "delegation_subject_issuer_mismatch"
+    },
+    {
+      "name": "link_subject_not_delegatee",
+      "note": "the link names mallory but the grant names b",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000051",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkfTuU6eN5CBXYG5fFRtyPrTUUM7Gm6RrxaL9Yi6AYriu5",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkfTuU6eN5CBXYG5fFRtyPrTUUM7Gm6RrxaL9Yi6AYriu5",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkfTuU6eN5CBXYG5fFRtyPrTUUM7Gm6RrxaL9Yi6AYriu5",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkfTuU6eN5CBXYG5fFRtyPrTUUM7Gm6RrxaL9Yi6AYriu5#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z4FpZyZLvtoEdqthMKEk6cHRn5eBjjJhmGSwVGwQwT7KSpjEGLg2qhrrKmf3NebFDVHp6PVLebHxMEMHrqD41ndPL"
+        }
+      },
+      "expected": "delegation_subject_mismatch"
+    },
+    {
+      "name": "grant_without_delegatee",
+      "note": "a grant that names no delegatee cannot be chained under",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000061",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z3Bn7HWnr8EV5k92F93e8QLnaviNAf8JsV5PMS1nGfN35mjShQbNXwr4dzDoQZex",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000060",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team"
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z3Bn7HWnr8EV5k92F93e8QLnaviNAf8JsV5PMS1nGfN35mjShQbNXwr4dzDoQZexmciSodLR7aiUnsuRRoVH8YSYy"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z5v2XMSw1CUVvtJkLVufAVkmM1Szw8H3M18oCwgZCvQgDohPE6e5xM3WxVbLrFSgyeuAhNuQEFUhYPh5Ah7rXJsiE"
+        }
+      },
+      "expected": "delegation_no_delegatee"
+    },
+    {
+      "name": "link_without_signed_grant",
+      "note": "links that carry no signed grant cannot be verified",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000070",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9"
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu"
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z54kJPctQMNC6PUGLNEpxViutkU4mCq7LPKebMz3MajPFSDuetV5FcgupnrurqynxDE57mJJpmdz2Z7SgcKXpHfxF"
+        }
+      },
+      "expected": "delegation_link_unsigned"
+    },
+    {
+      "name": "parent_proof_binding_mismatch",
+      "note": "parentProofValue does not match the embedded grant's proof",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000071",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z222222222222222222222222222222222222222222222222222222222222222",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z37MbqhgdXhKWfuubZ6zecEHV4QA5vPs5Dv24Hzh8LwFjr54oTPWUJDZig8smbTP2BBEhudSKB1eD8HzN1fnyd4bc"
+        }
+      },
+      "expected": "delegation_link_tampered"
+    },
+    {
+      "name": "spend_within_cap",
+      "note": "b spends 15 under a cap of 20",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000082",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team",
+            "amount": 15
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "policy": {
+                  "maxSpend": 20
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "policy": {
+                      "maxSpend": 50
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "amount": 15
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4TT4PqgwAuUE7xGqCJYRGV9yRPEsMfcVXNQfxM8FQUmKZrZDnZFJHdiyr5Bf1CS",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000081",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "policy": {
+                      "maxSpend": 20
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "policy": {
+                          "maxSpend": 20
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "policy": {
+                              "maxSpend": 50
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4TT4PqgwAuUE7xGqCJYRGV9yRPEsMfcVXNQfxM8FQUmKZrZDnZFJHdiyr5Bf1CSL8K2wEwRxJa1RXnYBM3UXyWE9"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z6r8KAUYrbWt5VAGTJwcNMP7JL68XXPAwohhq5Gedm7sNpRq1xGjMvhenvcHsSJvqrVgLpL2hnSMtwcsGsUxpKpt"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "spend_over_cap",
+      "note": "b spends 30 under a cap of 20",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000083",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team",
+            "amount": 30
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "policy": {
+                  "maxSpend": 20
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "policy": {
+                      "maxSpend": 50
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "amount": 15
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4TT4PqgwAuUE7xGqCJYRGV9yRPEsMfcVXNQfxM8FQUmKZrZDnZFJHdiyr5Bf1CS",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000081",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "policy": {
+                      "maxSpend": 20
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "policy": {
+                          "maxSpend": 20
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "policy": {
+                              "maxSpend": 50
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4TT4PqgwAuUE7xGqCJYRGV9yRPEsMfcVXNQfxM8FQUmKZrZDnZFJHdiyr5Bf1CSL8K2wEwRxJa1RXnYBM3UXyWE9"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z3KsLnVUqnwzFK4Nv2i6xoQhAjffKxbyJsB2ovYkpC5E35ToSUBSs3MscwNRJA1B5yQj38yCNeBGUfVZH1rXKfHtr"
+        }
+      },
+      "expected": "scope_exceeds_parent:policy"
+    },
+    {
+      "name": "sub_grant_raises_cap",
+      "note": "a re-delegates with a higher cap than it was given",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000085",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team",
+            "amount": 15
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "policy": {
+                  "maxSpend": 100
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "policy": {
+                      "maxSpend": 50
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "amount": 15
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z2FG4TbG79CJJ2oYzESQSGPCFYqCQLWeg44igvVbaw8bpZSpNvL2bNoqZK9jn7KC",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000084",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "policy": {
+                      "maxSpend": 100
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "policy": {
+                          "maxSpend": 100
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "policy": {
+                              "maxSpend": 50
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z2FG4TbG79CJJ2oYzESQSGPCFYqCQLWeg44igvVbaw8bpZSpNvL2bNoqZK9jn7KCcRwTRnQxkk1FkPTmqpYf6AiM4"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z4MqX875kdCc3ndZ1pcrTUD35hmioCVc8JfrxBMCBfVn2G7FfodiE2bfnyib5H9RT7J4FFe9ishUGtX1Lw3maxRqU"
+        }
+      },
+      "expected": "scope_exceeds_parent:policy"
+    },
+    {
+      "name": "inherited_cap_binds_leaf",
+      "note": "a's grant omits the policy, so the root's cap of 50 still binds b",
+      "now": "2026-11-10T12:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000087",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team",
+            "amount": 80
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "policy": {
+                      "maxSpend": 50
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "amount": 80
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z5ipP6Da1RD4fHJXMzA9fabxLRLHTQSyDd3DyjHgVhW9dNjVUMb9H8wxmJvzzPVq",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000086",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG"
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG"
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3j",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000080",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "policy": {
+                              "maxSpend": 50
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z5XAmE5kPfp1q5Hq242BwvVZ3ufyeHb6Pjr1GTjNK53ttY2Pc6FCx9ngzZjeyK3ju58PLRZdyniup1xxnKmrvEzJo"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z5ipP6Da1RD4fHJXMzA9fabxLRLHTQSyDd3DyjHgVhW9dNjVUMb9H8wxmJvzzPVqRPvK6zUWQJ4LqCgZMHMcdWM7r"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z61k2t7Z2nh1FrAkC4rozZ552az7jH5yKoySZg4s88uNuSbv6Y39APMSKaDjXKTtqkMjbq5XGxG28CSVTkbDqmKAK"
+        }
+      },
+      "expected": "scope_exceeds_parent:policy"
+    },
+    {
+      "name": "expired_grant",
+      "note": "the valid chain evaluated after its grants expired",
+      "now": "2026-11-12T00:00:00Z",
+      "credential": {
+        "@context": [
+          "https://www.w3.org/ns/credentials/v2",
+          "https://vouch-protocol.com/contexts/v1"
+        ],
+        "id": "urn:uuid:00000000-0000-4000-8000-000000000003",
+        "type": [
+          "VerifiableCredential",
+          "VouchCredential"
+        ],
+        "issuer": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+        "validFrom": "2026-11-10T00:00:00Z",
+        "validUntil": "2026-11-11T00:00:00Z",
+        "credentialSubject": {
+          "id": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+          "vouchVersion": "1.0",
+          "intent": {
+            "action": "read",
+            "target": "calendar",
+            "resource": "https://calendar.example.com/team/events"
+          },
+          "delegationChain": [
+            {
+              "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+              "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team",
+                "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                "rate": {
+                  "limit": 5,
+                  "window": "PT1H"
+                }
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": [
+                      "read",
+                      "update"
+                    ],
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                    "rate": {
+                      "limit": 10,
+                      "window": "PT1H"
+                    }
+                  }
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                }
+              }
+            },
+            {
+              "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+              "subject": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+              "intent": {
+                "action": "read",
+                "target": "calendar",
+                "resource": "https://calendar.example.com/team/events"
+              },
+              "validFrom": "2026-11-10T00:00:00Z",
+              "validUntil": "2026-11-11T00:00:00Z",
+              "parentProofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFu",
+              "parentCredential": {
+                "@context": [
+                  "https://www.w3.org/ns/credentials/v2",
+                  "https://vouch-protocol.com/contexts/v1"
+                ],
+                "id": "urn:uuid:00000000-0000-4000-8000-000000000002",
+                "type": [
+                  "VerifiableCredential",
+                  "VouchCredential"
+                ],
+                "issuer": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                "validFrom": "2026-11-10T00:00:00Z",
+                "validUntil": "2026-11-11T00:00:00Z",
+                "credentialSubject": {
+                  "id": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                  "vouchVersion": "1.0",
+                  "intent": {
+                    "action": "read",
+                    "target": "calendar",
+                    "resource": "https://calendar.example.com/team",
+                    "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                    "rate": {
+                      "limit": 5,
+                      "window": "PT1H"
+                    }
+                  },
+                  "delegationChain": [
+                    {
+                      "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                      "subject": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                      "intent": {
+                        "action": "read",
+                        "target": "calendar",
+                        "resource": "https://calendar.example.com/team",
+                        "delegatee": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG",
+                        "rate": {
+                          "limit": 5,
+                          "window": "PT1H"
+                        }
+                      },
+                      "validFrom": "2026-11-10T00:00:00Z",
+                      "validUntil": "2026-11-11T00:00:00Z",
+                      "parentProofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9",
+                      "parentCredential": {
+                        "@context": [
+                          "https://www.w3.org/ns/credentials/v2",
+                          "https://vouch-protocol.com/contexts/v1"
+                        ],
+                        "id": "urn:uuid:00000000-0000-4000-8000-000000000001",
+                        "type": [
+                          "VerifiableCredential",
+                          "VouchCredential"
+                        ],
+                        "issuer": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                        "validFrom": "2026-11-10T00:00:00Z",
+                        "validUntil": "2026-11-11T00:00:00Z",
+                        "credentialSubject": {
+                          "id": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN",
+                          "vouchVersion": "1.0",
+                          "intent": {
+                            "action": [
+                              "read",
+                              "update"
+                            ],
+                            "target": "calendar",
+                            "resource": "https://calendar.example.com/team",
+                            "delegatee": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK",
+                            "rate": {
+                              "limit": 10,
+                              "window": "PT1H"
+                            }
+                          }
+                        },
+                        "proof": {
+                          "type": "DataIntegrityProof",
+                          "cryptosuite": "eddsa-jcs-2022",
+                          "created": "2026-11-10T00:00:00Z",
+                          "verificationMethod": "did:key:z6MkkGRVaFR1d1HinnZwEjGEyRsqLrh2kfzTGu5TqFWGH4XN#key-1",
+                          "proofPurpose": "assertionMethod",
+                          "proofValue": "z281pnEiq2Dx3sRUZPsRV9cxf4mukQafiLyuQ6nwkvRupxRgVz64w7RquqzZSjt9HhMHtDbSrAQttA6m32H1Uzx1r"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "proof": {
+                  "type": "DataIntegrityProof",
+                  "cryptosuite": "eddsa-jcs-2022",
+                  "created": "2026-11-10T00:00:00Z",
+                  "verificationMethod": "did:key:z6MkscJVieQz8knMvRzR3GvBtnJt7iYXHWbcYNSKhDhFsakK#key-1",
+                  "proofPurpose": "assertionMethod",
+                  "proofValue": "z4nAF4vVKVFSg6rRZ4QX9A7DMwM1BoYofx5srJJNuUwRCM8ybUPVL7NjsDCGQiFufzHuWKZgWarifjPCz3FgvmLry"
+                }
+              }
+            }
+          ]
+        },
+        "proof": {
+          "type": "DataIntegrityProof",
+          "cryptosuite": "eddsa-jcs-2022",
+          "created": "2026-11-10T00:00:00Z",
+          "verificationMethod": "did:key:z6MkoXRwascXSxVPvoZJuUte3bKzKcfzcvEKh5XhADg3zGvG#key-1",
+          "proofPurpose": "assertionMethod",
+          "proofValue": "z58goEu21P7TcArKNLddynynLzHriisKZsTpfp4Qc9LhB63KN2QdqoeSoWctRhiMRcKvW9JZD3QKbF78Jbx1PzNqi"
+        }
+      },
+      "expected": "delegation_expired"
+    }
+  ]
+}

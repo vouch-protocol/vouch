@@ -200,26 +200,39 @@ def check_revocation() -> CheckResult:
     return CheckResult("revocation", Status.PASS, "set bit reads revoked, clear bit reads active")
 
 
+def _did_key_signer() -> Signer:
+    """A fresh did:key identity: self-certifying, so it resolves offline."""
+    import base64
+
+    from vouch import multikey
+
+    ident = keys.generate_identity()
+    raw = base64.urlsafe_b64decode(json.loads(ident.public_key_jwk)["x"] + "==")
+    return Signer(
+        private_key=ident.private_key_jwk,
+        did="did:key:" + multikey.encode_ed25519_public(raw),
+    )
+
+
 def check_delegation_narrowing() -> CheckResult:
-    """Delegation (v1.7 non-expansion): a child chains to its parent, a
-    broadening delegation is rejected, and there is no fixed depth bound."""
-    root = keys.generate_identity("conformance.test")
-    root_signer = Signer(private_key=root.private_key_jwk, did=root.did)
-    parent = root_signer.sign(
+    """Delegation (v1.7 non-expansion): a child chains to a grant that names it,
+    the chain verifies, a broadening delegation is rejected by the signer and by
+    the verifier, and there is no fixed depth bound."""
+    from vouch.verifier import verify_delegation_chain
+
+    db = "https://conformance.test/db"
+    root = _did_key_signer()
+    child_signer = _did_key_signer()
+    parent = root.sign(
         intent={
-            "action": "manage",
-            "target": "all_tables",
-            "resource": "https://conformance.test/db",
+            "action": ["manage", "read"],
+            "target": ["all_tables", "users_table"],
+            "resource": db,
+            "delegatee": child_signer.did,
         }
     )
-    child_id = keys.generate_identity("conformance.test")
-    child_signer = Signer(private_key=child_id.private_key_jwk, did=child_id.did)
     child = child_signer.sign(
-        intent={
-            "action": "read",
-            "target": "users_table",
-            "resource": "https://conformance.test/db/users",
-        },
+        intent={"action": "read", "target": "users_table", "resource": db + "/users"},
         parent_credential=parent,
     )
     chain = child.get("credentialSubject", {}).get("delegationChain") or []
@@ -229,42 +242,53 @@ def check_delegation_narrowing() -> CheckResult:
             Status.FAIL,
             "the child did not record its parent in the delegation chain",
         )
+    ok, _ = Verifier.verify(
+        child, public_key=child_signer.get_public_key_multikey(), trusted_roots=[root.did]
+    )
+    if not ok:
+        return CheckResult(
+            "delegation_narrowing", Status.FAIL, "a valid narrowing chain did not verify"
+        )
 
-    # Non-expansion: a child that broadens the parent's resource must be rejected.
-    widen_id = keys.generate_identity("conformance.test")
-    widen_signer = Signer(private_key=widen_id.private_key_jwk, did=widen_id.did)
-    rejected_widening = False
+    # Non-expansion at signing: a child broader than its grant is refused.
     try:
-        widen_signer.sign(
+        child_signer.sign(
             intent={
                 "action": "read",
                 "target": "users_table",
-                "resource": "https://conformance.test",  # broader than the parent
+                "resource": "https://conformance.test",
             },
             parent_credential=parent,
         )
-    except ValueError:
-        rejected_widening = True
-    if not rejected_widening:
         return CheckResult(
             "delegation_narrowing", Status.FAIL, "a broadening delegation was not rejected"
         )
+    except ValueError:
+        pass
+
+    # Non-expansion at verification: a hand-built broader chain is refused.
+    widened = child_signer.sign(
+        intent={"action": "delete", "target": "users_table", "resource": db + "/users"},
+        delegation_chain=chain,
+    )
+    if verify_delegation_chain(widened) != "scope_exceeds_parent:action":
+        return CheckResult(
+            "delegation_narrowing",
+            Status.FAIL,
+            "a broadening chain was not rejected by the verifier",
+        )
 
     # No fixed depth bound (v1.7): a deep restate-only chain must be accepted.
-    current = parent
-    for _ in range(8):
-        link_id = keys.generate_identity("conformance.test")
-        link_signer = Signer(private_key=link_id.private_key_jwk, did=link_id.did)
-        current = link_signer.sign(
-            intent={
-                "action": "manage",
-                "target": "all_tables",
-                "resource": "https://conformance.test/db",
-            },
-            parent_credential=current,
-        )
+    hops = [_did_key_signer() for _ in range(9)]
+    scope = {"action": "manage", "target": "all_tables", "resource": db}
+    current = hops[0].sign(intent={**scope, "delegatee": hops[1].did})
+    for i in range(1, 9):
+        nxt = {**scope}
+        if i + 1 < len(hops):
+            nxt["delegatee"] = hops[i + 1].did
+        current = hops[i].sign(intent=nxt, parent_credential=current)
     deep_chain = current.get("credentialSubject", {}).get("delegationChain") or []
-    if len(deep_chain) < 8:
+    if len(deep_chain) < 8 or verify_delegation_chain(current) is not None:
         return CheckResult(
             "delegation_narrowing", Status.FAIL, "a deep attenuating chain was not accepted"
         )
@@ -425,9 +449,15 @@ def check_hybrid_pq() -> CheckResult:
 
 
 def check_heartbeat() -> CheckResult:
-    """Heartbeat: a renewed chain validates, and each interval is distinct and advancing."""
-    session = HeartbeatSession(subject_did="did:web:conformance.test")
+    """Heartbeat: a signed renewal chain validates, each interval is distinct and
+    advancing, and an unsigned heartbeat is refused."""
+    agent = _did_key_signer()
+    session = HeartbeatSession(subject_did=agent.did, signer=agent)
     validator = HeartbeatValidator(validator_did="did:web:validator.conformance.test")
+
+    unsigned = HeartbeatSession(subject_did=agent.did).build_request()
+    if validator.validate(unsigned.to_dict()).ok:
+        return CheckResult("heartbeat", Status.FAIL, "an unsigned heartbeat was accepted")
 
     session.record_action(b"conformance-1")
     req1 = session.build_request()
@@ -450,13 +480,16 @@ def check_heartbeat() -> CheckResult:
     if req1.action_merkle_root == req2.action_merkle_root:
         return CheckResult("heartbeat", Status.FAIL, "consecutive intervals were not distinct")
     return CheckResult(
-        "heartbeat", Status.PASS, "renewal chain valid, intervals linked and advancing"
+        "heartbeat",
+        Status.PASS,
+        "signed renewal chain valid, intervals linked and advancing, unsigned refused",
     )
 
 
 def check_validator_quorum() -> CheckResult:
     """Validator quorum: an M-of-N quorum approves at threshold, and denies when fewer approve."""
-    session = HeartbeatSession(subject_did="did:web:conformance.test")
+    agent = _did_key_signer()
+    session = HeartbeatSession(subject_did=agent.did, signer=agent)
     session.record_action(b"conformance-quorum")
     request = session.build_request().to_dict()
 
