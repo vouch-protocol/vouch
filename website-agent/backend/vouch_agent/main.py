@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any
 
@@ -11,12 +12,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import audit, followups, interactions, signer
+from . import actions, audit, followups, interactions, signer
 from .config import CONFIG
 from .llm import stream_answer
 from .rag import get_index
 
-app = FastAPI(title="Vouch Website Agent", version="0.1.0")
+logger = logging.getLogger("vouch_agent")
+
+app = FastAPI(title="Vouch Website Agent", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,16 +33,15 @@ _index = get_index()
 
 class ChatMessage(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000)
-    intent: dict[str, Any] | None = None
     # If this question came from clicking a follow-up chip below an earlier
     # answer, the client sends the parent `interaction_id` so we can later
     # query "which suggested follow-ups actually got clicked".
     from_followup_of: str | None = Field(default=None, max_length=64)
 
 
-class SignRequest(BaseModel):
-    intent: dict[str, Any]
-    scope: list[str] | None = None
+class ActRequest(BaseModel):
+    action: str = Field(..., max_length=64)
+    params: dict[str, str] = Field(default_factory=dict, max_length=4)
 
 
 class FeedbackRequest(BaseModel):
@@ -84,14 +86,6 @@ async def chat(payload: ChatMessage, request: Request) -> StreamingResponse:
     retrieved = [(c.text, c.source, score) for c, score in retrieved_pairs]
     sources = [{"source": c.source, "score": round(score, 3)} for c, score in retrieved_pairs]
 
-    signed_credential: dict[str, Any] | None = None
-    if payload.intent:
-        try:
-            signed_credential = await signer.sign_intent(payload.intent)
-            audit.record(signed_credential)
-        except signer.SignerError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
     # Open a log row for this interaction. The id is returned in the meta event
     # so the client can later POST /feedback with it. IP is /24-truncated.
     interaction_id = interactions.log().start_interaction(
@@ -104,8 +98,6 @@ async def chat(payload: ChatMessage, request: Request) -> StreamingResponse:
 
     async def emit():
         meta = {"sources": sources, "interaction_id": interaction_id}
-        if signed_credential:
-            meta["credential"] = signed_credential
         yield "event: meta\ndata: " + json.dumps(meta) + "\n\n"
         collected = []
         try:
@@ -124,11 +116,37 @@ async def chat(payload: ChatMessage, request: Request) -> StreamingResponse:
         # leaving it to the frontend to re-parse) keeps the chip list
         # robust against odd bullet characters, missing dashes, etc.
         full_response = "".join(collected)
+        proposal, full_response = actions.extract_proposal(full_response)
         suggested, cleaned_body = followups.extract_followups(full_response)
         if not suggested and followups.is_substantive(cleaned_body):
             suggested = followups.fallback_followups(sources)
         if suggested:
             yield "event: followups\ndata: " + json.dumps({"questions": suggested}) + "\n\n"
+
+        if proposal:
+            yield "event: action\ndata: " + json.dumps(
+                {"action": proposal.action, "params": proposal.params, "label": proposal.label}
+            ) + "\n\n"
+
+        # Sign the reply: the credential carries a digest of the exact text
+        # the visitor sees (the cleaned body), so the answer is attributable
+        # to the agent's DID. A signing failure never blocks the answer.
+        answer_intent = {
+            "action": "answer_question",
+            "target": f"interaction:{interaction_id}",
+            "resource": actions.ASK_URL,
+            "outputDigest": signer.digest(cleaned_body),
+        }
+        try:
+            credential = await signer.sign_and_verify(
+                answer_intent, valid_seconds=actions.CREDENTIAL_VALID_SECONDS,
+            )
+            audit.record(credential)
+            yield "event: credential\ndata: " + json.dumps(
+                {"credential": credential, "signed_text": cleaned_body}
+            ) + "\n\n"
+        except signer.SignerError as exc:
+            logger.warning("answer not signed: %s", exc)
 
         # Persist the cleaned reply (without the marker block).
         interactions.log().complete_interaction(
@@ -176,14 +194,29 @@ async def interactions_endpoint(
     }
 
 
-@app.post("/sign")
-async def sign(payload: SignRequest) -> dict[str, Any]:
+@app.post("/act")
+async def act(payload: ActRequest) -> dict[str, Any]:
+    """Run an action the visitor confirmed: build, sign, verify, then release.
+
+    The intent is built here from a fixed list of actions and parameters, so
+    a caller cannot get the agent's key to sign an arbitrary statement. The
+    output is released only after the credential verifies against the
+    agent's DID document.
+    """
     try:
-        credential = await signer.sign_intent(payload.intent, scope=payload.scope)
-    except signer.SignerError as exc:
+        intent, result, covered = actions.build(payload.action, payload.params)
+    except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    intent["outputDigest"] = signer.digest(covered)
+    try:
+        credential = await signer.sign_and_verify(
+            intent, valid_seconds=actions.CREDENTIAL_VALID_SECONDS,
+        )
+    except signer.SignerError as exc:
+        logger.error("action %s not signed: %s", payload.action, exc)
+        raise HTTPException(status_code=503, detail="signing is unavailable, so the action did not run") from exc
     summary = audit.record(credential)
-    return {"credential": credential, "audit": summary}
+    return {"credential": credential, "verified": True, "result": result, "audit": summary}
 
 
 @app.get("/audit")
@@ -197,7 +230,7 @@ async def root() -> dict[str, Any]:
         "name": "Vouch Website Agent",
         "agent_did": CONFIG.agent_did,
         "endpoints": [
-            "/chat", "/sign", "/audit", "/feedback", "/interactions",
+            "/chat", "/act", "/audit", "/feedback", "/interactions",
             "/healthz", "/.well-known/did.json",
         ],
     }
@@ -205,20 +238,18 @@ async def root() -> dict[str, Any]:
 
 @app.get("/.well-known/did.json")
 async def did_document() -> JSONResponse:
-    """Serve the DID document so `did:web:agent.vouch-protocol.com` resolves.
+    """Serve the DID document for the key the signing sidecar holds.
 
-    The document is generated once by deploy/keygen.py and baked into the
-    container at /app/did.json (overridable via VOUCH_DID_DOCUMENT_PATH).
-    Content-Type is application/did+json per the DID spec, with a vanilla
-    application/json fallback for resolvers that do not negotiate.
+    The document comes from the sidecar, which derives it from its key, so
+    it always matches the signing key. The DID itself resolves wherever its
+    did:web points (for the default DID, https://vouch-protocol.com/assistant/did.json);
+    this copy lets an operator compare the two. Returns 404 when no signing
+    sidecar is configured.
     """
-    path = CONFIG.did_document_path
-    if path is None or not path.exists():
-        raise HTTPException(status_code=404, detail="DID document not configured")
     try:
-        document = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise HTTPException(status_code=500, detail=f"DID document unreadable: {exc}") from exc
+        document = await signer.did_document()
+    except signer.SignerError as exc:
+        raise HTTPException(status_code=404, detail="no signing key is configured") from exc
     return JSONResponse(
         content=document,
         media_type="application/did+json",

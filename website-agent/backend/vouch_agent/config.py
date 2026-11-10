@@ -50,10 +50,10 @@ class Config:
     audit_log_path: Path = field(
         default_factory=lambda: Path(os.getenv("VOUCH_AUDIT_LOG", str(Path(__file__).parent.parent / ".audit.jsonl")))
     )
-    agent_did: str = field(default_factory=lambda: os.getenv("VOUCH_AGENT_DID", "did:web:agent.vouch-protocol.org"))
+    agent_did: str = field(default_factory=lambda: os.getenv("VOUCH_AGENT_DID", "did:web:vouch-protocol.com:assistant"))
     cors_allow_origins: tuple[str, ...] = field(
         default_factory=lambda: tuple(
-            o.strip() for o in os.getenv("VOUCH_CORS_ORIGINS", "http://localhost:3000,https://vouch-protocol.org").split(",") if o.strip()
+            o.strip() for o in os.getenv("VOUCH_CORS_ORIGINS", "http://localhost:3000,https://vouch-protocol.com").split(",") if o.strip()
         )
     )
     max_context_chunks: int = 6

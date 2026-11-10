@@ -8,6 +8,10 @@ RUN pip install --no-cache-dir -e ".[gemini]"
 
 COPY vouch_agent ./vouch_agent
 COPY knowledge ./knowledge
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
 
+# start.sh runs the signing sidecar on localhost and the chat server on 8000.
+# It needs VOUCH_AGENT_SIGNING_KEY (a private Ed25519 JWK) to be set.
 EXPOSE 8000
-CMD ["uvicorn", "vouch_agent.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./start.sh"]

@@ -97,7 +97,7 @@ who needs one builds and owns their own.
 5. Capabilities: enable Web Browsing and Code Interpreter.
 6. Optionally add Actions: paste `actions.yaml`, configure auth per
    `actions-auth.md`. This lets the GPT call the hosted Vouch
-   Assistant's `/sign` endpoint.
+   Assistant's `/act` endpoint.
 7. Save as Only me (private), Anyone with the link, or Public.
 
 ### Why publish the config instead of a shared GPT
