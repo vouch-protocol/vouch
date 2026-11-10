@@ -241,6 +241,16 @@ A consumer does not trust a server's number: it fetches the receipts and recompu
         a: `A heartbeat proves an agent is still alive. It does not prove the agent still means to do what it is about to do. Because a session renews on a fixed interval, there is a window between two heartbeats where nothing is re-checked, and someone who knows the interval could line up a sensitive action to land in that gap, riding on an intent that was locked in earlier. Event-triggered intent recheck (the secondary seal) closes this: when a sensitive action is about to run, the agent locks its current intent again at that moment and signs it, rather than leaning on the last heartbeat's assurance. A verifier checks that the seal was made after the most recent heartbeat and recently enough for how sensitive the action is (consequence tiers 0 to 4 map to a freshness requirement, and the high and critical tiers demand a fresh seal); a seal made too early is rejected with a stable reason like \`intent_seal_stale\`. Routine, low-consequence actions are unaffected. It adds no new cryptography, reusing the \`eddsa-jcs-2022\` signing already there, and composes with Reasoned Action Proofs and the Heartbeat Protocol. It ships today in the Python SDK, the Go sidecar, and the core (Rust and WASM), with the other SDKs to follow.`,
         meta: 'Shipped - vouch.reasoning / vouch.intent_recheck (Python, Rust core, WASM)',
       },
+      {
+        q: 'What is the Pacing Profile?',
+        a: `A set of Python verification primitives (\`vouch.pacing\`) for proving that a party held to an agreed pace of autonomous system development, to a party that cannot see inside. Each module answers one question: did anyone exceed a compute ceiling (\`census\`, \`restraint\`), how far is an artifact from a human decision (\`recursion\`), what was a step meant to do (\`prereg\`), do the operator's and provider's compute books agree (\`custody\`), how a body slows grants without revoking them (\`pace\`), how long the world gets to look at a capability step (\`fuse\`), were safety thresholds fixed before the results (\`redline\`), did oversight scale with capability (\`oversight\`), may these exact weights still run (\`load_auth\`), can a concern be registered sealed and dated (\`dissent\`), and how rivals compare measurements with nobody going first (\`disclosure\`). Every record is a Vouch Protocol credential with an \`eddsa-jcs-2022\` proof, so it verifies like any other.`,
+        meta: 'Python - vouch.pacing',
+      },
+      {
+        q: 'Where can I read more about the Pacing Profile?',
+        a: `The design document is [docs/pacing-profile.md on GitHub](https://github.com/vouch-protocol/vouch/blob/main/docs/pacing-profile.md), and the defensive disclosures are PAD-125 to PAD-135 in \`docs/disclosures/\`. The Help guides have a short walkthrough with a runnable example.`,
+        helpLinks: [{ label: 'Read the Help guide', href: '/help/#pacing-profile-overview' }],
+      },
     ],
   },
 
