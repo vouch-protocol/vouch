@@ -4,7 +4,7 @@ info:
     version: "0.2.0"
     description: >
         Ask the hosted Vouch Assistant to run a signed action. Every action is
-        signed by the assistant's DID (did:web:vouch-protocol.com:assistant) and
+        signed by the assistant's DID (did:web:agent.vouch-protocol.com) and
         verified before its output is released.
 servers:
     - url: https://vouch-assistant.fly.dev

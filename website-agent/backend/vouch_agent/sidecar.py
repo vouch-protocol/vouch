@@ -9,6 +9,8 @@ Endpoints:
     GET  /did           the agent DID
     GET  /did-document  the DID document (Multikey), served publicly by the
                         chat process at /.well-known/did.json
+    GET  /agent-card    the signed A2A agent card, served publicly by the chat
+                        process at /.well-known/agent-card.json
     POST /sign          sign an intent that passes this process's own policy
 
 The sidecar enforces policy itself (allowed actions, resource prefix,
@@ -21,10 +23,16 @@ Key handling:
     refuses to start without one. ``--dev`` generates an ephemeral key for
     local development. ``--generate-key`` prints a fresh private JWK to
     stdout for storing as a deployment secret. ``--did-document`` prints the
-    public DID document for the key in VOUCH_AGENT_SIGNING_KEY, for
-    publishing where the DID resolves (for the default DID,
-    https://vouch-protocol.com/assistant/did.json). It never prints the
-    private key.
+    public DID document for the key in VOUCH_AGENT_SIGNING_KEY. The default
+    DID, did:web:agent.vouch-protocol.com, resolves to the chat process's own
+    /.well-known/did.json, which serves this same document. It never prints
+    the private key.
+
+Agent card:
+    At startup the sidecar builds the assistant's A2A agent card for the
+    endpoint in VOUCH_A2A_URL and signs it with ``sign_agent_card``. The card's
+    content comes from vouch_agent.card, never from the caller, so serving it
+    adds nothing to what the chat process can get signed.
 
 Run:
     python -m vouch_agent.sidecar                 # production, key from env
@@ -46,7 +54,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from vouch import Signer, multikey
+from vouch.integrations.a2a import sign_agent_card
 from vouch.keys import generate_identity
+
+from .card import CARD_VALID_SECONDS, DEFAULT_A2A_URL, build_card
 
 SIGNING_KEY_ENV = "VOUCH_AGENT_SIGNING_KEY"
 
@@ -110,15 +121,23 @@ def did_document(did: str, public_jwk: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def configure(did: str, private_jwk: str, resource_prefix: str, mode: str) -> None:
-    """Load a key into the sidecar's state."""
+def configure(
+    did: str,
+    private_jwk: str,
+    resource_prefix: str,
+    mode: str,
+    a2a_url: str = DEFAULT_A2A_URL,
+) -> None:
+    """Load a key into the sidecar's state and sign the agent card with it."""
     priv = json.loads(private_jwk)
     if priv.get("kty") != "OKP" or priv.get("crv") != "Ed25519" or not priv.get("d"):
         raise ValueError(f"{SIGNING_KEY_ENV} must be a private Ed25519 JWK")
     public_jwk = {"kty": "OKP", "crv": "Ed25519", "x": priv["x"]}
+    signer = Signer(private_key=private_jwk, did=did)
     _state.clear()
     _state.update(
-        signer=Signer(private_key=private_jwk, did=did),
+        signer=signer,
+        card=sign_agent_card(signer, build_card(a2a_url), valid_seconds=CARD_VALID_SECONDS),
         did=did,
         document=did_document(did, public_jwk),
         resource_prefix=resource_prefix,
@@ -141,6 +160,11 @@ async def document() -> dict[str, Any]:
     return _state["document"]
 
 
+@app.get("/agent-card")
+async def agent_card() -> dict[str, Any]:
+    return _state["card"]
+
+
 @app.post("/sign")
 async def sign(req: SignRequest) -> dict[str, Any]:
     try:
@@ -154,7 +178,7 @@ async def sign(req: SignRequest) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Vouch website agent signing sidecar")
     parser.add_argument(
-        "--did", default=os.getenv("VOUCH_AGENT_DID", "did:web:vouch-protocol.com:assistant")
+        "--did", default=os.getenv("VOUCH_AGENT_DID", "did:web:agent.vouch-protocol.com")
     )
     parser.add_argument("--host", default=os.getenv("VOUCH_SIDECAR_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.getenv("VOUCH_SIDECAR_PORT", "8877")))
@@ -162,6 +186,7 @@ def main(argv: list[str] | None = None) -> None:
         "--resource-prefix",
         default=os.getenv("VOUCH_RESOURCE_PREFIX", DEFAULT_RESOURCE_PREFIX),
     )
+    parser.add_argument("--a2a-url", default=os.getenv("VOUCH_A2A_URL", DEFAULT_A2A_URL))
     parser.add_argument("--dev", action="store_true", help="use an ephemeral key (local only)")
     parser.add_argument(
         "--generate-key", action="store_true", help="print a new private JWK and exit"
@@ -181,7 +206,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.did_document:
         if not key:
             sys.exit(f"{SIGNING_KEY_ENV} is not set.")
-        configure(args.did, key, args.resource_prefix, "print")
+        configure(args.did, key, args.resource_prefix, "print", args.a2a_url)
         print(json.dumps(_state["document"], indent=2))
         return
     if key:
@@ -192,7 +217,7 @@ def main(argv: list[str] | None = None) -> None:
     else:
         sys.exit(f"{SIGNING_KEY_ENV} is not set. Set it, or pass --dev for an ephemeral key.")
 
-    configure(args.did, key, args.resource_prefix, mode)
+    configure(args.did, key, args.resource_prefix, mode, args.a2a_url)
     print(f"vouch-agent-sidecar on {args.host}:{args.port}, did={args.did}, mode={mode}")
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 

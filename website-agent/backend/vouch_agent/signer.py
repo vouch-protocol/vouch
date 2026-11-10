@@ -63,6 +63,16 @@ async def did_document() -> dict[str, Any]:
         raise SignerError(f"sidecar unreachable: {exc}") from exc
 
 
+async def agent_card() -> dict[str, Any]:
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{CONFIG.sidecar_url}/agent-card")
+            resp.raise_for_status()
+            return resp.json()
+    except httpx.HTTPError as exc:
+        raise SignerError(f"sidecar unreachable: {exc}") from exc
+
+
 def _public_key_from_document(document: dict[str, Any], vm_id: str | None) -> Any:
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 

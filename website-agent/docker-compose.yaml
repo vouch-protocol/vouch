@@ -10,7 +10,7 @@ services:
         environment:
             VOUCH_AGENT_SIGNING_KEY: ${VOUCH_AGENT_SIGNING_KEY}
             ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-            VOUCH_AGENT_DID: ${VOUCH_AGENT_DID:-did:web:vouch-protocol.com:assistant}
+            VOUCH_AGENT_DID: ${VOUCH_AGENT_DID:-did:web:agent.vouch-protocol.com}
             VOUCH_CORS_ORIGINS: ${VOUCH_CORS_ORIGINS:-http://localhost:3000,https://vouch-protocol.com}
         ports:
             - "8000:8000"

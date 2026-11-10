@@ -60,7 +60,7 @@ print("after tampering:", ok)
 _PY_VERIFY = '''"""Verify the credential the Vouch Assistant signed for this project.
 
 The assistant's DID is a did:web, so the verifier fetches its public key
-from https://vouch-protocol.com/assistant/did.json. Paste the
+from https://agent.vouch-protocol.com/.well-known/did.json. Paste the
 credential the assistant showed you into credential.json first.
 """
 
