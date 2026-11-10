@@ -52,13 +52,13 @@ class TestTreeConstruction:
         expected_root = hash_node(hash_leaf(b"a"), hash_leaf(b"b"))
         assert tree.root() == expected_root
 
-    def test_three_leaf_tree_duplicates_last(self):
+    def test_three_leaf_tree_promotes_last(self):
         tree = MerkleTree(leaves=[b"a", b"b", b"c"])
         # Level 0: H(a), H(b), H(c)
-        # Level 1: H(H(a), H(b)), H(H(c), H(c))  # last duplicated
-        # Level 2: H(H(L1[0]), H(L1[1]))
+        # Level 1: H(H(a), H(b)), H(c)  # the unpaired node is promoted unchanged
+        # Level 2: H(L1[0], L1[1])
         l0 = [hash_leaf(b) for b in [b"a", b"b", b"c"]]
-        l1 = [hash_node(l0[0], l0[1]), hash_node(l0[2], l0[2])]
+        l1 = [hash_node(l0[0], l0[1]), l0[2]]
         expected_root = hash_node(l1[0], l1[1])
         assert tree.root() == expected_root
 

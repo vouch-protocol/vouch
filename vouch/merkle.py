@@ -18,8 +18,10 @@ Construction:
 - Internal nodes: SHA-256 of left || right.
 - Domain separation: leaves are hashed with a 0x00 prefix; internal nodes
  with a 0x01 prefix, per RFC 6962 §2.1.
-- Odd numbers of leaves at any level: the last node is duplicated
- (Bitcoin convention) to produce a balanced tree.
+- Odd numbers of nodes at any level: the last node is promoted to the
+ next level unchanged (RFC 6962 shape). A node is never paired with a copy
+ of itself, so a list of leaves and the same list with its last leaf
+ repeated always produce different roots.
 
 Inclusion proofs:
 
@@ -149,16 +151,7 @@ class MerkleTree:
         self._build()
 
     def _build(self) -> None:
-        level = [hash_leaf(leaf) for leaf in self.leaves]
-        self._levels = [level]
-        while len(level) > 1:
-            next_level: List[bytes] = []
-            for i in range(0, len(level), 2):
-                left = level[i]
-                right = level[i + 1] if i + 1 < len(level) else level[i]
-                next_level.append(hash_node(left, right))
-            self._levels.append(next_level)
-            level = next_level
+        self._levels = _build_levels([hash_leaf(leaf) for leaf in self.leaves])
 
     def root(self) -> bytes:
         """Return the 32-byte SHA-256 Merkle root."""
@@ -184,12 +177,11 @@ class MerkleTree:
         index = leaf_index
         for level in self._levels[:-1]:
             if index % 2 == 0:
-                sibling_idx = index + 1 if index + 1 < len(level) else index
-                is_right = True
+                if index + 1 < len(level):
+                    steps.append(ProofStep(sibling=level[index + 1], is_right=True))
+                # else: the node is promoted unchanged; no step at this level.
             else:
-                sibling_idx = index - 1
-                is_right = False
-            steps.append(ProofStep(sibling=level[sibling_idx], is_right=is_right))
+                steps.append(ProofStep(sibling=level[index - 1], is_right=False))
             index //= 2
 
         return InclusionProof(leaf_index=leaf_index, steps=steps)
@@ -221,6 +213,37 @@ def verify_inclusion(
     return _constant_time_eq(current, bytes(root))
 
 
+def _build_levels(level: List[bytes]) -> List[List[bytes]]:
+    """All tree levels from the leaf hashes up to the root, promoting an
+    unpaired last node unchanged."""
+    levels = [list(level)]
+    while len(level) > 1:
+        next_level: List[bytes] = []
+        for i in range(0, len(level), 2):
+            if i + 1 < len(level):
+                next_level.append(hash_node(level[i], level[i + 1]))
+            else:
+                next_level.append(level[i])
+        levels.append(next_level)
+        level = next_level
+    return levels
+
+
+def root_from_leaf_hashes(leaf_hashes: Sequence[bytes]) -> bytes:
+    """The Merkle root over already-hashed leaves (each `hash_leaf(...)`).
+
+    Lets a verifier that holds only the per-action leaf hashes, never the
+    actions themselves, recompute the root an agent committed to.
+    """
+    hashes = [bytes(h) for h in leaf_hashes]
+    if not hashes:
+        raise MerkleError("at least one leaf hash is required")
+    for i, h in enumerate(hashes):
+        if len(h) != 32:
+            raise MerkleError(f"leaf hash {i} must be 32 bytes")
+    return _build_levels(hashes)[-1][0]
+
+
 def _constant_time_eq(a: bytes, b: bytes) -> bool:
     if len(a) != len(b):
         return False
@@ -247,6 +270,7 @@ def compute_action_merkle_root(actions: Sequence[bytes]) -> str:
 
 
 __all__ = [
+    "root_from_leaf_hashes",
     "MULTIBASE_BASE64URL_PREFIX",
     "MerkleError",
     "MerkleTree",

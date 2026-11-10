@@ -16,6 +16,7 @@ from vouch.heartbeat import (
     HeartbeatSession,
     HeartbeatValidator,
 )
+from _heartbeat_keys import resolve, signed_session  # noqa: E402
 
 
 AGENT_DID = "did:web:agent.example.com"
@@ -24,7 +25,7 @@ VALIDATOR_DID = "did:web:validator.example.com"
 
 class TestHeartbeatRequestSerialization:
     def test_to_dict_shape_matches_spec(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         session.collector.record_api_call("/x", tokens=10)
         session.record_action(b"action_1")
         req = session.build_request()
@@ -42,7 +43,7 @@ class TestHeartbeatRequestSerialization:
         assert d["behavioralDigest"]["tokensConsumed"] == 10
 
     def test_round_trip_through_dict(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         session.record_action(b"a")
         original = session.build_request()
         encoded = original.to_dict()
@@ -53,21 +54,21 @@ class TestHeartbeatRequestSerialization:
         assert decoded.canary_commitment == original.canary_commitment
 
     def test_from_dict_rejects_wrong_version(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         d = session.build_request().to_dict()
         d["version"] = "0.9"
         with pytest.raises(HeartbeatError):
             HeartbeatRequest.from_dict(d)
 
     def test_from_dict_rejects_wrong_type(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         d = session.build_request().to_dict()
         d["type"] = "not_a_heartbeat"
         with pytest.raises(HeartbeatError):
             HeartbeatRequest.from_dict(d)
 
     def test_from_dict_rejects_missing_field(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         d = session.build_request().to_dict()
         del d["actionMerkleRoot"]
         with pytest.raises(HeartbeatError):
@@ -76,24 +77,24 @@ class TestHeartbeatRequestSerialization:
 
 class TestHeartbeatSession:
     def test_interval_index_increments(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         assert session.build_request().interval_index == 0
         assert session.build_request().interval_index == 1
         assert session.build_request().interval_index == 2
 
     def test_second_request_includes_canary_reveal(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         first = session.build_request()
         second = session.build_request()
         assert first.canary_reveal is None
         assert second.canary_reveal is not None
 
     def test_actions_aggregate_into_merkle_root(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         # Empty interval has a deterministic root (hash of empty leaf).
         empty_req = session.build_request()
 
-        session2 = HeartbeatSession(subject_did=AGENT_DID)
+        session2 = signed_session(AGENT_DID)
         session2.record_action(b"act_1")
         session2.record_action(b"act_2")
         nonempty_req = session2.build_request()
@@ -101,12 +102,12 @@ class TestHeartbeatSession:
         assert empty_req.action_merkle_root != nonempty_req.action_merkle_root
 
     def test_action_must_be_bytes(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         with pytest.raises(HeartbeatError):
             session.record_action("not bytes")  # type: ignore[arg-type]
 
     def test_collector_resets_between_intervals(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         session.collector.record_api_call("/x", tokens=5)
         first = session.build_request()
         assert first.behavioral_digest["apiCalls"] == 1
@@ -118,8 +119,8 @@ class TestHeartbeatSession:
 
 class TestHeartbeatValidator:
     def test_first_heartbeat_validates_and_issues_voucher(self):
-        validator = HeartbeatValidator(validator_did=VALIDATOR_DID)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        validator = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
+        session = signed_session(AGENT_DID)
         req = session.build_request().to_dict()
 
         result = validator.validate(req)
@@ -131,41 +132,43 @@ class TestHeartbeatValidator:
         assert result.session_voucher["credentialSubject"]["id"] == AGENT_DID
 
     def test_chain_of_heartbeats_validates(self):
-        validator = HeartbeatValidator(validator_did=VALIDATOR_DID)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        validator = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
+        session = signed_session(AGENT_DID)
         for _ in range(5):
             req = session.build_request().to_dict()
             result = validator.validate(req)
             assert result.ok is True
 
     def test_skipped_canary_reveal_breaks_chain(self):
-        validator = HeartbeatValidator(validator_did=VALIDATOR_DID)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        validator = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
+        session = signed_session(AGENT_DID)
         validator.validate(session.build_request().to_dict())
 
         # Build a second request and strip the reveal: simulating either
-        # a malicious agent or a chain restart attempt.
-        req2 = session.build_request().to_dict()
-        del req2["canaryReveal"]
-        result = validator.validate(req2)
+        # a malicious agent or a chain restart attempt. The agent re-signs its
+        # own edited request, so only the canary check can catch it.
+        req2 = session.build_request()
+        req2.canary_reveal = None
+        result = validator.validate(req2.to_dict(resign=session.signer))
         assert result.ok is False
         assert any("canary_chain_broken" in r for r in result.reasons)
 
     def test_forged_reveal_rejected(self):
-        validator = HeartbeatValidator(validator_did=VALIDATOR_DID)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        validator = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
+        session = signed_session(AGENT_DID)
         validator.validate(session.build_request().to_dict())
 
-        req2 = session.build_request().to_dict()
-        # Replace canaryReveal with a wrong-but-well-formatted multibase value.
-        req2["canaryReveal"] = "u" + "A" * 43
-        result = validator.validate(req2)
+        req2 = session.build_request()
+        # Replace canaryReveal with a wrong-but-well-formatted multibase value,
+        # re-signed by the agent itself, so only the canary check can catch it.
+        req2.canary_reveal = "u" + "A" * 43
+        result = validator.validate(req2.to_dict(resign=session.signer))
         assert result.ok is False
         assert any("canary_chain_broken" in r for r in result.reasons)
 
     def test_stale_interval_index_rejected(self):
-        validator = HeartbeatValidator(validator_did=VALIDATOR_DID)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        validator = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
+        session = signed_session(AGENT_DID)
         first = session.build_request().to_dict()
         second = session.build_request().to_dict()
         validator.validate(first)
@@ -176,20 +179,21 @@ class TestHeartbeatValidator:
         assert any("stale_interval_index" in r for r in result.reasons)
 
     def test_malformed_request_rejected(self):
-        validator = HeartbeatValidator(validator_did=VALIDATOR_DID)
+        validator = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
         result = validator.validate({"type": "garbage"})
         assert result.ok is False
         assert any("schema_invalid" in r for r in result.reasons)
 
     def test_voucher_carries_configured_trust_parameters(self):
         validator = HeartbeatValidator(
+            key_resolver=resolve,
             validator_did=VALIDATOR_DID,
             initial_trust=0.9,
             decay_lambda=0.002,
             voucher_valid_seconds=300,
             scope=["read", "write"],
         )
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         req = session.build_request().to_dict()
         result = validator.validate(req)
         assert result.ok is True
@@ -200,9 +204,9 @@ class TestHeartbeatValidator:
 
     def test_session_isolation(self):
         """Two sessions for the same agent must not cross-contaminate canary state."""
-        validator = HeartbeatValidator(validator_did=VALIDATOR_DID)
-        s1 = HeartbeatSession(subject_did=AGENT_DID)
-        s2 = HeartbeatSession(subject_did=AGENT_DID)
+        validator = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
+        s1 = signed_session(AGENT_DID)
+        s2 = signed_session(AGENT_DID)
         assert s1.session_id != s2.session_id
         assert validator.validate(s1.build_request().to_dict()).ok
         assert validator.validate(s2.build_request().to_dict()).ok
@@ -214,7 +218,7 @@ class TestHeartbeatValidator:
 class TestHeartbeatScheduler:
     @pytest.mark.asyncio
     async def test_scheduler_fires_callback_repeatedly(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         received = []
 
         async def submit(req):
@@ -233,7 +237,7 @@ class TestHeartbeatScheduler:
 
     @pytest.mark.asyncio
     async def test_scheduler_handles_callback_exceptions(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
         failures = []
 
         async def boom(req):
@@ -256,7 +260,7 @@ class TestHeartbeatScheduler:
 
     @pytest.mark.asyncio
     async def test_scheduler_rejects_zero_interval(self):
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
 
         async def submit(req):
             pass
@@ -273,12 +277,13 @@ class TestHeartbeatScheduler:
 class TestEndToEndFlow:
     def test_agent_validator_flow_over_multiple_intervals(self):
         validator = HeartbeatValidator(
+            key_resolver=resolve,
             validator_did=VALIDATOR_DID,
             initial_trust=1.0,
             decay_lambda=0.01,
             voucher_valid_seconds=60,
         )
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        session = signed_session(AGENT_DID)
 
         vouchers = []
         for i in range(10):
@@ -306,7 +311,7 @@ class TestPluggableStore:
     def test_default_uses_memory_store(self):
         from vouch.heartbeat import MemoryHeartbeatStore
 
-        v = HeartbeatValidator(validator_did=VALIDATOR_DID)
+        v = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
         assert isinstance(v.store, MemoryHeartbeatStore)
 
     def test_validator_survives_restart_when_state_is_persisted(self):
@@ -319,14 +324,18 @@ class TestPluggableStore:
 
         shared_store = MemoryHeartbeatStore()
 
-        v1 = HeartbeatValidator(validator_did=VALIDATOR_DID, store=shared_store)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        v1 = HeartbeatValidator(
+            key_resolver=resolve, validator_did=VALIDATOR_DID, store=shared_store
+        )
+        session = signed_session(AGENT_DID)
 
         first = session.build_request().to_dict()
         assert v1.validate(first).ok
 
         # "Restart" the validator with the same backing store.
-        v2 = HeartbeatValidator(validator_did=VALIDATOR_DID, store=shared_store)
+        v2 = HeartbeatValidator(
+            key_resolver=resolve, validator_did=VALIDATOR_DID, store=shared_store
+        )
         second = session.build_request().to_dict()
         result = v2.validate(second)
         assert result.ok, f"v2 rejected after restart: {result.reasons}"
@@ -358,8 +367,8 @@ class TestPluggableStore:
                 return list(self.d.keys())
 
         store = DictStore()
-        v = HeartbeatValidator(validator_did=VALIDATOR_DID, store=store)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        v = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID, store=store)
+        session = signed_session(AGENT_DID)
 
         for _ in range(3):
             assert v.validate(session.build_request().to_dict()).ok
@@ -372,8 +381,8 @@ class TestPluggableStore:
         assert state["last_commitment"] is not None
 
     def test_reset_session_removes_state_from_store(self):
-        v = HeartbeatValidator(validator_did=VALIDATOR_DID)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        v = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID)
+        session = signed_session(AGENT_DID)
         v.validate(session.build_request().to_dict())
         assert len(v.known_sessions()) == 1
         v.reset_session(AGENT_DID, session.session_id)
@@ -386,8 +395,8 @@ class TestPluggableStore:
         from vouch.heartbeat import MemoryHeartbeatStore
 
         store = MemoryHeartbeatStore()
-        v = HeartbeatValidator(validator_did=VALIDATOR_DID, store=store)
-        session = HeartbeatSession(subject_did=AGENT_DID)
+        v = HeartbeatValidator(key_resolver=resolve, validator_did=VALIDATOR_DID, store=store)
+        session = signed_session(AGENT_DID)
         v.validate(session.build_request().to_dict())
 
         key = next(iter(store.known_sessions()))

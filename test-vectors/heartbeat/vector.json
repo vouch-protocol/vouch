@@ -35,6 +35,18 @@
               "order:1"
             ],
             "intentDriftScore": 0.05
+          },
+          "actionLeafHashes": [
+            "uC4UoZWWmcYWDm0hYeMKZv1vG1vghW7vlrAApKQvVbbU",
+            "uMqMqGgdYgPMaR_FhOasbwI1Q_tcNQ8iuXswPtN3Mrg8"
+          ],
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:agent.example.com#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "zHsm5mEmuPQkFAqXGSvsEnKdoaJQS9BLGthED8rVr2M77A8g4C225sapro1B1vGk4qbNBRpNT6MWaSGryRnWzGTm"
           }
         },
         "interval_1": {
@@ -52,7 +64,18 @@
             "resourcesAccessed": [],
             "intentDriftScore": 0.1
           },
-          "canaryReveal": "uAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
+          "canaryReveal": "uAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE",
+          "actionLeafHashes": [
+            "uWAWHGevwbR6mbHtJxhMSkIihVatAlXfNjdF5V8KxZaY"
+          ],
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:01:00Z",
+            "verificationMethod": "did:web:agent.example.com#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z2yknPFqWLdwzozarestsVw2EVsT3qj5cPwL9oAnL96JazNi2QWqycNXWpoYD4jf4r5am9ZCE2cXABqU3HBaFU9as"
+          }
         }
       }
     },
@@ -77,6 +100,18 @@
               "order:1"
             ],
             "intentDriftScore": 0.05
+          },
+          "actionLeafHashes": [
+            "uC4UoZWWmcYWDm0hYeMKZv1vG1vghW7vlrAApKQvVbbU",
+            "uMqMqGgdYgPMaR_FhOasbwI1Q_tcNQ8iuXswPtN3Mrg8"
+          ],
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:agent.example.com#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "zHsm5mEmuPQkFAqXGSvsEnKdoaJQS9BLGthED8rVr2M77A8g4C225sapro1B1vGk4qbNBRpNT6MWaSGryRnWzGTm"
           }
         }
       },
@@ -130,7 +165,18 @@
             "resourcesAccessed": [],
             "intentDriftScore": 0.1
           },
-          "canaryReveal": "u__________________________________________8"
+          "canaryReveal": "u__________________________________________8",
+          "actionLeafHashes": [
+            "uWAWHGevwbR6mbHtJxhMSkIihVatAlXfNjdF5V8KxZaY"
+          ],
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:01:00Z",
+            "verificationMethod": "did:web:agent.example.com#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3DxSntyQoi89hBxBmguB8FECTMkb6WTHQGe7R92J3hLeU2fMYYMLtxdWqX2CcKiRnPuGi5bsPfB7QmCYrrfse2oB"
+          }
         }
       },
       "expected": {

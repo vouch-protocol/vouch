@@ -1,5 +1,5 @@
 {
-  "description": "Merkle tree vectors (Specification 11.3, RFC 6962 domain separation). Leaves are UTF-8 byte strings; raw 32-byte hashes are hex, the tree root and proof siblings are multibase base64url-no-pad (prefix 'u'). The three-leaf case exercises odd-level duplication.",
+  "description": "Merkle tree vectors (Specification 11.3, RFC 6962 domain separation). Leaves are UTF-8 byte strings; raw 32-byte hashes are hex, the tree root and proof siblings are multibase base64url-no-pad (prefix 'u'). The three-leaf case exercises odd-level promotion (RFC 6962 shape): the unpaired node moves up unchanged, so a repeated last leaf changes the root.",
   "module": "vouch.merkle",
   "spec_reference": "Specification 11.3",
   "version": "1.0",
@@ -46,8 +46,8 @@
         ]
       },
       "expected": {
-        "root_multibase": "u8ZnWd7DAt-isiDoOpzNhNHJX1q0H3BLTczerk0MKNOI",
-        "root_hex": "f199d677b0c0b7e8ac883a0ea73361347257d6ad07dc12d37337ab93430a34e2"
+        "root_multibase": "uWRr_HGF9AXlDEptvMt2fGq4bjvQzl00rZf2ELCWl7ok",
+        "root_hex": "591aff1c617d017943129b6f32dd9f1aae1b8ef433974d2b65fd842c25a5ee89"
       }
     },
     {
@@ -70,7 +70,7 @@
               "is_right": false
             },
             {
-              "sibling": "uIgxIIMP55RHmoJ4cTZcySxG4wdr1Ua-BLf2-23LAX6A",
+              "sibling": "u4C25G8uBnkNU-2rxlXJRcNYNkT5QZmVZ2b9htsgMpWk",
               "is_right": true
             }
           ]
@@ -91,7 +91,7 @@
               "is_right": false
             },
             {
-              "sibling": "uIgxIIMP55RHmoJ4cTZcySxG4wdr1Ua-BLf2-23LAX6A",
+              "sibling": "u4C25G8uBnkNU-2rxlXJRcNYNkT5QZmVZ2b9htsgMpWk",
               "is_right": true
             }
           ]
@@ -123,7 +123,7 @@
         ]
       },
       "expected": {
-        "root_multibase": "u8ZnWd7DAt-isiDoOpzNhNHJX1q0H3BLTczerk0MKNOI"
+        "root_multibase": "uWRr_HGF9AXlDEptvMt2fGq4bjvQzl00rZf2ELCWl7ok"
       }
     }
   ]

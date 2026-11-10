@@ -29,13 +29,27 @@ Wire format (Specification §11.3):
    "actionMerkleRoot": "u<multibase>",
    "canaryCommitment": "u<multibase>",
    "canaryReveal": "u<multibase>" (optional on first heartbeat),
-   "behavioralDigest": { ... per §11.3 ... }
+   "behavioralDigest": { ... per §11.3 ... },
+   "actionLeafHashes": ["u<multibase>", ...],
+   "proof": { eddsa-jcs-2022 Data Integrity proof by subject_did }
   }
 
-The request is typically signed with a Data Integrity proof before
-submission; the validator MAY require this. Phase-4 ships the protocol
-structure; signature attachment is left to the caller (see Signer in
-vouch/signer.py).
+`actionLeafHashes` carries the per-action leaf hashes (never the actions), so
+the validator recomputes `actionMerkleRoot` itself. The `proof` is made by the
+agent's own key (`HeartbeatSession(signer=...)`); the validator requires it by
+default.
+
+Validator policy (HeartbeatValidator):
+
+- the request must be signed by `subject_did`;
+- `issued_at` must be within `max_request_age_seconds` of the validator's clock
+  and no more than `max_clock_skew_seconds` ahead of it;
+- `actionMerkleRoot` must equal the root of `actionLeafHashes`;
+- `interval_index` must be strictly greater than the last accepted one;
+- missed beats: if more than `max_missed_intervals` intervals pass (by the
+  validator's clock or by `interval_index`) since the last accepted beat, the
+  session lapses. No voucher is issued, so the agent's trust decays out, and
+  every later beat is refused until `reset_session` is called.
 """
 
 from __future__ import annotations
@@ -53,8 +67,16 @@ from .behavioral_attestation import (
     BehavioralCollector,
     validate_behavioral_digest,
 )
+from . import data_integrity
 from .canary import CanaryChain, CanaryChainError, CanaryVerifier
-from .merkle import compute_action_merkle_root
+from .merkle import (
+    MerkleError,
+    _decode_multibase,
+    _encode_multibase,
+    compute_action_merkle_root,
+    hash_leaf,
+    root_from_leaf_hashes,
+)
 from .vc import build_session_voucher
 
 
@@ -84,8 +106,11 @@ class HeartbeatRequest:
     behavioral_digest: Dict[str, Any]
     canary_reveal: Optional[str] = None
     authority_epoch: Optional[int] = None
+    action_leaf_hashes: Optional[List[str]] = None
+    proof: Optional[Dict[str, Any]] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def unsigned_dict(self) -> Dict[str, Any]:
+        """The wire object without its proof (what the proof signs)."""
         d: Dict[str, Any] = {
             "version": HEARTBEAT_PROTOCOL_VERSION,
             "type": HEARTBEAT_REQUEST_TYPE,
@@ -101,6 +126,26 @@ class HeartbeatRequest:
             d["canaryReveal"] = self.canary_reveal
         if self.authority_epoch is not None:
             d["authorityEpoch"] = self.authority_epoch
+        if self.action_leaf_hashes is not None:
+            d["actionLeafHashes"] = list(self.action_leaf_hashes)
+        return d
+
+    def sign(self, signer: Any) -> None:
+        """Attach an eddsa-jcs-2022 proof made by `signer` over the request."""
+        key = getattr(signer, "_raw_priv", None) or getattr(signer, "_sign_func", None)
+        if key is None:
+            raise HeartbeatError("signer cannot sign: no private key or sign callback available")
+        self.proof = data_integrity.build_proof(
+            self.unsigned_dict(), key, signer.verification_method_id(), created=self.issued_at
+        )
+
+    def to_dict(self, *, resign: Any = None) -> Dict[str, Any]:
+        """The wire object. With `resign`, re-sign it first (after an edit)."""
+        if resign is not None:
+            self.sign(resign)
+        d = self.unsigned_dict()
+        if self.proof is not None:
+            d["proof"] = self.proof
         return d
 
     @classmethod
@@ -116,6 +161,8 @@ class HeartbeatRequest:
             behavioral_digest=d["behavioralDigest"],
             canary_reveal=d.get("canaryReveal"),
             authority_epoch=d.get("authorityEpoch"),
+            action_leaf_hashes=d.get("actionLeafHashes"),
+            proof=d.get("proof"),
         )
 
 
@@ -145,6 +192,16 @@ def _validate_request_shape(d: Dict[str, Any]) -> None:
         epoch = d["authorityEpoch"]
         if not isinstance(epoch, int) or isinstance(epoch, bool) or epoch < 0:
             raise HeartbeatError("authorityEpoch must be a non-negative integer")
+    if "actionLeafHashes" in d:
+        hashes = d["actionLeafHashes"]
+        if not isinstance(hashes, list) or not all(isinstance(h, str) for h in hashes):
+            raise HeartbeatError("actionLeafHashes must be a list of multibase strings")
+    if "proof" in d and not isinstance(d["proof"], dict):
+        raise HeartbeatError("proof must be an object")
+    try:
+        _parse_iso(d["issued_at"])
+    except (TypeError, ValueError) as exc:
+        raise HeartbeatError(f"issued_at must be an ISO-8601 UTC timestamp: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -180,9 +237,19 @@ class HeartbeatSession:
     collector: BehavioralCollector = field(default_factory=BehavioralCollector)
     chain: CanaryChain = field(default_factory=CanaryChain)
     authority_epoch: Optional[int] = None
+    signer: Optional[Any] = None
+    allow_foreign_signer: bool = False
     _interval_index: int = field(default=0, init=False)
     _actions: List[bytes] = field(default_factory=list, init=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.signer is not None
+            and not self.allow_foreign_signer
+            and getattr(self.signer, "did", None) != self.subject_did
+        ):
+            raise HeartbeatError("the heartbeat signer's DID must be the session's subject_did")
 
     @property
     def interval_index(self) -> int:
@@ -231,7 +298,10 @@ class HeartbeatSession:
                 canary_reveal=cm.reveal,
                 behavioral_digest=digest,
                 authority_epoch=self.authority_epoch,
+                action_leaf_hashes=[_encode_multibase(hash_leaf(a)) for a in self._actions],
             )
+            if self.signer is not None:
+                req.sign(self.signer)
             self._interval_index += 1
             self._actions.clear()
             self.collector.reset()
@@ -344,7 +414,9 @@ class HeartbeatStoreInterface(ABC):
       {
         "last_commitment": <multibase str or None>,
         "expecting_reveal": <bool>,
-        "last_interval": <int or None>
+        "last_interval": <int or None>,
+        "last_seen_at": <ISO-8601 UTC str or None>,
+        "lapsed": <bool>
       }
 
     The reference MemoryHeartbeatStore (in this module) keeps state in
@@ -442,11 +514,17 @@ class HeartbeatValidator:
     heartbeat:
 
     1. Validates request shape (Specification §11.3 schema).
-    2. Validates behavioral digest structure.
-    3. Walks the canary chain via CanaryVerifier.
-    4. Validates interval_index is monotonically non-decreasing.
-    5. On success, returns an unsigned SessionVoucher VC carrying the
-      configured initialTrust and decayLambda.
+    2. Verifies the request's proof was made by `subject_did`
+      (`require_signature`, on by default).
+    3. Checks `issued_at` against the validator's clock.
+    4. Recomputes `actionMerkleRoot` from `actionLeafHashes`.
+    5. Validates behavioral digest structure.
+    6. Refuses a lapsed session; validates that interval_index is strictly
+      greater than the last accepted one; lapses the session if more than
+      `max_missed_intervals` were missed.
+    7. Walks the canary chain via CanaryVerifier.
+    8. On success, returns an unsigned SessionVoucher VC carrying the
+      configured initialTrust and decayLambda, issued at the validator's clock.
 
     Attributes:
       validator_did: Validator's own DID, used as the SessionVoucher issuer.
@@ -456,6 +534,15 @@ class HeartbeatValidator:
       voucher_valid_seconds: validity window of the issued voucher.
         SHOULD be slightly longer than the heartbeat interval.
       scope: Scope list embedded in the SessionVoucher.
+      require_signature: Refuse a request without a valid proof by its subject.
+      key_resolver: `did -> key` for non-did:key subjects (did:key resolves offline).
+      require_action_leaf_hashes: Refuse a request that does not carry the
+        leaf hashes its actionMerkleRoot was built from.
+      interval_seconds: The expected heartbeat interval.
+      max_missed_intervals: How many intervals may be missed before the
+        session lapses.
+      max_request_age_seconds / max_clock_skew_seconds: The issued_at window.
+      clock: The validator's clock (injectable for tests and simulations).
     """
 
     validator_did: str
@@ -465,6 +552,14 @@ class HeartbeatValidator:
     voucher_valid_seconds: int = 120
     scope: List[str] = field(default_factory=lambda: ["agent_actions"])
     store: HeartbeatStoreInterface = field(default_factory=MemoryHeartbeatStore)
+    require_signature: bool = True
+    key_resolver: Optional[Callable[[str], Any]] = None
+    require_action_leaf_hashes: bool = True
+    interval_seconds: float = 60.0
+    max_missed_intervals: int = 2
+    max_request_age_seconds: int = 120
+    max_clock_skew_seconds: int = 30
+    clock: Callable[[], datetime] = field(default=lambda: datetime.now(timezone.utc), repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
     _highest_epoch: Dict[str, int] = field(default_factory=dict, init=False, repr=False)
 
@@ -490,6 +585,22 @@ class HeartbeatValidator:
         except HeartbeatError as exc:
             return HeartbeatValidationResult(ok=False, reasons=[f"schema_invalid:{exc}"])
 
+        if self.require_signature:
+            sig_reason = self._check_signature(request, req.subject_did)
+            if sig_reason is not None:
+                return HeartbeatValidationResult(ok=False, reasons=[sig_reason])
+
+        now = self.clock().astimezone(timezone.utc)
+        age = (now - req.issued_at).total_seconds()
+        if age > self.max_request_age_seconds:
+            return HeartbeatValidationResult(ok=False, reasons=["issued_at_too_old"])
+        if -age > self.max_clock_skew_seconds:
+            return HeartbeatValidationResult(ok=False, reasons=["issued_at_in_future"])
+
+        merkle_reason = self._check_action_root(req)
+        if merkle_reason is not None:
+            return HeartbeatValidationResult(ok=False, reasons=[merkle_reason])
+
         try:
             validate_behavioral_digest(req.behavioral_digest)
         except BehavioralAttestationError as exc:
@@ -502,11 +613,24 @@ class HeartbeatValidator:
                 "last_commitment": None,
                 "expecting_reveal": False,
                 "last_interval": None,
+                "last_seen_at": None,
+                "lapsed": False,
             }
+            if state.get("lapsed"):
+                return HeartbeatValidationResult(ok=False, reasons=["session_lapsed"])
 
             last_interval = state.get("last_interval")
             if last_interval is not None and req.interval_index <= last_interval:
                 reasons.append(f"stale_interval_index:{req.interval_index}<= last={last_interval}")
+
+            missed = self._missed_intervals(state, req.interval_index, now)
+            if not reasons and missed > self.max_missed_intervals:
+                state["lapsed"] = True
+                self.store.put(key, state)
+                return HeartbeatValidationResult(
+                    ok=False,
+                    reasons=[f"missed_heartbeats:{missed}>{self.max_missed_intervals}"],
+                )
 
             verifier = CanaryVerifier()
             verifier._last_commitment = state.get("last_commitment")  # noqa: SLF001
@@ -526,6 +650,8 @@ class HeartbeatValidator:
                 "last_commitment": verifier._last_commitment,  # noqa: SLF001
                 "expecting_reveal": verifier._expecting_reveal,  # noqa: SLF001
                 "last_interval": req.interval_index,
+                "last_seen_at": _iso(now),
+                "lapsed": False,
             }
             self.store.put(key, new_state)
 
@@ -545,9 +671,68 @@ class HeartbeatValidator:
             scope=list(self.scope),
             valid_seconds=self.voucher_valid_seconds,
             authority_epoch=req.authority_epoch,
+            issued_at=now,
         )
 
         return HeartbeatValidationResult(ok=True, session_voucher=voucher)
+
+    # -- checks ---------------------------------------------------------------
+
+    def _check_signature(self, request: Dict[str, Any], subject_did: str) -> Optional[str]:
+        from .verifier import _coerce_any_public_key, _resolve_did_key
+
+        proof = request.get("proof")
+        if not isinstance(proof, dict):
+            return "signature_missing"
+        vm = proof.get("verificationMethod")
+        if (
+            proof.get("proofPurpose") != "assertionMethod"
+            or not isinstance(vm, str)
+            or vm.split("#", 1)[0] != subject_did
+        ):
+            return "signature_invalid"
+        key = None
+        if self.key_resolver is not None:
+            candidate = self.key_resolver(subject_did)
+            key = _coerce_any_public_key(candidate) if candidate is not None else None
+        if key is None and subject_did.startswith("did:key:"):
+            key = _resolve_did_key(subject_did)
+        if key is None:
+            return "signature_key_unresolved"
+        try:
+            if not data_integrity.verify_proof(request, key):
+                return "signature_invalid"
+        except Exception:  # noqa: BLE001 - a malformed proof is an invalid one
+            return "signature_invalid"
+        return None
+
+    def _check_action_root(self, req: HeartbeatRequest) -> Optional[str]:
+        if req.action_leaf_hashes is None:
+            return "action_leaf_hashes_missing" if self.require_action_leaf_hashes else None
+        try:
+            hashes = [_decode_multibase(h) for h in req.action_leaf_hashes]
+            if hashes:
+                expected = _encode_multibase(root_from_leaf_hashes(hashes))
+            else:
+                expected = compute_action_merkle_root([])
+        except MerkleError:
+            return "action_leaf_hashes_invalid"
+        if expected != req.action_merkle_root:
+            return "action_merkle_root_mismatch"
+        return None
+
+    def _missed_intervals(self, state: Dict[str, Any], interval_index: int, now: datetime) -> int:
+        """Intervals missed since the last accepted beat, by index and by clock."""
+        last_interval = state.get("last_interval")
+        last_seen = state.get("last_seen_at")
+        missed = 0
+        if last_interval is not None:
+            missed = max(missed, interval_index - last_interval - 1)
+        if last_seen:
+            elapsed = (now - _parse_iso(last_seen)).total_seconds()
+            if self.interval_seconds > 0:
+                missed = max(missed, int(elapsed // self.interval_seconds) - 1)
+        return max(missed, 0)
 
     def known_sessions(self) -> List[str]:
         """Return session keys currently tracked by this validator."""

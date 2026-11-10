@@ -37,6 +37,7 @@ from vouch.status_list import (
 from vouch.heartbeat import HeartbeatRequest, HeartbeatSession, HeartbeatValidator
 from vouch.vc import build_session_voucher
 from vouch.trust_check import verify_agent_call
+from _heartbeat_keys import resolve, signed_session  # noqa: E402
 
 
 AUTHORITY_DID = "did:web:treasury.example.com"
@@ -312,7 +313,7 @@ def test_session_voucher_carries_epoch():
 
 
 def test_heartbeat_request_roundtrips_epoch():
-    session = HeartbeatSession(subject_did="did:web:agent.example.com", authority_epoch=6)
+    session = signed_session("did:web:agent.example.com", authority_epoch=6)
     req = session.build_request()
     assert req.authority_epoch == 6
     d = req.to_dict()
@@ -322,8 +323,8 @@ def test_heartbeat_request_roundtrips_epoch():
 
 
 def test_heartbeat_validator_tracks_highest_epoch_and_mints_voucher():
-    validator = HeartbeatValidator(validator_did="did:web:v.example.com")
-    session = HeartbeatSession(subject_did="did:web:agent.example.com", authority_epoch=2)
+    validator = HeartbeatValidator(key_resolver=resolve, validator_did="did:web:v.example.com")
+    session = signed_session("did:web:agent.example.com", authority_epoch=2)
     res = validator.validate(session.build_request().to_dict())
     assert res.ok
     assert res.session_voucher["credentialSubject"]["authorityEpoch"] == 2

@@ -449,9 +449,15 @@ def check_hybrid_pq() -> CheckResult:
 
 
 def check_heartbeat() -> CheckResult:
-    """Heartbeat: a renewed chain validates, and each interval is distinct and advancing."""
-    session = HeartbeatSession(subject_did="did:web:conformance.test")
+    """Heartbeat: a signed renewal chain validates, each interval is distinct and
+    advancing, and an unsigned heartbeat is refused."""
+    agent = _did_key_signer()
+    session = HeartbeatSession(subject_did=agent.did, signer=agent)
     validator = HeartbeatValidator(validator_did="did:web:validator.conformance.test")
+
+    unsigned = HeartbeatSession(subject_did=agent.did).build_request()
+    if validator.validate(unsigned.to_dict()).ok:
+        return CheckResult("heartbeat", Status.FAIL, "an unsigned heartbeat was accepted")
 
     session.record_action(b"conformance-1")
     req1 = session.build_request()
@@ -474,13 +480,16 @@ def check_heartbeat() -> CheckResult:
     if req1.action_merkle_root == req2.action_merkle_root:
         return CheckResult("heartbeat", Status.FAIL, "consecutive intervals were not distinct")
     return CheckResult(
-        "heartbeat", Status.PASS, "renewal chain valid, intervals linked and advancing"
+        "heartbeat",
+        Status.PASS,
+        "signed renewal chain valid, intervals linked and advancing, unsigned refused",
     )
 
 
 def check_validator_quorum() -> CheckResult:
     """Validator quorum: an M-of-N quorum approves at threshold, and denies when fewer approve."""
-    session = HeartbeatSession(subject_did="did:web:conformance.test")
+    agent = _did_key_signer()
+    session = HeartbeatSession(subject_did=agent.did, signer=agent)
     session.record_action(b"conformance-quorum")
     request = session.build_request().to_dict()
 
