@@ -2028,7 +2028,7 @@ All three follow the protocol's release cadence. Subscribe to releases on https:
       },
       {
         q: 'What is the Agent Trust Index?',
-        a: `An open benchmark that scans public AI agents and scores one question for each: can this agent prove who it is? Not whether it is good or safe, just whether it has a cryptographic identity (a \`did:web\`) that resolves to a real public key. The first sweep, drawn from the public Model Context Protocol registry on 10 June 2026, scanned 11,680 agents. Only 157, about 1.3 percent, publish a resolvable identity, and 98.7 percent cannot prove who they are at all. See [the Index](/agent-trust-index/) and its [methodology](/agent-trust-index/methodology/).`,
+        a: `An open benchmark that scans public AI agents and scores one question for each: can this agent prove who it is? Not whether it is good or safe, just whether it has a cryptographic identity (a \`did:web\`) that resolves to a real public key. The first sweep, drawn from the public Model Context Protocol registry on 10 June 2026, scanned 11,680 agents. Only 157, about 1.3 percent, publish a resolvable identity, and 98.7 percent cannot prove who they are at all. \`vouch grade\` and the web grader also report post-quantum, revocation, and agent-card signals, each only when the evidence checks out (a well-formed ML-DSA-44 key the DID controls, a current signed \`BitstringStatusList\`, a card whose \`vouchCredential\` verifies) and each with a reason. The score stays 60 for the DID and 40 for the key. See [the Index](/agent-trust-index/) and its [methodology](/agent-trust-index/methodology/).`,
       },
     ],
   },

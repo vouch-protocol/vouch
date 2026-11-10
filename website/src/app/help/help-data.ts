@@ -521,6 +521,16 @@ The handful that can prove themselves are mostly finance and oracle agents, whic
 
 Each agent is scored out of 100: **60 points** for a resolvable identity, **40 points** for that identity carrying a usable public key. A is 90 or above, then B, C, D, and F below 40. An agent with nothing scores zero. The 88 agents that resolve a DID but carry no usable key land around a C.
 
+## How the extra signals are checked
+
+\`vouch grade <domain>\` and the web grader also report post-quantum, revocation, and agent-card signals. Each is reported only when the evidence checks out, with a reason beside it (CLI text, and \`--json\` under \`signals.reasons\`).
+
+- **Post-quantum**: a well-formed ML-DSA-44 public key (1312 bytes) controlled by the DID and listed in \`assertionMethod\`.
+- **Revocation**: a \`BitstringStatusList\` service whose https endpoint returns a \`BitstringStatusListCredential\` issued by the same DID, inside its validity period, with a decodable \`encodedList\` and an \`eddsa-jcs-2022\` proof that verifies against an \`assertionMethod\` key.
+- **Agent card**: \`verified\` when the card's \`vouchCredential\` is issued by the domain's DID, bound to the card URL, and verifies; \`declared\` when the card only names a DID; \`no\` otherwise.
+
+The score stays 60 for the DID and 40 for the key. Fix lines say what was found. Fetches are https only, to public addresses, with redirects re-checked and size and time limits.
+
 The full method is published at [/agent-trust-index/methodology](/agent-trust-index/methodology/). The data is real and the scan is reproducible.
 `,
       },
