@@ -257,3 +257,28 @@ class TestEndToEndQuorum:
             result = quorum.validate(req)
             assert result.ok, f"interval {i} failed: {result.rejections}"
             assert len(result.approving_dids) == 3  # all three approve when chain intact
+
+
+class TestQuorumAuthorityEpoch:
+    def test_aggregate_voucher_carries_authority_epoch(self):
+        quorum = HeartbeatQuorum(
+            validators=[
+                QuorumValidator(validator=_validator(f"did:web:e{i}.example.com")) for i in range(3)
+            ],
+            threshold=2,
+        )
+        session = signed_session(AGENT_DID, authority_epoch=7)
+        result = quorum.validate(session.build_request().to_dict())
+        assert result.ok, result.rejections
+        assert result.session_voucher["credentialSubject"]["authorityEpoch"] == 7
+
+    def test_aggregate_voucher_without_epoch_omits_it(self):
+        quorum = HeartbeatQuorum(
+            validators=[
+                QuorumValidator(validator=_validator(f"did:web:f{i}.example.com")) for i in range(3)
+            ],
+            threshold=2,
+        )
+        result = quorum.validate(signed_session(AGENT_DID).build_request().to_dict())
+        assert result.ok
+        assert "authorityEpoch" not in result.session_voucher["credentialSubject"]
