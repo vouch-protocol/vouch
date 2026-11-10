@@ -29,5 +29,12 @@
   "assertionMethod": [
     "did:web:vouch-protocol.com#key-1",
     "did:web:vouch-protocol.com#mldsa44-1"
+  ],
+  "service": [
+    {
+      "id": "did:web:vouch-protocol.com#revocation",
+      "type": "BitstringStatusList",
+      "serviceEndpoint": "https://vouch-protocol.com/credentials/status/1.json"
+    }
   ]
 }
