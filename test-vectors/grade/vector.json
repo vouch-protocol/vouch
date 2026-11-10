@@ -1,0 +1,1874 @@
+{
+  "description": "Evidence checks of the grader: post-quantum key, revocation status list and agent-card identity. Fetches are replaced by the documents map.",
+  "now": "2026-11-11T00:00:00Z",
+  "cases": [
+    {
+      "name": "real-mldsa44-key",
+      "description": "A well-formed ML-DSA-44 Multikey in assertionMethod, a valid status list, and a valid signed card.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [
+        {
+          "name": "Grade Example Agent",
+          "description": "An agent used by the grader vectors.",
+          "url": "https://agent.grade.example/a2a",
+          "version": "1.0.0",
+          "capabilities": {
+            "streaming": false
+          },
+          "defaultInputModes": [
+            "text/plain"
+          ],
+          "defaultOutputModes": [
+            "text/plain"
+          ],
+          "skills": [
+            {
+              "id": "qa",
+              "name": "Q&A",
+              "description": "Answers questions."
+            }
+          ],
+          "vouchCredential": {
+            "@context": [
+              "https://www.w3.org/ns/credentials/v2",
+              "https://vouch-protocol.com/contexts/v1"
+            ],
+            "id": "urn:uuid:5d3f1a2e-7c4b-4e0a-9b1d-2f6a8c0e4d71",
+            "type": [
+              "VerifiableCredential",
+              "VouchCredential"
+            ],
+            "issuer": "did:web:grade.example",
+            "validFrom": "2026-01-01T00:00:00Z",
+            "validUntil": "2036-01-01T00:00:00Z",
+            "credentialSubject": {
+              "id": "did:web:grade.example",
+              "vouchVersion": "1.0",
+              "intent": {
+                "action": "operate",
+                "target": "https://agent.grade.example/a2a",
+                "resource": "a2a:agent-card"
+              }
+            },
+            "proof": {
+              "type": "DataIntegrityProof",
+              "cryptosuite": "eddsa-jcs-2022",
+              "created": "2026-01-01T00:00:00Z",
+              "verificationMethod": "did:web:grade.example#key-1",
+              "proofPurpose": "assertionMethod",
+              "proofValue": "z6EnWVPidYFdjUJTziyX1cAWm9YRSKtJ63J6D5HTocnDd1VLWEJMxWi2b61cgWovrtEmSmRaDfK6WVStUWGRMKto"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": true,
+        "has_card_identity": true,
+        "card_identity": "verified",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "vouchCredential is signed by #key-1"
+        }
+      }
+    },
+    {
+      "name": "mldsa-text-without-key",
+      "description": "ML-DSA words in descriptions, no ML-DSA key.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#pq-note",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "description": "ML-DSA / mldsa / dilithium support planned",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": false,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "no ML-DSA-44 verification method",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "mldsa-not-in-assertion-method",
+      "description": "A well-formed ML-DSA-44 key that is listed only under authentication.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": false,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 is not in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "mldsa-truncated-key",
+      "description": "An ML-DSA-44 Multikey one byte short.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "zpiXXCDUb9mBLTF77fCQ8nZTa91CmRWMsT8dSxkDrrM5wPT3aGNgt15Ugtq5T38dmhMrj6BWqo3ke2grUDk12zqUfjsNtAtUvo8J779KckjkpkHX4iCeN8i6L2VJJrfJzDjeAKChazmAqJbS9S2V9gNS9EMzpytsE2dbHW8rLwD8ybNNhBNQwGdca7WT3eQAM5gXWtgXYUpsYntJmYvjJFA46Q2odzDsafzcrHLAJ74aJWcCkTCd6mdHxwhJttytobsrEe5dj5NCfN2924m3MvjVyR5XcN7jaYBR6tzDr1JLgzg4MSrcgrNSNC6sdtTBtRqf7YwtXpYLkBWNhKzA32xa2UiAkezvVzZ4ycf1okvuwn8XFvHVUMcjJ6hmTYuhBht1643KiHP4pyT1XWwZHu25LrqHxgoU673GirCPLUB4QLuvsgzkaAQUZZvLnXikZsMWtXQUYEbE6ozmpyHhQ8ZGw8U9kK4jg2yfjEqb7Y9T9PW1iGsGk1sQtfBwsr8v2o5k5ZxmivSVieTB6ZVjWZuvgd6EDCKLwYR2Q2VDd1czxyKyWnEsvquwANX1TDMqPsTSscaA77HKhNhsHpK6WhoqPDgwsigokW8Eq6eBSeiTejHAjeV4ShpEncMeeSeUq5xGALdzWi9WDNz5j4Z3JZv4efJHatnn1Dcrj5kDt21v1bU46ph9wLouZ6q8L7BmUc8B5r1wjYuhu2kLBHREVEDTR9fDGWemKVcrxoZ6bKLtKt5KKjg9HgvtrbG4o1Ex5N6HyivN4LrfCiicWcSg2AhJBM9gqCKMp9vpqVQUGwbT5yw6cu5ejCbxaDFb2qBnLUuQvXYxGVBmQvXW8u9kRDBKBP6girHL4FLXrpCaV5GUHFdbkyJL6Hc9incngAcesGHt9c9PTi2UqMkzGVF22uXyfDKXbgiEgzj5WVWpTkdN1cffBwZg4pJqXv89X5pcFZ2MhQ1xBsDfmYdJa2wHu4txxAfVxBSE8x2X72PyFUV79g8xEMx7RccrVT8eoaD1qUqvLByKM7Hx76LmRuoXfjScWoTvgysBZbAwS8869apCW96p5t7V7X9yoanP9YrdBwHSHsFFWyZDWyjTCrcTS4aK643JND3DrGLZQbvydi1Yq39yx8noUiJNuMy8k9Hfjss8So9ufLEzc4o2amXDnJXBR5NW6jmdzBnrSUqcNLAtgtnJ3r9TUE1jDEkcF33KWAUqYxL6b22kmXaba9joGGTGhEaXmAwzJGL2hRTZAwrrMvwwrUNHi1f7ofrQyDFeZXPcSoGWHCdEeBSu9hSFHMqRJFAUgomzCLQffRhMbZzqx5wsBz6q8JfyGCbUqx6LuBtHF4XQrBbX4uVMJkxkTtqkp8s7vZs7HKdFNeowu1Yx3h4GVYjxTZHsSX3WeaWXPpTxTzgJZguDgE2X7Upm5DfZLvHhvTAZ5JgHogT8SERe2H1XZ7dZn7Jon6odDB3yVtGBf5QH4K6ZNXUMihnJRne6y4mCicApmCV93rM3u6hAjLbFmt4Vw87nFdaqh7qCySsDhrc6ETnpn1kFqseSixjDCkucYNWHWsrLTgXwoPQ93dMkBWjhmFRiLyS1VbK2jTXz5uUKrsdqB6qstaWoTkuiAQJP7XuVjto5fNrvAYaiiZWq72vJn5vsKzrMq8zgjcUWGgvkgecBQKv6WSpiE9FxZWbJivjyrWNxTtZS4dQx7AUi9QPEfSoy5PPkvNWkrpMnxYRGuuXKg7xKSboJFhRwHbBXNCvfWw35o9gShpRFC7P3vfQqCLEKatKddAskpe"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": false,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 is malformed (1311 bytes, expected 1312)",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "mldsa-other-controller",
+      "description": "A well-formed ML-DSA-44 key controlled by another DID.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:other.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": false,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 is not controlled by did:web:grade.example",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "mldsa-jwk-akp",
+      "description": "A well-formed ML-DSA-44 JWK (kty AKP) referenced by a relative id.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-jwk",
+            "type": "JsonWebKey",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "AKP",
+              "alg": "ML-DSA-44",
+              "pub": "nx62DBI7-S6jUUoVzZwtfND28vrPJS_KvSKAX20naihdqYmz21FJzLZnkfg5MDwfDoXnrmiaGQH8UPcKPcClqs5Uwmf1nbVafAKaGvZA6UnYQQQ2Sphj4ebPkF4Sjduu1lZel1uRmrijV428jMOq2Vhv9hc9cAZSRrOkssv5MCZY7J2PJCbWNp86mWwuK7AGg-PbO-4_ptERdKGqo2Z6BmMYOVXr9X6wE4XNP6-uBbNChK-4iCVwWXiA36wxDJgVhkg7nT3dAtXEwNsNonzwC2mjvJ4Odqc3dgpQlfZPhT-XaMu3OYFm3RzlEluHwhQDZqm7iY2_aC-bV0NNqOBgg_Gzaiywwu78AXxuiNGA4IArvCIQ20-xt95-rN7dOlkd3qRviDXmadX8Kl1Akuab6obo5yrINPtcuOY98m_tteKoFBdbPacBitiTKpLixUHZi_onNNgWOvqZWcObbALKhMkWXPbPeSo9CpjDn4SeWofCZAxWoANsXhUEY9nSDzIHX10EVaDDbbUSZQ8GJotaaJ4vXi4Kv1eGTIEvT-ZNmZ7mDA53J1XlDKXbZvs36Ym0-mWjzb-hXe5RUSqNRPERNv85hhoJWLzPziOOZMz4UTQwoGBcIzcqotImeRYLNikdcyb2KazF6i-cgRDRE-zXdLfmfnZ0_JHQ741GMi37p2MV29RvpqL31UTnO_o7yBzywm2WPuxXRVkYtEIPlArwhWUgXykf4Otjivi5Tx4zngEhlXKjwjySAC8kQpMd8I8L4Iu4GC5cKS00l6F-8-1XADH97HrFrX2CiR6O9vUIDX4G1awe96iD0UFpLLX66WdVrAJdF9CzXIUQCqcYk6whNQN55eBmKe8WNEr9O3X7lPM5epsmAs5wxfT4In49hAAxGw8W0XUJmsV8IRWXccmsxFepkQbeS40twELFuq5BtqtXBztRXxHcuA9tBCdR2N_oelKoPd1wrCa0_NgcDdqZxacvZ3FeUuNn6ejUJaBL4RRvchqbhqWbFRs73rg9nqJcxOVxqqPiGlaWloGUDsUr5LSOxeLPweFx7i5NOXS3JY9x4BpvajC0SIEzKRkIjMiUkwj7a3wYREWpjD3uIuyYg0iwf2zq0LbJVq9-Zm-hSsfbf4tQxViHuRVyyRoZ7N9KEv3g-EL_rWoCyHgTFIwjJ1p9QLv1DvJLikJYUl0-aemW4G2uCJA3rkpittVzt2Ixcuignb6djbJpRCHPiZOGsa7Unakw82mFymcFVtesyLhpyv030IjJ2KtKBgyoGwoqTGi_ZZbIWqbomDdPq_zTAs3cfbunJtwvV4tQE8-IdqkjaEQicwwNQV3HbiQ5A0GLFWlgdshOJY_1l5ulcsBiehlxp0wxCNrm1Nh2_4tUfu5Qm2JCEGJha8Hlawgf_OfUWGB4eRXzATug6Vqn_tl1zpHfcdvZPNv9-kBBcvjV8IeDKapRWSUF2Isr_dgrEUFOkkQILoNIu8KPDPqULk0XCKOXNztpLcahZxW45eXXt5tQNsoeryxKDetYaVYMKyZBeY5i5awPVNfO96Awg1HijG6jHXAoWXCIcO2Byn3Go94xMzhDgkfwg4Q0kO6X1x82wH9QAxmFCZt_8bRkLKA1x7-GNg2QHfNoH3TrL1WrQqwpQMEWohaJl2GfjBqOOf5wnlTaq4MwfR7u9Wn4bCqDWl1zD-THKR6iBJ-VU0AYE-5N190koue2V4ozDN3Ti1te74eZmlWBQAAuXn-m0Aa3Fw"
+            }
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "#key-1",
+          "#mldsa44-jwk"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-jwk in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "unrelated-service-type",
+      "description": "The only service is a LinkedDomains entry.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#site",
+            "type": "LinkedDomains",
+            "serviceEndpoint": "https://grade.example"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "no BitstringStatusList service (found LinkedDomains)",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "no-service",
+      "description": "No service entries at all.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "#key-1"
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": false,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "no ML-DSA-44 verification method",
+          "has_revocation": "no service in the DID document",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "status-list-expired",
+      "description": "The status list's validUntil is before now.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2026-06-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z4nJFkpwRzvFNWgNNcjKE8QzW3A9qCUw2LsFgVmBp2YeLrkPre4ccNa554r2v2DDC17pyusHr1zsPAwdGbCPN7G68"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json expired 2026-06-01T00:00:00Z",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "status-list-key-not-in-document",
+      "description": "The status list is signed by a key the DID document does not list.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-9",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3ZGVbtQfEAQbibq6aKftwoBYDh3uB87NBSRDqjasV5yNp8Nt6mi8SXfqmWJqaBcRhGqvf9S8hhyTnePTCniTs9YG"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-9, which is not in the DID document",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "status-list-wrong-signature",
+      "description": "The status list names #key-1 but is signed by another key.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3mTFvADSo25wH8WoFxqQbrPxXZtYRtLhovoSkNrgd739FMJtBAqewxGnZtSwW64DqRGtdoYLHon9Cm6CFnjNYhHX"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json has a proof that does not verify against #key-1",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "status-list-other-issuer",
+      "description": "The status list is issued by another DID.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:other.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:other.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z3aK4DLZQixwGzC7iZscKMzxFujr2ZBeDqLWZzGBFqo7Wx2Kc3c4njYbkTpSnh1GRw2aZhVSGERRFeKZM9VKVutSS"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is issued by did:web:other.example, not did:web:grade.example",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "status-list-short-bitstring",
+      "description": "The encodedList decodes to fewer than 131,072 bits.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_2NgGAWjYBSMVAAALq-17wAEAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "zPgnTMidL4aWiZJvYNwJFbefsPq9Ub7U76GDiNg5MFDpK85g3z3QN9NJAN6KfyWs9osd9v927ANDS6gyiKGw3wsB"
+          }
+        }
+      },
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json has an encodedList that does not decode",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "status-list-unfetchable",
+      "description": "The status list URL returns nothing.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {},
+      "cards": [],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": false,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json could not be fetched",
+          "card_identity": "no agent card"
+        }
+      }
+    },
+    {
+      "name": "card-unsigned",
+      "description": "An agent card with no DID and no credential.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [
+        {
+          "name": "Grade Example Agent",
+          "description": "An agent used by the grader vectors.",
+          "url": "https://agent.grade.example/a2a",
+          "version": "1.0.0",
+          "capabilities": {
+            "streaming": false
+          },
+          "defaultInputModes": [
+            "text/plain"
+          ],
+          "defaultOutputModes": [
+            "text/plain"
+          ],
+          "skills": [
+            {
+              "id": "qa",
+              "name": "Q&A",
+              "description": "Answers questions."
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "no",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "agent card names no DID"
+        }
+      }
+    },
+    {
+      "name": "card-names-did-only",
+      "description": "An agent card that names the DID but carries no credential.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [
+        {
+          "name": "Grade Example Agent",
+          "description": "An agent used by the grader vectors.",
+          "url": "https://agent.grade.example/a2a",
+          "version": "1.0.0",
+          "capabilities": {
+            "streaming": false
+          },
+          "defaultInputModes": [
+            "text/plain"
+          ],
+          "defaultOutputModes": [
+            "text/plain"
+          ],
+          "skills": [
+            {
+              "id": "qa",
+              "name": "Q&A",
+              "description": "Answers questions."
+            }
+          ],
+          "provider": {
+            "organization": "Grade Example",
+            "did": "did:web:grade.example"
+          }
+        }
+      ],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "declared",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "agent card names did:web:grade.example but carries no vouchCredential"
+        }
+      }
+    },
+    {
+      "name": "card-signed-by-stranger",
+      "description": "A card credential that names #key-1 but is signed by another key.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [
+        {
+          "name": "Grade Example Agent",
+          "description": "An agent used by the grader vectors.",
+          "url": "https://agent.grade.example/a2a",
+          "version": "1.0.0",
+          "capabilities": {
+            "streaming": false
+          },
+          "defaultInputModes": [
+            "text/plain"
+          ],
+          "defaultOutputModes": [
+            "text/plain"
+          ],
+          "skills": [
+            {
+              "id": "qa",
+              "name": "Q&A",
+              "description": "Answers questions."
+            }
+          ],
+          "vouchCredential": {
+            "@context": [
+              "https://www.w3.org/ns/credentials/v2",
+              "https://vouch-protocol.com/contexts/v1"
+            ],
+            "id": "urn:uuid:5d3f1a2e-7c4b-4e0a-9b1d-2f6a8c0e4d71",
+            "type": [
+              "VerifiableCredential",
+              "VouchCredential"
+            ],
+            "issuer": "did:web:grade.example",
+            "validFrom": "2026-01-01T00:00:00Z",
+            "validUntil": "2036-01-01T00:00:00Z",
+            "credentialSubject": {
+              "id": "did:web:grade.example",
+              "vouchVersion": "1.0",
+              "intent": {
+                "action": "operate",
+                "target": "https://agent.grade.example/a2a",
+                "resource": "a2a:agent-card"
+              }
+            },
+            "proof": {
+              "type": "DataIntegrityProof",
+              "cryptosuite": "eddsa-jcs-2022",
+              "created": "2026-01-01T00:00:00Z",
+              "verificationMethod": "did:web:grade.example#key-1",
+              "proofPurpose": "assertionMethod",
+              "proofValue": "zoeJZnTGD2Pgj15n5Ueyqok7m5nuya6NwwCe7n3k2n8KstanrPgyVtuVL1z8LAgrkMU9K6X6EG7e97yHe7zxD9Xp"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "declared",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "agent card names did:web:grade.example but its vouchCredential has a proof that does not verify against #key-1"
+        }
+      }
+    },
+    {
+      "name": "card-bound-to-other-url",
+      "description": "A valid credential copied from a card with another url.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [
+        {
+          "name": "Grade Example Agent",
+          "description": "An agent used by the grader vectors.",
+          "url": "https://agent.grade.example/a2a",
+          "version": "1.0.0",
+          "capabilities": {
+            "streaming": false
+          },
+          "defaultInputModes": [
+            "text/plain"
+          ],
+          "defaultOutputModes": [
+            "text/plain"
+          ],
+          "skills": [
+            {
+              "id": "qa",
+              "name": "Q&A",
+              "description": "Answers questions."
+            }
+          ],
+          "vouchCredential": {
+            "@context": [
+              "https://www.w3.org/ns/credentials/v2",
+              "https://vouch-protocol.com/contexts/v1"
+            ],
+            "id": "urn:uuid:5d3f1a2e-7c4b-4e0a-9b1d-2f6a8c0e4d71",
+            "type": [
+              "VerifiableCredential",
+              "VouchCredential"
+            ],
+            "issuer": "did:web:grade.example",
+            "validFrom": "2026-01-01T00:00:00Z",
+            "validUntil": "2036-01-01T00:00:00Z",
+            "credentialSubject": {
+              "id": "did:web:grade.example",
+              "vouchVersion": "1.0",
+              "intent": {
+                "action": "operate",
+                "target": "https://elsewhere.example/a2a",
+                "resource": "a2a:agent-card"
+              }
+            },
+            "proof": {
+              "type": "DataIntegrityProof",
+              "cryptosuite": "eddsa-jcs-2022",
+              "created": "2026-01-01T00:00:00Z",
+              "verificationMethod": "did:web:grade.example#key-1",
+              "proofPurpose": "assertionMethod",
+              "proofValue": "z5DsLnkjiwCro5SxuFNSVJFtqhagbcqeicBZKxJJmJpQM7uu8ygrG7yJS8TCj6SyMAHosw6hp697jTmP1TgHodNSh"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": true,
+        "has_card_identity": false,
+        "card_identity": "declared",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "agent card names did:web:grade.example but its vouchCredential is bound to https://elsewhere.example/a2a, not https://agent.grade.example/a2a"
+        }
+      }
+    },
+    {
+      "name": "card-best-of-two",
+      "description": "Two cards: an unsigned one and a signed one; the signed one counts.",
+      "did": "did:web:grade.example",
+      "didDocument": {
+        "@context": [
+          "https://www.w3.org/ns/did/v1",
+          "https://w3id.org/security/multikey/v1"
+        ],
+        "id": "did:web:grade.example",
+        "verificationMethod": [
+          {
+            "id": "did:web:grade.example#key-1",
+            "type": "JsonWebKey2020",
+            "controller": "did:web:grade.example",
+            "publicKeyJwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "cO48mdEjAGSm4LalEktQtXM3YaYTahJvQfceAEj6eFk"
+            }
+          },
+          {
+            "id": "did:web:grade.example#mldsa44-1",
+            "type": "Multikey",
+            "controller": "did:web:grade.example",
+            "publicKeyMultibase": "z4dcHiGW4mjfzcrqFzPbK7N6GHGKtw5Ab7gLfsb3mm2oeo45xMprj27LmD5mCdvQhJH94UmsQiNF9cSSuM9Eo9pGy7zDMareEGSbCVx7jAp3iRk3uhNrPvH2NWyZuPpC6PZDD27Le93wxQCeyzDTZFJmbyKygEn7vgWCWKqbenzGaCnhLkLmWeXzc19iyxg5EFdfTgw7TowpJ7KXTRdv9h7UxepexrFZpFd7KEX5a2VkmzHgNrneJLTyBsvQuz4S7egwSKCfT6iGaUKn2PhbPRNAat1Gz76Ciw2cyP2TZhJKXuXZPoF7zWtucxXzvVp6b3zdmDv1GT2qL9bNekzoGsyeGmXJi3gif8y2YYtNnZNtxgnCCYrBnfjzhgUAwEBqaNFS7PJRFbDJPtk9oKh9oXabkAex9rng6ZXf2Pi9FavwQ22tcnjXuKNWcekJSKxbHJ5FYvRCcYrz4peRzrjShK6MTKuxqcAjVMHj7wS5TZrUJQ2K49B2tUrqWT1ZKDRsw4vPw9AVAQ2sXkpJXZYRpdWGbwtJ5Jpwy1jf3AdZYhwjtr3ckSSgFnete4MySzhYxbwhjCQ1MBxj3XCoNyDpsL77iZ51KCrzhM1Yx3Hu76DTzdXcMyESrCT9VrK49AGCRqEruvDgGr8cXwe2wregRAYHD7E3JCbb3dxhGUjwmrBV2yd8QghWESrS2xgjRMLJXJr2fWPMAaoqdWeiFePTxXbKybbDf9TsgcdKHXJUfgTxmYLS3shMmafEsstDVk44a6G6MwN2XwkeBcj8fjhSKE9nrpfwLoix2s8Qa92NbPMy48zHmoSsXXGDJHb5PD5gb6zALbFr2wMQX2bFdbsBcdrkXEpY6KiX57LHDCsL6nuqHQjaYR5VVGLJ9VSLxbsSN8rVWkz828t5XrSd9mMesZQsj5fNn46H1RXniuArcV5ZVjiRdZHqDRqojDTUYbnH8bELzMJbCaxev7cbEYoYdapCMxVevnZ4Lz5shsbAPGtK49Hk6myUFMeDFSaLmrZa2gytvPhRZykmpDtaF6x4NMxL3kY5qyTzVcqpsFtSHitFKmckepYbd5n6dic7Jkjc2jGbYdSmu5JdCFKQNfKyVfcn2qJR9ec8oiShL3BBEy21RV2WeNMPA9KHhg7YmBRaZzFWFrriKSBvmFmk9z3WPQxLCyGHuSKn2FQdPDTsZ79cf95YvFZvKqASDK1hUYx1EfiqsJ3DHf9YkBXyHbKZuCPCxGavzmxuhuCezVQxCzu92sP7X7Mnxk1uF2zV6o75enZ8oSsDSEWJwD77KBPUS3CxiF7WqChTZT2fTec17uaeK48qAXV2jRF11L6BBu4AaqM3Lh4ZEG5mMiEg8dP34qhpCP3iDZS4Aj3CzSZtDJZS1xsoRP16bnDXTddc5rruK9iVyp9aUXH7Ux8VhubooXcuBkvCjcvVAa12RB38KpNFkQdfKrkGPg6qbU4cnpjN8NVG234RjscsXt1VkT4zwvQSmLTc6ieEMp5hCXaoVnx8HwsUCD6NShtQvjaUMv59mr9Af5Kwt6RFFsgHvWiYGYCyJrtoDsTvFtsSktmVasjs8WbUZbQFUvJg5VA5PBCSaeQ7kxebcF8VZdanjcevY56oegVqibqQhrKcPaPVKf8Pq8SWfKdUHTzkm8rLrwUHcP5aQCFEFozzGuxVMJxyay1T2EVcRE4ChwWfuoga9d1iiECqJc6D9JgvJWMqSrZxLat2mr9g9EWpqRfhAPzbM9sT4cDsT2bds17WCAhK6TAJ1e3AKurYBj1so2ZXEeeb2RGi"
+          }
+        ],
+        "authentication": [
+          "did:web:grade.example#key-1"
+        ],
+        "assertionMethod": [
+          "did:web:grade.example#key-1",
+          "did:web:grade.example#mldsa44-1"
+        ],
+        "service": [
+          {
+            "id": "did:web:grade.example#revocation",
+            "type": "BitstringStatusList",
+            "serviceEndpoint": "https://grade.example/credentials/status/1.json"
+          }
+        ]
+      },
+      "documents": {
+        "https://grade.example/credentials/status/1.json": {
+          "@context": [
+            "https://www.w3.org/ns/credentials/v2"
+          ],
+          "id": "https://grade.example/credentials/status/1.json",
+          "type": [
+            "VerifiableCredential",
+            "BitstringStatusListCredential"
+          ],
+          "issuer": "did:web:grade.example",
+          "validFrom": "2026-01-01T00:00:00Z",
+          "validUntil": "2036-01-01T00:00:00Z",
+          "credentialSubject": {
+            "id": "https://grade.example/credentials/status/1.json#list",
+            "type": "BitstringStatusList",
+            "statusPurpose": "revocation",
+            "encodedList": "uH4sIAAAAAAAC_-3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAIC3AYbSVKsAQAAA"
+          },
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-01-01T00:00:00Z",
+            "verificationMethod": "did:web:grade.example#key-1",
+            "proofPurpose": "assertionMethod",
+            "proofValue": "z5gpqPRJBj76Ub3w2kNg66Fam6BsTTXQUGGE9e3Te23TbLQgM9yJKhChCCLKuaAkQezdQm5zoYwEsNo1KoUYKZXCD"
+          }
+        }
+      },
+      "cards": [
+        {
+          "name": "Grade Example Agent",
+          "description": "An agent used by the grader vectors.",
+          "url": "https://agent.grade.example/a2a",
+          "version": "1.0.0",
+          "capabilities": {
+            "streaming": false
+          },
+          "defaultInputModes": [
+            "text/plain"
+          ],
+          "defaultOutputModes": [
+            "text/plain"
+          ],
+          "skills": [
+            {
+              "id": "qa",
+              "name": "Q&A",
+              "description": "Answers questions."
+            }
+          ]
+        },
+        {
+          "name": "Grade Example Agent",
+          "description": "An agent used by the grader vectors.",
+          "url": "https://agent.grade.example/a2a",
+          "version": "1.0.0",
+          "capabilities": {
+            "streaming": false
+          },
+          "defaultInputModes": [
+            "text/plain"
+          ],
+          "defaultOutputModes": [
+            "text/plain"
+          ],
+          "skills": [
+            {
+              "id": "qa",
+              "name": "Q&A",
+              "description": "Answers questions."
+            }
+          ],
+          "vouchCredential": {
+            "@context": [
+              "https://www.w3.org/ns/credentials/v2",
+              "https://vouch-protocol.com/contexts/v1"
+            ],
+            "id": "urn:uuid:5d3f1a2e-7c4b-4e0a-9b1d-2f6a8c0e4d71",
+            "type": [
+              "VerifiableCredential",
+              "VouchCredential"
+            ],
+            "issuer": "did:web:grade.example",
+            "validFrom": "2026-01-01T00:00:00Z",
+            "validUntil": "2036-01-01T00:00:00Z",
+            "credentialSubject": {
+              "id": "did:web:grade.example",
+              "vouchVersion": "1.0",
+              "intent": {
+                "action": "operate",
+                "target": "https://agent.grade.example/a2a",
+                "resource": "a2a:agent-card"
+              }
+            },
+            "proof": {
+              "type": "DataIntegrityProof",
+              "cryptosuite": "eddsa-jcs-2022",
+              "created": "2026-01-01T00:00:00Z",
+              "verificationMethod": "did:web:grade.example#key-1",
+              "proofPurpose": "assertionMethod",
+              "proofValue": "z6EnWVPidYFdjUJTziyX1cAWm9YRSKtJ63J6D5HTocnDd1VLWEJMxWi2b61cgWovrtEmSmRaDfK6WVStUWGRMKto"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "pq_ready": true,
+        "has_revocation": true,
+        "has_card_identity": true,
+        "card_identity": "verified",
+        "reasons": {
+          "pq_ready": "ML-DSA-44 key #mldsa44-1 in assertionMethod",
+          "has_revocation": "status list https://grade.example/credentials/status/1.json is signed by #key-1, valid until 2036-01-01T00:00:00Z",
+          "card_identity": "vouchCredential is signed by #key-1"
+        }
+      }
+    }
+  ]
+}

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `vouch grade`, the Agent Trust Index, and the web grader report the extra
+  signals from evidence that checks out. Post-quantum counts a well-formed
+  ML-DSA-44 key in `assertionMethod`; revocation counts a `BitstringStatusList`
+  service whose list is issued by the same DID, current, decodable, and signed
+  by an `assertionMethod` key; the agent card is `verified` when its
+  `vouchCredential` verifies against the domain's DID document, `declared` when
+  it only names a DID. Each signal carries its reason, in the text output and in
+  `--json` (`signals.reasons`), and JSON adds `card_identity`. The score is
+  unchanged. The shared vector `test-vectors/grade` pins the signals and reasons
+  for Python and the web grader.
+
+### Added
+
+- `vouch.ssrf.fetch_json` and `fetch_bytes`: https-only fetches pinned to the
+  validated public address, with every redirect re-checked and limits on size
+  and total time. The grader uses them for every document it fetches.
+
 ## [3.0.0] - 2026-11-10
 
 This release makes verification stricter by default across the SDKs. Each item

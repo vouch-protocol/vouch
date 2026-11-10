@@ -43,8 +43,36 @@ NEXT_PUBLIC_GRADER_ENDPOINT="https://vouch-grader.<your-subdomain>.workers.dev" 
   npm --prefix website run build
 ```
 
+## Signals
+
+The score is 60 points for a resolvable did:web and 40 for a usable
+verification method. The extra signals come from `evidence.js`, the same checks
+as `vouch/grade.py`, and each one carries its reason in `signals.reasons`:
+
+- `pq_ready`: a well-formed ML-DSA-44 public key (Multikey with the ML-DSA-44
+  multicodec, or a JWK with kty `AKP` and alg `ML-DSA-44`), controlled by the
+  DID and listed in `assertionMethod`.
+- `has_revocation`: a `BitstringStatusList` service whose https endpoint returns
+  a BitstringStatusListCredential issued by the same DID, inside its validity
+  period, with an `encodedList` that decodes and an `eddsa-jcs-2022` proof that
+  verifies against an `assertionMethod` key of the DID document.
+- `card_identity`: `verified` when the agent card's `vouchCredential` is issued
+  by the domain's DID, bound to the card's `url`, and verifies against that DID
+  document; `declared` when the card only names a DID; `no` otherwise.
+  `has_card_identity` is true only for `verified`.
+
+The shared vectors in `test-vectors/grade/` pin the signals and the reasons for
+both implementations:
+
+```bash
+node --test agent-trust-index/grader-worker/test/
+```
+
 ## Safety
 
 The worker validates the domain (rejects IP literals, localhost, and internal
-names) so it cannot be pointed at private infrastructure, and it caps each fetch
-at six seconds.
+names) so it cannot be pointed at private infrastructure. Every fetch, including
+the status-list URLs a DID document names, goes through `guardedFetchJson`:
+https only, a host whose every A and AAAA answer (looked up over DNS-over-HTTPS)
+is a public address, redirects followed by hand and re-checked hop by hop, a
+size cap per document, and a time limit per fetch.

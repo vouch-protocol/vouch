@@ -735,6 +735,8 @@ A reference implementation of both the issuer and verifier sides of BitstringSta
 
 Complementary to credential-level status, the Python SDK additionally ships an informative DID-level revocation registry (`vouch.revocation`) with pluggable Memory, Redis, and HTTP-remote backends. This is useful for operators that need to revoke all credentials issued under a compromised agent identity in a single operation, distinct from credential-by-credential status updates. Implementers MAY use the BitstringStatusList path, the DID-level registry, both in combination, or substitute their own.
 
+An issuer MAY advertise its status list in its DID Document with a `service` entry of type `BitstringStatusList` whose `serviceEndpoint` is the https URL of a `BitstringStatusListCredential`. That credential MUST be issued by the DID that lists the service, and its Data Integrity proof MUST verify against a verification method in that DID Document's `assertionMethod`. A verifier or grader that reports an issuer as revocation-capable SHOULD fetch the endpoint and check the issuer, the validity period, the `encodedList`, and the proof, rather than treating the presence of a service entry as evidence.
+
 ### 11.3 Heartbeat Request
 
 Every T seconds (where T < `validUntil` − `validFrom`), the agent submits a heartbeat request:

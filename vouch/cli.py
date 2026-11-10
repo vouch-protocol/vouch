@@ -1733,8 +1733,17 @@ def cmd_grade(args) -> int:
         print(f"  identity   : {report.signals['did']}")
     if report.signals.get("method"):
         print(f"  key        : {report.signals['method']}")
-    print(f"  post-quantum: {'yes' if report.signals.get('pq_ready') else 'no'}")
-    print(f"  revocation  : {'yes' if report.signals.get('has_revocation') else 'no'}")
+    reasons = report.signals.get("reasons") or {}
+
+    def _why(key: str) -> str:
+        return f"  ({reasons[key]})" if reasons.get(key) else ""
+
+    print(f"  post-quantum: {'yes' if report.signals.get('pq_ready') else 'no'}{_why('pq_ready')}")
+    print(
+        f"  revocation  : {'yes' if report.signals.get('has_revocation') else 'no'}"
+        f"{_why('has_revocation')}"
+    )
+    print(f"  agent card  : {report.signals.get('card_identity', 'no')}{_why('card_identity')}")
     if report.fixes:
         print("\nTo raise your grade:")
         for i, fix in enumerate(report.fixes, 1):
