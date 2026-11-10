@@ -19,6 +19,13 @@ Three properties make it real enforcement rather than advice:
      its caveat set and its parent, and a verifier requires the presented chain
      to root at the grantor.
 
+Every link is also bound to its place in the chain: only the delegatee a link
+names (`credentialSubject.to`) can issue the next link, a link's attenuation is
+never broader than its parent's (the same non-expansion rule as delegation
+chains, `vouch.attenuation`), and each link carries a validity window inside
+its parent's. A verifier can pass a revocation oracle to refuse a chain that
+includes a revoked link id or a revoked issuer or delegatee DID.
+
 The reference caveats here are a small **standard library** (value and
 running-total ceilings, time windows, allow-lists, an incident gate, a rate
 limit, a boolean flag). Each is declarative and parameterised, so it evaluates
@@ -32,8 +39,8 @@ from __future__ import annotations
 import base64
 import hashlib
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from . import data_integrity
 from .jcs import canonicalize
@@ -50,6 +57,14 @@ REASON_UNROOTED = "unrooted_capability"
 REASON_UNKNOWN_TYPE = "caveat_unknown_type"
 REASON_MODULE_UNAVAILABLE = "caveat_module_unavailable"
 REASON_BUDGET_EXCEEDED = "verifier_budget_exceeded"
+REASON_NOT_DELEGATEE = "not_delegatee"
+REASON_EXPIRED = "capability_expired"
+REASON_NOT_YET_VALID = "capability_not_yet_valid"
+REASON_MALFORMED_LINK = "capability_malformed"
+REASON_REVOKED = "capability_revoked"
+
+# Default lifetime of a capability link when the issuer does not choose one.
+DEFAULT_CAPABILITY_VALID_SECONDS = 3600
 
 
 class CaveatError(Exception):
@@ -85,6 +100,40 @@ def _attach_proof(credential: Dict[str, Any], signer: Any) -> Dict[str, Any]:
         credential, _raw_priv(signer), signer.verification_method_id()
     )
     return credential
+
+
+def _parse_time(value: Any) -> Optional[datetime]:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def _link_view(link: Dict[str, Any]) -> Dict[str, Any]:
+    """A capability link as the six-dimension shape `non_expansion` compares."""
+    att = (link.get("credentialSubject") or {}).get("attenuation") or {}
+    view: Dict[str, Any] = {
+        "intent": {k: att[k] for k in ("action", "target", "resource") if k in att},
+        "validFrom": link.get("validFrom"),
+        "validUntil": link.get("validUntil"),
+    }
+    for k in ("rate", "policy"):
+        if k in att:
+            view[k] = att[k]
+    return view
+
+
+def _revocation_oracle(
+    revoked: Optional[Union[Iterable[str], Callable[[str], bool]]],
+) -> Callable[[str], bool]:
+    if revoked is None:
+        return lambda _id: False
+    if callable(revoked):
+        return revoked
+    revoked_set = set(revoked)
+    return lambda _id: _id in revoked_set
 
 
 def _type_list(credential: Dict[str, Any]) -> list:
@@ -192,23 +241,43 @@ def build_capability(
     caveats: Optional[List[Dict[str, Any]]] = None,
     parent: Optional[Dict[str, Any]] = None,
     credential_id: Optional[str] = None,
+    valid_seconds: int = DEFAULT_CAPABILITY_VALID_SECONDS,
+    valid_from: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """
     Issue a signed capability-delegation link, optionally carrying caveats and
     referencing a parent link (whose digest it pins).
+
+    The link is valid for `valid_seconds` from `valid_from` (default now). A
+    child link is clamped inside its parent's window.
     """
+    if valid_seconds <= 0:
+        raise CaveatError("valid_seconds must be positive")
+    start = (valid_from or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    start = start.replace(microsecond=0)
+    until = start + timedelta(seconds=valid_seconds)
+
     subject: Dict[str, Any] = {"to": to, "attenuation": dict(attenuation)}
     if caveats:
         subject["caveats"] = list(caveats)
     if parent is not None:
         subject["parent"] = {"id": parent.get("id"), "digest": _digest(parent)}
+        parent_from = _parse_time(parent.get("validFrom"))
+        parent_until = _parse_time(parent.get("validUntil"))
+        if parent_from is None or parent_until is None:
+            raise CaveatError("the parent capability has no validity window")
+        start = max(start, parent_from)
+        until = min(until, parent_until)
+        if until <= start:
+            raise CaveatError("the parent capability has expired")
 
     credential: Dict[str, Any] = {
         "@context": [VC_CONTEXT_V2, VOUCH_CONTEXT_V1],
         "type": ["VerifiableCredential", CAPABILITY_TYPE],
         "id": credential_id or f"urn:uuid:{uuid.uuid4()}",
         "issuer": signer.get_did(),
-        "validFrom": _iso(datetime.now(timezone.utc)),
+        "validFrom": _iso(start),
+        "validUntil": _iso(until),
         "credentialSubject": subject,
     }
     return _attach_proof(credential, signer)
@@ -234,13 +303,18 @@ def verify_capability(
     *,
     root_issuer: Optional[str] = None,
     max_caveats: Optional[int] = None,
+    now: Optional[datetime] = None,
+    revoked: Optional[Union[Iterable[str], Callable[[str], bool]]] = None,
+    clock_skew_seconds: int = 30,
 ) -> Optional[str]:
     """
     Verify a capability chain and evaluate its accumulated caveats.
 
     Returns None if the action is allowed, else a structured reason. Checks, in
-    order: each link's signature and its parent-digest linkage; that the chain
-    roots at ``root_issuer`` when given (so a descendant cannot shed an ancestor
+    order: each link's signature, validity window, and revocation status; its
+    parent-digest linkage; that it was issued by the delegatee its parent names;
+    that its attenuation is not broader than its parent's; that the chain roots
+    at ``root_issuer`` when given (so a descendant cannot shed an ancestor
     caveat by presenting a shortened chain); an optional caveat-count budget; and
     finally every accumulated caveat against ``context``.
 
@@ -250,11 +324,20 @@ def verify_capability(
         context: The proposed action's facts the caveats are evaluated against.
         root_issuer: If set, the first link's issuer must equal this DID.
         max_caveats: Optional ceiling on the accumulated caveat count.
+        now: Evaluation time for the validity windows (default: now, UTC).
+        revoked: Optional revocation oracle: a collection of revoked link ids /
+            DIDs, or a callable ``is_revoked(id) -> bool``. A chain containing a
+            revoked link id, issuer, or delegatee is refused.
+        clock_skew_seconds: Allowed clock drift for the validity windows.
     """
+    from vouch.attenuation import non_expansion
     from vouch.verifier import _coerce_ed25519_public_key
 
     if not chain:
         raise CaveatError("chain must have at least one link")
+
+    moment = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    is_revoked = _revocation_oracle(revoked)
 
     for i, link in enumerate(chain):
         if CAPABILITY_TYPE not in _type_list(link):
@@ -268,10 +351,31 @@ def verify_capability(
                 return REASON_INVALID_LINK_PROOF
         except ValueError:
             return REASON_INVALID_LINK_PROOF
+
+        valid_from = _parse_time(link.get("validFrom"))
+        valid_until = _parse_time(link.get("validUntil"))
+        if valid_from is None or valid_until is None:
+            return REASON_MALFORMED_LINK
+        if (moment - valid_until).total_seconds() > clock_skew_seconds:
+            return REASON_EXPIRED
+        if (valid_from - moment).total_seconds() > clock_skew_seconds:
+            return REASON_NOT_YET_VALID
+
+        subject = link.get("credentialSubject") or {}
+        for ident in (link.get("id"), link.get("issuer"), subject.get("to")):
+            if isinstance(ident, str) and is_revoked(ident):
+                return REASON_REVOKED
+
         if i > 0:
-            parent_ref = (link.get("credentialSubject") or {}).get("parent") or {}
-            if parent_ref.get("digest") != _digest(chain[i - 1]):
+            parent = chain[i - 1]
+            parent_ref = subject.get("parent") or {}
+            if parent_ref.get("digest") != _digest(parent):
                 return REASON_BROKEN_CHAIN
+            if link.get("issuer") != (parent.get("credentialSubject") or {}).get("to"):
+                return REASON_NOT_DELEGATEE
+            dimension = non_expansion(_link_view(parent), _link_view(link))
+            if dimension is not None:
+                return f"scope_exceeds_parent:{dimension}"
 
     if root_issuer is not None and chain[0].get("issuer") != root_issuer:
         return REASON_UNROOTED
@@ -288,6 +392,12 @@ def verify_capability(
 
 
 __all__ = [
+    "DEFAULT_CAPABILITY_VALID_SECONDS",
+    "REASON_EXPIRED",
+    "REASON_MALFORMED_LINK",
+    "REASON_NOT_DELEGATEE",
+    "REASON_NOT_YET_VALID",
+    "REASON_REVOKED",
     "CaveatError",
     "CAPABILITY_TYPE",
     "caveat",

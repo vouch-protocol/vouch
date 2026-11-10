@@ -167,3 +167,124 @@ class TestChainAndAccumulation:
     def test_empty_chain_rejected(self):
         with pytest.raises(CaveatError):
             verify_capability([], {}.get, {})
+
+
+# ---------------------------------------------------------------------------
+# Linkage, narrowing, expiry, and revocation of capability links
+# ---------------------------------------------------------------------------
+
+
+class TestLinkSecurity:
+    def _parties(self):
+        skp, store = _id("store.example.com")
+        mkp, mgr = _id("manager.example.com")
+        xkp, stranger = _id("stranger.example.com")
+        akp, agent = _id("agent.example.com")
+        keys = {
+            store.get_did(): skp.public_key_jwk,
+            mgr.get_did(): mkp.public_key_jwk,
+            stranger.get_did(): xkp.public_key_jwk,
+            agent.get_did(): akp.public_key_jwk,
+        }
+        return store, mgr, stranger, agent, keys
+
+    def _root(self, store, mgr, **kw):
+        return build_capability(
+            store,
+            to=mgr.get_did(),
+            attenuation={"action": "refund"},
+            caveats=[value_ceiling("cap", limit=200)],
+            **kw,
+        )
+
+    def test_only_the_named_delegatee_can_issue_the_next_link(self):
+        """The probe: a stranger (not the delegatee) issues a widened child."""
+        from vouch.caveats import REASON_NOT_DELEGATEE
+
+        store, mgr, stranger, agent, keys = self._parties()
+        root = self._root(store, mgr)
+        child = build_capability(
+            stranger, to=agent.get_did(), attenuation={"action": "*"}, parent=root
+        )
+        r = verify_capability([root, child], keys.get, {"amount": 100}, root_issuer=store.get_did())
+        assert r == REASON_NOT_DELEGATEE
+
+    def test_child_attenuation_cannot_widen_parent(self):
+        store, mgr, stranger, agent, keys = self._parties()
+        root = self._root(store, mgr)
+        child = build_capability(mgr, to=agent.get_did(), attenuation={"action": "*"}, parent=root)
+        r = verify_capability([root, child], keys.get, {"amount": 100}, root_issuer=store.get_did())
+        assert r == "scope_exceeds_parent:action"
+
+    def test_links_carry_expiry(self):
+        store, mgr, *_ = self._parties()
+        root = self._root(store, mgr, valid_seconds=600)
+        assert "validFrom" in root and "validUntil" in root
+
+    def test_expired_link_fails(self):
+        from datetime import datetime, timedelta, timezone
+
+        from vouch.caveats import REASON_EXPIRED
+
+        store, mgr, stranger, agent, keys = self._parties()
+        root = self._root(store, mgr, valid_seconds=60)
+        later = datetime.now(timezone.utc) + timedelta(hours=2)
+        r = verify_capability(
+            [root], keys.get, {"amount": 10}, root_issuer=store.get_did(), now=later
+        )
+        assert r == REASON_EXPIRED
+
+    def test_link_without_expiry_fails(self):
+        from vouch.caveats import REASON_MALFORMED_LINK, _attach_proof
+
+        store, mgr, stranger, agent, keys = self._parties()
+        root = self._root(store, mgr)
+        undated = {k: v for k, v in root.items() if k not in ("proof", "validUntil")}
+        undated = _attach_proof(undated, store)
+        r = verify_capability([undated], keys.get, {"amount": 10}, root_issuer=store.get_did())
+        assert r == REASON_MALFORMED_LINK
+
+    def test_child_cannot_outlive_parent(self):
+        store, mgr, stranger, agent, keys = self._parties()
+        root = self._root(store, mgr, valid_seconds=60)
+        child = build_capability(
+            mgr,
+            to=agent.get_did(),
+            attenuation={"action": "refund"},
+            parent=root,
+            valid_seconds=86400,
+        )
+        # The builder clamps the child to its parent's window ...
+        assert child["validUntil"] <= root["validUntil"]
+        assert (
+            verify_capability([root, child], keys.get, {"amount": 10}, root_issuer=store.get_did())
+            is None
+        )
+
+    def test_revoked_link_or_issuer_fails(self):
+        from vouch.caveats import REASON_REVOKED
+
+        store, mgr, stranger, agent, keys = self._parties()
+        root = self._root(store, mgr)
+        child = build_capability(
+            mgr, to=agent.get_did(), attenuation={"action": "refund"}, parent=root
+        )
+        chain = [root, child]
+        ctx = {"amount": 10}
+        assert verify_capability(chain, keys.get, ctx, root_issuer=store.get_did()) is None
+        assert (
+            verify_capability(
+                chain, keys.get, ctx, root_issuer=store.get_did(), revoked={root["id"]}
+            )
+            == REASON_REVOKED
+        )
+        assert (
+            verify_capability(
+                chain,
+                keys.get,
+                ctx,
+                root_issuer=store.get_did(),
+                revoked=lambda i: i == mgr.get_did(),
+            )
+            == REASON_REVOKED
+        )
