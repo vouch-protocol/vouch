@@ -1,7 +1,8 @@
 {
   "@context": [
     "https://www.w3.org/ns/did/v1",
-    "https://w3id.org/security/suites/jws-2020/v1"
+    "https://w3id.org/security/suites/jws-2020/v1",
+    "https://w3id.org/security/multikey/v1"
   ],
   "id": "did:web:vouch-protocol.com",
   "verificationMethod": [
@@ -14,12 +15,26 @@
         "crv": "Ed25519",
         "x": "97HvSg41cwFmv5Kan-jpMojwoLHwh8BcygaoN3rptYU"
       }
+    },
+    {
+      "id": "did:web:vouch-protocol.com#mldsa44-1",
+      "type": "Multikey",
+      "controller": "did:web:vouch-protocol.com",
+      "publicKeyMultibase": "z4dc7Ha65QN5BFUKK98cGff3oneGgkMzGEfPoABGqLLG2kJwr4D4rqjyxXPeA65HVMWjv9YATw1S8myMKHv7yW1Rz2YT49CpWZsPve2GP1FQskrCYqDnunrAVgV42j1KVgLhuW3CaU6UAJUP3ykaX6ebDoG3jhhN8wbYGnuERCwZpFhkrscK64Nyg3dZXaYfUKxNTmSc2i7fxvrvF3ZSStcTPBTgE27KjPKNG7PBtVsL85W8huA6jzff9ENtGgYFHaWXD44LsPBTu9tZ8BgBG4FJpNxcTRTTVaqM2uqxQn99LejjgGu7XrsUd3HEf1MLSzbDqhDr6d7BnpYLii3SAE8ha9ZiQYr22Uy8RJw2ohTGvs61DY1DaemaCBVnsGR7258xroDkm7rgVUnfS7Rgq6LJ1633QvDgrx7XTTUhDJ6PRMsLCk9cTQatcdJFeip9W6ptsniVo8Wr1Jc3d35THU8TzY2AWmrZ4HfQCJK1QuwUCTxDpgbXtWYzm4Wq2xXTdDLfudhsVjRZsSUWaWTWk9JYLXKgymtjaKrZ1AAmkwU5ohyGFXDHP9ugLq58xaycBL8kzUdDfgbN3amuqm9i2zpWVsuSk4JQPmooaw4ZSmuudk1SLsZSc54wDN618drK4KPRFB6NoiLL8DVhHuJwg78Yw6Zu1bRojM3EaJifxrBsyLyzPzadaiekkj79GMkAbQk9idpwfcAv8omVgS6RcF21mYkPjqMqaejmYmjfoP38nuNfWMghXVejs6duC5ySSTKZ2ZUz1EdEixvY2KZU8na9u13TEUEy6AUUZf9ThE62T4146PmtEh57SjgQ3XnzoMz275uqNKjExbucTBcnpFGcm88TEQEQvwKCAEyyi3XJbF3HScDUvHBbj2PEty77ptNg59DH6nqBhPFhQ7WNVor5mVuWFoaQLLxQGzrnVx5ttNmgTNycAfaAKBCNHzMNFYsAUvWmcpGCHowr9DWVjGvw1sD46XG3iZKw4Z8TsKzQWmCavH6SN4DBdpH5JdYCFXAKZZNDDZV89cEG8yijsfRLnF9WGVQU3JEf4gSxVDtmmhxD7gRx9LJPXggmT8Yc1RXDAdqkfv5tS9VveUYnwGjobZQDCXcuKxNcBi6isjahEHB8oGHR1hho5CgdPpLvkz1w4can3UxtocghvmjMdQDHDx2HvAZT3LqNexypupU2wofpgm1poAgMEVS8z4nKgd1CzQ3S3DJ3szyk1zfMh7wYwspXbx6tNTze9xZSrrwAkiARr8ee6BcszZfujnhZcmw9kiVintmCAQej2QqkukNZfsLyXE9PJhv91ufZdwykVmHTZh5XHrxkuuh9yy1di2NuvVkMSpCdy3UhzGpKBTgq1GE4WZiT18jF7qccd59y6ecrNeyFmszk9GSa3UrDHPjVQBjjRkuy8BF3w7oACD9pia6gyfUgWB2nX9pTPvhytZ6NCjSEDMhCZacD2jB53uXRzr8VXDstyjGgxoEedqT18gtXxHohWJu43AvNYJuqPWDKgVnsCUBNYwrTn1D4aHxttHJUZLakHoYaeDQLXA4rBoaCVQZm2Z11up3PQTiv3VXB9c12hDHAn64vBgR3vrWGYP6XaZHFvQzcPXvQcXmLKXHC3KwAPv4nGtaaY6uKiZAaZ94oTMLP4uH2L8RA4iim7Fu5kLuazu9VXB4bwaMYzRM1naoQNwLuV3P7cuEnL5QQ76vKWopj8pM9wKVWNK7rfqcoFsxtLRFjUrG2j9vyeFveSJsibE4V77opqATDro5e4sS92ZfDNmXZwTks5rMV"
     }
   ],
   "authentication": [
     "did:web:vouch-protocol.com#key-1"
   ],
   "assertionMethod": [
-    "did:web:vouch-protocol.com#key-1"
+    "did:web:vouch-protocol.com#key-1",
+    "did:web:vouch-protocol.com#mldsa44-1"
+  ],
+  "service": [
+    {
+      "id": "did:web:vouch-protocol.com#revocation",
+      "type": "BitstringStatusList",
+      "serviceEndpoint": "https://vouch-protocol.com/credentials/status/1.json"
+    }
   ]
 }
