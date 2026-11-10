@@ -30,7 +30,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 
 # Threshold band conventions described in Specification §11.5. Implementers MAY
@@ -276,6 +276,87 @@ def time_until_threshold(
     return timedelta(seconds=remaining)
 
 
+def verify_session_voucher(
+    session_voucher: Any,
+    public_key: Any,
+    *,
+    at_time: Optional[datetime] = None,
+    clock_skew_seconds: int = 30,
+) -> Tuple[bool, str]:
+    """
+    Check that a SessionVoucher is authentic and inside its validity window.
+
+    Decayed trust is meaningful only for a voucher a validator actually issued
+    and that has not expired, so a verifier runs this before trusting
+    `compute_trust_at`. Checks, in order (first failure wins):
+
+      1. Shape: a SessionVoucher with numeric `initialTrust` / `decayLambda`
+         and both `validFrom` and `validUntil` -> `voucher_malformed:<why>`.
+      2. A validator key was supplied -> `voucher_unverified:<why>`.
+      3. An `eddsa-jcs-2022` proof with proofPurpose `assertionMethod`, made
+         by one of the voucher's issuers, verifies under `public_key`
+         -> `voucher_signature_invalid`.
+      4. `at_time` (default now) is within [validFrom, validUntil], allowing
+         `clock_skew_seconds` -> `voucher_not_yet_valid` / `voucher_expired`.
+
+    Returns `(True, "voucher_ok")` or `(False, reason)`.
+    """
+    from . import data_integrity
+    from .verifier import _coerce_ed25519_public_key
+
+    if not isinstance(session_voucher, dict):
+        return False, "voucher_malformed:not an object"
+    try:
+        compute_trust_at(session_voucher, at_time)
+    except TrustEntropyError as exc:
+        return False, f"voucher_malformed:{exc}"
+    valid_until_str = session_voucher.get("validUntil")
+    if not isinstance(valid_until_str, str) or not valid_until_str:
+        return False, "voucher_malformed:validUntil is required"
+    try:
+        valid_from = _parse_iso_utc(session_voucher["validFrom"])
+        valid_until = _parse_iso_utc(valid_until_str)
+    except ValueError as exc:
+        return False, f"voucher_malformed:{exc}"
+
+    if public_key is None:
+        return False, "voucher_unverified:no validator key supplied"
+    key = _coerce_ed25519_public_key(public_key)
+    if key is None:
+        return False, "voucher_unverified:validator key is not an Ed25519 key"
+
+    issuers = session_voucher.get("issuer")
+    issuer_list = issuers if isinstance(issuers, list) else [issuers]
+    raw_proof = session_voucher.get("proof")
+    proofs = raw_proof if isinstance(raw_proof, list) else [raw_proof]
+    verified = False
+    for proof in proofs:
+        if not isinstance(proof, dict) or proof.get("proofPurpose") != "assertionMethod":
+            continue
+        vm = proof.get("verificationMethod")
+        if not isinstance(vm, str) or vm.split("#", 1)[0] not in issuer_list:
+            continue
+        candidate = {k: v for k, v in session_voucher.items() if k != "proof"}
+        candidate["proof"] = proof
+        try:
+            if data_integrity.verify_proof(candidate, key):
+                verified = True
+                break
+        except Exception:  # noqa: BLE001 - any proof error is a failed proof
+            continue
+    if not verified:
+        return False, "voucher_signature_invalid"
+
+    now = at_time or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    if (now - valid_until).total_seconds() > clock_skew_seconds:
+        return False, "voucher_expired"
+    if (valid_from - now).total_seconds() > clock_skew_seconds:
+        return False, "voucher_not_yet_valid"
+    return True, "voucher_ok"
+
+
 def _parse_iso_utc(iso_str: str) -> datetime:
     """Parse -VC ISO timestamp format used in Vouch credentials."""
     if iso_str.endswith("Z"):
@@ -296,4 +377,5 @@ __all__ = [
     "check_trust_threshold",
     "half_life_seconds",
     "time_until_threshold",
+    "verify_session_voucher",
 ]

@@ -96,18 +96,25 @@ def build_session_voucher(
     scope: List[str],
     valid_seconds: int = 60,
     authority_epoch: Optional[int] = None,
+    issued_at: Optional[datetime] = None,
 ) -> Dict[str, Any]:
     """
     Construct an unsigned SessionVoucher credential (Specification §11.4).
-    Each validator in `validator_dids` will attach a separate proof.
+    Each validator in `validator_dids` will attach a separate proof (see
+    `sign_session_voucher`). A verifier MUST reject a voucher that carries no
+    proof it can verify.
 
     When `authority_epoch` is supplied, the voucher records the authority-state
     epoch it was minted under (Authority Freshness, `vouch.authority_state`). A
     verifier compares it against the highest epoch it has seen and collapses the
     freshness window on a stale epoch. Omitting it keeps the pre-Authority-
     Freshness wire shape unchanged.
+
+    `issued_at` overrides the issuance time (default: now, UTC). Validators
+    running on an injected clock pass it so the voucher window matches that
+    clock.
     """
-    issued_at = datetime.now(timezone.utc)
+    issued_at = (issued_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
     expires_at = issued_at + timedelta(seconds=valid_seconds)
     subject: Dict[str, Any] = {
         "id": subject_did,
@@ -131,6 +138,28 @@ def build_session_voucher(
         "validUntil": _iso(expires_at),
         "credentialSubject": subject,
     }
+
+
+def sign_session_voucher(voucher: Dict[str, Any], signer: Any) -> Dict[str, Any]:
+    """
+    Attach a validator's `eddsa-jcs-2022` proof to a SessionVoucher.
+
+    The signer's DID must be one of the voucher's issuers. Returns a new dict;
+    the input is not modified. A verifier checks this proof with
+    `trust_entropy.verify_session_voucher`.
+    """
+    from . import data_integrity
+
+    issuers = voucher.get("issuer")
+    issuer_list = issuers if isinstance(issuers, list) else [issuers]
+    if signer.did not in issuer_list:
+        raise ValueError(f"signer {signer.did!r} is not an issuer of this voucher")
+    key = getattr(signer, "_raw_priv", None) or getattr(signer, "_sign_func", None)
+    if key is None:
+        raise ValueError("signer cannot sign: no private key or sign callback available")
+    signed = {k: v for k, v in voucher.items() if k != "proof"}
+    signed["proof"] = data_integrity.build_proof(signed, key, signer.verification_method_id())
+    return signed
 
 
 def _validate_intent(intent: Dict[str, Any]) -> None:

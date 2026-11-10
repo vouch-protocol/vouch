@@ -5,11 +5,22 @@ MCP tool calls and Agent2Agent (A2A) calls both need to answer the same
 question before acting on a request from another agent: is the caller who it
 claims to be, was it allowed to do this, has it been revoked, and is its trust
 still live right now. This module composes the existing primitives (credential
-verification including the delegation chain, revocation, and trust-entropy
-decay) into a single verdict so every transport checks trust the same way.
+verification including the delegation chain, revocation, SessionVoucher
+authenticity, and trust-entropy decay) into a single verdict so every transport
+checks trust the same way.
 
 The integration packages (MCP, A2A) call `verify_agent_call` rather than
 re-implementing the composition. Keep the composition here, once.
+
+Safe defaults:
+
+- A supplied SessionVoucher counts only if its validator proof verifies under
+  `voucher_public_key`, it is inside its validity window, and it was issued to
+  the caller (its subject is the credential issuer). A voucher that fails any
+  of these fails the call.
+- When `trust_threshold` is not given, the threshold follows the consequence
+  tier: routine 0.5, sensitive 0.75, critical 0.9 (`DEFAULT_TRUST_THRESHOLDS`,
+  the reference bands of Specification §11.5). There is no zero default.
 """
 
 from __future__ import annotations
@@ -19,9 +30,36 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
 from .verifier import Verifier
-from .trust_entropy import evaluate_trust
+from .trust_entropy import (
+    TRUST_THRESHOLD_HIGH_STAKES,
+    TRUST_THRESHOLD_LOW_STAKES,
+    TRUST_THRESHOLD_MEDIUM_STAKES,
+    TrustEntropyError,
+    evaluate_trust,
+    verify_session_voucher,
+)
 from .authority_state import evaluate_authority_freshness
-from .status_list import CONSEQUENCE_ROUTINE
+from .status_list import (
+    CONSEQUENCE_CRITICAL,
+    CONSEQUENCE_ROUTINE,
+    CONSEQUENCE_SENSITIVE,
+    VALID_CONSEQUENCE_TIERS,
+)
+
+# The trust threshold applied when the caller does not pass one, keyed by the
+# consequence tier. An unknown tier falls back to the critical threshold.
+DEFAULT_TRUST_THRESHOLDS: Dict[str, float] = {
+    CONSEQUENCE_ROUTINE: TRUST_THRESHOLD_LOW_STAKES,
+    CONSEQUENCE_SENSITIVE: TRUST_THRESHOLD_MEDIUM_STAKES,
+    CONSEQUENCE_CRITICAL: TRUST_THRESHOLD_HIGH_STAKES,
+}
+
+
+def default_trust_threshold(consequence: str) -> float:
+    """The default trust threshold for a consequence tier (fail-closed on unknown)."""
+    if consequence not in VALID_CONSEQUENCE_TIERS:
+        return DEFAULT_TRUST_THRESHOLDS[CONSEQUENCE_CRITICAL]
+    return DEFAULT_TRUST_THRESHOLDS[consequence]
 
 
 @dataclass
@@ -30,15 +68,18 @@ class TrustVerdict:
     The outcome of checking an incoming agent call.
 
     Attributes:
-      ok: True only if identity verified, not revoked, current trust meets the
-        threshold (when a voucher is supplied), and the Authority Freshness gate
-        passes for the requested consequence.
+      ok: True only if identity verified, not revoked, the SessionVoucher (when
+        supplied) is authentic, current, and issued to the caller, current trust
+        meets the threshold, and the Authority Freshness gate passes.
       identity_ok: The credential's Data Integrity proof, timing, resource
         binding, and delegation chain all verified.
       revoked: The issuer DID was reported revoked by the caller.
       trust: Current decayed trust from the SessionVoucher, or None if no
-        voucher was supplied.
+        voucher was supplied (or it was too malformed to evaluate).
       trust_ok: Whether `trust` met the threshold, or None if no voucher.
+      voucher_ok: Whether the voucher's proof, validity window, and subject
+        binding all passed, or None if no voucher was supplied.
+      threshold: The trust threshold applied, or None if no voucher.
       authority_ok: Whether the Authority Freshness gate passed, or None when the
         consequence is `routine` (time-decay only, no state gate).
       authority_reason: The Authority Freshness reason code, or None.
@@ -51,6 +92,8 @@ class TrustVerdict:
     revoked: bool
     trust: Optional[float] = None
     trust_ok: Optional[bool] = None
+    voucher_ok: Optional[bool] = None
+    threshold: Optional[float] = None
     authority_ok: Optional[bool] = None
     authority_reason: Optional[str] = None
     reasons: List[str] = field(default_factory=list)
@@ -63,10 +106,23 @@ class TrustVerdict:
             "revoked": self.revoked,
             "trust": self.trust,
             "trust_ok": self.trust_ok,
+            "voucher_ok": self.voucher_ok,
+            "threshold": self.threshold,
             "authority_ok": self.authority_ok,
             "authority_reason": self.authority_reason,
             "reasons": list(self.reasons),
         }
+
+
+def _credential_issuer(credential: Union[Dict[str, Any], str], passport: Any) -> Optional[str]:
+    if passport is not None and getattr(passport, "iss", None):
+        return passport.iss
+    if isinstance(credential, dict):
+        issuer = credential.get("issuer")
+        if isinstance(issuer, list):
+            return issuer[0] if issuer else None
+        return issuer if isinstance(issuer, str) else None
+    return None
 
 
 def verify_agent_call(
@@ -75,7 +131,8 @@ def verify_agent_call(
     public_key: Optional[Union[str, Any]] = None,
     revoked: bool = False,
     session_voucher: Optional[Dict[str, Any]] = None,
-    trust_threshold: float = 0.0,
+    voucher_public_key: Optional[Union[str, Any]] = None,
+    trust_threshold: Optional[float] = None,
     at_time: Optional[datetime] = None,
     clock_skew_seconds: int = 30,
     consequence: str = CONSEQUENCE_ROUTINE,
@@ -89,21 +146,29 @@ def verify_agent_call(
 
     Args:
       credential: the caller's Vouch credential (dict or JSON string). Its
-        delegation chain, if present, is verified by `verify`.
+        delegation chain, if present, is verified by `Verifier.verify`.
       public_key: the issuer's Ed25519 public key (Multikey string or key
         object). If None, only structural and temporal checks run, so
-        identity_ok cannot be relied on.
+        identity_ok is False and the call fails.
       revoked: whether the issuer DID is revoked. Callers that have a
         revocation registry should pass the result of `is_revoked`, or use
         `verify_agent_call_async` which checks it for them.
       session_voucher: an optional current-trust SessionVoucher. When present,
-        the call is only ok if decayed trust meets `trust_threshold`.
+        the call is only ok if the voucher verifies (see `voucher_public_key`),
+        is inside its validity window, names the caller as its subject, and its
+        decayed trust meets the threshold.
+      voucher_public_key: the Ed25519 key of the validator that signed the
+        voucher. Required whenever `session_voucher` is given; without it the
+        voucher is unverified and the call fails.
       trust_threshold: minimum current trust required when a voucher is given.
-      at_time: evaluation time for trust decay (defaults to now).
-      clock_skew_seconds: allowed clock drift for credential timing.
+        Defaults to the consequence tier's band (`DEFAULT_TRUST_THRESHOLDS`):
+        routine 0.5, sensitive 0.75, critical 0.9.
+      at_time: evaluation time for the voucher window and trust decay
+        (defaults to now).
+      clock_skew_seconds: allowed clock drift for credential and voucher timing.
       consequence: the action's consequence tier (`routine`, `sensitive`,
-        `critical`) driving Authority Freshness (`vouch.authority_state`).
-        Defaults to `routine`, which is time-decay only and changes nothing.
+        `critical`) driving Authority Freshness (`vouch.authority_state`) and
+        the default trust threshold.
       last_seen_authority_epoch: the highest authority epoch the verifier has
         learned (via a status-list refresh or the heartbeat channel). Compared
         against the voucher's epoch on a state-freshness tier.
@@ -118,7 +183,9 @@ def verify_agent_call(
     reasons: List[str] = []
 
     structurally_valid, passport = Verifier.verify(
-        credential, public_key=public_key, clock_skew_seconds=clock_skew_seconds
+        credential,
+        public_key=public_key,
+        clock_skew_seconds=clock_skew_seconds,
     )
     # Identity is only established when a key was supplied AND the proof verified.
     # With no key, verify runs structural and temporal checks only, so
@@ -137,12 +204,41 @@ def verify_agent_call(
 
     trust: Optional[float] = None
     trust_ok: Optional[bool] = None
+    voucher_ok: Optional[bool] = None
+    threshold: Optional[float] = None
     if session_voucher is not None:
-        evaluation = evaluate_trust(session_voucher, trust_threshold, at_time)
-        trust = evaluation.trust
-        trust_ok = evaluation.passed
-        if not evaluation.passed:
-            reasons.append(f"trust_below_threshold:{trust:.4f}<{trust_threshold}")
+        threshold = (
+            trust_threshold if trust_threshold is not None else default_trust_threshold(consequence)
+        )
+        voucher_ok, voucher_reason = verify_session_voucher(
+            session_voucher,
+            voucher_public_key,
+            at_time=at_time,
+            clock_skew_seconds=clock_skew_seconds,
+        )
+        if not voucher_ok:
+            reasons.append(voucher_reason)
+
+        # A voucher vouches for one agent: the caller must be its subject.
+        subject = (
+            session_voucher.get("credentialSubject") if isinstance(session_voucher, dict) else None
+        )
+        subject_did = subject.get("id") if isinstance(subject, dict) else None
+        caller = _credential_issuer(credential, passport)
+        if subject_did is not None and caller is not None and subject_did != caller:
+            voucher_ok = False
+            reasons.append("voucher_subject_mismatch")
+
+        try:
+            evaluation = evaluate_trust(session_voucher, threshold, at_time)
+        except (TrustEntropyError, KeyError, TypeError, ValueError):
+            # Already reported as voucher_malformed by verify_session_voucher.
+            trust_ok = False
+        else:
+            trust = evaluation.trust
+            trust_ok = evaluation.passed
+            if not evaluation.passed:
+                reasons.append(f"trust_below_threshold:{trust:.4f}<{threshold}")
 
     # Authority Freshness: state change as a first-class input. For a
     # state-freshness consequence tier, a voucher minted under a stale authority
@@ -171,13 +267,21 @@ def verify_agent_call(
         if not verdict.allow:
             reasons.append(verdict.reason)
 
-    ok = identity_ok and (not revoked) and (trust_ok is not False) and (authority_ok is not False)
+    ok = (
+        identity_ok
+        and (not revoked)
+        and (voucher_ok is not False)
+        and (trust_ok is not False)
+        and (authority_ok is not False)
+    )
     return TrustVerdict(
         ok=ok,
         identity_ok=identity_ok,
         revoked=revoked,
         trust=trust,
         trust_ok=trust_ok,
+        voucher_ok=voucher_ok,
+        threshold=threshold,
         authority_ok=authority_ok,
         authority_reason=authority_reason,
         reasons=reasons,
@@ -192,7 +296,8 @@ async def verify_agent_call_async(
     revocation: Optional[Any] = None,
     issuer_did: Optional[str] = None,
     session_voucher: Optional[Dict[str, Any]] = None,
-    trust_threshold: float = 0.0,
+    voucher_public_key: Optional[Union[str, Any]] = None,
+    trust_threshold: Optional[float] = None,
     at_time: Optional[datetime] = None,
     clock_skew_seconds: int = 30,
     consequence: str = CONSEQUENCE_ROUTINE,
@@ -209,10 +314,7 @@ async def verify_agent_call_async(
       issuer_did: DID to check for revocation. Defaults to the credential's
         `issuer` field.
 
-    The Authority Freshness arguments (`consequence`,
-    `last_seen_authority_epoch`, `voucher_authority_epoch`,
-    `current_authority_status`, `live_cosign_ok`) are forwarded to
-    `verify_agent_call`.
+    Every other argument is forwarded to `verify_agent_call`.
     """
     revoked = False
     if revocation is not None:
@@ -227,6 +329,7 @@ async def verify_agent_call_async(
         public_key=public_key,
         revoked=revoked,
         session_voucher=session_voucher,
+        voucher_public_key=voucher_public_key,
         trust_threshold=trust_threshold,
         at_time=at_time,
         clock_skew_seconds=clock_skew_seconds,
@@ -236,3 +339,12 @@ async def verify_agent_call_async(
         current_authority_status=current_authority_status,
         live_cosign_ok=live_cosign_ok,
     )
+
+
+__all__ = [
+    "DEFAULT_TRUST_THRESHOLDS",
+    "TrustVerdict",
+    "default_trust_threshold",
+    "verify_agent_call",
+    "verify_agent_call_async",
+]

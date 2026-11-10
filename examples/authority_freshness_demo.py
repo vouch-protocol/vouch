@@ -25,7 +25,7 @@ from vouch.status_list import (
     CONSEQUENCE_SENSITIVE,
 )
 from vouch.trust_check import verify_agent_call
-from vouch.vc import build_session_voucher
+from vouch.vc import build_session_voucher, sign_session_voucher
 
 INTENT = {
     "action": "transfer_funds",
@@ -42,16 +42,24 @@ def main() -> None:
 
     # The agent holds a voucher minted under authority epoch 5. It stays
     # time-valid for the whole demo; only the authority's state moves.
-    voucher = build_session_voucher(
-        subject_did=agent.did,
-        validator_dids=["did:web:validator.example.com"],
-        decay_lambda=0.001,
-        initial_trust=1.0,
-        max_ttl_seconds=3600,
-        scope=["agent_actions"],
-        valid_seconds=300,
-        authority_epoch=5,
+    # The voucher is signed by the validator that issued it; the verifier
+    # checks that proof before it trusts the decayed trust value.
+    validator_id = generate_identity(domain="validator.example.com")
+    validator = Signer(private_key=validator_id.private_key_jwk, did=validator_id.did)
+    voucher = sign_session_voucher(
+        build_session_voucher(
+            subject_did=agent.did,
+            validator_dids=[validator.did],
+            decay_lambda=0.001,
+            initial_trust=1.0,
+            max_ttl_seconds=3600,
+            scope=["agent_actions"],
+            valid_seconds=300,
+            authority_epoch=5,
+        ),
+        validator,
     )
+    validator_key = validator.get_public_key_multikey()
     print("voucher minted under authorityEpoch 5, time-valid throughout")
 
     # Nothing has happened yet. The verifier has seen epoch 5 too.
@@ -59,6 +67,7 @@ def main() -> None:
         credential,
         public_key=signer.get_public_key_multikey(),
         session_voucher=voucher,
+        voucher_public_key=validator_key,
         trust_threshold=0.9,
         consequence=CONSEQUENCE_SENSITIVE,
         last_seen_authority_epoch=5,
@@ -80,6 +89,7 @@ def main() -> None:
         credential,
         public_key=signer.get_public_key_multikey(),
         session_voucher=voucher,
+        voucher_public_key=validator_key,
         trust_threshold=0.9,
         consequence=CONSEQUENCE_SENSITIVE,
         last_seen_authority_epoch=passport.authority_epoch,
@@ -93,6 +103,7 @@ def main() -> None:
         credential,
         public_key=signer.get_public_key_multikey(),
         session_voucher=voucher,
+        voucher_public_key=validator_key,
         trust_threshold=0.5,
         consequence=CONSEQUENCE_ROUTINE,
         last_seen_authority_epoch=passport.authority_epoch,
