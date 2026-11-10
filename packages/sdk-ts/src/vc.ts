@@ -30,6 +30,8 @@ export interface DelegationLink {
   validFrom?: string;
   validUntil?: string;
   parentProofValue?: string;
+  /** The signed grant this link was derived from (Specification 9.3). */
+  parentCredential?: Record<string, unknown>;
 }
 
 export interface CredentialSubject {

@@ -9,7 +9,8 @@
 import * as crypto from 'crypto';
 import * as jose from 'jose';
 
-import { verifyProof } from './data-integrity';
+import { capabilityView, nonExpansion } from './attenuation';
+import { CRYPTOSUITE_ID, verifyProof } from './data-integrity';
 import { decode as decodeMultikey } from './multikey';
 import type {
   CredentialPassport,
@@ -24,6 +25,22 @@ import type {
   Intent,
   VouchCredential,
 } from './vc';
+
+/** A public key in any form `Verifier.verify` accepts. */
+export type PublicKeyInput = crypto.KeyObject | string | Record<string, unknown>;
+
+/** Options for delegation chain verification and the evaluation clock. */
+export interface VerifyOptions {
+  /** Resolves the key of a chain grant issuer by DID. did:key always resolves offline. */
+  keyResolver?: (did: string) => PublicKeyInput | null | undefined | Promise<PublicKeyInput | null | undefined>;
+  /**
+   * Root anchors for the delegation chain: a `{did: key}` map (keys are also used
+   * for resolution) or a list of DIDs. When given, the chain must start at one.
+   */
+  trustedRoots?: Record<string, PublicKeyInput> | string[];
+  /** Evaluation time for validity windows (default: now). */
+  now?: Date;
+}
 
 export class Verifier {
   private trustedRootsRaw: Map<string, crypto.KeyObject>;
@@ -70,7 +87,8 @@ export class Verifier {
   static async verify(
     credential: VouchCredential | Record<string, unknown> | string,
     publicKey?: crypto.KeyObject | string | Record<string, unknown>,
-    clockSkewSeconds: number = 30
+    clockSkewSeconds: number = 30,
+    options: VerifyOptions = {}
   ): Promise<CredentialVerificationResult> {
     if (!credential) {
       return { isValid: false, passport: null, error: 'Empty credential' };
@@ -123,7 +141,7 @@ export class Verifier {
     }
 
     // Temporal validation.
-    const now = new Date();
+    const now = options.now ?? new Date();
     const validFrom = parseIso8601(cred.validFrom as string | undefined);
     const validUntil = parseIso8601(cred.validUntil as string | undefined);
     if (!validFrom || !validUntil) {
@@ -163,6 +181,19 @@ export class Verifier {
         passport: null,
         error: 'Missing required intent.resource',
       };
+    }
+
+    // Delegation chain (Specification 9.3): grant signatures, linkage,
+    // expiry, and non-expansion on every dimension.
+    if (Array.isArray(subject.delegationChain) && subject.delegationChain.length > 0) {
+      const reason = await verifyDelegationChain(cred, {
+        ...options,
+        now,
+        clockSkewSeconds,
+      });
+      if (reason !== null) {
+        return { isValid: false, passport: null, error: `delegation: ${reason}` };
+      }
     }
 
     // Build the passport.
@@ -258,10 +289,12 @@ export class Verifier {
         };
       }
 
+      const roots = this.trustedRootsRaw;
       return await Verifier.verify(
         cred as unknown as VouchCredential,
         rawKey,
-        this.clockSkew
+        this.clockSkew,
+        { keyResolver: (did: string) => roots.get(did) }
       );
     } catch (error) {
       return {
@@ -285,11 +318,16 @@ export class Verifier {
 export async function verify(
   credential: VouchCredential | Record<string, unknown> | string,
   publicKey?: crypto.KeyObject | string | Record<string, unknown>,
-  opts?: { clockSkewSeconds?: number }
+  opts?: { clockSkewSeconds?: number } & VerifyOptions
 ): Promise<CredentialVerificationResult> {
   const skew = opts?.clockSkewSeconds ?? 30;
+  const chainOpts: VerifyOptions = {
+    keyResolver: opts?.keyResolver,
+    trustedRoots: opts?.trustedRoots,
+    now: opts?.now,
+  };
   if (publicKey !== undefined) {
-    return Verifier.verify(credential, publicKey, skew);
+    return Verifier.verify(credential, publicKey, skew, chainOpts);
   }
 
   let cred: Record<string, unknown>;
@@ -313,7 +351,7 @@ export async function verify(
   if (issuer.startsWith('did:key:')) {
     // did:key is self-certifying: the multikey after the prefix is the key.
     const multikey = issuer.slice('did:key:'.length);
-    return Verifier.verify(cred, multikey, skew);
+    return Verifier.verify(cred, multikey, skew, chainOpts);
   }
 
   return {
@@ -323,6 +361,171 @@ export async function verify(
       `Cannot resolve the issuer key for ${issuer || 'this credential'}; ` +
       'pass a publicKey, or use a Verifier configured with trusted roots',
   };
+}
+
+// ---------------------------------------------------------------------------
+// Delegation chain verification (Specification 9.3)
+// ---------------------------------------------------------------------------
+
+type Obj = Record<string, unknown>;
+
+function asObj(v: unknown): Obj | null {
+  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Obj) : null;
+}
+
+function issuerDid(cred: Obj): string | null {
+  const iss = cred.issuer;
+  if (typeof iss === 'string') return iss;
+  if (Array.isArray(iss)) return typeof iss[0] === 'string' ? (iss[0] as string) : null;
+  const o = asObj(iss);
+  return o && typeof o.id === 'string' ? (o.id as string) : null;
+}
+
+/** The proof value a link binds to its parent (eddsa-jcs-2022 member of a proof set). */
+export function parentProofBinding(grant: Obj): string {
+  const proof = grant.proof;
+  if (Array.isArray(proof)) {
+    for (const p of proof) {
+      const o = asObj(p);
+      if (o && o.cryptosuite === CRYPTOSUITE_ID) return typeof o.proofValue === 'string' ? o.proofValue : '';
+    }
+    for (const p of proof) {
+      const o = asObj(p);
+      if (o && typeof o.proofValue === 'string' && o.proofValue) return o.proofValue;
+    }
+    return '';
+  }
+  const o = asObj(proof);
+  return o && typeof o.proofValue === 'string' ? o.proofValue : '';
+}
+
+function verifyGrantProof(grant: Obj, issuer: string, key: crypto.KeyObject): boolean {
+  const raw = grant.proof;
+  const proofs = Array.isArray(raw) ? raw : [raw];
+  const body: Obj = { ...grant };
+  delete body.proof;
+  for (const p of proofs) {
+    const o = asObj(p);
+    if (!o) continue;
+    if (o.cryptosuite !== undefined && o.cryptosuite !== null && o.cryptosuite !== CRYPTOSUITE_ID) continue;
+    if (o.proofPurpose !== 'assertionMethod') continue;
+    const vm = o.verificationMethod;
+    if (typeof vm !== 'string' || vm.split('#')[0] !== issuer) continue;
+    try {
+      if (verifyProof({ ...body, proof: o }, key)) return true;
+    } catch {
+      continue;
+    }
+  }
+  return false;
+}
+
+async function resolveChainKey(
+  did: string,
+  rootKeys: Record<string, PublicKeyInput>,
+  keyResolver: VerifyOptions['keyResolver']
+): Promise<crypto.KeyObject | null> {
+  if (Object.prototype.hasOwnProperty.call(rootKeys, did)) {
+    return coerceEd25519PublicKey(rootKeys[did]);
+  }
+  if (keyResolver) {
+    let candidate: PublicKeyInput | null | undefined;
+    try {
+      candidate = await keyResolver(did);
+    } catch {
+      candidate = null;
+    }
+    if (candidate) return coerceEd25519PublicKey(candidate);
+  }
+  if (did.startsWith('did:key:')) {
+    return coerceEd25519PublicKey(did.slice('did:key:'.length));
+  }
+  return null;
+}
+
+/**
+ * Verify a credential's embedded `delegationChain`. Resolves to null when the
+ * chain is valid (or absent), otherwise a reason code. A faithful port of
+ * `vouch.verifier.verify_delegation_chain` (Python reference); the shared
+ * vectors in test-vectors/delegation-chain are the contract.
+ */
+export async function verifyDelegationChain(
+  credential: Obj | string,
+  options: VerifyOptions & { clockSkewSeconds?: number } = {}
+): Promise<string | null> {
+  let cred: Obj | null;
+  try {
+    cred = typeof credential === 'string' ? asObj(JSON.parse(credential)) : asObj(credential);
+  } catch {
+    return 'malformed_delegation';
+  }
+  if (!cred) return 'malformed_delegation';
+  const subject = asObj(cred.credentialSubject);
+  const chain = subject ? subject.delegationChain : undefined;
+  if (chain === undefined || chain === null || (Array.isArray(chain) && chain.length === 0)) return null;
+  if (!Array.isArray(chain)) return 'malformed_delegation';
+
+  const skewMs = (options.clockSkewSeconds ?? 30) * 1000;
+  const now = (options.now ?? new Date()).getTime();
+  let rootKeys: Record<string, PublicKeyInput> = {};
+  let rootDids: string[] | null = null;
+  if (Array.isArray(options.trustedRoots)) {
+    rootDids = options.trustedRoots.map(String);
+  } else if (options.trustedRoots) {
+    rootKeys = options.trustedRoots;
+    rootDids = Object.keys(options.trustedRoots);
+  }
+
+  const grants: Obj[] = [];
+  for (const raw of chain) {
+    const link = asObj(raw);
+    if (!link || typeof link.issuer !== 'string' || typeof link.subject !== 'string') {
+      return 'malformed_delegation';
+    }
+    const grant = asObj(link.parentCredential);
+    if (!grant || (asObj(grant.proof) === null && !Array.isArray(grant.proof))) {
+      return 'delegation_link_unsigned';
+    }
+    const grantIssuer = issuerDid(grant);
+    if (grantIssuer !== link.issuer) return 'delegation_link_issuer_mismatch';
+    const key = await resolveChainKey(grantIssuer, rootKeys, options.keyResolver);
+    if (!key) return 'delegation_issuer_key_unresolved';
+    if (!verifyGrantProof(grant, grantIssuer, key)) return 'delegation_signature_invalid';
+    if (
+      link.parentProofValue !== undefined &&
+      link.parentProofValue !== null &&
+      link.parentProofValue !== parentProofBinding(grant).slice(0, 64)
+    ) {
+      return 'delegation_link_tampered';
+    }
+    const grantIntent = asObj(asObj(grant.credentialSubject)?.intent);
+    const delegatee = grantIntent ? grantIntent.delegatee : undefined;
+    if (!delegatee) return 'delegation_no_delegatee';
+    if (delegatee !== link.subject) return 'delegation_subject_mismatch';
+    const from = parseIso8601(grant.validFrom as string | undefined);
+    const until = parseIso8601(grant.validUntil as string | undefined);
+    if (!from || !until) return 'malformed_delegation';
+    if (now - until.getTime() > skewMs) return 'delegation_expired';
+    if (from.getTime() - now > skewMs) return 'delegation_not_yet_valid';
+    grants.push(grant);
+  }
+
+  const links = chain as Obj[];
+  for (let i = 1; i < links.length; i++) {
+    if (links[i - 1].subject !== links[i].issuer) return 'delegation_subject_issuer_mismatch';
+  }
+  if (links[links.length - 1].subject !== issuerDid(cred)) return 'delegation_subject_issuer_mismatch';
+
+  if (rootDids !== null && !rootDids.includes(links[0].issuer as string)) {
+    return 'untrusted_principal';
+  }
+
+  const views = [...grants.map((g) => capabilityView(g)), capabilityView(cred)];
+  for (let i = 1; i < views.length; i++) {
+    const dim = nonExpansion(views[i - 1], views[i]);
+    if (dim !== null) return `scope_exceeds_parent:${dim}`;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

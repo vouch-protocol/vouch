@@ -404,3 +404,57 @@ func marshalVerdict(v Verdict) string {
 	b, _ := json.Marshal(v)
 	return string(b)
 }
+
+// NonExpansion returns the offending dimension if child broadens parent, else
+// "". It is the exported form of the rule ValidateChain applies, so credential
+// verifiers and signers use the same comparison.
+func NonExpansion(parent, child map[string]interface{}) string {
+	return nonExpansion(parent, child)
+}
+
+// CapabilityView maps a signed Vouch credential onto the six-dimension link
+// shape NonExpansion compares (Specification 9.2): action / target / resource
+// from credentialSubject.intent, time from validFrom / validUntil, rate and
+// policy from intent.rate / intent.policy, subject from intent.delegatee.
+// Mirrors vouch.attenuation.capability_view (Python reference).
+func CapabilityView(credential map[string]interface{}, includeTime bool) map[string]interface{} {
+	intent := map[string]interface{}{}
+	if subject, ok := credential["credentialSubject"].(map[string]interface{}); ok {
+		if in, ok := subject["intent"].(map[string]interface{}); ok {
+			intent = in
+		}
+	}
+	var issuer interface{}
+	switch v := credential["issuer"].(type) {
+	case string:
+		issuer = v
+	case []interface{}:
+		if len(v) > 0 {
+			issuer = v[0]
+		}
+	}
+	dims := map[string]interface{}{}
+	for _, k := range []string{"action", "target", "resource"} {
+		if v, ok := intent[k]; ok {
+			dims[k] = v
+		}
+	}
+	view := map[string]interface{}{
+		"issuer":  issuer,
+		"subject": intent["delegatee"],
+		"intent":  dims,
+	}
+	if includeTime {
+		for _, k := range []string{"validFrom", "validUntil"} {
+			if v, ok := credential[k]; ok {
+				view[k] = v
+			}
+		}
+	}
+	for _, k := range []string{"rate", "policy"} {
+		if v, ok := intent[k]; ok {
+			view[k] = v
+		}
+	}
+	return view
+}

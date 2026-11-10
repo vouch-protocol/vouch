@@ -90,22 +90,28 @@ pub fn sign_vouch_credential(
     data_integrity::sign(&cred, raw_private_seed, proof_opts)
 }
 
-/// The outcome of verifying a credential: the proof and the temporal window are
-/// reported separately so a caller can distinguish "bad signature" from
-/// "expired".
+/// The outcome of verifying a credential: the proof, the temporal window, and
+/// the embedded delegation chain are reported separately so a caller can
+/// distinguish "bad signature" from "expired" from "chain refused".
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VerifyResult {
     pub proof_valid: bool,
     pub time_valid: bool,
+    /// True when the credential has no delegation chain, or its chain verifies
+    /// (`delegation::verify_delegation_chain`).
+    pub chain_valid: bool,
 }
 
 impl VerifyResult {
     pub fn is_valid(&self) -> bool {
-        self.proof_valid && self.time_valid
+        self.proof_valid && self.time_valid && self.chain_valid
     }
 }
 
-/// Verify the Data Integrity proof and the validity window against `now_iso`.
+/// Verify the Data Integrity proof, the validity window against `now_iso`, and
+/// the embedded delegation chain (Specification 9.3). Chain grant issuers must
+/// be `did:key` here; use `delegation::verify_delegation_chain` directly to
+/// supply keys for other issuers or to pin trusted roots.
 pub fn verify(
     credential: &Value,
     raw_public_key: &[u8],
@@ -114,9 +120,18 @@ pub fn verify(
 ) -> Result<VerifyResult> {
     let proof_valid = data_integrity::verify_proof(credential, raw_public_key)?;
     let time_valid = verify_temporal(credential, now_iso, clock_skew_seconds)?;
+    let chain_valid = crate::delegation::verify_delegation_chain(
+        credential,
+        now_iso,
+        clock_skew_seconds,
+        &std::collections::BTreeMap::new(),
+        None,
+    )
+    .is_none();
     Ok(VerifyResult {
         proof_valid,
         time_valid,
+        chain_valid,
     })
 }
 

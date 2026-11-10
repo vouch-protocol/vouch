@@ -112,6 +112,41 @@ function policyNotWeaker(parent: Json, child: Json): boolean {
   return true;
 }
 
+/**
+ * Map a signed Vouch credential onto the six-dimension link shape that
+ * `nonExpansion` compares (Specification 9.2): action / target / resource from
+ * `credentialSubject.intent`, time from `validFrom` / `validUntil`, rate and
+ * policy from `intent.rate` / `intent.policy`, subject from `intent.delegatee`.
+ * Mirrors `vouch.attenuation.capability_view` (Python reference).
+ */
+export function capabilityView(credential: Json, includeTime = true): Json {
+  const subject = credential?.credentialSubject;
+  const intent: Json =
+    subject && typeof subject === 'object' && subject.intent && typeof subject.intent === 'object'
+      ? subject.intent
+      : {};
+  let issuer = credential?.issuer;
+  if (Array.isArray(issuer)) issuer = issuer.length ? issuer[0] : null;
+  const dims: Json = {};
+  for (const k of ['action', 'target', 'resource']) {
+    if (k in intent) dims[k] = intent[k];
+  }
+  const view: Json = {
+    issuer: issuer ?? null,
+    subject: intent.delegatee ?? null,
+    intent: dims,
+  };
+  if (includeTime) {
+    for (const k of ['validFrom', 'validUntil']) {
+      if (credential && k in credential) view[k] = credential[k];
+    }
+  }
+  for (const k of ['rate', 'policy']) {
+    if (k in intent) view[k] = intent[k];
+  }
+  return view;
+}
+
 function windowOf(link: Json): [number | null, number | null] {
   const vf = typeof link.validFrom === 'string' ? isoToEpoch(link.validFrom) : null;
   const vu = typeof link.validUntil === 'string' ? isoToEpoch(link.validUntil) : null;

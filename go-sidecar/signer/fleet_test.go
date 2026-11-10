@@ -1,6 +1,9 @@
 package signer
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func rootAndDeviceSigners(t *testing.T) (*Signer, *Signer, string, string) {
 	t.Helper()
@@ -91,9 +94,16 @@ func TestWrongDeviceIssuerRejected(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New impostor: %v", err)
 	}
-	action, err := impostorSigner.Sign(SignOptions{
+	// The signer refuses to chain under a grant naming someone else ...
+	if _, err := impostorSigner.Sign(SignOptions{
 		Action: "charge", Target: "api.bank", Resource: "https://api.bank/invoices/42",
 		ParentCredential: grant,
+	}); err == nil || !strings.Contains(err.Error(), "delegatee") {
+		t.Fatalf("expected a delegatee refusal, got %v", err)
+	}
+	// ... and the verifier rejects the impostor's credential presented after it.
+	action, err := impostorSigner.Sign(SignOptions{
+		Action: "charge", Target: "api.bank", Resource: "https://api.bank/invoices/42",
 	})
 	if err != nil {
 		t.Fatalf("Sign impostor: %v", err)

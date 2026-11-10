@@ -9,8 +9,11 @@
 package signer
 
 import (
+	"crypto/ed25519"
 	"fmt"
 	"time"
+
+	"github.com/vouch-protocol/vouch/go-sidecar/attenuation"
 )
 
 // EnrollDeviceOptions configures EnrollDevice.
@@ -98,6 +101,14 @@ func VerifyDelegatedChain(
 		isRevoked = func(string) bool { return false }
 	}
 
+	// Grants embedded in a credential's own chain resolve from the trusted
+	// roots first (did:key issuers resolve offline).
+	chainKeys := make(map[string]ed25519.PublicKey, len(opts.TrustedRoots))
+	for did, k := range opts.TrustedRoots {
+		chainKeys[did] = ed25519.PublicKey(k)
+	}
+	now := formatISO8601(time.Now())
+
 	passports := make([]*CredentialPassport, 0, len(credentials))
 	for index, cred := range credentials {
 		issuer := issuerOf(cred)
@@ -113,10 +124,14 @@ func VerifyDelegatedChain(
 		var ok bool
 		var passport *CredentialPassport
 		var err error
-		if trusted {
-			ok, passport, err = VerifyCredential(cred, key, formatISO8601(time.Now()), skew)
-		} else {
-			ok, passport, err = Verify(cred, nil, skew)
+		if !trusted {
+			if !IsDIDKey(issuer) {
+				return FleetResult{OK: false, Reason: fmt.Sprintf("credential %d failed verification", index)}
+			}
+			key, err = Ed25519FromDIDKey(issuer)
+		}
+		if err == nil {
+			ok, passport, err = verifyCredential(cred, key, now, skew, chainKeys)
 		}
 		if err != nil || !ok || passport == nil {
 			return FleetResult{OK: false, Reason: fmt.Sprintf("credential %d failed verification", index)}
@@ -148,11 +163,14 @@ func VerifyDelegatedChain(
 			)}
 		}
 
-		parentResource := parent.Resource()
-		childResource := child.Resource()
-		if parentResource != "" && childResource != "" && !isSubResource(childResource, parentResource) {
+		// No step may be broader than the one before it on action, target,
+		// resource, rate, or policy (the same rule as embedded chains).
+		if dim := attenuation.NonExpansion(
+			attenuation.CapabilityView(parent.RawCredential, false),
+			attenuation.CapabilityView(child.RawCredential, false),
+		); dim != "" {
 			return FleetResult{OK: false, Reason: fmt.Sprintf(
-				"link %d: resource %q is not within the granted %q", i, childResource, parentResource,
+				"link %d: %s %v is not within the granted %v", i, dim, child.Intent[dim], parent.Intent[dim],
 			)}
 		}
 

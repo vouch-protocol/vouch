@@ -308,6 +308,7 @@ class Verifier:
         *,
         key_resolver: Optional[Callable[[str], Any]] = None,
         trusted_roots: Optional[Any] = None,
+        now: Optional[datetime] = None,
     ) -> Tuple[bool, Optional[CredentialPassport]]:
         """
         Verify a Verifiable Credential issued under Vouch Protocol v1.0.
@@ -333,6 +334,7 @@ class Verifier:
           trusted_roots: Optional root anchors for the delegation chain: either
             a `{did: key}` map (keys are also used for resolution) or a list of
             DIDs. When given, the chain's root issuer must be one of them.
+          now: Evaluation time for the validity windows (default: now, UTC).
 
         Returns:
           Tuple of (is_valid, CredentialPassport or None).
@@ -408,7 +410,7 @@ class Verifier:
                     return False, None
 
         # Validate temporal claims
-        now = datetime.now(timezone.utc)
+        now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
         valid_from = _parse_iso8601(cred.get("validFrom"))
         valid_until = _parse_iso8601(cred.get("validUntil"))
 

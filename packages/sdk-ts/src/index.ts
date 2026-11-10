@@ -29,7 +29,8 @@
 // ---------------------------------------------------------------------------
 
 export { Signer, generateIdentity, sign } from './signer';
-export { Verifier, verify } from './verifier';
+export { Verifier, verify, verifyDelegationChain, parentProofBinding } from './verifier';
+export type { VerifyOptions, PublicKeyInput } from './verifier';
 export { Agent } from './agent';
 export type { AgentCreateOptions, AgentVerifyOptions } from './agent';
 export { Credential } from './credential';

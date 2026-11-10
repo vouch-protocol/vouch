@@ -10,6 +10,7 @@
 import * as crypto from 'crypto';
 import * as jose from 'jose';
 
+import { capabilityView, nonExpansion } from './attenuation';
 import { CRYPTOSUITE_ID, buildProof } from './data-integrity';
 import {
   buildDualProof,
@@ -44,6 +45,29 @@ import {
  * falling back to the first proof in the set when no classical member is
  * present. Returns undefined when no proofValue can be resolved.
  */
+/**
+ * Fit a child credential's window inside its parent grant's window. Throws if
+ * the grant has no usable window or has expired.
+ */
+function clampToParentWindow(
+  parent: VouchCredential,
+  validFrom: Date | undefined,
+  validSeconds: number
+): [Date, number] {
+  const pf = Date.parse(parent.validFrom as unknown as string);
+  const pu = Date.parse(parent.validUntil as unknown as string);
+  if (Number.isNaN(pf) || Number.isNaN(pu)) {
+    throw new Error('Delegation refused: the parent grant has no validity window');
+  }
+  let start = (validFrom ?? new Date()).getTime();
+  start = Math.max(start, pf);
+  const remaining = Math.floor((pu - start) / 1000);
+  if (remaining <= 0) {
+    throw new Error('Delegation refused: the parent grant has expired');
+  }
+  return [new Date(start), Math.min(validSeconds, remaining)];
+}
+
 function parentProofBindingValue(
   parentCredential: VouchCredential
 ): string | undefined {
@@ -319,18 +343,22 @@ export class Signer {
   async sign(opts: SignOptions): Promise<VouchCredential> {
     const intent = mergeIntent(opts);
     let chain: DelegationLink[] | undefined = opts.delegationChain;
+    let validSeconds = opts.validSeconds ?? this.defaultExpiry;
+    let validFrom = opts.validFrom;
     if (opts.parentCredential) {
       chain = this.extendDelegationChainFromParent(opts.parentCredential, intent);
+      // A child never outlives, or starts before, the grant it acts under.
+      [validFrom, validSeconds] = clampToParentWindow(opts.parentCredential, validFrom, validSeconds);
     }
 
     const credential = buildVouchCredential({
       issuerDid: this.did,
       intent,
-      validSeconds: opts.validSeconds ?? this.defaultExpiry,
+      validSeconds,
       reputationScore: opts.reputationScore,
       delegationChain: chain,
       credentialId: opts.credentialId,
-      validFrom: opts.validFrom,
+      validFrom,
     });
 
     const proof = buildProof(
@@ -386,18 +414,22 @@ export class Signer {
     }
     const intent = mergeIntent(opts);
     let chain: DelegationLink[] | undefined = opts.delegationChain;
+    let validSeconds = opts.validSeconds ?? this.defaultExpiry;
+    let validFrom = opts.validFrom;
     if (opts.parentCredential) {
       chain = this.extendDelegationChainFromParent(opts.parentCredential, intent);
+      // A child never outlives, or starts before, the grant it acts under.
+      [validFrom, validSeconds] = clampToParentWindow(opts.parentCredential, validFrom, validSeconds);
     }
 
     const credential = buildVouchCredential({
       issuerDid: this.did,
       intent,
-      validSeconds: opts.validSeconds ?? this.defaultExpiry,
+      validSeconds,
       reputationScore: opts.reputationScore,
       delegationChain: chain,
       credentialId: opts.credentialId,
-      validFrom: opts.validFrom,
+      validFrom,
     });
 
     this.ensureMldsa44KeyPair();
@@ -443,8 +475,10 @@ export class Signer {
   /**
    * Build a delegation link from `parentCredential` to this signer.
    *
-   * Implements Specification §9.2 link structure. Validates depth limit
-   * (§9.4) and resource-narrowing (§9.3 step 5).
+   * Implements Specification §9.2 link structure and the non-expansion rule
+   * (§9.3): the parent must be a signed grant naming this signer as its
+   * `delegatee`, and the child may not broaden it on any dimension. The link
+   * embeds the signed grant (`parentCredential`) so a verifier can check it.
    */
   private extendDelegationChainFromParent(
     parentCredential: VouchCredential,
@@ -473,6 +507,34 @@ export class Signer {
       );
     }
 
+    const parentObj = parentCredential as unknown as Record<string, unknown>;
+    const proof = parentObj.proof;
+    if (!parentObj.issuer || !proof || typeof proof !== 'object') {
+      throw new Error('Delegation refused: the parent grant is not a signed credential');
+    }
+    const delegatee = (parentIntent as Record<string, unknown>).delegatee;
+    if (!delegatee) {
+      throw new Error(
+        "Delegation refused: the parent grant names no delegatee; issue it with the delegatee's DID"
+      );
+    }
+    if (delegatee !== this.did) {
+      throw new Error(
+        `Delegation refused: the parent grant names delegatee ${JSON.stringify(delegatee)}, ` +
+          `not this signer ${JSON.stringify(this.did)}`
+      );
+    }
+    const dimension = nonExpansion(
+      capabilityView(parentObj, false),
+      capabilityView({ credentialSubject: { intent: currentIntent } }, false)
+    );
+    if (dimension !== null) {
+      throw new Error(
+        'Delegation violates the non-expansion rule: the child is broader than the parent ' +
+          `grant on ${JSON.stringify(dimension)}`
+      );
+    }
+
     const parentProofValue = parentProofBindingValue(parentCredential);
     const newLink: DelegationLink = {
       issuer: parentCredential.issuer,
@@ -481,6 +543,7 @@ export class Signer {
       validFrom: parentCredential.validFrom,
       validUntil: parentCredential.validUntil,
       parentProofValue: parentProofValue?.slice(0, 64),
+      parentCredential: parentObj,
     };
 
     return [...parentChain, newLink];
