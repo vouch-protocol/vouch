@@ -127,6 +127,37 @@ def _window(link: dict):
     )
 
 
+def capability_view(credential: Dict[str, Any], *, include_time: bool = True) -> Dict[str, Any]:
+    """Map a signed Vouch credential onto the six-dimension link shape that
+    `non_expansion` compares (Specification 9.2).
+
+    action, target, and resource come from `credentialSubject.intent`; time from
+    `validFrom` / `validUntil`; rate and policy from `intent.rate` and
+    `intent.policy` when present. `subject` is the grant's `intent.delegatee`.
+    Used by both the signer (refusing to mint a broader child) and the verifier
+    (refusing a chain where any step is broader), so they agree by construction.
+    """
+    subject = credential.get("credentialSubject") or {}
+    intent = subject.get("intent") if isinstance(subject, dict) else None
+    intent = intent if isinstance(intent, dict) else {}
+    issuer = credential.get("issuer")
+    if isinstance(issuer, list):
+        issuer = issuer[0] if issuer else None
+    view: Dict[str, Any] = {
+        "issuer": issuer,
+        "subject": intent.get("delegatee"),
+        "intent": {k: intent[k] for k in ("action", "target", "resource") if k in intent},
+    }
+    if include_time:
+        for k in ("validFrom", "validUntil"):
+            if k in credential:
+                view[k] = credential[k]
+    for k in ("rate", "policy"):
+        if k in intent:
+            view[k] = intent[k]
+    return view
+
+
 def non_expansion(parent: dict, child: dict) -> Optional[str]:
     """Return the offending dimension name if ``child`` broadens ``parent``,
     else None."""

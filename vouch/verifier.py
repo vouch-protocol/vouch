@@ -11,7 +11,7 @@ import json
 import time
 import logging
 from datetime import datetime, timezone
-from typing import Tuple, Optional, Dict, Any, Union, List
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 from dataclasses import dataclass, field
 
 from cryptography.exceptions import InvalidSignature
@@ -305,6 +305,9 @@ class Verifier:
         credential: Union[Dict[str, Any], str],
         public_key: Optional[Union[Ed25519PublicKey, str]] = None,
         clock_skew_seconds: int = 30,
+        *,
+        key_resolver: Optional[Callable[[str], Any]] = None,
+        trusted_roots: Optional[Any] = None,
     ) -> Tuple[bool, Optional[CredentialPassport]]:
         """
         Verify a Verifiable Credential issued under Vouch Protocol v1.0.
@@ -314,13 +317,22 @@ class Verifier:
           2. Verify the Data Integrity proof (eddsa-jcs-2022).
           3. Validate temporal claims (validFrom, validUntil).
           4. Validate the required `intent.resource` binding.
-          5. Build a CredentialPassport.
+          5. Verify the embedded delegation chain, if any
+             (`verify_delegation_chain`, Specification §9.3).
+          6. Build a CredentialPassport.
 
         Args:
           credential: A Vouch Credential dict OR a JSON-encoded string.
           public_key: An `Ed25519PublicKey` instance, or a Multikey string,
-            or None. If None, only structural and temporal checks run.
+            or None. If None, the credential's own proof is not checked; the
+            delegation chain, if present, is still verified.
           clock_skew_seconds: Allowed clock drift for timestamp validation.
+          key_resolver: Optional `did -> key` callable used to resolve the keys
+            of the delegation chain's grant issuers. `did:key` issuers always
+            resolve offline.
+          trusted_roots: Optional root anchors for the delegation chain: either
+            a `{did: key}` map (keys are also used for resolution) or a list of
+            DIDs. When given, the chain's root issuer must be one of them.
 
         Returns:
           Tuple of (is_valid, CredentialPassport or None).
@@ -424,6 +436,20 @@ class Verifier:
             logger.debug("Credential missing required intent.resource")
             return False, None
 
+        # Verify the delegation chain (Specification §9.3): each grant's
+        # signature, the parent -> child linkage, expiry, and non-expansion.
+        if subject.get("delegationChain"):
+            chain_reason = verify_delegation_chain(
+                cred,
+                key_resolver=key_resolver,
+                trusted_roots=trusted_roots,
+                clock_skew_seconds=skew,
+                now=now,
+            )
+            if chain_reason is not None:
+                logger.debug(f"Delegation chain rejected: {chain_reason}")
+                return False, None
+
         # Build the CredentialPassport
         chain = []
         for raw_link in subject.get("delegationChain", []) or []:
@@ -467,10 +493,17 @@ class Verifier:
     def check_vouch_credential(
         self,
         credential: Union[Dict[str, Any], str],
+        *,
+        key_resolver: Optional[Callable[[str], Any]] = None,
+        trusted_roots: Optional[Any] = None,
     ) -> Tuple[bool, Optional[CredentialPassport]]:
         """
         Verify a W3C Vouch Credential, resolving the issuer key from trusted
         roots or via DID resolution (`did:web`).
+
+        Delegation-chain grant issuers resolve through `key_resolver` when
+        given, otherwise through this verifier's own trusted roots and DID
+        resolution.
 
         Mirrors `check_vouch()` for the modern credential format.
         """
@@ -501,6 +534,8 @@ class Verifier:
                 cred,
                 public_key=public_key,
                 clock_skew_seconds=self._clock_skew,
+                key_resolver=key_resolver or self._resolve_credential_public_key,
+                trusted_roots=trusted_roots,
             )
         except Exception as e:
             logger.debug(f"check_vouch_credential error: {e}")
@@ -555,6 +590,8 @@ def verify(
     public_key: Optional[Union[Ed25519PublicKey, str]] = None,
     *,
     allow_did_resolution: bool = True,
+    key_resolver: Optional[Callable[[str], Any]] = None,
+    trusted_roots: Optional[Any] = None,
 ) -> Tuple[bool, Optional[CredentialPassport]]:
     """Verify a Vouch Credential in one line.
 
@@ -570,7 +607,10 @@ def verify(
         verification. If omitted, the issuer's key is resolved automatically
         from trusted roots or ``did:web``.
       allow_did_resolution: set ``False`` to forbid network DID resolution
-        (offline-only). Ignored when ``public_key`` is supplied.
+        (offline-only). With a ``public_key`` it still governs how delegation
+        chain grant issuers are resolved.
+      key_resolver / trusted_roots: see :meth:`Verifier.verify`; used for the
+        delegation chain.
 
     Returns:
       ``(is_valid, CredentialPassport | None)``.
@@ -583,15 +623,224 @@ def verify(
         if credential is None:
             return False, None
 
-    # Offline path: a key was handed to us, no resolution needed.
-    if public_key is not None:
-        return Verifier.verify(credential, public_key=public_key)
-
-    # Auto-resolving path: reuse a cached resolver-enabled Verifier.
     global _DEFAULT_VERIFIER
     if _DEFAULT_VERIFIER is None or _DEFAULT_VERIFIER._allow_resolution != allow_did_resolution:
         _DEFAULT_VERIFIER = Verifier(allow_did_resolution=allow_did_resolution)
-    return _DEFAULT_VERIFIER.check_vouch_credential(credential)
+    resolver = key_resolver or _DEFAULT_VERIFIER._resolve_credential_public_key
+
+    # Offline path: a key was handed to us for the credential itself.
+    if public_key is not None:
+        return Verifier.verify(
+            credential,
+            public_key=public_key,
+            key_resolver=resolver,
+            trusted_roots=trusted_roots,
+        )
+
+    # Auto-resolving path: reuse a cached resolver-enabled Verifier.
+    return _DEFAULT_VERIFIER.check_vouch_credential(
+        credential, key_resolver=resolver, trusted_roots=trusted_roots
+    )
+
+
+# ---------------------------------------------------------------------------
+# Delegation chain verification (Specification §9.3)
+# ---------------------------------------------------------------------------
+
+
+def verify_delegation_chain(
+    credential: Union[Dict[str, Any], str],
+    *,
+    key_resolver: Optional[Callable[[str], Any]] = None,
+    trusted_roots: Optional[Any] = None,
+    clock_skew_seconds: int = 30,
+    now: Optional[datetime] = None,
+) -> Optional[str]:
+    """
+    Verify a credential's embedded `delegationChain`. Returns None when the
+    chain is valid (or absent), otherwise a stable reason code.
+
+    Each link embeds the signed grant it was derived from (`parentCredential`).
+    For every link, in order (first failure wins):
+
+      - the link carries a signed grant              -> delegation_link_unsigned
+      - the grant's issuer is the link's issuer      -> delegation_link_issuer_mismatch
+      - the issuer's key resolves                    -> delegation_issuer_key_unresolved
+      - the grant's eddsa-jcs-2022 proof verifies,
+        made by the issuer for assertionMethod       -> delegation_signature_invalid
+      - `parentProofValue`, if present, binds to it  -> delegation_link_tampered
+      - the grant names a delegatee ...              -> delegation_no_delegatee
+        ... who is the link's subject                -> delegation_subject_mismatch
+      - the grant is inside its validity window      -> delegation_expired /
+                                                        delegation_not_yet_valid
+
+    Then across the chain:
+
+      - each link's subject is the next link's issuer, and the last link's
+        subject is the credential's issuer          -> delegation_subject_issuer_mismatch
+      - the root issuer is trusted (only when
+        `trusted_roots` is given)                   -> untrusted_principal
+      - no step is broader than its parent on action, target, resource, time,
+        rate, or policy (`vouch.attenuation.non_expansion`; the leaf credential
+        is the last step)                           -> scope_exceeds_parent:<dimension>
+
+    Keys resolve from `trusted_roots` (when it is a `{did: key}` map), then
+    `key_resolver`, then `did:key` (offline). Revocation is not checked here;
+    combine with a status-list or registry check.
+    """
+    from .attenuation import capability_view, non_expansion
+    from .signer import _parent_proof_binding_value
+
+    try:
+        cred = json.loads(credential) if isinstance(credential, str) else credential
+    except json.JSONDecodeError:
+        return "malformed_delegation"
+    if not isinstance(cred, dict):
+        return "malformed_delegation"
+    subject = cred.get("credentialSubject")
+    chain = subject.get("delegationChain") if isinstance(subject, dict) else None
+    if not chain:
+        return None
+    if not isinstance(chain, list):
+        return "malformed_delegation"
+
+    moment = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    root_keys, root_dids = _normalize_trusted_roots(trusted_roots)
+
+    grants: List[Dict[str, Any]] = []
+    for link in chain:
+        if (
+            not isinstance(link, dict)
+            or not isinstance(link.get("issuer"), str)
+            or not isinstance(link.get("subject"), str)
+        ):
+            return "malformed_delegation"
+        grant = link.get("parentCredential")
+        if not isinstance(grant, dict) or not isinstance(grant.get("proof"), (dict, list)):
+            return "delegation_link_unsigned"
+        grant_issuer = _issuer_did(grant)
+        if grant_issuer != link["issuer"]:
+            return "delegation_link_issuer_mismatch"
+        key = _resolve_chain_key(grant_issuer, root_keys, key_resolver)
+        if key is None:
+            return "delegation_issuer_key_unresolved"
+        if not _verify_grant_proof(grant, grant_issuer, key):
+            return "delegation_signature_invalid"
+        bound = link.get("parentProofValue")
+        if bound is not None and bound != _parent_proof_binding_value(grant)[:64]:
+            return "delegation_link_tampered"
+        grant_subject = grant.get("credentialSubject")
+        grant_intent = grant_subject.get("intent") if isinstance(grant_subject, dict) else None
+        delegatee = grant_intent.get("delegatee") if isinstance(grant_intent, dict) else None
+        if not delegatee:
+            return "delegation_no_delegatee"
+        if delegatee != link["subject"]:
+            return "delegation_subject_mismatch"
+        valid_from = _parse_iso8601(grant.get("validFrom"))
+        valid_until = _parse_iso8601(grant.get("validUntil"))
+        if valid_from is None or valid_until is None:
+            return "malformed_delegation"
+        if (moment - valid_until).total_seconds() > clock_skew_seconds:
+            return "delegation_expired"
+        if (valid_from - moment).total_seconds() > clock_skew_seconds:
+            return "delegation_not_yet_valid"
+        grants.append(grant)
+
+    for i in range(1, len(chain)):
+        if chain[i - 1]["subject"] != chain[i]["issuer"]:
+            return "delegation_subject_issuer_mismatch"
+    if chain[-1]["subject"] != _issuer_did(cred):
+        return "delegation_subject_issuer_mismatch"
+
+    if root_dids is not None and chain[0]["issuer"] not in root_dids:
+        return "untrusted_principal"
+
+    views = [capability_view(g) for g in grants] + [capability_view(cred)]
+    for parent_view, child_view in zip(views, views[1:]):
+        dimension = non_expansion(parent_view, child_view)
+        if dimension is not None:
+            return f"scope_exceeds_parent:{dimension}"
+    return None
+
+
+def _issuer_did(credential: Dict[str, Any]) -> Optional[str]:
+    issuer = credential.get("issuer")
+    if isinstance(issuer, list):
+        issuer = issuer[0] if issuer else None
+    if isinstance(issuer, dict):
+        issuer = issuer.get("id")
+    return issuer if isinstance(issuer, str) else None
+
+
+def _normalize_trusted_roots(
+    trusted_roots: Optional[Any],
+) -> Tuple[Dict[str, Any], Optional[List[str]]]:
+    """`{did: key}` -> (keys, dids); `[did, ...]` / `did` -> ({}, dids); None -> ({}, None)."""
+    if trusted_roots is None:
+        return {}, None
+    if isinstance(trusted_roots, Mapping):
+        return dict(trusted_roots), list(trusted_roots.keys())
+    if isinstance(trusted_roots, str):
+        return {}, [trusted_roots]
+    if isinstance(trusted_roots, Iterable):
+        return {}, [str(d) for d in trusted_roots]
+    raise TypeError("trusted_roots must be a {did: key} map or a list of DIDs")
+
+
+def _resolve_chain_key(
+    did: Optional[str],
+    root_keys: Dict[str, Any],
+    key_resolver: Optional[Callable[[str], Any]],
+) -> Optional[Ed25519PublicKey]:
+    if not did:
+        return None
+    if did in root_keys:
+        return _coerce_any_public_key(root_keys[did])
+    if key_resolver is not None:
+        try:
+            candidate = key_resolver(did)
+        except Exception as e:  # noqa: BLE001 - an unresolvable key is a refusal
+            logger.debug(f"key_resolver failed for {did}: {e}")
+            candidate = None
+        if candidate is not None:
+            return _coerce_any_public_key(candidate)
+    if did.startswith("did:key:"):
+        return _resolve_did_key(did)
+    return None
+
+
+def _coerce_any_public_key(key: Any) -> Optional[Ed25519PublicKey]:
+    """Like `_coerce_ed25519_public_key`, also accepting a jwcrypto JWK object."""
+    if isinstance(key, jwk.JWK):
+        try:
+            key = json.loads(key.export_public())
+        except Exception:  # noqa: BLE001
+            return None
+    return _coerce_ed25519_public_key(key)
+
+
+def _verify_grant_proof(grant: Dict[str, Any], issuer_did: str, key: Ed25519PublicKey) -> bool:
+    """Verify a grant's eddsa-jcs-2022 proof (the classical member of a proof set)."""
+    raw = grant.get("proof")
+    proofs = raw if isinstance(raw, list) else [raw]
+    for proof in proofs:
+        if not isinstance(proof, dict):
+            continue
+        if proof.get("cryptosuite") not in (None, data_integrity.CRYPTOSUITE_ID):
+            continue
+        if proof.get("proofPurpose") != "assertionMethod":
+            continue
+        vm = proof.get("verificationMethod")
+        if not isinstance(vm, str) or vm.split("#", 1)[0] != issuer_did:
+            continue
+        candidate = {k: v for k, v in grant.items() if k != "proof"}
+        candidate["proof"] = proof
+        try:
+            if data_integrity.verify_proof(candidate, key):
+                return True
+        except (ValueError, InvalidSignature):
+            continue
+    return False
 
 
 # ---------------------------------------------------------------------------

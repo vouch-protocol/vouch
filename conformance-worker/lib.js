@@ -138,14 +138,20 @@ export function buildSession(core, implementation, nowIso) {
 
   // delegation_narrowing: the implementation issues a child credential chained to
   // this parent, narrowed to the given intent. The worker verifies the child's
-  // signature and that the chain records the parent's issuer.
+  // signature and that the chain records the parent's issuer. The parent grant
+  // names the implementation as its delegatee when the implementation sent its
+  // DID, and its action and target sets contain the narrowed intent's values,
+  // so the child restates or narrows every dimension (Specification 9.3).
   const pk = JSON.parse(core.generateEd25519());
-  const parent = credentialSkeleton(
-    pk.did_key,
-    { action: "manage", target: "all_records", resource: "https://conformance.vouch-protocol.com/db" },
-    nowIso,
-    "2100-01-01T00:00:00Z"
-  );
+  const parentIntent = {
+    action: ["manage", "read"],
+    target: ["all_records", "one_record"],
+    resource: "https://conformance.vouch-protocol.com/db",
+  };
+  if (typeof implementation.did === "string" && implementation.did) {
+    parentIntent.delegatee = implementation.did;
+  }
+  const parent = credentialSkeleton(pk.did_key, parentIntent, nowIso, "2100-01-01T00:00:00Z");
   const parentSigned = JSON.parse(
     core.sign(JSON.stringify(parent), pk.seed_b64, `${pk.did_key}#key-1`, nowIso)
   );

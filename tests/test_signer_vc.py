@@ -174,18 +174,21 @@ def test_delegation_chain_appends_link_from_parent():
     parent = _new_signer("did:web:alice.example.com")
     child = _new_signer("did:web:assistant.example.com")
 
+    # The grant names its delegatee, and the child restates or narrows every
+    # dimension (Specification §9.3): same action and target, a sub-resource.
     parent_cred = parent.sign(
         intent={
             "action": "plan_trip",
             "target": "destination:Paris",
             "resource": "https://travel-api.example.com/v1/bookings",
+            "delegatee": child.did,
         }
     )
 
     child_cred = child.sign(
         intent={
-            "action": "book_flight",
-            "target": "flight:AF123",
+            "action": "plan_trip",
+            "target": "destination:Paris",
             "resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
         },
         parent_credential=parent_cred,
@@ -195,17 +198,21 @@ def test_delegation_chain_appends_link_from_parent():
     assert len(chain) == 1
     assert chain[0]["issuer"] == parent.did
     assert chain[0]["subject"] == child.did
+    # The link carries the signed grant so a verifier can check it.
+    assert chain[0]["parentCredential"] == parent_cred
 
 
 def test_delegation_from_proof_set_parent_binds_to_classical_member():
     from vouch.signer import _parent_proof_binding_value
 
     parent = _new_signer("did:web:alice.example.com")
+    child = _new_signer("did:web:assistant.example.com")
     parent_cred = parent.sign(
         intent={
             "action": "plan_trip",
             "target": "destination:Paris",
             "resource": "https://travel-api.example.com/v1/bookings",
+            "delegatee": child.did,
         }
     )
     # Simulate a post-quantum proof-set parent: proof becomes an array whose
@@ -220,11 +227,10 @@ def test_delegation_from_proof_set_parent_binds_to_classical_member():
     binding = _parent_proof_binding_value(proof_set_parent)
     assert binding == classical["proofValue"]
 
-    child = _new_signer("did:web:assistant.example.com")
     child_cred = child.sign(
         intent={
-            "action": "book_flight",
-            "target": "flight:AF123",
+            "action": "plan_trip",
+            "target": "destination:Paris",
             "resource": "https://travel-api.example.com/v1/bookings/flight-AF123",
         },
         parent_credential=proof_set_parent,
@@ -266,6 +272,7 @@ def test_delegation_chain_resource_narrowing_allows_sub_path():
             "action": "read",
             "target": "users",
             "resource": "https://api.example.com/v1/users",
+            "delegatee": child.did,
         }
     )
 
@@ -273,7 +280,7 @@ def test_delegation_chain_resource_narrowing_allows_sub_path():
     grand_cred = child.sign(
         intent={
             "action": "read",
-            "target": "user_42",
+            "target": "users",
             "resource": "https://api.example.com/v1/users/42",
         },
         parent_credential=parent_cred,
@@ -292,12 +299,16 @@ def test_delegation_chain_deep_chain_allowed_v17():
         "resource": common_resource,
     }
 
-    signers = [_new_signer(f"did:web:agent{i}.example.com") for i in range(7)]
+    signers = [_new_signer(f"did:web:agent{i}.example.com") for i in range(8)]
 
-    cred = signers[0].sign(intent=intent_template)
+    # Each hop restates the scope and names the next hop as its delegatee.
+    cred = signers[0].sign(intent={**intent_template, "delegatee": signers[1].did})
     # Six hops: the sixth was previously rejected by the depth limit.
-    for s in signers[1:7]:
-        cred = s.sign(intent=intent_template, parent_credential=cred)
+    for i, s in enumerate(signers[1:7], start=1):
+        cred = s.sign(
+            intent={**intent_template, "delegatee": signers[i + 1].did},
+            parent_credential=cred,
+        )
 
     assert len(cred["credentialSubject"]["delegationChain"]) == 6
 

@@ -89,13 +89,21 @@ def test_wrong_device_issuer_rejected():
         target="api.bank",
         resource="https://api.bank/invoices",
     )
-    # A different device signs, not the one the grant authorized.
+    # A different device signs, not the one the grant authorized. The signer
+    # refuses to chain it under a grant naming someone else ...
     impostor = Agent()
+    with pytest.raises(ValueError, match="delegatee"):
+        impostor.sign(
+            action="charge",
+            target="api.bank",
+            resource="https://api.bank/invoices/42",
+            parent_credential=grant,
+        )
+    # ... and the verifier rejects the impostor's credential presented after it.
     action = impostor.sign(
         action="charge",
         target="api.bank",
         resource="https://api.bank/invoices/42",
-        parent_credential=grant,
     )
     result = verify_delegated_chain([grant, action], trusted_roots={root.did: root.public_key_jwk})
     assert not result.ok
@@ -259,3 +267,55 @@ def test_device_registry():
     assert not verify_delegated_chain(
         [grant, action], trusted_roots=roots, revoked=registry.is_revoked
     ).ok
+
+
+# ---------------------------------------------------------------------------
+# Narrowing on action and target, not only resource
+# ---------------------------------------------------------------------------
+
+
+def _k8s_grant(root, device):
+    return enroll_device(
+        root,
+        device_did=device.did,
+        action="deploy",
+        target="k8s.staging",
+        resource="https://k8s.example/apps",
+    )
+
+
+@pytest.mark.parametrize(
+    "action, target",
+    [("deploy", "k8s.prod"), ("delete", "k8s.staging")],
+)
+def test_leaf_outside_granted_action_or_target_rejected(action, target):
+    """The leaf is signed on its own (no parent_credential), so only
+    verify_delegated_chain stands between it and the grant."""
+    root, device = _root_and_device()
+    grant = _k8s_grant(root, device)
+    leaf = device.sign(action=action, target=target, resource="https://k8s.example/apps")
+    result = verify_delegated_chain([grant, leaf], trusted_roots={root.did: root.public_key_jwk})
+    assert not result.ok
+    assert "not within the granted" in (result.reason or "")
+
+
+def test_leaf_within_granted_action_and_target_accepted():
+    root, device = _root_and_device()
+    grant = _k8s_grant(root, device)
+    leaf = device.sign(
+        action="deploy", target="k8s.staging", resource="https://k8s.example/apps/web"
+    )
+    result = verify_delegated_chain([grant, leaf], trusted_roots={root.did: root.public_key_jwk})
+    assert result.ok, result.reason
+
+
+def test_device_cannot_sign_widened_action_under_grant():
+    root, device = _root_and_device()
+    grant = _k8s_grant(root, device)
+    with pytest.raises(ValueError, match="non-expansion"):
+        device.sign(
+            action="delete",
+            target="k8s.staging",
+            resource="https://k8s.example/apps",
+            parent_credential=grant,
+        )

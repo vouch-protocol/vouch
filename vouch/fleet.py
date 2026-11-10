@@ -32,8 +32,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Union
 
-from vouch.signer import Signer, _is_sub_resource
-from vouch.verifier import CredentialPassport, verify
+from vouch.attenuation import capability_view, non_expansion
+from vouch.signer import Signer
+from vouch.verifier import CredentialPassport, Verifier, verify
 
 
 def _root_signer(root: Any) -> Signer:
@@ -114,7 +115,10 @@ def verify_delegated_chain(
     leaf_action]``. The first credential's issuer must be a trusted root. Every
     credential's Data Integrity proof and validity window are checked, each step
     must be authorized by the step before it (the child's issuer is the parent's
-    delegatee), the resource may only narrow, and the validity windows must nest.
+    delegatee), and no step may be broader than the one before it on action,
+    target, resource, rate, or policy (`vouch.attenuation.non_expansion`, the
+    same rule the verifier applies to embedded chains). Validity windows must
+    nest.
 
     Args:
       credentials: the presented chain, root grant first, leaf action last.
@@ -138,6 +142,14 @@ def verify_delegated_chain(
         return FleetResult(ok=False, reason="empty chain")
     trusted_roots = trusted_roots or {}
     is_revoked = _revocation_oracle(revoked)
+    resolver_verifier = Verifier(allow_did_resolution=allow_did_resolution)
+
+    def resolve_key(did: str) -> Any:
+        """Keys for grants embedded in a credential's own chain: the trusted
+        roots first, then did:key / did:web resolution as configured."""
+        if did in trusted_roots:
+            return trusted_roots[did]
+        return resolver_verifier._resolve_credential_public_key(did)
 
     passports: List[CredentialPassport] = []
     for index, cred in enumerate(credentials):
@@ -151,7 +163,12 @@ def verify_delegated_chain(
         if index == 0 and key is None:
             return FleetResult(ok=False, reason=f"root issuer {issuer!r} is not in trusted_roots")
 
-        ok, passport = verify(cred, public_key=key, allow_did_resolution=allow_did_resolution)
+        ok, passport = verify(
+            cred,
+            public_key=key,
+            allow_did_resolution=allow_did_resolution,
+            key_resolver=resolve_key,
+        )
         if not ok or passport is None:
             return FleetResult(ok=False, reason=f"credential {index} failed verification")
 
@@ -188,19 +205,16 @@ def verify_delegated_chain(
                 ),
             )
 
-        parent_resource = (parent.intent or {}).get("resource", "")
-        child_resource = (child.intent or {}).get("resource", "")
-        if (
-            parent_resource
-            and child_resource
-            and not _is_sub_resource(child_resource, parent_resource)
-        ):
+        dimension = non_expansion(
+            capability_view(parent.raw_credential, include_time=False),
+            capability_view(child.raw_credential, include_time=False),
+        )
+        if dimension is not None:
+            granted = (parent.intent or {}).get(dimension)
+            asked = (child.intent or {}).get(dimension)
             return FleetResult(
                 ok=False,
-                reason=(
-                    f"link {i}: resource {child_resource!r} is not within the "
-                    f"granted {parent_resource!r}"
-                ),
+                reason=(f"link {i}: {dimension} {asked!r} is not within the granted {granted!r}"),
             )
 
         if not _window_within(child, parent):

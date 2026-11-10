@@ -229,13 +229,19 @@ class Signer:
         intent = _merge_intent(intent, action=action, target=target, resource=resource)
 
         chain = delegation_chain or []
+        valid_seconds = valid_seconds or self.default_expiry
         if parent_credential is not None:
             chain = self._extend_delegation_chain_from_parent(parent_credential, intent)
+            # A child can never outlive, or start before, the grant it acts
+            # under (the time dimension of the non-expansion rule).
+            valid_from, valid_seconds = _clamp_to_parent_window(
+                parent_credential, valid_from, valid_seconds
+            )
 
         credential = vc.build_vouch_credential(
             issuer_did=self.did,
             intent=intent,
-            valid_seconds=valid_seconds or self.default_expiry,
+            valid_seconds=valid_seconds,
             reputation_score=reputation_score,
             delegation_chain=chain or None,
             credential_id=credential_id,
@@ -314,13 +320,19 @@ class Signer:
         intent = _merge_intent(intent, action=action, target=target, resource=resource)
 
         chain = delegation_chain or []
+        valid_seconds = valid_seconds or self.default_expiry
         if parent_credential is not None:
             chain = self._extend_delegation_chain_from_parent(parent_credential, intent)
+            # A child can never outlive, or start before, the grant it acts
+            # under (the time dimension of the non-expansion rule).
+            valid_from, valid_seconds = _clamp_to_parent_window(
+                parent_credential, valid_from, valid_seconds
+            )
 
         credential = vc.build_vouch_credential(
             issuer_did=self.did,
             intent=intent,
-            valid_seconds=valid_seconds or self.default_expiry,
+            valid_seconds=valid_seconds,
             reputation_score=reputation_score,
             delegation_chain=chain or None,
             credential_id=credential_id,
@@ -402,16 +414,23 @@ class Signer:
         non-expansion rule (§9.3-9.5): the new link must not broaden the parent
         on any dimension. The fixed depth limit is removed; verifiers bound
         chain cost with their own budgets.
+
+        The parent must be a signed grant that names this signer as its
+        `delegatee`. The link embeds the full parent (`parentCredential`) so a
+        verifier can check the grant's signature, the linkage, and narrowing
+        from the credential alone (`verifier.verify_delegation_chain`).
+
+        Raises:
+          ValueError: the parent is unsigned, names no delegatee or a different
+            one, or the child would broaden it on any dimension.
         """
+        from .attenuation import capability_view, non_expansion
+
         parent_subject = parent_credential.get("credentialSubject", {})
         parent_intent = parent_subject.get("intent", {})
         parent_chain = parent_subject.get("delegationChain") or []
 
-        # v1.7 removes the fixed depth limit. The full non-expansion rule across
-        # all six dimensions is enforced at verification time by the shared
-        # validator (vouch/attenuation.py, pinned to the cross-language interop
-        # vectors). At build time we keep the resource-narrowing guard as a fast
-        # local check so an obviously-broadening link is refused early.
+        # Resource first, so the long-standing error message is unchanged.
         parent_resource = parent_intent.get("resource", "")
         child_resource = current_intent.get("resource", "")
         if (
@@ -425,6 +444,35 @@ class Signer:
                 f"{parent_resource!r}"
             )
 
+        if not parent_credential.get("issuer") or not isinstance(
+            parent_credential.get("proof"), (dict, list)
+        ):
+            raise ValueError("Delegation refused: the parent grant is not a signed credential")
+
+        delegatee = parent_intent.get("delegatee")
+        if not delegatee:
+            raise ValueError(
+                "Delegation refused: the parent grant names no delegatee; issue it "
+                "with the delegatee's DID (for example vouch.delegate(..., to=did))"
+            )
+        if delegatee != self.did:
+            raise ValueError(
+                f"Delegation refused: the parent grant names delegatee {delegatee!r}, "
+                f"not this signer {self.did!r}"
+            )
+
+        child_view = capability_view(
+            {"credentialSubject": {"intent": current_intent}}, include_time=False
+        )
+        dimension = non_expansion(
+            capability_view(parent_credential, include_time=False), child_view
+        )
+        if dimension is not None:
+            raise ValueError(
+                "Delegation violates the non-expansion rule: the child is broader "
+                f"than the parent grant on {dimension!r}"
+            )
+
         new_link = {
             "issuer": parent_credential.get("issuer", ""),
             "subject": self.did,
@@ -432,6 +480,7 @@ class Signer:
             "validFrom": parent_credential.get("validFrom"),
             "validUntil": parent_credential.get("validUntil"),
             "parentProofValue": _parent_proof_binding_value(parent_credential)[:64],
+            "parentCredential": parent_credential,
         }
 
         return list(parent_chain) + [new_link]
@@ -474,6 +523,37 @@ class Signer:
     def get_did(self) -> str:
         """Returns the DID of this signer."""
         return self.did
+
+
+def _parse_vc_time(value: Any) -> Optional[datetime]:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def _clamp_to_parent_window(
+    parent_credential: Dict[str, Any],
+    valid_from: Optional[datetime],
+    valid_seconds: int,
+) -> "tuple[datetime, int]":
+    """Fit a child credential's window inside its parent grant's window.
+
+    The child starts no earlier than the grant and ends no later than it.
+    Raises ValueError if the grant has no usable window or has expired.
+    """
+    parent_from = _parse_vc_time(parent_credential.get("validFrom"))
+    parent_until = _parse_vc_time(parent_credential.get("validUntil"))
+    if parent_from is None or parent_until is None:
+        raise ValueError("Delegation refused: the parent grant has no validity window")
+    start = (valid_from or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    start = max(start, parent_from)
+    remaining = int((parent_until - start).total_seconds())
+    if remaining <= 0:
+        raise ValueError("Delegation refused: the parent grant has expired")
+    return start, min(int(valid_seconds), remaining)
 
 
 def _parent_proof_binding_value(parent_credential: dict) -> str:
