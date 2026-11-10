@@ -10,7 +10,7 @@
 import * as crypto from 'crypto';
 import * as jose from 'jose';
 
-import { capabilityView, nonExpansion } from './attenuation';
+import { capabilityView, effectiveCapability, nonExpansion } from './attenuation';
 import { CRYPTOSUITE_ID, buildProof } from './data-integrity';
 import {
   buildDualProof,
@@ -525,7 +525,7 @@ export class Signer {
       );
     }
     const dimension = nonExpansion(
-      capabilityView(parentObj, false),
+      effectiveCapability(parentObj, false),
       capabilityView({ credentialSubject: { intent: currentIntent } }, false)
     );
     if (dimension !== null) {

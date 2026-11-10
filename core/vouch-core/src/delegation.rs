@@ -135,7 +135,7 @@ pub fn capability_view(credential: &Value, include_time: bool) -> Value {
         intent.get("delegatee").cloned().unwrap_or(Value::Null),
     );
     let mut dims = Map::new();
-    for k in ["action", "target", "resource"] {
+    for k in ["action", "target", "resource", "amount"] {
         if let Some(v) = intent.get(k) {
             dims.insert(k.into(), v.clone());
         }
@@ -375,10 +375,8 @@ pub fn verify_delegation_chain(
 
     let mut views: Vec<Value> = grants.iter().map(|g| capability_view(g, true)).collect();
     views.push(capability_view(credential, true));
-    for pair in views.windows(2) {
-        if let Err(dim) = attenuation::non_expansion(&pair[0], &pair[1]) {
-            return Some(format!("scope_exceeds_parent:{}", dim.as_str()));
-        }
+    if let Err(dim) = attenuation::first_broader_step(&views) {
+        return Some(format!("scope_exceeds_parent:{}", dim.as_str()));
     }
     None
 }

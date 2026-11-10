@@ -307,6 +307,86 @@ def build() -> Dict[str, Any]:
         note="parentProofValue does not match the embedded grant's proof",
     )
 
+    # Spend caps: root caps at 50 (read or update), a re-delegates read capped at 20.
+    cap_root = _issue(
+        root,
+        {
+            "action": ["read", "update"],
+            "target": "calendar",
+            "resource": CAL,
+            "delegatee": a.did,
+            "policy": {"maxSpend": 50},
+        },
+        "urn:uuid:00000000-0000-4000-8000-000000000080",
+    )
+    cap_a = _issue(
+        a,
+        {
+            "action": "read",
+            "target": "calendar",
+            "resource": CAL,
+            "delegatee": b.did,
+            "policy": {"maxSpend": 20},
+        },
+        "urn:uuid:00000000-0000-4000-8000-000000000081",
+        parent=cap_root,
+    )
+    spend15 = {"action": "read", "target": "calendar", "resource": CAL, "amount": 15}
+    within = _issue(b, dict(spend15), "urn:uuid:00000000-0000-4000-8000-000000000082", parent=cap_a)
+    case("spend_within_cap", within, None, note="b spends 15 under a cap of 20")
+    cap_links = within["credentialSubject"]["delegationChain"]
+    case(
+        "spend_over_cap",
+        forged(
+            b,
+            {"action": "read", "target": "calendar", "resource": CAL, "amount": 30},
+            copy.deepcopy(cap_links),
+            "urn:uuid:00000000-0000-4000-8000-000000000083",
+        ),
+        "scope_exceeds_parent:policy",
+        note="b spends 30 under a cap of 20",
+    )
+    raised = {
+        "action": "read",
+        "target": "calendar",
+        "resource": CAL,
+        "delegatee": b.did,
+        "policy": {"maxSpend": 100},
+    }
+    raised_grant = forged(
+        a, raised, [_link(cap_root, a.did, raised)], "urn:uuid:00000000-0000-4000-8000-000000000084"
+    )
+    case(
+        "sub_grant_raises_cap",
+        forged(
+            b,
+            dict(spend15),
+            [_link(cap_root, a.did, raised), _link(raised_grant, b.did, dict(spend15))],
+            "urn:uuid:00000000-0000-4000-8000-000000000085",
+        ),
+        "scope_exceeds_parent:policy",
+        note="a re-delegates with a higher cap than it was given",
+    )
+    open_grant = {"action": "read", "target": "calendar", "resource": CAL, "delegatee": b.did}
+    open_a = forged(
+        a,
+        open_grant,
+        [_link(cap_root, a.did, open_grant)],
+        "urn:uuid:00000000-0000-4000-8000-000000000086",
+    )
+    spend80 = {"action": "read", "target": "calendar", "resource": CAL, "amount": 80}
+    case(
+        "inherited_cap_binds_leaf",
+        forged(
+            b,
+            spend80,
+            [_link(cap_root, a.did, open_grant), _link(open_a, b.did, spend80)],
+            "urn:uuid:00000000-0000-4000-8000-000000000087",
+        ),
+        "scope_exceeds_parent:policy",
+        note="a's grant omits the policy, so the root's cap of 50 still binds b",
+    )
+
     case(
         "expired_grant",
         leaf,

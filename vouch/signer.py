@@ -424,7 +424,7 @@ class Signer:
           ValueError: the parent is unsigned, names no delegatee or a different
             one, or the child would broaden it on any dimension.
         """
-        from .attenuation import capability_view, non_expansion
+        from .attenuation import capability_view, effective_capability, non_expansion
 
         parent_subject = parent_credential.get("credentialSubject", {})
         parent_intent = parent_subject.get("intent", {})
@@ -465,7 +465,7 @@ class Signer:
             {"credentialSubject": {"intent": current_intent}}, include_time=False
         )
         dimension = non_expansion(
-            capability_view(parent_credential, include_time=False), child_view
+            effective_capability(parent_credential, include_time=False), child_view
         )
         if dimension is not None:
             raise ValueError(

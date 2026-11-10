@@ -9,7 +9,7 @@
 import * as crypto from 'crypto';
 import * as jose from 'jose';
 
-import { capabilityView, nonExpansion } from './attenuation';
+import { capabilityView, firstBroaderStep } from './attenuation';
 import { CRYPTOSUITE_ID, verifyProof } from './data-integrity';
 import { decode as decodeMultikey } from './multikey';
 import type {
@@ -521,10 +521,8 @@ export async function verifyDelegationChain(
   }
 
   const views = [...grants.map((g) => capabilityView(g)), capabilityView(cred)];
-  for (let i = 1; i < views.length; i++) {
-    const dim = nonExpansion(views[i - 1], views[i]);
-    if (dim !== null) return `scope_exceeds_parent:${dim}`;
-  }
+  const dim = firstBroaderStep(views);
+  if (dim !== null) return `scope_exceeds_parent:${dim}`;
   return null;
 }
 

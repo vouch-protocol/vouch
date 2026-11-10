@@ -146,6 +146,9 @@ func VerifyDelegatedChain(
 		passports = append(passports, passport)
 	}
 
+	// Each child is compared against its parent's effective capability
+	// (dimensions a grant omits are inherited).
+	effective := attenuation.CapabilityView(passports[0].RawCredential, false)
 	for i := 0; i < len(passports)-1; i++ {
 		parent := passports[i]
 		child := passports[i+1]
@@ -165,10 +168,10 @@ func VerifyDelegatedChain(
 
 		// No step may be broader than the one before it on action, target,
 		// resource, rate, or policy (the same rule as embedded chains).
-		if dim := attenuation.NonExpansion(
-			attenuation.CapabilityView(parent.RawCredential, false),
-			attenuation.CapabilityView(child.RawCredential, false),
-		); dim != "" {
+		childView := attenuation.CapabilityView(child.RawCredential, false)
+		dim := attenuation.NonExpansion(effective, childView)
+		effective = attenuation.Inherit(effective, childView)
+		if dim != "" {
 			return FleetResult{OK: false, Reason: fmt.Sprintf(
 				"link %d: %s %v is not within the granted %v", i, dim, child.Intent[dim], parent.Intent[dim],
 			)}

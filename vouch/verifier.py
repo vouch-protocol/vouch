@@ -690,7 +690,7 @@ def verify_delegation_chain(
     `key_resolver`, then `did:key` (offline). Revocation is not checked here;
     combine with a status-list or registry check.
     """
-    from .attenuation import capability_view, non_expansion
+    from .attenuation import capability_view, first_broader_step
     from .signer import _parent_proof_binding_value
 
     try:
@@ -758,10 +758,9 @@ def verify_delegation_chain(
         return "untrusted_principal"
 
     views = [capability_view(g) for g in grants] + [capability_view(cred)]
-    for parent_view, child_view in zip(views, views[1:]):
-        dimension = non_expansion(parent_view, child_view)
-        if dimension is not None:
-            return f"scope_exceeds_parent:{dimension}"
+    dimension = first_broader_step(views)
+    if dimension is not None:
+        return f"scope_exceeds_parent:{dimension}"
     return None
 
 

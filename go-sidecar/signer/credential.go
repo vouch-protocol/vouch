@@ -379,7 +379,7 @@ func (s *Signer) extendDelegationChain(
 	childView := attenuation.CapabilityView(
 		map[string]any{"credentialSubject": map[string]any{"intent": currentIntent}}, false,
 	)
-	if dim := attenuation.NonExpansion(attenuation.CapabilityView(parentCredential, false), childView); dim != "" {
+	if dim := attenuation.NonExpansion(attenuation.EffectiveCapability(parentCredential, false), childView); dim != "" {
 		return nil, fmt.Errorf(
 			"delegation violates the non-expansion rule: the child is broader than the parent grant on %q", dim,
 		)

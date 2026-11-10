@@ -141,10 +141,8 @@ func VerifyDelegationChain(
 		views = append(views, attenuation.CapabilityView(g, true))
 	}
 	views = append(views, attenuation.CapabilityView(credential, true))
-	for i := 1; i < len(views); i++ {
-		if dim := attenuation.NonExpansion(views[i-1], views[i]); dim != "" {
-			return "scope_exceeds_parent:" + dim
-		}
+	if dim := attenuation.FirstBroaderStep(views); dim != "" {
+		return "scope_exceeds_parent:" + dim
 	}
 	return ""
 }

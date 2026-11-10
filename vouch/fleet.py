@@ -32,7 +32,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Union
 
-from vouch.attenuation import capability_view, non_expansion
+from vouch.attenuation import capability_view, inherit, non_expansion
 from vouch.signer import Signer
 from vouch.verifier import CredentialPassport, Verifier, verify
 
@@ -184,7 +184,9 @@ def verify_delegated_chain(
             )
         passports.append(passport)
 
-    # Walk parent -> child links.
+    # Walk parent -> child links, comparing each child against its parent's
+    # effective capability (dimensions a grant omits are inherited).
+    effective = capability_view(passports[0].raw_credential, include_time=False)
     for i in range(len(passports) - 1):
         parent = passports[i]
         child = passports[i + 1]
@@ -205,10 +207,9 @@ def verify_delegated_chain(
                 ),
             )
 
-        dimension = non_expansion(
-            capability_view(parent.raw_credential, include_time=False),
-            capability_view(child.raw_credential, include_time=False),
-        )
+        child_view = capability_view(child.raw_credential, include_time=False)
+        dimension = non_expansion(effective, child_view)
+        effective = inherit(effective, child_view)
         if dimension is not None:
             granted = (parent.intent or {}).get(dimension)
             asked = (child.intent or {}).get(dimension)

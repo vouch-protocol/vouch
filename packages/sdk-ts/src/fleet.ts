@@ -11,7 +11,7 @@
  * the credential wire format is unchanged.
  */
 
-import { capabilityView, nonExpansion } from './attenuation';
+import { capabilityView, inherit, nonExpansion } from './attenuation';
 import * as crypto from 'crypto';
 
 import { Signer } from './signer';
@@ -121,6 +121,9 @@ export async function verifyDelegatedChain(
     passports.push(result.passport);
   }
 
+  // Each child is compared against its parent's effective capability
+  // (dimensions a grant omits are inherited).
+  let effective = capabilityView(passports[0].rawCredential as unknown as Record<string, unknown>, false);
   for (let i = 0; i < passports.length - 1; i++) {
     const parent = passports[i];
     const child = passports[i + 1];
@@ -141,10 +144,9 @@ export async function verifyDelegatedChain(
 
     // No step may be broader than the one before it on action, target,
     // resource, rate, or policy (the same rule as embedded chains).
-    const dimension = nonExpansion(
-      capabilityView(parent.rawCredential as unknown as Record<string, unknown>, false),
-      capabilityView(child.rawCredential as unknown as Record<string, unknown>, false)
-    );
+    const childView = capabilityView(child.rawCredential as unknown as Record<string, unknown>, false);
+    const dimension = nonExpansion(effective, childView);
+    effective = inherit(effective, childView);
     if (dimension !== null) {
       const granted = (parent.intent as Record<string, unknown>)?.[dimension];
       const asked = (child.intent as Record<string, unknown>)?.[dimension];

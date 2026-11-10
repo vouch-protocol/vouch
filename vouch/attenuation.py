@@ -98,17 +98,34 @@ def _rate_events_per_sec(rate: Any) -> float:
     return float(limit) / float(secs)
 
 
+def _is_number(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
 def _policy_not_weaker(parent: Any, child: Any) -> bool:
+    """Child policy is equal to or stricter than the parent's.
+
+    Numeric values narrow by the key's name: a key starting with "max" is a
+    ceiling (the child may lower it, never raise it), a key starting with "min"
+    is a floor (the child may raise it, never lower it), and any other numeric
+    key must be restated unchanged, because its direction is unknown.
+    """
     if not isinstance(parent, dict) or not isinstance(child, dict):
         return False
     for k, pv in parent.items():
         if k not in child:
             return False  # child dropped a parent constraint => weaker
         cv = child[k]
-        p_num = isinstance(pv, (int, float)) and not isinstance(pv, bool)
-        c_num = isinstance(cv, (int, float)) and not isinstance(cv, bool)
+        p_num = _is_number(pv)
+        c_num = _is_number(cv)
         if p_num and c_num:
-            if cv < pv:
+            if k.startswith("max"):
+                if cv > pv:
+                    return False
+            elif k.startswith("min"):
+                if cv < pv:
+                    return False
+            elif cv != pv:
                 return False
         elif p_num != c_num:
             return False  # type mismatch
@@ -146,7 +163,7 @@ def capability_view(credential: Dict[str, Any], *, include_time: bool = True) ->
     view: Dict[str, Any] = {
         "issuer": issuer,
         "subject": intent.get("delegatee"),
-        "intent": {k: intent[k] for k in ("action", "target", "resource") if k in intent},
+        "intent": {k: intent[k] for k in ("action", "target", "resource", "amount") if k in intent},
     }
     if include_time:
         for k in ("validFrom", "validUntil"):
@@ -156,6 +173,23 @@ def capability_view(credential: Dict[str, Any], *, include_time: bool = True) ->
         if k in intent:
             view[k] = intent[k]
     return view
+
+
+def effective_capability(
+    credential: Dict[str, Any], *, include_time: bool = True
+) -> Dict[str, Any]:
+    """A grant's effective capability: its own view with every dimension it
+    omits inherited from the grants in its embedded delegation chain."""
+    subject = credential.get("credentialSubject") or {}
+    chain = subject.get("delegationChain") if isinstance(subject, dict) else None
+    effective: Optional[Dict[str, Any]] = None
+    for link in chain or []:
+        grant = link.get("parentCredential") if isinstance(link, dict) else None
+        if isinstance(grant, dict):
+            view = capability_view(grant, include_time=include_time)
+            effective = view if effective is None else inherit(effective, view)
+    own = capability_view(credential, include_time=include_time)
+    return own if effective is None else inherit(effective, own)
 
 
 def non_expansion(parent: dict, child: dict) -> Optional[str]:
@@ -214,11 +248,56 @@ def non_expansion(parent: dict, child: dict) -> Optional[str]:
 
     # policy: child must be equal to or stricter than the parent's.
     c_pol = child.get("policy")
+    p_pol = parent.get("policy")
     if c_pol is not None:
-        p_pol = parent.get("policy")
         if p_pol is not None and not _policy_not_weaker(p_pol, c_pol):
             return "policy"
 
+    # spend: an action's intent.amount stays within the parent's maxSpend.
+    if isinstance(p_pol, dict) and "maxSpend" in p_pol and isinstance(c_intent, dict):
+        if "amount" in c_intent:
+            amount = c_intent["amount"]
+            cap = p_pol["maxSpend"]
+            if not _is_number(amount) or not _is_number(cap) or amount > cap:
+                return "policy"
+
+    return None
+
+
+_INHERITED_TOP = ("rate", "policy", "validFrom", "validUntil")
+
+
+def inherit(parent_effective: dict, child: dict) -> dict:
+    """The child's effective capability: any dimension it omits is inherited
+    unchanged from its parent's effective capability (Specification 9.2).
+    `amount` is per action and is never inherited."""
+    out = dict(child)
+    p_intent = parent_effective.get("intent") or {}
+    c_intent = child.get("intent")
+    c_intent = dict(c_intent) if isinstance(c_intent, dict) else {}
+    if isinstance(p_intent, dict):
+        for k in ("action", "target", "resource"):
+            if k not in c_intent and k in p_intent:
+                c_intent[k] = p_intent[k]
+    out["intent"] = c_intent
+    for k in _INHERITED_TOP:
+        if out.get(k) is None and parent_effective.get(k) is not None:
+            out[k] = parent_effective[k]
+    return out
+
+
+def first_broader_step(views: List[dict]) -> Optional[str]:
+    """Walk root -> leaf comparing each step against its parent's EFFECTIVE
+    capability (inherited dimensions included). Returns the first offending
+    dimension, or None."""
+    if not views:
+        return None
+    effective = views[0]
+    for child in views[1:]:
+        dimension = non_expansion(effective, child)
+        if dimension is not None:
+            return dimension
+        effective = inherit(effective, child)
     return None
 
 
@@ -259,13 +338,15 @@ def validate_chain(
     if revoked:
         return {"valid": False, "code": "delegation_revoked", "linkIndex": min(revoked)}
 
+    effective = chain[0]
     for i in range(1, len(chain)):
         parent, child = chain[i - 1], chain[i]
         if parent.get("subject") != child.get("issuer"):
             return {"valid": False, "code": "subject_issuer_mismatch", "linkIndex": i}
-        dim = non_expansion(parent, child)
+        dim = non_expansion(effective, child)
         if dim is not None:
             return {"valid": False, "code": "scope_exceeds_parent", "dimension": dim}
+        effective = inherit(effective, child)
 
     eff_start = None
     eff_end = None
