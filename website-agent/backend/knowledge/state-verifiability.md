@@ -121,6 +121,7 @@ verdict = verify_agent_call(
     credential,
     public_key=caller_key,
     session_voucher=voucher,          # carries authorityEpoch 5
+    voucher_public_key=validator_key, # the validator that signed the voucher
     trust_threshold=0.9,
     consequence=CONSEQUENCE_SENSITIVE,
     last_seen_authority_epoch=7,      # a suspension already bumped it
@@ -129,8 +130,12 @@ verdict = verify_agent_call(
 # "authority_epoch_stale:seen=7,voucher=5", even though verdict.trust_ok is True.
 ```
 
-The default tier is `routine`, so existing callers see no change until
-they opt a higher tier in.
+`verify_agent_call` checks the SessionVoucher's proof (against
+`voucher_public_key`), its validity window, and that its subject is the
+caller before it uses the voucher's trust value. The credential and the
+voucher are evaluated at the same `at_time`. When no `trust_threshold` is
+given, the threshold follows the consequence tier: 0.5 for `routine`, 0.75
+for `sensitive`, 0.9 for `critical`. The default tier is `routine`.
 
 Reason codes are identical across every language binding, so an audit
 log reads the same whichever SDK produced it. An absent epoch renders as
@@ -226,6 +231,12 @@ proof = tree.proof(leaf_index=1)
 ok = verify_inclusion(leaf=b"action_2", proof=proof, root=tree.root())
 ```
 
+An unpaired node at the end of a level is promoted to the next level
+unchanged (the RFC 6962 tree shape), so a list of leaves and the same list
+with its last leaf repeated have different roots. `root_from_leaf_hashes`
+computes a root from leaf hashes directly, which is how a validator checks a
+heartbeat's `actionMerkleRoot`.
+
 Domain separation: leaves hashed with `0x00` prefix, internal nodes
 with `0x01` prefix. Prevents the classic second-preimage attack where
 an internal node hash is fed back as a "leaf."
@@ -238,7 +249,10 @@ Composes the four primitives above. Agent side:
 from vouch import HeartbeatSession, HeartbeatScheduler
 import asyncio
 
-session = HeartbeatSession(subject_did="did:web:agent.example.com")
+session = HeartbeatSession(
+    subject_did="did:web:agent.example.com",
+    signer=signer,  # the agent signs every heartbeat request
+)
 
 # During agent activity
 session.record_action(b"submit_claim:HC-001")
@@ -246,8 +260,9 @@ session.collector.record_api_call("https://api.example.com/orders", tokens=120)
 
 # Submit callback
 async def submit(req):
-    signed = signer.sign(req.to_dict())
-    response = await http.post(validator_url, json=signed)
+    # req is already signed by the session's signer and carries the leaf
+    # hashes of the actions it commits to.
+    response = await http.post(validator_url, json=req.to_dict())
     new_session_voucher = response.json()
     return new_session_voucher
 
@@ -273,6 +288,8 @@ validator = HeartbeatValidator(
     voucher_valid_seconds=120,
     scope=["agent_actions"],
     store=MemoryHeartbeatStore(),  # or RedisHeartbeatStore in production
+    key_resolver=resolve,          # did -> key, for subjects that are not did:key
+    max_missed_intervals=2,
 )
 
 result = validator.validate(heartbeat_request_dict)
@@ -283,9 +300,14 @@ else:
         log(reason)
 ```
 
-The validator checks: schema, behavioral digest structure, canary
-chain integrity, interval-index monotonicity. On success, returns an
-unsigned SessionVoucher carrying configured trust parameters.
+The validator checks: schema, the agent's signature on the request, the
+request time against the validator's clock, the action Merkle root against
+the leaf hashes, behavioral digest structure, canary chain integrity, and
+interval-index monotonicity. A session that misses more than
+`max_missed_intervals` lapses until it is reset. On success, returns an
+unsigned SessionVoucher carrying configured trust parameters. Vouchers
+issued by a validator quorum carry the `authorityEpoch` of the heartbeat
+they renew.
 
 ## Validator Quorum (M-of-N)
 

@@ -225,7 +225,9 @@ grant = vouch.delegate(action="charge", target="api.payments.example.com",
 agent.tools = vouch.protect([charge_invoice], parent=grant)
 ```
 
-`parent=` also works on `@signed` and `sign_intent`.
+`parent=` also works on `@signed` and `sign_intent`. Pass the delegate's DID as `to=`:
+a child credential can only be issued by the delegate the grant names, and only
+within the grant.
 
 ## Zero-config runtime protection: Shield.guard
 
