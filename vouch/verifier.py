@@ -28,6 +28,13 @@ from . import data_integrity, did_web, multikey
 logger = logging.getLogger(__name__)
 
 
+class MissingMLDSA44KeyError(ValueError):
+    """A credential carries a post-quantum proof set (eddsa-jcs-2022 plus
+    mldsa44-jcs-2024) but no ML-DSA-44 public key was available to check the
+    post-quantum half. Pass `mldsa44_public_key=`, or publish the key in the
+    issuer's DID document. A did:key identifier encodes only the Ed25519 key."""
+
+
 @dataclass
 class DelegationLink:
     """
@@ -309,6 +316,7 @@ class Verifier:
         key_resolver: Optional[Callable[[str], Any]] = None,
         trusted_roots: Optional[Any] = None,
         now: Optional[datetime] = None,
+        mldsa44_public_key: Optional[Union[bytes, str]] = None,
     ) -> Tuple[bool, Optional[CredentialPassport]]:
         """
         Verify a Verifiable Credential issued under Vouch Protocol v1.0.
@@ -335,9 +343,18 @@ class Verifier:
             a `{did: key}` map (keys are also used for resolution) or a list of
             DIDs. When given, the chain's root issuer must be one of them.
           now: Evaluation time for the validity windows (default: now, UTC).
+          mldsa44_public_key: The issuer's ML-DSA-44 public key (raw bytes or
+            a Multikey string), needed to verify a post-quantum proof set
+            (`proof` is an array of an eddsa-jcs-2022 and an mldsa44-jcs-2024
+            proof). Both proofs must verify. Supplying it also requires a
+            proof set: a single classical proof is then refused.
 
         Returns:
           Tuple of (is_valid, CredentialPassport or None).
+
+        Raises:
+          MissingMLDSA44KeyError: the credential carries a proof set and
+            `public_key` was given but no ML-DSA-44 key was.
         """
         if not credential:
             return False, None
@@ -355,25 +372,42 @@ class Verifier:
         if not isinstance(cred, dict):
             return False, None
 
-        # A `proof` array is a post-quantum proof set (an Ed25519 proof
-        # alongside an ML-DSA-44 proof). This generic verifier checks only the
-        # classical eddsa-jcs-2022 proof and has no ML-DSA-44 key to check the
-        # post-quantum half, so it cannot validate a proof set. Fail closed with
-        # a clear reason here instead of letting data_integrity.verify_proof
-        # raise an incidental "no proof object" error that reads like a bad
-        # signature. Post-quantum credentials must be verified with
-        # vouch.data_integrity_hybrid.verify_dual or
-        # vouch.robotics.verify_robot_credential, which take the ML-DSA-44 key.
-        if isinstance(cred.get("proof"), list):
-            logger.debug(
-                "Credential carries a proof set (post-quantum); verify it with "
-                "verify_dual or verify_robot_credential, which take an "
-                "ML-DSA-44 key"
-            )
+        # A `proof` array is a post-quantum proof set: an eddsa-jcs-2022 proof
+        # alongside an mldsa44-jcs-2024 proof. Both halves must verify, so the
+        # ML-DSA-44 key is required whenever the proof is checked.
+        is_proof_set = isinstance(cred.get("proof"), list)
+        if public_key is not None and is_proof_set:
+            if mldsa44_public_key is None:
+                raise MissingMLDSA44KeyError(
+                    "this credential carries an ML-DSA-44 post-quantum proof; pass "
+                    "mldsa44_public_key= (raw bytes or Multikey) or publish the key in "
+                    "the issuer's DID document. A did:key identifier encodes only the "
+                    "Ed25519 key."
+                )
+            ml_raw = _coerce_mldsa44_public_key(mldsa44_public_key)
+            resolved = _coerce_ed25519_public_key(public_key)
+            if ml_raw is None or resolved is None:
+                logger.debug("Could not coerce the Ed25519 or ML-DSA-44 public key")
+                return False, None
+            try:
+                from . import data_integrity_hybrid
+
+                if not data_integrity_hybrid.verify_dual(
+                    cred, ed25519_public_key=resolved, mldsa44_public_key=ml_raw
+                ):
+                    logger.debug("Post-quantum proof set verification failed")
+                    return False, None
+            except (ValueError, InvalidSignature) as e:
+                logger.debug(f"Proof set verification raised: {e}")
+                return False, None
+        elif public_key is not None and mldsa44_public_key is not None:
+            # The caller requires post-quantum; a single classical proof (for
+            # example a proof set with its ML-DSA-44 half stripped) is refused.
+            logger.debug("An ML-DSA-44 key was supplied but the credential has no proof set")
             return False, None
 
         # Verify the Data Integrity proof if a key was provided
-        if public_key is not None:
+        if public_key is not None and not is_proof_set:
             try:
                 resolved = _coerce_ed25519_public_key(public_key)
                 if resolved is None:
@@ -393,8 +427,11 @@ class Verifier:
         # the right purpose. Without this, a key trusted for issuer A could sign
         # a credential claiming issuer B (cross-issuer reuse), and a proof made
         # for an unrelated purpose could be replayed as an assertion.
-        proof = cred.get("proof")
-        if isinstance(proof, dict):
+        raw_proof = cred.get("proof")
+        proofs = raw_proof if isinstance(raw_proof, list) else [raw_proof]
+        for proof in proofs:
+            if not isinstance(proof, dict):
+                continue
             if proof.get("proofPurpose") != "assertionMethod":
                 logger.debug("Proof proofPurpose is not assertionMethod")
                 return False, None
@@ -498,10 +535,13 @@ class Verifier:
         *,
         key_resolver: Optional[Callable[[str], Any]] = None,
         trusted_roots: Optional[Any] = None,
+        mldsa44_public_key: Optional[Union[bytes, str]] = None,
     ) -> Tuple[bool, Optional[CredentialPassport]]:
         """
         Verify a W3C Vouch Credential, resolving the issuer key from trusted
-        roots or via DID resolution (`did:web`).
+        roots or via DID resolution (`did:web`). For a post-quantum proof set
+        the ML-DSA-44 key comes from `mldsa44_public_key` or, for did:web, from
+        the issuer's DID document.
 
         Delegation-chain grant issuers resolve through `key_resolver` when
         given, otherwise through this verifier's own trusted roots and DID
@@ -526,22 +566,58 @@ class Verifier:
             # Determine which verification method the proof points at
             proof = cred.get("proof") or {}
             vm_id = proof.get("verificationMethod") if isinstance(proof, dict) else None
+            ml_vm_id = None
+            if isinstance(proof, list):
+                for p in proof:
+                    if not isinstance(p, dict):
+                        continue
+                    if p.get("cryptosuite") == data_integrity.CRYPTOSUITE_ID:
+                        vm_id = p.get("verificationMethod")
+                    elif str(p.get("cryptosuite", "")).startswith("mldsa44"):
+                        ml_vm_id = p.get("verificationMethod")
 
             public_key = self._resolve_credential_public_key(issuer_did, vm_id)
             if public_key is None:
                 logger.warning(f"Could not resolve Multikey/JWK for: {issuer_did}")
                 return False, None
 
+            ml_key = mldsa44_public_key
+            if ml_key is None and isinstance(proof, list):
+                ml_key = self._resolve_mldsa44_public_key(issuer_did, ml_vm_id)
+        except Exception as e:
+            logger.debug(f"check_vouch_credential error: {e}")
+            return False, None
+
+        # Outside the try: a missing ML-DSA-44 key is reported to the caller,
+        # not swallowed as a bare False.
+        try:
             return Verifier.verify(
                 cred,
                 public_key=public_key,
                 clock_skew_seconds=self._clock_skew,
                 key_resolver=key_resolver or self._resolve_credential_public_key,
                 trusted_roots=trusted_roots,
+                mldsa44_public_key=ml_key,
             )
+        except MissingMLDSA44KeyError:
+            raise
         except Exception as e:
             logger.debug(f"check_vouch_credential error: {e}")
             return False, None
+
+    def _resolve_mldsa44_public_key(
+        self, did: str, verification_method_id: Optional[str] = None
+    ) -> Optional[bytes]:
+        """The issuer's ML-DSA-44 key from its DID document (did:web only;
+        did:key encodes only Ed25519)."""
+        if not (self._allow_resolution and did.startswith("did:web:")):
+            return None
+        try:
+            doc = did_web.resolve_did_web_sync(did)
+        except Exception as e:  # noqa: BLE001 - unresolvable means "no key"
+            logger.debug(f"DID resolution failed for {did}: {e}")
+            return None
+        return doc.get_mldsa44_public_key(verification_method_id) or doc.get_mldsa44_public_key()
 
     def _resolve_credential_public_key(
         self,
@@ -594,6 +670,7 @@ def verify(
     allow_did_resolution: bool = True,
     key_resolver: Optional[Callable[[str], Any]] = None,
     trusted_roots: Optional[Any] = None,
+    mldsa44_public_key: Optional[Union[bytes, str]] = None,
 ) -> Tuple[bool, Optional[CredentialPassport]]:
     """Verify a Vouch Credential in one line.
 
@@ -613,6 +690,9 @@ def verify(
         chain grant issuers are resolved.
       key_resolver / trusted_roots: see :meth:`Verifier.verify`; used for the
         delegation chain.
+      mldsa44_public_key: the issuer's ML-DSA-44 key for a post-quantum proof
+        set (raw bytes or Multikey). Without it, a did:web issuer's DID document
+        is consulted; a missing key raises :class:`MissingMLDSA44KeyError`.
 
     Returns:
       ``(is_valid, CredentialPassport | None)``.
@@ -637,11 +717,15 @@ def verify(
             public_key=public_key,
             key_resolver=resolver,
             trusted_roots=trusted_roots,
+            mldsa44_public_key=mldsa44_public_key,
         )
 
     # Auto-resolving path: reuse a cached resolver-enabled Verifier.
     return _DEFAULT_VERIFIER.check_vouch_credential(
-        credential, key_resolver=resolver, trusted_roots=trusted_roots
+        credential,
+        key_resolver=resolver,
+        trusted_roots=trusted_roots,
+        mldsa44_public_key=mldsa44_public_key,
     )
 
 
@@ -807,6 +891,19 @@ def _resolve_chain_key(
             return _coerce_any_public_key(candidate)
     if did.startswith("did:key:"):
         return _resolve_did_key(did)
+    return None
+
+
+def _coerce_mldsa44_public_key(key: Union[bytes, str]) -> Optional[bytes]:
+    """Raw ML-DSA-44 public key bytes from raw bytes or a Multikey string."""
+    if isinstance(key, (bytes, bytearray)):
+        return bytes(key)
+    if isinstance(key, str) and key.startswith("z"):
+        try:
+            alg, raw = multikey.decode(key)
+        except ValueError:
+            return None
+        return raw if alg == "ML-DSA-44" else None
     return None
 
 

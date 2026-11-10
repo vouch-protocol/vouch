@@ -11,6 +11,7 @@ import * as jose from 'jose';
 
 import { capabilityView, firstBroaderStep } from './attenuation';
 import { CRYPTOSUITE_ID, verifyProof } from './data-integrity';
+import { verifyDualProof } from './data-integrity-hybrid';
 import { decode as decodeMultikey } from './multikey';
 import type {
   CredentialPassport,
@@ -40,6 +41,24 @@ export interface VerifyOptions {
   trustedRoots?: Record<string, PublicKeyInput> | string[];
   /** Evaluation time for validity windows (default: now). */
   now?: Date;
+  /**
+   * The issuer's ML-DSA-44 public key (raw bytes or a Multikey string). Needed
+   * to verify a post-quantum proof set; supplying it also requires one.
+   */
+  mldsa44PublicKey?: Uint8Array | string;
+}
+
+function coerceMLDSA44PublicKey(key: Uint8Array | string): Uint8Array | null {
+  if (key instanceof Uint8Array) return key;
+  if (typeof key === 'string' && key.startsWith('z')) {
+    try {
+      const { algorithm, rawKey } = decodeMultikey(key);
+      return algorithm === 'ML-DSA-44' ? rawKey : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 export class Verifier {
@@ -122,8 +141,35 @@ export class Verifier {
           error: 'Could not coerce public key to Ed25519',
         };
       }
+      const isProofSet = Array.isArray(cred.proof);
+      if (isProofSet && options.mldsa44PublicKey === undefined) {
+        return {
+          isValid: false,
+          passport: null,
+          error:
+            'missing ML-DSA-44 key: this credential carries an ML-DSA-44 post-quantum proof; ' +
+            "pass options.mldsa44PublicKey or publish the key in the issuer's DID document " +
+            '(a did:key encodes only the Ed25519 key)',
+        };
+      }
+      if (!isProofSet && options.mldsa44PublicKey !== undefined) {
+        return {
+          isValid: false,
+          passport: null,
+          error: 'a post-quantum proof set is required but the credential carries a single proof',
+        };
+      }
       try {
-        if (!verifyProof(cred, resolved)) {
+        if (isProofSet) {
+          const ml = coerceMLDSA44PublicKey(options.mldsa44PublicKey!);
+          if (!ml || !verifyDualProof(cred, resolved, ml)) {
+            return {
+              isValid: false,
+              passport: null,
+              error: 'Post-quantum proof set verification failed',
+            };
+          }
+        } else if (!verifyProof(cred, resolved)) {
           return {
             isValid: false,
             passport: null,
