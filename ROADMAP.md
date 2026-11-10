@@ -78,11 +78,11 @@ The chat assistant on vouch-protocol.com currently runs in graceful "coming soon
 
 - [ ] Choose host: Fly.io (best technical fit for FastAPI + SSE) or Vercel (matches Operator's stack but needs SSE rework). Default plan: Fly.io.
 - [ ] Provision `fly.toml`, deploy `website-agent/backend/` with the existing `Dockerfile`.
-- [ ] DNS: `agent.vouch-protocol.org` pointing at the deployed app.
+- [ ] DNS: `agent.vouch-protocol.com` pointing at the deployed app.
 - [ ] Configure secrets: `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GEMINI_API_KEY`, `VOUCH_SIDECAR_URL`, `VOUCH_AGENT_DID`, `VOUCH_CORS_ORIGINS` (must include https://vouch-protocol.com).
 - [ ] Decide on rate limiting (per-IP, per-day) before going public; budget the LLM provider's monthly cost cap.
 - [ ] Deploy the Go sidecar alongside (KMS-backed key in production, not the dev sidecar).
-- [ ] Set `NEXT_PUBLIC_VOUCH_AGENT_URL=https://agent.vouch-protocol.org` in `.github/workflows/deploy-website.yml`. The website's graceful-fallback mode auto-switches to live mode when this is set.
+- [ ] Set `NEXT_PUBLIC_VOUCH_AGENT_URL=https://agent.vouch-protocol.com` in `.github/workflows/deploy-website.yml`. The website's graceful-fallback mode auto-switches to live mode when this is set.
 - [ ] Verify end-to-end: open the live site, click "Ask the assistant", confirm streaming response and credential card render.
 - [ ] Add backend monitoring (uptime, error rate, LLM provider latency) to observability.
 

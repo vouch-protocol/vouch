@@ -136,7 +136,7 @@ Every AI model receives a cryptographically signed "Birth Certificate" at the co
 
 ```json
 {
-  "$schema": "https://vouch-protocol.org/schemas/pad-018/birth-certificate/v1",
+  "$schema": "https://vouch-protocol.com/schemas/pad-018/birth-certificate/v1",
   "certificate_id": "vouch:model:bc-2026-02-14-a8f3d1e7...",
   "version": "1.0",
   "model_identity": {
@@ -1185,7 +1185,7 @@ C2PA Extended (PAD-018):
       "version": "1.0",
       "required": true,
       "content_type": "application/json",
-      "schema_uri": "https://vouch-protocol.org/schemas/pad-018/birth-certificate/v1"
+      "schema_uri": "https://vouch-protocol.com/schemas/pad-018/birth-certificate/v1"
     },
     "vouch.model.trainingData": {
       "label": "vouch.model.trainingData",
@@ -1193,7 +1193,7 @@ C2PA Extended (PAD-018):
       "version": "1.0",
       "required": true,
       "content_type": "application/json",
-      "schema_uri": "https://vouch-protocol.org/schemas/pad-018/training-data/v1"
+      "schema_uri": "https://vouch-protocol.com/schemas/pad-018/training-data/v1"
     },
     "vouch.model.parentLineage": {
       "label": "vouch.model.parentLineage",
@@ -1201,7 +1201,7 @@ C2PA Extended (PAD-018):
       "version": "1.0",
       "required": true,
       "content_type": "application/json",
-      "schema_uri": "https://vouch-protocol.org/schemas/pad-018/parent-lineage/v1"
+      "schema_uri": "https://vouch-protocol.com/schemas/pad-018/parent-lineage/v1"
     },
     "vouch.model.selfModLog": {
       "label": "vouch.model.selfModLog",
@@ -1209,7 +1209,7 @@ C2PA Extended (PAD-018):
       "version": "1.0",
       "required_when": "generation_counter > 0",
       "content_type": "application/json",
-      "schema_uri": "https://vouch-protocol.org/schemas/pad-018/self-mod-log/v1"
+      "schema_uri": "https://vouch-protocol.com/schemas/pad-018/self-mod-log/v1"
     },
     "vouch.model.architecture": {
       "label": "vouch.model.architecture",
@@ -1217,7 +1217,7 @@ C2PA Extended (PAD-018):
       "version": "1.0",
       "required": true,
       "content_type": "application/json",
-      "schema_uri": "https://vouch-protocol.org/schemas/pad-018/architecture/v1"
+      "schema_uri": "https://vouch-protocol.com/schemas/pad-018/architecture/v1"
     },
     "vouch.model.generation": {
       "label": "vouch.model.generation",
@@ -1225,7 +1225,7 @@ C2PA Extended (PAD-018):
       "version": "1.0",
       "required": true,
       "content_type": "application/json",
-      "schema_uri": "https://vouch-protocol.org/schemas/pad-018/generation/v1"
+      "schema_uri": "https://vouch-protocol.com/schemas/pad-018/generation/v1"
     },
     "vouch.model.fingerprint": {
       "label": "vouch.model.fingerprint",
@@ -1233,7 +1233,7 @@ C2PA Extended (PAD-018):
       "version": "1.0",
       "required": true,
       "content_type": "application/json",
-      "schema_uri": "https://vouch-protocol.org/schemas/pad-018/fingerprint/v1"
+      "schema_uri": "https://vouch-protocol.com/schemas/pad-018/fingerprint/v1"
     }
   }
 }
@@ -1539,7 +1539,7 @@ The Vouch Token (PAD-001) is extended with a model provenance field:
         "model_did": "did:key:z6MkModel...",
         "generation": 3,
         "fingerprint_hash": "sha256:H(behavioral_fingerprint)",
-        "certificate_registry": "https://registry.vouch-protocol.org/certificates/"
+        "certificate_registry": "https://registry.vouch-protocol.com/certificates/"
       }
     },
     "signature": "ed25519:agent_signs_payload"

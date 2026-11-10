@@ -42,6 +42,6 @@ Whenever the protocol changes:
 ## Not included
 
 - A logo (provide a 512x512 PNG matching the Vouch website's icon set)
-- Actions hosting (point the GPT at https://agent.vouch-protocol.org)
+- Actions hosting (point the GPT at https://vouch-assistant.fly.dev)
 - Analytics (ChatGPT does not expose per-GPT analytics outside the
   builder's "Usage" tab)

@@ -230,7 +230,7 @@ LLM proposes:
 ```json
 { "action": "share_quickstart",
   "target":  "me@example.com",
-  "resource": "https://vouch-protocol.org/quickstart" }
+  "resource": "https://vouch-protocol.com/quickstart" }
 ```
 
 Sidecar matches the second entry. Signs. Returns the Verifiable

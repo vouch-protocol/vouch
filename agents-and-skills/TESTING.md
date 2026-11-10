@@ -85,14 +85,14 @@ You need three terminals.
 
 ```bash
 cd go-sidecar
-go run ./cmd/vouch-sidecar --did did:web:agent.vouch-protocol.org --port 8877
+go run ./cmd/vouch-sidecar --did did:web:vouch-assistant.fly.dev --port 8877
 ```
 
 If you don't have Go installed, use the Python bridge:
 
 ```bash
 pip install 'vouch-protocol[server]'
-vouch-bridge --did did:web:agent.vouch-protocol.org --port 8877
+vouch-bridge --did did:web:vouch-assistant.fly.dev --port 8877
 ```
 
 **Terminal 2: Agent backend**
@@ -137,7 +137,7 @@ curl -s -X POST http://localhost:8000/sign \
         "intent": {
             "action": "answer_question",
             "target": "session:abc",
-            "resource": "https://vouch-protocol.org/help"
+            "resource": "https://vouch-protocol.com/help"
         }
     }' | jq
 # Expect: { "credential": { ... signed VC ... }, "audit": { ... } }
@@ -172,7 +172,7 @@ $signBody = @{
     intent = @{
         action   = "answer_question"
         target   = "session:abc"
-        resource = "https://vouch-protocol.org/help"
+        resource = "https://vouch-protocol.com/help"
     }
 } | ConvertTo-Json
 Invoke-RestMethod -Method Post -Uri "http://localhost:8000/sign" -ContentType "application/json" -Body $signBody
@@ -275,7 +275,7 @@ Run each:
 
 In the GPT preview, type:
 
-> "Sign a credential for me with action=answer_question target=test-session-1 resource=https://vouch-protocol.org/help"
+> "Sign a credential for me with action=answer_question target=test-session-1 resource=https://vouch-protocol.com/help"
 
 The GPT should:
 1. Summarize the credential it is about to sign.
