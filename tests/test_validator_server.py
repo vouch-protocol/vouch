@@ -92,12 +92,17 @@ def test_session_status_reflects_voucher(client):
     assert after["revoked"] is False
 
 
-def test_revoked_did_is_blocked(client):
+def test_revoked_did_is_blocked(authed_client):
+    client = authed_client
     sess = signed_session(AGENT_DID)
     # First heartbeat works.
     assert client.post("/heartbeat", json=sess.build_request().to_dict()).json()["ok"]
-    # Revoke the agent.
-    rv = client.post("/revoke", json={"did": AGENT_DID, "reason": "key leaked"})
+    # Revoke the agent (an authorized revocation).
+    rv = client.post(
+        "/revoke",
+        json={"did": AGENT_DID, "reason": "key leaked"},
+        headers={"Authorization": f"Bearer {REVOKE_TOKEN}"},
+    )
     assert rv.status_code == 200 and rv.json()["revoked"] is True
     # Next heartbeat is refused with 403.
     r = client.post("/heartbeat", json=sess.build_request().to_dict())
@@ -131,3 +136,50 @@ def test_single_validator_coordinator(signer_identity):
     body = c.post("/heartbeat", json=req).json()
     assert body["ok"] is True
     assert "reasons" in body  # single-validator result shape
+
+
+# ---------------------------------------------------------------------------
+# /revoke requires authentication
+# ---------------------------------------------------------------------------
+
+REVOKE_TOKEN = "test-only-revoke-token"  # test value, not a secret
+
+
+@pytest.fixture
+def authed_client(signer_identity):
+    _, signer = signer_identity
+    app = create_validator_app(coordinator=_quorum(), signer=signer, revoke_token=REVOKE_TOKEN)
+    return TestClient(app)
+
+
+def test_unauthenticated_revoke_is_refused(authed_client):
+    r = authed_client.post("/revoke", json={"did": AGENT_DID, "reason": "prank"})
+    assert r.status_code == 401
+    status = authed_client.get(f"/sessions/{AGENT_DID}/any").json()
+    assert status["revoked"] is False
+
+
+def test_revoke_with_wrong_token_is_refused(authed_client):
+    r = authed_client.post(
+        "/revoke",
+        json={"did": AGENT_DID},
+        headers={"Authorization": "Bearer not-the-token"},
+    )
+    assert r.status_code == 401
+    assert authed_client.get(f"/sessions/{AGENT_DID}/any").json()["revoked"] is False
+
+
+def test_revoke_with_token_succeeds(authed_client):
+    r = authed_client.post(
+        "/revoke",
+        json={"did": AGENT_DID, "reason": "key leaked"},
+        headers={"Authorization": f"Bearer {REVOKE_TOKEN}"},
+    )
+    assert r.status_code == 200 and r.json()["revoked"] is True
+
+
+def test_revoke_is_disabled_when_no_credential_is_configured(client):
+    r = client.post("/revoke", json={"did": AGENT_DID})
+    assert r.status_code == 403
+    assert r.json()["error"] == "revocation_not_enabled"
+    assert client.get(f"/sessions/{AGENT_DID}/any").json()["revoked"] is False

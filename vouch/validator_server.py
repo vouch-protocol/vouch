@@ -12,7 +12,7 @@ Endpoints:
   POST /heartbeat                     submit a signed heartbeat, get a signed voucher
   GET  /sessions/{did}/{session_id}   session status
   GET  /vouchers/{did}/{session_id}   the last issued voucher (cache-friendly)
-  POST /revoke                        revoke a DID
+  POST /revoke                        revoke a DID (requires the configured credential)
   GET  /healthz                       liveness
 
 The coordinator is either a HeartbeatValidator (single validator) or a
@@ -23,9 +23,10 @@ their result shapes and signs the issued voucher with the server's own key.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import threading
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Awaitable, Callable, Dict, Optional, Tuple, Union
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
@@ -78,6 +79,8 @@ def create_validator_app(
     signer: Any,
     revocation: Optional[RevocationRegistry] = None,
     voucher_store: Optional[VoucherStore] = None,
+    revoke_token: Optional[str] = None,
+    revoke_authorizer: Optional[Callable[[Request], Awaitable[bool]]] = None,
 ) -> FastAPI:
     """
     Build the validator FastAPI app.
@@ -88,6 +91,13 @@ def create_validator_app(
       revocation: a RevocationRegistry. Defaults to a local-only memory registry
         (no remote .well-known lookups) so the reference server is self-contained.
       voucher_store: where issued vouchers are cached for GET /vouchers.
+      revoke_token: a shared secret; POST /revoke then requires
+        `Authorization: Bearer <revoke_token>`.
+      revoke_authorizer: an async callable deciding whether a /revoke request is
+        authorized (for example, checking a signed request or mTLS identity).
+        When both are given, both must allow.
+
+    With neither configured, POST /revoke is disabled and answers 403.
     """
     if revocation is None:
         revocation = RevocationRegistry(local_store=MemoryRevocationStore(), check_remote=False)
@@ -168,8 +178,25 @@ def create_validator_app(
             },
         )
 
+    async def _revoke_allowed(request: Request) -> Tuple[bool, int, str]:
+        if revoke_token is None and revoke_authorizer is None:
+            return False, 403, "revocation_not_enabled"
+        if revoke_token is not None:
+            header = request.headers.get("authorization", "")
+            scheme, _, presented = header.partition(" ")
+            if scheme.lower() != "bearer" or not hmac.compare_digest(
+                presented.encode("utf-8"), revoke_token.encode("utf-8")
+            ):
+                return False, 401, "unauthorized"
+        if revoke_authorizer is not None and not await revoke_authorizer(request):
+            return False, 401, "unauthorized"
+        return True, 200, ""
+
     @app.post("/revoke")
     async def revoke(request: Request) -> JSONResponse:
+        allowed, status, error = await _revoke_allowed(request)
+        if not allowed:
+            return JSONResponse({"error": error}, status_code=status)
         try:
             body = await request.json()
         except Exception:
