@@ -2483,6 +2483,17 @@ $env:GEMINI_API_KEY = "..."
 
 Or set them in \`website-agent/.env\` (auto-loaded on backend start).
 
+## The hosted assistant's DID, A2A endpoint and agent card
+
+The hosted Vouch Protocol Assistant uses the DID \`did:web:agent.vouch-protocol.com\`. It resolves to \`https://agent.vouch-protocol.com/.well-known/did.json\`, which the assistant serves itself from its sidecar's key. Verify a credential it signed with \`vouch.verify(credential)\`.
+
+Other agents can reach it over A2A:
+
+- \`POST /a2a\` takes a JSON-RPC 2.0 \`message/send\` request with text parts. It answers through the same retrieval and model path as the chat, with the same 4000-character limit. The reply's signed Vouch credential is in \`metadata.vouchCredential\`. No actions are reachable here.
+- \`GET /.well-known/agent-card.json\` returns the signed A2A agent card. It is signed with \`vouch.integrations.a2a.sign_agent_card\` at sidecar startup, is valid for 90 days, and lists \`https://agent.vouch-protocol.com/a2a\` as its URL.
+
+If you self-host, set \`VOUCH_A2A_URL\` to your own A2A endpoint. The DID resolves once your hostname reaches the app over HTTPS, so it needs a DNS record and a TLS certificate.
+
 ## Production deployment
 
 For production, replace the dev sidecar with the Go sidecar (\`vouch-sidecar\`) backed by KMS, and run the agent backend behind a reverse proxy with TLS. The backend is self-contained; everything else (LLM provider, sidecar URL, CORS allow-list) is environment-driven.
