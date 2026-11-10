@@ -10,11 +10,19 @@ type Credential = Record<string, unknown> & {
     credentialSubject?: { intent?: Record<string, unknown> };
     proof?: { cryptosuite?: string; verificationMethod?: string; proofValue?: string };
 };
+type ActionProposal = { action: string; params: Record<string, string>; label: string };
 type Message = {
     role: 'user' | 'assistant';
     text: string;
     sources?: Source[];
     credential?: Credential;
+    /** 'reply' when the credential signs this answer's text, 'action' for a confirmed action. */
+    credentialKind?: 'reply' | 'action';
+    /** An action the assistant proposed; runs only when the visitor clicks it. */
+    action?: ActionProposal;
+    actionUsed?: boolean;
+    /** Files released by a verified generate_starter action. */
+    files?: Record<string, string>;
     interactionId?: string;
     feedbackRating?: 1 | -1;
     feedbackSubmitting?: boolean;
@@ -33,6 +41,23 @@ type Message = {
 };
 
 const FOLLOWUPS_MARKER = '---FOLLOWUPS---';
+/** The model's action-proposal line; the backend parses it, the UI hides it. */
+const ACTION_LINE = /^\s*---ACTION---.*$/gm;
+
+/** Actions the welcome screen offers directly, with no model in the loop. */
+const DIRECT_ACTIONS: ActionProposal[] = [
+    { action: 'generate_starter', params: { language: 'python' }, label: 'Generate a signed Python starter project' },
+    { action: 'generate_starter', params: { language: 'typescript' }, label: 'Generate a signed TypeScript starter project' },
+    { action: 'sign_sample', params: {}, label: 'Sign a sample credential so I can see the proof structure' },
+];
+
+const VERIFY_SNIPPET = `# pip install vouch-protocol
+import json
+from vouch import verify
+
+credential = json.loads(open("credential.json").read())
+ok, _ = verify(credential)  # fetches the assistant's did:web document
+print("valid:", ok)`;
 
 type Props = {
     apiBase: string;
@@ -209,16 +234,31 @@ function CodeFence({ code, language }: { code: string; language?: string }) {
     );
 }
 
-function CredentialView({ credential }: { credential: Credential }) {
+function CredentialView({ credential, compact = false }: { credential: Credential; compact?: boolean }) {
     const [expanded, setExpanded] = useState(false);
+    const [open, setOpen] = useState(!compact);
     const intent = credential.credentialSubject?.intent ?? {};
     const proof = credential.proof ?? {};
     const id = String(credential.id ?? '');
     const truncated = id.length > 28 ? id.slice(0, 16) + '...' + id.slice(-8) : id;
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="mt-2 font-mono uppercase text-[0.62rem] tracking-[0.16em] text-ink-faint hover:text-burgundy"
+                title="This reply is signed by the assistant's DID, bound to a hash of its text"
+            >
+                ✓ Signed reply · show credential
+            </button>
+        );
+    }
     return (
         <div className="mt-3 p-3 border border-rule bg-parchment-warm text-[0.78rem]">
             <div className="flex items-center gap-2 mb-2">
-                <span className="font-mono uppercase text-[0.6rem] tracking-[0.18em] text-burgundy">Vouch Credential</span>
+                <span className="font-mono uppercase text-[0.6rem] tracking-[0.18em] text-burgundy">
+                    {compact ? 'Signed reply' : 'Vouch Credential · verified'}
+                </span>
                 <span className="font-mono text-ink-faint text-[0.7rem]" title={id}>{truncated}</span>
             </div>
             <dl className="grid grid-cols-[90px_1fr] gap-x-3 gap-y-1">
@@ -230,21 +270,67 @@ function CredentialView({ credential }: { credential: Credential }) {
                 <dd>{String(intent.target ?? '')}</dd>
                 <dt className="text-ink-faint">Resource</dt>
                 <dd className="break-all font-mono text-[0.7rem]">{String(intent.resource ?? '')}</dd>
+                {intent.outputDigest !== undefined && (
+                    <>
+                        <dt className="text-ink-faint">Output</dt>
+                        <dd className="break-all font-mono text-[0.7rem]">{String(intent.outputDigest)}</dd>
+                    </>
+                )}
                 <dt className="text-ink-faint">Suite</dt>
                 <dd className="font-mono text-[0.7rem]">{String(proof.cryptosuite ?? '')}</dd>
+                <dt className="text-ink-faint">Valid until</dt>
+                <dd className="font-mono text-[0.7rem]">{String(credential.validUntil ?? '')}</dd>
             </dl>
             <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
                 className="mt-2 font-mono uppercase text-[0.65rem] tracking-[0.18em] text-ink-faint hover:text-burgundy"
             >
-                {expanded ? 'Hide JSON' : 'Show raw JSON'}
+                {expanded ? 'Hide JSON' : 'Show raw JSON and verify it yourself'}
             </button>
             {expanded && (
-                <pre className="mt-2 text-[0.7rem] max-h-72">
-                    <code>{JSON.stringify(credential, null, 2)}</code>
-                </pre>
+                <>
+                    <CodeFence code={JSON.stringify(credential, null, 2)} language="json" />
+                    <p className="mt-2 text-ink-faint">
+                        Copy the JSON into <code>credential.json</code>, then:
+                    </p>
+                    <CodeFence code={VERIFY_SNIPPET} language="python" />
+                </>
             )}
+        </div>
+    );
+}
+
+function StarterFiles({ files }: { files: Record<string, string> }) {
+    const [urls, setUrls] = useState<Record<string, string>>({});
+    useEffect(() => {
+        const made: Record<string, string> = {};
+        for (const [name, content] of Object.entries(files)) {
+            made[name] = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+        }
+        setUrls(made);
+        return () => Object.values(made).forEach((u) => URL.revokeObjectURL(u));
+    }, [files]);
+    return (
+        <div className="mt-3 space-y-2">
+            {Object.keys(files)
+                .sort()
+                .map((name) => (
+                    <div key={name}>
+                        <p className="font-mono text-[0.72rem] text-ink-soft flex items-baseline gap-3">
+                            {name}
+                            <a
+                                href={urls[name]}
+                                download={name}
+                                className="uppercase text-[0.6rem] tracking-[0.16em] text-ink-faint hover:text-burgundy"
+                            >
+                                download
+                            </a>
+                        </p>
+                        {/* Exact contents: the signed digest covers these bytes. */}
+                        <CodeFence code={files[name]} />
+                    </div>
+                ))}
         </div>
     );
 }
@@ -342,6 +428,27 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<{ vouch: VouchError; raw: string } | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
+    // Signed actions need a backend that serves /act. Ask the backend what it
+    // supports, and show action buttons only when it says so, so this UI
+    // keeps working against an older deployment.
+    const [actionsEnabled, setActionsEnabled] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`${apiBase}/`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((info: { endpoints?: unknown } | null) => {
+                if (!cancelled && Array.isArray(info?.endpoints) && info.endpoints.includes('/act')) {
+                    setActionsEnabled(true);
+                }
+            })
+            .catch(() => {
+                /* older backend or offline: actions stay hidden */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [apiBase]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -408,6 +515,63 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
         }
     }
 
+    /**
+     * Run an action the visitor confirmed. The backend builds the output,
+     * signs an intent carrying its digest, verifies the credential, and only
+     * then returns the output, so nothing shows here unless it was signed.
+     */
+    async function runAction(proposal: ActionProposal, fromIndex?: number) {
+        if (busy) return;
+        setError(null);
+        setBusy(true);
+        setMessages((prev) => {
+            const next = [...prev];
+            if (fromIndex !== undefined && next[fromIndex]) {
+                next[fromIndex] = { ...next[fromIndex], actionUsed: true };
+            }
+            next.push({ role: 'user', text: proposal.label }, { role: 'assistant', text: 'Signing the intent…' });
+            return next;
+        });
+        try {
+            const resp = await fetch(`${apiBase}/act`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ action: proposal.action, params: proposal.params }),
+            });
+            const bodyText = await resp.text();
+            if (!resp.ok) {
+                setMessages((prev) => prev.slice(0, -1));
+                setError(classifyError(`agent returned ${resp.status}: ${bodyText}`.trim(), { status: resp.status, rawText: bodyText }));
+                return;
+            }
+            const body = JSON.parse(bodyText) as {
+                credential: Credential;
+                verified: boolean;
+                result: { files?: Record<string, string> } | null;
+            };
+            const files = body.result?.files;
+            const text = files
+                ? 'Here is your starter project. I signed a credential for it first, and its output digest is the SHA-256 of these exact files, so you can check you got what I signed. verify_assistant.py does that for you.'
+                : 'Here is a sample credential, signed by my DID and verified before I showed it to you.';
+            setMessages((prev) => {
+                const next = [...prev];
+                next[next.length - 1] = {
+                    role: 'assistant',
+                    text,
+                    credential: body.credential,
+                    credentialKind: 'action',
+                    files,
+                };
+                return next;
+            });
+        } catch (e) {
+            setMessages((prev) => prev.slice(0, -1));
+            setError(classifyError(e));
+        } finally {
+            setBusy(false);
+        }
+    }
+
     async function submitFeedback(messageIndex: number, rating: 1 | -1, comment: string | null) {
         const target = messages[messageIndex];
         if (!target?.interactionId) return;
@@ -464,7 +628,6 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     const last = next[next.length - 1];
                     if (last && last.role === 'assistant') {
                         last.sources = parsed.sources ?? last.sources;
-                        last.credential = parsed.credential ?? last.credential;
                         last.interactionId = parsed.interaction_id ?? last.interactionId;
                     }
                     return next;
@@ -513,6 +676,30 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                     }
                     return next;
                 });
+            } else if (event === 'action') {
+                setMessages((prev) => {
+                    const next = [...prev];
+                    const last = next[next.length - 1];
+                    if (
+                        last &&
+                        last.role === 'assistant' &&
+                        typeof parsed.action === 'string' &&
+                        typeof parsed.label === 'string'
+                    ) {
+                        last.action = { action: parsed.action, params: parsed.params ?? {}, label: parsed.label };
+                    }
+                    return next;
+                });
+            } else if (event === 'credential') {
+                setMessages((prev) => {
+                    const next = [...prev];
+                    const last = next[next.length - 1];
+                    if (last && last.role === 'assistant' && parsed.credential) {
+                        last.credential = parsed.credential;
+                        last.credentialKind = 'reply';
+                    }
+                    return next;
+                });
             } else if (event === 'done') {
                 // Defensive fallback: if the server never sent a followups
                 // frame (e.g. older deploy), use whatever we parsed inline
@@ -557,15 +744,26 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                         </p>
                         <p className="text-[0.92rem] leading-relaxed mb-5 text-ink-faint">
                             I can explain the wire format, walk through SDK examples in Python, TypeScript, or Go,
-                            debug verification errors, and sign a real Vouch credential to demonstrate any flow you ask
-                            about.
+                            and debug verification errors.
+                            {actionsEnabled &&
+                                ' Every reply I give is signed by my DID, and anything I make for you is signed and verified before you see it.'}
                         </p>
                         <div className="grid gap-2 text-[0.85rem]">
+                            {actionsEnabled && DIRECT_ACTIONS.map((a) => (
+                                <button
+                                    key={a.label}
+                                    type="button"
+                                    onClick={() => void runAction(a)}
+                                    disabled={busy}
+                                    className="text-left px-3 py-2 border border-burgundy/50 text-burgundy hover:border-burgundy hover:bg-burgundy hover:text-parchment transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    ✓ {a.label}
+                                </button>
+                            ))}
                             {[
                                 'Show me a Python quickstart for signing a credential.',
                                 'My verifier returns verificationMethod_not_found. What does that mean?',
                                 'Walk me through enabling post-quantum signatures.',
-                                'Sign a sample credential so I can see the proof structure.',
                             ].map((s) => (
                                 <button
                                     key={s}
@@ -590,7 +788,7 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                                         : 'bg-parchment-warm text-ink'
                                 }`}
                             >
-                                {renderMessageBody(m.text || (m.role === 'assistant' && busy && i === messages.length - 1 ? '...' : '')).map((part, j) =>
+                                {renderMessageBody(m.text.replace(ACTION_LINE, '').trimEnd() || (m.role === 'assistant' && busy && i === messages.length - 1 ? '...' : '')).map((part, j) =>
                                     part.type === 'code' ? (
                                         <CodeFence key={j} code={part.content} language={part.language} />
                                     ) : (
@@ -598,7 +796,19 @@ export default function AgentChat({ apiBase, initialPrompt }: Props) {
                                     ),
                                 )}
                             </div>
-                            {m.credential && <CredentialView credential={m.credential} />}
+                            {m.files && <StarterFiles files={m.files} />}
+                            {m.credential && (
+                                <CredentialView credential={m.credential} compact={m.credentialKind === 'reply'} />
+                            )}
+                            {m.role === 'assistant' && m.action && !m.actionUsed && !busy && actionsEnabled && (
+                                <button
+                                    type="button"
+                                    onClick={() => m.action && void runAction(m.action, i)}
+                                    className="mt-3 font-mono uppercase text-[0.7rem] tracking-[0.14em] text-parchment bg-burgundy border border-burgundy px-3 py-2 hover:bg-burgundy-dark transition-colors"
+                                >
+                                    ✓ {m.action.label}
+                                </button>
+                            )}
                             {m.sources && m.sources.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1.5">
                                     {/* RAG can return multiple chunks from the same file. Dedupe

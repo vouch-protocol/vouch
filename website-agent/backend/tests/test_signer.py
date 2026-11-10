@@ -12,7 +12,7 @@ def test_valid_intent_passes() -> None:
         {
             "action": "answer_question",
             "target": "session:abc",
-            "resource": "https://vouch-protocol.org/help",
+            "resource": "https://vouch-protocol.com/help",
         }
     )
 
@@ -22,7 +22,7 @@ def test_missing_field_raises(missing: str) -> None:
     intent = {
         "action": "answer_question",
         "target": "session:abc",
-        "resource": "https://vouch-protocol.org/help",
+        "resource": "https://vouch-protocol.com/help",
     }
     intent.pop(missing)
     with pytest.raises(SignerError):
@@ -35,6 +35,6 @@ def test_disallowed_action_raises() -> None:
             {
                 "action": "exfiltrate_keys",
                 "target": "session:abc",
-                "resource": "https://vouch-protocol.org/help",
+                "resource": "https://vouch-protocol.com/help",
             }
         )
