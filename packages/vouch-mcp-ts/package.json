@@ -1,6 +1,6 @@
 {
   "name": "@vouch-protocol-official/mcp",
-  "version": "2.2.1",
+  "version": "3.0.0",
   "description": "Vouch-protected MCP servers. Change one import and every tool checks a credential before it acts.",
   "license": "Apache-2.0",
   "repository": {
@@ -49,7 +49,7 @@
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": ">=1.10.0",
-    "@vouch-protocol-official/sdk": ">=2.2.0",
+    "@vouch-protocol-official/sdk": ">=3.0.0",
     "zod": "^3.23.0 || ^4.0.0"
   },
   "devDependencies": {

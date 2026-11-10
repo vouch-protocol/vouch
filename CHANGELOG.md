@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-10
+
+This release makes verification stricter by default across the SDKs. Each item
+under Changed lists what to do when upgrading.
+
+### Changed
+
+- Delegation chains are verified end to end. Each link carries the signed grant
+  it came from (`parentCredential`), and `vouch.verify` checks every grant's
+  signature, that each grant names the next delegate, that every grant is
+  current, and that no step is broader than the one before it on action,
+  target, resource, time, rate, or policy. `Signer.sign(parent_credential=...)`
+  issues a child only for the delegate the grant names and only within the
+  grant. Upgrading: issue grants with the delegatee's DID
+  (`vouch.delegate(..., to=did)`), keep each child's action and target inside
+  the grant's set, re-issue delegated credentials with this release, and pass
+  `trusted_roots=` or `key_resolver=` to resolve grantors that are not
+  `did:key`. The TypeScript SDK, the Go sidecar, and the Rust core apply the
+  same rules, pinned by the shared vector `test-vectors/delegation-chain`.
+- Numeric policy limits narrow by name: a `max*` limit can only be lowered and a
+  `min*` limit can only be raised by a sub-delegation, and other numeric limits
+  are carried unchanged. `policy.maxSpend` caps the `amount` of every action
+  under the grant. A dimension a link leaves out is inherited from its parent,
+  so a later link is held to it. All SDKs apply these rules identically.
+- `verify_agent_call` verifies the SessionVoucher's proof, validity window, and
+  subject before it uses the voucher's trust value, and evaluates the
+  credential and the voucher at the same `at_time`. Upgrading: pass the issuing
+  validator's key as `voucher_public_key=`. When no `trust_threshold` is given,
+  the threshold follows the consequence tier: 0.5 routine, 0.75 sensitive, 0.9
+  critical. The vouch-mcp `check_trust` tool applies the same voucher checks.
+- Heartbeat requests are signed by the agent and carry the leaf hashes of the
+  actions they commit to. The validator checks the signature, the request
+  time, and the action Merkle root before it renews a SessionVoucher, and a
+  session that misses more than the configured number of intervals lapses
+  until it is reset. Upgrading: create sessions with
+  `HeartbeatSession(subject_did=..., signer=...)`, and give the validator a
+  `key_resolver=` for subjects that are not `did:key`.
+- Merkle trees promote an unpaired node to the next level unchanged, following
+  the RFC 6962 tree shape, so a list of leaves and the same list with its last
+  leaf repeated have different roots.
+- Capability links carry a validity window, and a child link is kept inside its
+  parent's. `verify_capability` checks that each link was issued by the
+  delegatee its parent names, that its attenuation stays within its parent's,
+  and that it is current, and it accepts a `revoked=` oracle for link ids and
+  DIDs.
+- The reference validator server accepts revocation only from an authorized
+  caller: configure `revoke_token` (sent as a bearer token) or a
+  `revoke_authorizer`. With neither, revocation over HTTP is off.
+
+### Added
+
+- `vouch.verify` verifies post-quantum credentials. Pass the issuer's ML-DSA-44
+  key as `mldsa44_public_key=`, or publish it in the issuer's DID document, and
+  both the Ed25519 and the ML-DSA-44 proof must verify. Without an ML-DSA-44
+  key, verification raises `MissingMLDSA44KeyError` with a clear message. The
+  TypeScript `Verifier.verify` accepts `mldsa44PublicKey` the same way.
+- SessionVouchers issued by a validator quorum carry the authority epoch of the
+  heartbeat they renew.
+- `vouch.verifier.verify_delegation_chain`, `vouch.vc.sign_session_voucher`,
+  `vouch.trust_entropy.verify_session_voucher`, and
+  `vouch.merkle.root_from_leaf_hashes`.
+- `examples/ccg_demo/`: three offline demos of delegation that only narrows,
+  trust that decays until renewed, and heartbeat renewal.
+
 ## [2.2.1] - 2026-09-08
 
 ### Fixed
