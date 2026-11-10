@@ -163,8 +163,8 @@ def verify_agent_call(
       trust_threshold: minimum current trust required when a voucher is given.
         Defaults to the consequence tier's band (`DEFAULT_TRUST_THRESHOLDS`):
         routine 0.5, sensitive 0.75, critical 0.9.
-      at_time: evaluation time for the voucher window and trust decay
-        (defaults to now).
+      at_time: evaluation time for the credential and voucher windows and
+        trust decay (defaults to now).
       clock_skew_seconds: allowed clock drift for credential and voucher timing.
       consequence: the action's consequence tier (`routine`, `sensitive`,
         `critical`) driving Authority Freshness (`vouch.authority_state`) and
@@ -186,6 +186,7 @@ def verify_agent_call(
         credential,
         public_key=public_key,
         clock_skew_seconds=clock_skew_seconds,
+        now=at_time,
     )
     # Identity is only established when a key was supplied AND the proof verified.
     # With no key, verify runs structural and temporal checks only, so

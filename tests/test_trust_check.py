@@ -258,3 +258,20 @@ def test_async_checks_revocation_registry(agent):
         assert v2.ok is False and v2.revoked is True
 
     asyncio.run(run())
+
+
+def test_at_time_applies_to_the_credential_window_too(validator):
+    """One evaluation time for the whole decision: credential and voucher."""
+    ident = generate_identity(domain="caller.example.com")
+    signer = Signer(private_key=ident.private_key_jwk, did=ident.did)
+    then = datetime(2030, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    cred = signer.sign(intent=INTENT, valid_seconds=300, valid_from=then)
+    voucher = _signed_voucher(validator, ident.did, issued_at=then)
+    v = verify_agent_call(
+        cred,
+        public_key=signer.get_public_key_multikey(),
+        session_voucher=voucher,
+        voucher_public_key=validator.get_public_key_multikey(),
+        at_time=then + timedelta(seconds=5),
+    )
+    assert v.ok is True, v.reasons
