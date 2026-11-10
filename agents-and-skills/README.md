@@ -46,7 +46,7 @@ Before any of this lands on the live website or in shared accounts:
    Decide on the final route(s) (`/help/sidecars`, `/help/ai-assistants`,
    or merge into existing `/help`).
 3. Decide whether the hosted Vouch agent gets the
-   `agent.vouch-protocol.org` hostname or another.
+   `agent.vouch-protocol.com` hostname or another.
 4. Confirm the retention claim (30-day audit log) matches your actual
    policy.
 5. Decide whether to publish a shared Custom GPT / Gemini Gem under a

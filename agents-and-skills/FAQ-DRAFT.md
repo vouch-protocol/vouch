@@ -332,7 +332,7 @@ deduplicates by filename so the upload replaces in place.
 
 ## Hosted agent
 
-**Q: What is https://agent.vouch-protocol.org?**
+**Q: What is https://agent.vouch-protocol.com?**
 A: The hosted instance of the Vouch Agent. It powers the chat
 assistant on the website and exposes a small public API (`/chat`,
 `/sign`, `/audit`, `/healthz`). The same code is open source under
@@ -344,8 +344,8 @@ hosted agent rate-limits anonymous traffic and only signs intents in
 its allow-list. For higher quota, contact us about a managed instance.
 
 **Q: What signing key does the hosted agent use?**
-A: A did:web DID rooted at vouch-protocol.org. The DID Document is
-public at https://vouch-protocol.org/.well-known/did.json. Verification
+A: A did:web DID rooted at vouch-protocol.com. The DID Document is
+public at https://vouch-protocol.com/.well-known/did.json. Verification
 methods rotate quarterly; the prior keys remain in the document for
 the lifetime of credentials they signed.
 
@@ -446,7 +446,7 @@ before sealing. See `docs/udna-upstream-proposal.md`.
 
 ## Notes for the user reviewing this draft
 
-- "https://agent.vouch-protocol.org" is the proposed hostname for the
+- "https://agent.vouch-protocol.com" is the proposed hostname for the
   hosted agent; substitute the actual host once you provision it.
 - The "30-day retention for abuse monitoring" claim is a placeholder;
   set this to whatever policy you intend to publish.

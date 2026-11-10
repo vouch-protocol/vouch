@@ -16,7 +16,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-Instead, please email: **security@vouch-protocol.org**
+Instead, please email: **security@vouch-protocol.com**
 
 Or use GitHub's private vulnerability reporting:
 1. Go to the [Security tab](https://github.com/vouch-protocol/vouch/security)

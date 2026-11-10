@@ -578,7 +578,7 @@ at the application layer before sealing.
 - Screenshots are intentionally omitted; add them after capturing
   the screens you want shown.
 - The "agent.example.com" host in code blocks is a placeholder; if you
-  prefer "agent.vouch-protocol.org" use that consistently. Same for
+  prefer "agent.vouch-protocol.com" use that consistently. Same for
   any other example DID.
 - The "Pro tier adds FIPS 140-3" line in Part 1 is a forward-looking
   commitment; reword if you don't want a public mention yet.
