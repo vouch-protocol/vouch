@@ -67,16 +67,6 @@ def _fetch_json(url: str) -> Dict[str, Any]:
     raise RuntimeError("registry fetch failed")
 
 
-def _get_json(url: str, timeout: int = 6) -> Optional[Any]:
-    """Best-effort GET of a JSON document. Returns None on any error."""
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.load(resp)
-    except Exception:  # noqa: BLE001 - missing/invalid docs are expected
-        return None
-
-
 def _next_cursor(metadata: Dict[str, Any]) -> Optional[str]:
     """Pull the pagination cursor out of a registry response's metadata."""
     if not metadata:
@@ -195,102 +185,40 @@ def _resolve_declared_did(did: str, sig: Dict[str, Any]) -> None:
 def resolve_domain(domain: str) -> Dict[str, Any]:
     """Resolve one domain and gather every trust signal we can observe.
 
-    Identity (did:web) is the headline. We also record what key type is used,
-    whether the identity is post-quantum ready, whether a revocation or service
-    endpoint is published, and whether an agent card carries identity. Delegation
-    and continuous trust are deliberately absent: they appear only when an agent
+    Identity (did:web) is the headline. The post-quantum, revocation and
+    agent-card signals come from `vouch.grade`, the same evidence checks the
+    `vouch grade` command and the web grader run, so the Index counts a signal
+    only when the key, status list or signed card checks out. Delegation and
+    continuous trust are deliberately absent: they appear only when an agent
     presents a credential at runtime, never in a static published document.
     """
-    from vouch.did_web import resolve_did_web_sync
-    from vouch.multikey import algorithm_of
+    from vouch.grade import inspect_domain
 
-    sig: Dict[str, Any] = {
-        "has_did": False,
-        "has_verification_method": False,
-        "did": None,
-        "method": None,
-        "pq_ready": False,
-        "has_revocation": False,
-        "has_card_identity": False,
-    }
+    sig, cards = inspect_domain(domain, timeout=5)
 
-    try:
-        doc = resolve_did_web_sync(f"did:web:{domain}", timeout=5)
-        sig["has_did"] = True
-        sig["did"] = f"did:web:{domain}"
-        jwk = None
-        multibase = None
-        try:
-            jwk = doc.get_public_key_jwk()
-        except Exception:
-            jwk = None
-        try:
-            multibase = doc.get_public_key_multibase()
-        except Exception:
-            multibase = None
-        if jwk:
-            sig["has_verification_method"] = True
-            sig["method"] = f"did:web, {jwk.get('crv') or jwk.get('kty') or 'key'} (JWK)"
-        elif multibase:
-            sig["has_verification_method"] = True
-            try:
-                alg = algorithm_of(multibase)
-            except Exception:
-                alg = "key"
-            sig["method"] = f"did:web, {alg} (Multikey)"
-    except Exception:
-        pass
-
-    # Look at the served did.json for a revocation/service endpoint and any
-    # post-quantum key material.
-    if sig["has_did"]:
-        raw = _get_json(f"https://{domain}/.well-known/did.json")
-        if isinstance(raw, dict):
-            services = raw.get("service")
-            if isinstance(services, list) and services:
-                sig["has_revocation"] = True
-            blob = json.dumps(raw).lower()
-            if "ml-dsa" in blob or "mldsa" in blob or "dilithium" in blob:
-                sig["pq_ready"] = True
-
-    # Look at the agent card for declared identity or signatures, and for a DID
-    # the agent declares but does not serve at the bare domain.
-    card = _get_json(f"https://{domain}/.well-known/agent.json") or _get_json(
-        f"https://{domain}/.well-known/agent-card.json"
-    )
-    if isinstance(card, dict):
-        blob = json.dumps(card)
-        if "did:" in blob.lower() or "signature" in blob.lower():
-            sig["has_card_identity"] = True
-        if not sig["has_verification_method"]:
-            for did in dict.fromkeys(DID_RE.findall(blob)):
+    # Look in the agent cards for a DID the agent declares but does not serve
+    # at the bare domain.
+    if not sig["has_verification_method"]:
+        for card in cards:
+            if not isinstance(card, dict):
+                continue
+            for did in dict.fromkeys(DID_RE.findall(json.dumps(card))):
                 if did == f"did:web:{domain}":
                     continue
                 _resolve_declared_did(did, sig)
                 if sig["has_verification_method"]:
                     break
+            if sig["has_verification_method"]:
+                break
 
     return sig
 
 
 def score(signals: Dict[str, Any]) -> Dict[str, Any]:
     """Turn the signals into a 0 to 100 Trust Score and a letter grade."""
-    breakdown = {
-        "resolvable_did": 60 if signals["has_did"] else 0,
-        "valid_verification_method": 40 if signals["has_verification_method"] else 0,
-    }
-    points = sum(breakdown.values())
-    if points >= 90:
-        grade = "A"
-    elif points >= 75:
-        grade = "B"
-    elif points >= 60:
-        grade = "C"
-    elif points >= 40:
-        grade = "D"
-    else:
-        grade = "F"
-    return {"score": points, "grade": grade, "breakdown": breakdown}
+    from vouch.grade import score_signals
+
+    return score_signals(signals)
 
 
 # ---------------------------------------------------------------------------
@@ -304,6 +232,8 @@ def run(max_servers: Optional[int] = None, workers: int = 20) -> List[Dict[str, 
     Domains are resolved concurrently and deduplicated, so an agent that lists
     several domains is scored on the best signals across all of them.
     """
+    from vouch.grade import CARD_STATES, empty_signals
+
     records = fetch_servers(max_servers)
     unique_domains = sorted({d for r in records for d in r.domains})
 
@@ -315,24 +245,25 @@ def run(max_servers: Optional[int] = None, workers: int = 20) -> List[Dict[str, 
 
     results: List[Dict[str, Any]] = []
     for record in records:
-        signals: Dict[str, Any] = {
-            "has_did": False,
-            "has_verification_method": False,
-            "did": None,
-            "method": None,
-            "pq_ready": False,
-            "has_revocation": False,
-            "has_card_identity": False,
-        }
+        signals = empty_signals()
         for domain in record.domains:
             sig = domain_signals.get(domain, {})
             if sig.get("has_did") and not signals["has_did"]:
                 signals["has_did"] = True
                 signals["did"] = sig.get("did") or f"did:web:{domain}"
                 signals["method"] = sig.get("method")
-            for flag in ("has_verification_method", "pq_ready", "has_revocation", "has_card_identity"):
-                if sig.get(flag):
+            if sig.get("has_verification_method"):
+                signals["has_verification_method"] = True
+            reasons = sig.get("reasons") or {}
+            for flag in ("pq_ready", "has_revocation"):
+                if sig.get(flag) and not signals[flag]:
                     signals[flag] = True
+                    signals["reasons"][flag] = reasons.get(flag, "")
+            state = sig.get("card_identity", "no")
+            if CARD_STATES.index(state) > CARD_STATES.index(signals["card_identity"]):
+                signals["card_identity"] = state
+                signals["has_card_identity"] = state == "verified"
+                signals["reasons"]["card_identity"] = reasons.get("card_identity", "")
 
         scored = score(signals)
         results.append(

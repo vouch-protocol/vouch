@@ -96,6 +96,17 @@ jobs:
           npm install --legacy-peer-deps
           npm test
 
+  grader-worker:
+    name: Web grader worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+      - name: Run the shared grader vectors
+        run: node --test agent-trust-index/grader-worker/test/
+
   wasm:
     name: WASM core
     runs-on: ubuntu-latest

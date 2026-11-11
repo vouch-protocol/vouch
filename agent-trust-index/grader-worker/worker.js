@@ -6,7 +6,9 @@
  * the DID server-side and returns a grade. It is a faithful port of the Python
  * `vouch grade` scoring: 60 points for a resolvable did:web, 40 for a usable
  * verification method, with post-quantum, revocation, and agent-card identity
- * reported as extra signals that do not change the score.
+ * reported as extra signals that do not change the score. The extra signals
+ * come from evidence.js, the same evidence checks as vouch/grade.py, and every
+ * fetch goes through its guarded fetcher.
  *
  * Endpoints:
  *   GET /grade?domain=example.com   -> JSON report
@@ -14,6 +16,15 @@
  *
  * No secrets, no storage. Public, read-only grading.
  */
+
+import {
+  CARD_MAX_BYTES,
+  CARD_PATHS,
+  DID_DOCUMENT_MAX_BYTES,
+  STATUS_LIST_MAX_BYTES,
+  evidenceSignals,
+  guardedFetchJson,
+} from "./evidence.js";
 
 const GRADE_COLORS = { A: "#22c55e", B: "#84cc16", C: "#eab308", D: "#f97316", F: "#ef4444" };
 
@@ -70,16 +81,6 @@ function normalizeDomain(raw) {
   return d;
 }
 
-async function getJson(u) {
-  try {
-    const resp = await fetch(u, { redirect: "follow", signal: AbortSignal.timeout(6000) });
-    if (resp.status !== 200) return null;
-    return await resp.json();
-  } catch {
-    return null;
-  }
-}
-
 async function grade(domain) {
   const signals = {
     has_did: false,
@@ -89,12 +90,17 @@ async function grade(domain) {
     pq_ready: false,
     has_revocation: false,
     has_card_identity: false,
+    card_identity: "no",
+    reasons: {},
   };
+  const did = `did:web:${domain}`;
 
-  const didDoc = await getJson(`https://${domain}/.well-known/did.json`);
+  const didDoc = await guardedFetchJson(`https://${domain}/.well-known/did.json`, {
+    maxBytes: DID_DOCUMENT_MAX_BYTES,
+  });
   if (didDoc && typeof didDoc === "object") {
     signals.has_did = true;
-    signals.did = `did:web:${domain}`;
+    signals.did = did;
 
     const vms = []
       .concat(didDoc.verificationMethod || [])
@@ -113,23 +119,15 @@ async function grade(domain) {
         break;
       }
     }
-
-    if (Array.isArray(didDoc.service) && didDoc.service.length > 0) {
-      signals.has_revocation = true;
-    }
-    const blob = JSON.stringify(didDoc).toLowerCase();
-    if (blob.includes("ml-dsa") || blob.includes("mldsa") || blob.includes("dilithium")) {
-      signals.pq_ready = true;
-    }
   }
 
-  const card =
-    (await getJson(`https://${domain}/.well-known/agent.json`)) ||
-    (await getJson(`https://${domain}/.well-known/agent-card.json`));
-  if (card && typeof card === "object") {
-    const blob = JSON.stringify(card).toLowerCase();
-    if (blob.includes("did:") || blob.includes("signature")) signals.has_card_identity = true;
+  const cards = [];
+  for (const path of CARD_PATHS) {
+    cards.push(await guardedFetchJson(`https://${domain}${path}`, { maxBytes: CARD_MAX_BYTES }));
   }
+  const doc = signals.has_did && !Array.isArray(didDoc) ? didDoc : null;
+  const fetchList = (u) => guardedFetchJson(u, { maxBytes: STATUS_LIST_MAX_BYTES });
+  Object.assign(signals, await evidenceSignals(did, doc, cards, fetchList, new Date()));
 
   return { domain, ...scoreSignals(signals), signals, fixes: fixIts(signals) };
 }
@@ -148,6 +146,11 @@ function scoreSignals(signals) {
   return { score, grade, breakdown };
 }
 
+function found(s, key) {
+  const reason = (s.reasons || {})[key];
+  return reason ? ` Found: ${reason}.` : "";
+}
+
 function fixIts(s) {
   const fixes = [];
   if (!s.has_did)
@@ -160,16 +163,21 @@ function fixIts(s) {
     );
   if (!s.pq_ready)
     fixes.push(
-      "Add a post-quantum key (ML-DSA-44) alongside your Ed25519 key and sign with `sign_hybrid`."
+      "Add an ML-DSA-44 key to your DID document (a Multikey verification method holding the 1312-byte public key, listed in assertionMethod) and sign with `sign_hybrid`, so credentials survive a future quantum break." +
+        found(s, "pq_ready")
     );
   if (!s.has_revocation)
     fixes.push(
-      "Publish a service or revocation endpoint in your DID document, so a compromised key can be revoked."
+      "Publish a signed BitstringStatusListCredential at an https URL and list it in your DID document as a `BitstringStatusList` service, so a revocation can be published and discovered." +
+        found(s, "has_revocation")
     );
-  if (!s.has_card_identity)
-    fixes.push(
-      "Reference your DID in your agent card (/.well-known/agent.json), so a counterparty can tie the card to a verifiable identity."
-    );
+  if (!s.has_card_identity) {
+    const text =
+      s.card_identity === "declared"
+        ? "Sign your agent card with `sign_agent_card`, using a key in your DID document's assertionMethod, so a counterparty can verify the identity the card names."
+        : "Publish an agent card at /.well-known/agent-card.json and sign it with `sign_agent_card`, using a key in your DID document's assertionMethod, so a counterparty can tie the card to a verifiable identity.";
+    fixes.push(text + found(s, "card_identity"));
+  }
   return fixes;
 }
 
