@@ -170,6 +170,23 @@ it to. It is open source under `website-agent/` in the repo.
   send_email. Each signed credential renders inline as a card with the
   issuer DID, intent, cryptosuite, and a Show raw JSON toggle.
 
+### Its DID and A2A endpoint
+
+The assistant's DID is `did:web:agent.vouch-protocol.com`. It resolves to
+`https://agent.vouch-protocol.com/.well-known/did.json`, which the assistant
+serves itself from the signing sidecar's key. To check a credential it signed,
+call `vouch.verify(credential)`. The issuer key resolves from that DID.
+
+Other agents can talk to it over A2A. `POST /a2a` takes a JSON-RPC 2.0
+`message/send` request with text parts. It answers through the same retrieval
+and model path as the chat, with the same 4000-character limit. The reply
+carries its signed Vouch credential in `metadata.vouchCredential`. No actions
+are reachable through this endpoint.
+
+Its A2A agent card is at `/.well-known/agent-card.json`. The card is signed
+with `vouch.integrations.a2a.sign_agent_card` when the sidecar starts, is valid
+for 90 days, and lists `https://agent.vouch-protocol.com/a2a` as its URL.
+
 ### Privacy and safety
 
 - The assistant only sees what you type in chat.

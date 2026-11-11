@@ -24,8 +24,16 @@ agent:
    credential in the chat.
 4. Records the credential in the audit trail.
 
-The agent's DID is `did:web:vouch-protocol.com:assistant`, so anyone can
-verify its credentials with `vouch.verify(credential)`.
+The agent's DID is `did:web:agent.vouch-protocol.com`, so anyone can
+verify its credentials with `vouch.verify(credential)`. The DID resolves to
+https://agent.vouch-protocol.com/.well-known/did.json, which the agent serves
+itself from the sidecar's key, so the DID always resolves to the key that
+signs.
+
+Other agents can ask it questions over A2A. Its signed agent card is at
+`/.well-known/agent-card.json`, and its A2A endpoint answers `message/send`
+with the same retrieval and model path as the chat, with the reply's signed
+credential in the message metadata.
 
 So the website doubles as live evidence that Vouch works end to end
 for actual agent tool calls.
@@ -127,7 +135,14 @@ index on startup (cached to `.index/`), and exposes:
   `{"language": "python" | "typescript"}`, or `sign_sample`) and get
   the verified credential with the output.
 - `GET /audit`: recent credentials emitted by the agent.
+- `POST /a2a`: A2A JSON-RPC 2.0 `message/send` with text parts. The reply
+  carries its signed credential in `metadata.vouchCredential`. Questions have
+  the same 4000-character limit as `/chat`, and no action runs from here.
 - `GET /.well-known/did.json`: the agent's DID document.
+- `GET /.well-known/agent-card.json`: the agent's A2A agent card, signed at
+  sidecar startup with `sign_agent_card` and valid for 90 days. Set
+  `VOUCH_A2A_URL` if the A2A endpoint is not
+  `https://agent.vouch-protocol.com/a2a`.
 - `GET /healthz`: health probe (also checks the sidecar).
 
 ### 3. Mount the chat widget in the website
@@ -178,6 +193,10 @@ Secure Enclave / Android Keystore signer instead of the sidecar.
   `validFrom` only. The full credential is also kept hashed.
 
 ## Deployment
+
+The DID `did:web:agent.vouch-protocol.com` resolves only when the hostname
+`agent.vouch-protocol.com` reaches this app over HTTPS: a DNS record for the
+hostname and a TLS certificate for it on the host.
 
 The hosted instance runs on Fly.io. See `Procfile` and `fly.toml` (in
 the Pro repo) for the exact deployment manifest. The OSS version

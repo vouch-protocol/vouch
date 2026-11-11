@@ -1999,6 +1999,15 @@ The assistant is open source under \`website-agent/\` in the repo. You can self-
         helpLinks: [{ label: 'Running the Vouch Assistant locally', href: '/help/#assistant-local' }],
       },
       {
+        q: 'What is the Vouch Protocol Assistant\'s DID, and how do I verify what it signs?',
+        a: `Its DID is \`did:web:agent.vouch-protocol.com\`. It resolves to \`https://agent.vouch-protocol.com/.well-known/did.json\`, which the assistant serves itself from the key in its signing sidecar. Pass any credential it signed to \`vouch.verify(credential)\` and the issuer key resolves from that DID.
+
+Other agents can also ask it questions over A2A. It has a JSON-RPC 2.0 endpoint at \`POST https://agent.vouch-protocol.com/a2a\` that accepts \`message/send\` with text parts. It answers the same way the chat does, with the same 4000-character limit, and puts the reply's signed Vouch credential in the message's \`metadata.vouchCredential\`. No actions run through this endpoint.
+
+Its signed A2A agent card is at \`https://agent.vouch-protocol.com/.well-known/agent-card.json\`. The card is signed with \`vouch.integrations.a2a.sign_agent_card\` at sidecar startup and is valid for 90 days.`,
+        helpLinks: [{ label: 'Running the Vouch Assistant locally', href: '/help/#assistant-local' }],
+      },
+      {
         q: 'Is the Vouch Assistant vulnerable to prompt injection?',
         a: `The LLM portion is vulnerable, like any LLM. Vouch's defense is defense-in-depth: the signing key lives in a sidecar process that the LLM cannot reach. Even a fully prompt-injected LLM cannot leak a key it never had, and the sidecar refuses to sign anything outside a small allow-list of action types. So the assistant can be tricked into saying weird things in chat, but cannot mint arbitrary credentials.`,
       },
