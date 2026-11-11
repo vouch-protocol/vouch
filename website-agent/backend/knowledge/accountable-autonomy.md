@@ -77,6 +77,12 @@ link2 = build_capability(mgr, to=agent.get_did(), attenuation={"action": "refund
 reason = verify_capability([link1, link2], keys.get, {"shipped": True, "amount": 120}, root_issuer=ceo.get_did())
 ```
 
+Each link carries a validity window (`valid_seconds`, one hour by default), and a
+child link is kept inside its parent's window. `verify_capability` checks that each link
+was issued by the delegatee its parent names, that its attenuation stays within its
+parent's, and that it is current. It accepts a `revoked=` oracle (a set of ids or a
+callable) for link ids and DIDs.
+
 Structured reasons: `caveat_denied:<id>`, `unrooted_capability`, `broken_chain`,
 `verifier_budget_exceeded`.
 
