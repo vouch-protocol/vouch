@@ -29,6 +29,7 @@ The action credential carries an optional `delegationChain` array:
                 "intent": { "action": "*", "target": "*", "resource": "orders/*" },
                 "validFrom": "...",
                 "validUntil": "...",
+                "parentCredential": { "...": "the signed grant this link came from" },
                 "parentProofValue": null
             },
             {
@@ -37,6 +38,7 @@ The action credential carries an optional `delegationChain` array:
                 "intent": { "action": "submit_claim", "target": "*", "resource": "orders/HC-001" },
                 "validFrom": "...",
                 "validUntil": "...",
+                "parentCredential": { "...": "the signed grant this link came from" },
                 "parentProofValue": "z..."
             }
         ]
@@ -46,15 +48,17 @@ The action credential carries an optional `delegationChain` array:
 ```
 
 Each link records: issuer, subject (the next entity in the chain), the
-intent scope being delegated, validity window, and the proof value of
-the parent link (binding the chain cryptographically).
+intent scope being delegated, validity window, the signed grant it came
+from (`parentCredential`), and the proof value of the parent link (binding
+the chain cryptographically).
 
 ## Construction (one line)
 
 The one-line path uses `vouch.delegate` on the principal side and a `parent=`
 argument on the agent side. The agent's tools are then chained under the grant
 automatically, and the protocol enforces that each link can only narrow the
-authority, never widen it.
+authority, never widen it. Name the delegate with `to=` (its DID); a child
+credential can only be issued by the delegate the grant names.
 
 ```python
 import vouch
@@ -75,7 +79,7 @@ agent.tools = vouch.protect([submit_claim], parent=grant)
 
 To build a chain explicitly, sign each credential under its parent. The
 `parent_credential` argument appends a delegation link and enforces resource
-narrowing at build time. The full non-expansion rule (no link may broaden its parent on any of action, target, resource, time, rate, or policy) is checked at verification, and there is no fixed chain-depth limit; verifiers bound cost with their own budgets.
+narrowing at build time. The full non-expansion rule (no link may broaden its parent on any of action, target, resource, time, rate, or policy) is checked at verification, and there is no fixed chain-depth limit; verifiers bound cost with their own budgets. `Signer.sign(parent_credential=...)` issues a child only for the delegate the grant names and only within the grant.
 
 ```python
 from vouch import Signer
@@ -112,19 +116,26 @@ import vouch
 # One line. Auto-resolves the issuer key and walks the delegationChain,
 # validating each link.
 ok, passport = vouch.verify(action)
+
+# For grantors that are not did:key, pass trusted roots or a resolver.
+ok, passport = vouch.verify(action, trusted_roots=roots)   # {did: public key}
+ok, passport = vouch.verify(action, key_resolver=resolve)  # did -> key
 ```
 
 The verifier checks at each link:
 
-1. Signature math: the link's `proof` validates against the issuer's DID Doc
-2. Resource narrowing: this link's `resource` is a subset of the parent's
-3. Validity window: now is within each link's `validFrom..validUntil`
-4. Issuer-of-this-link == subject-of-previous-link (chain integrity)
-5. Total chain depth <= 5 (Specification §9.4)
+1. Signature: the signed grant (`parentCredential`) carries a valid proof made by the link's issuer
+2. Delegatee: the grant names a delegate, and that delegate is the link's subject
+3. Currency: the grant is inside its validity window
+4. Chain integrity: each link's subject is the next link's issuer, and the last link's subject is the credential's issuer
+5. Non-expansion: no step is broader than the one before it on action, target, resource, time, rate, or policy
 
 If any check fails, the whole action credential is rejected with a
-specific reason (`delegation_chain_invalid`, `resource_not_narrowed`,
-`chain_depth_exceeded`, etc.).
+specific reason (`delegation_signature_invalid`,
+`delegation_subject_mismatch`, `delegation_expired`,
+`scope_exceeds_parent:<dimension>`, etc.). The same check is available
+directly as `vouch.verifier.verify_delegation_chain`. The TypeScript SDK,
+the Go sidecar, and the Rust core apply the same rules.
 
 ## Resource narrowing rule
 
@@ -153,27 +164,34 @@ If a chain doesn't terminate at a trusted principal, it fails with
 `untrusted_principal`. This prevents an attacker from signing their own
 "principal" delegation.
 
-## Why depth = 5?
+## Numeric policy limits
 
-Empirical limit from PAD-006 (trust-graph URL chaining). Five hops is
-enough for nearly all realistic multi-agent flows. The cap prevents
-unbounded chain growth that would explode the verifier's walk cost.
+Policy limits narrow by name. A `max*` limit (for example `maxSpend`) can
+only be lowered by a sub-delegation, and a `min*` limit can only be raised.
+Other numeric limits are carried unchanged. `policy.maxSpend` caps the
+`amount` of every action under the grant. A dimension a link leaves out is
+inherited from its parent, so a later link is held to it.
 
-For flows that need deeper nesting, restructure to use Validator
-Quorum issuance instead of pure delegation (the validator becomes the
-intermediate authority).
+## Chain length and verifier budgets
+
+There is no fixed chain-depth limit. A verifier sets its own cost budget,
+such as a maximum depth or a maximum cumulative TTL, and a chain that goes
+past it fails with `verifier_budget_exceeded`.
 
 ## Common errors
 
-- **`delegation_chain_invalid: parent proof mismatch`**: a link's
-  `parentProofValue` doesn't match the previous link's `proofValue`.
-  Usually means the chain was reassembled out of order.
-- **`resource_not_narrowed: ...`**: a child link tried to grant access
-  beyond its parent's scope.
-- **`chain_depth_exceeded`**: more than 5 links. Restructure.
+- **`delegation_link_tampered`**: a link's `parentProofValue` doesn't
+  match its signed grant. Usually means the chain was reassembled out of
+  order.
+- **`scope_exceeds_parent:<dimension>`**: a child link tried to go beyond
+  its parent on action, target, resource, time, rate, or policy.
+- **`delegation_subject_mismatch`**: the grant names a different delegate
+  than the link's subject. Issue grants with `to=<delegate DID>`.
+- **`verifier_budget_exceeded`**: the chain is longer or longer-lived than
+  the verifier's own budget allows.
 - **`untrusted_principal`**: the chain root isn't in the verifier's trust
   set.
-- **`link_signature_invalid`**: a delegation link's signature failed
+- **`delegation_signature_invalid`**: a delegation link's signature failed
   verification. Usually a key rotation or DID Doc cache miss.
 
 ## Common patterns

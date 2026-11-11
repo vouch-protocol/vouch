@@ -9,7 +9,7 @@
  * (or any reader) can use this to recollect / onboard after time away.
  *
  * Every claim here is cross-checked against:
- *  vouch-protocol/CHANGELOG.md (current: v1.6.0)
+ *  vouch-protocol/CHANGELOG.md (current: v3.0.0)
  *  vouch-protocol/vouch/ (Python SDK)
  *  vouch-protocol/packages/sdk-ts/ (TypeScript SDK)
  *  vouch-protocol/go-sidecar/ (Go sidecar)
@@ -150,7 +150,7 @@ The fix: run a small separate process (the "sidecar") that owns the key. When th
         q: 'What is the Heartbeat Protocol?',
         a: `It is a dead-man's-switch for long-running agents. Every few minutes (you pick the interval) the agent has to actively renew its credentials. If it crashes, gets disconnected, or is taken over, the renewals stop and its permissions expire on their own. No human has to remember to revoke anything.
 
-The credential format for these renewals ships today (it is called SessionVoucher). The runtime that actually drives the heartbeats and coordinates with multiple validators is on the roadmap, not built yet.`,
+The credential format for these renewals is called SessionVoucher, and the runtime ships in the Python SDK. The agent signs every heartbeat request and lists the actions it commits to. The validator checks the signature, the request time, and the action Merkle root before it renews the voucher, and a session that misses more than the configured number of intervals lapses until it is reset.`,
       },
       {
         q: 'A voucher can still be time-valid the second an agent loses its mandate. What catches that?',
@@ -172,6 +172,8 @@ The credential is signed with \`eddsa-jcs-2022\` like every other Vouch Protocol
         a: `A chain of permission slips that tracks "who let whom do what." Imagine you tell your assistant "please book my flight." Your assistant tells an AI travel agent "please find flights." The travel agent tells a payment agent "please charge this card." Three steps, three permission grants.
 
 A Vouch delegation chain captures all three steps cryptographically. Each step narrows the permission (the travel agent can find flights but not, say, sell your house). At the end, anyone looking at the action can walk the chain backward to the human who started it. "The AI did it" becomes "Person X delegated to assistant Y who delegated to agent Z, and here is each signed step." Real accountability.
+
+Each link carries the signed grant it came from. When you verify the final credential, every grant is checked: its signature, that it names the next delegate, that it is still current, and that no step is broader than the one before it on action, target, resource, time, rate, or policy. Numeric limits narrow by name: a \`max*\` limit can only be lowered and a \`min*\` limit can only be raised.
 
 Beyond narrowing static fields, a link can carry executable caveats: live conditions ("only for shipped orders", "under the customer's lifetime spend", "business hours only") that accumulate down the chain and that no downstream holder can drop. Try it in the interactive demo, where a rule the CEO sets still blocks an agent two hops away.`,
         helpLinks: [{ label: 'See it: the delegation-envelope demo', href: '/demos/#caveats' }],
@@ -1173,15 +1175,18 @@ The Go sidecar is also useful for polyglot stacks: it exposes \`POST /sign\` ove
       },
       {
         q: 'How do I verify a delegation chain?',
-        a: `Pass the chain (list of credentials, principal first, agent last) to the verifier:
+        a: `Issue the grant with the delegate's DID, then verify the final credential. Each link carries the signed grant it came from, so one call checks the whole chain:
 
 \`\`\`python
-from vouch import Verifier
-verifier = Verifier()
-result = await verifier.verify_delegation_chain([principal_vc, agent_vc, sub_agent_vc])
+import vouch
+
+grant = vouch.delegate(action="submit_claim", target="*", resource="orders",
+                       to=agent_did, signer=principal_signer)
+# ... the agent signs its action under the grant, then:
+ok, passport = vouch.verify(action_credential)
 \`\`\`
 
-The verifier walks every link, validates signatures, and confirms resource subset narrowing. If any link fails, the whole chain fails with a structured reason.`,
+The verifier walks every link and checks each grant's signature, that it names the next delegate, that it is current, and that no step is broader than the one before it. If any link fails, the whole chain fails with a structured reason such as \`scope_exceeds_parent:resource\`. For grantors that are not \`did:key\`, pass \`trusted_roots=\` or \`key_resolver=\`. \`vouch.verifier.verify_delegation_chain\` runs the same check on its own.`,
         meta: 'Specification §9 Delegation Chains',
       },
       {
@@ -1771,7 +1776,7 @@ What that means in practice:
 
 - A verifier that understands only \`eddsa-jcs-2022\` checks that proof and gets a valid classical signature.
 - A verifier that understands only \`mldsa44-jcs-2024\` checks that proof and gets a valid post-quantum signature.
-- A Vouch Protocol verifier checks both, and the credential is accepted when both verify.
+- A Vouch Protocol verifier checks both, and the credential is accepted when both verify. In Python, pass the issuer's ML-DSA-44 key to \`vouch.verify(credential, mldsa44_public_key=...)\` (or publish it in the issuer's DID document); in TypeScript, pass \`mldsa44PublicKey\` to \`Verifier.verify\`.
 
 You can issue post-quantum credentials right now and they stay readable whether or not a given verifier has been upgraded. No flag day, no mass migration, and no Vouch-specific cryptosuite to register: the proof set uses standard W3C Data Integrity primitives.`,
       },
@@ -1996,6 +2001,15 @@ The Gem can use Google Workspace tools (drafting Docs, summarizing Sheets, compo
         a: `The chat helper you can open from "Ask the assistant" in the nav or the floating tab in the bottom-right. It answers questions about the protocol grounded in the canonical docs, and signs real Vouch credentials when you ask it to do something with consequences. The signed credential appears in the chat as a card with the issuer DID, intent, cryptosuite, and a Show raw JSON toggle.
 
 The assistant is open source under \`website-agent/\` in the repo. You can self-host it; the README has the local-run steps.`,
+        helpLinks: [{ label: 'Running the Vouch Assistant locally', href: '/help/#assistant-local' }],
+      },
+      {
+        q: 'What is the Vouch Protocol Assistant\'s DID, and how do I verify what it signs?',
+        a: `Its DID is \`did:web:agent.vouch-protocol.com\`. It resolves to \`https://agent.vouch-protocol.com/.well-known/did.json\`, which the assistant serves itself from the key in its signing sidecar. Pass any credential it signed to \`vouch.verify(credential)\` and the issuer key resolves from that DID.
+
+Other agents can also ask it questions over A2A. It has a JSON-RPC 2.0 endpoint at \`POST https://agent.vouch-protocol.com/a2a\` that accepts \`message/send\` with text parts. It answers the same way the chat does, with the same 4000-character limit, and puts the reply's signed Vouch credential in the message's \`metadata.vouchCredential\`. No actions run through this endpoint.
+
+Its signed A2A agent card is at \`https://agent.vouch-protocol.com/.well-known/agent-card.json\`. The card is signed with \`vouch.integrations.a2a.sign_agent_card\` at sidecar startup and is valid for 90 days.`,
         helpLinks: [{ label: 'Running the Vouch Assistant locally', href: '/help/#assistant-local' }],
       },
       {

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import actions, audit, followups, interactions, signer
+from . import a2a, actions, audit, followups, interactions, signer
 from .config import CONFIG
 from .llm import stream_answer
 from .rag import get_index
@@ -231,7 +231,7 @@ async def root() -> dict[str, Any]:
         "agent_did": CONFIG.agent_did,
         "endpoints": [
             "/chat", "/act", "/audit", "/feedback", "/interactions",
-            "/healthz", "/.well-known/did.json",
+            "/healthz", "/.well-known/did.json", "/.well-known/agent-card.json", "/a2a",
         ],
     }
 
@@ -241,10 +241,9 @@ async def did_document() -> JSONResponse:
     """Serve the DID document for the key the signing sidecar holds.
 
     The document comes from the sidecar, which derives it from its key, so
-    it always matches the signing key. The DID itself resolves wherever its
-    did:web points (for the default DID, https://vouch-protocol.com/assistant/did.json);
-    this copy lets an operator compare the two. Returns 404 when no signing
-    sidecar is configured.
+    it always matches the signing key. The default DID,
+    did:web:agent.vouch-protocol.com, resolves here. Returns 404 when no
+    signing sidecar is configured.
     """
     try:
         document = await signer.did_document()
@@ -255,3 +254,92 @@ async def did_document() -> JSONResponse:
         media_type="application/did+json",
         headers={"Cache-Control": "public, max-age=300"},
     )
+
+
+@app.get("/.well-known/agent-card.json")
+async def agent_card() -> JSONResponse:
+    """Serve the assistant's signed A2A agent card.
+
+    The sidecar builds and signs the card at startup, so its vouchCredential
+    verifies against the DID document served at /.well-known/did.json.
+    Returns 404 when no signing sidecar is configured.
+    """
+    try:
+        card = await signer.agent_card()
+    except signer.SignerError as exc:
+        raise HTTPException(status_code=404, detail="no signed agent card is configured") from exc
+    return JSONResponse(content=card, headers={"Cache-Control": "public, max-age=300"})
+
+
+async def _answer(question: str, request: Request) -> tuple[str, dict[str, Any] | None]:
+    """The /chat question-and-answer path without streaming or actions.
+
+    Retrieves context, asks the model, drops any action proposal and
+    follow-up block, signs the reply, and logs the interaction. Nothing here
+    can run an action: actions only run through /act after a visitor confirms.
+    """
+    retrieved_pairs = _index.search(question, top_k=CONFIG.max_context_chunks)
+    retrieved = [(c.text, c.source, score) for c, score in retrieved_pairs]
+    sources = [{"source": c.source, "score": round(score, 3)} for c, score in retrieved_pairs]
+    interaction_id = interactions.log().start_interaction(
+        question=question,
+        ip=_client_ip(request),
+        country=_client_country(request),
+        user_agent=request.headers.get("user-agent"),
+        from_followup_of=None,
+    )
+    collected = [piece async for piece in stream_answer(question, retrieved)]
+    _proposal, text = actions.extract_proposal("".join(collected))
+    _suggested, body = followups.extract_followups(text)
+    answer_intent = {
+        "action": "answer_question",
+        "target": f"interaction:{interaction_id}",
+        "resource": actions.ASK_URL,
+        "outputDigest": signer.digest(body),
+    }
+    credential: dict[str, Any] | None = None
+    try:
+        credential = await signer.sign_and_verify(
+            answer_intent, valid_seconds=actions.CREDENTIAL_VALID_SECONDS,
+        )
+        audit.record(credential)
+    except signer.SignerError as exc:
+        logger.warning("A2A answer not signed: %s", exc)
+    interactions.log().complete_interaction(interaction_id, response=body, sources=sources)
+    return body, credential
+
+
+@app.post("/a2a")
+async def a2a_endpoint(request: Request) -> JSONResponse:
+    """A2A JSON-RPC 2.0 endpoint: ``message/send`` with text parts only.
+
+    Questions go through the same retrieval and model path as /chat, with the
+    same 4000-character limit on the question. Replies carry the reply's
+    signed credential in the message metadata. Tool actions are not reachable
+    from here.
+    """
+    body = await a2a.read_body(request)
+    if body is None:
+        return JSONResponse(
+            a2a.error(None, a2a.INVALID_REQUEST, "request body is too large"), status_code=413
+        )
+    try:
+        req = json.loads(body)
+    except ValueError:
+        return JSONResponse(a2a.error(None, a2a.PARSE_ERROR, "request is not valid JSON"))
+    if not a2a.is_request(req):
+        return JSONResponse(a2a.error(None, a2a.INVALID_REQUEST, "not a JSON-RPC 2.0 request"))
+    if req["method"] != "message/send":
+        return JSONResponse(
+            a2a.error(req["id"], a2a.METHOD_NOT_FOUND, f"method not found: {req['method']}")
+        )
+    try:
+        question, context_id = a2a.message_text(req.get("params"))
+    except a2a.InvalidParams as exc:
+        return JSONResponse(a2a.error(req["id"], a2a.INVALID_PARAMS, str(exc)))
+    try:
+        answer, credential = await _answer(question, request)
+    except Exception as exc:  # the model provider failed; report it, as /chat does
+        logger.error("A2A answer failed: %s", exc)
+        return JSONResponse(a2a.error(req["id"], a2a.INTERNAL_ERROR, "the assistant could not answer"))
+    return JSONResponse(a2a.result(req["id"], a2a.agent_message(answer, credential, context_id)))

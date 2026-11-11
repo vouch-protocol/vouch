@@ -21,7 +21,7 @@ and verify, the validity window (an expired credential is rejected), and
 nonce replay resistance.
 
 **L2 Structural-Security.** Everything in L1, plus BitstringStatusList
-revocation, delegation narrowing with the five-link depth bound, the
+revocation, delegation narrowing on every dimension, the
 Identity Sidecar allow and deny behaviour, and a hash-linked audit trail.
 
 **L3 State Verifiable + Post-Quantum.** Everything in L2, plus the

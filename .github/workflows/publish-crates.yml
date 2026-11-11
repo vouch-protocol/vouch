@@ -2,6 +2,9 @@
 #
 # Trigger: push a tag like `rust-v0.1.0`, or run manually (workflow_dispatch).
 # Required repo secret: CARGO_REGISTRY_TOKEN (crates.io API token).
+#
+# A version already on crates.io is skipped; any other publish error fails the
+# job (see .github/scripts/crate-publish-once.sh).
 name: Publish crates.io
 
 on:
@@ -17,6 +20,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -26,14 +31,11 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             cargo publish --dry-run --allow-dirty
           else
-            cargo publish --allow-dirty --token "${{ secrets.CARGO_REGISTRY_TOKEN }}" \
-              || echo "vouch-core: this version may already be published, continuing"
+            bash "$GITHUB_WORKSPACE/.github/scripts/crate-publish-once.sh"
           fi
       - name: Publish vouch-core-uniffi
         if: ${{ inputs.dry_run != true }}
         working-directory: core/uniffi
         # vouch-core-uniffi depends on vouch-core, so it publishes second.
         # cargo waits for the just-published vouch-core to appear in the index.
-        run: |
-          cargo publish --allow-dirty --token "${{ secrets.CARGO_REGISTRY_TOKEN }}" \
-            || echo "vouch-core-uniffi: this version may already be published, continuing"
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/crate-publish-once.sh"
