@@ -134,7 +134,37 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-122](./PAD-122-byzantine-sensor-agreement-provenance.md) | Byzantine Sensor Agreement via Cross-Checked Signed Perception Provenance | 2026-07-19 | Published |
 | [PAD-123](./PAD-123-mutual-attestation-mesh-trust-graph.md) | Mutual-Attestation Mesh: A Live Offline Trust Graph | 2026-07-19 | Published |
 | [PAD-124](./PAD-124-dtn-bundle-custody-credential-binding.md) | Binding Verifiable-Credential Trust to DTN Bundle Custody | 2026-07-19 | Published |
+| [PAD-125](./PAD-125-census-complete-compute-ceiling-attestation.md) | Census-Complete Compute Ceiling Attestation | 2026-09-10 | Published |
+| [PAD-126](./PAD-126-recursion-ceiling-human-distance-bound.md) | Recursion Ceiling by Human-Distance Bound | 2026-09-10 | Published |
+| [PAD-127](./PAD-127-pre-registered-development-step.md) | Pre-Registered Development Step | 2026-09-10 | Published |
+| [PAD-128](./PAD-128-double-entry-compute-custody.md) | Double-Entry Compute Custody | 2026-09-10 | Published |
+| [PAD-129](./PAD-129-graduated-multilateral-pace-control.md) | Graduated Multilateral Pace Control | 2026-09-10 | Published |
+| [PAD-130](./PAD-130-capability-proportional-sequential-delay.md) | Capability-Proportional Sequential Delay | 2026-09-10 | Published |
+| [PAD-131](./PAD-131-immutable-red-line-commitment.md) | Immutable Red Line Commitment | 2026-09-10 | Published |
+| [PAD-132](./PAD-132-oversight-ratio-bound.md) | Oversight Ratio Bound | 2026-09-10 | Published |
+| [PAD-133](./PAD-133-weight-bound-load-authorization.md) | Weight-Bound Load Authorization | 2026-09-10 | Published |
+| [PAD-134](./PAD-134-sealed-dissent-registration.md) | Sealed Dissent Registration | 2026-09-10 | Published |
+| [PAD-135](./PAD-135-simultaneous-reveal-comparative-disclosure.md) | Simultaneous-Reveal Comparative Disclosure | 2026-09-10 | Published |
 
+
+## September 10, 2026: The Pacing Profile (PAD-125 to PAD-135)
+
+Eleven disclosures covering the verification layer for a coordinated pace of
+autonomous system development. Accounting: PAD-125 census-complete compute
+ceiling attestation, where completeness is bound to an attested device
+population; PAD-128 double-entry compute custody, reconciling an operator ledger
+against a provider-countersigned allocation ledger. Loop control: PAD-126 the
+recursion ceiling, bounding autonomy depth by human distance over a signed
+authorship graph; PAD-132 the oversight ratio bound, coupling compute to
+artifact-bound attested oversight work. Commitment discipline: PAD-127
+pre-registered development steps fixing configuration and evaluation plan
+together; PAD-131 immutable red line commitments ordered by log index; PAD-135
+simultaneous-reveal comparative disclosure for parties that will not go first.
+Braking: PAD-129 graduated multilateral pace control through a threshold-signed
+decay rate; PAD-130 capability-proportional sequential delay seeded from a shared
+log root; PAD-133 weight-bound load authorization requiring continuing consent.
+Accountability: PAD-134 sealed dissent registration, establishing the date of a
+safety concern without disclosing it.
 
 ## July 19, 2026: Disconnected-Edge Trust, Full Set (PAD-112 to PAD-124)
 

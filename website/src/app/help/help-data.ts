@@ -2300,6 +2300,84 @@ Event-triggered intent recheck ships in the Python SDK, the Go sidecar, and the 
   },
 
   // =====================================================================
+  // PACING PROFILE: prove a pace was held to a party that cannot see inside
+  // =====================================================================
+  {
+    id: 'pacing-profile',
+    title: 'Pacing Profile',
+    description:
+      'Verification primitives for proving a party held to an agreed pace of autonomous system development.',
+    articles: [
+      {
+        id: 'pacing-profile-overview',
+        title: 'The Pacing Profile',
+        summary:
+          'Eleven Python modules that make a pace commitment checkable: compute census, autonomy depth, pre-registration, red lines, and more.',
+        body: `
+The Pacing Profile (\`vouch.pacing\`, Python) is a set of verification primitives for proving that a party held to an agreed pace of autonomous system development, to a party that cannot see inside. Every record is a Vouch Protocol credential with an \`eddsa-jcs-2022\` proof, so it verifies the same way as any other credential.
+
+## What each module answers
+
+- \`census\` and \`restraint\`: did anyone exceed a compute ceiling? Proved over an enrolled device population whose completeness is checkable.
+- \`recursion\`: how many autonomous steps sit between an artifact and the nearest human decision?
+- \`prereg\`: what was a step meant to do, and how will it be judged? Both are fixed before it runs.
+- \`custody\`: does the operator's compute account agree with the provider's?
+- \`pace\`: a threshold-signed decay rate that slows every outstanding grant without revoking any.
+- \`fuse\`: an interval that grows with the size of a capability step and cannot be shortened with parallel compute.
+- \`redline\`: were the safety thresholds fixed before the results were known?
+- \`oversight\`: a committed ratio between compute and attested oversight work.
+- \`load_auth\`: an authorization bound to the exact weights, re-checked while they stay loaded.
+- \`dissent\`: a sealed, dated registration of a concern, released on a declared condition.
+- \`disclosure\`: rivals commit first and reveal together, so nobody goes first.
+
+## Example: commit red lines before the results
+
+\`\`\`python
+from vouch import Signer, generate_identity
+from vouch.pacing import (
+    Threshold, commit_policy, publish_policy, open_threshold, verify_open,
+    measurement_record, check_ordering,
+)
+
+def principal(domain):
+    kp = generate_identity(domain=domain)
+    return kp, Signer(private_key=kp.private_key_jwk, did=kp.did)
+
+operator_kp, operator = principal("operator.example.com")
+evaluator_kp, evaluator = principal("evaluator.example.org")
+
+# 1. Commit the thresholds and publish the commitment at log index 100.
+policy = commit_policy([
+    Threshold("cyber", "cyber-uplift", ">=", 0.40, "halt"),
+    Threshold("autonomy", "autonomy-days", ">=", 30.0, "narrow"),
+])
+published = publish_policy(operator, policy, log_index=100)
+
+# 2. An evaluator records a result later, at log index 140.
+result = measurement_record(
+    evaluator, measurement="cyber-uplift", value=0.52,
+    subject_of_measurement="model-x", log_index=140,
+)
+
+# 3. Open one threshold. An empty list means it verifies.
+reveal = open_threshold(policy, "cyber")
+print(verify_open(reveal, published, operator_kp.public_key_jwk))
+
+# 4. The policy was committed before the result, by log index.
+print(check_ordering(published, result, operator_kp.public_key_jwk, evaluator_kp.public_key_jwk))
+\`\`\`
+
+Both checks print an empty list, which means they passed. The verify functions return the reasons a check fails.
+
+## Where to read more
+
+See [the Pacing Profile design document](https://github.com/vouch-protocol/vouch/blob/main/docs/pacing-profile.md) and PAD-125 to PAD-135 in \`docs/disclosures/\`.
+`,
+      },
+    ],
+  },
+
+  // =====================================================================
   // AI ASSISTANTS: walkthroughs for each surface
   // =====================================================================
   {
