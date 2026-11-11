@@ -140,14 +140,22 @@ confirm; if still set, credential is genuinely revoked.
 
 A link in the chain failed verification. Sub-reasons:
 
-- `parent_proof_mismatch`: a link's `parentProofValue` doesn't match
-  the previous link's `proofValue`. Chain was reassembled incorrectly.
-- `resource_not_narrowed`: a child link granted access beyond its
-  parent's scope.
-- `chain_depth_exceeded`: more than 5 links. Restructure.
+- `delegation_link_tampered`: a link's `parentProofValue` doesn't match
+  the signed grant it carries. The chain was reassembled incorrectly.
+- `verifier_budget_exceeded`: the chain crossed this verifier's own cost
+  budget (depth or cumulative validity). There is no fixed protocol cap.
 - `untrusted_principal`: the chain root isn't in the verifier's trust set.
-- `link_signature_invalid`: one of the delegation link signatures
-  failed.
+- `delegation_signature_invalid`: the signed grant a link carries
+  (`parentCredential`) failed signature verification.
+- `delegation_subject_mismatch`: the grant names a different delegate than
+  the link's subject. Issue grants with `vouch.delegate(..., to=did)`.
+- `delegation_expired` / `delegation_not_yet_valid`: a grant is outside its
+  validity window.
+- `scope_exceeds_parent:<dimension>`: a step is broader than the one before
+  it on action, target, resource, time, rate, or policy.
+- `delegation_issuer_key_unresolved`: the grantor's key could not be found.
+  Pass `trusted_roots=` or `key_resolver=` for grantors that are not
+  `did:key`.
 
 ## Cross-language
 

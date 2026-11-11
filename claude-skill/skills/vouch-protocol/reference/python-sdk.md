@@ -110,7 +110,7 @@ voucher = build_session_voucher(
 )
 ```
 
-Then orchestrate with `HeartbeatSession` and validate with `HeartbeatValidator`.
+Then orchestrate with `HeartbeatSession(subject_did=..., signer=...)` (the agent signs every heartbeat request) and validate with `HeartbeatValidator`.
 See `reference/state-verifiability.md`.
 
 ## Trust Entropy decay

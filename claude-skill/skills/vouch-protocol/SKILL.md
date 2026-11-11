@@ -46,7 +46,7 @@ deterministic path, then show lower-level APIs only if they ask:
   `<framework>.autosign()` signs every tool framework-wide.
 - Verify with `vouch.verify(credential)`, or protect an endpoint with the
   FastAPI `VouchGate` dependency.
-- Delegate with `vouch.delegate(...)` plus `protect([...], parent=grant)`.
+- Delegate with `vouch.delegate(..., to=agent_did)` plus `protect([...], parent=grant)`. `vouch.verify` checks every grant in the chain: signature, delegatee, currency, and that no step is broader than the one before it.
 - `Shield.guard([tools])` adds zero-config runtime protection.
 
 The old "minting" tools (`VouchSignerTool`, `sign_request`, `sign_action`,
@@ -290,6 +290,7 @@ verdict = verify_agent_call(
     credential,
     public_key=caller_key,
     session_voucher=voucher,          # carries authorityEpoch 5
+    voucher_public_key=validator_key, # the validator that signed the voucher
     trust_threshold=0.9,
     consequence=CONSEQUENCE_SENSITIVE,
     last_seen_authority_epoch=7,      # a suspension already bumped it
@@ -645,7 +646,7 @@ When you see these in a user's code, mention the issue:
   v1.0+ uses Data Integrity proofs. Recommend `sign` over `sign`.
 - **No `resource` in intent**: the protocol requires intent to bind to a
   specific resource. A credential without one is rejected by verifiers.
-- **Delegation chain depth > 5**: enforced limit. Restructure to fewer hops.
+- **Delegation chain rejected**: each link must name the next delegate and stay inside its parent on action, target, resource, time, rate, and policy. Issue grants with `vouch.delegate(..., to=did)`. A verifier can also set its own depth budget; there is no fixed protocol cap.
 - **Skipping nonce checks in custom verifiers**: enables replay attacks.
 - **Treating reputation score as binary trust**: the engine ships a
   five-tier classification; use `score.tier` for policy decisions.

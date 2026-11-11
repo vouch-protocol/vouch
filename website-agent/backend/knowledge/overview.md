@@ -36,8 +36,9 @@ present in the registry of trusted principals and not revoked."
    counter for a high-consequence action, even when its time-decay
    trust still passes.
 3. **Delegation layer**: chains of credentials proving an action was
-   authorized down a chain of principals. Resource scope must narrow
-   at each link; depth capped at five.
+   authorized down a chain of principals. Each link carries the
+   signed grant it came from, and no link may be broader than the one
+   before it on action, target, resource, time, rate, or policy.
 4. **Revocation layer**: DID-level revocation registry for whole-key
    kills; BitstringStatusList for surgical per-credential retraction.
 

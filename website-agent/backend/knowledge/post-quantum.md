@@ -116,6 +116,26 @@ Verifiers iterate the `proof` array and match on `cryptosuite`, so a verifier
 that has not adopted ML-DSA-44 yet still gets a meaningful classical result
 from the same credential.
 
+### Verifying with `vouch.verify`
+
+`vouch.verify` (Python) and `Verifier.verify` (TypeScript) verify a proof set
+directly. Pass the issuer's ML-DSA-44 key, or publish it in the issuer's DID
+document, and both the Ed25519 proof and the ML-DSA-44 proof must verify.
+
+```python
+import vouch
+
+ok, passport = vouch.verify(signed, mldsa44_public_key=mldsa_pub)
+```
+
+```ts
+// Ed25519 key, clock skew in seconds, then the ML-DSA-44 key in the options.
+const result = await Verifier.verify(signed, edPublicKey, 30, { mldsa44PublicKey: mldsaPub });
+```
+
+Without an ML-DSA-44 key, Python verification raises `MissingMLDSA44KeyError`
+with a message that says which key to supply.
+
 ## Issuing post-quantum credentials
 
 ### Python

@@ -70,8 +70,9 @@ present in the registry of trusted principals and not revoked."
    counter for a high-consequence action, even when its time-decay
    trust still passes.
 3. **Delegation layer**: chains of credentials proving an action was
-   authorized down a chain of principals. Resource scope must narrow
-   at each link; depth capped at five.
+   authorized down a chain of principals. Each link carries the
+   signed grant it came from, and no link may be broader than the one
+   before it on action, target, resource, time, rate, or policy.
 4. **Revocation layer**: DID-level revocation registry for whole-key
    kills; BitstringStatusList for surgical per-credential retraction.
 
@@ -610,6 +611,7 @@ The action credential carries an optional `delegationChain` array:
                 "intent": { "action": "*", "target": "*", "resource": "orders/*" },
                 "validFrom": "...",
                 "validUntil": "...",
+                "parentCredential": { "...": "the signed grant this link came from" },
                 "parentProofValue": null
             },
             {
@@ -618,6 +620,7 @@ The action credential carries an optional `delegationChain` array:
                 "intent": { "action": "submit_claim", "target": "*", "resource": "orders/HC-001" },
                 "validFrom": "...",
                 "validUntil": "...",
+                "parentCredential": { "...": "the signed grant this link came from" },
                 "parentProofValue": "z..."
             }
         ]
@@ -627,15 +630,17 @@ The action credential carries an optional `delegationChain` array:
 ```
 
 Each link records: issuer, subject (the next entity in the chain), the
-intent scope being delegated, validity window, and the proof value of
-the parent link (binding the chain cryptographically).
+intent scope being delegated, validity window, the signed grant it came
+from (`parentCredential`), and the proof value of the parent link (binding
+the chain cryptographically).
 
 ### Construction (one line)
 
 The one-line path uses `vouch.delegate` on the principal side and a `parent=`
 argument on the agent side. The agent's tools are then chained under the grant
 automatically, and the protocol enforces that each link can only narrow the
-authority, never widen it.
+authority, never widen it. Name the delegate with `to=` (its DID); a child
+credential can only be issued by the delegate the grant names.
 
 ```python
 import vouch
@@ -656,7 +661,7 @@ agent.tools = vouch.protect([submit_claim], parent=grant)
 
 To build a chain explicitly, sign each credential under its parent. The
 `parent_credential` argument appends a delegation link and enforces resource
-narrowing at build time. The full non-expansion rule (no link may broaden its parent on any of action, target, resource, time, rate, or policy) is checked at verification, and there is no fixed chain-depth limit; verifiers bound cost with their own budgets.
+narrowing at build time. The full non-expansion rule (no link may broaden its parent on any of action, target, resource, time, rate, or policy) is checked at verification, and there is no fixed chain-depth limit; verifiers bound cost with their own budgets. `Signer.sign(parent_credential=...)` issues a child only for the delegate the grant names and only within the grant.
 
 ```python
 from vouch import Signer
@@ -693,19 +698,26 @@ import vouch
 ## One line. Auto-resolves the issuer key and walks the delegationChain,
 ## validating each link.
 ok, passport = vouch.verify(action)
+
+## For grantors that are not did:key, pass trusted roots or a resolver.
+ok, passport = vouch.verify(action, trusted_roots=roots)   # {did: public key}
+ok, passport = vouch.verify(action, key_resolver=resolve)  # did -> key
 ```
 
 The verifier checks at each link:
 
-1. Signature math: the link's `proof` validates against the issuer's DID Doc
-2. Resource narrowing: this link's `resource` is a subset of the parent's
-3. Validity window: now is within each link's `validFrom..validUntil`
-4. Issuer-of-this-link == subject-of-previous-link (chain integrity)
-5. Total chain depth <= 5 (Specification §9.4)
+1. Signature: the signed grant (`parentCredential`) carries a valid proof made by the link's issuer
+2. Delegatee: the grant names a delegate, and that delegate is the link's subject
+3. Currency: the grant is inside its validity window
+4. Chain integrity: each link's subject is the next link's issuer, and the last link's subject is the credential's issuer
+5. Non-expansion: no step is broader than the one before it on action, target, resource, time, rate, or policy
 
 If any check fails, the whole action credential is rejected with a
-specific reason (`delegation_chain_invalid`, `resource_not_narrowed`,
-`chain_depth_exceeded`, etc.).
+specific reason (`delegation_signature_invalid`,
+`delegation_subject_mismatch`, `delegation_expired`,
+`scope_exceeds_parent:<dimension>`, etc.). The same check is available
+directly as `vouch.verifier.verify_delegation_chain`. The TypeScript SDK,
+the Go sidecar, and the Rust core apply the same rules.
 
 ### Resource narrowing rule
 
@@ -734,27 +746,34 @@ If a chain doesn't terminate at a trusted principal, it fails with
 `untrusted_principal`. This prevents an attacker from signing their own
 "principal" delegation.
 
-### Why depth = 5?
+### Numeric policy limits
 
-Empirical limit from PAD-006 (trust-graph URL chaining). Five hops is
-enough for nearly all realistic multi-agent flows. The cap prevents
-unbounded chain growth that would explode the verifier's walk cost.
+Policy limits narrow by name. A `max*` limit (for example `maxSpend`) can
+only be lowered by a sub-delegation, and a `min*` limit can only be raised.
+Other numeric limits are carried unchanged. `policy.maxSpend` caps the
+`amount` of every action under the grant. A dimension a link leaves out is
+inherited from its parent, so a later link is held to it.
 
-For flows that need deeper nesting, restructure to use Validator
-Quorum issuance instead of pure delegation (the validator becomes the
-intermediate authority).
+### Chain length and verifier budgets
+
+There is no fixed chain-depth limit. A verifier sets its own cost budget,
+such as a maximum depth or a maximum cumulative TTL, and a chain that goes
+past it fails with `verifier_budget_exceeded`.
 
 ### Common errors
 
-- **`delegation_chain_invalid: parent proof mismatch`**: a link's
-  `parentProofValue` doesn't match the previous link's `proofValue`.
-  Usually means the chain was reassembled out of order.
-- **`resource_not_narrowed: ...`**: a child link tried to grant access
-  beyond its parent's scope.
-- **`chain_depth_exceeded`**: more than 5 links. Restructure.
+- **`delegation_link_tampered`**: a link's `parentProofValue` doesn't
+  match its signed grant. Usually means the chain was reassembled out of
+  order.
+- **`scope_exceeds_parent:<dimension>`**: a child link tried to go beyond
+  its parent on action, target, resource, time, rate, or policy.
+- **`delegation_subject_mismatch`**: the grant names a different delegate
+  than the link's subject. Issue grants with `to=<delegate DID>`.
+- **`verifier_budget_exceeded`**: the chain is longer or longer-lived than
+  the verifier's own budget allows.
 - **`untrusted_principal`**: the chain root isn't in the verifier's trust
   set.
-- **`link_signature_invalid`**: a delegation link's signature failed
+- **`delegation_signature_invalid`**: a delegation link's signature failed
   verification. Usually a key rotation or DID Doc cache miss.
 
 ### Common patterns
@@ -1100,6 +1119,12 @@ verifier throughput.
 
 Backends: `MemoryRevocationStore`, `RedisRevocationStore`, plus an
 abstract `RevocationStoreInterface` for custom backends.
+
+The reference validator server (`vouch.validator_server`) exposes
+`POST /revoke`, and accepts it only from an authorized caller. Configure
+`revoke_token` (sent as `Authorization: Bearer <token>`) or a
+`revoke_authorizer` callable. With neither set, revocation over HTTP is
+off and the endpoint answers 403.
 
 ### Credential-level revocation: BitstringStatusList
 
@@ -1652,6 +1677,26 @@ ML-DSA-44 key is `z`-prefixed while the ML-DSA-44 proof value is `u`-prefixed.
 Verifiers iterate the `proof` array and match on `cryptosuite`, so a verifier
 that has not adopted ML-DSA-44 yet still gets a meaningful classical result
 from the same credential.
+
+#### Verifying with `vouch.verify`
+
+`vouch.verify` (Python) and `Verifier.verify` (TypeScript) verify a proof set
+directly. Pass the issuer's ML-DSA-44 key, or publish it in the issuer's DID
+document, and both the Ed25519 proof and the ML-DSA-44 proof must verify.
+
+```python
+import vouch
+
+ok, passport = vouch.verify(signed, mldsa44_public_key=mldsa_pub)
+```
+
+```ts
+// Ed25519 key, clock skew in seconds, then the ML-DSA-44 key in the options.
+const result = await Verifier.verify(signed, edPublicKey, 30, { mldsa44PublicKey: mldsaPub });
+```
+
+Without an ML-DSA-44 key, Python verification raises `MissingMLDSA44KeyError`
+with a message that says which key to supply.
 
 ### Issuing post-quantum credentials
 
@@ -2374,7 +2419,9 @@ grant = vouch.delegate(action="charge", target="api.payments.example.com",
 agent.tools = vouch.protect([charge_invoice], parent=grant)
 ```
 
-`parent=` also works on `@signed` and `sign_intent`.
+`parent=` also works on `@signed` and `sign_intent`. Pass the delegate's DID as `to=`:
+a child credential can only be issued by the delegate the grant names, and only
+within the grant.
 
 ### Zero-config runtime protection: Shield.guard
 
@@ -2735,7 +2782,7 @@ and verify, the validity window (an expired credential is rejected), and
 nonce replay resistance.
 
 **L2 Structural-Security.** Everything in L1, plus BitstringStatusList
-revocation, delegation narrowing with the five-link depth bound, the
+revocation, delegation narrowing on every dimension, the
 Identity Sidecar allow and deny behaviour, and a hash-linked audit trail.
 
 **L3 State Verifiable + Post-Quantum.** Everything in L2, plus the
@@ -2902,6 +2949,7 @@ verdict = verify_agent_call(
     credential,
     public_key=caller_key,
     session_voucher=voucher,          # carries authorityEpoch 5
+    voucher_public_key=validator_key, # the validator that signed the voucher
     trust_threshold=0.9,
     consequence=CONSEQUENCE_SENSITIVE,
     last_seen_authority_epoch=7,      # a suspension already bumped it
@@ -2910,8 +2958,12 @@ verdict = verify_agent_call(
 # "authority_epoch_stale:seen=7,voucher=5", even though verdict.trust_ok is True.
 ```
 
-The default tier is `routine`, so existing callers see no change until
-they opt a higher tier in.
+`verify_agent_call` checks the SessionVoucher's proof (against
+`voucher_public_key`), its validity window, and that its subject is the
+caller before it uses the voucher's trust value. The credential and the
+voucher are evaluated at the same `at_time`. When no `trust_threshold` is
+given, the threshold follows the consequence tier: 0.5 for `routine`, 0.75
+for `sensitive`, 0.9 for `critical`. The default tier is `routine`.
 
 Reason codes are identical across every language binding, so an audit
 log reads the same whichever SDK produced it. An absent epoch renders as
@@ -3007,6 +3059,12 @@ proof = tree.proof(leaf_index=1)
 ok = verify_inclusion(leaf=b"action_2", proof=proof, root=tree.root())
 ```
 
+An unpaired node at the end of a level is promoted to the next level
+unchanged (the RFC 6962 tree shape), so a list of leaves and the same list
+with its last leaf repeated have different roots. `root_from_leaf_hashes`
+computes a root from leaf hashes directly, which is how a validator checks a
+heartbeat's `actionMerkleRoot`.
+
 Domain separation: leaves hashed with `0x00` prefix, internal nodes
 with `0x01` prefix. Prevents the classic second-preimage attack where
 an internal node hash is fed back as a "leaf."
@@ -3019,7 +3077,10 @@ Composes the four primitives above. Agent side:
 from vouch import HeartbeatSession, HeartbeatScheduler
 import asyncio
 
-session = HeartbeatSession(subject_did="did:web:agent.example.com")
+session = HeartbeatSession(
+    subject_did="did:web:agent.example.com",
+    signer=signer,  # the agent signs every heartbeat request
+)
 
 ## During agent activity
 session.record_action(b"submit_claim:HC-001")
@@ -3027,8 +3088,9 @@ session.collector.record_api_call("https://api.example.com/orders", tokens=120)
 
 ## Submit callback
 async def submit(req):
-    signed = signer.sign(req.to_dict())
-    response = await http.post(validator_url, json=signed)
+    # req is already signed by the session's signer and carries the leaf
+    # hashes of the actions it commits to.
+    response = await http.post(validator_url, json=req.to_dict())
     new_session_voucher = response.json()
     return new_session_voucher
 
@@ -3054,6 +3116,8 @@ validator = HeartbeatValidator(
     voucher_valid_seconds=120,
     scope=["agent_actions"],
     store=MemoryHeartbeatStore(),  # or RedisHeartbeatStore in production
+    key_resolver=resolve,          # did -> key, for subjects that are not did:key
+    max_missed_intervals=2,
 )
 
 result = validator.validate(heartbeat_request_dict)
@@ -3064,9 +3128,14 @@ else:
         log(reason)
 ```
 
-The validator checks: schema, behavioral digest structure, canary
-chain integrity, interval-index monotonicity. On success, returns an
-unsigned SessionVoucher carrying configured trust parameters.
+The validator checks: schema, the agent's signature on the request, the
+request time against the validator's clock, the action Merkle root against
+the leaf hashes, behavioral digest structure, canary chain integrity, and
+interval-index monotonicity. A session that misses more than
+`max_missed_intervals` lapses until it is reset. On success, returns an
+unsigned SessionVoucher carrying configured trust parameters. Vouchers
+issued by a validator quorum carry the `authorityEpoch` of the heartbeat
+they renew.
 
 ### Validator Quorum (M-of-N)
 
@@ -3289,6 +3358,12 @@ link2 = build_capability(mgr, to=agent.get_did(), attenuation={"action": "refund
                          caveats=[value_ceiling("under-200", field="amount", limit=200)], parent=link1)
 reason = verify_capability([link1, link2], keys.get, {"shipped": True, "amount": 120}, root_issuer=ceo.get_did())
 ```
+
+Each link carries a validity window (`valid_seconds`, one hour by default), and a
+child link is kept inside its parent's window. `verify_capability` checks that each link
+was issued by the delegatee its parent names, that its attenuation stays within its
+parent's, and that it is current. It accepts a `revoked=` oracle (a set of ids or a
+callable) for link ids and DIDs.
 
 Structured reasons: `caveat_denied:<id>`, `unrooted_capability`, `broken_chain`,
 `verifier_budget_exceeded`.
@@ -3812,14 +3887,22 @@ confirm; if still set, credential is genuinely revoked.
 
 A link in the chain failed verification. Sub-reasons:
 
-- `parent_proof_mismatch`: a link's `parentProofValue` doesn't match
-  the previous link's `proofValue`. Chain was reassembled incorrectly.
-- `resource_not_narrowed`: a child link granted access beyond its
-  parent's scope.
-- `chain_depth_exceeded`: more than 5 links. Restructure.
+- `delegation_link_tampered`: a link's `parentProofValue` doesn't match
+  the signed grant it carries. The chain was reassembled incorrectly.
+- `verifier_budget_exceeded`: the chain crossed this verifier's own cost
+  budget (depth or cumulative validity). There is no fixed protocol cap.
 - `untrusted_principal`: the chain root isn't in the verifier's trust set.
-- `link_signature_invalid`: one of the delegation link signatures
-  failed.
+- `delegation_signature_invalid`: the signed grant a link carries
+  (`parentCredential`) failed signature verification.
+- `delegation_subject_mismatch`: the grant names a different delegate than
+  the link's subject. Issue grants with `vouch.delegate(..., to=did)`.
+- `delegation_expired` / `delegation_not_yet_valid`: a grant is outside its
+  validity window.
+- `scope_exceeds_parent:<dimension>`: a step is broader than the one before
+  it on action, target, resource, time, rate, or policy.
+- `delegation_issuer_key_unresolved`: the grantor's key could not be found.
+  Pass `trusted_roots=` or `key_resolver=` for grantors that are not
+  `did:key`.
 
 ### Cross-language
 

@@ -30,6 +30,12 @@ verifier throughput.
 Backends: `MemoryRevocationStore`, `RedisRevocationStore`, plus an
 abstract `RevocationStoreInterface` for custom backends.
 
+The reference validator server (`vouch.validator_server`) exposes
+`POST /revoke`, and accepts it only from an authorized caller. Configure
+`revoke_token` (sent as `Authorization: Bearer <token>`) or a
+`revoke_authorizer` callable. With neither set, revocation over HTTP is
+off and the endpoint answers 403.
+
 ## Credential-level revocation: BitstringStatusList
 
 When you need to retract one specific credential without invalidating

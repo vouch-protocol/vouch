@@ -53,7 +53,9 @@ export default function DemosPage() {
               <a href="/demos/transparency/" className="prose-link">AI transparency marking demo</a> signs a
               machine-readable disclosure of an output's AI origin and verifies it live. The{' '}
               <a href="/demos/halos/" className="prose-link">Halos safety-evidence demo</a> records a robot's safety
-              events into a tamper-evident black-box, seals and verifies the record, and rejects a tampered one.
+              events into a tamper-evident black-box, seals and verifies the record, and rejects a tampered one. The{' '}
+              <a href="/demos/delegation/" className="prose-link">delegation chain demo</a> verifies a grant that
+              narrows at every hop and refuses each attempt to go beyond it.
             </p>
           </div>
         </div>

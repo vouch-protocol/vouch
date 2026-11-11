@@ -660,6 +660,8 @@ Credentials issued before this alignment keep verifying. The earlier \`mldsa44-j
 - **Post-quantum-only verifier** validates the \`mldsa44-jcs-2024\` proof the same way.
 - **Vouch Protocol verification** validates both proofs in the set and accepts the credential when both pass.
 
+In Python, \`vouch.verify(credential, mldsa44_public_key=...)\` verifies the whole proof set. If you leave the key out and the issuer's DID document does not publish one, verification raises \`MissingMLDSA44KeyError\`. In TypeScript, pass \`mldsa44PublicKey\` to \`Verifier.verify\`.
+
 ## DID Document layout
 
 An agent using the post-quantum profile publishes both keys in its DID Document:
@@ -702,7 +704,7 @@ See it in the browser: the [interactive demos](/demos/#caveats) show a delegatio
 ## Three rules
 
 1. Each link is a signed Vouch credential where the **issuer** is the **subject** of the previous link.
-2. Each link's \`resource\` MUST be a subset of the previous link's. You cannot delegate authority you do not have.
+2. No link may be broader than the previous one on action, target, resource, time, rate, or policy. You cannot delegate authority you do not have.
 3. The chain must terminate at a principal (typically a human, or a system root).
 
 ## Build a chain in Python
@@ -737,17 +739,17 @@ action = sub_agent.sign(
 )
 \`\`\`
 
-For the one-line path, the principal can issue the grant with \`vouch.delegate(...)\` and the agent's tools can be wrapped with \`vouch.protect([...], parent=grant)\`.
+For the one-line path, the principal can issue the grant with \`vouch.delegate(..., to=agent_did)\` and the agent's tools can be wrapped with \`vouch.protect([...], parent=grant)\`. A child credential can only be issued by the delegate its grant names, and only within the grant.
 
 ## Verify
 
 \`\`\`python
-from vouch import Verifier
-verifier = Verifier()
-result = await verifier.verify_delegation_chain([principal_link, agent_link, action])
+import vouch
+
+ok, passport = vouch.verify(action)
 \`\`\`
 
-The verifier walks every link, validates each signature, and confirms resource narrowing.
+Each link carries the signed grant it came from. The verifier checks every grant's signature, that it names the next delegate, that it is current, and that no step is broader than the one before it. Numeric limits narrow by name: a \`max*\` limit can only be lowered and a \`min*\` limit can only be raised, and \`policy.maxSpend\` caps the \`amount\` of every action under the grant. A dimension a link leaves out is inherited from its parent. For grantors that are not \`did:key\`, pass \`trusted_roots=\` or \`key_resolver=\`.
 `,
       },
       {
@@ -1898,7 +1900,7 @@ from vouch.behavioral_attestation import ewma_drift_scorer
 import asyncio
 import httpx
 
-session = HeartbeatSession(subject_did="did:web:agent.example.com")
+session = HeartbeatSession(subject_did="did:web:agent.example.com", signer=signer)
 session.collector = BehavioralCollector(intent_drift_scorer=ewma_drift_scorer(alpha=0.3))
 
 # As the agent runs, record its activity
@@ -1930,7 +1932,7 @@ scheduler.start()
 await scheduler.stop()
 \`\`\`
 
-The scheduler pulls the current behavioral digest from the collector, advances the canary commit/reveal chain, and includes the running Merkle root of actions performed since the last heartbeat. The validator's response is a fresh SessionVoucher with decayed-but-renewed trust.
+The scheduler pulls the current behavioral digest from the collector, advances the canary commit/reveal chain, and includes the running Merkle root of actions performed since the last heartbeat along with their leaf hashes. The session's \`signer\` signs each request. The validator's response is a fresh SessionVoucher with decayed-but-renewed trust.
 
 ## Validator side: accept and renew
 
@@ -1944,6 +1946,7 @@ validator = HeartbeatValidator(
     voucher_valid_seconds=120,
     scope=["agent_actions"],
     store=MemoryHeartbeatStore(),  # swap for RedisHeartbeatStore in production
+    key_resolver=resolve,          # did -> key, for subjects that are not did:key
 )
 
 def handle_heartbeat(request_dict):
@@ -1953,7 +1956,7 @@ def handle_heartbeat(request_dict):
     return {"error": "rejected", "reasons": result.reasons}
 \`\`\`
 
-The validator checks schema, behavioral digest structure, canary chain integrity, and interval-index monotonicity. A broken canary chain or stale interval index returns a structured rejection, so the agent does not get a new voucher and its existing one expires.
+The validator checks the schema, the agent's signature, the request time, the action Merkle root, behavioral digest structure, canary chain integrity, and interval-index monotonicity. A broken canary chain or stale interval index returns a structured rejection, so the agent does not get a new voucher and its existing one expires. A session that misses more than the configured number of intervals lapses until it is reset.
 
 ## Trust entropy: gate actions by current trust
 
@@ -2111,6 +2114,7 @@ verdict = verify_agent_call(
     credential,
     public_key=caller_key,
     session_voucher=voucher,            # minted under authorityEpoch 5
+    voucher_public_key=validator_key,   # the validator that signed the voucher
     trust_threshold=0.9,
     consequence=CONSEQUENCE_SENSITIVE,
     last_seen_authority_epoch=6,        # the suspension already bumped it
@@ -2121,7 +2125,7 @@ verdict.trust_ok          # True: time-decay still passes
 verdict.authority_reason  # "authority_epoch_stale:seen=6,voucher=5"
 \`\`\`
 
-\`routine\` is the default, so an existing call site behaves exactly as it did until you opt a higher tier in. The voucher's own counter is read from \`credentialSubject.authorityEpoch\` unless you pass \`voucher_authority_epoch\` yourself.
+\`routine\` is the default. \`verify_agent_call\` also verifies the voucher's proof, validity window, and subject before it uses the trust value. When you pass no \`trust_threshold\`, the threshold follows the tier: 0.5 for \`routine\`, 0.75 for \`sensitive\`, 0.9 for \`critical\`. The voucher's own counter is read from \`credentialSubject.authorityEpoch\` unless you pass \`voucher_authority_epoch\` yourself.
 
 If you want the gate on its own, without identity and trust folded in, call it directly:
 
@@ -2179,6 +2183,7 @@ verdict = verify_agent_call(
     credential,
     public_key=caller_key,
     session_voucher=voucher,
+    voucher_public_key=validator_key,
     consequence=CONSEQUENCE_CRITICAL,
     last_seen_authority_epoch=6,
     live_cosign_ok=res.ok,
@@ -2561,6 +2566,17 @@ $env:GEMINI_API_KEY = "..."
 
 Or set them in \`website-agent/.env\` (auto-loaded on backend start).
 
+## The hosted assistant's DID, A2A endpoint and agent card
+
+The hosted Vouch Protocol Assistant uses the DID \`did:web:agent.vouch-protocol.com\`. It resolves to \`https://agent.vouch-protocol.com/.well-known/did.json\`, which the assistant serves itself from its sidecar's key. Verify a credential it signed with \`vouch.verify(credential)\`.
+
+Other agents can reach it over A2A:
+
+- \`POST /a2a\` takes a JSON-RPC 2.0 \`message/send\` request with text parts. It answers through the same retrieval and model path as the chat, with the same 4000-character limit. The reply's signed Vouch credential is in \`metadata.vouchCredential\`. No actions are reachable here.
+- \`GET /.well-known/agent-card.json\` returns the signed A2A agent card. It is signed with \`vouch.integrations.a2a.sign_agent_card\` at sidecar startup, is valid for 90 days, and lists \`https://agent.vouch-protocol.com/a2a\` as its URL.
+
+If you self-host, set \`VOUCH_A2A_URL\` to your own A2A endpoint. The DID resolves once your hostname reaches the app over HTTPS, so it needs a DNS record and a TLS certificate.
+
 ## Production deployment
 
 For production, replace the dev sidecar with the Go sidecar (\`vouch-sidecar\`) backed by KMS, and run the agent backend behind a reverse proxy with TLS. The backend is self-contained; everything else (LLM provider, sidecar URL, CORS allow-list) is environment-driven.
@@ -2637,7 +2653,7 @@ The agent code does not change. What changes is the DID (production agents use a
 Conformance grades an implementation in three cumulative levels. A level is achieved only when every check at that level and all lower levels passes.
 
 - **L1 Credential**: RFC 8785 JCS canonicalization, \`eddsa-jcs-2022\` sign and verify, the validity window (an expired credential is rejected), and nonce replay resistance.
-- **L2 Structural-Security**: everything in L1, plus BitstringStatusList revocation, delegation narrowing with the five-link depth bound, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail.
+- **L2 Structural-Security**: everything in L1, plus BitstringStatusList revocation, delegation narrowing on every dimension, the Identity Sidecar allow and deny behaviour, and a hash-linked audit trail.
 - **L3 State Verifiable plus Post-Quantum**: everything in L2, plus the post-quantum proof set (an \`eddsa-jcs-2022\` proof and an \`mldsa44-jcs-2024\` proof over the same document), the Heartbeat renewal chain, and an M-of-N validator quorum.
 
 Robotics is a separate profile, Robotics Conformant, not part of L1 to L3.
