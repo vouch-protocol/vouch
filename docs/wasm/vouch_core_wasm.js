@@ -1,6 +1,56 @@
 /* @ts-self-types="./vouch_core_wasm.d.ts" */
 
 /**
+ * Build an unsigned AuthorityState credential. Pass null/undefined for the
+ * optional subjectDid, which defaults to the issuer. Returns the credential as
+ * a JSON string.
+ * @param {string} issuer_did
+ * @param {string} credential_id
+ * @param {number} authority_epoch
+ * @param {string} status
+ * @param {string} valid_from
+ * @param {string} valid_until
+ * @param {string | null} [subject_did]
+ * @returns {string}
+ */
+export function buildAuthorityState(issuer_did, credential_id, authority_epoch, status, valid_from, valid_until, subject_did) {
+    let deferred8_0;
+    let deferred8_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(issuer_did, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(credential_id, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(status, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len2 = WASM_VECTOR_LEN;
+        const ptr3 = passStringToWasm0(valid_from, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len3 = WASM_VECTOR_LEN;
+        const ptr4 = passStringToWasm0(valid_until, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len4 = WASM_VECTOR_LEN;
+        var ptr5 = isLikeNone(subject_did) ? 0 : passStringToWasm0(subject_did, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        var len5 = WASM_VECTOR_LEN;
+        wasm.buildAuthorityState(retptr, ptr0, len0, ptr1, len1, authority_epoch, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr7 = r0;
+        var len7 = r1;
+        if (r3) {
+            ptr7 = 0; len7 = 0;
+            throw takeObject(r2);
+        }
+        deferred8_0 = ptr7;
+        deferred8_1 = len7;
+        return getStringFromWasm0(ptr7, len7);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred8_0, deferred8_1, 1);
+    }
+}
+
+/**
  * Build a delegation link. Pass null/undefined for the optional validFrom,
  * validUntil, parentProofValue. Returns the link as a JSON string.
  * @param {string} issuer
@@ -307,6 +357,38 @@ export function encodeEd25519Multikey(public_b64) {
 }
 
 /**
+ * Evaluate the Authority Freshness gate for an action. Pass null/undefined for
+ * an unknown epoch, an unknown status, or an unevaluated live co-sign. Returns
+ * {allow, tier, reason}, where reason is the shared cross-language reason code.
+ * @param {string} tier
+ * @param {number | null} [voucher_epoch]
+ * @param {number | null} [last_seen_epoch]
+ * @param {string | null} [current_status]
+ * @param {boolean | null} [live_cosign_ok]
+ * @returns {string}
+ */
+export function evaluateAuthorityFreshness(tier, voucher_epoch, last_seen_epoch, current_status, live_cosign_ok) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(tier, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        var ptr1 = isLikeNone(current_status) ? 0 : passStringToWasm0(current_status, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        var len1 = WASM_VECTOR_LEN;
+        wasm.evaluateAuthorityFreshness(retptr, ptr0, len0, isLikeNone(voucher_epoch) ? Number.MAX_SAFE_INTEGER : (voucher_epoch) >> 0, isLikeNone(last_seen_epoch) ? Number.MAX_SAFE_INTEGER : (last_seen_epoch) >> 0, ptr1, len1, isLikeNone(live_cosign_ok) ? 0xFFFFFF : live_cosign_ok ? 1 : 0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred3_0 = r0;
+        deferred3_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
  * Generate an Ed25519 key pair. Returns {seed_b64, public_b64, multikey, did_key}.
  * @returns {string}
  */
@@ -424,6 +506,382 @@ export function mldsa44Verify(public_b64, message_b64, signature_b64) {
             throw takeObject(r1);
         }
         return r0 !== 0;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * Read credentialSubject.authorityEpoch without verifying the proof.
+ * @param {string} credential_json
+ * @returns {number}
+ */
+export function readAuthorityEpoch(credential_json) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(credential_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.readAuthorityEpoch(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        if (r2) {
+            throw takeObject(r1);
+        }
+        return r0;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * Read credentialSubject.status without verifying the proof.
+ * @param {string} credential_json
+ * @returns {string}
+ */
+export function readAuthorityStatus(credential_json) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(credential_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.readAuthorityStatus(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr2 = r0;
+        var len2 = r1;
+        if (r3) {
+            ptr2 = 0; len2 = 0;
+            throw takeObject(r2);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * Multibase SHA-256 of an evidence artifact (JSON object or string).
+ * @param {string} artifact_json
+ * @returns {string}
+ */
+export function reasoningArtifactDigest(artifact_json) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(artifact_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.reasoningArtifactDigest(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr2 = r0;
+        var len2 = r1;
+        if (r3) {
+            ptr2 = 0; len2 = 0;
+            throw takeObject(r2);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * Build a justification from an intent object, an anchors array, and an optional
+ * commitment level. Returns the justification as a JSON string.
+ * @param {string} intent_json
+ * @param {string} anchors_json
+ * @param {number | null} [commitment_level]
+ * @returns {string}
+ */
+export function reasoningBuildJustification(intent_json, anchors_json, commitment_level) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(intent_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(anchors_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.reasoningBuildJustification(retptr, ptr0, len0, ptr1, len1, isLikeNone(commitment_level) ? Number.MAX_SAFE_INTEGER : (commitment_level) >> 0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr3 = r0;
+        var len3 = r1;
+        if (r3) {
+            ptr3 = 0; len3 = 0;
+            throw takeObject(r2);
+        }
+        deferred4_0 = ptr3;
+        deferred4_1 = len3;
+        return getStringFromWasm0(ptr3, len3);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
+ * Verify a ReasonedActionCredential. Returns null on success, else the stable
+ * reason string. Pass null for escrow_public_b64 when no escrow is required.
+ * @param {string} credential_json
+ * @param {string} public_b64
+ * @param {string | null | undefined} escrow_public_b64
+ * @param {boolean} require_escrow
+ * @returns {string | undefined}
+ */
+export function reasoningCheckReasonedAction(credential_json, public_b64, escrow_public_b64, require_escrow) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(credential_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(public_b64, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(escrow_public_b64) ? 0 : passStringToWasm0(escrow_public_b64, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        var len2 = WASM_VECTOR_LEN;
+        wasm.reasoningCheckReasonedAction(retptr, ptr0, len0, ptr1, len1, ptr2, len2, require_escrow);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        if (r3) {
+            throw takeObject(r2);
+        }
+        let v4;
+        if (r0 !== 0) {
+            v4 = getStringFromWasm0(r0, r1).slice();
+            wasm.__wbindgen_export4(r0, r1 * 1, 1);
+        }
+        return v4;
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * Multibase SHA-256 over the JCS-canonical justification.
+ * @param {string} justification_json
+ * @returns {string}
+ */
+export function reasoningJustificationDigest(justification_json) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(justification_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.reasoningJustificationDigest(retptr, ptr0, len0);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr2 = r0;
+        var len2 = r1;
+        if (r3) {
+            ptr2 = 0; len2 = 0;
+            throw takeObject(r2);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * Classify an execution time against the pulse schedule. Returns
+ * {in_window, in_gap, seconds_into_window} as a JSON string.
+ * @param {string} last_pulse
+ * @param {number} interval_seconds
+ * @param {string} exec_time
+ * @returns {string}
+ */
+export function reasoningPulseWindow(last_pulse, interval_seconds, exec_time) {
+    let deferred4_0;
+    let deferred4_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(last_pulse, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(exec_time, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.reasoningPulseWindow(retptr, ptr0, len0, interval_seconds, ptr1, len1);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr3 = r0;
+        var len3 = r1;
+        if (r3) {
+            ptr3 = 0; len3 = 0;
+            throw takeObject(r2);
+        }
+        deferred4_0 = ptr3;
+        deferred4_1 = len3;
+        return getStringFromWasm0(ptr3, len3);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred4_0, deferred4_1, 1);
+    }
+}
+
+/**
+ * Execution-time reseal: seal the intent at `now` and issue a fresh
+ * ReasonedActionCredential whose sealedAt and validFrom are both `now`.
+ * @param {string} seed_b64
+ * @param {string} issuer_did
+ * @param {string} verification_method
+ * @param {string} intent_json
+ * @param {string} anchors_json
+ * @param {number | null | undefined} commitment_level
+ * @param {string} now
+ * @param {string} credential_id
+ * @param {boolean} include_reasoning
+ * @returns {string}
+ */
+export function reasoningResealIntent(seed_b64, issuer_did, verification_method, intent_json, anchors_json, commitment_level, now, credential_id, include_reasoning) {
+    let deferred9_0;
+    let deferred9_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(seed_b64, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(issuer_did, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(verification_method, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len2 = WASM_VECTOR_LEN;
+        const ptr3 = passStringToWasm0(intent_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len3 = WASM_VECTOR_LEN;
+        const ptr4 = passStringToWasm0(anchors_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len4 = WASM_VECTOR_LEN;
+        const ptr5 = passStringToWasm0(now, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len5 = WASM_VECTOR_LEN;
+        const ptr6 = passStringToWasm0(credential_id, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len6 = WASM_VECTOR_LEN;
+        wasm.reasoningResealIntent(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, isLikeNone(commitment_level) ? Number.MAX_SAFE_INTEGER : (commitment_level) >> 0, ptr5, len5, ptr6, len6, include_reasoning);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr8 = r0;
+        var len8 = r1;
+        if (r3) {
+            ptr8 = 0; len8 = 0;
+            throw takeObject(r2);
+        }
+        deferred9_0 = ptr8;
+        deferred9_1 = len8;
+        return getStringFromWasm0(ptr8, len8);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred9_0, deferred9_1, 1);
+    }
+}
+
+/**
+ * Sign a ReasonedActionCredential. Pass null for the optional sealed_at and
+ * escrow_receipt_json. Returns the signed credential as a JSON string.
+ * @param {string} seed_b64
+ * @param {string} issuer_did
+ * @param {string} verification_method
+ * @param {string} intent_json
+ * @param {string} justification_json
+ * @param {string} valid_from
+ * @param {string} credential_id
+ * @param {boolean} include_reasoning
+ * @param {string | null} [sealed_at]
+ * @param {string | null} [escrow_receipt_json]
+ * @returns {string}
+ */
+export function reasoningSignReasonedAction(seed_b64, issuer_did, verification_method, intent_json, justification_json, valid_from, credential_id, include_reasoning, sealed_at, escrow_receipt_json) {
+    let deferred11_0;
+    let deferred11_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(seed_b64, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(issuer_did, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(verification_method, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len2 = WASM_VECTOR_LEN;
+        const ptr3 = passStringToWasm0(intent_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len3 = WASM_VECTOR_LEN;
+        const ptr4 = passStringToWasm0(justification_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len4 = WASM_VECTOR_LEN;
+        const ptr5 = passStringToWasm0(valid_from, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len5 = WASM_VECTOR_LEN;
+        const ptr6 = passStringToWasm0(credential_id, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len6 = WASM_VECTOR_LEN;
+        var ptr7 = isLikeNone(sealed_at) ? 0 : passStringToWasm0(sealed_at, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        var len7 = WASM_VECTOR_LEN;
+        var ptr8 = isLikeNone(escrow_receipt_json) ? 0 : passStringToWasm0(escrow_receipt_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        var len8 = WASM_VECTOR_LEN;
+        wasm.reasoningSignReasonedAction(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5, ptr6, len6, include_reasoning, ptr7, len7, ptr8, len8);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr10 = r0;
+        var len10 = r1;
+        if (r3) {
+            ptr10 = 0; len10 = 0;
+            throw takeObject(r2);
+        }
+        deferred11_0 = ptr10;
+        deferred11_1 = len10;
+        return getStringFromWasm0(ptr10, len10);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred11_0, deferred11_1, 1);
+    }
+}
+
+/**
+ * Verify intent freshness for a credential at a consequence tier, using the
+ * reference tier policy. Returns null when accepted, else the stable reason
+ * string (e.g. "intent_seal_stale:...").
+ * @param {string} credential_json
+ * @param {number} tier
+ * @param {string} last_pulse
+ * @returns {string | undefined}
+ */
+export function reasoningVerifyIntentFreshness(credential_json, tier, last_pulse) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(credential_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(last_pulse, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        wasm.reasoningVerifyIntentFreshness(retptr, ptr0, len0, tier, ptr1, len1);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        if (r3) {
+            throw takeObject(r2);
+        }
+        let v3;
+        if (r0 !== 0) {
+            v3 = getStringFromWasm0(r0, r1).slice();
+            wasm.__wbindgen_export4(r0, r1 * 1, 1);
+        }
+        return v3;
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
     }
@@ -3610,6 +4068,63 @@ export function sign(credential_json, seed_b64, verification_method, created) {
 }
 
 /**
+ * Build and sign an AuthorityState credential in one step (eddsa-jcs-2022).
+ * @param {string} issuer_did
+ * @param {string} credential_id
+ * @param {number} authority_epoch
+ * @param {string} status
+ * @param {string} valid_from
+ * @param {string} valid_until
+ * @param {string | null | undefined} subject_did
+ * @param {string} seed_b64
+ * @param {string} verification_method
+ * @param {string} created
+ * @returns {string}
+ */
+export function signAuthorityState(issuer_did, credential_id, authority_epoch, status, valid_from, valid_until, subject_did, seed_b64, verification_method, created) {
+    let deferred11_0;
+    let deferred11_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(issuer_did, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(credential_id, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(status, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len2 = WASM_VECTOR_LEN;
+        const ptr3 = passStringToWasm0(valid_from, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len3 = WASM_VECTOR_LEN;
+        const ptr4 = passStringToWasm0(valid_until, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len4 = WASM_VECTOR_LEN;
+        var ptr5 = isLikeNone(subject_did) ? 0 : passStringToWasm0(subject_did, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        var len5 = WASM_VECTOR_LEN;
+        const ptr6 = passStringToWasm0(seed_b64, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len6 = WASM_VECTOR_LEN;
+        const ptr7 = passStringToWasm0(verification_method, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len7 = WASM_VECTOR_LEN;
+        const ptr8 = passStringToWasm0(created, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len8 = WASM_VECTOR_LEN;
+        wasm.signAuthorityState(retptr, ptr0, len0, ptr1, len1, authority_epoch, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5, ptr6, len6, ptr7, len7, ptr8, len8);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr10 = r0;
+        var len10 = r1;
+        if (r3) {
+            ptr10 = 0; len10 = 0;
+            throw takeObject(r2);
+        }
+        deferred11_0 = ptr10;
+        deferred11_1 = len10;
+        return getStringFromWasm0(ptr10, len10);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred11_0, deferred11_1, 1);
+    }
+}
+
+/**
  * Build a dual proof (Ed25519 + ML-DSA-44) and attach it to the credential.
  * @param {string} credential_json
  * @param {string} ed25519_seed_b64
@@ -3859,6 +4374,46 @@ export function verify(credential_json, public_b64, now_iso, clock_skew_seconds)
         const ptr2 = passStringToWasm0(now_iso, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
         const len2 = WASM_VECTOR_LEN;
         wasm.verify(retptr, ptr0, len0, ptr1, len1, ptr2, len2, clock_skew_seconds);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr4 = r0;
+        var len4 = r1;
+        if (r3) {
+            ptr4 = 0; len4 = 0;
+            throw takeObject(r2);
+        }
+        deferred5_0 = ptr4;
+        deferred5_1 = len4;
+        return getStringFromWasm0(ptr4, len4);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export4(deferred5_0, deferred5_1, 1);
+    }
+}
+
+/**
+ * Verify an AuthorityState credential's proof and validity window.
+ * Returns {proofValid, timeValid, valid}.
+ * @param {string} credential_json
+ * @param {string} public_b64
+ * @param {string} now_iso
+ * @param {number} clock_skew_seconds
+ * @returns {string}
+ */
+export function verifyAuthorityState(credential_json, public_b64, now_iso, clock_skew_seconds) {
+    let deferred5_0;
+    let deferred5_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        const ptr0 = passStringToWasm0(credential_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(public_b64, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(now_iso, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const len2 = WASM_VECTOR_LEN;
+        wasm.verifyAuthorityState(retptr, ptr0, len0, ptr1, len1, ptr2, len2, clock_skew_seconds);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
