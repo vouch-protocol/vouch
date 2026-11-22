@@ -10,10 +10,12 @@
     "dev": "next dev",
     "prebuild": "npm run copy-static",
     "build": "next build",
+    "postbuild": "node scripts/postbuild.mjs",
+    "check-pages": "node scripts/check-pages.mjs ../docs",
     "prestart": "npm run copy-static",
     "start": "next start",
     "lint": "next lint",
-    "export-to-docs": "next build && cp -r out/. ../docs/ && echo 'Exported to ../docs/. Commit and push to deploy via GH Pages. CI handles this automatically on push to main.'"
+    "export-to-docs": "npm run build && rm -rf ../docs/_next && cp -r out/. ../docs/ && npm run check-pages && echo 'Exported to ../docs/. Commit and push to deploy via GH Pages. CI handles this automatically on push to main.'"
   },
   "dependencies": {
     "@vouch-protocol-official/core-wasm": "3.0.0",

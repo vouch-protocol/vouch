@@ -85,11 +85,11 @@ npm run export-to-docs
 
 That builds and copies the static output to `../vouch-protocol/docs/`. Then commit and push from the `vouch-protocol` repo.
 
-**The export will overwrite** existing files in `docs/` (the legacy `index.html`, `demo.html`, `cps.html`, etc.). Before publishing for the first time, decide whether to:
+The export replaces `docs/_next/` and merges the rest of the output over `docs/`. Everything else kept in `docs/` (disclosures, specs, images) is left as it is.
 
-- A. Archive the legacy pages to `docs/legacy/` first, then export
-- B. Adapt the Next.js export to write only specific routes (custom build script)
-- C. Move the legacy pages into the Next.js project as additional routes
+Every page on the site is a route in this project, including the terms, the certificate practice statement, and the key ceremony record. The addresses those pages used to have as hand-written `.html` files are listed under `legacyRedirects` in `site.config.json`, and the build writes a small redirect page at each one. The build also generates `sitemap.xml` and `robots.txt` from the exported pages. `siteUrl` in the same file is the one place the address of the site is set.
+
+After the copy, `npm run check-pages` confirms that every HTML file in `docs/` comes from the current build, is a redirect page, or is a certificate page. A page that is none of these fails the check, so an outdated page cannot stay published at a working address.
 
 The `docs/blog/` directory is on a separate CNAME (`blog.vouch-protocol.com`) and is untouched by this export.
 

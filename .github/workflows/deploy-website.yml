@@ -63,9 +63,15 @@ jobs:
 
       - name: Copy output into docs/
         run: |
-          # Preserve existing static pages, blog/, disclosures/, etc.
+          # The hashed build assets are replaced as a set, so bundles from
+          # earlier builds do not pile up next to the current one.
+          rm -rf docs/_next
+          # Preserve the other files kept in docs/ (disclosures, specs, images).
           # Next.js output is merged on top (overwrites overlapping files).
           cp -rv website/out/. docs/
+
+      - name: Check every published page is on the current build
+        run: node website/scripts/check-pages.mjs docs
 
       - name: Detect changes
         id: detect
