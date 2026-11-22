@@ -46,6 +46,6 @@ tell the user to run `vouch init --env` and export the values.
 ## Links
 
 - Repo: https://github.com/vouch-protocol/vouch
-- Spec: https://vouch-protocol.com/specs/SPEC/
+- Spec: https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md
 - Issues: https://github.com/vouch-protocol/vouch/issues
 - Discord: https://discord.gg/mMqx5cG9Y

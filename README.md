@@ -69,7 +69,7 @@ Vouch Protocol v1.0 aligns directly with the open standard:
 - **Post-quantum profile** as a Data Integrity proof set: the credential carries two independent proofs, `eddsa-jcs-2022` and `mldsa44-jcs-2024`, an optional add-on for regulated deployments aligning with NIST CNSA 2.0 / NSM-10 timelines.
 - **Three-way cross-implementation interop** verified across Python, TypeScript, and Go.
 
-Credentials are issued with `Signer.sign()` and checked with `Verifier.verify()`. See the Specification at [vouch-protocol.com/specs/SPEC/](https://vouch-protocol.com/specs/SPEC/) for the full specification.
+Credentials are issued with `Signer.sign()` and checked with `Verifier.verify()`. See the [Specification](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md) for the full normative text.
 
 ---
 
@@ -387,7 +387,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 ## Documentation
 
 - [Quick Start](https://github.com/vouch-protocol/vouch#quick-start)
-- [Vouch Specification (v1.6 normative)](https://vouch-protocol.com/specs/)
+- [Vouch Specification (v1.6 normative)](https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md)
 - [Post-Quantum Implementation Guide](https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md)
 - [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
 - [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
