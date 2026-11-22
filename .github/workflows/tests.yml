@@ -4,7 +4,8 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Python 3.9 has no prebuilt release for the ubuntu-26.04 image.
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v7
     - name: Set up Python 3.9
