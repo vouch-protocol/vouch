@@ -117,4 +117,4 @@ credential = signer.sign(intent={
 
 For the full agent-identity guide, see
 [The Vouch Protocol: A Comprehensive Guide](./vouch_guide.md) and the
-[Specification](https://vouch-protocol.com/specs/SPEC/).
+[Specification](./specs/w3c-cg-report.md).

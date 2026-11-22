@@ -93,7 +93,7 @@ Apache-2.0. See [LICENSE](https://github.com/vouch-protocol/vouch/blob/main/LICE
 
 ## Documentation
 
-- specification draft: https://vouch-protocol.com/specs/SPEC/
+- specification draft: https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md
 - Hybrid Post-Quantum Implementation Guide: https://github.com/vouch-protocol/vouch/blob/main/docs/hybrid-pq-implementation-guide.md
 - Defensive Prior Art Disclosures (CC0): https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures
 
