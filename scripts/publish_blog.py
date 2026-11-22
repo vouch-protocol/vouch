@@ -86,14 +86,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <meta name="author" content="Ramprasad Anandam Gaddam">
 
   <!-- Canonical URL -->
-  <link rel="canonical" href="https://vouch-protocol.com/blog/{filename}">
+  <link rel="canonical" href="https://vouch-protocol.org/blog/{filename}">
 
   <!-- Open Graph -->
   <meta property="og:title" content="{title}">
   <meta property="og:description" content="{og_description}">
   <meta property="og:type" content="article">
-  <meta property="og:url" content="https://vouch-protocol.com/blog/{filename}">
-  <meta property="og:image" content="https://vouch-protocol.com/images/og-blog-{slug}.png">
+  <meta property="og:url" content="https://vouch-protocol.org/blog/{filename}">
+  <meta property="og:image" content="https://vouch-protocol.org/images/og-blog-{slug}.png">
   <meta property="og:site_name" content="Vouch Protocol">
   <meta property="article:author" content="Ramprasad Anandam Gaddam">
   <meta property="article:published_time" content="2026-01-10T00:00:00Z">
@@ -103,7 +103,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   <meta name="twitter:site" content="@vouchprotocol">
   <meta name="twitter:title" content="{title}">
   <meta name="twitter:description" content="{og_description}">
-  <meta name="twitter:image" content="https://vouch-protocol.com/images/og-blog-{slug}.png">
+  <meta name="twitter:image" content="https://vouch-protocol.org/images/og-blog-{slug}.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>�</text></svg>">
@@ -127,11 +127,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     "publisher": {{
       "@type": "Organization",
       "name": "Vouch Protocol",
-      "url": "https://vouch-protocol.com"
+      "url": "https://vouch-protocol.org"
     }},
     "datePublished": "2026-01-10",
-    "mainEntityOfPage": "https://vouch-protocol.com/blog/{filename}",
-    "url": "https://vouch-protocol.com/blog/{filename}"
+    "mainEntityOfPage": "https://vouch-protocol.org/blog/{filename}",
+    "url": "https://vouch-protocol.org/blog/{filename}"
   }}
   </script>
 
@@ -176,9 +176,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
   <div class="gradient-bg"></div>
   <nav>
-    <a href="https://vouch-protocol.com" class="logo">🔐 Vouch <span>Protocol</span></a>
+    <a href="https://vouch-protocol.org" class="logo">🔐 Vouch <span>Protocol</span></a>
     <ul class="nav-links">
-      <li><a href="https://vouch-protocol.com/blog">Blog</a></li>
+      <li><a href="https://vouch-protocol.org/blog">Blog</a></li>
       <li><a href="https://github.com/vouch-protocol/vouch">GitHub</a></li>
     </ul>
   </nav>
@@ -193,7 +193,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     {content}
     <hr style="border: 0; height: 1px; background: var(--border); margin: 3rem 0;">
     <p style="text-align: center;">
-      <a href="https://vouch-protocol.com/blog" style="color: var(--accent); text-decoration: none;">← Back to Blog</a>
+      <a href="https://vouch-protocol.org/blog" style="color: var(--accent); text-decoration: none;">← Back to Blog</a>
     </p>
   </article>
   <footer>
@@ -261,7 +261,7 @@ def main():
     slug = metadata.get("slug", pad_id.lower().replace("-", ""))
     tech_id = metadata.get("tech_id", pad_id.lower().replace("-", ""))
     og_description = metadata.get("og_desc", f"Technical Digest: {title}")
-    arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.com/disclosures/{pad_id}.md")
+    arxiv_url = metadata.get("arxiv_url", f"https://vouch-protocol.org/disclosures/{pad_id}.md")
     reading_time = metadata.get("reading_time", "3 min read")
 
     # Generate shortlink URL from config

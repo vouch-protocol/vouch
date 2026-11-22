@@ -5,7 +5,7 @@ import ShareButtons from '../agent-trust-index/ShareButtons';
 
 const TOTAL = ATI_SUMMARY.total.toLocaleString('en-US');
 const VERIFIABLE = ATI_SUMMARY.verifiable.toLocaleString('en-US');
-const PAGE_URL = 'https://vouch-protocol.com/the-trust-gap/';
+const PAGE_URL = 'https://vouch-protocol.org/the-trust-gap/';
 const SHARE_TEXT = `"Trust me, I'm an AI agent." ${ATI_SUMMARY.pctCannot}% of public AI agents can't back that up: they can't prove who they are or who authorized them. As agents start touching money and real data, this is the AI trust gap to watch:`;
 
 export const metadata: Metadata = {

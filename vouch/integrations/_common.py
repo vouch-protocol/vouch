@@ -30,7 +30,7 @@ Or use the CLI:
 
   vouch init --domain your-agent.example.com --env
 
-See https://vouch-protocol.com/ for more details.
+See https://vouch-protocol.org/ for more details.
 """
 
 

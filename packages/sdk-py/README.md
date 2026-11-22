@@ -1,6 +1,6 @@
 # vouch-sdk
 
-Official Python SDK for the [Vouch Protocol](https://vouch-protocol.com).
+Official Python SDK for the [Vouch Protocol](https://vouch-protocol.org).
 
 A clean client library for communicating with the Vouch Bridge Daemon. Supports both **synchronous** and **asynchronous** operations using `httpx`.
 

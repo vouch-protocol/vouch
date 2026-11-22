@@ -1,8 +1,8 @@
 # Vouch Protocol Website
 
-The marketing and documentation site for [Vouch Protocol](https://vouch-protocol.com).
+The marketing and documentation site for [Vouch Protocol](https://vouch-protocol.org).
 
-Lives in `vouch-protocol/website/`. Next.js 14 (App Router) + Tailwind + TypeScript. Built as a static export and deployed automatically to GitHub Pages by `.github/workflows/deploy-website.yml` on every push to `main` that touches `website/**`. CNAME `vouch-protocol.com` is served from `vouch-protocol/docs/`, where the workflow writes the built output.
+Lives in `vouch-protocol/website/`. Next.js 14 (App Router) + Tailwind + TypeScript. Built as a static export and deployed automatically to GitHub Pages by `.github/workflows/deploy-website.yml` on every push to `main` that touches `website/**`. CNAME `vouch-protocol.org` is served from `vouch-protocol/docs/`, where the workflow writes the built output.
 
 ## Stack
 
@@ -77,7 +77,7 @@ This produces a static export in `out/`. With `output: 'export'` and `trailingSl
 
 ## Deploy (GitHub Pages, no infra change)
 
-The site at `vouch-protocol.com` is served from `vouch-protocol/docs/` via GitHub Pages. To publish:
+The site at `vouch-protocol.org` is served from `vouch-protocol/docs/` via GitHub Pages. To publish:
 
 ```bash
 npm run export-to-docs

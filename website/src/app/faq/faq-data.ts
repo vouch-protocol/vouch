@@ -1088,7 +1088,7 @@ Every tool call is now signed in Python before it runs. There is no prompt to wr
         a: `On Linux or macOS, one line installs the \`vouch\` command (on Windows, use \`pip install vouch-protocol\`):
 
 \`\`\`bash
-curl -fsSL https://vouch-protocol.com/install.sh | sh
+curl -fsSL https://vouch-protocol.org/install.sh | sh
 \`\`\`
 
 Then run \`vouch\` with no arguments and pick from a short menu: sign your git commits (a verified badge on GitHub), or give an agent its own identity. For a full agent setup with recommended defaults and no questions, run \`vouch onboard --quick\`, which writes a working identity, allow-list, verifier, and heartbeat config in one command.`,
@@ -2048,7 +2048,7 @@ All three follow the protocol's release cadence. Subscribe to releases on https:
       },
       {
         q: 'Is there an llms.txt for AI coding assistants?',
-        a: `Yes. [vouch-protocol.com/llms.txt](https://vouch-protocol.com/llms.txt) is a plain-text map of the protocol written for AI coding assistants. Point Cursor, Claude, Copilot, or any tool that reads \`llms.txt\` at it and the assistant gets the package names, the core APIs, and the canonical conventions without crawling the whole site. The Claude Skill, OpenAI Custom GPT, and Gemini Gem are the deeper, packaged version of the same knowledge.`,
+        a: `Yes. [vouch-protocol.org/llms.txt](https://vouch-protocol.org/llms.txt) is a plain-text map of the protocol written for AI coding assistants. Point Cursor, Claude, Copilot, or any tool that reads \`llms.txt\` at it and the assistant gets the package names, the core APIs, and the canonical conventions without crawling the whole site. The Claude Skill, OpenAI Custom GPT, and Gemini Gem are the deeper, packaged version of the same knowledge.`,
       },
       {
         q: 'What is the Agent Trust Index?',
@@ -2112,7 +2112,7 @@ Rule of thumb: if your auditor will ask about the sidecar, run the Go one. For e
     items: [
       {
         q: 'How do I become a Vouch Verified Contributor?',
-        a: `Land a merged pull request on the [repository](https://github.com/vouch-protocol/vouch). When it merges, an automated workflow mints a signed Vouch Verified Contributor credential for you, publishes a certificate page at \`vouch-protocol.com/c/<your-handle>/<pr>\`, adds you to the [contributors page](https://vouch-protocol.com/contributors), and posts a comment on your pull request with the badge and the full credential.
+        a: `Land a merged pull request on the [repository](https://github.com/vouch-protocol/vouch). When it merges, an automated workflow mints a signed Vouch Verified Contributor credential for you, publishes a certificate page at \`vouch-protocol.org/c/<your-handle>/<pr>\`, adds you to the [contributors page](https://vouch-protocol.org/contributors), and posts a comment on your pull request with the badge and the full credential.
 
 New to the project? Start with a [good first issue](https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). The badge is offered, never required.`,
         helpLinks: [{ label: 'Become a Vouch Verified Contributor', href: '/help/#verified-contributor' }],

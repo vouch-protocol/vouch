@@ -37,7 +37,7 @@ Requires the `vouch` CLI installed (`pip install vouch-protocol`).
 ### 3. One-click access to the Vouch Assistant
 
 Ctrl/Cmd-Shift-P → **Vouch: Ask the assistant**. Opens
-[`vouch-protocol.com/ask`](https://vouch-protocol.com/ask) in your default
+[`vouch-protocol.org/ask`](https://vouch-protocol.org/ask) in your default
 browser. Retrieval-grounded answers about the spec, the SDKs, conformance
 levels, and compliance mappings. Every reply is itself Vouch-signed.
 
@@ -52,7 +52,7 @@ command group in the command palette. Disable via
 | Setting | Default | Description |
 |---|---|---|
 | `vouch.statusBar.enabled` | `true` | Show the Vouch status-bar shortcut. |
-| `vouch.assistant.url` | `https://vouch-protocol.com/ask` | URL for **Ask the assistant**. |
+| `vouch.assistant.url` | `https://vouch-protocol.org/ask` | URL for **Ask the assistant**. |
 
 ## Requirements
 

@@ -37,7 +37,7 @@ pj.description =
   'did:key/multikey, Data Integrity (eddsa-jcs-2022), credentials, delegation, ' +
   'dual-proof ML-DSA-44, and BitstringStatusList revocation. One byte-exact ' +
   'Rust implementation shared across every Vouch SDK.';
-pj.homepage = 'https://vouch-protocol.com';
+pj.homepage = 'https://vouch-protocol.org';
 pj.repository = {
   type: 'git',
   url: 'https://github.com/vouch-protocol/vouch',

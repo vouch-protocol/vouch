@@ -5,7 +5,7 @@ Node.js. It is a thin wrapper over one byte-exact Rust crate (`vouch-core`), the
 same core that powers the native and mobile SDKs, so every platform produces and
 verifies identical bytes. No JCS or proof logic is re-implemented per language.
 
-Apache-2.0. Part of the Vouch Protocol (https://vouch-protocol.com).
+Apache-2.0. Part of the Vouch Protocol (https://vouch-protocol.org).
 
 ## What it does
 

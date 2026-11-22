@@ -158,7 +158,7 @@ If you just want Vouch working without writing any code:
 
 ```bash
 ## Install on Linux or macOS (on Windows: pip install vouch-protocol)
-curl -fsSL https://vouch-protocol.com/install.sh | sh
+curl -fsSL https://vouch-protocol.org/install.sh | sh
 
 ## Run vouch with no arguments and choose from the menu
 vouch
@@ -3712,8 +3712,8 @@ the badge is a real Verifiable Credential, not a decorative image.
 
 ### What you get
 
-- A certificate page at `https://vouch-protocol.com/c/<login>/<pr>`.
-- A listing on the contributors page at `https://vouch-protocol.com/contributors`.
+- A certificate page at `https://vouch-protocol.org/c/<login>/<pr>`.
+- A listing on the contributors page at `https://vouch-protocol.org/contributors`.
 - A comment on your pull request with the badge, a copy-paste snippet,
   and the full credential inline.
 
@@ -3764,7 +3764,7 @@ contributor DID document before it is rendered.
 
 ### Links
 
-- Contributors: https://vouch-protocol.com/contributors
+- Contributors: https://vouch-protocol.org/contributors
 - Repository: https://github.com/vouch-protocol/vouch
 - Good first issues: https://github.com/vouch-protocol/vouch/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
 

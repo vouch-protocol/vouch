@@ -56,7 +56,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://vouch-protocol.com"
+Homepage = "https://vouch-protocol.org"
 Documentation = "https://github.com/vouch-protocol/vouch#readme"
 Repository = "https://github.com/vouch-protocol/vouch"
 Issues = "https://github.com/vouch-protocol/vouch/issues"

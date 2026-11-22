@@ -26,7 +26,7 @@ streamlit run app.py
 
 - 5 verifications per day
 - Basic C2PA + AI analysis
-- [Upgrade to Pro](https://vouch-protocol.com/pro) for unlimited
+- [Upgrade to Pro](https://vouch-protocol.org/pro) for unlimited
 
 ## API Keys Required
 

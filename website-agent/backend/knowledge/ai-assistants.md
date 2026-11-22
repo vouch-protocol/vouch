@@ -147,7 +147,7 @@ the draft, then ask before creating or sending.
 
 ## Vouch Assistant (the chat on the website)
 
-The chat helper on vouch-protocol.com and the mobile app. Answers
+The chat helper on vouch-protocol.org and the mobile app. Answers
 questions about Vouch and signs real Vouch credentials when you ask
 it to. It is open source under `website-agent/` in the repo.
 

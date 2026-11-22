@@ -9,7 +9,7 @@ Pod::Spec.new do |s|
   s.description    = package['description']
   s.license        = 'Apache-2.0'
   s.author         = package['author']
-  s.homepage       = 'https://vouch-protocol.com'
+  s.homepage       = 'https://vouch-protocol.org'
   s.platforms      = { :ios => '15.1', :tvos => '15.1' }
   s.swift_version  = '5.9'
   s.source         = { git: 'https://github.com/vouch-protocol/vouch.git' }

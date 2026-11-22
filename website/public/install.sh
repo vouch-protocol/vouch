@@ -1,7 +1,7 @@
 #!/bin/sh
 # Vouch Protocol installer.
 #
-#   curl -fsSL https://vouch-protocol.com/install.sh | sh
+#   curl -fsSL https://vouch-protocol.org/install.sh | sh
 #
 # Installs the `vouch` command line tool. Prefers pipx (an isolated install),
 # falls back to pip. Prints the one thing to run next.

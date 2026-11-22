@@ -4,7 +4,7 @@
   "description": "Typed HTTP client for the Vouch Protocol Bridge API (sign, verify, audio), generated from its OpenAPI spec.",
   "author": "Ramprasad Anandam Gaddam",
   "license": "Apache-2.0",
-  "homepage": "https://vouch-protocol.com",
+  "homepage": "https://vouch-protocol.org",
   "keywords": [
     "vouch",
     "verifiable-credentials",

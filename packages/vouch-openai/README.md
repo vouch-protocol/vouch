@@ -57,4 +57,4 @@ A tool runs whether or not an identity is resolved; when none is configured, sig
 
 ## License
 
-Apache-2.0. Part of [Vouch Protocol](https://vouch-protocol.com).
+Apache-2.0. Part of [Vouch Protocol](https://vouch-protocol.org).

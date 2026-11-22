@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 REGISTRY_URL = "https://registry.modelcontextprotocol.io/v0/servers"
-USER_AGENT = "agent-trust-index/0.1 (+https://vouch-protocol.com)"
+USER_AGENT = "agent-trust-index/0.1 (+https://vouch-protocol.org)"
 PAGE_SIZE = 100
 
 # Any did:web or did:key string embedded in an agent card.

@@ -10,7 +10,7 @@
 
 name: Vouch Gatekeeper
 description: Enforce cryptographic identity and organizational policy on every Pull Request
-url: https://vouch-protocol.com
+url: https://vouch-protocol.org
 hook_attributes:
   url: https://your-deployment.example.com/webhook
   active: true

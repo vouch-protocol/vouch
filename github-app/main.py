@@ -1002,7 +1002,7 @@ app = FastAPI(
 
 APP_MANIFEST = {
     "name": "Vouch Gatekeeper",
-    "url": "https://vouch-protocol.com",
+    "url": "https://vouch-protocol.org",
     "hook_attributes": {
         "url": f"{API_DOMAIN}/webhook",
         "active": True,
@@ -1366,7 +1366,7 @@ async def add_badge_if_missing(
     
     # Create badge markdown
     badge_url = f"https://img.shields.io/endpoint?url={API_DOMAIN}/api/badge/{owner}/{repo}"
-    badge_md = f"[![Vouch Protected]({badge_url})](https://vouch-protocol.com)\n\n"
+    badge_md = f"[![Vouch Protected]({badge_url})](https://vouch-protocol.org)\n\n"
     
     # Prepend badge to README
     new_readme = badge_md + readme_content
@@ -1419,7 +1419,7 @@ async def add_badge_if_missing(
 
 This PR adds a Vouch protection badge to your README.
 
-The badge shows that this repository is protected by [Vouch Gatekeeper](https://vouch-protocol.com), 
+The badge shows that this repository is protected by [Vouch Gatekeeper](https://vouch-protocol.org), 
 which enforces cryptographic identity verification on all commits.
 
 ### What does this mean?

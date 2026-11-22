@@ -37,7 +37,7 @@
 
 ```bash
 # Install (Linux and macOS). On Windows, use: pip install vouch-protocol
-curl -fsSL https://vouch-protocol.com/install.sh | sh
+curl -fsSL https://vouch-protocol.org/install.sh | sh
 
 # Run vouch with no arguments and pick what you want to do
 vouch
@@ -245,7 +245,7 @@ flowchart TB
 ### 1. Install
 ```bash
 # Linux and macOS: one line
-curl -fsSL https://vouch-protocol.com/install.sh | sh
+curl -fsSL https://vouch-protocol.org/install.sh | sh
 
 # Or with pip (any platform)
 pip install vouch-protocol

@@ -167,7 +167,7 @@ policy:
 Add to your README:
 
 ```markdown
-[![Vouch Protected](https://img.shields.io/endpoint?url=https://gatekeeper.vouch-protocol.com/api/badge/OWNER/REPO)](https://vouch-protocol.com)
+[![Vouch Protected](https://img.shields.io/endpoint?url=https://gatekeeper.vouch-protocol.com/api/badge/OWNER/REPO)](https://vouch-protocol.org)
 ```
 
 ---

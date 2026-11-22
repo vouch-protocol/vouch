@@ -3,7 +3,7 @@
 /**
  * /ask: direct-link entry point to the Vouch Assistant.
  *
- * Linkable from anywhere as `vouch-protocol.com/ask` (no need to tell readers
+ * Linkable from anywhere as `vouch-protocol.org/ask` (no need to tell readers
  * to "click the bottom-right tab"). Renders a full-screen chat experience
  * with the same backend the side-panel widget uses.
  *
@@ -46,7 +46,7 @@ export default function AskPage() {
                     href="/"
                     className="font-mono uppercase text-[0.7rem] tracking-[0.16em] text-ink-soft hover:text-ink no-underline"
                 >
-                    ← vouch-protocol.com
+                    ← vouch-protocol.org
                 </a>
             </header>
 
@@ -105,7 +105,7 @@ function ComingSoon() {
                     </li>
                     <li>
                         <a className="border-b border-ink text-ink no-underline" href="/docs">
-                            vouch-protocol.com/docs
+                            vouch-protocol.org/docs
                         </a>
                         <span className="block normal-case tracking-normal text-[0.85rem] text-ink-faint mt-1 font-serif italic">
                             self-serve reference

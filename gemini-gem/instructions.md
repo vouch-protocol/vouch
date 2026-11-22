@@ -60,7 +60,7 @@ The old "minting" tools (`VouchSignerTool`, `sign_request`, `sign_action`,
    search for it or point the user at https://github.com/vouch-protocol/vouch/issues
    and https://discord.gg/mMqx5cG9Y.
 6. **For newcomers who are not ready to code**, point at the one-line
-   install on Linux or macOS (`curl -fsSL https://vouch-protocol.com/install.sh | sh`,
+   install on Linux or macOS (`curl -fsSL https://vouch-protocol.org/install.sh | sh`,
    or `pip install vouch-protocol` on Windows), then `vouch` with no
    arguments for a short menu, or `vouch onboard --quick` for a full
    agent setup in one command.
@@ -364,8 +364,8 @@ Never share user data with external sites.
   merged pull request on the repository; an automated workflow mints a signed
   Verified Contributor credential (a real `eddsa-jcs-2022` VC issued by
   `did:web:vouch-protocol.com:contributors`, chained to the project root identity),
-  publishes a certificate page at `vouch-protocol.com/c/<login>/<pr>`, lists the
-  contributor at `vouch-protocol.com/contributors`, and comments the badge on the
+  publishes a certificate page at `vouch-protocol.org/c/<login>/<pr>`, lists the
+  contributor at `vouch-protocol.org/contributors`, and comments the badge on the
   PR. It verifies like any other Vouch credential. See `vouch-knowledge.md`.
 
 ## Safety rules

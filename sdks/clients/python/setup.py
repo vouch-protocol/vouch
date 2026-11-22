@@ -37,7 +37,7 @@ setup(
     author="Ramprasad Anandam Gaddam",
     author_email="hello@vouch-protocol.com",
     url="https://github.com/vouch-protocol/vouch",
-    project_urls={"Homepage": "https://vouch-protocol.com"},
+    project_urls={"Homepage": "https://vouch-protocol.org"},
     license="Apache-2.0",
     keywords=["vouch", "verifiable-credentials", "api-client", "openapi"],
     install_requires=REQUIRES,

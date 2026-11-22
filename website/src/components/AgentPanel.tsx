@@ -36,9 +36,9 @@ export default function AgentPanel() {
         window.addEventListener('vouch-agent:open', onOpen as EventListener);
         window.addEventListener('keydown', onKey);
 
-        // Direct-link support: vouch-protocol.com/?ask=open opens the panel.
-        // Also: vouch-protocol.com/?ask=full opens in full-screen mode.
-        // Hash form vouch-protocol.com/#ask also accepted for share-friendly URLs.
+        // Direct-link support: vouch-protocol.org/?ask=open opens the panel.
+        // Also: vouch-protocol.org/?ask=full opens in full-screen mode.
+        // Hash form vouch-protocol.org/#ask also accepted for share-friendly URLs.
         const params = new URLSearchParams(window.location.search);
         const ask = params.get('ask');
         if (ask) {

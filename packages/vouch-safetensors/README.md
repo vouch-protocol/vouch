@@ -1,6 +1,6 @@
 # vouch-safetensors
 
-Embed [Vouch](https://vouch-protocol.com) Credentials in a `.safetensors` file's
+Embed [Vouch](https://vouch-protocol.org) Credentials in a `.safetensors` file's
 existing `__metadata__` header, with zero changes to the safetensors format.
 
 This is deliberately complementary to OpenSSF Model Signing (OMS). OMS proves an

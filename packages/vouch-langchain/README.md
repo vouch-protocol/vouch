@@ -1,7 +1,7 @@
 # vouch-langchain
 
 A [LangChain](https://www.langchain.com/) tool that issues
-[Vouch](https://vouch-protocol.com) Credentials, so a LangChain agent can
+[Vouch](https://vouch-protocol.org) Credentials, so a LangChain agent can
 cryptographically authorize the tool calls it makes.
 
 Each signed call carries a W3C Verifiable Credential with an `eddsa-jcs-2022`

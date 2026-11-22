@@ -8,7 +8,7 @@
     "url": "git+https://github.com/vouch-protocol/vouch.git",
     "directory": "packages/vouch-mcp-ts"
   },
-  "homepage": "https://vouch-protocol.com",
+  "homepage": "https://vouch-protocol.org",
   "keywords": [
     "mcp",
     "model-context-protocol",

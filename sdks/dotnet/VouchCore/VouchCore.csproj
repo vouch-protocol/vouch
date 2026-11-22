@@ -15,7 +15,7 @@
     <Product>Vouch Protocol Core</Product>
     <Description>Vouch Protocol .NET SDK: JCS, Ed25519, did:key/multikey, Data Integrity (eddsa-jcs-2022), credentials, delegation, dual-proof ML-DSA-44, and BitstringStatusList revocation, over the canonical Rust core via C-FFI.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://vouch-protocol.com</PackageProjectUrl>
+    <PackageProjectUrl>https://vouch-protocol.org</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>vouch;verifiable-credentials;did;ed25519;ml-dsa;post-quantum;agents;data-integrity</PackageTags>
     <RepositoryUrl>https://github.com/vouch-protocol/vouch</RepositoryUrl>

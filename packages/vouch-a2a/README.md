@@ -1,7 +1,7 @@
 # vouch-a2a
 
 Bind [A2A](https://a2a-protocol.org/) (Agent2Agent) Agent Cards to a
-[Vouch](https://vouch-protocol.com) identity, so two agents can establish trust
+[Vouch](https://vouch-protocol.org) identity, so two agents can establish trust
 before they collaborate.
 
 A2A standardized how agents discover and talk to each other through Agent Cards.

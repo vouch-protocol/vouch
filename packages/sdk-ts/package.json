@@ -32,7 +32,7 @@
     "url": "https://github.com/vouch-protocol/vouch.git",
     "directory": "packages/sdk-ts"
   },
-  "homepage": "https://vouch-protocol.com",
+  "homepage": "https://vouch-protocol.org",
   "bugs": {
     "url": "https://github.com/vouch-protocol/vouch/issues"
   },

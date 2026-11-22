@@ -1,7 +1,7 @@
 # vouch-mcp
 
 A Model Context Protocol (MCP) server that lets AI agents **issue and verify**
-[Vouch](https://vouch-protocol.com) Credentials, so every action an agent takes
+[Vouch](https://vouch-protocol.org) Credentials, so every action an agent takes
 carries cryptographic proof of who authorized it.
 
 MCP standardized how agents call tools. It does not say *who* is calling, or on

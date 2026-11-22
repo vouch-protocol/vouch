@@ -204,7 +204,7 @@ export default function ConformancePage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src="https://img.shields.io/badge/Vouch_Protocol-L1_Conformant-9B4051?style=flat&labelColor=333" alt="Vouch Protocol L1 Conformant badge" className="h-5 w-auto mb-2" />
                             <CodeBlock
-                                code={'[![Vouch Protocol L1 Conformant](https://img.shields.io/badge/Vouch_Protocol-L1_Conformant-9B4051?style=flat&labelColor=333)](https://vouch-protocol.com/conformance/)'}
+                                code={'[![Vouch Protocol L1 Conformant](https://img.shields.io/badge/Vouch_Protocol-L1_Conformant-9B4051?style=flat&labelColor=333)](https://vouch-protocol.org/conformance/)'}
                                 className="text-[0.78rem]"
                             />
                         </div>
@@ -212,7 +212,7 @@ export default function ConformancePage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src="https://img.shields.io/badge/Vouch_Protocol-L2_Conformant-7C2D3A?style=flat&labelColor=333" alt="Vouch Protocol L2 Conformant badge" className="h-5 w-auto mb-2" />
                             <CodeBlock
-                                code={'[![Vouch Protocol L2 Conformant](https://img.shields.io/badge/Vouch_Protocol-L2_Conformant-7C2D3A?style=flat&labelColor=333)](https://vouch-protocol.com/conformance/)'}
+                                code={'[![Vouch Protocol L2 Conformant](https://img.shields.io/badge/Vouch_Protocol-L2_Conformant-7C2D3A?style=flat&labelColor=333)](https://vouch-protocol.org/conformance/)'}
                                 className="text-[0.78rem]"
                             />
                         </div>
@@ -220,7 +220,7 @@ export default function ConformancePage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src="https://img.shields.io/badge/Vouch_Protocol-L3_Conformant-5C1F2C?style=flat&labelColor=333" alt="Vouch Protocol L3 Conformant badge" className="h-5 w-auto mb-2" />
                             <CodeBlock
-                                code={'[![Vouch Protocol L3 Conformant](https://img.shields.io/badge/Vouch_Protocol-L3_Conformant-5C1F2C?style=flat&labelColor=333)](https://vouch-protocol.com/conformance/)'}
+                                code={'[![Vouch Protocol L3 Conformant](https://img.shields.io/badge/Vouch_Protocol-L3_Conformant-5C1F2C?style=flat&labelColor=333)](https://vouch-protocol.org/conformance/)'}
                                 className="text-[0.78rem]"
                             />
                         </div>

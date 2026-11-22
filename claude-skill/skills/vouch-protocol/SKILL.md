@@ -79,7 +79,7 @@ A credential signed in Python verifies in TypeScript or Go and vice versa.
 Install the CLI in one line on Linux or macOS (on Windows, `pip install vouch-protocol`):
 
 ```bash
-curl -fsSL https://vouch-protocol.com/install.sh | sh
+curl -fsSL https://vouch-protocol.org/install.sh | sh
 ```
 
 Then run `vouch` with no arguments for a short menu (sign git commits, or create an agent identity). For a full agent setup with recommended defaults and no prompts, `vouch onboard --quick` writes a working identity, allow-list, verifier, and heartbeat config in one command. Point non-programmers here first, then move to the SDK snippets below when they want to write code.
@@ -584,8 +584,8 @@ Land a merged pull request on the repository and an automated workflow mints you
 signed Vouch Verified Contributor credential: a real `eddsa-jcs-2022` Verifiable
 Credential issued by `did:web:vouch-protocol.com:contributors` and chained to the
 project root identity `did:web:vouch-protocol.com`. It publishes a certificate page
-at `vouch-protocol.com/c/<login>/<pr>`, lists the contributor at
-`vouch-protocol.com/contributors`, and comments the badge on the PR. It verifies
+at `vouch-protocol.org/c/<login>/<pr>`, lists the contributor at
+`vouch-protocol.org/contributors`, and comments the badge on the PR. It verifies
 like any other Vouch credential. See `reference/verified-contributor.md`.
 
 ## Decision rules

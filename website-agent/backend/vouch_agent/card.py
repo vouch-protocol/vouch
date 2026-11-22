@@ -27,7 +27,7 @@ def build_card(url: str = DEFAULT_A2A_URL) -> dict[str, Any]:
         "url": url,
         "preferredTransport": "JSONRPC",
         "version": CARD_VERSION,
-        "provider": {"organization": "Vouch Protocol", "url": "https://vouch-protocol.com"},
+        "provider": {"organization": "Vouch Protocol", "url": "https://vouch-protocol.org"},
         "capabilities": {"streaming": False, "pushNotifications": False},
         "defaultInputModes": ["text/plain"],
         "defaultOutputModes": ["text/plain"],
