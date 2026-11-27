@@ -1,11 +1,11 @@
 # Vouch Protocol - robots.txt
-# https://vouch-protocol.com
+# https://vouch-protocol.org
 
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://vouch-protocol.com/sitemap.xml
+Sitemap: https://vouch-protocol.org/sitemap.xml
 
 # Crawl-delay for politeness
 Crawl-delay: 1
