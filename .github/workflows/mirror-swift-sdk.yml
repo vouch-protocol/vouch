@@ -61,7 +61,7 @@ jobs:
           for d in Sources Tests ffi; do
             rm -rf "${DST:?}/$d"
             mkdir -p "$DST/$d"
-            cp -R "$SRC/$d/." "$DST/$d/"
+            cp -RL "$SRC/$d/." "$DST/$d/"
           done
 
       - name: Derive release version from Package.swift
