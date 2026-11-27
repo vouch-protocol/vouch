@@ -10,7 +10,7 @@ Lives in `vouch-protocol/website/`. Next.js 14 (App Router) + Tailwind + TypeScr
 - React 18
 - Tailwind CSS 3
 - TypeScript 5
-- Self-hosted Google Fonts (Source Serif 4, JetBrains Mono) via CDN
+- Self-hosted fonts (Source Serif 4, JetBrains Mono) served from `public/fonts/`
 - Google Analytics (same property as the legacy site, `G-JHPT5HRW2F`)
 
 ## Theme
