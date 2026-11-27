@@ -1,0 +1,17 @@
+name = "vouch-com-domain"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Every path on the .com apex that another Worker's route does not already
+# match. The verify, API and C2PA routes are more specific, so they keep
+# going to their own Workers.
+[[routes]]
+pattern = "vouch-protocol.com/*"
+zone_name = "vouch-protocol.com"
+
+[[routes]]
+pattern = "www.vouch-protocol.com/*"
+zone_name = "vouch-protocol.com"
+
+[vars]
+SITE_ORIGIN = "https://vouch-protocol.org"
