@@ -24,6 +24,14 @@ response and no redirect:
 
 For these the Worker fetches the same path from the site and returns it.
 
+**JSON-LD documents.** A credential names its context without a file extension,
+`https://vouch-protocol.com/contexts/v1`, and the site publishes it as
+`contexts/v1.jsonld`. For a path under `/contexts/` or `/ns/` the Worker fetches
+the matching `.jsonld` file and returns it as `application/ld+json`, readable
+from any origin. The vocabulary those terms point into is served the same way at
+`https://vouch-protocol.com/ns/v1`. The sources are
+`website/public/contexts/v1.jsonld` and `website/public/ns/v1.jsonld`.
+
 The verify pages (`/v/*`), the API (`/api/*`) and the C2PA endpoints
 (`/.well-known/c2pa-*`) belong to the Workers in `cloudflare-worker/`. Their
 routes are more specific than this one, so they keep matching first.

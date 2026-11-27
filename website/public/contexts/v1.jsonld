@@ -1,0 +1,96 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "@vocab": "https://vouch-protocol.com/ns/v1#",
+
+    "id": "@id",
+    "type": "@type",
+
+    "VouchCredential": "https://vouch-protocol.com/ns/v1#VouchCredential",
+    "SessionVoucher": "https://vouch-protocol.com/ns/v1#SessionVoucher",
+    "VouchRootOfTrust": "https://vouch-protocol.com/ns/v1#VouchRootOfTrust",
+    "RecognizedIssuerCredential": "https://vouch-protocol.com/ns/v1#RecognizedIssuerCredential",
+    "AgentIdentityCredential": "https://vouch-protocol.com/ns/v1#AgentIdentityCredential",
+
+    "vouchVersion": "https://vouch-protocol.com/ns/v1#vouchVersion",
+    "intent": {
+      "@id": "https://vouch-protocol.com/ns/v1#intent",
+      "@context": {
+        "@protected": true,
+        "action": "https://vouch-protocol.com/ns/v1#action",
+        "target": "https://vouch-protocol.com/ns/v1#target",
+        "resource": {
+          "@id": "https://vouch-protocol.com/ns/v1#resource",
+          "@type": "http://www.w3.org/2001/XMLSchema#anyURI"
+        }
+      }
+    },
+    "reputationScore": {
+      "@id": "https://vouch-protocol.com/ns/v1#reputationScore",
+      "@type": "http://www.w3.org/2001/XMLSchema#integer"
+    },
+    "delegationChain": {
+      "@id": "https://vouch-protocol.com/ns/v1#delegationChain",
+      "@container": "@list",
+      "@context": {
+        "@protected": true,
+        "issuer": {
+          "@id": "https://www.w3.org/2018/credentials#issuer",
+          "@type": "@id"
+        },
+        "subject": {
+          "@id": "https://vouch-protocol.com/ns/v1#subject",
+          "@type": "@id"
+        },
+        "validFrom": {
+          "@id": "https://www.w3.org/2018/credentials#validFrom",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        },
+        "validUntil": {
+          "@id": "https://www.w3.org/2018/credentials#validUntil",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        },
+        "proof": {
+          "@id": "https://w3id.org/security#proof",
+          "@type": "@id",
+          "@container": "@graph"
+        }
+      }
+    },
+
+    "decayLambda": {
+      "@id": "https://vouch-protocol.com/ns/v1#decayLambda",
+      "@type": "http://www.w3.org/2001/XMLSchema#double"
+    },
+    "initialTrust": {
+      "@id": "https://vouch-protocol.com/ns/v1#initialTrust",
+      "@type": "http://www.w3.org/2001/XMLSchema#double"
+    },
+    "maxTtl": {
+      "@id": "https://vouch-protocol.com/ns/v1#maxTtl",
+      "@type": "http://www.w3.org/2001/XMLSchema#integer"
+    },
+    "scope": "https://vouch-protocol.com/ns/v1#scope",
+
+    "rootOfTrust": "https://vouch-protocol.com/ns/v1#rootOfTrust",
+    "recognizedActions": "https://vouch-protocol.com/ns/v1#recognizedActions",
+    "recognizedIn": {
+      "@id": "https://vouch-protocol.com/ns/v1#recognizedIn",
+      "@type": "@id"
+    },
+    "identity": {
+      "@id": "https://vouch-protocol.com/ns/v1#identity",
+      "@context": {
+        "@protected": true,
+        "owner": "https://vouch-protocol.com/ns/v1#owner",
+        "model": "https://vouch-protocol.com/ns/v1#model",
+        "capabilityClass": "https://vouch-protocol.com/ns/v1#capabilityClass",
+        "createdAt": {
+          "@id": "https://vouch-protocol.com/ns/v1#createdAt",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        }
+      }
+    }
+  }
+}
