@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import adoptersData from '@/data/adopters.json';
 
 export const metadata: Metadata = {
-    title: 'Adopters - Vouch Protocol',
+    title: 'Adopters',
     description:
         'Independent systems that build on or integrate Vouch Protocol, starting with invinoveritas, the first reference integration of Outcome Evidence and the AccountabilityRecord.',
 };

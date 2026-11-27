@@ -16,12 +16,15 @@ export const metadata: Metadata = {
   description:
     'The standards-aligned cryptographic identity and accountability layer for autonomous AI agents. Verifiable Credentials with Data Integrity proofs, resource-bound delegation, the Heartbeat Protocol, and an optional post-quantum proof set.',
   metadataBase: new URL(siteConfig.siteUrl),
+  // './' resolves against each page's own path, so every page names itself as
+  // the canonical address instead of leaving search engines to guess.
+  alternates: { canonical: './' },
   openGraph: {
     title: 'Vouch Protocol',
     description:
       'Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.',
     type: 'website',
-    url: siteConfig.siteUrl,
+    url: './',
     images: [
       {
         url: '/assets/og-image.png',

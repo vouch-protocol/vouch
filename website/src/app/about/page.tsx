@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-    title: 'About - Vouch Protocol',
+    title: 'About',
     description:
         'The story behind Vouch Protocol: an open, independent standard for the cryptographic identity and accountability of autonomous AI agents.',
 };

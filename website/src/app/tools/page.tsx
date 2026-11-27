@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import CodeBlock from '@/components/CodeBlock';
 
 export const metadata: Metadata = {
-    title: 'Tools - Vouch Protocol',
+    title: 'Tools',
     description:
         'Everything Vouch gives you: a command line, a standalone MCP server, SDKs in every major language, packages for your AI tools, trust primitives for robots and embodied agents, media provenance, a GitHub gatekeeper, and the Agent Trust Index.',
 };
