@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `vouch run -- <command>` and `vouch.fence`: start an agent inside a
+  file-access fence on Linux. The kernel (Landlock) limits the agent, and every
+  process it starts, to its workspace, the system runtime folders, and the paths
+  you list. The Vouch Protocol key store always stays outside, secret-bearing
+  `VOUCH_*` variables are removed from the agent's environment, and `--report`
+  writes a JSON record of the fence that was applied. No administrator rights
+  and no new dependencies. See `docs/fenced-run.md`.
 - `vouch.ssrf.fetch_json` and `fetch_bytes`: https-only fetches pinned to the
   validated public address, with every redirect re-checked and limits on size
   and total time. The grader uses them for every document it fetches.

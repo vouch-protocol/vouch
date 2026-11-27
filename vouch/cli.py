@@ -1783,6 +1783,65 @@ def cmd_scan(args) -> int:
     return 0
 
 
+def cmd_run(args) -> int:
+    """Run a command inside a file-access fence (``vouch run -- <command>``).
+
+    The command can reach its workspace, the system runtime folders, and the
+    paths listed on the command line. The kernel refuses everything else,
+    including the Vouch Protocol key store.
+    """
+    from vouch import fence
+
+    command = list(args.agent_command)
+    if command and command[0] == "--":
+        command = command[1:]
+    if not command:
+        print(
+            "vouch run: give the command after --, for example: vouch run -- python agent.py",
+            file=sys.stderr,
+        )
+        return fence.EXIT_LAUNCHER_ERROR
+
+    policy = fence.FencePolicy(
+        workspace=args.workspace,
+        read_only=tuple(args.ro),
+        read_execute=tuple(args.rx),
+        read_write=tuple(args.rw),
+        protect=tuple(args.protect),
+        drop_env=tuple(args.drop_env),
+        system_paths=not args.no_system_paths,
+    )
+    try:
+        if args.plan:
+            plan = fence.plan_fence(command, policy)
+            print(json.dumps(plan.to_dict(), indent=2, sort_keys=True))
+            return 0
+        return fence.run_fenced(
+            command,
+            policy,
+            allow_unfenced=args.allow_unfenced,
+            report_path=args.report,
+        )
+    except fence.FenceCommandNotFoundError as e:
+        print(f"vouch run: {e}", file=sys.stderr)
+        return fence.EXIT_NOT_FOUND
+    except fence.FenceStartError as e:
+        print(f"vouch run: could not start the command: {e}", file=sys.stderr)
+        if "Permission denied" in str(e):
+            print(
+                "vouch run: if the program or its interpreter lives outside the fence, "
+                "allow its folder with --rx",
+                file=sys.stderr,
+            )
+        return fence.EXIT_CANNOT_START
+    except fence.FenceUnavailableError as e:
+        print(f"vouch run: {e}. Pass --allow-unfenced to run without one.", file=sys.stderr)
+        return fence.EXIT_LAUNCHER_ERROR
+    except fence.FenceError as e:
+        print(f"vouch run: {e}", file=sys.stderr)
+        return fence.EXIT_LAUNCHER_ERROR
+
+
 def _guided_start() -> "list[str] | None":
     """Interactive picker shown when ``vouch`` is run with no subcommand.
 
@@ -2131,6 +2190,82 @@ def main(argv: "list[str] | None" = None) -> int:
     p_grade.add_argument("--badge", metavar="FILE", help="Write an embeddable SVG badge to FILE")
     p_grade.add_argument("--timeout", type=int, default=5, help="Network timeout in seconds")
 
+    p_run = subparsers.add_parser(
+        "run",
+        help="Run an agent inside a file-access fence (vouch run -- python agent.py)",
+        description=(
+            "Run a command where the kernel only lets it reach its workspace, the "
+            "system runtime folders, and the paths listed here. The Vouch Protocol "
+            "key store always stays outside."
+        ),
+    )
+    p_run.add_argument(
+        "--workspace",
+        default=".",
+        metavar="DIR",
+        help="Folder the agent works in, with full access (default: current directory)",
+    )
+    p_run.add_argument(
+        "--ro", action="append", default=[], metavar="PATH", help="Extra path the agent may read"
+    )
+    p_run.add_argument(
+        "--rx",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="Extra path the agent may read and execute (an interpreter or toolchain)",
+    )
+    p_run.add_argument(
+        "--rw",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="Extra path the agent may read and change",
+    )
+    p_run.add_argument(
+        "--protect",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="Extra path that must stay outside the fence",
+    )
+    p_run.add_argument(
+        "--drop-env",
+        dest="drop_env",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="Extra environment variable to remove from the agent's environment",
+    )
+    p_run.add_argument(
+        "--no-system-paths",
+        dest="no_system_paths",
+        action="store_true",
+        help="Leave the system runtime folders out of the fence",
+    )
+    p_run.add_argument(
+        "--allow-unfenced",
+        dest="allow_unfenced",
+        action="store_true",
+        help="Run the command even when this machine cannot enforce the fence",
+    )
+    p_run.add_argument(
+        "--report",
+        metavar="FILE",
+        help="Write a JSON record of the fence that was applied (outside the fence)",
+    )
+    p_run.add_argument(
+        "--plan",
+        action="store_true",
+        help="Print the fence that would be applied, then exit without running",
+    )
+    p_run.add_argument(
+        "agent_command",
+        nargs=argparse.REMAINDER,
+        metavar="-- COMMAND ...",
+        help="The command to run, after --",
+    )
+
     p_onboard = subparsers.add_parser(
         "onboard",
         help="Guided six-step wizard to adopt Vouch (identity, allow-list, verifier, heartbeat)",
@@ -2238,6 +2373,8 @@ def main(argv: "list[str] | None" = None) -> int:
         return attribution_cli.dispatch(args, p_attr.print_help)
     elif args.command == "grade":
         return cmd_grade(args)
+    elif args.command == "run":
+        return cmd_run(args)
     elif args.command == "onboard":
         from . import onboard as onboard_mod
 
