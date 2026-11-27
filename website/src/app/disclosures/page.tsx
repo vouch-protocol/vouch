@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
     title: 'Prior Art Disclosures',
     description:
-        'The Vouch Protocol defensive disclosure series: published prior art for AI agents and robots, from identity and delegation to safety, revocation, offline verification, and provenance.',
+        'The Vouch Protocol defensive disclosure series: published prior art on how AI agents and robots prove who they are, show who allowed them to act, stay within safe limits, and can be stopped.',
 };
 
 // The listing is read from the disclosure files at build time, so a newly
@@ -100,10 +100,10 @@ export default function DisclosuresPage() {
                                 Prior Art Disclosures
                             </h1>
                             <p className="text-ink-soft text-[1.05rem] leading-relaxed max-w-prose">
-                                Technical disclosures for AI agents and robots. They cover identity and delegation,
-                                safety and governance, revocation, offline and delay-tolerant verification,
-                                post-quantum cryptography, and content provenance. Each one is published as prior
-                                art, so the idea stays free for everyone to use.
+                                These disclosures describe how AI agents and robots can prove who they are, show
+                                who allowed them to act, stay within safe limits, and be stopped when something
+                                goes wrong. Each one is published as prior art, so the idea stays free for
+                                everyone to use.
                             </p>
                         </div>
                         <dl className="grid grid-cols-2 gap-x-6 gap-y-6 sm:gap-x-10">
