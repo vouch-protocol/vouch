@@ -68,11 +68,11 @@ Productivity
 - trust
 
 ## Privacy Policy URL
-https://vouch-protocol.com/privacy
+https://vouch-protocol.org/privacy
 
 ## Support URL  
 https://github.com/vouch-protocol/vouch/issues
 
 ## Website
-https://vouch-protocol.com
+https://vouch-protocol.org
  

@@ -163,7 +163,7 @@ jobs:
           REPO: ${{ github.repository }}
           BADGE: "https://img.shields.io/badge/Vouch-Verified_Integration-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
         run: |
-          CERT_URL="https://vouch-protocol.com/i/${SLUG}/"
+          CERT_URL="https://vouch-protocol.org/i/${SLUG}/"
           {
             echo "### Vouch Verified Integration :sparkles:"
             echo ""
@@ -173,7 +173,7 @@ jobs:
             echo ""
             echo "**Certificate (download and share it):** ${CERT_URL}"
             echo ""
-            echo "**Listed on the adopters page:** https://vouch-protocol.com/adopters/"
+            echo "**Listed on the adopters page:** https://vouch-protocol.org/adopters/"
             echo ""
             echo "**Add the badge to your site (optional):**"
             echo ""

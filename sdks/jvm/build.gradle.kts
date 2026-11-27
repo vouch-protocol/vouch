@@ -44,7 +44,7 @@ publishing {
             pom {
                 name.set("Vouch Protocol JVM SDK")
                 description.set("Verify and sign Vouch credentials on the JVM (Kotlin + Java) over the canonical Rust core.")
-                url.set("https://vouch-protocol.com")
+                url.set("https://vouch-protocol.org")
                 licenses {
                     license {
                         name.set("Apache-2.0")

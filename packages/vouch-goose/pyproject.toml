@@ -20,7 +20,7 @@ dev = ["pytest>=7.0"]
 vouch-goose = "vouch.integrations.goose:_main"
 
 [project.urls]
-Homepage = "https://vouch-protocol.com"
+Homepage = "https://vouch-protocol.org"
 Source = "https://github.com/vouch-protocol/vouch"
 
 [tool.setuptools.packages.find]

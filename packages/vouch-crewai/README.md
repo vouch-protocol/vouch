@@ -1,7 +1,7 @@
 # vouch-crewai
 
 A [CrewAI](https://www.crewai.com/) tool that issues
-[Vouch](https://vouch-protocol.com) Credentials, so the agents in a crew can
+[Vouch](https://vouch-protocol.org) Credentials, so the agents in a crew can
 cryptographically authorize their tool calls, including across delegation.
 
 Each signed call carries a W3C Verifiable Credential with an `eddsa-jcs-2022`

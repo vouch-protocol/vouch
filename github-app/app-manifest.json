@@ -1,6 +1,6 @@
 {
     "name": "Vouch Gatekeeper",
-    "url": "https://vouch-protocol.com",
+    "url": "https://vouch-protocol.org",
     "hook_attributes": {
         "url": "https://gatekeeper.vouch-protocol.com/webhook",
         "active": true

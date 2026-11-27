@@ -23,7 +23,7 @@ There are three surfaces, all driven by the same underlying step model:
 1. **CLI wizard** (`vouch onboard`) that does the work and writes artifacts to
    disk. This is the canonical surface; engineers will run it during a
    deployment.
-2. **Website stepper** (`/onboard` on vouch-protocol.com) that teaches the same
+2. **Website stepper** (`/onboard` on vouch-protocol.org) that teaches the same
    six steps with copy-paste commands and inline preview of the artifacts the
    CLI would produce. This is the "look-before-you-leap" surface for evaluators
    and procurement.
@@ -123,7 +123,7 @@ this style; the wizard matches it for visual consistency.)
 
 ## 4. Website surface
 
-Route: `/onboard` on vouch-protocol.com.
+Route: `/onboard` on vouch-protocol.org.
 
 The page mirrors the CLI step model exactly. Each step has:
 

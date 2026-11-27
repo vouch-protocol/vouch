@@ -31,7 +31,7 @@ pj.version = version;
 pj.description =
   'Vouch Sonic Engine - inaudible spread-spectrum audio watermark embed/detect ' +
   '+ voice features (WASM, browser + Node.js)';
-pj.homepage = 'https://vouch-protocol.com';
+pj.homepage = 'https://vouch-protocol.org';
 pj.repository = {
   type: 'git',
   url: 'https://github.com/vouch-protocol/vouch',

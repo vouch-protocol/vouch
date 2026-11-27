@@ -139,7 +139,7 @@ all = [
 [project.urls]
 "Homepage" = "https://github.com/vouch-protocol/vouch"
 "Bug Tracker" = "https://github.com/vouch-protocol/vouch/issues"
-"Documentation" = "https://vouch-protocol.com"
+"Documentation" = "https://vouch-protocol.org"
 
 [project.scripts]
 vouch = "vouch.cli:main"

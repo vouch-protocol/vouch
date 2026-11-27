@@ -301,7 +301,7 @@ jobs:
 
           # Best effort: wait for the live page to serve, using a unique query
           # string to bypass any cached negative response at the edge.
-          CERT_URL="https://vouch-protocol.com/c/${PR_AUTHOR}/${PR_NUMBER}/"
+          CERT_URL="https://vouch-protocol.org/c/${PR_AUTHOR}/${PR_NUMBER}/"
           for _ in $(seq 1 10); do
             code=$(curl -s -o /dev/null -w '%{http_code}' "${CERT_URL}?cb=${GITHUB_RUN_ID}-${RANDOM}" || echo 000)
             echo "Live check ${CERT_URL} -> ${code}"
@@ -318,7 +318,7 @@ jobs:
           REPO: ${{ github.repository }}
           CONTRIBUTION_TYPE: ${{ steps.resolve.outputs.contribution_type }}
           BADGE: "https://img.shields.io/badge/Vouch-Verified_Contributor-7C2D3A?style=for-the-badge&labelColor=2d2d2d"
-          CERT_URL: "https://vouch-protocol.com/c/${{ steps.resolve.outputs.login }}/${{ steps.resolve.outputs.pr_number }}"
+          CERT_URL: "https://vouch-protocol.org/c/${{ steps.resolve.outputs.login }}/${{ steps.resolve.outputs.pr_number }}"
         run: |
           # Say what the certificate actually attests. A design contributor did
           # not write the code, so it must not thank them for the pull request.

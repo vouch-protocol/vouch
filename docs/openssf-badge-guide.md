@@ -10,7 +10,7 @@ Copy and paste these answers into the application form.
 
 | Field | Answer | URL / Note |
 |-------|--------|------------|
-| **Project website** | `https://vouch-protocol.com` | |
+| **Project website** | `https://vouch-protocol.org` | |
 | **Project implementation** | `https://github.com/vouch-protocol/vouch` | |
 | **Project description** | The Identity & Reputation Standard for AI Agents | |
 | **People interacted with** | `Met` | GitHub issues & Discord |
@@ -19,7 +19,7 @@ Copy and paste these answers into the application form.
 | **Documentation** | `Met` | `https://github.com/vouch-protocol/vouch#readme` |
 | **Documentation basics** | `Met` | |
 | **Documentation interface** | `Met` | |
-| **Sites https** | `Met` | `https://vouch-protocol.com` |
+| **Sites https** | `Met` | `https://vouch-protocol.org` |
 | **Sites https redirect** | `Met` | |
 | **Repo public** | `Met` | |
 | **Repo track** | `Met` | |

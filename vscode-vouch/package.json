@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "publisher": "vouch-protocol",
   "license": "Apache-2.0",
-  "homepage": "https://vouch-protocol.com",
+  "homepage": "https://vouch-protocol.org",
   "repository": {
     "type": "git",
     "url": "https://github.com/vouch-protocol/vouch.git",
@@ -90,7 +90,7 @@
         },
         "vouch.assistant.url": {
           "type": "string",
-          "default": "https://vouch-protocol.com/ask",
+          "default": "https://vouch-protocol.org/ask",
           "description": "URL the 'Ask the assistant' command opens."
         }
       }

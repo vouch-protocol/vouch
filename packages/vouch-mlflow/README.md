@@ -1,7 +1,7 @@
 # vouch-mlflow
 
 Sign [MLflow](https://mlflow.org/) model artifacts with
-[Vouch](https://vouch-protocol.com) Credentials, so a registered model carries
+[Vouch](https://vouch-protocol.org) Credentials, so a registered model carries
 verifiable lineage: who registered it, on whose authority, and a content digest
 that breaks if the weights are tampered with.
 

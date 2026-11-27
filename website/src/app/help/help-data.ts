@@ -43,7 +43,7 @@ export const HELP_SECTIONS: HelpSection[] = [
 
 \`\`\`bash
 # Linux and macOS: one line (on Windows, use pip below)
-curl -fsSL https://vouch-protocol.com/install.sh | sh
+curl -fsSL https://vouch-protocol.org/install.sh | sh
 
 # Or with pip on any platform
 pip install vouch-protocol
@@ -2512,7 +2512,7 @@ In the Gem's Save dialog, choose "Visible to anyone in [your org]". Workspace ad
         title: 'Running the Vouch Assistant locally',
         summary: 'Three processes: dev sidecar, agent backend, chat widget. Browse to localhost:3200.',
         body: `
-The chat helper on vouch-protocol.com is open source under \`website-agent/\` in the repo. You can self-host it.
+The chat helper on vouch-protocol.org is open source under \`website-agent/\` in the repo. You can self-host it.
 
 ## Three processes, three terminals
 
@@ -3484,8 +3484,8 @@ When you land a merged pull request on the [repository](https://github.com/vouch
 
 ## What you receive
 
-- A certificate page at \`vouch-protocol.com/c/<your-handle>/<pr>\`.
-- A listing on the [contributors page](https://vouch-protocol.com/contributors).
+- A certificate page at \`vouch-protocol.org/c/<your-handle>/<pr>\`.
+- A listing on the [contributors page](https://vouch-protocol.org/contributors).
 - A comment on your pull request with the badge, a copy-paste snippet, and the full credential inline.
 
 ## The credential

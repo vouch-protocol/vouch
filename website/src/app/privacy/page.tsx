@@ -24,7 +24,7 @@ export default function PrivacyPage() {
                 <Section title="What we run">
                     <p>
                         Vouch Protocol&trade; is an open-source specification and reference implementation. The
-                        software is Apache 2.0; the protocol is W3C-track. When you visit vouch-protocol.com, you&apos;re
+                        software is Apache 2.0; the protocol is W3C-track. When you visit vouch-protocol.org, you&apos;re
                         looking at our marketing and documentation surface plus an AI assistant. Three surfaces
                         collect data:
                     </p>

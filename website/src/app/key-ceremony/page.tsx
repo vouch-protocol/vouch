@@ -291,8 +291,8 @@ export default function KeyCeremonyPage() {
             <DocNav
                 links={[
                     { label: 'Certificate Practice Statement', href: '/cps/' },
-                    { label: 'Trust List', href: '/.well-known/c2pa-trust-list' },
-                    { label: 'CRL', href: '/api/v1/c2pa/crl' },
+                    { label: 'Trust List', href: 'https://vouch-protocol.com/.well-known/c2pa-trust-list' },
+                    { label: 'CRL', href: 'https://vouch-protocol.com/api/v1/c2pa/crl' },
                     { label: 'Home', href: '/' },
                 ]}
             />

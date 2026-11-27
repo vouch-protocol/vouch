@@ -6,7 +6,7 @@
  * user's source for "vouch readiness" without consent. Three things it does:
  *
  *   1. Insert language-aware local-first quickstart snippets at the cursor
- *      (Python, TypeScript, Go). Same code as the vouch-protocol.com Guides,
+ *      (Python, TypeScript, Go). Same code as the vouch-protocol.org Guides,
  *      so a developer can ctrl-shift-P -> "Vouch: Insert" and have a working
  *      sign+verify loop without leaving VS Code.
  *
@@ -213,7 +213,7 @@ async function runInit(): Promise<void> {
 async function openAskAssistant(): Promise<void> {
   const url = vscode.workspace
     .getConfiguration('vouch')
-    .get<string>('assistant.url', 'https://vouch-protocol.com/ask');
+    .get<string>('assistant.url', 'https://vouch-protocol.org/ask');
   await vscode.env.openExternal(vscode.Uri.parse(url));
 }
 

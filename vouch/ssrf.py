@@ -98,7 +98,7 @@ def validate_url(url: str, *, allow_http: bool = False) -> None:
 DEFAULT_FETCH_TIMEOUT = 5.0
 DEFAULT_MAX_BYTES = 1024 * 1024
 DEFAULT_MAX_REDIRECTS = 3
-USER_AGENT = "vouch-protocol/fetch (+https://vouch-protocol.com)"
+USER_AGENT = "vouch-protocol/fetch (+https://vouch-protocol.org)"
 _REDIRECT_STATUSES = (301, 302, 303, 307, 308)
 
 

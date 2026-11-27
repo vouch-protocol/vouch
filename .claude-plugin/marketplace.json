@@ -2,7 +2,7 @@
   "name": "vouch",
   "owner": {
     "name": "Vouch Protocol",
-    "url": "https://vouch-protocol.com"
+    "url": "https://vouch-protocol.org"
   },
   "metadata": {
     "description": "The Vouch Protocol plugin marketplace: cryptographic identity and accountability for autonomous AI agents.",

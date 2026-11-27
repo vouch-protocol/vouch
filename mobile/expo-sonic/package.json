@@ -46,7 +46,7 @@
   },
   "author": "Ramprasad Anandam Gaddam",
   "license": "Apache-2.0",
-  "homepage": "https://vouch-protocol.com",
+  "homepage": "https://vouch-protocol.org",
   "publishConfig": {
     "access": "public"
   },

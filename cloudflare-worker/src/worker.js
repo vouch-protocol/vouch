@@ -211,7 +211,7 @@ async function handleSignaturePage(id, env) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vouch Verification - Not Found</title>
-    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <link rel="icon" type="image/png" href="https://vouch-protocol.org/assets/vouch-verified-icon.png?v=2">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -227,7 +227,7 @@ async function handleSignaturePage(id, env) {
         <p>No signature found with ID: <strong>${escapeHtml(id)}</strong></p>
         <p>The signature may have expired or the link may be incorrect.</p>
         <div class="footer">
-            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+            <a href="https://vouch-protocol.org">vouch-protocol.org</a>
         </div>
     </div>
 </body>
@@ -245,7 +245,7 @@ async function handleSignaturePage(id, env) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vouch Signature Verification - ${id}</title>
-    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <link rel="icon" type="image/png" href="https://vouch-protocol.org/assets/vouch-verified-icon.png?v=2">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -271,7 +271,7 @@ async function handleSignaturePage(id, env) {
 <body>
     <div class="card">
         <div class="header">
-            <img class="logo" src="https://vouch-protocol.com/vouch-logo-icon.jpg" alt="Vouch Protocol">
+            <img class="logo" src="https://vouch-protocol.org/vouch-logo-icon.jpg" alt="Vouch Protocol">
             <h1 class="verified">✓ Verified Signature</h1>
         </div>
         <div class="field">
@@ -300,7 +300,7 @@ async function handleSignaturePage(id, env) {
             <div class="value">${formatDate(signatureData.expiresAt)}</div>
         </div>` : ''}
         <div class="footer">
-            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+            <a href="https://vouch-protocol.org">vouch-protocol.org</a>
         </div>
         <div class="cta-banner" id="cta-banner">
             <a id="cta-link" href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your own text with Vouch Protocol → Get the Extension</a>
@@ -988,7 +988,7 @@ function handlePaperPage(id, env) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vouch Paper Verification - ${id}</title>
-    <link rel="icon" type="image/png" href="https://vouch-protocol.com/assets/vouch-verified-icon.png?v=2">
+    <link rel="icon" type="image/png" href="https://vouch-protocol.org/assets/vouch-verified-icon.png?v=2">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -1013,7 +1013,7 @@ function handlePaperPage(id, env) {
     <div class="card">
         ${data.success ? `
         <div class="header">
-            <img class="logo" src="https://vouch-protocol.com/vouch-logo-icon.jpg" alt="Vouch Protocol">
+            <img class="logo" src="https://vouch-protocol.org/vouch-logo-icon.jpg" alt="Vouch Protocol">
             <h1 class="verified">✓ Verified Paper</h1>
         </div>
         <div class="field">
@@ -1045,7 +1045,7 @@ function handlePaperPage(id, env) {
             To verify yourself: compute SHA-256 of the PDF and compare with the hash above.
         </div>
         <div class="footer">
-            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+            <a href="https://vouch-protocol.org">vouch-protocol.org</a>
         </div>
         <div class="cta-banner">
             <a href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>
@@ -1054,7 +1054,7 @@ function handlePaperPage(id, env) {
         <h1 class="not-found">✗ Paper Not Found</h1>
         <p>No paper registered with ID: <strong>${id}</strong></p>
         <div class="footer">
-            <a href="https://vouch-protocol.com">vouch-protocol.com</a>
+            <a href="https://vouch-protocol.org">vouch-protocol.org</a>
         </div>
         <div class="cta-banner">
             <a id="cta-link2" href="https://chrome.google.com/webstore/detail/geeolhekompbmeheekaaaefiecafhhfb">✍️ Sign your paper using Vouch Protocol for free → Get Started</a>

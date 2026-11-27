@@ -17,7 +17,7 @@ dependencies = ["vouch-protocol>=1.6.0", "openai>=1.0.0"]
 dev = ["pytest>=7.0"]
 
 [project.urls]
-Homepage = "https://vouch-protocol.com"
+Homepage = "https://vouch-protocol.org"
 Source = "https://github.com/vouch-protocol/vouch"
 
 [tool.setuptools.packages.find]

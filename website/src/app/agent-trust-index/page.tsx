@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: `${ATI_SUMMARY.pctCannot}% of AI agents cannot prove who they are`,
         description: `An open benchmark of the agent world. ${ATI_SUMMARY.verifiable} of ${TOTAL} public agents can prove who they are.`,
-        url: 'https://vouch-protocol.com/agent-trust-index/',
+        url: 'https://vouch-protocol.org/agent-trust-index/',
         type: 'website',
         images: [{ url: '/assets/ati-card.png', width: 1200, height: 630 }],
     },
@@ -88,7 +88,7 @@ export default function AgentTrustIndexPage() {
                 <div className="mb-16">
                     <ShareButtons
                         text={`AI agents now act on our behalf, yet ${ATI_SUMMARY.pctCannot}% of them cannot prove who they are or who authorized them. As they start touching money and real data, this is the AI trust gap to watch:`}
-                        url="https://vouch-protocol.com/the-trust-gap/"
+                        url="https://vouch-protocol.org/the-trust-gap/"
                         image="/assets/ati-card.png"
                     />
                 </div>

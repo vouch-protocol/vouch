@@ -388,4 +388,4 @@ For a single task walked through these in order, see
 
 **Next Steps:**
 - [MCP Quickstart](./mcp-quickstart.md) - Get running in 3 minutes
-- [Vouch Documentation](https://vouch-protocol.com)
+- [Vouch Documentation](https://vouch-protocol.org)

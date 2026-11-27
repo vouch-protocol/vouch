@@ -6,9 +6,9 @@
   "description": "Integrate the Vouch Protocol: cryptographic identity and accountability for autonomous AI agents. Signing and verifying agent actions, did:web and did:key, Data Integrity proofs, the post-quantum proof set, delegation chains, and revocation, across SDKs on every major platform.",
   "author": {
     "name": "Ramprasad Anandam Gaddam",
-    "url": "https://vouch-protocol.com"
+    "url": "https://vouch-protocol.org"
   },
-  "homepage": "https://vouch-protocol.com",
+  "homepage": "https://vouch-protocol.org",
   "repository": "https://github.com/vouch-protocol/vouch",
   "license": "Apache-2.0",
   "keywords": [

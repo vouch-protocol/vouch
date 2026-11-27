@@ -65,7 +65,7 @@ The listing usually becomes searchable on
 1. `code --install-extension vouch-protocol.vouch-vscode` works.
 2. Command palette shows `Vouch: Insert local-first quickstart at cursor`.
 3. The status-bar item appears (right side, `● Vouch`).
-4. `Vouch: Ask the assistant` opens `vouch-protocol.com/ask` in the browser.
+4. `Vouch: Ask the assistant` opens `vouch-protocol.org/ask` in the browser.
 
 ## Rolling back
 

@@ -9,7 +9,7 @@ If you just want Vouch working without writing any code:
 
 ```bash
 # Install on Linux or macOS (on Windows: pip install vouch-protocol)
-curl -fsSL https://vouch-protocol.com/install.sh | sh
+curl -fsSL https://vouch-protocol.org/install.sh | sh
 
 # Run vouch with no arguments and choose from the menu
 vouch

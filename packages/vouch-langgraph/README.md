@@ -46,7 +46,7 @@ Each node step issues its own credential. Verify anywhere with
 
 `protect` and `sign_node` use the ambient Vouch identity, or a `signer=` you
 pass in. Provision one with `vouch init --yes`, or construct a `Signer`
-directly. See the [Vouch Protocol docs](https://vouch-protocol.com).
+directly. See the [Vouch Protocol docs](https://vouch-protocol.org).
 
 ## License
 

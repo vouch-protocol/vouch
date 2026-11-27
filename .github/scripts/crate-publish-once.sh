@@ -9,7 +9,7 @@ read -r name version < <(cargo metadata --no-deps --format-version 1 --manifest-
   | python3 -c 'import json,sys,os; m=json.load(sys.stdin); p=[p for p in m["packages"] if os.path.samefile(os.path.dirname(p["manifest_path"]), ".")][0]; print(p["name"], p["version"])')
 
 status=$(curl -s -o /dev/null -w "%{http_code}" \
-  -H "User-Agent: vouch-protocol-release (+https://vouch-protocol.com)" \
+  -H "User-Agent: vouch-protocol-release (+https://vouch-protocol.org)" \
   "https://crates.io/api/v1/crates/${name}/${version}")
 if [ "${status}" = "200" ]; then
   echo "${name} ${version} is already on crates.io, skipping"

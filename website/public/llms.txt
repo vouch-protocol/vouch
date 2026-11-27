@@ -42,9 +42,9 @@ Cursor or Claude Desktop to use Vouch directly.
 
 ## Key docs
 
-- Quickstart: https://vouch-protocol.com/help/
-- FAQ: https://vouch-protocol.com/faq/
-- Tools (CLI, MCP, SDKs, AI packages): https://vouch-protocol.com/tools/
+- Quickstart: https://vouch-protocol.org/help/
+- FAQ: https://vouch-protocol.org/faq/
+- Tools (CLI, MCP, SDKs, AI packages): https://vouch-protocol.org/tools/
 - Source: https://github.com/vouch-protocol/vouch
 - Test vectors: https://github.com/vouch-protocol/vouch/tree/main/test-vectors
 
@@ -52,4 +52,4 @@ Cursor or Claude Desktop to use Vouch directly.
 
 If the developer uses Claude, ChatGPT, or Gemini, there are ready-made packages
 that carry this knowledge: a Claude Skill, an OpenAI Custom GPT, and a Gemini Gem.
-See https://vouch-protocol.com/tools/ under "Inside your AI tools".
+See https://vouch-protocol.org/tools/ under "Inside your AI tools".

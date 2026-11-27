@@ -107,7 +107,7 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
     issued_time = fmt_time(cred.get("validFrom", ""))
     repo = intent.get("repository", "vouch-protocol/vouch")
     pr_url = f"https://github.com/{repo}/pull/{pr}" if pr else ""
-    cert_url = f"https://vouch-protocol.com/c/{login}/{pr}".rstrip("/")
+    cert_url = f"https://vouch-protocol.org/c/{login}/{pr}".rstrip("/")
     work = title or "a contribution"
 
     gh_url = f"https://github.com/{esc(login)}"
@@ -237,10 +237,10 @@ def render(cred: dict, login: str, pr: str, title: str = "") -> str:
 <title>Vouch Verified Contributor · @{esc(login)}</title>
 <meta property="og:title" content="Vouch Verified Contributor · @{esc(login)}">
 <meta property="og:description" content="A cryptographically signed certificate for a contribution to Vouch Protocol, the open standard for AI agent identity and accountability.">
-<meta property="og:image" content="https://vouch-protocol.com/android-chrome-512x512.png">
+<meta property="og:image" content="https://vouch-protocol.org/android-chrome-512x512.png">
 <meta property="og:url" content="{esc(cert_url)}">
 <meta name="twitter:card" content="summary">
-<link rel="icon" type="image/png" sizes="32x32" href="https://vouch-protocol.com/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://vouch-protocol.org/favicon-32x32.png">
 <link href="/fonts/cert.css" rel="stylesheet">
 <style>
 :root {{ --parchment:#FAF7EE; --parchment-warm:#F2EBD9; --ink:#0F172A; --ink-soft:#334155; --ink-faint:#64748B; --burgundy:#7C2D3A; --burgundy-dark:#5C1F2C; --rule:#D9CFB6; --rule-light:#E8DFC9; --code-bg:#0F172A; --code-fg:#FAF7EE; }}
@@ -309,8 +309,8 @@ h1.title a {{ color: inherit; text-decoration: none; }}
 <section>
   <div class="cert-head">
   <div class="seal-wrap">
-    <a href="https://vouch-protocol.com" target="_blank" rel="noopener noreferrer" aria-label="Vouch Protocol">
-      <img class="seal-img" src="https://vouch-protocol.com/seal-verified.png" alt="Vouch Protocol Verified" />
+    <a href="https://vouch-protocol.org" target="_blank" rel="noopener noreferrer" aria-label="Vouch Protocol">
+      <img class="seal-img" src="https://vouch-protocol.org/seal-verified.png" alt="Vouch Protocol Verified" />
     </a>
   </div>
   <p class="issued-line">{esc(issued)} &middot; {esc(issued_time)}</p>
@@ -327,16 +327,16 @@ h1.title a {{ color: inherit; text-decoration: none; }}
     <p>Vouch gives AI agents a cryptographic identity, verifiable accountability, and a heartbeat
     protocol for continuous trust, so anyone can prove who acted, under whose authority, and that the
     agent is still trustworthy.</p>
-    <p>The <a href="https://vouch-protocol.com/agent-trust-index" target="_blank" rel="noopener noreferrer">Agent Trust Index</a> grades how verifiable and accountable an AI agent is, an open, public scorecard.</p>
-    <p class="cta"><a href="https://vouch-protocol.com/the-trust-gap" target="_blank" rel="noopener noreferrer">See the AI trust gap</a></p>
+    <p>The <a href="https://vouch-protocol.org/agent-trust-index" target="_blank" rel="noopener noreferrer">Agent Trust Index</a> grades how verifiable and accountable an AI agent is, an open, public scorecard.</p>
+    <p class="cta"><a href="https://vouch-protocol.org/the-trust-gap" target="_blank" rel="noopener noreferrer">See the AI trust gap</a></p>
   </div>
 
   <div class="footer-cta">
-    See everyone on the <a href="https://vouch-protocol.com/contributors" target="_blank" rel="noopener noreferrer">Vouch contributors</a> page.<br>
+    See everyone on the <a href="https://vouch-protocol.org/contributors" target="_blank" rel="noopener noreferrer">Vouch contributors</a> page.<br>
     <a href="{esc(ISSUES_URL)}" target="_blank" rel="noopener noreferrer">Earn yours: pick up a good first issue</a>.
   </div>
 </section>
-<div class="pagefoot"><a href="https://vouch-protocol.com/" target="_blank" rel="noopener noreferrer">vouch-protocol.com</a></div>
+<div class="pagefoot"><a href="https://vouch-protocol.org/" target="_blank" rel="noopener noreferrer">vouch-protocol.org</a></div>
 </div>
 <script>
 const LINKEDIN_POST = {linkedin_js};

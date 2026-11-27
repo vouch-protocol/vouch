@@ -59,8 +59,8 @@ CATEGORY: Privacy & Security
 
 TAGS: security, cryptography, digital signature, verification, identity, authenticity, trust
 
-PRIVACY POLICY: https://vouch-protocol.com/privacy
+PRIVACY POLICY: https://vouch-protocol.org/privacy
 
 SUPPORT: https://github.com/vouch-protocol/vouch/issues
 
-WEBSITE: https://vouch-protocol.com
+WEBSITE: https://vouch-protocol.org

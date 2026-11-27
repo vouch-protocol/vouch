@@ -1,6 +1,6 @@
 # @vouch-protocol-official/sdk
 
-Official TypeScript SDK for the [Vouch Protocol](https://vouch-protocol.com).
+Official TypeScript SDK for the [Vouch Protocol](https://vouch-protocol.org).
 
 The open standards-aligned standard for cryptographic identity and provenance of AI agents. Works in both **Browser** and **Node.js**.
 

@@ -19,7 +19,7 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 - [ ] Add `vouch demo` command , guided walkthrough of sign → verify → git sign
 
 ### 1.2 Documentation Site
-- [ ] Host docs at vouch-protocol.com/docs (or ReadTheDocs)
+- [ ] Host docs at vouch-protocol.org/docs (or ReadTheDocs)
 - [ ] Quick Start guide (5-minute identity to first signature)
 - [ ] CLI reference (all commands with examples)
 - [ ] MCP integration guide (Claude Desktop, Cursor, Windsurf)
@@ -74,12 +74,12 @@ Vouch Protocol is **feature-complete** across core identity, signing, verificati
 ### 2.5 Hosted Vouch Assistant: backend deployment
 *Added 2026-05-15. Owner: editor. Trigger: post Leaders Connect.*
 
-The chat assistant on vouch-protocol.com currently runs in graceful "coming soon" mode because no public backend exists yet. Steps to bring it live:
+The chat assistant on vouch-protocol.org currently runs in graceful "coming soon" mode because no public backend exists yet. Steps to bring it live:
 
 - [ ] Choose host: Fly.io (best technical fit for FastAPI + SSE) or Vercel (matches Operator's stack but needs SSE rework). Default plan: Fly.io.
 - [ ] Provision `fly.toml`, deploy `website-agent/backend/` with the existing `Dockerfile`.
 - [ ] DNS: `agent.vouch-protocol.com` pointing at the deployed app.
-- [ ] Configure secrets: `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GEMINI_API_KEY`, `VOUCH_SIDECAR_URL`, `VOUCH_AGENT_DID`, `VOUCH_CORS_ORIGINS` (must include https://vouch-protocol.com).
+- [ ] Configure secrets: `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GEMINI_API_KEY`, `VOUCH_SIDECAR_URL`, `VOUCH_AGENT_DID`, `VOUCH_CORS_ORIGINS` (must include https://vouch-protocol.org).
 - [ ] Decide on rate limiting (per-IP, per-day) before going public; budget the LLM provider's monthly cost cap.
 - [ ] Deploy the Go sidecar alongside (KMS-backed key in production, not the dev sidecar).
 - [ ] Set `NEXT_PUBLIC_VOUCH_AGENT_URL=https://agent.vouch-protocol.com` in `.github/workflows/deploy-website.yml`. The website's graceful-fallback mode auto-switches to live mode when this is set.

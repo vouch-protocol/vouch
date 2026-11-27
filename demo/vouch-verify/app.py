@@ -1,7 +1,7 @@
 """
 Vouch Verify - Sign & Verify Media with Cryptographic Provenance
 
-Redesigned to match vouch-protocol.com branding.
+Redesigned to match vouch-protocol.org branding.
 
 Run with: streamlit run app.py
 """
@@ -34,7 +34,7 @@ st.markdown("""
     
     /* ============================================
        Vouch Protocol Design System
-       Matching vouch-protocol.com
+       Matching vouch-protocol.org
        ============================================ */
     
     /* Import Inter font */
@@ -321,7 +321,7 @@ st.markdown("""
 # Header with logo
 st.markdown("""
 <div style="display: flex; align-items: center; gap: 16px; padding: 1rem 0 2rem 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 2rem;">
-    <img src="https://vouch-protocol.com/assets/vouch-logo-full.png" alt="Vouch Protocol" style="height: 45px; width: auto;">
+    <img src="https://vouch-protocol.org/assets/vouch-logo-full.png" alt="Vouch Protocol" style="height: 45px; width: auto;">
     <div>
         <div style="font-size: 1.5rem; font-weight: 700; color: #1e3a5f;">Vouch Verify</div>
         <div style="font-size: 0.875rem; color: #64748b;">Sign & Verify Media with Cryptographic Provenance</div>
@@ -647,7 +647,7 @@ with tab_verify:
 # Footer
 st.markdown("""
 <div class="vouch-footer">
-    <a href="https://vouch-protocol.com">vouch-protocol.com</a> • 
+    <a href="https://vouch-protocol.org">vouch-protocol.org</a> • 
     <a href="https://github.com/vouch-protocol/vouch">GitHub</a> • 
     <a href="https://pypi.org/project/vouch-protocol/">PyPI</a>
     <br><br>
