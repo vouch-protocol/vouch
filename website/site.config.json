@@ -1,0 +1,19 @@
+{
+  "siteUrl": "https://vouch-protocol.com",
+  "legacyRedirects": {
+    "/privacy.html": "/privacy/",
+    "/terms.html": "/terms/",
+    "/cps.html": "/cps/",
+    "/key-ceremony.html": "/key-ceremony/",
+    "/demo.html": "/demo/",
+    "/blog/ai-agent-delegation-chains.html": "/blog/ai-agent-delegation-chains/",
+    "/blog/ai-coding-assistant-signatures.html": "/blog/ai-coding-assistant-signatures/",
+    "/blog/ambient-verification-browser.html": "/blog/ambient-verification-browser/",
+    "/blog/identity-sidecar-architecture.html": "/blog/identity-sidecar-architecture/",
+    "/blog/orphaned-content-signatures.html": "/blog/orphaned-content-signatures/",
+    "/blog/vouch-git-workflow.html": "/blog/vouch-git-workflow/",
+    "/blog/web-of-trust-urls.html": "/blog/web-of-trust-urls/",
+    "/blog/who-authorized-this-problem.html": "/blog/who-authorized-this-problem/",
+    "/blog/zero-friction-ssh-identity.html": "/blog/zero-friction-ssh-identity/"
+  }
+}

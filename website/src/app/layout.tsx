@@ -6,6 +6,7 @@ import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import BackToTop from '@/components/BackToTop';
 import AgentPanel from '@/components/AgentPanel';
+import siteConfig from '../../site.config.json';
 
 export const metadata: Metadata = {
   title: {
@@ -14,13 +15,13 @@ export const metadata: Metadata = {
   },
   description:
     'The standards-aligned cryptographic identity and accountability layer for autonomous AI agents. Verifiable Credentials with Data Integrity proofs, resource-bound delegation, the Heartbeat Protocol, and an optional post-quantum proof set.',
-  metadataBase: new URL('https://vouch-protocol.com'),
+  metadataBase: new URL(siteConfig.siteUrl),
   openGraph: {
     title: 'Vouch Protocol',
     description:
       'Cryptographic identity, intent attestation, and continuous trust verification for autonomous AI agents.',
     type: 'website',
-    url: 'https://vouch-protocol.com',
+    url: siteConfig.siteUrl,
     images: [
       {
         url: '/assets/og-image.png',
