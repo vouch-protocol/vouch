@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Privacy - Vouch Protocol',
+    title: 'Privacy',
     description:
         'What Vouch Protocol logs, what it does not, and what you can do about it. Plain English. No dark patterns.',
 };
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
                         collect data:
                     </p>
                     <ul>
-                        <li><strong>The website itself</strong> (static pages): uses Google Analytics to measure visits, which sets cookies in your browser. Details are just below this list.</li>
+                        <li><strong>The website itself</strong> (static pages): uses Google Analytics and Cloudflare Web Analytics to measure visits. Google Analytics sets cookies in your browser. Cloudflare Web Analytics does not. Details are just below this list.</li>
                         <li><strong>The Vouch Assistant chat</strong> (the panel at <code>/ask</code> and the floating widget): logs as described below.</li>
                         <li><strong>The email assistant</strong> (replies to <code>ask@vouch-protocol.com</code>): processes your message via Gemini and replies via Resend.</li>
                     </ul>
@@ -42,11 +42,19 @@ export default function PrivacyPage() {
                         approximate location (city, region, country) that Google derives from your IP address.
                     </p>
                     <p>
-                        We use these numbers to see which pages people read and where the site needs work. We do
-                        not send Google Analytics your name, your email address, or anything you type into the
-                        chat. If you would rather not be counted, use a content blocker or install{' '}
-                        <a className="text-burgundy" href="https://tools.google.com/dlpage/gaoptout">Google&apos;s opt-out browser add-on</a>.
-                        Every page works the same without it.
+                        Cloudflare, which sits in front of the website, adds its Web Analytics script to every
+                        page. It sets no cookies and stores nothing in your browser. When a page finishes
+                        loading, and again when you leave it, the script reports the address of the page, the
+                        page that referred you, how long the page took to load, and your browser, operating
+                        system and device type. Cloudflare works out your country from your IP address.
+                    </p>
+                    <p>
+                        We use these numbers to see which pages people read, how fast they load, and where the
+                        site needs work. We do not send either service your name, your email address, or
+                        anything you type into the chat. If you would rather not be counted, most content
+                        blockers stop both, and{' '}
+                        <a className="text-burgundy" href="https://tools.google.com/dlpage/gaoptout">Google&apos;s opt-out browser add-on</a>{' '}
+                        stops Google Analytics. Every page works the same without them.
                     </p>
                 </Section>
 
@@ -97,7 +105,7 @@ export default function PrivacyPage() {
                     <ul>
                         <li><strong>Google (Gemini API)</strong>: processes your question to generate a reply. Subject to <a className="text-burgundy" href="https://ai.google.dev/gemini-api/terms">Gemini API terms</a>. We use the free tier; queries may be used by Google to improve their models per Google&apos;s policy.</li>
                         <li><strong>Google (Analytics)</strong>: measures visits to the website, as described under &quot;What we run&quot;. Subject to <a className="text-burgundy" href="https://policies.google.com/privacy">Google&apos;s privacy policy</a>. Google explains how it uses data from sites that use its services at <a className="text-burgundy" href="https://policies.google.com/technologies/partner-sites">policies.google.com/technologies/partner-sites</a>.</li>
-                        <li><strong>Cloudflare</strong>: routes traffic, runs the email worker, terminates TLS. Standard Cloudflare data-handling.</li>
+                        <li><strong>Cloudflare</strong>: routes traffic, runs the email worker, terminates TLS, and measures page views and loading speed through Web Analytics, as described under &quot;What we run&quot;. Subject to <a className="text-burgundy" href="https://www.cloudflare.com/privacypolicy/">Cloudflare&apos;s privacy policy</a>.</li>
                         <li><strong>Fly.io</strong>: hosts the chat assistant backend in Mumbai. Standard Fly data-handling.</li>
                         <li><strong>Resend</strong>: sends email replies. Subject to <a className="text-burgundy" href="https://resend.com/legal/privacy-policy">Resend privacy policy</a>.</li>
                         <li><strong>GitHub Pages</strong>: serves the static parts of this website.</li>
@@ -147,7 +155,7 @@ export default function PrivacyPage() {
                     <p>
                         We&apos;ll update this page when our practices change. For material changes, we&apos;ll also
                         publish a note in the blog and (if you&apos;ve given us your email) drop you a line. Last
-                        substantive update: 2026-11-27.
+                        substantive update: 2026-11-28.
                     </p>
                 </Section>
 

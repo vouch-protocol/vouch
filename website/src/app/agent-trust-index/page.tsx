@@ -15,9 +15,8 @@ const ACCOUNTABILITY = [
 const TOTAL = ATI_SUMMARY.total.toLocaleString('en-US');
 
 export const metadata: Metadata = {
-    title: 'Agent Trust Index - Vouch Protocol',
+    title: 'Agent Trust Index',
     description: `An open benchmark of how many autonomous agents can prove who they are. The first sweep checked ${TOTAL} public agents from the Model Context Protocol registry. ${ATI_SUMMARY.pctCannot}% cannot present a verifiable identity.`,
-    alternates: { canonical: 'https://index.vouch-protocol.com/' },
     openGraph: {
         title: `${ATI_SUMMARY.pctCannot}% of AI agents cannot prove who they are`,
         description: `An open benchmark of the agent world. ${ATI_SUMMARY.verifiable} of ${TOTAL} public agents can prove who they are.`,

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import CodeBlock from '@/components/CodeBlock';
 
 export const metadata: Metadata = {
-    title: 'Conformance Levels - Vouch Protocol',
+    title: 'Conformance Levels',
     description:
         'Three deployment tiers for Vouch Protocol: L1 (credential), L2 (sidecar + delegation + revocation), L3 (state verifiable + post-quantum).',
 };

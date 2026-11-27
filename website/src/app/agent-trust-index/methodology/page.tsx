@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Methodology - Agent Trust Index - Vouch Protocol',
+    title: 'Methodology - Agent Trust Index',
     description:
         'The full, open account of how the Agent Trust Index measured how many public agents can prove who they are. No black box.',
 };

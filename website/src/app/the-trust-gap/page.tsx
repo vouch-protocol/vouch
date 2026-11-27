@@ -9,7 +9,7 @@ const PAGE_URL = 'https://vouch-protocol.org/the-trust-gap/';
 const SHARE_TEXT = `"Trust me, I'm an AI agent." ${ATI_SUMMARY.pctCannot}% of public AI agents can't back that up: they can't prove who they are or who authorized them. As agents start touching money and real data, this is the AI trust gap to watch:`;
 
 export const metadata: Metadata = {
-    title: 'The AI trust gap - Vouch Protocol',
+    title: 'The AI trust gap',
     description: `"Trust me, I'm an AI agent." ${ATI_SUMMARY.pctCannot}% can't back that up. They act for us, yet cannot prove who they are or who put them in charge. The AI trust gap, in plain English.`,
     alternates: { canonical: PAGE_URL },
     openGraph: {

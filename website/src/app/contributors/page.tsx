@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import contributors from '@/data/contributors.json';
 
 export const metadata: Metadata = {
-    title: 'Verified Contributors - Vouch Protocol',
+    title: 'Verified Contributors',
     description:
         'People who have contributed to Vouch Protocol, each issued a signed Vouch Verified Contributor credential.',
 };
