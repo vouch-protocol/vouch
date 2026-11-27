@@ -73,6 +73,25 @@ jobs:
 
       # Guard 5: prove the framework actually links and runs, do not just build
       # it. The Package.swift binaryTarget points at the path we just produced.
+      # Package.swift normally points at the hosted release, so swap it to the
+      # framework we just built before testing. The swap is never committed.
+      - name: Point Package.swift at the local framework
+        working-directory: sdks/swift
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path("Package.swift")
+          s = p.read_text()
+          out, n = re.subn(
+              r'\.binaryTarget\(\s*name: "vouch_coreFFI",\s*url: "[^"]*",\s*checksum: "[^"]*"\s*\)',
+              '.binaryTarget(name: "vouch_coreFFI", path: "Frameworks/vouch_coreFFI.xcframework")',
+              s,
+          )
+          assert n == 1, "binaryTarget url block not found in Package.swift"
+          p.write_text(out)
+          PY
+          grep -n 'binaryTarget' -A1 Package.swift
+
       - name: Verify with swift test
         working-directory: sdks/swift
         run: swift test
