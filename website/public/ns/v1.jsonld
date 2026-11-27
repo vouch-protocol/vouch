@@ -1,0 +1,201 @@
+{
+  "@context": {
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "vouch": "https://vouch-protocol.com/ns/v1#",
+    "id": "@id",
+    "type": "@type",
+    "label": "rdfs:label",
+    "comment": "rdfs:comment",
+    "isDefinedBy": { "@id": "rdfs:isDefinedBy", "@type": "@id" },
+    "seeAlso": { "@id": "rdfs:seeAlso", "@type": "@id" }
+  },
+  "@graph": [
+    {
+      "id": "https://vouch-protocol.com/ns/v1",
+      "type": "owl:Ontology",
+      "label": "Vouch Protocol vocabulary",
+      "comment": "Terms used by Vouch Protocol credentials. The JSON-LD context at https://vouch-protocol.com/contexts/v1 maps credential properties to these terms.",
+      "seeAlso": [
+        "https://vouch-protocol.com/contexts/v1",
+        "https://github.com/vouch-protocol/vouch/blob/main/docs/specs/w3c-cg-report.md"
+      ]
+    },
+    {
+      "id": "vouch:VouchCredential",
+      "type": "rdfs:Class",
+      "label": "VouchCredential",
+      "comment": "A Verifiable Credential that carries an agent's intent: the action being authorized. Specification section 5.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:SessionVoucher",
+      "type": "rdfs:Class",
+      "label": "SessionVoucher",
+      "comment": "A short-lived Verifiable Credential issued by a validator quorum after a heartbeat is validated. Specification section 11.4.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:VouchRootOfTrust",
+      "type": "rdfs:Class",
+      "label": "VouchRootOfTrust",
+      "comment": "A credential self-issued by a trust root, in which the root describes itself. Specification section 18.1.1.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:RecognizedIssuerCredential",
+      "type": "rdfs:Class",
+      "label": "RecognizedIssuerCredential",
+      "comment": "A credential issued by a root to authorize an issuer. Specification section 18.1.2.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:AgentIdentityCredential",
+      "type": "rdfs:Class",
+      "label": "AgentIdentityCredential",
+      "comment": "A credential issued by a recognized issuer that binds an agent's key to attributes. Specification section 18.1.3.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:vouchVersion",
+      "type": "rdf:Property",
+      "label": "vouchVersion",
+      "comment": "Protocol version. Specification section 5.4.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:intent",
+      "type": "rdf:Property",
+      "label": "intent",
+      "comment": "The action being authorized, or the authorized scope of a delegation link. Specification sections 5.4.1 and 9.2.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:action",
+      "type": "rdf:Property",
+      "label": "action",
+      "comment": "The action being performed. Specification section 5.4.1.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:target",
+      "type": "rdf:Property",
+      "label": "target",
+      "comment": "The semantic target of the action. Specification section 5.4.1.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:resource",
+      "type": "rdf:Property",
+      "label": "resource",
+      "comment": "A URI identifying the specific resource. Specification section 5.4.1.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:reputationScore",
+      "type": "rdf:Property",
+      "label": "reputationScore",
+      "comment": "The agent's self-reported reputation score, an integer from 0 to 100. Specification section 5.4.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:delegationChain",
+      "type": "rdf:Property",
+      "label": "delegationChain",
+      "comment": "Ordered list of delegation links. Specification sections 5.4 and 9.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:subject",
+      "type": "rdf:Property",
+      "label": "subject",
+      "comment": "DID of the delegate, the recipient of authority in a delegation link. Specification section 9.2.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:decayLambda",
+      "type": "rdf:Property",
+      "label": "decayLambda",
+      "comment": "Decay rate of the trust function. Specification section 11.5.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:initialTrust",
+      "type": "rdf:Property",
+      "label": "initialTrust",
+      "comment": "Trust value at issuance in the trust function. Specification section 11.5.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:maxTtl",
+      "type": "rdf:Property",
+      "label": "maxTtl",
+      "comment": "Maximum time to live, in seconds. Specification section 11.4.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:scope",
+      "type": "rdf:Property",
+      "label": "scope",
+      "comment": "What a credential covers: the operations a Session Voucher permits, or what a root of trust anchors. Specification sections 11.4 and 18.1.1.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:rootOfTrust",
+      "type": "rdf:Property",
+      "label": "rootOfTrust",
+      "comment": "Description of a trust root: its name and scope. Specification section 18.1.1.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:recognizedActions",
+      "type": "rdf:Property",
+      "label": "recognizedActions",
+      "comment": "Action identifiers a recognized issuer is permitted to perform. Specification section 18.1.2.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:recognizedIn",
+      "type": "rdf:Property",
+      "label": "recognizedIn",
+      "comment": "The root DID that a recognition chains to. Specification section 18.1.2.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:identity",
+      "type": "rdf:Property",
+      "label": "identity",
+      "comment": "Attributes bound to the subject of an Agent Identity Credential. Specification section 18.1.3.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:owner",
+      "type": "rdf:Property",
+      "label": "owner",
+      "comment": "Identity attribute named in specification section 18.1.3.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:model",
+      "type": "rdf:Property",
+      "label": "model",
+      "comment": "Identity attribute named in specification section 18.1.3.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:capabilityClass",
+      "type": "rdf:Property",
+      "label": "capabilityClass",
+      "comment": "Identity attribute named in specification section 18.1.3.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    },
+    {
+      "id": "vouch:createdAt",
+      "type": "rdf:Property",
+      "label": "createdAt",
+      "comment": "Identity attribute named in specification section 18.1.3.",
+      "isDefinedBy": "https://vouch-protocol.com/ns/v1"
+    }
+  ]
+}

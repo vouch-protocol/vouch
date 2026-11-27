@@ -8,7 +8,8 @@
  *      and credential status lists are named with the .com host inside signed
  *      credentials and resolver configuration, so they keep answering on .com
  *      with an ordinary response. They are fetched from the site and returned
- *      as they are.
+ *      as they are. A JSON-LD context or vocabulary is named without a file
+ *      extension and is answered from its .jsonld file on the site.
  *   2. Pages. Everything else gets a permanent redirect to the same path on
  *      the site.
  *
@@ -41,6 +42,13 @@ const IDENTIFIER_FILES = ['/funding.json', '/install.sh'];
 // Paths served by other Workers on this host.
 const OTHER_WORKER_PREFIXES = ['/v/', '/api/', '/.well-known/c2pa-'];
 
+// JSON-LD documents. A credential names its context without a file extension
+// (https://vouch-protocol.com/contexts/v1), while the site publishes the file
+// as contexts/v1.jsonld. Under these prefixes a path is answered from the
+// matching .jsonld file and labelled as JSON-LD, readable from any origin.
+const JSONLD_PREFIXES = ['/contexts/', '/ns/'];
+const JSONLD_TYPE = 'application/ld+json';
+
 // Response headers carried over from the site for an identifier URL.
 const PASSED_HEADERS = ['content-type', 'cache-control', 'etag', 'last-modified', 'access-control-allow-origin'];
 
@@ -62,6 +70,16 @@ export function classify(pathname) {
     if (IDENTIFIER_FILES.includes(pathname)) return 'identifier';
     if (IDENTIFIER_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return 'identifier';
     return 'page';
+}
+
+/**
+ * The site file behind a JSON-LD identifier, or null when the path is not one.
+ * A path that already names a .jsonld or .json file is served as it is.
+ */
+export function jsonldSource(pathname) {
+    if (!JSONLD_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return null;
+    if (pathname.endsWith('/') || /\.(jsonld|json)$/.test(pathname)) return null;
+    return `${pathname}.jsonld`;
 }
 
 function text(status, body, extra = {}) {
@@ -94,9 +112,10 @@ async function serveIdentifier(origin, pathname, method, fetchImpl) {
     if (method !== 'GET' && method !== 'HEAD') {
         return text(405, 'Method not allowed\n', { allow: 'GET, HEAD' });
     }
+    const jsonld = jsonldSource(pathname);
     let response;
     try {
-        response = await fetchFromSite(origin, pathname, method, fetchImpl);
+        response = await fetchFromSite(origin, jsonld || pathname, method, fetchImpl);
     } catch (error) {
         return text(502, 'The site could not be reached\n');
     }
@@ -108,6 +127,10 @@ async function serveIdentifier(origin, pathname, method, fetchImpl) {
     for (const name of PASSED_HEADERS) {
         const value = response.headers.get(name);
         if (value) headers.set(name, value);
+    }
+    if (jsonld) {
+        headers.set('content-type', JSONLD_TYPE);
+        headers.set('access-control-allow-origin', '*');
     }
     return new Response(method === 'HEAD' ? null : response.body, { status: 200, headers });
 }
