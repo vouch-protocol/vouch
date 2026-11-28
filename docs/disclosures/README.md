@@ -145,7 +145,20 @@ These disclosures establish prior art for novel concepts, preventing others from
 | [PAD-133](./PAD-133-weight-bound-load-authorization.md) | Weight-Bound Load Authorization | 2026-09-10 | Published |
 | [PAD-134](./PAD-134-sealed-dissent-registration.md) | Sealed Dissent Registration | 2026-09-10 | Published |
 | [PAD-135](./PAD-135-simultaneous-reveal-comparative-disclosure.md) | Simultaneous-Reveal Comparative Disclosure | 2026-09-10 | Published |
+| [PAD-136](./PAD-136-kernel-enforcement-profile.md) | Kernel Enforcement Profile for Signed Agent Credentials | 2026-11-28 | Published |
 
+
+## November 28, 2026: Kernel Enforcement Profile (PAD-136)
+
+One disclosure on carrying a signed agent credential down to the operating
+system kernel, so the kernel enforces what the credential says. It covers four
+methods that share one design. The kernel rule set is compiled from the
+credential by a fixed procedure, and anyone holding the credential can recompute
+its fingerprint. A one-use grant carries the digest of a signed request and, in
+its main form, is used up inside the kernel. Delegation is placed on the
+kernel's group tree, so a sub-agent can never have more than its parent. One
+write makes every new operation in a branch refuse. A breaker allows any two of
+private data, untrusted input and outward communication, and refuses the third.
 
 ## September 10, 2026: The Pacing Profile (PAD-125 to PAD-135)
 

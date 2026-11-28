@@ -165,7 +165,7 @@ AI agents are making real-world API calls with **ZERO cryptographic proof** of:
 - **Human-readable JSON** (proof attaches as a sibling object, no Base64-wrapped opaque payload)
 - **Framework-agnostic** (works with MCP, LangChain, CrewAI, AutoGPT, AutoGen, Vertex AI)
 - **Cross-language interop** (Python, TypeScript, Go, byte-identical canonical form)
-- **Open source** (Apache 2.0 license, CC0 prior-art portfolio)
+- **Open source** (Apache 2.0 license, with a public portfolio of defensive prior-art disclosures)
 
 **Think of it as:**
 - SSL certificate = Proves website identity
@@ -371,7 +371,7 @@ agent.sign({'action': 'read_customer_data', 'customer_id': 'cust_abc'})
 agent.sign({'action': 'access_phi', 'patient_id': '12345'})
 ```
 
-To keep this space free from patent capture, the project publishes **61 defensive prior-art disclosures** under CC0, covering cryptographic identity, media provenance, voice biometrics, AI safety, post-quantum cryptography, AI coding governance, and per-region human-or-AI code authorship. See [docs/disclosures](docs/disclosures/README.md).
+To keep this space free from patent capture, the project publishes **more than 130 defensive prior-art disclosures**, covering cryptographic identity, media provenance, voice biometrics, AI safety, post-quantum cryptography, AI coding governance, per-region human-or-AI code authorship, robotics, delegation, and operating system enforcement. See [docs/disclosures](docs/disclosures/README.md).
 
 ---
 
@@ -394,7 +394,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 - [Protocol Specification (developer guide)](https://github.com/vouch-protocol/vouch/blob/main/docs/vouch_guide.md)
 - [Integration Guides](https://github.com/vouch-protocol/vouch/tree/main/vouch/integrations)
 - [Threat Model and Security Considerations](https://github.com/vouch-protocol/vouch/blob/main/docs/THREAT_MODEL.md)
-- [Defensive Prior Art Disclosures (61 PADs, CC0)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
+- [Defensive Prior Art Disclosures (more than 130 PADs)](https://github.com/vouch-protocol/vouch/tree/main/docs/disclosures)
 - [FAQ and Discussions](https://github.com/vouch-protocol/vouch/discussions)
 
 ---
@@ -416,7 +416,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 - [x] **Post-quantum profile** (`eddsa-jcs-2022` + `mldsa44-jcs-2024` proof set, NIST CNSA 2.0 / NSM-10 aligned)
 - [x] **Three-language reference implementation** (Python, TypeScript, Go) with byte-identical canonical form via RFC 8785 JCS, verified against shared test vectors
 - [x] **Specification drafted** and submitted to the open standards group for incubation
-- [x] **55 Prior Art Disclosures** (CC0 defensive publications)
+- [x] **More than 130 Prior Art Disclosures** (defensive publications)
 - [x] Identity Sidecar architecture (LLM-isolated keys)
 - [x] Heartbeat Protocol with adaptive Trust Entropy
 - [x] Resource-bound delegation chains with capability narrowing
@@ -452,7 +452,7 @@ To keep this space free from patent capture, the project publishes **61 defensiv
 
 You can use this freely in commercial and open-source projects.
 
-The 61 defensive prior-art disclosures are released under **CC0 1.0 Universal** to ensure ecosystem freedom from patent capture.
+The defensive prior-art disclosures in `docs/disclosures` are published to keep these methods free from patent capture. Most are released under **Apache 2.0**. Some of the earlier ones are dedicated to the public domain under **CC0 1.0 Universal**. Where a disclosure states its own terms, those terms apply.
 
 *The Vouch Protocol specification is being developed as a open standard submission via the open standards group. The implementation is also being proposed to the Linux Foundation's AI & Data Foundation.*
 
@@ -504,7 +504,7 @@ Thanks goes to these wonderful people. This section is maintained automatically 
 
 ## Prior Art Disclosures
 
-To ensure ecosystem freedom, we publish **55 defensive prior art disclosures** (CC0 public domain) covering novel methods across cryptographic identity, media provenance, voice biometrics, AI safety, post-quantum cryptography, AI coding assistant governance, and content authenticity:
+To ensure ecosystem freedom, we publish **more than 130 defensive prior art disclosures** covering novel methods across cryptographic identity, media provenance, voice biometrics, AI safety, post-quantum cryptography, AI coding assistant governance, and content authenticity. The first 55 are listed below. The full list is in [docs/disclosures](docs/disclosures/README.md):
 
 | ID | Title | Category |
 |----|-------|----------|
