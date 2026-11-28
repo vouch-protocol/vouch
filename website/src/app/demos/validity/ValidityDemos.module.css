@@ -42,7 +42,7 @@
 
 .radio.on {
   border-color: rgb(var(--color-burgundy));
-  background: rgba(var(--color-burgundy), 0.05);
+  background: rgb(var(--color-burgundy) / 0.05);
   color: rgb(var(--color-ink));
 }
 
@@ -84,7 +84,7 @@
 .card {
   border: 1px solid rgb(var(--color-rule));
   padding: 0.75rem 0.9rem;
-  background: rgba(var(--color-parchment-deep), 0.35);
+  background: rgb(var(--color-parchment-deep) / 0.35);
 }
 
 .cardLabel {

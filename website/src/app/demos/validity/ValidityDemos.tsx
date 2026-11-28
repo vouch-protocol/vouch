@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 
 import styles from './ValidityDemos.module.css';
 
@@ -77,6 +77,22 @@ const CLOCKS = [
 
 const iso = (date: Date) => date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 const clockTime = (isoTime: string) => isoTime.slice(11, 19) + ' UTC';
+
+/** A time, with its date added when it falls on a different UTC day from `start`. */
+function stamp(isoTime: string, start: string): string {
+  if (isoTime.slice(0, 10) === start.slice(0, 10)) return clockTime(isoTime);
+  return `${isoTime.slice(0, 10)} ${clockTime(isoTime)}`;
+}
+
+/** A random credential id. Falls back for browsers without crypto.randomUUID. */
+function uuid(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
 const short = (did: string) => `${did.slice(0, 16)}…${did.slice(-6)}`;
 
 function span(seconds: number): string {
@@ -114,7 +130,7 @@ function decide(
   const did = identity.did_key;
   const unsigned = {
     '@context': ['https://www.w3.org/ns/credentials/v2', 'https://vouch-protocol.com/contexts/v1'],
-    id: `urn:uuid:${crypto.randomUUID()}`,
+    id: `urn:uuid:${uuid()}`,
     type: ['VerifiableCredential', 'VouchCredential'],
     issuer: did,
     validFrom: iso(now),
@@ -136,7 +152,7 @@ function decide(
 }
 
 function Validity() {
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'sign-error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
   const [core, setCore] = useState<Core | null>(null);
   const [identity, setIdentity] = useState<Identity | null>(null);
@@ -169,22 +185,24 @@ function Validity() {
   }, []);
 
   // Every change to the request or to the sidecar's settings is a new request,
-  // signed again from scratch.
-  useEffect(() => {
+  // signed again from scratch. A layout effect, so the new request and its
+  // verdict appear together in the same frame.
+  useLayoutEffect(() => {
     if (!core || !identity) return;
     try {
       setResult(decide(core, identity, asked, defaultSeconds, ceilingSeconds));
       setEdited(false);
+      setStatus('ready');
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : String(e));
-      setStatus('error');
+      setStatus('sign-error');
     }
   }, [core, identity, asked, defaultSeconds, ceilingSeconds]);
 
   const check = useMemo(() => {
     if (!core || !identity || !result || result.kind !== 'signed') return null;
     const presented = edited
-      ? { ...result.credential, validUntil: iso(new Date(result.signedAt + 86400 * 1000)) }
+      ? { ...result.credential, validUntil: iso(new Date(Date.parse(String(result.credential.validUntil)) + 86400 * 1000)) }
       : result.credential;
     const at = iso(new Date(result.signedAt + ahead * 1000));
     try {
@@ -208,6 +226,7 @@ function Validity() {
         : 'its time is up';
 
   const ready = status === 'ready';
+  const usable = !!core && !!identity && status !== 'error';
 
   return (
     <div className={styles.demo}>
@@ -215,7 +234,8 @@ function Validity() {
         <p className="text-ink-soft leading-relaxed mb-5">
           An agent asks its sidecar to sign what it is about to do, and says how long the signature should last. The
           sidecar signs for that long. Whoever runs the sidecar sets two limits around that choice: a default, for when
-          the agent asks for nothing, and a ceiling the agent cannot go past. Every credential below is signed in your
+          the agent asks for nothing, and a ceiling the agent cannot go past. This page plays the sidecar&apos;s part, with
+          the same rule and the same refusal message as the real one. Every credential below is signed in your
           browser with a real <code className="font-mono text-[0.85em]">eddsa-jcs-2022</code> proof, and the Vouch
           Protocol core compiled to WebAssembly checks it. The key is made fresh for this visit and is thrown away when
           you leave.
@@ -223,13 +243,14 @@ function Validity() {
 
         <div className={styles.group}>
           <div className="eyebrow-faint mb-2">The agent asks for</div>
-          <div className={styles.controls}>
+          <div className={styles.controls} role="group" aria-label="The agent asks for">
             {ASKS.map((a) => (
               <button
                 key={a.label}
                 className={`${styles.radio}${asked === a.seconds ? ' ' + styles.on : ''}`}
+                aria-pressed={asked === a.seconds}
                 onClick={() => setAsked(a.seconds)}
-                disabled={!ready}
+                disabled={!usable}
               >
                 {a.label}
               </button>
@@ -239,13 +260,14 @@ function Validity() {
 
         <div className={styles.group}>
           <div className="eyebrow-faint mb-2">The sidecar&apos;s default</div>
-          <div className={styles.inline}>
+          <div className={styles.inline} role="group" aria-label="The sidecar’s default">
             {DEFAULTS.map((d) => (
               <button
                 key={d.seconds}
                 className={`${styles.radio}${defaultSeconds === d.seconds ? ' ' + styles.on : ''}`}
+                aria-pressed={defaultSeconds === d.seconds}
                 onClick={() => setDefaultSeconds(d.seconds)}
-                disabled={!ready}
+                disabled={!usable}
               >
                 {d.label}
               </button>
@@ -255,13 +277,14 @@ function Validity() {
 
         <div className={styles.group}>
           <div className="eyebrow-faint mb-2">The sidecar&apos;s ceiling</div>
-          <div className={styles.inline}>
+          <div className={styles.inline} role="group" aria-label="The sidecar’s ceiling">
             {CEILINGS.map((c) => (
               <button
                 key={c.seconds}
                 className={`${styles.radio}${ceilingSeconds === c.seconds ? ' ' + styles.on : ''}`}
+                aria-pressed={ceilingSeconds === c.seconds}
                 onClick={() => setCeilingSeconds(c.seconds)}
-                disabled={!ready}
+                disabled={!usable}
               >
                 {c.label}
               </button>
@@ -271,11 +294,12 @@ function Validity() {
 
         <div className={styles.group}>
           <div className="eyebrow-faint mb-2">A verifier checks it</div>
-          <div className={styles.inline}>
+          <div className={styles.inline} role="group" aria-label="A verifier checks it">
             {CLOCKS.map((c) => (
               <button
                 key={c.ahead}
                 className={`${styles.radio}${ahead === c.ahead ? ' ' + styles.on : ''}`}
+                aria-pressed={ahead === c.ahead}
                 onClick={() => setAhead(c.ahead)}
                 disabled={!ready || result?.kind !== 'signed'}
               >
@@ -287,9 +311,10 @@ function Validity() {
 
         <div className={styles.group}>
           <div className="eyebrow-faint mb-2">Or someone edits it first</div>
-          <div className={styles.inline}>
+          <div className={styles.inline} role="group" aria-label="Or someone edits it first">
             <button
               className={`${styles.radio}${edited ? ' ' + styles.on : ''}`}
+              aria-pressed={edited}
               onClick={() => setEdited((v) => !v)}
               disabled={!ready || result?.kind !== 'signed'}
             >
@@ -311,6 +336,14 @@ function Validity() {
         {status === 'error' && (
           <div className={styles.error}>
             The in-browser core could not load, so nothing was signed or verified. Nothing here is faked.
+            <br />
+            <span className={styles.mono}>{errorMsg}</span>
+          </div>
+        )}
+        {status === 'sign-error' && (
+          <div className={styles.error}>
+            The core loaded, but signing this request failed in your browser, so nothing was signed or verified. Pick
+            another option to try again.
             <br />
             <span className={styles.mono}>{errorMsg}</span>
           </div>
@@ -353,8 +386,8 @@ function Validity() {
                   <div className={styles.mono}>
                     valid from {clockTime(String(check.presented.validFrom))}
                     <br />
-                    valid until {clockTime(String(check.presented.validUntil))}
-                    {edited ? ' the next day' : ''}
+                    valid until {stamp(String(check.presented.validUntil), String(check.presented.validFrom))}
+                    {edited ? ' (moved out by a day)' : ''}
                     <br />
                     proof: {String((check.presented.proof as { proofValue?: string })?.proofValue ?? '').slice(0, 28)}…
                   </div>
@@ -362,7 +395,7 @@ function Validity() {
 
                 <div className={styles.card}>
                   <div className={styles.cardLabel}>The verifier&apos;s clock</div>
-                  <div className={styles.mono}>{clockTime(check.at)}</div>
+                  <div className={styles.mono}>{stamp(check.at, String(check.presented.validFrom))}</div>
                 </div>
 
                 <div className={styles.checks}>
@@ -382,7 +415,7 @@ function Validity() {
               </>
             )}
 
-            <div className={styles.verdict}>
+            <div className={styles.verdict} role="status" aria-live="polite">
               {result.kind === 'refused' ? (
                 <>
                   <span className={styles.badge} style={{ color: DENY, borderColor: DENY }}>
@@ -423,7 +456,7 @@ export default function ValidityDemos() {
         </div>
         <p className="eyebrow mb-6">
           Each credential carries its own start and end time, and a verifier refuses it once that time is up ·
-          vouch sidecar
+          vouch.sidecar
         </p>
         <Validity />
       </div>

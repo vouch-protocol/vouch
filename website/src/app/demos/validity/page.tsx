@@ -26,9 +26,11 @@ export default function ValidityDemosPage() {
           </p>
           <p className="footnote mt-5">
             The credentials are ordinary <code className="font-mono text-[0.85em]">eddsa-jcs-2022</code> Verifiable
-            Credentials, checked by the same core that powers every SDK. The same sequence runs on your own machine
-            with <code className="font-mono text-[0.85em]">vouch sidecar</code> and{' '}
-            <code className="font-mono text-[0.85em]">vouch sign --valid-for</code>.
+            Credentials, checked by the same core that powers every SDK. The same limits run on your own machine with{' '}
+            <code className="font-mono text-[0.85em]">vouch sidecar --default-validity 5m --max-validity 1h</code>, and a
+            caller picks the length by sending <code className="font-mono text-[0.85em]">validSeconds</code>. When you
+            sign directly, without a sidecar, <code className="font-mono text-[0.85em]">vouch sign --valid-for</code>{' '}
+            sets the length.
           </p>
         </div>
       </section>
