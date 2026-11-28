@@ -135,36 +135,64 @@ export const ONBOARD_STEPS: OnboardStep[] = [
     short: 'Wire tools',
     title: 'Wire the agent tool-call layer to /sign',
     blurb:
-      'The wizard generates a thin wrapper for your agent runtime. Every time the agent invokes a tool, the wrapper first calls the Sidecar /sign endpoint to mint a credential bound to that action; the verifier in step 5 will require the credential. The example below is Python; pass --lang typescript or --lang go for the other reference SDKs.\n\nTRY IT LOCALLY FIRST: the wrapper points at SIDECAR_URL = "http://localhost:8787/sign" by default, so an Edge-tier sidecar started on your laptop just works. On the Edge tier you can also skip the HTTP hop entirely and call the signer in-process; the wrapper module documents both modes.',
+      'The wizard generates a thin wrapper for your agent runtime. Every time the agent invokes a tool, the wrapper first calls the Sidecar /sign endpoint to mint a credential bound to that action; the verifier in step 5 will require the credential. The example below is Python; pass --lang typescript or --lang go for the other reference SDKs.\n\nTRY IT LOCALLY FIRST: the wrapper points at SIDECAR_URL = "http://127.0.0.1:8877/sign" by default, the address the sidecar listens on, so a sidecar started on your laptop just works. On the Edge tier you can also skip the HTTP hop and sign in-process with the SDK.',
     command: 'vouch onboard --resume --lang python',
     artifact: 'vouch-toolwire.py',
     previewLanguage: 'python',
-    preview: `import httpx
-from typing import Any, Callable, Dict
+    preview: `import json
+from typing import Any, Callable, Dict, Optional
 
-SIDECAR_URL = "http://localhost:8787/sign"
+import httpx
+
+SIDECAR_URL = "http://127.0.0.1:8877/sign"
 ISSUER_DID = "did:web:agent.acme.example"
 
 
-def vouch_tool(action: str) -> Callable:
+def vouch_headers(
+    action: str, target: str, resource: str, valid_seconds: Optional[int] = None
+) -> Dict[str, str]:
+    """Ask the sidecar to sign one action and return the header to send with it.
+
+    \`valid_seconds\` is how long the signature stays valid. Leave it out to get
+    the sidecar's default.
+    """
+    request: Dict[str, Any] = {
+        "intent": {"action": action, "target": target, "resource": resource}
+    }
+    if valid_seconds is not None:
+        request["validSeconds"] = valid_seconds
+    response = httpx.post(SIDECAR_URL, json=request, timeout=2.0)
+    response.raise_for_status()
+    credential = response.json()
+    if credential.get("issuer") != ISSUER_DID:
+        raise RuntimeError("the sidecar signed as an unexpected issuer")
+    return {"Vouch-Token": json.dumps(credential, separators=(",", ":"))}
+
+
+def vouch_tool(
+    action: str, target: str, resource: str, valid_seconds: Optional[int] = None
+) -> Callable:
+    """Decorator: sign the action, then call the tool with \`_vouch_headers\` set."""
+
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-        def wrapped(*args: Any, **kwargs: Dict[str, Any]) -> Any:
-            r = httpx.post(SIDECAR_URL, json={
-                "issuer": ISSUER_DID,
-                "action": action,
-                "args": kwargs,
-            }, timeout=2.0)
-            r.raise_for_status()
-            token = r.json()["token"]
-            kwargs.setdefault("_vouch_headers", {})
-            kwargs["_vouch_headers"]["Vouch-Token"] = token
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            kwargs["_vouch_headers"] = vouch_headers(action, target, resource, valid_seconds)
             return fn(*args, **kwargs)
+
         return wrapped
+
     return decorator
 
 
-# @vouch_tool("http.post")
-# def send_to_partner(url: str, body: dict, _vouch_headers=None): ...`,
+# Example. This signature is good for two minutes:
+# @vouch_tool(
+#     "http.post",
+#     target="partner-api",
+#     resource="https://api.partner.example/orders",
+#     valid_seconds=120,
+# )
+# def send_to_partner(body: dict, _vouch_headers=None):
+#     return httpx.post("https://api.partner.example/orders", json=body, headers=_vouch_headers)`,
     eta: '10 minutes',
   },
   {
@@ -173,35 +201,39 @@ def vouch_tool(action: str) -> Callable:
     short: 'Verifier',
     title: 'Deploy a verifier at the API boundary',
     blurb:
-      'The verifier middleware sits at every endpoint that an agent can call. It checks the Vouch-Token header, validates the signature against the issuer DID, and rejects requests whose action is not in your allow-list. The wizard emits FastAPI, Express, and Gin variants; the FastAPI version is shown below.\n\nTRY IT LOCALLY FIRST: in dev mode, point the verifier at a trusted_roots dict (DID -> public JWK string) instead of letting it resolve did:web over HTTPS. Pass Verifier(trusted_roots={your_did: your_pubkey_jwk}, allow_did_resolution=False) and the entire sign-and-verify loop runs end-to-end on localhost with no public DNS or .well-known path. Production deployments drop those two arguments and the verifier resolves the DID over HTTPS instead.',
+      'The verifier middleware sits at every endpoint that an agent can call. It checks the Vouch-Token header, validates the signature against the issuer DID, and rejects requests whose action is not in your allow-list. The wizard emits FastAPI, Express, and Gin variants; the FastAPI version is shown below.\n\nTRY IT LOCALLY FIRST: the generated verifier carries your issuer public key from step 1, so the entire sign-and-verify loop runs end-to-end on localhost with no public DNS or .well-known path.',
     command: 'vouch onboard --resume --lang python',
     artifact: 'vouch-verifier.py',
     previewLanguage: 'python',
     preview: `import json
 from pathlib import Path
-from fastapi import FastAPI, Request, HTTPException
-from vouch.verifier import Verifier
+
+from fastapi import Depends, FastAPI, HTTPException
+
+from vouch.integrations.fastapi import VouchGate
 
 ISSUER_DID = "did:web:agent.acme.example"
+# The issuer's public key. Only credentials signed with its private half pass.
+ISSUER_PUBLIC_KEY = '{"kty":"OKP","crv":"Ed25519","x":"<base64url public key>"}'
 ALLOWLIST = json.loads(Path("vouch-allowlist.json").read_text())
 ALLOWED_ACTIONS = {a["name"] for a in ALLOWLIST["actions"]}
+
+gate = VouchGate(header="Vouch-Token", trusted_keys={ISSUER_DID: ISSUER_PUBLIC_KEY})
+
+
+async def require_vouch(passport=Depends(gate)):
+    """Reject a verified credential whose action is not on the allow-list."""
+    if passport.action not in ALLOWED_ACTIONS:
+        raise HTTPException(403, f"Action {passport.action!r} is not on the allow-list")
+    return passport
+
 
 app = FastAPI()
 
 
-@app.middleware("http")
-async def vouch_middleware(request: Request, call_next):
-    token = request.headers.get("Vouch-Token")
-    if not token:
-        raise HTTPException(401, "Missing Vouch-Token header")
-    valid, passport = Verifier.verify(token)
-    if not valid or not passport:
-        raise HTTPException(401, "Invalid Vouch-Token")
-    action = (passport.payload or {}).get("action")
-    if action not in ALLOWED_ACTIONS:
-        raise HTTPException(403, f"Action {action!r} not in allow-list")
-    request.state.vouch_passport = passport
-    return await call_next(request)`,
+@app.post("/example")
+async def example(passport=Depends(require_vouch)):
+    return {"agent": passport.iss, "action": passport.action}`,
     eta: '10 minutes',
   },
   {
