@@ -98,7 +98,7 @@ main().catch(console.error);
 `;
 
 const QUICKSTART_GO = `// Run the Vouch sidecar locally:
-//   ./vouch-sidecar --did did:web:localhost --port 8877
+//   ./vouch-sidecar --did did:web:localhost --port 8877 --dev
 //
 // Then sign a credential by POSTing to localhost. Any language can call it.
 package main

@@ -257,18 +257,20 @@ Or via go install:
 go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
 \`\`\`
 
-Run it locally with a placeholder DID. The sidecar binds to localhost only by default; no inbound firewall change is needed:
+Run it locally with a placeholder DID. The sidecar binds to localhost only by default, so no inbound firewall change is needed, and \`--dev\` gives it a throwaway key for this run. Once you have run \`vouch init\`, plain \`vouch-sidecar\` signs as that saved identity:
 
 \`\`\`bash
-./vouch-sidecar --did did:web:localhost --port 8877
+./vouch-sidecar --did did:web:localhost --port 8877 --dev
 \`\`\`
 
 \`\`\`powershell
-.\\vouch-sidecar.exe --did did:web:localhost --port 8877
+.\\vouch-sidecar.exe --did did:web:localhost --port 8877 --dev
 \`\`\`
 
 Optional flags:
 
+- \`--default-validity\` and \`--max-validity\` - how long a credential lasts when the caller does not say (default 5m), and the longest a caller may ask for (default 1h). The caller picks a value in between by sending \`validSeconds\`
+- \`--key\` - path to a private key file, in place of the saved identity
 - \`--sensitive\` or \`-s\` - wrap the response in a JWE so the credential is encrypted in flight
 - \`--hybrid\` - use the post-quantum profile (an \`eddsa-jcs-2022\` proof plus an \`mldsa44-jcs-2024\` proof on the same credential)
 - \`--verbose\` - detailed startup logs

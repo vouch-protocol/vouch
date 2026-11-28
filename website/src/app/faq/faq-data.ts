@@ -1531,7 +1531,7 @@ OpenTelemetry exporters are optional via the \`[otel]\` extra.`,
 \`\`\`bash
 cd go-sidecar
 go build ./cmd/vouch-sidecar
-./vouch-sidecar --did did:web:agent.example.com --port 8877
+./vouch-sidecar --did did:web:agent.example.com --port 8877 --dev
 \`\`\`
 
 The \`-s\` / \`--sensitive\` flag wraps the response in a JWE so the credential is encrypted in flight. The endpoint is \`POST /sign\` accepting a credential JSON body and returning the signed credential.
