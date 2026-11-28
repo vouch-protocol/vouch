@@ -126,7 +126,8 @@ services:
             - vouch-sidecar
 
     vouch-sidecar:
-        image: vouch-protocol/sidecar:latest
+        image: ghcr.io/vouch-protocol/sidecar:0.1.0
+        user: "1000:1000" # your own user and group ids, from `id -u` and `id -g`
         command: --did did:web:agent.example.com --key /keys/agent.jwk --host 0.0.0.0
         environment:
             - VOUCH_SIDECAR_TOKEN=${VOUCH_SIDECAR_TOKEN}
@@ -135,7 +136,14 @@ services:
 ```
 
 The key file is mounted read-only into the sidecar container only.
-The llm-app container has no access to `/keys/`.
+The llm-app container has no access to `/keys/`. Key files are readable
+only by their owner, so the sidecar container runs as your own user.
+
+The image is published at `ghcr.io/vouch-protocol/sidecar`, with a tag
+for each release (such as `0.1.0`) and `latest`. It works on Intel and
+Arm machines, runs one static binary, and is signed with cosign and a
+build provenance record. Check an image with
+`gh attestation verify oci://ghcr.io/vouch-protocol/sidecar:0.1.0 --owner vouch-protocol`.
 
 The sidecar listens on `127.0.0.1` by default. Here the app reaches it from
 another container, so it listens on all addresses and `/sign` requires the
@@ -153,7 +161,7 @@ spec:
         - name: llm-app
           image: your-llm-app
         - name: vouch-sidecar
-          image: vouch-protocol/sidecar:latest
+          image: ghcr.io/vouch-protocol/sidecar:0.1.0
           args: ["--did", "did:web:agent.example.com", "--key", "/keys/agent.jwk"]
           volumeMounts:
               - name: vouch-key
