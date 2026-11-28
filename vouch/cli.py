@@ -22,7 +22,7 @@ from jwcrypto import jwk
 from cryptography.hazmat.primitives import serialization
 
 from vouch.signer import Signer
-from vouch.verifier import Verifier
+from vouch.verifier import Verifier, verify as resolve_and_verify
 from vouch.keys import KeyManager, generate_identity
 import getpass
 
@@ -241,8 +241,18 @@ def cmd_sign(args: argparse.Namespace) -> int:
         intent.setdefault("resource", intent["action"])
 
         # Create signer and issue a Verifiable Credential.
+        # The person signing decides how long the credential stays valid.
+        valid_seconds = None
+        valid_for = getattr(args, "valid_for", None)
+        if valid_for:
+            from vouch.sidecar import parse_duration
+
+            valid_seconds = parse_duration(valid_for)
+            if valid_seconds < 1:
+                raise ValueError("--valid-for must be at least one second, for example 10m")
+
         signer = Signer(private_key=private_key, did=did)
-        credential = signer.sign(intent=intent)
+        credential = signer.sign(intent=intent, valid_seconds=valid_seconds)
         out = json.dumps(credential, separators=(",", ":"))
 
         if args.header:
@@ -272,15 +282,26 @@ def cmd_verify(args: argparse.Namespace) -> int:
             return 1
 
         if public_key:
+            key_source = "the key you supplied"
             valid, passport = Verifier.verify(credential, public_key=public_key)
         else:
-            # Resolve the issuer's key from its DID.
-            valid, passport = Verifier.verify(credential)
+            # No key given: the signature is still checked. Use the key of an
+            # identity held in the local keystore, otherwise resolve the
+            # issuer's key from its DID (did:key offline, did:web over HTTPS).
+            issuer = credential.get("issuer") if isinstance(credential, dict) else None
+            local_key = KeyManager().get_public_key(issuer) if isinstance(issuer, str) else None
+            if local_key:
+                key_source = "your local keystore"
+                valid, passport = Verifier.verify(credential, public_key=local_key)
+            else:
+                key_source = "the issuer's DID"
+                valid, passport = resolve_and_verify(credential)
 
         if valid and passport:
             if args.json:
                 result = {
                     "valid": True,
+                    "key_source": key_source,
                     "sub": passport.sub,
                     "iss": passport.iss,
                     "valid_from": passport.valid_from,
@@ -294,12 +315,18 @@ def cmd_verify(args: argparse.Namespace) -> int:
                 print(f"   Subject: {passport.sub}")
                 print(f"   Issuer:  {passport.iss}")
                 print(f"   Intent:  {json.dumps(passport.intent)}")
+                print(f"   Signature checked against {key_source}")
             return 0
         else:
             if args.json:
                 print(json.dumps({"valid": False}))
             else:
                 print("❌ INVALID")
+                if key_source == "the issuer's DID":
+                    print(
+                        "   If the issuer's key is not published at its DID yet, "
+                        "pass it with --key."
+                    )
             return 1
 
     except Exception as e:
@@ -1897,6 +1924,12 @@ def main(argv: "list[str] | None" = None) -> int:
     p_sign.add_argument("--key", help="Private key (JWK JSON)")
     p_sign.add_argument("--did", help="Agent DID")
     p_sign.add_argument(
+        "--valid-for",
+        dest="valid_for",
+        metavar="DURATION",
+        help="How long the credential stays valid, for example 30s, 10m or 2h (default: 5m)",
+    )
+    p_sign.add_argument(
         "--header", action="store_true", help="Output with Vouch-Token header prefix"
     )
 
@@ -2266,6 +2299,14 @@ def main(argv: "list[str] | None" = None) -> int:
         help="The command to run, after --",
     )
 
+    p_sidecar = subparsers.add_parser(
+        "sidecar",
+        help="Run the signing sidecar: it holds the agent's key and signs what the agent is about to do",
+    )
+    from . import sidecar as sidecar_mod
+
+    sidecar_mod.add_arguments(p_sidecar)
+
     p_onboard = subparsers.add_parser(
         "onboard",
         help="Guided six-step wizard to adopt Vouch (identity, allow-list, verifier, heartbeat)",
@@ -2375,6 +2416,8 @@ def main(argv: "list[str] | None" = None) -> int:
         return cmd_grade(args)
     elif args.command == "run":
         return cmd_run(args)
+    elif args.command == "sidecar":
+        return sidecar_mod.run(args)
     elif args.command == "onboard":
         from . import onboard as onboard_mod
 

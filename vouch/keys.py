@@ -184,6 +184,32 @@ class KeyManager:
             did=data["id"], public_key_jwk=data["public_key"], private_key_jwk=private_key_jwk
         )
 
+    def get_public_key(self, did: str) -> Optional[str]:
+        """
+        Return the public key JWK stored for ``did``, or None if this keystore
+        does not hold that identity.
+
+        The public key is stored in the clear even when the private key is
+        encrypted, so no password is needed.
+        """
+        try:
+            filename = self._get_filename(did)
+        except ValueError:
+            return None
+        if not os.path.exists(filename):
+            return None
+        try:
+            with open(filename, "r") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return None
+        # Different DIDs can map to the same filename, so the file has to name
+        # this exact DID before its key is used for it.
+        if not isinstance(data, dict) or data.get("id") != did:
+            return None
+        public_key = data.get("public_key")
+        return public_key if isinstance(public_key, str) and public_key else None
+
     def list_identities(self) -> List[Dict[str, Any]]:
         """List all stored identities."""
         identities = []

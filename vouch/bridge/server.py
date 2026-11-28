@@ -540,7 +540,19 @@ async def verify_image(
 
 
 def main() -> None:
-    """CLI entry point for vouch-bridge command."""
+    """CLI entry point for vouch-bridge command.
+
+    With ``--did`` (for example ``vouch-bridge --did did:web:agent.example.com
+    --port 8877``) it runs the signing sidecar, the same server as
+    ``vouch sidecar``. With no arguments it runs the media bridge.
+    """
+    import sys
+
+    if any(arg == "--did" or arg.startswith("--did=") for arg in sys.argv[1:]):
+        from vouch.sidecar import main as sidecar_main
+
+        sys.exit(sidecar_main(sys.argv[1:]))
+
     import uvicorn
 
     settings = load_settings()
