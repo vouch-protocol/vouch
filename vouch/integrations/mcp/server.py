@@ -127,6 +127,7 @@ def sign(
     target: str,
     resource: Optional[str] = None,
     post_quantum: bool = False,
+    valid_seconds: Optional[int] = None,
 ) -> str:
     """Issue a Vouch Credential authorizing a single sensitive action.
 
@@ -141,6 +142,8 @@ def sign(
         post_quantum: If true, sign under the hybrid post-quantum profile
             (hybrid-eddsa-mldsa44-jcs-2026) for regulated deployments.
             Requires the server to have 'vouch-protocol[pq]' installed.
+        valid_seconds: How long the credential stays valid, in seconds.
+            Leave it out for the default of five minutes.
 
     Returns:
         A compact JSON Vouch Credential to attach as a 'Vouch-Credential' header.
@@ -152,6 +155,10 @@ def sign(
             "VOUCH_DID, or run 'vouch init'."
         )
     resolved_resource = resource or target
+    if valid_seconds is not None and (
+        isinstance(valid_seconds, bool) or not isinstance(valid_seconds, int) or valid_seconds < 1
+    ):
+        return "Error: valid_seconds must be a whole number of seconds, at least 1."
 
     # Consult Shield before signing. A credential is a statement this agent
     # authorised the action; if policy says it may not, there is nothing to
@@ -172,11 +179,13 @@ def sign(
             separators=(",", ":"),
         )
 
+    intent = {"action": action, "target": target, "resource": resolved_resource}
     try:
         if post_quantum:
-            credential = signer.sign_hybrid(
-                {"action": action, "target": target, "resource": resolved_resource}
-            )
+            credential = signer.sign_hybrid(intent, valid_seconds=valid_seconds)
+        elif valid_seconds is not None:
+            # The caller chose how long this credential lasts.
+            credential = signer.sign(intent=intent, valid_seconds=valid_seconds)
         else:
             credential = sign_intent(
                 action,

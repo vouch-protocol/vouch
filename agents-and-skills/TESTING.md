@@ -85,7 +85,7 @@ You need three terminals.
 
 ```bash
 cd go-sidecar
-go run ./cmd/vouch-sidecar --did did:web:vouch-assistant.fly.dev --port 8877
+go run ./cmd/vouch-sidecar --did did:web:vouch-assistant.fly.dev --port 8877 --dev
 ```
 
 If you don't have Go installed, use the Python bridge:

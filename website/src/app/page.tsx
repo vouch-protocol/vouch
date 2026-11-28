@@ -429,7 +429,7 @@ console.log(signed.proof.proofValue); // z-base58-encoded Ed25519 signature
                 language: 'go',
                 code: `// The Go sidecar holds the key and signs over localhost HTTP,
 // so the signing key never enters your agent's process.
-// Start it with: vouch-sidecar --did did:web:agent.example.com --port 8877
+// Start it with: vouch-sidecar --did did:web:agent.example.com --port 8877 --dev
 package main
 
 import (

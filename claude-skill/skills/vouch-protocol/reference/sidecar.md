@@ -52,29 +52,60 @@ binary, low memory, fast startup, no GIL.
 
 ```bash
 go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
-./vouch-sidecar --did did:web:agent.example.com --port 8877
+./vouch-sidecar --did did:web:agent.example.com --port 8877 --dev
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
 go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
-.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877
+.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877 --dev
 ```
+
+After `vouch init`, plain `vouch-sidecar` signs as your saved identity. `--dev`
+is for trying it out without one.
 
 See `reference/go-sidecar.md` for the full HTTP API and deployment patterns.
 
 ### Python (for development)
 
-`vouch.bridge.server` is a FastAPI-based equivalent:
+`vouch sidecar` is the Python equivalent, part of the `vouch-protocol`
+package:
 
 ```bash
-pip install 'vouch-protocol[server]'
-vouch-bridge --did did:web:agent.example.com --port 8877
+pip install vouch-protocol
+vouch sidecar
 ```
+
+It signs as the identity `vouch init` saved and asks for its passphrase if
+it has one. `vouch-bridge --did did:web:agent.example.com --port 8877`
+(from `pip install 'vouch-protocol[server]'`) starts the same server.
 
 Same endpoint shape as the Go sidecar. Convenient when you don't want
 to install the Go toolchain.
+
+## How long a credential lasts
+
+The caller decides, by sending `validSeconds` with the request:
+
+```bash
+curl -X POST http://localhost:8877/sign \
+  -H 'Content-Type: application/json' \
+  -d '{"intent": {"action": "read", "target": "reports", "resource": "https://api.example.com/reports/1"}, "validSeconds": 120}'
+```
+
+The sidecar adds two settings of its own. `--default-validity` (5m) is what
+a caller gets when it sends no `validSeconds`. `--max-validity` (1h) is the
+longest a caller may ask for. Set either when you start the sidecar, or
+with `VOUCH_SIDECAR_DEFAULT_VALIDITY` and `VOUCH_SIDECAR_MAX_VALIDITY`:
+
+```bash
+vouch sidecar --default-validity 10m --max-validity 2h
+```
+
+Both sidecars work the same way. From the command line,
+`vouch sign "approve order 42" --valid-for 2h` sets the validity of a
+single credential.
 
 ## Deployment patterns
 
@@ -90,18 +121,25 @@ services:
         image: your-llm-app
         environment:
             - VOUCH_SIDECAR_URL=http://vouch-sidecar:8877
+            - VOUCH_SIDECAR_TOKEN=${VOUCH_SIDECAR_TOKEN}
         depends_on:
             - vouch-sidecar
 
     vouch-sidecar:
         image: vouch-protocol/sidecar:latest
-        command: --did did:web:agent.example.com
+        command: --did did:web:agent.example.com --key /keys/agent.jwk --host 0.0.0.0
+        environment:
+            - VOUCH_SIDECAR_TOKEN=${VOUCH_SIDECAR_TOKEN}
         volumes:
             - ./secrets/agent.jwk:/keys/agent.jwk:ro
 ```
 
 The key file is mounted read-only into the sidecar container only.
 The llm-app container has no access to `/keys/`.
+
+The sidecar listens on `127.0.0.1` by default. Here the app reaches it from
+another container, so it listens on all addresses and `/sign` requires the
+shared token as `Authorization: Bearer <token>`.
 
 ### Kubernetes sidecar container
 
@@ -116,7 +154,7 @@ spec:
           image: your-llm-app
         - name: vouch-sidecar
           image: vouch-protocol/sidecar:latest
-          args: ["--did", "did:web:agent.example.com"]
+          args: ["--did", "did:web:agent.example.com", "--key", "/keys/agent.jwk"]
           volumeMounts:
               - name: vouch-key
                 mountPath: /keys

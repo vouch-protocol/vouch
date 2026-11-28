@@ -1179,9 +1179,20 @@ The published test vectors at [test-vectors/hybrid-eddsa-mldsa44/](https://githu
         q: 'Do I need to run the Go sidecar?',
         a: `Only if you want the Identity Sidecar pattern, which is the recommended deployment for LLM-driven agents because it keeps the private key out of the LLM context window. If your code never exposes the key to the model (for example, a Python service signing on behalf of an agent), you can sign directly from the Python or TypeScript SDK.
 
-The Go sidecar is also useful for polyglot stacks: it exposes \`POST /sign\` over HTTP, so any language can ask it to sign without having a Vouch SDK installed.`,
+The Go sidecar is also useful for polyglot stacks: it exposes \`POST /sign\` over HTTP, so any language can ask it to sign without having a Vouch SDK installed.
+
+No Go toolchain? \`vouch sidecar\` runs the same sidecar from the Python package, with the same endpoints.`,
         helpLinks: [{ label: 'Sidecar deployment guide', href: '/help/#sidecar-deployment' }],
         meta: 'Specification §10 - PAD-003',
+      },
+      {
+        q: 'Who decides how long a signed credential stays valid?',
+        a: `The caller does. A request to the sidecar can carry \`validSeconds\`, and the credential lasts exactly that long.
+
+Whoever runs the sidecar sets two limits around that choice. \`--default-validity\` (5 minutes unless you change it) is what a caller gets when it does not ask for a duration. \`--max-validity\` (1 hour unless you change it) is the longest a caller may ask for, so a single request cannot mint a credential that outlives its purpose. Change either by restarting the sidecar with a new value.
+
+From the command line, \`vouch sign "approve order 42" --valid-for 2h\` sets the validity of a single credential.`,
+        helpLinks: [{ label: 'Sidecar deployment guide', href: '/help/#sidecar-deployment' }],
       },
       {
         q: 'How do I verify a delegation chain?',
@@ -1392,8 +1403,9 @@ Verify on the receiving side with \`verify_tool_call\`. Identity is resolved aut
 **Identity and tokens**
 
 - \`vouch init\` generate an agent identity (DID + Ed25519 keypair)
-- \`vouch sign "<message>"\` sign a message or JSON payload, prints a Vouch-Token
-- \`vouch verify <token>\` verify a Vouch-Token
+- \`vouch sign "<message>"\` sign a message or JSON payload, prints a Vouch-Token. \`--valid-for 10m\` sets how long it stays valid
+- \`vouch verify <token>\` verify a Vouch-Token. The signature is always checked, against your keystore or the key published at the issuer's DID
+- \`vouch sidecar\` run the signing sidecar, which holds the key and signs for your agent
 
 **Git**
 
@@ -1531,7 +1543,7 @@ OpenTelemetry exporters are optional via the \`[otel]\` extra.`,
 \`\`\`bash
 cd go-sidecar
 go build ./cmd/vouch-sidecar
-./vouch-sidecar --did did:web:agent.example.com --port 8877
+./vouch-sidecar --did did:web:agent.example.com --port 8877 --dev
 \`\`\`
 
 The \`-s\` / \`--sensitive\` flag wraps the response in a JWE so the credential is encrypted in flight. The endpoint is \`POST /sign\` accepting a credential JSON body and returning the signed credential.

@@ -107,7 +107,7 @@ console.assert(result.isValid);
 
 ```bash
 go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
-vouch-sidecar --did did:web:agent.example.com --port 8877
+vouch-sidecar --did did:web:agent.example.com --port 8877 --dev
 ```
 
 **macOS / Linux**

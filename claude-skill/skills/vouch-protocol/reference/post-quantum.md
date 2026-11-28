@@ -183,13 +183,13 @@ Post-quantum signing is built into the sidecar:
 **macOS / Linux**
 
 ```bash
-./vouch-sidecar --did did:web:agent.example.com --hybrid --port 8877
+./vouch-sidecar --did did:web:agent.example.com --hybrid --port 8877 --dev
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
-.\vouch-sidecar.exe --did did:web:agent.example.com --hybrid --port 8877
+.\vouch-sidecar.exe --did did:web:agent.example.com --hybrid --port 8877 --dev
 ```
 
 All `/sign` requests now produce credentials carrying the proof set.

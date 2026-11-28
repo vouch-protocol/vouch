@@ -72,6 +72,45 @@ def test_sign_issues_a_credential_for_a_permitted_intent(notary_env):
     assert out["proof"]["cryptosuite"] == "eddsa-jcs-2022"
 
 
+def _window_seconds(credential):
+    from datetime import datetime
+
+    fmt = "%Y-%m-%dT%H:%M:%SZ"
+    start = datetime.strptime(credential["validFrom"], fmt)
+    end = datetime.strptime(credential["validUntil"], fmt)
+    return int((end - start).total_seconds())
+
+
+def test_sign_lets_the_caller_choose_how_long_the_credential_lasts(notary_env):
+    intent = {"action": "read_file", "target": TARGET, "resource": "reports/q3.txt"}
+
+    default = json.loads(notary.sign(**intent))
+    chosen = json.loads(notary.sign(**intent, valid_seconds=120))
+    post_quantum = json.loads(notary.sign(**intent, post_quantum=True, valid_seconds=45))
+
+    assert _window_seconds(default) == 300
+    assert _window_seconds(chosen) == 120
+    assert _window_seconds(post_quantum) == 45
+    assert isinstance(post_quantum["proof"], list) and len(post_quantum["proof"]) == 2
+
+
+@pytest.mark.parametrize("valid_seconds", [0, -5, 1.5, "120", True])
+def test_sign_rejects_a_validity_that_is_not_a_positive_whole_number(notary_env, valid_seconds):
+    out = notary.sign(
+        action="read_file", target=TARGET, resource="reports/q3.txt", valid_seconds=valid_seconds
+    )
+    assert out.startswith("Error: valid_seconds")
+
+
+def test_a_chosen_validity_does_not_get_past_the_policy_check(notary_env):
+    out = json.loads(
+        notary.sign(
+            action="delete_file", target=TARGET, resource="reports/q3.txt", valid_seconds=120
+        )
+    )
+    assert out["error"] == "refused" and "proof" not in out
+
+
 def test_sign_refuses_a_denied_action_with_a_structured_refusal(notary_env):
     """Nothing to present: the notary will not stamp it."""
     out = json.loads(notary.sign(action="delete_file", target=TARGET, resource="reports/q3.txt"))

@@ -22,25 +22,38 @@ go build ./cmd/vouch-sidecar
 **macOS / Linux**
 
 ```bash
-./vouch-sidecar --did did:web:agent.example.com --port 8877
+./vouch-sidecar --did did:web:agent.example.com --port 8877 --dev
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
-.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877
+.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877 --dev
 ```
 
 Flags:
 
 | Flag | Default | Notes |
 |---|---|---|
-| `--did` | required | The agent DID this sidecar represents |
+| `--did` | the saved identity | The agent DID this sidecar signs as. Needed only when the keystore holds more than one identity, or with `--dev` |
+| `--host` | 127.0.0.1 | Address to listen on. To listen beyond this machine, also set `VOUCH_SIDECAR_TOKEN`; `/sign` then requires `Authorization: Bearer <token>` |
 | `--port` | 8877 | HTTP listen port |
-| `--key` | platform key store | Path to JWK private key file (alternative to KMS) |
+| `--key` | the keystore | Path to a private Ed25519 JWK file or an identity file, in place of the identity `vouch init` saved under `~/.vouch/keys`. `VOUCH_ED25519_SEED` (64 hex characters) is the alternative |
+| `--dev` | off | Local testing: use a random key that lasts for this run only |
+| `--allowlist` | sign any action | Path to an allow-list JSON file such as the one `vouch onboard` writes. Only the actions it names are signed |
+| `--default-validity` | 5m | How long a credential lasts when the caller sends no `validSeconds`. Also `VOUCH_SIDECAR_DEFAULT_VALIDITY` |
+| `--max-validity` | 1h | Longest validity a caller may ask for. Also `VOUCH_SIDECAR_MAX_VALIDITY` |
 | `--hybrid` | off | Enable post-quantum signing (the default proof plus an ML-DSA-44 proof) |
 | `--sensitive` / `-s` | off | Wrap responses in JWE so credentials are encrypted in flight |
-| `--verbose` | off | Detailed startup logs |
+| `--otel-endpoint` | off | OpenTelemetry collector address, such as `http://localhost:4318`. Each signing request becomes a trace span |
+| `--verbose` | off | Log every request |
+
+With no flags at all, `vouch-sidecar` signs as the identity `vouch init` saved.
+
+The caller decides how long each credential lasts by sending `validSeconds`.
+`--default-validity` is what a caller gets when it sends none, and
+`--max-validity` is the ceiling. Change either by restarting the sidecar with a
+new value.
 
 ## HTTP API
 
@@ -92,9 +105,10 @@ base64url-nopad multibase), over the same document.
 
 ### Other endpoints
 
-- `GET /health` - liveness check
+- `GET /health` - readiness, the validity settings, and the time of the last signature
 - `GET /did` - return the configured DID and verification method
-- `GET /pubkey` - return Multikey-encoded public key
+- `GET /pubkey` - return the Multikey-encoded public keys
+- `GET /.well-known/did.json` - the DID document for the signing key
 - `POST /sign/hybrid` - explicit post-quantum signing endpoint
 
 ## Calling from Python

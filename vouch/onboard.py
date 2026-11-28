@@ -17,12 +17,14 @@ import dataclasses
 import hashlib
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from vouch import multikey
 from vouch.keys import KeyManager, generate_identity
 
 # ---------------------------------------------------------------------------
@@ -98,6 +100,7 @@ class OnboardState:
     completed_at: Optional[str] = None
     domain: Optional[str] = None
     did: Optional[str] = None
+    public_key_jwk: Optional[str] = None
     tier: Optional[str] = None
     allowlist_path: Optional[str] = None
     allowlist_preset: Optional[str] = None
@@ -227,8 +230,66 @@ def _step_header(num: int, title: str, io: WizardIO) -> None:
     io.out(f"─── Step {num} of 6: {title} ───")
 
 
+# A host name, with an optional port written the did:web way (":" as "%3A").
+_DOMAIN_RE = re.compile(r"^[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?(%3a[0-9]{1,5})?$")
+
+
 def _did_from_domain(domain: str) -> str:
-    return f"did:web:{domain.strip().lower()}"
+    """Build the did:web identifier for a host name.
+
+    Raises:
+      ValueError: the value is not a plain host name. The DID is written into
+        the generated starter files, so anything else is refused here.
+    """
+    host = domain.strip().lower()
+    if not _DOMAIN_RE.match(host) or ".." in host:
+        raise ValueError(
+            f"{domain!r} is not a domain name. Use a host such as agent.example.com, "
+            "with no scheme, path, or spaces."
+        )
+    return f"did:web:{host}"
+
+
+def _render(template: str, values: Dict[str, str]) -> str:
+    """Fill the ``@@NAME@@`` placeholders of a starter-file template.
+
+    The template is filled in one pass, so a value is never scanned for
+    placeholders itself.
+    """
+
+    def fill(match: "re.Match[str]") -> str:
+        name = match.group(1)
+        if name not in values:
+            raise ValueError(f"starter template has an unknown placeholder: {match.group(0)}")
+        return values[name]
+
+    return re.sub(r"@@([A-Z_]+)@@", fill, template)
+
+
+def _starter_values(state: OnboardState) -> Dict[str, str]:
+    """Values written into the generated tool wrapper and verifier.
+
+    Everything that lands inside code is emitted as a quoted string literal.
+    """
+    did = state.did or "did:web:agent.acme.example"
+    public_key_jwk = state.public_key_jwk
+    if not public_key_jwk and state.did:
+        public_key_jwk = KeyManager().get_public_key(state.did)
+    if not public_key_jwk:
+        raise ValueError(
+            f"No public key found for {did}. Re-run with --reset to create the identity again."
+        )
+    jwk_dict = json.loads(public_key_jwk)
+    raw_public = base64.urlsafe_b64decode(jwk_dict["x"] + "=" * (-len(jwk_dict["x"]) % 4))
+    public_jwk = {"kty": jwk_dict["kty"], "crv": jwk_dict["crv"], "x": jwk_dict["x"]}
+    return {
+        "DID": did,
+        "DID_LITERAL": json.dumps(did),
+        "ALLOWLIST_LITERAL": json.dumps(state.allowlist_path or "./vouch-allowlist.json"),
+        "PUBLIC_KEY_JWK_LITERAL": repr(json.dumps(public_jwk, separators=(",", ":"))),
+        "PUBLIC_KEY_JWK_OBJECT": json.dumps(public_jwk),
+        "PUBLIC_KEY_MULTIKEY_LITERAL": json.dumps(multikey.encode_ed25519_public(raw_public)),
+    }
 
 
 def _ed25519_did_document(did: str, public_key_jwk: str) -> Dict[str, Any]:
@@ -268,25 +329,29 @@ def step_identity(state: OnboardState, io: WizardIO) -> None:
         "Domain that will host the DID Document (e.g. agent.acme.example)",
         default=state.domain,
     )
-    state.domain = domain
     state.did = _did_from_domain(domain)
+    state.domain = state.did[len("did:web:") :]
 
-    kp = generate_identity(domain)
-    # KeyPair from generate_identity already has did:web:<domain>; reuse.
-    if not io.dry_run:
-        km = KeyManager()
-        try:
+    # An identity that already exists for this DID is kept. Generating a new
+    # one would replace its private key and orphan a published did.json.
+    km = KeyManager()
+    existing_key = km.get_public_key(state.did)
+    if existing_key:
+        state.public_key_jwk = existing_key
+        io.out("  Using the identity already in your keystore for this domain")
+    else:
+        kp = generate_identity(state.domain)
+        state.public_key_jwk = kp.public_key_jwk
+        if not io.dry_run:
             km.save_identity(kp, password=None)
-        except Exception as e:
-            io.out(f"  (skipped key save: {e})")
 
-    did_doc = _ed25519_did_document(state.did, kp.public_key_jwk)
+    did_doc = _ed25519_did_document(state.did, state.public_key_jwk)
     out_path = str(Path(state.out_dir) / "did.json")
     io.write(out_path, json.dumps(did_doc, indent=2))
 
     io.out(f"  DID:        {state.did}")
-    io.out(f"  Publish at: https://{domain}/.well-known/did.json")
-    if not io.dry_run:
+    io.out(f"  Publish at: https://{state.domain}/.well-known/did.json")
+    if not io.dry_run and not existing_key:
         io.out("  Private key stored at ~/.vouch/keys/ (encrypt with passphrase via `vouch init`)")
 
 
@@ -333,7 +398,7 @@ def step_toolwire(state: OnboardState, io: WizardIO) -> None:
         "toolwire_lang", "Language", default=state.toolwire_lang or "python", choices=LANG_CHOICES
     )
     state.toolwire_lang = lang
-    snippet = _TOOLWIRE_SNIPPETS[lang].format(did=state.did or "did:web:agent.acme.example")
+    snippet = _render(_TOOLWIRE_SNIPPETS[lang], _starter_values(state))
     ext = {"python": "py", "typescript": "ts", "go": "go"}[lang]
     out_path = str(Path(state.out_dir) / f"vouch-toolwire.{ext}")
     io.write(out_path, snippet)
@@ -348,10 +413,7 @@ def step_verifier(state: OnboardState, io: WizardIO) -> None:
         choices=LANG_CHOICES,
     )
     state.verifier_lang = lang
-    snippet = _VERIFIER_SNIPPETS[lang].format(
-        did=state.did or "did:web:agent.acme.example",
-        allowlist=state.allowlist_path or "./vouch-allowlist.json",
-    )
+    snippet = _render(_VERIFIER_SNIPPETS[lang], _starter_values(state))
     ext = {"python": "py", "typescript": "ts", "go": "go"}[lang]
     out_path = str(Path(state.out_dir) / f"vouch-verifier.{ext}")
     io.write(out_path, snippet)
@@ -400,206 +462,425 @@ STEPS: List[Callable[[OnboardState, WizardIO], None]] = [
 
 
 _TOOLWIRE_SNIPPETS = {
-    "python": '''"""Vouch tool-call wrapper.
+    "python": '''"""Vouch Protocol tool-call wrapper.
 
-Wrap your agent's tool dispatcher so every call mints a Vouch credential
-against the Sidecar's /sign endpoint before the underlying tool runs.
+Wrap a tool so that every call first asks the sidecar to sign what the agent is
+about to do. The sidecar holds the signing key. This process never sees it.
+
+Start the sidecar before the agent:
+
+    vouch sidecar --did @@DID@@ --allowlist vouch-allowlist.json
 """
+import json
+from typing import Any, Callable, Dict, Optional
+
 import httpx
-from typing import Any, Callable, Dict
 
-SIDECAR_URL = "http://localhost:8787/sign"
-ISSUER_DID = "{did}"
+SIDECAR_URL = "http://127.0.0.1:8877/sign"
+ISSUER_DID = @@DID_LITERAL@@
 
 
-def vouch_tool(action: str) -> Callable:
+def vouch_headers(
+    action: str, target: str, resource: str, valid_seconds: Optional[int] = None
+) -> Dict[str, str]:
+    """Ask the sidecar to sign one action and return the header to send with it.
+
+    `valid_seconds` is how long the signature stays valid. Leave it out to get
+    the sidecar's default.
+    """
+    request: Dict[str, Any] = {
+        "intent": {"action": action, "target": target, "resource": resource}
+    }
+    if valid_seconds is not None:
+        request["validSeconds"] = valid_seconds
+    response = httpx.post(SIDECAR_URL, json=request, timeout=2.0)
+    response.raise_for_status()
+    credential = response.json()
+    if credential.get("issuer") != ISSUER_DID:
+        raise RuntimeError("the sidecar signed as an unexpected issuer")
+    return {"Vouch-Token": json.dumps(credential, separators=(",", ":"))}
+
+
+def vouch_tool(
+    action: str, target: str, resource: str, valid_seconds: Optional[int] = None
+) -> Callable:
+    """Decorator: sign the action, then call the tool with `_vouch_headers` set."""
+
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-        def wrapped(*args: Any, **kwargs: Dict[str, Any]) -> Any:
-            r = httpx.post(SIDECAR_URL, json={{
-                "issuer": ISSUER_DID,
-                "action": action,
-                "args": kwargs,
-            }}, timeout=2.0)
-            r.raise_for_status()
-            token = r.json()["token"]
-            kwargs.setdefault("_vouch_headers", {{}})
-            kwargs["_vouch_headers"]["Vouch-Token"] = token
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            kwargs["_vouch_headers"] = vouch_headers(action, target, resource, valid_seconds)
             return fn(*args, **kwargs)
+
         return wrapped
+
     return decorator
 
 
-# Example:
-# @vouch_tool("http.post")
-# def send_to_partner(url: str, body: dict, _vouch_headers=None): ...
+# Example. This signature is good for two minutes:
+# @vouch_tool(
+#     "http.post",
+#     target="partner-api",
+#     resource="https://api.partner.example/orders",
+#     valid_seconds=120,
+# )
+# def send_to_partner(body: dict, _vouch_headers=None):
+#     return httpx.post("https://api.partner.example/orders", json=body, headers=_vouch_headers)
 ''',
     "typescript": """/**
- * Vouch tool-call wrapper.
+ * Vouch Protocol tool-call wrapper.
  *
- * Wrap your agent's tool dispatcher so every call mints a Vouch credential
- * against the Sidecar's /sign endpoint before the underlying tool runs.
+ * Wrap a tool so that every call first asks the sidecar to sign what the agent
+ * is about to do. The sidecar holds the signing key. This process never sees it.
+ *
+ * Start the sidecar before the agent:
+ *
+ *   vouch sidecar --did @@DID@@ --allowlist vouch-allowlist.json
  */
-const SIDECAR_URL = "http://localhost:8787/sign";
-const ISSUER_DID = "{did}";
+const SIDECAR_URL = "http://127.0.0.1:8877/sign";
+const ISSUER_DID = @@DID_LITERAL@@;
 
-export function vouchTool<F extends (...args: any[]) => any>(action: string, fn: F): F {{
-  return (async (...args: any[]) => {{
-    const res = await fetch(SIDECAR_URL, {{
-      method: "POST",
-      headers: {{ "content-type": "application/json" }},
-      body: JSON.stringify({{ issuer: ISSUER_DID, action, args }}),
-    }});
-    if (!res.ok) throw new Error(`Vouch sidecar /sign failed: ${{res.status}}`);
-    const {{ token }} = await res.json();
-    return fn(...args, {{ "Vouch-Token": token }});
-  }}) as F;
-}}
+export interface Intent {
+  action: string;
+  target: string;
+  resource: string;
+}
+
+export type VouchHeaders = Record<string, string>;
+
+/**
+ * Ask the sidecar to sign one action and return the header to send with it.
+ * `validSeconds` is how long the signature stays valid. Leave it out to get the
+ * sidecar's default.
+ */
+export async function vouchHeaders(intent: Intent, validSeconds?: number): Promise<VouchHeaders> {
+  const res = await fetch(SIDECAR_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(validSeconds === undefined ? { intent } : { intent, validSeconds }),
+  });
+  if (!res.ok) throw new Error(`Vouch Protocol sidecar /sign failed: ${res.status}`);
+  const credential = await res.json();
+  if (credential.issuer !== ISSUER_DID) {
+    throw new Error("the sidecar signed as an unexpected issuer");
+  }
+  // Header values must be ASCII, so escape anything else.
+  const token = JSON.stringify(credential).replace(
+    /[\\u007f-\\uffff]/g,
+    (c) => "\\\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"),
+  );
+  return { "Vouch-Token": token };
+}
+
+/** Wrap a tool so each call is signed first. The tool gets the headers as its last argument. */
+export function vouchTool<A extends unknown[], R>(
+  intent: Intent,
+  fn: (...args: [...A, VouchHeaders]) => R | Promise<R>,
+  validSeconds?: number,
+): (...args: A) => Promise<R> {
+  return async (...args: A) => fn(...args, await vouchHeaders(intent, validSeconds));
+}
+
+// Example:
+// const sendToPartner = vouchTool(
+//   { action: "http.post", target: "partner-api", resource: "https://api.partner.example/orders" },
+//   (body: unknown, headers: VouchHeaders) =>
+//     fetch("https://api.partner.example/orders", {
+//       method: "POST",
+//       headers: { ...headers, "content-type": "application/json" },
+//       body: JSON.stringify(body),
+//     }),
+// );
 """,
-    "go": """// Vouch tool-call wrapper.
+    "go": """// Vouch Protocol tool-call wrapper.
 //
-// Call VouchSign before invoking the underlying tool to mint a credential
-// against the Sidecar's /sign endpoint.
+// Call VouchSign before a tool runs to ask the sidecar to sign what the agent
+// is about to do. The sidecar holds the signing key. This process never sees it.
+//
+// Start the sidecar before the agent:
+//
+//	vouch sidecar --did @@DID@@ --allowlist vouch-allowlist.json
 package vouchwire
 
 import (
-    "bytes"
-    "encoding/json"
-    "net/http"
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+	"unicode/utf16"
 )
 
 const (
-    SidecarURL = "http://localhost:8787/sign"
-    IssuerDID  = "{did}"
+	SidecarURL = "http://127.0.0.1:8877/sign"
+	IssuerDID  = @@DID_LITERAL@@
 )
 
-type signReq struct {{
-    Issuer string                 `json:"issuer"`
-    Action string                 `json:"action"`
-    Args   map[string]interface{{}} `json:"args"`
-}}
+// Intent is the action the agent is about to take.
+type Intent struct {
+	Action   string `json:"action"`
+	Target   string `json:"target"`
+	Resource string `json:"resource"`
+}
 
-type signResp struct {{
-    Token string `json:"token"`
-}}
+var client = &http.Client{Timeout: 2 * time.Second}
 
-func VouchSign(action string, args map[string]interface{{}}) (string, error) {{
-    body, _ := json.Marshal(signReq{{Issuer: IssuerDID, Action: action, Args: args}})
-    resp, err := http.Post(SidecarURL, "application/json", bytes.NewReader(body))
-    if err != nil {{
-        return "", err
-    }}
-    defer resp.Body.Close()
-    var sr signResp
-    if err := json.NewDecoder(resp.Body).Decode(&sr); err != nil {{
-        return "", err
-    }}
-    return sr.Token, nil
-}}
+type signRequest struct {
+	Intent       Intent `json:"intent"`
+	ValidSeconds int    `json:"validSeconds,omitempty"`
+}
+
+// VouchSign asks the sidecar to sign intent. Send the returned string as the
+// Vouch-Token header of the call the tool makes.
+//
+// validFor is how long the signature stays valid. Pass 0 to get the sidecar's
+// default.
+func VouchSign(intent Intent, validFor time.Duration) (string, error) {
+	body, err := json.Marshal(signRequest{Intent: intent, ValidSeconds: int(validFor / time.Second)})
+	if err != nil {
+		return "", err
+	}
+	resp, err := client.Post(SidecarURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("vouch sidecar /sign: %s: %s", resp.Status, strings.TrimSpace(string(raw)))
+	}
+	var credential struct {
+		Issuer string `json:"issuer"`
+	}
+	if err := json.Unmarshal(raw, &credential); err != nil {
+		return "", err
+	}
+	if credential.Issuer != IssuerDID {
+		return "", errors.New("the sidecar signed as an unexpected issuer")
+	}
+	var compact bytes.Buffer
+	if err := json.Compact(&compact, raw); err != nil {
+		return "", err
+	}
+	return asciiJSON(compact.String()), nil
+}
+
+// asciiJSON escapes non-ASCII characters so the JSON is a valid header value.
+func asciiJSON(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r < 0x7f:
+			b.WriteRune(r)
+		case r > 0xffff:
+			hi, lo := utf16.EncodeRune(r)
+			fmt.Fprintf(&b, "\\\\u%04x\\\\u%04x", hi, lo)
+		default:
+			fmt.Fprintf(&b, "\\\\u%04x", r)
+		}
+	}
+	return b.String()
+}
+
+// Example:
+//
+//	token, err := vouchwire.VouchSign(vouchwire.Intent{
+//		Action:   "http.post",
+//		Target:   "partner-api",
+//		Resource: "https://api.partner.example/orders",
+//	}, 2*time.Minute)
+//	req.Header.Set("Vouch-Token", token)
 """,
 }
 
 
 _VERIFIER_SNIPPETS = {
-    "python": '''"""Vouch verifier middleware for FastAPI.
+    "python": '''"""Vouch Protocol verifier for FastAPI.
 
-Drop this into your API boundary. It verifies the Vouch-Token header on
-every request and rejects calls whose action is not in the allow-list.
+Add `Depends(require_vouch)` to every route an agent can call. For each request
+it checks the credential in the Vouch-Token header: that it was signed with your
+issuer's key, that it is inside its validity window, and that the signed action
+is on your allow-list. A request that fails any check never reaches your code.
+
+    pip install vouch-protocol fastapi
 """
 import json
 from pathlib import Path
-from fastapi import FastAPI, Request, HTTPException
-from vouch.verifier import Verifier
 
-ISSUER_DID = "{did}"
-ALLOWLIST = json.loads(Path("{allowlist}").read_text())
-ALLOWED_ACTIONS = {{a["name"] for a in ALLOWLIST["actions"]}}
+from fastapi import Depends, FastAPI, HTTPException
+
+from vouch.integrations.fastapi import VouchGate
+
+ISSUER_DID = @@DID_LITERAL@@
+# The issuer's public key. Only credentials signed with its private half pass.
+ISSUER_PUBLIC_KEY = @@PUBLIC_KEY_JWK_LITERAL@@
+ALLOWLIST = json.loads(Path(@@ALLOWLIST_LITERAL@@).read_text())
+ALLOWED_ACTIONS = {a["name"] for a in ALLOWLIST["actions"]}
+
+gate = VouchGate(header="Vouch-Token", trusted_keys={ISSUER_DID: ISSUER_PUBLIC_KEY})
+
+
+async def require_vouch(passport=Depends(gate)):
+    """Reject a verified credential whose action is not on the allow-list."""
+    if passport.action not in ALLOWED_ACTIONS:
+        raise HTTPException(403, f"Action {passport.action!r} is not on the allow-list")
+    return passport
+
 
 app = FastAPI()
 
 
-@app.middleware("http")
-async def vouch_middleware(request: Request, call_next):
-    token = request.headers.get("Vouch-Token")
-    if not token:
-        raise HTTPException(401, "Missing Vouch-Token header")
-    valid, passport = Verifier.verify(token)
-    if not valid or not passport:
-        raise HTTPException(401, "Invalid Vouch-Token")
-    action = (passport.payload or {{}}).get("action")
-    if action not in ALLOWED_ACTIONS:
-        raise HTTPException(403, f"Action {{action!r}} not in allow-list")
-    request.state.vouch_passport = passport
-    return await call_next(request)
+@app.post("/example")
+async def example(passport=Depends(require_vouch)):
+    return {"agent": passport.iss, "action": passport.action}
 ''',
     "typescript": """/**
- * Vouch verifier middleware for Express.
+ * Vouch Protocol verifier middleware for Express.
  *
- * Verifies the Vouch-Token header on every request and rejects calls
- * whose action is not in the allow-list.
+ * For each request it checks the credential in the Vouch-Token header: that it
+ * was signed with your issuer's key, that it is inside its validity window, and
+ * that the signed action is on your allow-list. A request that fails any check
+ * never reaches your routes.
+ *
+ *   npm install @vouch-protocol-official/sdk
  */
-import {{ readFileSync }} from "node:fs";
-import type {{ Request, Response, NextFunction }} from "express";
+import { readFileSync } from "node:fs";
+import type { Request, Response, NextFunction } from "express";
+import { verify } from "@vouch-protocol-official/sdk";
 
-const ISSUER_DID = "{did}";
-const ALLOWLIST = JSON.parse(readFileSync("{allowlist}", "utf-8"));
-const ALLOWED = new Set<string>(ALLOWLIST.actions.map((a: any) => a.name));
+const ISSUER_DID = @@DID_LITERAL@@;
+// The issuer's public key. Only credentials signed with its private half pass.
+const ISSUER_PUBLIC_KEY = @@PUBLIC_KEY_JWK_OBJECT@@;
+const ALLOWLIST = JSON.parse(readFileSync(@@ALLOWLIST_LITERAL@@, "utf-8"));
+const ALLOWED = new Set<string>(ALLOWLIST.actions.map((a: { name: string }) => a.name));
 
-export function vouchMiddleware(req: Request, res: Response, next: NextFunction) {{
+export async function vouchMiddleware(req: Request, res: Response, next: NextFunction) {
   const token = req.header("Vouch-Token");
   if (!token) return res.status(401).send("Missing Vouch-Token");
-  // Pseudo: replace with @vouch-protocol/sdk verify(token, {{ issuer: ISSUER_DID }}).
-  const passport = verify(token);
-  if (!passport) return res.status(401).send("Invalid Vouch-Token");
-  if (!ALLOWED.has(passport.payload.action)) {{
-    return res.status(403).send(`Action ${{passport.payload.action}} not allow-listed`);
-  }}
-  (req as any).vouchPassport = passport;
-  next();
-}}
 
-function verify(_token: string): any {{
-  throw new Error("Wire to @vouch-protocol/sdk verify()");
-}}
+  let passport;
+  try {
+    const result = await verify(token, ISSUER_PUBLIC_KEY);
+    passport = result.isValid ? result.passport : null;
+  } catch {
+    passport = null;
+  }
+  if (!passport || passport.iss !== ISSUER_DID) {
+    return res.status(401).send("Invalid Vouch-Token");
+  }
+  if (!ALLOWED.has(passport.intent.action)) {
+    return res.status(403).send("Action is not on the allow-list");
+  }
+  (req as Request & { vouchPassport?: unknown }).vouchPassport = passport;
+  next();
+}
 """,
-    "go": """// Vouch verifier middleware for net/http (Gin-compatible).
+    "go": """// Vouch Protocol verifier middleware for net/http.
+//
+// For each request it checks the credential in the Vouch-Token header: that it
+// was signed with your issuer's key, that it is inside its validity window, and
+// that the signed action is on your allow-list. A request that fails any check
+// never reaches your handler.
+//
+//	go get github.com/vouch-protocol/vouch/go-sidecar
 package vouchverify
 
 import (
-    "encoding/json"
-    "net/http"
-    "os"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/vouch-protocol/vouch/go-sidecar/signer"
 )
 
-const IssuerDID = "{did}"
+const (
+	IssuerDID = @@DID_LITERAL@@
+	// The issuer's public key. Only credentials signed with its private half pass.
+	IssuerPublicKey = @@PUBLIC_KEY_MULTIKEY_LITERAL@@
+	allowlistPath   = @@ALLOWLIST_LITERAL@@
+)
 
-var allowed map[string]bool
+type passportKey struct{}
 
-func init() {{
-    data, _ := os.ReadFile("{allowlist}")
-    var doc struct {{
-        Actions []struct {{ Name string `json:"name"` }} `json:"actions"`
-    }}
-    _ = json.Unmarshal(data, &doc)
-    allowed = map[string]bool{{}}
-    for _, a := range doc.Actions {{
-        allowed[a.Name] = true
-    }}
-}}
+// PassportFrom returns the verified credential of a request that passed Middleware.
+func PassportFrom(r *http.Request) *signer.CredentialPassport {
+	passport, _ := r.Context().Value(passportKey{}).(*signer.CredentialPassport)
+	return passport
+}
 
-func Middleware(next http.Handler) http.Handler {{
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {{
-        token := r.Header.Get("Vouch-Token")
-        if token == "" {{
-            http.Error(w, "missing Vouch-Token", http.StatusUnauthorized)
-            return
-        }}
-        // Wire to github.com/vouch-protocol/vouch/go/verifier here.
-        // passport := verifier.Verify(token, IssuerDID)
-        // if passport == nil {{ ...401... }}
-        // if !allowed[passport.Action] {{ ...403... }}
-        next.ServeHTTP(w, r)
-    }})
-}}
+// Middleware rejects every request that does not carry a valid credential for
+// an allow-listed action. It returns an error if the issuer key or the
+// allow-list cannot be loaded, so a broken setup never lets requests through.
+func Middleware(next http.Handler) (http.Handler, error) {
+	algorithm, issuerKey, err := signer.MultikeyDecode(IssuerPublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("issuer public key: %w", err)
+	}
+	if algorithm != "Ed25519" {
+		return nil, errors.New("issuer public key must be an Ed25519 key")
+	}
+	allowed, err := loadAllowed(allowlistPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Vouch-Token")
+		if token == "" {
+			http.Error(w, "missing Vouch-Token", http.StatusUnauthorized)
+			return
+		}
+		var credential map[string]any
+		if err := json.Unmarshal([]byte(token), &credential); err != nil {
+			http.Error(w, "invalid Vouch-Token", http.StatusUnauthorized)
+			return
+		}
+		ok, passport, err := signer.Verify(credential, issuerKey, 30)
+		if err != nil || !ok || passport == nil || passport.Issuer != IssuerDID {
+			http.Error(w, "invalid Vouch-Token", http.StatusUnauthorized)
+			return
+		}
+		if !allowed[passport.Action()] {
+			http.Error(w, "action is not on the allow-list", http.StatusForbidden)
+			return
+		}
+		ctx := context.WithValue(r.Context(), passportKey{}, passport)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}), nil
+}
+
+func loadAllowed(path string) (map[string]bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("allow-list: %w", err)
+	}
+	var doc struct {
+		Actions []struct {
+			Name string `json:"name"`
+		} `json:"actions"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, fmt.Errorf("allow-list: %w", err)
+	}
+	allowed := map[string]bool{}
+	for _, action := range doc.Actions {
+		if action.Name != "" {
+			allowed[action.Name] = true
+		}
+	}
+	if len(allowed) == 0 {
+		return nil, errors.New("allow-list names no actions")
+	}
+	return allowed, nil
+}
 """,
 }
 
@@ -661,7 +942,21 @@ def _print_summary(state: OnboardState, io: WizardIO) -> None:
     elif state.steps["heartbeat"].status == "skipped":
         io.out("  Heartbeat:   skipped")
     io.out("")
-    io.out("Next: commit did.json to your domain at /.well-known/did.json, then deploy.")
+    io.out("Next:")
+    io.out(f"  1. Publish did.json at https://{state.domain}/.well-known/did.json")
+    io.out("  2. Start the sidecar next to your agent:")
+    io.out(f"       {_sidecar_command(state)}")
+    io.out("  3. Wrap your tools with the tool wrapper and add the verifier to your API.")
+
+
+def _sidecar_command(state: OnboardState) -> str:
+    """The command that starts the sidecar with this run's identity and allow-list.
+
+    The sidecar finds the identity's key in the keystore by its DID, so there
+    is no key to pass.
+    """
+    allowlist = state.allowlist_path or "vouch-allowlist.json"
+    return f'vouch sidecar --did {state.did} --allowlist "{allowlist}"'
 
 
 def _ext(lang: Optional[str]) -> str:
@@ -747,16 +1042,20 @@ def cmd_onboard(args: argparse.Namespace) -> int:
     if quick and not domain_supplied:
         preset.setdefault("domain", "agent.example")
 
-    rc = run_wizard(
-        resume=getattr(args, "resume", False),
-        # Quick mode always starts fresh so re-running it just works instead of
-        # short-circuiting on a prior completed run.
-        reset=getattr(args, "reset", False) or quick,
-        interactive=not (getattr(args, "non_interactive", False) or quick),
-        dry_run=getattr(args, "dry_run", False),
-        out_dir=getattr(args, "out_dir", ".") or ".",
-        preset_answers=preset,
-    )
+    try:
+        rc = run_wizard(
+            resume=getattr(args, "resume", False),
+            # Quick mode always starts fresh so re-running it just works instead of
+            # short-circuiting on a prior completed run.
+            reset=getattr(args, "reset", False) or quick,
+            interactive=not (getattr(args, "non_interactive", False) or quick),
+            dry_run=getattr(args, "dry_run", False),
+            out_dir=getattr(args, "out_dir", ".") or ".",
+            preset_answers=preset,
+        )
+    except (ValueError, OSError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
 
     if rc == 0 and quick and not domain_supplied:
         print(

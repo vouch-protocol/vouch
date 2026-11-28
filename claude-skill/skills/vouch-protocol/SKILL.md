@@ -162,15 +162,18 @@ LLM never sees it.
 
 ```bash
 cd go-sidecar && go build ./cmd/vouch-sidecar
-./vouch-sidecar --did did:web:agent.example.com --port 8877
+./vouch-sidecar --did did:web:agent.example.com --port 8877 --dev
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
 cd go-sidecar; go build ./cmd/vouch-sidecar
-.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877
+.\vouch-sidecar.exe --did did:web:agent.example.com --port 8877 --dev
 ```
+
+No Go toolchain? `pip install vouch-protocol`, then `vouch sidecar` runs the
+same sidecar and signs as the identity `vouch init` saved.
 
 The agent's code calls `POST http://localhost:8877/sign` with the
 credential body and receives a signed credential back. Prompt injection
