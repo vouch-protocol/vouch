@@ -387,11 +387,26 @@ func runMain(t *testing.T, home string, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestMainProcess$")
-	cmd.Env = []string{
-		"VOUCH_SIDECAR_TEST_MAIN=1",
-		"VOUCH_SIDECAR_TEST_ARGS=" + strings.Join(args, "\x1f"),
-		"HOME=" + home, "USERPROFILE=" + home, "PATH=" + os.Getenv("PATH"),
+	// Start from this process's environment, so the child finds the same
+	// libraries, and take out every setting the sidecar itself reads.
+	own := []string{"HOME=", "USERPROFILE=", seedEnv + "=", tokenEnv + "=", hostEnv + "=",
+		defaultValidityEnv + "=", maxValidityEnv + "=", otelEndpointEnv + "="}
+	for _, entry := range os.Environ() {
+		keep := true
+		for _, prefix := range own {
+			if strings.HasPrefix(entry, prefix) {
+				keep = false
+			}
+		}
+		if keep {
+			cmd.Env = append(cmd.Env, entry)
+		}
 	}
+	cmd.Env = append(cmd.Env,
+		"VOUCH_SIDECAR_TEST_MAIN=1",
+		"VOUCH_SIDECAR_TEST_ARGS="+strings.Join(args, "\x1f"),
+		"HOME="+home, "USERPROFILE="+home,
+	)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
