@@ -849,6 +849,8 @@ def test_wizard_publishes_the_saved_post_quantum_key(
     monkeypatch.setattr(onboard, "STATE_PATH", tmp_path / "state.json")
     keys = generate_identity("agent.example.com", post_quantum=True)
     KeyManager().save_identity(keys, password)
+    if password:
+        monkeypatch.setenv("VOUCH_KEY_PASSPHRASE", password)
     out = tmp_path / "out"
     out.mkdir()
     args = types.SimpleNamespace(
@@ -922,3 +924,195 @@ def test_a_two_key_identity_loads_without_the_post_quantum_package(km, monkeypat
     loaded = km.load_identity(DID)
     assert loaded.private_key_jwk == keys.private_key_jwk
     assert pq(loaded).public_key == pq(keys).public_key
+
+
+# ---------------------------------------------------------------------------
+# Third review round
+# ---------------------------------------------------------------------------
+
+
+def _quick_onboard(tmp_path, monkeypatch):
+    from vouch import onboard
+
+    monkeypatch.setattr(onboard, "STATE_PATH", tmp_path / "state.json")
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    args = types.SimpleNamespace(
+        quick=True, domain="agent.example.com", non_interactive=True, out_dir=str(out)
+    )
+    return onboard.cmd_onboard(args), out
+
+
+def test_wizard_leaves_out_an_unchecked_key_of_a_locked_identity(
+    temp_keystore, tmp_path, monkeypatch, capsys
+):
+    monkeypatch.delenv("VOUCH_KEY_PASSPHRASE", raising=False)
+    keys = generate_identity("agent.example.com", post_quantum=True)
+    KeyManager().save_identity(keys, PASSWORD)
+    # Someone who cannot unlock the file swaps in a public key of their own.
+    data = read(KeyManager())
+    data["keys"][0]["public_key"] = new_post_quantum_key().public_key
+    write(KeyManager(), data)
+
+    rc, out = _quick_onboard(tmp_path, monkeypatch)
+    assert rc == 0
+    with open(out / "did.json") as f:
+        ids = [m["id"] for m in json.load(f)["verificationMethod"]]
+    assert ids == [f"{DID}#key-1"]
+    assert "left out" in capsys.readouterr().out
+
+    monkeypatch.setenv("VOUCH_KEY_PASSPHRASE", PASSWORD)
+    rc, _ = _quick_onboard(tmp_path, monkeypatch)
+    assert rc == 2 and "damaged" in capsys.readouterr().err
+
+
+def test_autosign_stops_on_an_unreadable_identity_file(temp_keystore, monkeypatch):
+    import vouch.autosign as autosign
+
+    monkeypatch.setenv("VOUCH_AUTO_IDENTITY", "1")
+    monkeypatch.delenv("VOUCH_PRIVATE_KEY", raising=False)
+    monkeypatch.delenv("VOUCH_DID", raising=False)
+    KeyManager().save_identity(generate_identity("other.example.com"))
+    init()
+    path = KeyManager()._get_filename(DID)
+    with open(path) as f:
+        cut = f.read()[:3000]
+    with open(path, "w") as f:
+        f.write(cut)
+
+    autosign.reset_default_signer()
+    try:
+        assert autosign.resolve_signer() is None
+    finally:
+        autosign.reset_default_signer()
+
+
+def _add(did=None, domain="agent.example.com"):
+    return cli.cmd_init(
+        types.SimpleNamespace(
+            domain=None if did else domain, did=did, env=False, yes=True, add_post_quantum_key=True
+        )
+    )
+
+
+def test_add_flag_on_a_locked_identity_needs_the_passphrase(temp_keystore, monkeypatch):
+    monkeypatch.delenv("VOUCH_KEY_PASSPHRASE", raising=False)
+    KeyManager().save_identity(generate_identity("agent.example.com"), PASSWORD)
+
+    assert _add() == 1
+    assert "keys" not in read(KeyManager())
+
+    monkeypatch.setenv("VOUCH_KEY_PASSPHRASE", PASSWORD)
+    assert _add() == 0
+    assert pq(KeyManager().load_identity(DID, PASSWORD)) is not None
+
+
+def test_add_flag_works_for_any_did_method(temp_keystore):
+    from vouch.root_of_trust import generate_did_key_identity
+
+    keys = generate_did_key_identity()
+    KeyManager().save_identity(keys)
+    assert _add(did=keys.did) == 0
+    loaded = KeyManager().load_identity(keys.did)
+    assert loaded.private_key_jwk == keys.private_key_jwk and pq(loaded) is not None
+    assert _add(did="did:key:z6MkNothingSavedHere") == 1
+
+
+def test_did_without_the_add_flag_is_refused(temp_keystore):
+    args = types.SimpleNamespace(
+        domain=None, did=DID, env=False, yes=True, add_post_quantum_key=False
+    )
+    assert cli.cmd_init(args) == 1
+    assert KeyManager().list_identities() == []
+
+
+def test_keep_path_refuses_a_file_of_another_did(temp_keystore, capsys):
+    assert init("a:b") == 0
+    before = read(KeyManager(), "did:web:a:b")
+    assert cli._keep_existing_identity("did:web:a-b", types.SimpleNamespace(yes=True)) == 1
+    assert read(KeyManager(), "did:web:a:b") == before
+
+
+def test_sidecar_key_file_advice_names_the_identity(temp_keystore, tmp_path):
+    old = generate_identity("agent.example.com")
+    KeyManager().save_identity(old)
+    with pytest.raises(sidecar.SidecarError, match=f"--did {DID}"):
+        sidecar.build_sidecar(parse("--key", KeyManager()._get_filename(DID), "--hybrid"))
+
+
+def test_without_the_post_quantum_package(temp_keystore, monkeypatch, capsys):
+    from vouch import data_integrity_hybrid
+
+    init()
+
+    def missing():
+        raise ImportError("no pqcrypto")
+
+    monkeypatch.setattr(data_integrity_hybrid, "_import_pqcrypto", missing)
+    with pytest.raises(sidecar.SidecarError, match="pqcrypto"):
+        sidecar.build_sidecar(parse("--hybrid"))
+    assert sidecar.build_sidecar(parse()).config.post_quantum == "saved"
+
+    old = generate_identity("old.example.com")
+    KeyManager().save_identity(old)
+    with pytest.raises(sidecar.SidecarError, match="pqcrypto"):
+        sidecar.build_sidecar(parse("--did", old.did, "--hybrid"))
+    assert init("old.example.com") == 0  # a plain rerun still succeeds
+
+
+def test_adding_a_key_is_logged(km, caplog):
+    saved(km, post_quantum=False)
+    with caplog.at_level("WARNING", logger="vouch.keys"):
+        km.ensure_post_quantum_key(DID)
+    assert "Added a post-quantum key" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda d: d.update(v=True),
+        lambda d: d.update(v=1.0),
+        lambda d: d.update(v="1"),
+    ],
+    ids=["v true", "v 1.0", "v string"],
+)
+def test_a_one_key_file_must_say_version_one_exactly(km, change):
+    saved(km, post_quantum=False)
+    data = read(km)
+    change(data)
+    write(km, data)
+    with pytest.raises(IdentityDamagedError):
+        km.load_identity(DID)
+
+
+def test_non_canonical_base64_and_nan_are_refused(km):
+    saved(km)
+    data = read(km)
+    encoded = data["keys"][0]["private_key"]
+    # Change the padding bits of the last character without changing the bytes.
+    last = encoded.rstrip("=")[-1]
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    sibling = alphabet[alphabet.index(last) ^ 1]
+    tail = len(encoded) - len(encoded.rstrip("="))
+    data["keys"][0]["private_key"] = encoded.rstrip("=")[:-1] + sibling + "=" * tail
+    write(km, data)
+    with pytest.raises(IdentityDamagedError):
+        km.load_identity(DID)
+
+    saved(km)
+    with open(km._get_filename(DID)) as f:
+        text = f.read()
+    with open(km._get_filename(DID), "w") as f:
+        f.write(text.replace('"v": 2', '"v": 2, "extra": NaN'))
+    with pytest.raises(IdentityDamagedError):
+        km.load_identity(DID)
+
+
+def test_upgrade_call_sweeps_old_temporary_files(km):
+    saved(km)
+    old = km._get_filename(DID) + ".9.dead.tmp"
+    with open(old, "w") as f:
+        f.write("{}")
+    os.utime(old, (1, 1))
+    km.ensure_post_quantum_key(DID)
+    assert not os.path.exists(old)

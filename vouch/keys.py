@@ -176,6 +176,20 @@ def _row_binding(did: str, key_id: str, alg: str, public_key: str) -> bytes:
     ).encode("utf-8")
 
 
+class _NotJSON(ValueError):
+    """NaN or Infinity, which strict JSON does not have."""
+
+
+def _refuse_constant(name: str) -> Any:
+    raise _NotJSON(name)
+
+
+def _is_version_one(data: Dict[str, Any]) -> bool:
+    """True for a file without key lists: no "v", or "v" exactly the number 1."""
+    version = data.get("v", 1)
+    return type(version) is int and version == 1
+
+
 def _digest(private_key: bytes) -> str:
     """The check value stored beside an unlocked private key, so damage to
     any of its bytes is noticed when it is read back."""
@@ -201,7 +215,7 @@ def _read_rows(
     """
     rows = data.get("keys")
     if rows is None:
-        if "keys" in data or data.get("v", 1) != 1:
+        if "keys" in data or not _is_version_one(data):
             raise _damaged("its key list is missing")
         return [], []
     if not isinstance(rows, list):
@@ -236,7 +250,10 @@ def _read_rows(
             else:
                 if "cipher" in row:
                     raise ValueError("locked key in an unlocked file")
-                private_key = base64.b64decode(row["private_key"], validate=True)
+                encoded = row["private_key"]
+                private_key = base64.b64decode(encoded, validate=True)
+                if base64.b64encode(private_key).decode("ascii") != encoded:
+                    raise ValueError("not canonical base64")
                 digest = row["private_key_sha256"]
                 if not isinstance(digest, str) or not hmac.compare_digest(
                     digest.lower(), _digest(private_key)
@@ -452,8 +469,8 @@ class KeyManager:
             raise FileNotFoundError(f"Identity {did} not found")
         try:
             with open(filename, "r") as f:
-                data = json.load(f)
-        except json.JSONDecodeError:
+                data = json.load(f, parse_constant=_refuse_constant)
+        except (json.JSONDecodeError, _NotJSON):
             raise _damaged("it is not valid JSON") from None
         if not isinstance(data, dict):
             raise _damaged("it is not a JSON object")
@@ -509,7 +526,8 @@ class KeyManager:
             if password:
                 raise WrongPasswordError(
                     f"the identity file for {did} is not locked, but a passphrase was given. "
-                    "It may have been replaced; check it before using it"
+                    "If it was saved without a passphrase, unset VOUCH_KEY_PASSPHRASE. Otherwise "
+                    "it may have been replaced; check it before using it"
                 )
             try:
                 private_key_jwk = data["private_key"]
@@ -594,6 +612,7 @@ class KeyManager:
           IdentityError: locked, wrong password, damaged, or busy.
           OSError: the keystore cannot be written.
         """
+        self._sweep_temporary_files(self._get_filename(did))
         identity = self.load_identity(did, password)
         if identity.key_for(MLDSA44) is not None:
             return identity
@@ -602,36 +621,35 @@ class KeyManager:
             if identity.key_for(MLDSA44) is not None:
                 return identity
             data = self._read_file(did)
-            if "keys" in data or data.get("v", 1) != 1:
+            if "keys" in data or not _is_version_one(data):
                 raise _damaged(
                     "it has a key list but no post-quantum key, so it was altered. "
                     "Restore it from a backup"
                 )
             identity.additional_keys.append(new_post_quantum_key())
             self.save_identity(identity, password)
+            logger.warning(
+                "Added a post-quantum key (#key-2) to the saved identity %s. Publish it in the "
+                "DID document before relying on post-quantum proofs.",
+                did,
+            )
             return self.load_identity(did, password)
 
-    def post_quantum_public_key(self, did: str) -> Optional[str]:
+    def post_quantum_public_key(self, did: str, password: Optional[str] = None) -> Optional[str]:
         """
         The identity's saved ML-DSA-44 public key (a Multikey), or None.
 
-        Public keys are stored in the clear, so this works for a locked identity
-        without its passphrase. For an unlocked identity the key is fully
-        checked; for a locked one the stated key is returned, which the
-        encryption binds to its private half.
+        The key is returned only after the identity has been fully read and
+        checked, so a locked identity needs its passphrase. Without it the
+        answer is None: a stated key that cannot be checked is never published.
+
+        Raises:
+          FileNotFoundError: no identity is saved for ``did``.
+          WrongPasswordError, IdentityDamagedError: as for load_identity.
         """
         try:
-            identity = self.load_identity(did, None)
+            identity = self.load_identity(did, password)
         except IdentityLockedError:
-            data = self._read_file(did)
-            for row in data.get("keys") or []:
-                if (
-                    isinstance(row, dict)
-                    and row.get("alg") == MLDSA44
-                    and row.get("id") == MLDSA44_KEY_ID
-                    and isinstance(row.get("public_key"), str)
-                ):
-                    return str(row["public_key"])
             return None
         key = identity.key_for(MLDSA44)
         return key.public_key if key else None

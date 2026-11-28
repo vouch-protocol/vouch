@@ -33,24 +33,36 @@ const (
 )
 
 // noSavedPQKey explains how to give a saved identity its post-quantum key. The
-// flag it names does not exist in releases that would replace the identity,
-// so an older `vouch` stops with an error instead of making a new identity.
+// flags it names do not exist in releases that would replace the identity, so
+// an older `vouch` stops with an error instead of making a new identity.
 const noSavedPQKey = "this identity has no saved post-quantum key. Upgrade the Python package " +
-	"(pip install -U vouch-protocol), then run `vouch init --domain <your domain> --add-post-quantum-key`: " +
+	"(pip install -U vouch-protocol), then run `vouch init --did <your DID> --add-post-quantum-key`: " +
 	"it keeps your key and adds the post-quantum one"
+
+// upgradeAdvice is noSavedPQKey with the identity's own DID filled in.
+func upgradeAdvice(did string) string {
+	if did == "" {
+		return noSavedPQKey
+	}
+	return "this identity has no saved post-quantum key. Upgrade the Python package " +
+		"(pip install -U vouch-protocol), then run `vouch init --did " + did + " --add-post-quantum-key`: " +
+		"it keeps your key and adds the post-quantum one"
+}
 
 // noPQKeyFor says what to do about a missing post-quantum key, by where the
 // signing key came from.
-func noPQKeyFor(source string) string {
+func noPQKeyFor(source, did string) string {
 	switch source {
 	case keyFromEnv:
 		return "--hybrid needs a post-quantum key, and " + seedEnv + " carries none. " +
 			"Use the identity `vouch init` saved instead, or pass its file with --key"
 	case keyFromFile:
-		return "--hybrid needs a post-quantum key, and this key file carries none. " +
-			"Pass an identity file from ~/.vouch/keys made by `vouch init` instead. " + noSavedPQKey
+		if did == "" {
+			return "--hybrid needs a post-quantum key, and this key file carries none. " +
+				"Pass an identity file from ~/.vouch/keys made by `vouch init` instead"
+		}
 	}
-	return noSavedPQKey
+	return upgradeAdvice(did)
 }
 
 // ---------------------------------------------------------------------------
@@ -330,7 +342,7 @@ func (h *handler) signCredential(w http.ResponseWriter, r *http.Request, req sig
 		return
 	}
 	if postQuantum && h.cfg.postQuantum == pqNone {
-		h.refuse(w, r, http.StatusConflict, noSavedPQKey)
+		h.refuse(w, r, http.StatusConflict, upgradeAdvice(h.cfg.did))
 		return
 	}
 	for _, field := range []string{"action", "target", "resource"} {

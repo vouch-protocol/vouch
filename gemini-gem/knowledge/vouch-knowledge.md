@@ -1799,7 +1799,8 @@ creates both, the Ed25519 key and the ML-DSA-44 key, and saves them together,
 so the same pair signs on every start and the `#key-2` you publish stays true.
 For an identity made before the second key was saved, upgrade the package
 (`pip install -U vouch-protocol`), then run
-`vouch init --domain <your domain> --add-post-quantum-key`. It keeps your
+`vouch init --domain <your domain> --add-post-quantum-key` (or
+`--did <your DID>` in place of `--domain`, for any identity). It keeps your
 existing key and adds the new one. The Python sidecar,
 `vouch sidecar --hybrid`, uses the same saved keys.
 

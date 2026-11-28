@@ -108,6 +108,18 @@ _NO_PQ_KEY_BY_SOURCE = {
     ),
 }
 
+
+def _no_pq_key_message(source: str, did: str, file_names_identity: bool) -> str:
+    """What to do about a missing post-quantum key, for this identity."""
+    if source == KEY_FROM_FILE and file_names_identity:
+        return (
+            f"--hybrid needs a post-quantum key, and this identity file carries none. Run "
+            f"`vouch init --did {did} --add-post-quantum-key` to add one, or start the "
+            f"sidecar with `--did {did}` instead of --key, which adds it"
+        )
+    return _NO_PQ_KEY_BY_SOURCE.get(source, _NO_SAVED_PQ_KEY)
+
+
 PROOF_CLASSICAL = "eddsa-jcs-2022"
 PROOF_HYBRID = "eddsa-jcs-2022+mldsa44-jcs-2024"
 
@@ -169,6 +181,8 @@ class ResolvedIdentity:
     mldsa44: Optional[Tuple[bytes, bytes]] = field(default=None, repr=False)
     # True when the post-quantum key was created and saved just now.
     added_post_quantum_key: bool = False
+    # True when a key file names its identity (an identity file, not a bare JWK).
+    file_names_identity: bool = False
 
 
 def _b64url_decode(value: str) -> bytes:
@@ -253,7 +267,11 @@ def _identity_from_key_file(path: str, did: Optional[str]) -> ResolvedIdentity:
         raise SidecarError(f"the key file is damaged: {e}") from None
     saved = KeyPair(private_jwk, "", chosen, rows).mldsa44_keypair()
     return ResolvedIdentity(
-        did=chosen, private_jwk=private_jwk, source=KEY_FROM_FILE, mldsa44=saved
+        did=chosen,
+        private_jwk=private_jwk,
+        source=KEY_FROM_FILE,
+        mldsa44=saved,
+        file_names_identity=bool(file_did),
     )
 
 
@@ -322,6 +340,10 @@ def _identity_from_keystore(
         except OSError as e:
             raise SidecarError(
                 f"cannot save the post-quantum key for {did}: {e.strerror or e}"
+            ) from None
+        except ImportError:
+            raise SidecarError(
+                "--hybrid needs the post-quantum package: pip install pqcrypto"
             ) from None
         added = True
     return ResolvedIdentity(
@@ -515,9 +537,13 @@ class Sidecar:
         if config.hybrid and config.post_quantum == PQ_NONE:
             raise SidecarError(_NO_SAVED_PQ_KEY)
         if config.post_quantum == PQ_SAVED or config.hybrid:
-            # Have the ML-DSA-44 key ready now, so a missing package stops
-            # startup instead of failing the first request.
+            # Have the ML-DSA-44 key ready now. With --hybrid, a missing
+            # package stops startup instead of failing every request.
             try:
+                if config.hybrid:
+                    from vouch import data_integrity_hybrid
+
+                    data_integrity_hybrid._import_pqcrypto()
                 self._pq_multikey = signer.public_key_mldsa44_multikey()
             except ImportError:
                 raise SidecarError(
@@ -933,7 +959,9 @@ def build_sidecar(args: argparse.Namespace, log_stream: Optional[TextIO] = None)
     else:
         post_quantum = PQ_NONE
     if args.hybrid and post_quantum == PQ_NONE:
-        raise SidecarError(_NO_PQ_KEY_BY_SOURCE.get(identity.source, _NO_SAVED_PQ_KEY))
+        raise SidecarError(
+            _no_pq_key_message(identity.source, identity.did, identity.file_names_identity)
+        )
     # The secrets have been read; drop them so nothing this process starts
     # later inherits them.
     for name in (SEED_ENV, PRIVATE_KEY_ENV, PASSPHRASE_ENV, TOKEN_ENV):

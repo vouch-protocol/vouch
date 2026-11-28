@@ -92,33 +92,45 @@ def _print_agent_quickstart(keys, file=None) -> None:
 _PQ_PACKAGE_MISSING = (
     "The post-quantum package (pqcrypto) is not installed, so no post-quantum key was "
     "made. Install it with `pip install pqcrypto`, then run "
-    "`vouch init --domain {domain} --add-post-quantum-key`."
+    "`vouch init --did {did} --add-post-quantum-key`."
 )
 
 
-def _keep_existing_identity(did: str, domain: str, args: argparse.Namespace) -> int:
-    """`vouch init` for a domain that already has an identity: keep its keys
-    and add the post-quantum key if it is missing."""
+def _keep_existing_identity(did: str, args: argparse.Namespace) -> int:
+    """`vouch init` for an identity that already exists: keep its keys and add
+    the post-quantum key if it is missing.
+
+    With --add-post-quantum-key the exit code says whether the identity ends up
+    with the key; a plain rerun of `vouch init` succeeds either way.
+    """
     km = KeyManager()
+    add_only = bool(getattr(args, "add_post_quantum_key", False))
+    if km.get_public_key(did) is None:
+        print(
+            f"❌ Error: {km._get_filename(did)} holds a different or damaged identity, so it "
+            "was left as it is.",
+            file=sys.stderr,
+        )
+        return 1
     print(f"An identity for {did} already exists. Its key is kept.")
-    passphrase = None
+    passphrase = os.environ.get("VOUCH_KEY_PASSPHRASE") or None
     try:
         try:
-            had_key = km.load_identity(did, None).key_for(MLDSA44) is not None
+            had_key = km.load_identity(did, passphrase).key_for(MLDSA44) is not None
         except IdentityLockedError:
             if getattr(args, "yes", False) or not sys.stdin.isatty():
                 print(
-                    "It is locked with a passphrase. Run `vouch init` in a terminal to add "
-                    "its post-quantum key."
+                    "It is locked with a passphrase. Run this in a terminal, or set "
+                    "VOUCH_KEY_PASSPHRASE, to add its post-quantum key."
                 )
-                return 0
+                return 1 if add_only else 0
             passphrase = getpass.getpass(f"Enter passphrase for {did}: ")
             had_key = km.load_identity(did, passphrase).key_for(MLDSA44) is not None
         if not had_key:
             km.ensure_post_quantum_key(did, passphrase)
     except ImportError:
-        print(_PQ_PACKAGE_MISSING.format(domain=domain), file=sys.stderr)
-        return 1
+        print(_PQ_PACKAGE_MISSING.format(did=did), file=sys.stderr)
+        return 1 if add_only else 0
     except Exception as e:
         print(f"❌ Error reading identity: {e}", file=sys.stderr)
         return 1
@@ -136,6 +148,8 @@ def cmd_init(args: argparse.Namespace) -> int:
         # Build DID
         if args.domain:
             domain = args.domain
+        elif getattr(args, "did", None):
+            domain = ""
         else:
             domain = "example.com"
             print(
@@ -146,6 +160,12 @@ def cmd_init(args: argparse.Namespace) -> int:
 
         did = f"did:web:{domain}"
         add_only = getattr(args, "add_post_quantum_key", False)
+        given_did = getattr(args, "did", None)
+        if given_did and not add_only:
+            print("❌ Error: --did goes with --add-post-quantum-key", file=sys.stderr)
+            return 1
+        if given_did:
+            did = given_did
         if add_only and args.env:
             print(
                 "❌ Error: --add-post-quantum-key works on a saved identity, not --env",
@@ -160,7 +180,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             km = KeyManager()
             path = km._get_filename(did)
             if km.get_public_key(did) is not None:
-                return _keep_existing_identity(did, domain, args)
+                return _keep_existing_identity(did, args)
             if os.path.exists(path):
                 print(
                     f"❌ Error: {path} already holds a different or damaged identity, so it was "
@@ -170,8 +190,8 @@ def cmd_init(args: argparse.Namespace) -> int:
                 return 1
             if add_only:
                 print(
-                    f"❌ Error: no identity is saved for {did}. Run `vouch init --domain {domain}` "
-                    "to create one.",
+                    f"❌ Error: no identity is saved for {did}, so there is nothing to add a "
+                    "key to.",
                     file=sys.stderr,
                 )
                 return 1
@@ -211,7 +231,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             km.create_identity(keys, passphrase if passphrase else None)
         except IdentityExistsError:
             # Another program created it a moment ago. Keep that one.
-            return _keep_existing_identity(did, domain, args)
+            return _keep_existing_identity(did, args)
         except Exception as e:
             print(f"❌ Error saving identity: {e}", file=sys.stderr)
             return 1
@@ -222,7 +242,7 @@ def cmd_init(args: argparse.Namespace) -> int:
         if not passphrase:
             print("⚠️  Warning: Key saved in PLAIN TEXT. Use a passphrase for security.")
         if pq_missing:
-            print(_PQ_PACKAGE_MISSING.format(domain=domain))
+            print(_PQ_PACKAGE_MISSING.format(did=did))
 
         print("\n--- PUBLIC KEY (Put this in vouch.json) ---")
         print(keys.public_key_jwk)
@@ -1999,7 +2019,11 @@ def main(argv: "list[str] | None" = None) -> int:
         "--add-post-quantum-key",
         dest="add_post_quantum_key",
         action="store_true",
-        help="Add the post-quantum key to the identity already saved for --domain, and nothing else",
+        help="Add the post-quantum key to the identity already saved for --domain (or --did), and nothing else",
+    )
+    p_init.add_argument(
+        "--did",
+        help="With --add-post-quantum-key: the saved identity to add the key to, for any DID method",
     )
     p_init.add_argument(
         "--yes",

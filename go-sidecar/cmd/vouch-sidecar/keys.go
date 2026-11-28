@@ -312,10 +312,8 @@ func damaged(what string) error {
 func postQuantumKey(top map[string]json.RawMessage) (*mldsa44.PrivateKey, error) {
 	rawRows, present := top["keys"]
 	if !present {
-		if version, ok := field(top, "v"); ok {
-			if number, isNumber := version.(float64); !isNumber || number != 1 {
-				return nil, damaged("its key list is missing")
-			}
+		if version, ok := top["v"]; ok && strings.TrimSpace(string(version)) != "1" {
+			return nil, damaged("its key list is missing")
 		}
 		return nil, nil
 	}

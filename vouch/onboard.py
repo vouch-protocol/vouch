@@ -330,7 +330,7 @@ def _saved_post_quantum_public_key(km: KeyManager, did: str) -> Optional[str]:
       IdentityDamagedError: the identity file is damaged.
     """
     try:
-        return km.post_quantum_public_key(did)
+        return km.post_quantum_public_key(did, os.environ.get("VOUCH_KEY_PASSPHRASE") or None)
     except FileNotFoundError:
         return None
 
@@ -373,8 +373,15 @@ def step_identity(state: OnboardState, io: WizardIO) -> None:
                 km.create_identity(kp, password=None)
                 created = True
             except IdentityExistsError:
-                # Another program created it a moment ago. Use that one.
-                state.public_key_jwk = km.get_public_key(state.did) or kp.public_key_jwk
+                # Another program created it a moment ago. Use that one, if it
+                # really is this identity.
+                existing = km.get_public_key(state.did)
+                if existing is None:
+                    raise ValueError(
+                        f"{km._get_filename(state.did)} holds a different identity, so it was "
+                        "left as it is."
+                    ) from None
+                state.public_key_jwk = existing
                 new_post_quantum_key = None
                 io.out("  Using the identity already in your keystore for this domain")
 
@@ -397,6 +404,11 @@ def step_identity(state: OnboardState, io: WizardIO) -> None:
         )
         did_doc["assertionMethod"].append(method)
         did_doc["@context"].append("https://w3id.org/security/multikey/v1")
+    elif any(e["did"] == state.did and e.get("encrypted") for e in km.list_identities()):
+        io.out(
+            "  The post-quantum key (#key-2) is left out: the identity is locked. Set "
+            "VOUCH_KEY_PASSPHRASE and run the wizard again to list it"
+        )
     out_path = str(Path(state.out_dir) / "did.json")
     io.write(out_path, json.dumps(did_doc, indent=2))
 

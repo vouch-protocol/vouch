@@ -31,6 +31,7 @@ credentials produced here.
 from __future__ import annotations
 
 import functools
+import glob
 import inspect
 import json
 import logging
@@ -156,6 +157,21 @@ def _build_default_signer() -> Optional[Signer]:
     #    (an encrypted identity needs a passphrase we cannot prompt for here).
     damaged = False
     km = KeyManager()
+    # A file that does not even parse (for example, cut short) is a damaged
+    # identity too, which list_identities would pass over in silence.
+    for path in glob.glob(os.path.join(km.key_dir, "*.json")):
+        try:
+            with open(path, "r") as f:
+                json.load(f)
+        except (OSError, ValueError):
+            logger.error(
+                "Vouch autosign: the identity file %s cannot be read. Restore it from a "
+                "backup; tool calls are not signed until then.",
+                path,
+            )
+            damaged = True
+    if damaged:
+        return None
     for entry in km.list_identities():
         if entry.get("encrypted"):
             continue
@@ -170,8 +186,7 @@ def _build_default_signer() -> Optional[Signer]:
                 entry.get("file"),
                 e,
             )
-            damaged = True
-            continue
+            return None
         except Exception as e:  # pragma: no cover - defensive
             logger.debug("Keystore lookup failed: %s", e)
             continue
@@ -182,8 +197,6 @@ def _build_default_signer() -> Optional[Signer]:
             mldsa44_keypair=kp.mldsa44_keypair(),
             mldsa44_provider=_saved_post_quantum_provider(km, kp.did),
         )
-    if damaged:
-        return None
 
     # 4. Opt-in ephemeral identity.
     if _truthy(os.getenv("VOUCH_AUTO_IDENTITY")):

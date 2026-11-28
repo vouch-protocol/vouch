@@ -347,7 +347,7 @@ func TestStartupUsesTheSavedPostQuantumKey(t *testing.T) {
 }
 
 func TestStartupMessagesNameTheKeySource(t *testing.T) {
-	cases := map[string]string{keyFromEnv: seedEnv, keyFromFile: "key file", keyFromKeystore: "--add-post-quantum-key"}
+	cases := map[string]string{keyFromEnv: seedEnv, keyFromFile: "--did " + testDID, keyFromKeystore: "--did " + testDID + " --add-post-quantum-key"}
 	for source, want := range cases {
 		_, _, err := newSigner(identity{did: testDID, seed: seedOf(6), source: source}, 300, true)
 		if err == nil || !strings.Contains(err.Error(), want) {
@@ -359,5 +359,18 @@ func TestStartupMessagesNameTheKeySource(t *testing.T) {
 	}
 	if _, postQuantum, err := newSigner(identity{did: testDID, seed: seedOf(6), source: keyFromKeystore}, 300, false); err != nil || postQuantum != pqNone {
 		t.Fatalf("no --hybrid: %q %v", postQuantum, err)
+	}
+}
+
+func TestVersionMustBeExactlyOne(t *testing.T) {
+	for _, version := range []string{"2", "1.0", "true", `"1"`, "null"} {
+		raw := []byte(`{"v": ` + version + `, "id": "` + testDID + `", "private_key": ` + string(mustJSON(t, string(mustJSON(t, privateJWK(t, seedOf(8)))))) + `}`)
+		if _, _, _, err := identityFromKeyFile(raw); err == nil {
+			t.Fatalf("v=%s with no key list: accepted", version)
+		}
+	}
+	raw := []byte(`{"v": 1, "id": "` + testDID + `", "private_key": ` + string(mustJSON(t, string(mustJSON(t, privateJWK(t, seedOf(8)))))) + `}`)
+	if _, _, pq, err := identityFromKeyFile(raw); err != nil || pq != nil {
+		t.Fatalf("v=1 one-key file: %v", err)
 	}
 }
