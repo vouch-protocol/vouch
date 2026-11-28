@@ -1380,6 +1380,9 @@ go install github.com/vouch-protocol/vouch/go-sidecar/cmd/vouch-sidecar@latest
 .\vouch-sidecar.exe --did did:web:agent.example.com --port 8877 --dev
 ```
 
+After `vouch init`, plain `vouch-sidecar` signs as your saved identity. `--dev`
+is for trying it out without one.
+
 See `reference/go-sidecar.md` for the full HTTP API and deployment patterns.
 
 #### Python (for development)
@@ -1398,6 +1401,29 @@ it has one. `vouch-bridge --did did:web:agent.example.com --port 8877`
 
 Same endpoint shape as the Go sidecar. Convenient when you don't want
 to install the Go toolchain.
+
+### How long a credential lasts
+
+The caller decides, by sending `validSeconds` with the request:
+
+```bash
+curl -X POST http://localhost:8877/sign \
+  -H 'Content-Type: application/json' \
+  -d '{"intent": {"action": "read", "target": "reports", "resource": "https://api.example.com/reports/1"}, "validSeconds": 120}'
+```
+
+The sidecar adds two settings of its own. `--default-validity` (5m) is what
+a caller gets when it sends no `validSeconds`. `--max-validity` (1h) is the
+longest a caller may ask for. Set either when you start the sidecar, or
+with `VOUCH_SIDECAR_DEFAULT_VALIDITY` and `VOUCH_SIDECAR_MAX_VALIDITY`:
+
+```bash
+vouch sidecar --default-validity 10m --max-validity 2h
+```
+
+Both sidecars work the same way. From the command line,
+`vouch sign "approve order 42" --valid-for 2h` sets the validity of a
+single credential.
 
 ### Deployment patterns
 
@@ -1757,13 +1783,13 @@ Post-quantum signing is built into the sidecar:
 **macOS / Linux**
 
 ```bash
-./vouch-sidecar --did did:web:agent.example.com --hybrid --port 8877
+./vouch-sidecar --did did:web:agent.example.com --hybrid --port 8877 --dev
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
-.\vouch-sidecar.exe --did did:web:agent.example.com --hybrid --port 8877
+.\vouch-sidecar.exe --did did:web:agent.example.com --hybrid --port 8877 --dev
 ```
 
 All `/sign` requests now produce credentials carrying the proof set.

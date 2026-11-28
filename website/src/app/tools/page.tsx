@@ -46,6 +46,11 @@ const GROUPS: Group[] = [
                 start: 'vouch sign "hello"',
             },
             {
+                name: 'vouch sidecar',
+                blurb: 'Keep the signing key in a separate local process. Your agent asks it to sign each action and never holds the key.',
+                start: 'vouch sidecar',
+            },
+            {
                 name: 'vouch media',
                 blurb: 'Sign images so their origin can be verified, with C2PA support.',
                 start: 'vouch media sign photo.jpg',

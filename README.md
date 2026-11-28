@@ -85,6 +85,7 @@ Vouch is not one tool, it is a set of them. Here is the whole map.
 ### On the command line
 - **`vouch init`** generate an agent identity (a DID and keypair).
 - **`vouch sign` / `vouch verify`** sign a payload and verify it.
+- **`vouch sidecar`** run the signing sidecar, which holds your agent's key so the model never has it. The caller chooses how long each credential stays valid.
 - **`vouch git`** sign every git commit cryptographically, set up in one command, with a verified badge for your README.
 - **`vouch run`** start an agent inside a file-access fence on Linux: `vouch run -- python agent.py`. The kernel lets it reach its workspace and the paths you list, and keeps your keys out of its reach. See [Fenced runs](docs/fenced-run.md).
 - **`vouch scan`** find leaked Vouch key material in your code before it ships (a private key in a file, a seed in an env var, a DID document that accidentally carries a private key).

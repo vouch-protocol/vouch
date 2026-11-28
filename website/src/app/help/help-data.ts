@@ -1806,14 +1806,28 @@ Sign a message and print a Vouch-Token. With no key flags it loads your stored i
 - \`--key <JWK>\` private key as JWK JSON
 - \`--did <DID>\` agent DID
 - \`--header\` prefix the output with \`Vouch-Token: \`
+- \`--valid-for <DURATION>\` how long the credential stays valid, such as 30s, 10m or 2h (default 5m)
 
 ### vouch verify <token>
 
-Verify a Vouch-Token. With a public key it checks the signature; without one it validates structure only and warns the signature was not verified.
+Verify a Vouch-Token. The signature is always checked: against \`--key\` when you pass one, otherwise against the matching identity in your keystore, otherwise against the key published at the issuer's DID. A credential whose signature cannot be checked is reported invalid.
 
 - \`<token>\` the token to verify (positional)
 - \`--key <JWK>\` public key as JWK JSON
 - \`--json\` output as JSON
+
+### vouch sidecar
+
+Run the signing sidecar: a small local server that holds your agent's key and signs what the agent is about to do, so the model never has the key. With no flags it signs as the identity \`vouch init\` saved, asking for the passphrase if it has one.
+
+- \`--did <DID>\` which identity to sign as, when the keystore holds more than one
+- \`--allowlist <FILE>\` only sign the actions this file names, such as the \`vouch-allowlist.json\` from \`vouch onboard\`
+- \`--default-validity <DURATION>\` how long a credential lasts when the caller does not say (default 5m)
+- \`--max-validity <DURATION>\` the longest a caller may ask for (default 1h)
+- \`--hybrid\` sign with the post-quantum proof set
+- \`--host <ADDRESS>\` and \`--port <PORT>\` where to listen (default 127.0.0.1:8877). Listening beyond this machine needs \`VOUCH_SIDECAR_TOKEN\`
+- \`--dev\` use a throwaway key for local testing
+- \`--verbose\` log every request
 
 ## Git
 
