@@ -324,13 +324,15 @@ def _ed25519_did_document(did: str, public_key_jwk: str) -> Dict[str, Any]:
 
 def _saved_post_quantum_public_key(km: KeyManager, did: str) -> Optional[str]:
     """The identity's saved ML-DSA-44 public key (a Multikey), or None when the
-    identity has none. A locked identity's key is read without its passphrase.
+    identity has none, or is locked and VOUCH_KEY_PASSPHRASE is not set.
 
     Raises:
       IdentityDamagedError: the identity file is damaged.
     """
     try:
-        return km.post_quantum_public_key(did, os.environ.get("VOUCH_KEY_PASSPHRASE") or None)
+        # A passphrase in the environment is for a locked identity only.
+        passphrase = os.environ.get("VOUCH_KEY_PASSPHRASE") if km.is_locked(did) else None
+        return km.post_quantum_public_key(did, passphrase or None)
     except FileNotFoundError:
         return None
 

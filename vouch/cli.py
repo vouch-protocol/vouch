@@ -113,7 +113,8 @@ def _keep_existing_identity(did: str, args: argparse.Namespace) -> int:
         )
         return 1
     print(f"An identity for {did} already exists. Its key is kept.")
-    passphrase = os.environ.get("VOUCH_KEY_PASSPHRASE") or None
+    # A passphrase in the environment is for a locked identity only.
+    passphrase = (os.environ.get("VOUCH_KEY_PASSPHRASE") or None) if km.is_locked(did) else None
     try:
         try:
             had_key = km.load_identity(did, passphrase).key_for(MLDSA44) is not None
@@ -161,6 +162,9 @@ def cmd_init(args: argparse.Namespace) -> int:
         did = f"did:web:{domain}"
         add_only = getattr(args, "add_post_quantum_key", False)
         given_did = getattr(args, "did", None)
+        if given_did and args.domain:
+            print("❌ Error: give either --domain or --did, not both", file=sys.stderr)
+            return 1
         if given_did and not add_only:
             print("❌ Error: --did goes with --add-post-quantum-key", file=sys.stderr)
             return 1

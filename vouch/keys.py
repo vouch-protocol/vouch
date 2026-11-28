@@ -635,6 +635,13 @@ class KeyManager:
             )
             return self.load_identity(did, password)
 
+    def is_locked(self, did: str) -> bool:
+        """True when the identity file for ``did`` is locked with a passphrase."""
+        try:
+            return bool(self._read_file(did).get("encrypted"))
+        except (FileNotFoundError, IdentityError):
+            return False
+
     def post_quantum_public_key(self, did: str, password: Optional[str] = None) -> Optional[str]:
         """
         The identity's saved ML-DSA-44 public key (a Multikey), or None.

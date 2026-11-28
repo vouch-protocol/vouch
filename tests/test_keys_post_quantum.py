@@ -1116,3 +1116,62 @@ def test_upgrade_call_sweeps_old_temporary_files(km):
     os.utime(old, (1, 1))
     km.ensure_post_quantum_key(DID)
     assert not os.path.exists(old)
+
+
+# ---------------------------------------------------------------------------
+# Fourth review round
+# ---------------------------------------------------------------------------
+
+
+def test_autosign_without_a_writable_home_still_falls_back(monkeypatch, tmp_path):
+    import vouch.autosign as autosign
+
+    def unusable(self, key_dir=None):
+        raise PermissionError(13, "Permission denied", "/nonexistent")
+
+    monkeypatch.setattr(KeyManager, "__init__", unusable)
+    monkeypatch.setenv("VOUCH_AUTO_IDENTITY", "1")
+    monkeypatch.delenv("VOUCH_PRIVATE_KEY", raising=False)
+    monkeypatch.delenv("VOUCH_DID", raising=False)
+    autosign.reset_default_signer()
+    try:
+        signer = autosign.resolve_signer()
+        assert signer is not None and signer.get_did() == "did:web:ephemeral.agent.local"
+    finally:
+        autosign.reset_default_signer()
+
+
+def test_an_exported_passphrase_does_not_break_unlocked_identities(
+    temp_keystore, tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setenv("VOUCH_KEY_PASSPHRASE", "for-another-identity")
+
+    rc, out = _quick_onboard(tmp_path, monkeypatch)
+    assert rc == 0
+    with open(out / "did.json") as f:
+        ids = [m["id"] for m in json.load(f)["verificationMethod"]]
+    assert ids == [f"{DID}#key-1", f"{DID}#key-2"]
+
+    assert init() == 0  # a plain rerun on the unlocked identity
+
+
+def test_vouch_init_refuses_both_did_and_domain(temp_keystore):
+    from vouch.root_of_trust import generate_did_key_identity
+
+    keys = generate_did_key_identity()
+    KeyManager().save_identity(keys)
+    args = types.SimpleNamespace(
+        domain="agent.example.com", did=keys.did, env=False, yes=True, add_post_quantum_key=True
+    )
+    assert cli.cmd_init(args) == 1
+    assert pq(KeyManager().load_identity(keys.did)) is None
+
+
+def test_sidecar_key_file_refuses_nan(temp_keystore, tmp_path):
+    path = tmp_path / "identity.json"
+    keys = generate_identity("agent.example.com")
+    path.write_text(
+        '{"id": "%s", "v": NaN, "private_key": %s}' % (DID, json.dumps(keys.private_key_jwk))
+    )
+    with pytest.raises(sidecar.SidecarError, match="not valid JSON"):
+        sidecar.build_sidecar(parse("--key", str(path)))

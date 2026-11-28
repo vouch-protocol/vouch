@@ -51,13 +51,13 @@ func upgradeAdvice(did string) string {
 
 // noPQKeyFor says what to do about a missing post-quantum key, by where the
 // signing key came from.
-func noPQKeyFor(source, did string) string {
+func noPQKeyFor(source, did string, fileNamesIdentity bool) string {
 	switch source {
 	case keyFromEnv:
 		return "--hybrid needs a post-quantum key, and " + seedEnv + " carries none. " +
 			"Use the identity `vouch init` saved instead, or pass its file with --key"
 	case keyFromFile:
-		if did == "" {
+		if !fileNamesIdentity {
 			return "--hybrid needs a post-quantum key, and this key file carries none. " +
 				"Pass an identity file from ~/.vouch/keys made by `vouch init` instead"
 		}

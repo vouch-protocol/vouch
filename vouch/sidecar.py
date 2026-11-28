@@ -237,12 +237,15 @@ def _checked_private_jwk(raw: Any) -> str:
 
 
 def _identity_from_key_file(path: str, did: Optional[str]) -> ResolvedIdentity:
+    def refuse(name: str) -> Any:
+        raise ValueError(name)
+
     try:
         with open(path, "r") as f:
-            data = json.load(f)
+            data = json.load(f, parse_constant=refuse)
     except OSError as e:
         raise SidecarError(f"cannot read the key file: {e.strerror or e}") from None
-    except json.JSONDecodeError:
+    except ValueError:
         raise SidecarError("the key file is not valid JSON") from None
     if not isinstance(data, dict):
         raise SidecarError("the key file is not valid JSON")

@@ -220,7 +220,7 @@ func newSigner(id identity, defaultSeconds int, hybrid bool) (*signer.Signer, st
 		postQuantum = pqPerRun
 	}
 	if hybrid && postQuantum == pqNone {
-		return nil, "", errors.New(noPQKeyFor(id.source, id.did))
+		return nil, "", errors.New(noPQKeyFor(id.source, id.did, id.fileNamesIdentity))
 	}
 	s, err := signer.New(signer.Config{
 		DID:                  id.did,

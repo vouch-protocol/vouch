@@ -347,11 +347,19 @@ func TestStartupUsesTheSavedPostQuantumKey(t *testing.T) {
 }
 
 func TestStartupMessagesNameTheKeySource(t *testing.T) {
-	cases := map[string]string{keyFromEnv: seedEnv, keyFromFile: "--did " + testDID, keyFromKeystore: "--did " + testDID + " --add-post-quantum-key"}
-	for source, want := range cases {
-		_, _, err := newSigner(identity{did: testDID, seed: seedOf(6), source: source}, 300, true)
-		if err == nil || !strings.Contains(err.Error(), want) {
-			t.Fatalf("%s: %v", source, err)
+	cases := []struct {
+		id   identity
+		want string
+	}{
+		{identity{did: testDID, seed: seedOf(6), source: keyFromEnv}, seedEnv},
+		{identity{did: testDID, seed: seedOf(6), source: keyFromFile}, "Pass an identity file from ~/.vouch/keys"},
+		{identity{did: testDID, seed: seedOf(6), source: keyFromFile, fileNamesIdentity: true}, "--did " + testDID + " --add-post-quantum-key"},
+		{identity{did: testDID, seed: seedOf(6), source: keyFromKeystore}, "--did " + testDID + " --add-post-quantum-key"},
+	}
+	for _, c := range cases {
+		_, _, err := newSigner(c.id, 300, true)
+		if err == nil || !strings.Contains(err.Error(), c.want) {
+			t.Fatalf("%s (names identity %v): %v", c.id.source, c.id.fileNamesIdentity, err)
 		}
 	}
 	if _, postQuantum, err := newSigner(identity{did: testDID, seed: seedOf(6), source: keyEphemeral}, 300, true); err != nil || postQuantum != pqPerRun {
@@ -372,5 +380,23 @@ func TestVersionMustBeExactlyOne(t *testing.T) {
 	raw := []byte(`{"v": 1, "id": "` + testDID + `", "private_key": ` + string(mustJSON(t, string(mustJSON(t, privateJWK(t, seedOf(8)))))) + `}`)
 	if _, _, pq, err := identityFromKeyFile(raw); err != nil || pq != nil {
 		t.Fatalf("v=1 one-key file: %v", err)
+	}
+}
+
+func TestBareJWKKeyFileIsNotNamedAnIdentity(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "agent.jwk")
+	if err := os.WriteFile(path, mustJSON(t, privateJWK(t, seedOf(7))), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	id, err := resolveIdentity(keyOptions{keyPath: path, did: testDID})
+	if err != nil || id.fileNamesIdentity {
+		t.Fatalf("bare JWK: names identity=%v err=%v", id.fileNamesIdentity, err)
+	}
+	named := filepath.Join(t.TempDir(), "identity.json")
+	if err := os.WriteFile(named, identityFile(t, testDID, seedOf(7)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if id, err := resolveIdentity(keyOptions{keyPath: named}); err != nil || !id.fileNamesIdentity {
+		t.Fatalf("identity file: names identity=%v err=%v", id.fileNamesIdentity, err)
 	}
 }

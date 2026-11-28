@@ -37,6 +37,10 @@ type identity struct {
 	// mldsa44 is the identity's saved post-quantum key, from the "#key-2" row
 	// of its identity file. nil when the key source carries none.
 	mldsa44 *mldsa44.PrivateKey
+
+	// fileNamesIdentity is true when a --key file names its own DID (an
+	// identity file from the keystore), false for a bare JWK.
+	fileNamesIdentity bool
 }
 
 // keyOptions is everything that can say which identity to use.
@@ -74,7 +78,7 @@ func resolveIdentity(o keyOptions) (identity, error) {
 		if err != nil {
 			return identity{}, err
 		}
-		return identity{did: did, seed: seed, source: keyFromFile, mldsa44: pq}, nil
+		return identity{did: did, seed: seed, source: keyFromFile, mldsa44: pq, fileNamesIdentity: fileDID != ""}, nil
 
 	case o.seedHex != "":
 		if o.did == "" {
