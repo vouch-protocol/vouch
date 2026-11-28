@@ -9,12 +9,15 @@ import os
 import re
 import json
 import time
+import hmac
+import hashlib
+import contextlib
 import base64
 import glob
 import logging
 import secrets
 from dataclasses import dataclass, asdict, field
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any, Iterator, Tuple
 
 from jwcrypto import jwk
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
@@ -60,6 +63,9 @@ class KeyPair:
     public_key_jwk: str
     did: Optional[str] = None
     additional_keys: List[StoredKey] = field(default_factory=list)
+    # Rows of key types this release does not know, kept so a save does not
+    # drop them.
+    other_keys: List[Dict[str, Any]] = field(default_factory=list, repr=False)
 
     def key_for(self, alg: str) -> Optional[StoredKey]:
         """Return this identity's key for ``alg``, or None if it has none."""
@@ -91,12 +97,50 @@ def new_post_quantum_key() -> StoredKey:
     )
 
 
+class IdentityError(ValueError):
+    """A saved identity cannot be used as it is."""
+
+
+class IdentityLockedError(IdentityError):
+    """The identity is locked with a passphrase and none was given."""
+
+
+class WrongPasswordError(IdentityError):
+    """The passphrase does not open the identity."""
+
+
+class IdentityDamagedError(IdentityError):
+    """The identity file was altered or is broken. Nothing is replaced on its own."""
+
+
+class IdentityBusyError(IdentityError):
+    """Another program is changing the identity file right now."""
+
+
+class IdentityExistsError(IdentityError):
+    """An identity file is already saved under this name."""
+
+
+def _pqcrypto_available() -> bool:
+    try:
+        from . import data_integrity_hybrid
+
+        data_integrity_hybrid._import_pqcrypto()
+        return True
+    except ImportError:
+        return False
+
+
 def _check_stored_key(key: StoredKey) -> None:
     """Check that a saved key is whole and that its two halves belong together.
 
+    The halves are checked by signing a probe with the private key and
+    verifying it with the public key. That needs the post-quantum package; when
+    it is missing the sizes and the Multikey are still checked.
+
     Raises:
-      ValueError: the key is the wrong size, or its public half does not
-        verify what its private half signs.
+      IdentityDamagedError: the key is the wrong size, or its public half does
+        not verify what its private half signs.
     """
     from . import data_integrity_hybrid, multikey
 
@@ -105,19 +149,21 @@ def _check_stored_key(key: StoredKey) -> None:
     try:
         alg, public = multikey.decode(key.public_key)
     except ValueError:
-        raise ValueError(f"saved {key.alg} public key is not a Multikey") from None
+        raise IdentityDamagedError(f"saved {key.alg} public key is not a Multikey") from None
     if alg != MLDSA44 or len(public) != MLDSA44_PUBLIC_KEY_SIZE:
-        raise ValueError(f"saved {key.alg} public key is not an {MLDSA44} key")
+        raise IdentityDamagedError(f"saved {key.alg} public key is not an {MLDSA44} key")
     if len(key.private_key) != MLDSA44_SECRET_KEY_SIZE:
-        raise ValueError(f"saved {key.alg} private key is the wrong size")
+        raise IdentityDamagedError(f"saved {key.alg} private key is the wrong size")
+    if not _pqcrypto_available():
+        return
     ml_dsa_44 = data_integrity_hybrid._import_pqcrypto()
     probe = b"vouch-protocol key check"
     try:
         signature = ml_dsa_44.sign(key.private_key, probe)
     except Exception:
-        raise ValueError(f"saved {key.alg} private key is damaged") from None
+        raise IdentityDamagedError(f"saved {key.alg} private key is damaged") from None
     if not data_integrity_hybrid._mldsa44_verify(ml_dsa_44, public, probe, signature):
-        raise ValueError(f"saved {key.alg} public key does not match its private key")
+        raise IdentityDamagedError(f"saved {key.alg} public key does not match its private key")
 
 
 def _row_binding(did: str, key_id: str, alg: str, public_key: str) -> bytes:
@@ -128,6 +174,105 @@ def _row_binding(did: str, key_id: str, alg: str, public_key: str) -> bytes:
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
+
+
+def _digest(private_key: bytes) -> str:
+    """The check value stored beside an unlocked private key, so damage to
+    any of its bytes is noticed when it is read back."""
+    return hashlib.sha256(private_key).hexdigest()
+
+
+def _damaged(what: str) -> IdentityDamagedError:
+    return IdentityDamagedError(f"identity file is damaged: {what}")
+
+
+def _read_rows(
+    data: Dict[str, Any], cipher: Optional[ChaCha20Poly1305]
+) -> Tuple[List[StoredKey], List[Dict[str, Any]]]:
+    """Read the further keys of an identity file and check each one.
+
+    Returns the keys this release knows, and the rows of key types it does not
+    know, unchanged, so a later save carries them through. A row in the
+    post-quantum slot, or one that names the post-quantum algorithm, must be
+    exactly that key: anything else in it is damage, never an unknown key.
+
+    Raises:
+      IdentityDamagedError: the list or a known row is malformed or altered.
+    """
+    rows = data.get("keys")
+    if rows is None:
+        if "keys" in data or data.get("v", 1) != 1:
+            raise _damaged("its key list is missing")
+        return [], []
+    if not isinstance(rows, list):
+        raise _damaged("its key list is not a list")
+
+    loaded: List[StoredKey] = []
+    unknown: List[Dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise _damaged("a key entry is not an object")
+        alg, key_id, public_key = row.get("alg"), row.get("id"), row.get("public_key")
+        if alg != MLDSA44 and key_id != MLDSA44_KEY_ID:
+            # A key type this release does not know. Keep it as it is.
+            unknown.append(row)
+            continue
+        if alg != MLDSA44 or key_id != MLDSA44_KEY_ID or not isinstance(public_key, str):
+            raise _damaged(f"its {MLDSA44} entry is malformed")
+        if loaded:
+            raise _damaged(f"it holds two {MLDSA44} keys")
+        try:
+            if cipher is not None:
+                # A locked file keeps every private key locked: a row that
+                # also carries one in the clear has been altered.
+                if "private_key" in row or "private_key_sha256" in row:
+                    raise ValueError("unlocked key in a locked file")
+                sealed = row["cipher"]
+                private_key = cipher.decrypt(
+                    base64.b64decode(sealed["nonce"], validate=True),
+                    base64.b64decode(sealed["ciphertext"], validate=True),
+                    _row_binding(data["id"], key_id, alg, public_key),
+                )
+            else:
+                if "cipher" in row:
+                    raise ValueError("locked key in an unlocked file")
+                private_key = base64.b64decode(row["private_key"], validate=True)
+                digest = row["private_key_sha256"]
+                if not isinstance(digest, str) or not hmac.compare_digest(
+                    digest.lower(), _digest(private_key)
+                ):
+                    raise ValueError("check value does not match")
+        except Exception:
+            raise _damaged(f"its {MLDSA44} key cannot be read") from None
+        key = StoredKey(id=key_id, alg=alg, public_key=public_key, private_key=private_key)
+        _check_stored_key(key)
+        loaded.append(key)
+    return loaded, unknown
+
+
+def _try_lock(fd: int) -> None:
+    """Take an exclusive lock on an open file without waiting. The operating
+    system drops it when the holder exits, so a stopped program never leaves
+    the identity locked."""
+    if os.name == "nt":  # pragma: no cover - exercised on Windows only
+        import msvcrt
+
+        msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _unlock(fd: int) -> None:
+    if os.name == "nt":  # pragma: no cover - exercised on Windows only
+        import msvcrt
+
+        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(fd, fcntl.LOCK_UN)
 
 
 class KeyManager:
@@ -171,6 +316,7 @@ class KeyManager:
         if not identity.did:
             raise ValueError("Cannot save identity without a DID")
         rows = list(identity.additional_keys)
+        others = list(identity.other_keys)
         if len({row.alg for row in rows}) != len(rows) or len({row.id for row in rows}) != len(
             rows
         ):
@@ -181,7 +327,7 @@ class KeyManager:
         filename = self._get_filename(identity.did)
 
         data: Dict[str, Any] = {
-            "v": 2 if rows else 1,
+            "v": 2 if rows or others else 1,
             "id": identity.did,
             "algo": "Ed25519",
             "public_key": identity.public_key_jwk,
@@ -248,8 +394,8 @@ class KeyManager:
                         },
                     }
                 )
-            if encrypted_rows:
-                data["keys"] = encrypted_rows
+            if encrypted_rows or others:
+                data["keys"] = encrypted_rows + others
         else:
             # Plaintext storage: discouraged. The private key sits unencrypted
             # on disk; prefer passing a password.
@@ -259,17 +405,19 @@ class KeyManager:
                 identity.did,
             )
             data["private_key"] = identity.private_key_jwk
-            if rows:
+            if rows or others:
                 data["keys"] = [
                     {
                         "id": row.id,
                         "alg": row.alg,
                         "public_key": row.public_key,
                         "private_key": base64.b64encode(row.private_key).decode("utf-8"),
+                        "private_key_sha256": _digest(row.private_key),
                     }
                     for row in rows
-                ]
+                ] + others
 
+        self._sweep_temporary_files(filename)
         # Write to a temporary file created with 0o600, so there is no window
         # where the keys are world/group-readable, then move it into place.
         temporary = f"{filename}.{os.getpid()}.{secrets.token_hex(4)}.tmp"
@@ -286,26 +434,49 @@ class KeyManager:
             raise
         os.chmod(filename, 0o600)
 
+    @staticmethod
+    def _sweep_temporary_files(filename: str) -> None:
+        """Remove temporary files a stopped save left behind. They hold private
+        keys, so they are not left lying around. A save takes milliseconds,
+        so a temporary file older than a minute belongs to no live save."""
+        for leftover in glob.glob(glob.escape(filename) + ".*.tmp"):
+            try:
+                if time.time() - os.path.getmtime(leftover) > 60:
+                    os.remove(leftover)
+            except OSError:
+                continue
+
+    def _read_file(self, did: str) -> Dict[str, Any]:
+        filename = self._get_filename(did)
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"Identity {did} not found")
+        try:
+            with open(filename, "r") as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            raise _damaged("it is not valid JSON") from None
+        if not isinstance(data, dict):
+            raise _damaged("it is not a JSON object")
+        return data
+
     def load_identity(self, did: str, password: Optional[str] = None) -> KeyPair:
         """
         Load identity from disk. Decrypts if encrypted.
 
         Raises:
           FileNotFoundError: no identity is saved for ``did``.
-          ValueError: a password is needed or wrong, or a saved key is damaged.
-            A damaged key is never replaced with a new one silently.
+          IdentityLockedError: the identity is locked and no password was given.
+          WrongPasswordError: the password does not open it, or a password was
+            given for a file that is not locked (it may have been replaced).
+          IdentityDamagedError: the file or a saved key is damaged. A damaged
+            key is never replaced with a new one on its own.
         """
-        filename = self._get_filename(did)
-        if not os.path.exists(filename):
-            raise FileNotFoundError(f"Identity {did} not found")
-
-        with open(filename, "r") as f:
-            data = json.load(f)
+        data = self._read_file(did)
 
         cipher: Optional[ChaCha20Poly1305] = None
         if data.get("encrypted"):
             if not password:
-                raise ValueError("Password required to decrypt identity")
+                raise IdentityLockedError("Password required to decrypt identity")
 
             try:
                 # Extract KDF params
@@ -331,105 +502,139 @@ class KeyManager:
                 private_key_jwk = cipher.decrypt(nonce, ciphertext, None).decode("utf-8")
 
             except Exception as e:
-                raise ValueError("Decryption failed. Invalid password or corrupted file.") from e
+                raise WrongPasswordError(
+                    "Decryption failed. Invalid password or corrupted file."
+                ) from e
         else:
-            private_key_jwk = data["private_key"]
-
-        return KeyPair(
-            did=data["id"],
-            public_key_jwk=data["public_key"],
-            private_key_jwk=private_key_jwk,
-            additional_keys=self._load_rows(data, cipher),
-        )
-
-    @staticmethod
-    def _load_rows(data: Dict[str, Any], cipher: Optional[ChaCha20Poly1305]) -> List[StoredKey]:
-        """Read the further keys of an identity file and check each one."""
-        rows = data.get("keys")
-        if rows is None:
-            return []
-        if not isinstance(rows, list):
-            raise ValueError("identity file is damaged: its key list is not a list")
-
-        loaded: List[StoredKey] = []
-        for row in rows:
-            if not isinstance(row, dict):
-                raise ValueError("identity file is damaged: a key entry is not an object")
-            alg, key_id, public_key = row.get("alg"), row.get("id"), row.get("public_key")
-            if alg != MLDSA44:
-                # A key type this release does not know. Leave it alone.
-                continue
-            if key_id != MLDSA44_KEY_ID or not isinstance(public_key, str):
-                raise ValueError(f"identity file is damaged: its {alg} entry is malformed")
-            if any(existing.alg == alg for existing in loaded):
-                raise ValueError(f"identity file is damaged: it holds two {alg} keys")
+            if password:
+                raise WrongPasswordError(
+                    f"the identity file for {did} is not locked, but a passphrase was given. "
+                    "It may have been replaced; check it before using it"
+                )
             try:
-                if cipher is not None:
-                    # A locked file keeps every private key locked: a row that
-                    # also carries one in the clear has been altered.
-                    if "private_key" in row:
-                        raise ValueError("unlocked key in a locked file")
-                    sealed = row["cipher"]
-                    private_key = cipher.decrypt(
-                        base64.b64decode(sealed["nonce"]),
-                        base64.b64decode(sealed["ciphertext"]),
-                        _row_binding(data["id"], key_id, alg, public_key),
-                    )
-                else:
-                    private_key = base64.b64decode(row["private_key"], validate=True)
-            except Exception:
-                raise ValueError(
-                    f"identity file is damaged: its {alg} key cannot be read"
-                ) from None
-            key = StoredKey(id=key_id, alg=alg, public_key=public_key, private_key=private_key)
-            _check_stored_key(key)
-            loaded.append(key)
-        return loaded
+                private_key_jwk = data["private_key"]
+            except KeyError:
+                raise _damaged("it has no private key") from None
 
-    def ensure_post_quantum_key(self, did: str, password: Optional[str] = None) -> KeyPair:
+        rows, others = _read_rows(data, cipher)
+        try:
+            return KeyPair(
+                did=data["id"],
+                public_key_jwk=data["public_key"],
+                private_key_jwk=private_key_jwk,
+                additional_keys=rows,
+                other_keys=others,
+            )
+        except KeyError as e:
+            raise _damaged(f"it has no {e.args[0]!r} field") from None
+
+    @contextlib.contextmanager
+    def _identity_lock(self, did: str, timeout: float = 10.0) -> Iterator[None]:
+        """Hold the identity's lock while its file is created or changed.
+
+        The lock is held by the operating system on a ".lock" file next to the
+        identity, so it is released when the holder exits, even after a crash.
+
+        Raises:
+          IdentityBusyError: another program held it for longer than ``timeout``.
+          OSError: the lock file cannot be created (for example, a read-only
+            keystore).
+        """
+        path = self._get_filename(did) + ".lock"
+        fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+        try:
+            deadline = time.monotonic() + timeout
+            while True:
+                try:
+                    _try_lock(fd)
+                    break
+                except OSError:
+                    if time.monotonic() > deadline:
+                        raise IdentityBusyError(
+                            f"the identity for {did} is busy; try again"
+                        ) from None
+                    time.sleep(0.05)
+            try:
+                yield
+            finally:
+                _unlock(fd)
+        finally:
+            os.close(fd)
+
+    def create_identity(self, identity: KeyPair, password: Optional[str] = None) -> None:
+        """
+        Save a new identity, refusing to replace any file already saved under
+        its name. Two programs creating the same identity at once: one saves,
+        the other gets IdentityExistsError.
+
+        Raises:
+          IdentityExistsError: a file is already saved under this name.
+        """
+        if not identity.did:
+            raise ValueError("Cannot save identity without a DID")
+        with self._identity_lock(identity.did):
+            if os.path.exists(self._get_filename(identity.did)):
+                raise IdentityExistsError(f"an identity is already saved for {identity.did}")
+            self.save_identity(identity, password)
+
+    def ensure_post_quantum_key(
+        self, did: str, password: Optional[str] = None, timeout: float = 10.0
+    ) -> KeyPair:
         """
         Make sure the identity has a saved ML-DSA-44 key, and return the identity.
 
-        An identity created before post-quantum keys were saved gains one here,
-        once, and keeps it. Its Ed25519 key is left as it is. Two programs that
+        An identity created before post-quantum keys were saved (a file with no
+        key list) gains one here, once, and keeps it. Its Ed25519 key is left as
+        it is. A file that has a key list but no post-quantum key has been
+        altered, and is refused rather than given a new key. Two programs that
         call this at the same moment end up with the same key.
 
         Raises:
           FileNotFoundError: no identity is saved for ``did``.
-          ValueError: a password is needed or wrong, or the file is damaged.
+          IdentityError: locked, wrong password, damaged, or busy.
+          OSError: the keystore cannot be written.
         """
-        filename = self._get_filename(did)
-        lock = filename + ".lock"
-        deadline = time.monotonic() + 10
-        while True:
-            try:
-                fd = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-                os.close(fd)
-                break
-            except FileExistsError:
-                # Another program is adding the key. A lock left behind by one
-                # that stopped is cleared after a while.
-                try:
-                    if time.time() - os.path.getmtime(lock) > 30:
-                        os.remove(lock)
-                        continue
-                except OSError:
-                    continue
-                if time.monotonic() > deadline:
-                    raise ValueError(f"the identity for {did} is busy; try again") from None
-                time.sleep(0.05)
-        try:
-            identity = self.load_identity(did, password)
-            if identity.key_for(MLDSA44) is None:
-                identity.additional_keys.append(new_post_quantum_key())
-                self.save_identity(identity, password)
-                identity = self.load_identity(did, password)
+        identity = self.load_identity(did, password)
+        if identity.key_for(MLDSA44) is not None:
             return identity
-        finally:
-            try:
-                os.remove(lock)
-            except OSError:
-                pass
+        with self._identity_lock(did, timeout):
+            identity = self.load_identity(did, password)
+            if identity.key_for(MLDSA44) is not None:
+                return identity
+            data = self._read_file(did)
+            if "keys" in data or data.get("v", 1) != 1:
+                raise _damaged(
+                    "it has a key list but no post-quantum key, so it was altered. "
+                    "Restore it from a backup"
+                )
+            identity.additional_keys.append(new_post_quantum_key())
+            self.save_identity(identity, password)
+            return self.load_identity(did, password)
+
+    def post_quantum_public_key(self, did: str) -> Optional[str]:
+        """
+        The identity's saved ML-DSA-44 public key (a Multikey), or None.
+
+        Public keys are stored in the clear, so this works for a locked identity
+        without its passphrase. For an unlocked identity the key is fully
+        checked; for a locked one the stated key is returned, which the
+        encryption binds to its private half.
+        """
+        try:
+            identity = self.load_identity(did, None)
+        except IdentityLockedError:
+            data = self._read_file(did)
+            for row in data.get("keys") or []:
+                if (
+                    isinstance(row, dict)
+                    and row.get("alg") == MLDSA44
+                    and row.get("id") == MLDSA44_KEY_ID
+                    and isinstance(row.get("public_key"), str)
+                ):
+                    return str(row["public_key"])
+            return None
+        key = identity.key_for(MLDSA44)
+        return key.public_key if key else None
 
     def get_public_key(self, did: str) -> Optional[str]:
         """

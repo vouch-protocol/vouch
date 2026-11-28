@@ -104,8 +104,10 @@ class Signer:
         self._public_multikey: Optional[str] = None
 
         self._mldsa44_provider = mldsa44_provider
+        self._mldsa44_saved = False
         if mldsa44_keypair is not None:
             self._set_mldsa44_keypair(mldsa44_keypair)
+            self._mldsa44_saved = True
 
     @classmethod
     def from_backend(
@@ -418,9 +420,8 @@ class Signer:
     def has_saved_mldsa44_key(self) -> bool:
         """True when this signer's ML-DSA-44 key was supplied, or can be
         fetched, from saved storage, so it is the same key on every run."""
-        return (
-            getattr(self, "_mldsa44_secret", None) is not None
-            or getattr(self, "_mldsa44_provider", None) is not None
+        return bool(getattr(self, "_mldsa44_saved", False)) or (
+            getattr(self, "_mldsa44_provider", None) is not None
         )
 
     def _ensure_mldsa44_keypair(self) -> None:
@@ -431,6 +432,7 @@ class Signer:
         provider = getattr(self, "_mldsa44_provider", None)
         if provider is not None:
             self._set_mldsa44_keypair(provider())
+            self._mldsa44_saved = True
             return
         pub, sec = data_integrity_hybrid.generate_mldsa44_keypair()
         self._mldsa44_public = pub

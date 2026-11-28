@@ -122,27 +122,9 @@ func main() {
 		fatal(err)
 	}
 
-	// The post-quantum key is the one saved with the identity. Only --dev,
-	// where every key lasts one run, makes one up.
-	postQuantum := pqNone
-	switch {
-	case id.mldsa44 != nil:
-		postQuantum = pqSaved
-	case id.source == keyEphemeral:
-		postQuantum = pqPerRun
-	}
-	if *hybrid && postQuantum == pqNone {
-		fatal(errors.New(noSavedPQKey))
-	}
-
-	s, err := signer.New(signer.Config{
-		DID:                  id.did,
-		Ed25519Seed:          id.seed,
-		MLDSA44PrivateKey:    id.mldsa44,
-		DefaultExpirySeconds: defaultSeconds,
-	})
+	s, postQuantum, err := newSigner(id, defaultSeconds, *hybrid)
 	if err != nil {
-		fatal(fmt.Errorf("signer init failed: %w", err))
+		fatal(err)
 	}
 
 	var allowed map[string]bool
@@ -224,6 +206,32 @@ func main() {
 		srv.Shutdown(shutdown)
 	}
 	tracer.close()
+}
+
+// newSigner builds the signer for an identity and says where its post-quantum
+// key comes from. The post-quantum key is the one saved with the identity;
+// only --dev, where every key lasts one run, makes one up.
+func newSigner(id identity, defaultSeconds int, hybrid bool) (*signer.Signer, string, error) {
+	postQuantum := pqNone
+	switch {
+	case id.mldsa44 != nil:
+		postQuantum = pqSaved
+	case id.source == keyEphemeral:
+		postQuantum = pqPerRun
+	}
+	if hybrid && postQuantum == pqNone {
+		return nil, "", errors.New(noPQKeyFor(id.source))
+	}
+	s, err := signer.New(signer.Config{
+		DID:                  id.did,
+		Ed25519Seed:          id.seed,
+		MLDSA44PrivateKey:    id.mldsa44,
+		DefaultExpirySeconds: defaultSeconds,
+	})
+	if err != nil {
+		return nil, "", fmt.Errorf("signer init failed: %w", err)
+	}
+	return s, postQuantum, nil
 }
 
 // fatal prints a startup problem in plain words and exits.

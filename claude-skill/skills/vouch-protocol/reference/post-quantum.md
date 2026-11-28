@@ -197,9 +197,11 @@ All `/sign` requests now produce credentials carrying the proof set.
 The sidecar signs with the two keys saved in your identity. `vouch init`
 creates both, the Ed25519 key and the ML-DSA-44 key, and saves them together,
 so the same pair signs on every start and the `#key-2` you publish stays true.
-For an identity made before the second key was saved, run `vouch init` again
-for the same domain: it keeps your existing key and adds the new one. The
-Python sidecar, `vouch sidecar --hybrid`, uses the same saved keys.
+For an identity made before the second key was saved, upgrade the package
+(`pip install -U vouch-protocol`), then run
+`vouch init --domain <your domain> --add-post-quantum-key`. It keeps your
+existing key and adds the new one. The Python sidecar,
+`vouch sidecar --hybrid`, uses the same saved keys.
 
 ## Test vector
 

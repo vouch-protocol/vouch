@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -35,9 +37,11 @@ func pqRow(t *testing.T) (map[string]any, *mldsa44.PrivateKey) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sum := sha256.Sum256(rawPrivate)
 	return map[string]any{
 		"id": "#key-2", "alg": "ML-DSA-44", "public_key": multikey,
-		"private_key": base64.StdEncoding.EncodeToString(rawPrivate),
+		"private_key":        base64.StdEncoding.EncodeToString(rawPrivate),
+		"private_key_sha256": hex.EncodeToString(sum[:]),
 	}, private
 }
 
@@ -49,6 +53,9 @@ func identityFileWith(t *testing.T, did string, seed []byte, rows ...map[string]
 		t.Fatal(err)
 	}
 	doc["v"] = 2
+	if rows == nil {
+		rows = []map[string]any{}
+	}
 	doc["keys"] = rows
 	return mustJSON(t, doc)
 }
@@ -229,5 +236,128 @@ func TestHybridStartupNeedsASavedKeyUnlessDev(t *testing.T) {
 	}
 	if strings.Contains(out, "listening") || !strings.Contains(out, "vouch init") {
 		t.Fatalf("output should say how to add the key: %s", out)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Second review round
+// ---------------------------------------------------------------------------
+
+func withRow(row map[string]any, change func(map[string]any)) map[string]any {
+	copied := map[string]any{}
+	for k, v := range row {
+		copied[k] = v
+	}
+	change(copied)
+	return copied
+}
+
+func TestTamperedPostQuantumRowsAreRefused(t *testing.T) {
+	good, _ := pqRow(t)
+	cases := map[string]func(map[string]any){
+		"alg ML-DSA-65":    func(r map[string]any) { r["alg"] = "ML-DSA-65" },
+		"alg lower case":   func(r map[string]any) { r["alg"] = "ml-dsa-44" },
+		"alg removed":      func(r map[string]any) { delete(r, "alg") },
+		"alg a number":     func(r map[string]any) { r["alg"] = 44 },
+		"alg one byte off": func(r map[string]any) { r["alg"] = "ML-DSA-44x" },
+		"no check value":   func(r map[string]any) { delete(r, "private_key_sha256") },
+		"cipher and key":   func(r map[string]any) { r["cipher"] = map[string]string{"nonce": "AA"} },
+		"line breaks":      func(r map[string]any) { k := r["private_key"].(string); r["private_key"] = k[:64] + "\n" + k[64:] },
+	}
+	for name, change := range cases {
+		raw := identityFileWith(t, testDID, seedOf(3), withRow(good, change))
+		if _, _, pq, err := identityFromKeyFile(raw); err == nil {
+			t.Fatalf("%s: accepted (pq=%v)", name, pq != nil)
+		}
+	}
+}
+
+func TestDamageAnywhereInThePrivateKeyIsNoticed(t *testing.T) {
+	good, _ := pqRow(t)
+	for _, position := range []int{0, 1000, 1664, 2550, 2559} {
+		raw, _ := base64.StdEncoding.DecodeString(good["private_key"].(string))
+		raw[position] ^= 0x01
+		bad := withRow(good, func(r map[string]any) { r["private_key"] = base64.StdEncoding.EncodeToString(raw) })
+		if _, _, _, err := identityFromKeyFile(identityFileWith(t, testDID, seedOf(3), bad)); err == nil {
+			t.Fatalf("byte %d flipped: accepted", position)
+		}
+	}
+}
+
+func TestKeyListShapes(t *testing.T) {
+	good, _ := pqRow(t)
+	base := func() map[string]any {
+		var doc map[string]any
+		if err := json.Unmarshal(identityFileWith(t, testDID, seedOf(4), good), &doc); err != nil {
+			t.Fatal(err)
+		}
+		return doc
+	}
+
+	refused := map[string]func(map[string]any){
+		"keys null":         func(d map[string]any) { d["keys"] = nil },
+		"keys removed, v 2": func(d map[string]any) { delete(d, "keys") },
+		"keys not a list":   func(d map[string]any) { d["keys"] = "rows" },
+		"null row":          func(d map[string]any) { d["keys"] = []any{nil, good} },
+	}
+	for name, change := range refused {
+		doc := base()
+		change(doc)
+		if _, _, _, err := identityFromKeyFile(mustJSON(t, doc)); err == nil {
+			t.Fatalf("%s: accepted", name)
+		}
+	}
+
+	// Rows of a key type this release does not know are left alone, whatever
+	// their shape.
+	doc := base()
+	doc["keys"] = []any{
+		map[string]any{"id": 9, "alg": "SLH-DSA-128s", "private_key": map[string]any{"x": 1}},
+		good,
+	}
+	if _, _, pq, err := identityFromKeyFile(mustJSON(t, doc)); err != nil || pq == nil {
+		t.Fatalf("an unknown row stopped the file from loading: %v", err)
+	}
+
+	// Member names match exactly: a "Keys" member is not the key list.
+	other, otherKey := pqRow(t)
+	doc = base()
+	doc["Keys"] = []any{other}
+	_, _, pq, err := identityFromKeyFile(mustJSON(t, doc))
+	if err != nil || pq == nil || bytes.Equal(privateBytes(t, pq), privateBytes(t, otherKey)) {
+		t.Fatalf("the wrong member was read as the key list: %v", err)
+	}
+}
+
+func TestStartupUsesTheSavedPostQuantumKey(t *testing.T) {
+	row, private := pqRow(t)
+	seed, did, pq, err := identityFromKeyFile(identityFileWith(t, testDID, seedOf(5), row))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, postQuantum, err := newSigner(identity{did: did, seed: seed, source: keyFromKeystore, mldsa44: pq}, 300, true)
+	if err != nil || postQuantum != pqSaved {
+		t.Fatalf("postQuantum=%q err=%v", postQuantum, err)
+	}
+	got, _ := s.PublicKeyMLDSA44().MarshalBinary()
+	want, _ := private.Public().(*mldsa44.PublicKey).MarshalBinary()
+	if !bytes.Equal(got, want) {
+		t.Fatal("the signer does not use the saved post-quantum key")
+	}
+}
+
+func TestStartupMessagesNameTheKeySource(t *testing.T) {
+	cases := map[string]string{keyFromEnv: seedEnv, keyFromFile: "key file", keyFromKeystore: "--add-post-quantum-key"}
+	for source, want := range cases {
+		_, _, err := newSigner(identity{did: testDID, seed: seedOf(6), source: source}, 300, true)
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Fatalf("%s: %v", source, err)
+		}
+	}
+	if _, postQuantum, err := newSigner(identity{did: testDID, seed: seedOf(6), source: keyEphemeral}, 300, true); err != nil || postQuantum != pqPerRun {
+		t.Fatalf("--dev: %q %v", postQuantum, err)
+	}
+	if _, postQuantum, err := newSigner(identity{did: testDID, seed: seedOf(6), source: keyFromKeystore}, 300, false); err != nil || postQuantum != pqNone {
+		t.Fatalf("no --hybrid: %q %v", postQuantum, err)
 	}
 }

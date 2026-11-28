@@ -67,6 +67,12 @@ def write(km, data, did=DID):
         json.dump(data, f)
 
 
+def assert_not_held(km, did=DID):
+    """Nobody holds the identity's lock: it can be taken straight away."""
+    with km._identity_lock(did, timeout=0.5):
+        pass
+
+
 def pq(keys):
     return keys.key_for(MLDSA44)
 
@@ -160,7 +166,7 @@ def test_an_older_identity_gains_the_key_once_and_keeps_it(km, password):
     assert pq(first).public_key == pq(second).public_key
     assert first.private_key_jwk == old.private_key_jwk
     assert pq(km.load_identity(DID, password)).public_key == pq(first).public_key
-    assert not os.path.exists(km._get_filename(DID) + ".lock")
+    assert_not_held(km)
 
 
 def test_adding_the_key_needs_the_right_passphrase(km):
@@ -173,7 +179,7 @@ def test_adding_the_key_needs_the_right_passphrase(km):
         km.ensure_post_quantum_key(DID, "wrong")
 
     assert read(km) == before
-    assert not os.path.exists(km._get_filename(DID) + ".lock")
+    assert_not_held(km)
 
 
 def test_two_programs_adding_the_key_at_once_agree(km):
@@ -327,6 +333,15 @@ def test_a_key_type_from_a_later_release_is_left_alone(km):
     assert [key.alg for key in loaded.additional_keys] == [MLDSA44]
     assert pq(loaded).public_key == pq(keys).public_key
 
+    # A save carries the unknown row through unchanged.
+    km.save_identity(loaded)
+    assert {
+        "id": "#key-3",
+        "alg": "SLH-DSA-128s",
+        "public_key": "z",
+        "private_key": "AA==",
+    } in read(km)["keys"]
+
 
 def test_saving_refuses_a_key_whose_halves_do_not_belong_together(km):
     keys = generate_identity("agent.example.com")
@@ -471,10 +486,13 @@ def test_dev_mode_still_uses_a_key_for_one_run(temp_keystore):
 
 def test_a_key_file_that_carries_both_keys_serves_post_quantum(temp_keystore, tmp_path):
     keys = generate_identity("agent.example.com", post_quantum=True)
-    elsewhere = KeyManager(str(tmp_path / "elsewhere"))
-    elsewhere.save_identity(keys)
+    KeyManager().save_identity(keys)
+    outside = tmp_path / "outside" / "agent-identity.json"
+    outside.parent.mkdir()
+    os.replace(KeyManager()._get_filename(DID), outside)
+    assert KeyManager().list_identities() == []
 
-    sc = sidecar.build_sidecar(parse("--key", elsewhere._get_filename(DID), "--hybrid"))
+    sc = sidecar.build_sidecar(parse("--key", str(outside), "--hybrid"))
 
     credential = post(sc, "/sign").json()
     assert hybrid_verifies(credential, keys, pq(keys).public_key)
@@ -499,3 +517,408 @@ def test_auto_signing_saves_the_key_on_first_post_quantum_use(temp_keystore, mon
     autosign.reset_default_signer()
     assert autosign.resolve_signer().public_key_mldsa44_multikey() == stored.public_key
     autosign.reset_default_signer()
+
+
+# ---------------------------------------------------------------------------
+# Second review round: tampering that must never turn into a new key
+# ---------------------------------------------------------------------------
+
+from vouch.keys import (  # noqa: E402
+    IdentityBusyError,
+    IdentityDamagedError,
+    IdentityExistsError,
+    IdentityLockedError,
+    WrongPasswordError,
+)
+
+
+def _drop_keys(d):
+    d.pop("keys")
+
+
+@pytest.mark.parametrize("password", [None, PASSWORD])
+@pytest.mark.parametrize(
+    "change",
+    [
+        _drop_keys,
+        lambda d: d.update(keys=None),
+        lambda d: d["keys"][0].update(alg="ML-DSA-65"),
+        lambda d: d["keys"][0].update(alg="ml-dsa-44"),
+        lambda d: d["keys"][0].pop("alg"),
+        lambda d: d["keys"][0].update(alg=44),
+        lambda d: d["keys"][0].update(alg="ML-DSA-44x"),
+    ],
+    ids=[
+        "keys removed",
+        "keys null",
+        "alg ML-DSA-65",
+        "alg lower case",
+        "alg removed",
+        "alg number",
+        "alg one byte",
+    ],
+)
+def test_a_tampered_post_quantum_row_is_an_error_and_never_replaced(km, password, change):
+    saved(km, password)
+    data = read(km)
+    change(data)
+    write(km, data)
+    before = read(km)
+
+    with pytest.raises(IdentityDamagedError):
+        km.load_identity(DID, password)
+    with pytest.raises(IdentityDamagedError):
+        km.ensure_post_quantum_key(DID, password)
+    assert read(km) == before
+
+
+@pytest.mark.parametrize("password", [None, PASSWORD])
+def test_an_emptied_key_list_is_refused_rather_than_refilled(km, password):
+    saved(km, password)
+    data = read(km)
+    data["keys"] = []
+    write(km, data)
+
+    assert pq(km.load_identity(DID, password)) is None
+    with pytest.raises(IdentityDamagedError):
+        km.ensure_post_quantum_key(DID, password)
+    assert read(km)["keys"] == []
+
+
+def test_damage_anywhere_in_an_unlocked_private_key_is_noticed(km):
+    saved(km)
+    for position in (0, 1000, 1664, 2550, 2559):
+        data = read(km)
+        raw = bytearray(base64.b64decode(data["keys"][0]["private_key"]))
+        raw[position] ^= 0x01
+        data["keys"][0]["private_key"] = base64.b64encode(bytes(raw)).decode()
+        write(km, data)
+        with pytest.raises(IdentityDamagedError):
+            km.load_identity(DID)
+        saved(km)  # a fresh, whole identity for the next position
+
+
+def test_a_row_mixing_locked_and_unlocked_forms_is_refused(km):
+    saved(km)
+    data = read(km)
+    data["keys"][0]["cipher"] = {"nonce": "AAAA", "ciphertext": "AAAA"}
+    write(km, data)
+    with pytest.raises(IdentityDamagedError):
+        km.load_identity(DID)
+
+
+def test_a_passphrase_for_an_unlocked_file_is_refused(km):
+    """A locked file swapped for an unlocked one is noticed when the
+    passphrase is supplied, instead of loading the swapped-in keys."""
+    saved(km)
+    with pytest.raises(WrongPasswordError, match="not locked"):
+        km.load_identity(DID, PASSWORD)
+    with pytest.raises(WrongPasswordError):
+        km.ensure_post_quantum_key(DID, PASSWORD)
+
+
+def test_locked_and_wrong_passphrase_are_told_apart(km):
+    saved(km, PASSWORD)
+    with pytest.raises(IdentityLockedError):
+        km.load_identity(DID)
+    with pytest.raises(WrongPasswordError):
+        km.load_identity(DID, "wrong")
+
+
+# ---------------------------------------------------------------------------
+# The lock
+# ---------------------------------------------------------------------------
+
+
+def test_a_lock_file_left_behind_does_not_block(km):
+    saved(km, post_quantum=False)
+    with open(km._get_filename(DID) + ".lock", "w"):
+        pass  # what a program that crashed would leave
+    assert pq(km.ensure_post_quantum_key(DID, timeout=1)) is not None
+
+
+def test_a_held_lock_times_out_as_busy(km):
+    saved(km, post_quantum=False)
+    with km._identity_lock(DID):
+        with pytest.raises(IdentityBusyError):
+            km.ensure_post_quantum_key(DID, timeout=0.3)
+    assert pq(km.load_identity(DID)) is None
+
+
+def test_an_identity_that_has_the_key_needs_no_lock(km):
+    saved(km)
+    with km._identity_lock(DID):
+        assert pq(km.ensure_post_quantum_key(DID, timeout=0.3)) is not None
+
+
+def test_create_identity_never_replaces_a_file(km):
+    first = generate_identity("agent.example.com")
+    km.create_identity(first)
+    with pytest.raises(IdentityExistsError):
+        km.create_identity(generate_identity("agent.example.com"))
+    assert km.load_identity(DID).private_key_jwk == first.private_key_jwk
+
+
+def test_old_temporary_files_are_swept_on_the_next_save(km):
+    keys = saved(km)
+    old = km._get_filename(DID) + ".123.abcd.tmp"
+    fresh = km._get_filename(DID) + ".456.ef01.tmp"
+    for path in (old, fresh):
+        with open(path, "w") as f:
+            f.write("{}")
+    os.utime(old, (1, 1))
+
+    km.save_identity(keys)
+
+    assert not os.path.exists(old)
+    assert os.path.exists(fresh)
+
+
+def test_a_per_run_key_is_not_reported_as_saved():
+    signer = vouch.Signer.from_keypair(generate_identity("agent.example.com"))
+    signer.sign_hybrid(intent=INTENT)
+    assert not signer.has_saved_mldsa44_key()
+
+
+# ---------------------------------------------------------------------------
+# What an earlier reader sees
+# ---------------------------------------------------------------------------
+
+
+def _earlier_reader(path, password):
+    """The identity loader as it was before key lists: the main fields only,
+    and the main key decrypted with no associated data."""
+    from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+    from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+
+    with open(path) as f:
+        data = json.load(f)
+    if not data.get("encrypted"):
+        return data["id"], data["public_key"], data["private_key"]
+    params = data["kdf"]["params"]
+    key = Scrypt(
+        salt=base64.b64decode(params["salt"]),
+        length=32,
+        n=params["n"],
+        r=params["r"],
+        p=params["p"],
+    ).derive(password.encode())
+    secret = ChaCha20Poly1305(key).decrypt(
+        base64.b64decode(data["cipher"]["nonce"]),
+        base64.b64decode(data["cipher"]["ciphertext"]),
+        None,
+    )
+    return data["id"], data["public_key"], secret.decode()
+
+
+@pytest.mark.parametrize("password", [None, PASSWORD])
+def test_an_earlier_reader_opens_a_two_key_file(km, password):
+    keys = saved(km, password)
+    did, public, private = _earlier_reader(km._get_filename(DID), password)
+    assert (did, public, private) == (DID, keys.public_key_jwk, keys.private_key_jwk)
+
+
+# ---------------------------------------------------------------------------
+# Callers report damage as damage
+# ---------------------------------------------------------------------------
+
+
+def _damage_row(km):
+    data = read(km)
+    data["keys"][0]["private_key"] = data["keys"][0]["private_key"][:-8]
+    write(km, data)
+
+
+def test_vouch_init_reports_a_damaged_identity(temp_keystore, capsys):
+    assert init() == 0
+    _damage_row(KeyManager())
+    before = read(KeyManager())
+
+    assert init() == 1
+
+    err = capsys.readouterr().err
+    assert "damaged" in err and "locked" not in err
+    assert read(KeyManager()) == before
+
+
+def test_vouch_init_never_writes_over_a_file_it_cannot_read(temp_keystore, capsys):
+    path = KeyManager()._get_filename(DID)
+    with open(path, "w") as f:
+        f.write('{"id": "did:web:agent.ex')  # cut short
+    assert init() == 1
+    assert "left as it is" in capsys.readouterr().err
+    with open(path) as f:
+        assert f.read() == '{"id": "did:web:agent.ex'
+
+
+def test_vouch_init_does_not_take_over_a_file_name_shared_with_another_did(temp_keystore, capsys):
+    assert init("foo:bar") == 0
+    before = read(KeyManager(), "did:web:foo:bar")
+    assert init("foo-bar") == 1
+    assert read(KeyManager(), "did:web:foo:bar") == before
+
+
+def test_add_post_quantum_key_flag(temp_keystore, capsys):
+    args = types.SimpleNamespace(
+        domain="agent.example.com", env=False, yes=True, add_post_quantum_key=True
+    )
+    assert cli.cmd_init(args) == 1  # nothing saved yet: nothing is created
+    assert KeyManager().list_identities() == []
+
+    old = generate_identity("agent.example.com")
+    KeyManager().save_identity(old)
+    assert cli.cmd_init(args) == 0
+    upgraded = KeyManager().load_identity(DID)
+    assert upgraded.private_key_jwk == old.private_key_jwk and pq(upgraded) is not None
+
+
+def test_concurrent_first_runs_of_vouch_init_make_one_identity(tmp_path):
+    import subprocess
+    import sys
+
+    script = (
+        "import types, sys\n"
+        "from vouch import cli\n"
+        "sys.exit(cli.cmd_init(types.SimpleNamespace(domain='race.example.com', env=False, yes=True)))\n"
+    )
+    env = {**os.environ, "HOME": str(tmp_path), "PYTHONPATH": os.getcwd()}
+    procs = [
+        subprocess.Popen(
+            [sys.executable, "-c", script],
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for _ in range(6)
+    ]
+    outs = [p.communicate(timeout=120)[0] for p in procs]
+    assert all(p.returncode == 0 for p in procs)
+    created = [o for o in outs if "NEW AGENT IDENTITY GENERATED" in o]
+    assert len(created) == 1
+    with open(tmp_path / ".vouch" / "keys" / "did-web-race.example.com.json") as f:
+        on_disk = json.load(f)["public_key"]
+    assert on_disk in created[0]
+
+
+def test_sidecar_reports_a_damaged_identity(temp_keystore):
+    init()
+    _damage_row(KeyManager())
+    with pytest.raises(sidecar.SidecarError, match="damaged"):
+        sidecar.build_sidecar(parse())
+
+
+def test_sidecar_hybrid_with_an_environment_key_explains_the_key_source(temp_keystore, monkeypatch):
+    keys = generate_identity("agent.example.com")
+    monkeypatch.setenv(sidecar.PRIVATE_KEY_ENV, keys.private_key_jwk)
+    with pytest.raises(sidecar.SidecarError, match="environment"):
+        sidecar.build_sidecar(parse("--did", DID, "--hybrid"))
+
+
+def test_sidecar_on_a_read_only_keystore_says_what_failed(temp_keystore):
+    KeyManager().save_identity(generate_identity("agent.example.com"))
+    os.chmod(temp_keystore, 0o500)
+    try:
+        if os.access(temp_keystore, os.W_OK):
+            pytest.skip("running as a user who can write anywhere")
+        with pytest.raises(sidecar.SidecarError, match="post-quantum"):
+            sidecar.build_sidecar(parse("--hybrid"))
+    finally:
+        os.chmod(temp_keystore, 0o700)
+
+
+def test_wizard_reports_a_damaged_identity(temp_keystore, tmp_path, capsys):
+    from vouch import onboard
+
+    init()
+    _damage_row(KeyManager())
+    args = types.SimpleNamespace(
+        quick=True, domain="agent.example.com", non_interactive=True, out_dir=str(tmp_path / "out")
+    )
+    os.makedirs(args.out_dir)
+    assert onboard.cmd_onboard(args) == 2
+    assert "damaged" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("password", [None, PASSWORD])
+def test_wizard_publishes_the_saved_post_quantum_key(
+    temp_keystore, tmp_path, monkeypatch, password
+):
+    from vouch import onboard
+
+    monkeypatch.setattr(onboard, "STATE_PATH", tmp_path / "state.json")
+    keys = generate_identity("agent.example.com", post_quantum=True)
+    KeyManager().save_identity(keys, password)
+    out = tmp_path / "out"
+    out.mkdir()
+    args = types.SimpleNamespace(
+        quick=True, domain="agent.example.com", non_interactive=True, out_dir=str(out)
+    )
+
+    assert onboard.cmd_onboard(args) == 0
+
+    with open(out / "did.json") as f:
+        doc = json.load(f)
+    second = [m for m in doc["verificationMethod"] if m["id"] == f"{DID}#key-2"]
+    assert second and second[0]["publicKeyMultibase"] == pq(keys).public_key
+    assert f"{DID}#key-2" in doc["assertionMethod"]
+
+
+def test_autosign_stops_on_a_damaged_identity(temp_keystore, monkeypatch, caplog):
+    import vouch.autosign as autosign
+
+    monkeypatch.setenv("VOUCH_AUTO_IDENTITY", "1")
+    monkeypatch.delenv("VOUCH_PRIVATE_KEY", raising=False)
+    monkeypatch.delenv("VOUCH_DID", raising=False)
+    init()
+    _damage_row(KeyManager())
+
+    autosign.reset_default_signer()
+    try:
+        assert autosign.resolve_signer() is None  # no throwaway identity either
+        assert "damaged" in caplog.text
+    finally:
+        autosign.reset_default_signer()
+
+
+def test_autosign_uses_the_saved_key_for_an_environment_identity(temp_keystore, monkeypatch):
+    import vouch.autosign as autosign
+
+    keys = generate_identity("agent.example.com", post_quantum=True)
+    KeyManager().save_identity(keys)
+    monkeypatch.setenv("VOUCH_PRIVATE_KEY", keys.private_key_jwk)
+    monkeypatch.setenv("VOUCH_DID", DID)
+
+    autosign.reset_default_signer()
+    try:
+        signer = autosign.resolve_signer()
+        assert signer.has_saved_mldsa44_key()
+        assert signer.public_key_mldsa44_multikey() == pq(keys).public_key
+    finally:
+        autosign.reset_default_signer()
+
+
+def test_vouch_init_works_without_the_post_quantum_package(temp_keystore, monkeypatch, capsys):
+    from vouch import data_integrity_hybrid
+
+    def missing():
+        raise ImportError("Hybrid post-quantum cryptosuite requires the 'pqcrypto' package")
+
+    monkeypatch.setattr(data_integrity_hybrid, "_import_pqcrypto", missing)
+    assert init() == 0
+    assert "pqcrypto" in capsys.readouterr().out
+    assert pq(KeyManager().load_identity(DID)) is None
+
+
+def test_a_two_key_identity_loads_without_the_post_quantum_package(km, monkeypatch):
+    from vouch import data_integrity_hybrid
+
+    keys = saved(km)
+
+    def missing():
+        raise ImportError("no pqcrypto")
+
+    monkeypatch.setattr(data_integrity_hybrid, "_import_pqcrypto", missing)
+    loaded = km.load_identity(DID)
+    assert loaded.private_key_jwk == keys.private_key_jwk
+    assert pq(loaded).public_key == pq(keys).public_key

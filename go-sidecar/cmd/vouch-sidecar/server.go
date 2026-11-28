@@ -32,8 +32,26 @@ const (
 	pqNone   = "none"
 )
 
-const noSavedPQKey = "this identity has no saved post-quantum key. Run `vouch init --domain <your domain>` once: " +
+// noSavedPQKey explains how to give a saved identity its post-quantum key. The
+// flag it names does not exist in releases that would replace the identity,
+// so an older `vouch` stops with an error instead of making a new identity.
+const noSavedPQKey = "this identity has no saved post-quantum key. Upgrade the Python package " +
+	"(pip install -U vouch-protocol), then run `vouch init --domain <your domain> --add-post-quantum-key`: " +
 	"it keeps your key and adds the post-quantum one"
+
+// noPQKeyFor says what to do about a missing post-quantum key, by where the
+// signing key came from.
+func noPQKeyFor(source string) string {
+	switch source {
+	case keyFromEnv:
+		return "--hybrid needs a post-quantum key, and " + seedEnv + " carries none. " +
+			"Use the identity `vouch init` saved instead, or pass its file with --key"
+	case keyFromFile:
+		return "--hybrid needs a post-quantum key, and this key file carries none. " +
+			"Pass an identity file from ~/.vouch/keys made by `vouch init` instead. " + noSavedPQKey
+	}
+	return noSavedPQKey
+}
 
 // ---------------------------------------------------------------------------
 // Listening address, allow-list, validity

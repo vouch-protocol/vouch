@@ -32,12 +32,13 @@ from __future__ import annotations
 
 import functools
 import inspect
+import json
 import logging
 import os
 from contextvars import ContextVar
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from vouch.keys import KeyManager
+from vouch.keys import IdentityDamagedError, KeyManager
 from vouch.signer import Signer
 
 logger = logging.getLogger(__name__)
@@ -93,44 +94,96 @@ def resolve_signer(signer: Optional[Signer] = None) -> Optional[Signer]:
     return _DEFAULT_SIGNER
 
 
+def _saved_post_quantum_provider(km: KeyManager, did: str) -> Callable[[], Tuple[bytes, bytes]]:
+    """Fetch the identity's saved ML-DSA-44 key on first use, creating and
+    saving it if it has none yet, so the same key signs on every run."""
+
+    def provide() -> Tuple[bytes, bytes]:
+        try:
+            keypair = km.ensure_post_quantum_key(did).mldsa44_keypair()
+        except OSError as e:
+            raise ValueError(
+                f"cannot save the post-quantum key for {did}: {e.strerror or e}"
+            ) from None
+        if keypair is None:  # pragma: no cover - ensure always adds one
+            raise ValueError(f"no post-quantum key could be saved for {did}")
+        return keypair
+
+    return provide
+
+
+def _public_x(jwk_json: str) -> Optional[str]:
+    try:
+        value = json.loads(jwk_json).get("x")
+    except (ValueError, AttributeError):
+        return None
+    return value if isinstance(value, str) else None
+
+
 def _build_default_signer() -> Optional[Signer]:
     # 2. Environment variables (the existing convention every integration used).
     private_key = os.getenv("VOUCH_PRIVATE_KEY")
     did = os.getenv("VOUCH_DID")
     if private_key and did:
         try:
-            return Signer(private_key=private_key, did=did)
+            signer = Signer(private_key=private_key, did=did)
         except Exception as e:  # pragma: no cover - defensive
             logger.warning("VOUCH_PRIVATE_KEY/VOUCH_DID present but unusable: %s", e)
+        else:
+            # The environment holds the Ed25519 key only. When the keystore
+            # holds the same identity, unlocked, its saved post-quantum key is
+            # used, so post-quantum proofs carry the same key on every run.
+            try:
+                km = KeyManager()
+                stored = km.get_public_key(did)
+                same = stored is not None and _public_x(stored) == _public_x(
+                    signer.get_public_key_jwk()
+                )
+                if same and km.load_identity(did, None) is not None:
+                    signer._mldsa44_provider = _saved_post_quantum_provider(km, did)
+            except Exception as e:  # a locked or damaged keystore entry
+                logger.debug("No saved post-quantum key for %s: %s", did, e)
+            if not signer.has_saved_mldsa44_key():
+                logger.info(
+                    "Vouch autosign: %s comes from VOUCH_PRIVATE_KEY, which carries no "
+                    "post-quantum key. A post-quantum proof would use a key made for this "
+                    "process only, so use the identity `vouch init` saved for those.",
+                    did,
+                )
+            return signer
 
     # 3. On-disk keystore - whatever `vouch init` saved, unencrypted only
     #    (an encrypted identity needs a passphrase we cannot prompt for here).
-    try:
-        km = KeyManager()
-        for entry in km.list_identities():
-            if entry.get("encrypted"):
-                continue
+    damaged = False
+    km = KeyManager()
+    for entry in km.list_identities():
+        if entry.get("encrypted"):
+            continue
+        try:
             kp = km.load_identity(entry["did"])
-            logger.info("Vouch autosign using keystore identity %s", kp.did)
-            saved_did = kp.did
-
-            def saved_post_quantum_key(did: str = saved_did) -> Tuple[bytes, bytes]:
-                # The first post-quantum proof fetches the identity's saved
-                # ML-DSA-44 key, creating and saving it if it has none yet, so
-                # the same key signs on every run.
-                keypair = km.ensure_post_quantum_key(did).mldsa44_keypair()
-                if keypair is None:  # pragma: no cover - ensure always adds one
-                    raise ValueError(f"no post-quantum key could be saved for {did}")
-                return keypair
-
-            return Signer(
-                private_key=kp.private_key_jwk,
-                did=kp.did,
-                mldsa44_keypair=kp.mldsa44_keypair(),
-                mldsa44_provider=saved_post_quantum_key,
+        except IdentityDamagedError as e:
+            # Never sign as someone else, or as a throwaway identity, because a
+            # real identity is broken. Say so plainly instead.
+            logger.error(
+                "Vouch autosign: the identity in %s is damaged (%s). Restore it from a "
+                "backup; tool calls are not signed until then.",
+                entry.get("file"),
+                e,
             )
-    except Exception as e:  # pragma: no cover - defensive
-        logger.debug("Keystore lookup failed: %s", e)
+            damaged = True
+            continue
+        except Exception as e:  # pragma: no cover - defensive
+            logger.debug("Keystore lookup failed: %s", e)
+            continue
+        logger.info("Vouch autosign using keystore identity %s", kp.did)
+        return Signer(
+            private_key=kp.private_key_jwk,
+            did=kp.did,
+            mldsa44_keypair=kp.mldsa44_keypair(),
+            mldsa44_provider=_saved_post_quantum_provider(km, kp.did),
+        )
+    if damaged:
+        return None
 
     # 4. Opt-in ephemeral identity.
     if _truthy(os.getenv("VOUCH_AUTO_IDENTITY")):
