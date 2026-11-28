@@ -25,6 +25,16 @@ const maxBodyBytes = 1 << 20
 // maxLoggedText bounds caller-supplied text copied into logs and spans.
 const maxLoggedText = 128
 
+// Where the ML-DSA-44 key comes from. Reported on /health.
+const (
+	pqSaved  = "saved"
+	pqPerRun = "per-run"
+	pqNone   = "none"
+)
+
+const noSavedPQKey = "this identity has no saved post-quantum key. Run `vouch init --domain <your domain>` once: " +
+	"it keeps your key and adds the post-quantum one"
+
 // ---------------------------------------------------------------------------
 // Listening address, allow-list, validity
 // ---------------------------------------------------------------------------
@@ -112,6 +122,10 @@ type serverConfig struct {
 	// proof and an mldsa44-jcs-2024 proof on the same credential.
 	hybrid bool
 
+	// postQuantum says where the ML-DSA-44 key comes from: pqSaved with the
+	// identity, pqPerRun (made for this process, as --dev does), or pqNone.
+	postQuantum string
+
 	// token, when set, must be presented as a bearer token on the signing
 	// endpoints.
 	token string
@@ -195,6 +209,9 @@ func newHandler(s *signer.Signer, cfg serverConfig) http.Handler {
 	}
 	if cfg.defaultValidSeconds > cfg.maxValidSeconds {
 		cfg.defaultValidSeconds = cfg.maxValidSeconds
+	}
+	if cfg.postQuantum == "" {
+		cfg.postQuantum = pqPerRun
 	}
 	logger := cfg.logger
 	if logger == nil {
@@ -292,6 +309,10 @@ func (h *handler) signCredential(w http.ResponseWriter, r *http.Request, req sig
 	info := infoFrom(r)
 	if h.cfg.sensitive {
 		h.refuse(w, r, http.StatusBadRequest, "sensitive mode signs the payload form only")
+		return
+	}
+	if postQuantum && h.cfg.postQuantum == pqNone {
+		h.refuse(w, r, http.StatusConflict, noSavedPQKey)
 		return
 	}
 	for _, field := range []string{"action", "target", "resource"} {
@@ -416,6 +437,7 @@ func (h *handler) health(w http.ResponseWriter, r *http.Request) {
 		"did":                    h.cfg.did,
 		"key":                    h.cfg.keySource,
 		"hybrid":                 h.cfg.hybrid,
+		"postQuantumKey":         h.cfg.postQuantum,
 		"defaultValiditySeconds": h.cfg.defaultValidSeconds,
 		"maxValiditySeconds":     h.cfg.maxValidSeconds,
 		"lastSignedAt":           lastSignedAt,
@@ -441,7 +463,7 @@ func (h *handler) pubkey(w http.ResponseWriter, r *http.Request) {
 		"verificationMethod": h.signer.VerificationMethodID(),
 		"publicKeyMultibase": multikey,
 	}
-	if pq, err := h.signer.PublicKeyMLDSA44Multikey(); err == nil {
+	if pq, err := h.signer.PublicKeyMLDSA44Multikey(); err == nil && h.cfg.postQuantum != pqNone {
 		out["mldsa44"] = map[string]string{
 			"verificationMethod": h.signer.MLDSA44VerificationMethodID(),
 			"publicKeyMultibase": pq,

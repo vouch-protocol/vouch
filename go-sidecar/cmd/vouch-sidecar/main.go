@@ -122,9 +122,23 @@ func main() {
 		fatal(err)
 	}
 
+	// The post-quantum key is the one saved with the identity. Only --dev,
+	// where every key lasts one run, makes one up.
+	postQuantum := pqNone
+	switch {
+	case id.mldsa44 != nil:
+		postQuantum = pqSaved
+	case id.source == keyEphemeral:
+		postQuantum = pqPerRun
+	}
+	if *hybrid && postQuantum == pqNone {
+		fatal(errors.New(noSavedPQKey))
+	}
+
 	s, err := signer.New(signer.Config{
 		DID:                  id.did,
 		Ed25519Seed:          id.seed,
+		MLDSA44PrivateKey:    id.mldsa44,
 		DefaultExpirySeconds: defaultSeconds,
 	})
 	if err != nil {
@@ -157,6 +171,7 @@ func main() {
 		did:                 id.did,
 		sensitive:           *sensitive,
 		hybrid:              *hybrid,
+		postQuantum:         postQuantum,
 		token:               token,
 		keySource:           id.source,
 		allowedActions:      allowed,
@@ -180,7 +195,7 @@ func main() {
 	publicKey, _ := s.PublicKeyMultikey()
 	logger.Info("vouch-sidecar listening",
 		"address", addr, "did", id.did, "key", id.source, "public_key", publicKey,
-		"mode", modeLabel(*sensitive), "hybrid", *hybrid,
+		"mode", modeLabel(*sensitive), "hybrid", *hybrid, "post_quantum_key", postQuantum,
 		"default_validity", validity.String(), "max_validity", maxValidity.String(),
 	)
 	if id.source == keyEphemeral {

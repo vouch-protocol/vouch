@@ -13,6 +13,10 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/cloudflare/circl/sign/mldsa/mldsa44"
+
+	"github.com/vouch-protocol/vouch/go-sidecar/signer"
 )
 
 // Where the signing key came from. Reported on /health and in the startup log.
@@ -28,6 +32,10 @@ type identity struct {
 	did    string
 	seed   []byte
 	source string
+
+	// mldsa44 is the identity's saved post-quantum key, from the "#key-2" row
+	// of its identity file. nil when the key source carries none.
+	mldsa44 *mldsa44.PrivateKey
 }
 
 // keyOptions is everything that can say which identity to use.
@@ -57,7 +65,7 @@ func resolveIdentity(o keyOptions) (identity, error) {
 		if err != nil {
 			return identity{}, fmt.Errorf("read key file: %w", err)
 		}
-		seed, fileDID, err := identityFromKeyFile(raw)
+		seed, fileDID, pq, err := identityFromKeyFile(raw)
 		if err != nil {
 			return identity{}, err
 		}
@@ -65,7 +73,7 @@ func resolveIdentity(o keyOptions) (identity, error) {
 		if err != nil {
 			return identity{}, err
 		}
-		return identity{did: did, seed: seed, source: keyFromFile}, nil
+		return identity{did: did, seed: seed, source: keyFromFile, mldsa44: pq}, nil
 
 	case o.seedHex != "":
 		if o.did == "" {
@@ -152,7 +160,7 @@ func identityFromKeystore(dir, did string) (identity, error) {
 	if err != nil {
 		return identity{}, fmt.Errorf("read the identity for %s: %w", did, err)
 	}
-	seed, fileDID, err := identityFromKeyFile(raw)
+	seed, fileDID, pq, err := identityFromKeyFile(raw)
 	if err != nil {
 		return identity{}, fmt.Errorf("identity for %s: %w", did, err)
 	}
@@ -161,7 +169,7 @@ func identityFromKeystore(dir, did string) (identity, error) {
 	if fileDID != did {
 		return identity{}, fmt.Errorf("the keystore file for %s names a different identity", did)
 	}
-	return identity{did: did, seed: seed, source: keyFromKeystore}, nil
+	return identity{did: did, seed: seed, source: keyFromKeystore, mldsa44: pq}, nil
 }
 
 func noKeyError(did string) error {
@@ -240,19 +248,89 @@ type keyFile struct {
 	ID         string          `json:"id"`
 	Encrypted  bool            `json:"encrypted"`
 	PrivateKey json.RawMessage `json:"private_key"`
+
+	// Keys lists the identity's further keys, one row per key.
+	Keys []keyRow `json:"keys"`
+}
+
+// keyRow is one further key of an identity, such as its ML-DSA-44 key.
+type keyRow struct {
+	ID         string          `json:"id"`
+	Alg        string          `json:"alg"`
+	PublicKey  string          `json:"public_key"`
+	PrivateKey string          `json:"private_key"`
+	Cipher     json.RawMessage `json:"cipher"`
+}
+
+const (
+	algMLDSA44     = "ML-DSA-44"
+	mldsa44KeySlot = "#key-2"
+)
+
+// postQuantumKey reads the saved ML-DSA-44 key from an identity file's rows.
+// It returns nil when the file has none. A row that is present but damaged is
+// an error: the key is never quietly replaced with a new one.
+func postQuantumKey(rows []keyRow) (*mldsa44.PrivateKey, error) {
+	var found *mldsa44.PrivateKey
+	for _, row := range rows {
+		if row.Alg != algMLDSA44 {
+			// A key type this release does not know. Leave it alone.
+			continue
+		}
+		if found != nil {
+			return nil, errors.New("identity file holds two ML-DSA-44 keys")
+		}
+		if row.ID != mldsa44KeySlot {
+			return nil, errors.New("identity file has its ML-DSA-44 key in the wrong slot")
+		}
+		if len(row.Cipher) > 0 || row.PrivateKey == "" {
+			return nil, errors.New("identity file has a locked ML-DSA-44 key that this sidecar cannot open")
+		}
+		raw, err := base64.StdEncoding.DecodeString(row.PrivateKey)
+		if err != nil || len(raw) != mldsa44.PrivateKeySize {
+			return nil, errors.New("identity file has a damaged ML-DSA-44 private key")
+		}
+		var private mldsa44.PrivateKey
+		if err := private.UnmarshalBinary(raw); err != nil {
+			return nil, errors.New("identity file has a damaged ML-DSA-44 private key")
+		}
+		algorithm, stated, err := signer.MultikeyDecode(row.PublicKey)
+		if err != nil || algorithm != algMLDSA44 {
+			return nil, errors.New("identity file has a damaged ML-DSA-44 public key")
+		}
+		derived, err := private.Public().(*mldsa44.PublicKey).MarshalBinary()
+		if err != nil || !bytes.Equal(stated, derived) {
+			return nil, errors.New("identity file ML-DSA-44 public key does not match its private key")
+		}
+		found = &private
+	}
+	return found, nil
 }
 
 // identityFromKeyFile extracts the Ed25519 seed from a key file, checks it
 // against the public key the file states, and returns the DID the file names
-// (empty for a bare JWK).
-func identityFromKeyFile(raw []byte) (seed []byte, did string, err error) {
+// (empty for a bare JWK) and the saved post-quantum key, if the file has one.
+func identityFromKeyFile(raw []byte) (seed []byte, did string, pq *mldsa44.PrivateKey, err error) {
+	seed, did, rows, err := ed25519FromKeyFile(raw)
+	if err != nil {
+		return nil, "", nil, err
+	}
+	pq, err = postQuantumKey(rows)
+	if err != nil {
+		return nil, "", nil, err
+	}
+	return seed, did, pq, nil
+}
+
+func ed25519FromKeyFile(raw []byte) (seed []byte, did string, rows []keyRow, err error) {
 	var kf keyFile
 	if err := json.Unmarshal(raw, &kf); err != nil {
-		return nil, "", errors.New("key file is not valid JSON")
+		return nil, "", nil, errors.New("key file is not valid JSON")
 	}
 	did = kf.ID
+	rows = kf.Keys
 	if kf.Encrypted {
-		return nil, "", errors.New(
+		return nil, "", nil, errors.New(
 			"the identity file is locked with a passphrase, which this sidecar cannot open. " +
 				"Start `vouch sidecar` instead (it asks for the passphrase), or use an identity saved without one",
 		)
@@ -266,27 +344,27 @@ func identityFromKeyFile(raw []byte) (seed []byte, did string, err error) {
 		}
 		kf = keyFile{}
 		if err := json.Unmarshal(inner, &kf); err != nil {
-			return nil, "", errors.New("key file holds a private key that is not a JWK")
+			return nil, "", nil, errors.New("key file holds a private key that is not a JWK")
 		}
 	}
 	if kf.Kty != "OKP" || kf.Crv != "Ed25519" {
-		return nil, "", errors.New("key file must hold an Ed25519 JWK (kty OKP, crv Ed25519)")
+		return nil, "", nil, errors.New("key file must hold an Ed25519 JWK (kty OKP, crv Ed25519)")
 	}
 	if kf.D == "" {
-		return nil, "", errors.New("key file has no private key (the JWK \"d\" member is missing)")
+		return nil, "", nil, errors.New("key file has no private key (the JWK \"d\" member is missing)")
 	}
 	seed, err = decodeBase64URL(kf.D)
 	if err != nil || len(seed) != ed25519.SeedSize {
-		return nil, "", fmt.Errorf("key file private key must be %d bytes, base64url-encoded", ed25519.SeedSize)
+		return nil, "", nil, fmt.Errorf("key file private key must be %d bytes, base64url-encoded", ed25519.SeedSize)
 	}
 	if kf.X != "" {
 		stated, err := decodeBase64URL(kf.X)
 		derived := ed25519.NewKeyFromSeed(seed).Public().(ed25519.PublicKey)
 		if err != nil || !bytes.Equal(stated, derived) {
-			return nil, "", errors.New("key file public key does not match its private key")
+			return nil, "", nil, errors.New("key file public key does not match its private key")
 		}
 	}
-	return seed, did, nil
+	return seed, did, rows, nil
 }
 
 func decodeBase64URL(s string) ([]byte, error) {
