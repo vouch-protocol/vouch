@@ -35,7 +35,7 @@ import inspect
 import logging
 import os
 from contextvars import ContextVar
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from vouch.keys import KeyManager
 from vouch.signer import Signer
@@ -112,7 +112,23 @@ def _build_default_signer() -> Optional[Signer]:
                 continue
             kp = km.load_identity(entry["did"])
             logger.info("Vouch autosign using keystore identity %s", kp.did)
-            return Signer(private_key=kp.private_key_jwk, did=kp.did)
+            saved_did = kp.did
+
+            def saved_post_quantum_key(did: str = saved_did) -> Tuple[bytes, bytes]:
+                # The first post-quantum proof fetches the identity's saved
+                # ML-DSA-44 key, creating and saving it if it has none yet, so
+                # the same key signs on every run.
+                keypair = km.ensure_post_quantum_key(did).mldsa44_keypair()
+                if keypair is None:  # pragma: no cover - ensure always adds one
+                    raise ValueError(f"no post-quantum key could be saved for {did}")
+                return keypair
+
+            return Signer(
+                private_key=kp.private_key_jwk,
+                did=kp.did,
+                mldsa44_keypair=kp.mldsa44_keypair(),
+                mldsa44_provider=saved_post_quantum_key,
+            )
     except Exception as e:  # pragma: no cover - defensive
         logger.debug("Keystore lookup failed: %s", e)
 

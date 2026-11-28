@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives import serialization
 
 from vouch.signer import Signer
 from vouch.verifier import Verifier, verify as resolve_and_verify
-from vouch.keys import KeyManager, generate_identity
+from vouch.keys import MLDSA44, KeyManager, generate_identity
 import getpass
 
 # Constants
@@ -83,8 +83,38 @@ def _print_agent_quickstart(keys, file=None) -> None:
     )
 
 
+def _keep_existing_identity(did: str, args: argparse.Namespace) -> int:
+    """`vouch init` for a domain that already has an identity: keep its keys
+    and add the post-quantum key if it is missing."""
+    km = KeyManager()
+    print(f"An identity for {did} already exists. Its key is kept.")
+    passphrase = None
+    try:
+        try:
+            had_key = km.load_identity(did, None).key_for(MLDSA44) is not None
+        except ValueError:
+            if getattr(args, "yes", False) or not sys.stdin.isatty():
+                print(
+                    "It is locked with a passphrase. Run `vouch init` in a terminal to add "
+                    "its post-quantum key."
+                )
+                return 0
+            passphrase = getpass.getpass(f"Enter passphrase for {did}: ")
+            had_key = km.load_identity(did, passphrase).key_for(MLDSA44) is not None
+        km.ensure_post_quantum_key(did, passphrase)
+    except Exception as e:
+        print(f"❌ Error reading identity: {e}", file=sys.stderr)
+        return 1
+    if had_key:
+        print("It already has a post-quantum key.")
+    else:
+        print("✅ Added a post-quantum key (ML-DSA-44) and saved it with the identity.")
+    print(f"Saved at: {km._get_filename(did)}")
+    return 0
+
+
 def cmd_init(args: argparse.Namespace) -> int:
-    """Generate a new Ed25519 keypair for agent identity."""
+    """Generate a new agent identity: an Ed25519 key and an ML-DSA-44 key."""
     try:
         # Build DID
         if args.domain:
@@ -97,8 +127,15 @@ def cmd_init(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
 
-        # Generate keys
-        keys = generate_identity(domain)
+        # An identity that already exists for this domain is kept. Creating a
+        # new one would replace its private key. It gains a post-quantum key if
+        # it has none yet.
+        did = f"did:web:{domain}"
+        if not args.env and KeyManager().get_public_key(did) is not None:
+            return _keep_existing_identity(did, args)
+
+        # Generate keys: the Ed25519 key and, saved beside it, the ML-DSA-44 key.
+        keys = generate_identity(domain, post_quantum=not args.env)
 
         if args.env:
             # Output as environment variable format

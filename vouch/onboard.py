@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from vouch import multikey
-from vouch.keys import KeyManager, generate_identity
+from vouch.keys import MLDSA44, KeyManager, generate_identity
 
 # ---------------------------------------------------------------------------
 # State
@@ -322,6 +322,16 @@ def _ed25519_did_document(did: str, public_key_jwk: str) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _saved_post_quantum_public_key(km: KeyManager, did: str) -> Optional[str]:
+    """The identity's saved ML-DSA-44 public key (a Multikey), or None when the
+    identity has none or is locked."""
+    try:
+        key = km.load_identity(did, None).key_for(MLDSA44)
+    except (ValueError, FileNotFoundError):
+        return None
+    return key.public_key if key else None
+
+
 def step_identity(state: OnboardState, io: WizardIO) -> None:
     _step_header(1, "Identity (generate issuer DID)", io)
     domain = io.ask(
@@ -340,12 +350,26 @@ def step_identity(state: OnboardState, io: WizardIO) -> None:
         state.public_key_jwk = existing_key
         io.out("  Using the identity already in your keystore for this domain")
     else:
-        kp = generate_identity(state.domain)
+        kp = generate_identity(state.domain, post_quantum=True)
         state.public_key_jwk = kp.public_key_jwk
         if not io.dry_run:
             km.save_identity(kp, password=None)
 
     did_doc = _ed25519_did_document(state.did, state.public_key_jwk)
+    post_quantum_key = _saved_post_quantum_public_key(km, state.did)
+    if post_quantum_key:
+        # The post-quantum key sits in the "#key-2" slot beside the Ed25519 key.
+        method = f"{state.did}#key-2"
+        did_doc["verificationMethod"].append(
+            {
+                "id": method,
+                "type": "Multikey",
+                "controller": state.did,
+                "publicKeyMultibase": post_quantum_key,
+            }
+        )
+        did_doc["assertionMethod"].append(method)
+        did_doc["@context"].append("https://w3id.org/security/multikey/v1")
     out_path = str(Path(state.out_dir) / "did.json")
     io.write(out_path, json.dumps(did_doc, indent=2))
 

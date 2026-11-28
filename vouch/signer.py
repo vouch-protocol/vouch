@@ -14,7 +14,7 @@ import json
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from jwcrypto import jwk, jws
@@ -44,7 +44,14 @@ class Signer:
       ... })
     """
 
-    def __init__(self, private_key: str, did: str, default_expiry_seconds: int = 300):
+    def __init__(
+        self,
+        private_key: str,
+        did: str,
+        default_expiry_seconds: int = 300,
+        mldsa44_keypair: Optional[Tuple[bytes, bytes]] = None,
+        mldsa44_provider: Optional[Callable[[], Tuple[bytes, bytes]]] = None,
+    ):
         """
         Initialize the Signer with credentials.
 
@@ -52,9 +59,15 @@ class Signer:
           private_key: JWK JSON string containing the Ed25519 private key.
           did: The Decentralized Identifier (DID) of the signing agent.
           default_expiry_seconds: Token validity period (default: 5 minutes).
+          mldsa44_keypair: The identity's saved ML-DSA-44 key as raw
+            (public, secret) bytes, used for post-quantum proofs.
+          mldsa44_provider: Called once, the first time a post-quantum proof
+            is needed, to fetch (and if need be create and save) that key.
+            With neither, a key is generated that lasts for this process only.
 
         Raises:
-          ValueError: If private_key or did is missing or invalid.
+          ValueError: If private_key or did is missing or invalid, or the
+            ML-DSA-44 key is the wrong size.
         """
         if not private_key:
             raise ValueError("Vouch Signer requires 'private_key' (JWK JSON string)")
@@ -89,6 +102,10 @@ class Signer:
         self._sign_func: Optional[Callable[[bytes], bytes]] = None
         self._public_jwk_str: Optional[str] = None
         self._public_multikey: Optional[str] = None
+
+        self._mldsa44_provider = mldsa44_provider
+        if mldsa44_keypair is not None:
+            self._set_mldsa44_keypair(mldsa44_keypair)
 
     @classmethod
     def from_backend(
@@ -154,10 +171,12 @@ class Signer:
                 "Signer.from_keypair requires a keypair with a DID; "
                 "generate it with a domain, e.g. generate_identity('agent.example')"
             )
+        saved = getattr(keypair, "mldsa44_keypair", None)
         return cls(
             private_key=keypair.private_key_jwk,
             did=did,
             default_expiry_seconds=default_expiry_seconds,
+            mldsa44_keypair=saved() if callable(saved) else None,
         )
 
     # ------------------------------------------------------------------
@@ -389,9 +408,29 @@ class Signer:
             mldsa44_verification_method=self.mldsa44_verification_method_id(),
         )
 
+    def _set_mldsa44_keypair(self, keypair: Tuple[bytes, bytes]) -> None:
+        public, secret = keypair
+        if len(public) != 1312 or len(secret) != 2560:
+            raise ValueError("ML-DSA-44 key must be a 1312-byte public and 2560-byte secret key")
+        self._mldsa44_public = bytes(public)
+        self._mldsa44_secret = bytes(secret)
+
+    def has_saved_mldsa44_key(self) -> bool:
+        """True when this signer's ML-DSA-44 key was supplied, or can be
+        fetched, from saved storage, so it is the same key on every run."""
+        return (
+            getattr(self, "_mldsa44_secret", None) is not None
+            or getattr(self, "_mldsa44_provider", None) is not None
+        )
+
     def _ensure_mldsa44_keypair(self) -> None:
-        """Generate an ML-DSA-44 keypair on first use and cache it."""
+        """Make the ML-DSA-44 key ready: the saved one when the signer has it,
+        otherwise one generated on first use that lasts for this process."""
         if getattr(self, "_mldsa44_secret", None) is not None:
+            return
+        provider = getattr(self, "_mldsa44_provider", None)
+        if provider is not None:
+            self._set_mldsa44_keypair(provider())
             return
         pub, sec = data_integrity_hybrid.generate_mldsa44_keypair()
         self._mldsa44_public = pub
