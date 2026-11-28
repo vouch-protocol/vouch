@@ -1783,16 +1783,23 @@ Post-quantum signing is built into the sidecar:
 **macOS / Linux**
 
 ```bash
-./vouch-sidecar --did did:web:agent.example.com --hybrid --port 8877 --dev
+./vouch-sidecar --hybrid
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
-.\vouch-sidecar.exe --did did:web:agent.example.com --hybrid --port 8877 --dev
+.\vouch-sidecar.exe --hybrid
 ```
 
 All `/sign` requests now produce credentials carrying the proof set.
+
+The sidecar signs with the two keys saved in your identity. `vouch init`
+creates both, the Ed25519 key and the ML-DSA-44 key, and saves them together,
+so the same pair signs on every start and the `#key-2` you publish stays true.
+For an identity made before the second key was saved, run `vouch init` again
+for the same domain: it keeps your existing key and adds the new one. The
+Python sidecar, `vouch sidecar --hybrid`, uses the same saved keys.
 
 ### Test vector
 

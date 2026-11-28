@@ -83,7 +83,7 @@ Credentials are issued with `Signer.sign()` and checked with `Verifier.verify()`
 Vouch is not one tool, it is a set of them. Here is the whole map.
 
 ### On the command line
-- **`vouch init`** generate an agent identity (a DID and keypair).
+- **`vouch init`** generate an agent identity (a DID, an Ed25519 key and a post-quantum key).
 - **`vouch sign` / `vouch verify`** sign a payload and verify it.
 - **`vouch sidecar`** run the signing sidecar, which holds your agent's key so the model never has it. The caller chooses how long each credential stays valid.
 - **`vouch git`** sign every git commit cryptographically, set up in one command, with a verified badge for your README.
