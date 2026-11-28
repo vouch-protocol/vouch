@@ -1794,8 +1794,10 @@ Post-quantum signing is built into the sidecar:
 
 All `/sign` requests now produce credentials carrying the proof set.
 
-The sidecar signs with the two keys saved in your identity. `vouch init`
-creates both, the Ed25519 key and the ML-DSA-44 key, and saves them together,
+The sidecar signs with the two keys saved in your identity, saved without a
+passphrase (`vouch init --yes`). For an identity locked with a passphrase, use
+the Python sidecar, `vouch sidecar --hybrid`, which asks for it. `vouch init`
+creates both keys, the Ed25519 key and the ML-DSA-44 key, and saves them together,
 so the same pair signs on every start and the `#key-2` you publish stays true.
 For an identity made before the second key was saved, upgrade the package
 (`pip install -U vouch-protocol`), then run
