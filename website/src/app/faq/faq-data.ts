@@ -1548,7 +1548,7 @@ go build ./cmd/vouch-sidecar
 
 The \`-s\` / \`--sensitive\` flag wraps the response in a JWE so the credential is encrypted in flight. The endpoint is \`POST /sign\` accepting a credential JSON body and returning the signed credential.
 
-For containerized deployment, the [Dockerfile](https://github.com/vouch-protocol/vouch/tree/main/go-sidecar) is straightforward Go static binary in a scratch image.`,
+For containers, pull the ready-made image with \`docker pull ghcr.io/vouch-protocol/sidecar:latest\`. It is signed, runs as a non-root user, and works on Intel and Arm machines. You can also build it yourself from the [Dockerfile](https://github.com/vouch-protocol/vouch/tree/main/go-sidecar).`,
         helpLinks: [{ label: 'Sidecar deployment guide', href: '/help/#sidecar-deployment' }],
       },
       {

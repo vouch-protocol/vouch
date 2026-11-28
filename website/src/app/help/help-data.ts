@@ -1025,20 +1025,37 @@ Under the hood \`build_identity_bundle\` packages the pieces and \`verify_bundle
         title: 'Deploying the Vouch Sidecar',
         summary: 'Run the Vouch signing daemon in production: container, key provisioning, health checks, scaling.',
         body: `
-## Build container
+## Get the container image
 
-The Go binary is statically linked; you can put it in a scratch image.
+The sidecar is published as a ready-made image for Intel and Arm machines:
 
-\`\`\`dockerfile
-FROM golang:1.22 AS build
-WORKDIR /src
-COPY . .
-RUN go build -o /vouch-sidecar ./go-sidecar/cmd/vouch-sidecar
-
-FROM scratch
-COPY --from=build /vouch-sidecar /vouch-sidecar
-ENTRYPOINT ["/vouch-sidecar"]
+\`\`\`bash
+docker pull ghcr.io/vouch-protocol/sidecar:latest
 \`\`\`
+
+Each release also has its own version tag, such as \`ghcr.io/vouch-protocol/sidecar:0.1.0\`. Pin a version in production. The image holds one static binary and runs as a non-root user.
+
+Run it next to your agent with your identity folder mounted read-only:
+
+\`\`\`bash
+docker run --rm -p 127.0.0.1:8877:8877 \\
+  --user "$(id -u):$(id -g)" -e HOME=/home/vouch \\
+  -e VOUCH_SIDECAR_TOKEN \\
+  -v "$HOME/.vouch/keys:/home/vouch/.vouch/keys:ro" \\
+  ghcr.io/vouch-protocol/sidecar:0.1.0 --host 0.0.0.0
+\`\`\`
+
+\`vouch init\` saves identity files so only you can read them, so the container runs as your own user. It finds the identity in the mounted folder the same way the sidecar does on your machine.
+
+Inside a container the sidecar listens on all addresses so the port mapping can reach it, which is why it asks for \`VOUCH_SIDECAR_TOKEN\`. In a Kubernetes pod, where your agent shares localhost with the sidecar, leave \`--host\` and the token out.
+
+Every published image is signed with cosign and carries a build provenance record. To check an image came from this repository's release workflow:
+
+\`\`\`bash
+gh attestation verify oci://ghcr.io/vouch-protocol/sidecar:0.1.0 --owner vouch-protocol
+\`\`\`
+
+To build the image yourself, run \`docker build -t vouch-sidecar .\` inside the \`go-sidecar\` folder.
 
 ## Key provisioning
 
