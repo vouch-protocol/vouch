@@ -31,13 +31,15 @@ credentials produced here.
 from __future__ import annotations
 
 import functools
+import glob
 import inspect
+import json
 import logging
 import os
 from contextvars import ContextVar
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from vouch.keys import KeyManager
+from vouch.keys import IdentityDamagedError, KeyManager
 from vouch.signer import Signer
 
 logger = logging.getLogger(__name__)
@@ -93,28 +95,133 @@ def resolve_signer(signer: Optional[Signer] = None) -> Optional[Signer]:
     return _DEFAULT_SIGNER
 
 
+def _saved_post_quantum_provider(km: KeyManager, did: str) -> Callable[[], Tuple[bytes, bytes]]:
+    """Fetch the identity's saved ML-DSA-44 key on first use, creating and
+    saving it if it has none yet, so the same key signs on every run."""
+
+    def provide() -> Tuple[bytes, bytes]:
+        try:
+            keypair = km.ensure_post_quantum_key(did).mldsa44_keypair()
+        except OSError as e:
+            raise ValueError(
+                f"cannot save the post-quantum key for {did}: {e.strerror or e}"
+            ) from None
+        if keypair is None:  # pragma: no cover - ensure always adds one
+            raise ValueError(f"no post-quantum key could be saved for {did}")
+        return keypair
+
+    return provide
+
+
+def _public_x(jwk_json: str) -> Optional[str]:
+    try:
+        value = json.loads(jwk_json).get("x")
+    except (ValueError, AttributeError):
+        return None
+    return value if isinstance(value, str) else None
+
+
+def _keystore_damaged(paths: List[str]) -> bool:
+    """True when an identity file in the keystore does not even parse (for
+    example, cut short). That is a damaged identity too, which
+    list_identities would pass over in silence."""
+    damaged = False
+    for path in paths:
+        try:
+            with open(path, "r") as f:
+                json.load(f)
+        except OSError:
+            continue
+        except ValueError:
+            logger.error(
+                "Vouch autosign: the identity file %s cannot be read. Restore it from a "
+                "backup; tool calls are not signed until then.",
+                path,
+            )
+            damaged = True
+    return damaged
+
+
+def _signer_from_keystore(km: KeyManager, paths: List[str]) -> Tuple[Optional[Signer], bool]:
+    """The first unlocked identity in the keystore, and whether a saved
+    identity is damaged. When one is, no signer is returned at all: never
+    another identity, and never a throwaway one."""
+    if _keystore_damaged(paths):
+        return None, True
+    for entry in km.list_identities():
+        if entry.get("encrypted"):
+            continue
+        try:
+            kp = km.load_identity(entry["did"])
+        except IdentityDamagedError as e:
+            # Never sign as someone else, or as a throwaway identity, because a
+            # real identity is broken. Say so plainly instead.
+            logger.error(
+                "Vouch autosign: the identity in %s is damaged (%s). Restore it from a "
+                "backup; tool calls are not signed until then.",
+                entry.get("file"),
+                e,
+            )
+            return None, True
+        except Exception as e:  # pragma: no cover - defensive
+            logger.debug("Keystore lookup failed: %s", e)
+            continue
+        logger.info("Vouch autosign using keystore identity %s", kp.did)
+        signer = Signer(
+            private_key=kp.private_key_jwk,
+            did=kp.did,
+            mldsa44_keypair=kp.mldsa44_keypair(),
+            mldsa44_provider=_saved_post_quantum_provider(km, kp.did),
+        )
+        return signer, False
+    return None, False
+
+
 def _build_default_signer() -> Optional[Signer]:
     # 2. Environment variables (the existing convention every integration used).
     private_key = os.getenv("VOUCH_PRIVATE_KEY")
     did = os.getenv("VOUCH_DID")
     if private_key and did:
         try:
-            return Signer(private_key=private_key, did=did)
+            signer = Signer(private_key=private_key, did=did)
         except Exception as e:  # pragma: no cover - defensive
             logger.warning("VOUCH_PRIVATE_KEY/VOUCH_DID present but unusable: %s", e)
+        else:
+            # The environment holds the Ed25519 key only. When the keystore
+            # holds the same identity, unlocked, its saved post-quantum key is
+            # used, so post-quantum proofs carry the same key on every run.
+            try:
+                km = KeyManager()
+                stored = km.get_public_key(did)
+                same = stored is not None and _public_x(stored) == _public_x(
+                    signer.get_public_key_jwk()
+                )
+                if same and km.load_identity(did, None) is not None:
+                    signer._mldsa44_provider = _saved_post_quantum_provider(km, did)
+            except Exception as e:  # a locked or damaged keystore entry
+                logger.debug("No saved post-quantum key for %s: %s", did, e)
+            if not signer.has_saved_mldsa44_key():
+                logger.info(
+                    "Vouch autosign: %s comes from VOUCH_PRIVATE_KEY, which carries no "
+                    "post-quantum key. A post-quantum proof would use a key made for this "
+                    "process only, so use the identity `vouch init` saved for those.",
+                    did,
+                )
+            return signer
 
     # 3. On-disk keystore - whatever `vouch init` saved, unencrypted only
     #    (an encrypted identity needs a passphrase we cannot prompt for here).
     try:
         km = KeyManager()
-        for entry in km.list_identities():
-            if entry.get("encrypted"):
-                continue
-            kp = km.load_identity(entry["did"])
-            logger.info("Vouch autosign using keystore identity %s", kp.did)
-            return Signer(private_key=kp.private_key_jwk, did=kp.did)
-    except Exception as e:  # pragma: no cover - defensive
-        logger.debug("Keystore lookup failed: %s", e)
+        paths = glob.glob(os.path.join(km.key_dir, "*.json"))
+    except OSError as e:
+        # No usable keystore folder (for example, a home folder that cannot be
+        # written). There is no saved identity to sign as.
+        logger.debug("Keystore unavailable: %s", e)
+    else:
+        signer, damaged = _signer_from_keystore(km, paths)
+        if signer is not None or damaged:
+            return signer
 
     # 4. Opt-in ephemeral identity.
     if _truthy(os.getenv("VOUCH_AUTO_IDENTITY")):

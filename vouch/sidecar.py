@@ -44,7 +44,7 @@ import os
 import re
 import sys
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Callable, Dict, FrozenSet, List, Mapping, Optional, TextIO, Tuple
@@ -53,7 +53,17 @@ from urllib.parse import urlsplit
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from vouch.keys import KeyManager, generate_identity
+from vouch.keys import (
+    MLDSA44,
+    IdentityDamagedError,
+    IdentityError,
+    IdentityLockedError,
+    KeyManager,
+    KeyPair,
+    WrongPasswordError,
+    generate_identity,
+)
+from vouch.keys import _read_rows as read_key_rows
 from vouch.signer import Signer
 
 SEED_ENV = "VOUCH_ED25519_SEED"
@@ -77,6 +87,38 @@ KEY_FROM_FILE = "key file"
 KEY_FROM_ENV = "environment"
 KEY_FROM_KEYSTORE = "keystore"
 KEY_EPHEMERAL = "ephemeral"
+
+PQ_SAVED = "saved"
+PQ_PER_RUN = "per-run"
+PQ_NONE = "none"
+_NO_SAVED_PQ_KEY = (
+    "this identity has no saved post-quantum key. Start the sidecar with --hybrid on the "
+    "identity `vouch init` saved, or with an identity file that carries one"
+)
+
+# What to do about a missing post-quantum key, by where the key came from.
+_NO_PQ_KEY_BY_SOURCE = {
+    KEY_FROM_ENV: (
+        "--hybrid needs a post-quantum key, and a key given in the environment carries none. "
+        "Use the identity `vouch init` saved instead, or pass its file with --key"
+    ),
+    KEY_FROM_FILE: (
+        "--hybrid needs a post-quantum key, and this key file carries none. Pass an identity "
+        "file from ~/.vouch/keys made by `vouch init` instead"
+    ),
+}
+
+
+def _no_pq_key_message(source: str, did: str, file_names_identity: bool) -> str:
+    """What to do about a missing post-quantum key, for this identity."""
+    if source == KEY_FROM_FILE and file_names_identity:
+        return (
+            f"--hybrid needs a post-quantum key, and this identity file carries none. Run "
+            f"`vouch init --did {did} --add-post-quantum-key` to add one, or start the "
+            f"sidecar with `--did {did}` instead of --key, which adds it"
+        )
+    return _NO_PQ_KEY_BY_SOURCE.get(source, _NO_SAVED_PQ_KEY)
+
 
 PROOF_CLASSICAL = "eddsa-jcs-2022"
 PROOF_HYBRID = "eddsa-jcs-2022+mldsa44-jcs-2024"
@@ -133,8 +175,14 @@ class ResolvedIdentity:
     """The agent the sidecar signs as, and the key it signs with."""
 
     did: str
-    private_jwk: str
-    source: str
+    private_jwk: str = field(repr=False)
+    source: str = ""
+    # The identity's saved ML-DSA-44 key as raw (public, secret) bytes, or None.
+    mldsa44: Optional[Tuple[bytes, bytes]] = field(default=None, repr=False)
+    # True when the post-quantum key was created and saved just now.
+    added_post_quantum_key: bool = False
+    # True when a key file names its identity (an identity file, not a bare JWK).
+    file_names_identity: bool = False
 
 
 def _b64url_decode(value: str) -> bytes:
@@ -189,12 +237,15 @@ def _checked_private_jwk(raw: Any) -> str:
 
 
 def _identity_from_key_file(path: str, did: Optional[str]) -> ResolvedIdentity:
+    def refuse(name: str) -> Any:
+        raise ValueError(name)
+
     try:
         with open(path, "r") as f:
-            data = json.load(f)
+            data = json.load(f, parse_constant=refuse)
     except OSError as e:
         raise SidecarError(f"cannot read the key file: {e.strerror or e}") from None
-    except json.JSONDecodeError:
+    except ValueError:
         raise SidecarError("the key file is not valid JSON") from None
     if not isinstance(data, dict):
         raise SidecarError("the key file is not valid JSON")
@@ -213,7 +264,18 @@ def _identity_from_key_file(path: str, did: Optional[str]) -> ResolvedIdentity:
     chosen = did or file_did
     if not chosen:
         raise SidecarError("--did is required: this key file does not name an identity")
-    return ResolvedIdentity(did=chosen, private_jwk=private_jwk, source=KEY_FROM_FILE)
+    try:
+        rows, _ = read_key_rows({**data, "id": file_did or chosen}, None)
+    except IdentityError as e:
+        raise SidecarError(f"the key file is damaged: {e}") from None
+    saved = KeyPair(private_jwk, "", chosen, rows).mldsa44_keypair()
+    return ResolvedIdentity(
+        did=chosen,
+        private_jwk=private_jwk,
+        source=KEY_FROM_FILE,
+        mldsa44=saved,
+        file_names_identity=bool(file_did),
+    )
 
 
 def _no_key_error(did: Optional[str]) -> SidecarError:
@@ -233,6 +295,7 @@ def _identity_from_keystore(
     did: Optional[str],
     environ: Mapping[str, str],
     ask_passphrase: Optional[Callable[[str], str]],
+    need_post_quantum: bool = False,
 ) -> ResolvedIdentity:
     km = KeyManager()
     stored = sorted({entry["did"] for entry in km.list_identities()})
@@ -247,24 +310,51 @@ def _identity_from_keystore(
     if km.get_public_key(did) is None:
         raise _no_key_error(did)
 
+    # A passphrase set in the environment is always used, so a locked file
+    # swapped for an unlocked one is noticed instead of loaded.
+    passphrase = environ.get(PASSPHRASE_ENV, "")
     try:
-        keys = km.load_identity(did, None)
-    except ValueError:
-        # The identity is locked. Use the passphrase from the environment, or ask.
-        passphrase = environ.get(PASSPHRASE_ENV) or (ask_passphrase(did) if ask_passphrase else "")
-        if not passphrase:
-            raise SidecarError(
-                f"the identity for {did} is locked with a passphrase. Run the sidecar in a "
-                f"terminal to be asked for it, or set {PASSPHRASE_ENV}"
-            ) from None
         try:
+            keys = km.load_identity(did, passphrase or None)
+        except IdentityLockedError:
+            passphrase = ask_passphrase(did) if ask_passphrase else ""
+            if not passphrase:
+                raise SidecarError(
+                    f"the identity for {did} is locked with a passphrase. Run the sidecar in a "
+                    f"terminal to be asked for it, or set {PASSPHRASE_ENV}"
+                ) from None
             keys = km.load_identity(did, passphrase)
-        except ValueError:
-            raise SidecarError(f"wrong passphrase for {did}") from None
+    except WrongPasswordError as e:
+        if "not locked" in str(e):
+            raise SidecarError(str(e)) from None
+        raise SidecarError(f"wrong passphrase for {did}") from None
+    except IdentityDamagedError as e:
+        raise SidecarError(f"the identity for {did} is damaged: {e}") from None
     if keys.did != did:
         raise SidecarError(f"the keystore file for {did} names a different identity")
+    added = False
+    if need_post_quantum and keys.key_for(MLDSA44) is None:
+        # An identity from before post-quantum keys were saved gains one here,
+        # once. Its Ed25519 key is left as it is.
+        try:
+            keys = km.ensure_post_quantum_key(did, passphrase or None)
+        except IdentityError as e:
+            raise SidecarError(f"cannot add the post-quantum key for {did}: {e}") from None
+        except OSError as e:
+            raise SidecarError(
+                f"cannot save the post-quantum key for {did}: {e.strerror or e}"
+            ) from None
+        except ImportError:
+            raise SidecarError(
+                "--hybrid needs the post-quantum package: pip install pqcrypto"
+            ) from None
+        added = True
     return ResolvedIdentity(
-        did=did, private_jwk=_checked_private_jwk(keys.private_key_jwk), source=KEY_FROM_KEYSTORE
+        did=did,
+        private_jwk=_checked_private_jwk(keys.private_key_jwk),
+        source=KEY_FROM_KEYSTORE,
+        mldsa44=keys.mldsa44_keypair(),
+        added_post_quantum_key=added,
     )
 
 
@@ -275,6 +365,7 @@ def resolve_identity(
     dev: bool = False,
     environ: Optional[Mapping[str, str]] = None,
     ask_passphrase: Optional[Callable[[str], str]] = None,
+    need_post_quantum: bool = False,
 ) -> ResolvedIdentity:
     """Work out which agent to sign as and load its key.
 
@@ -322,7 +413,7 @@ def resolve_identity(
             raise SidecarError("--did is required with --dev, for example --did did:web:localhost")
         return ResolvedIdentity(did, generate_identity().private_key_jwk, KEY_EPHEMERAL)
 
-    return _identity_from_keystore(did, env, ask_passphrase)
+    return _identity_from_keystore(did, env, ask_passphrase, need_post_quantum)
 
 
 # ---------------------------------------------------------------------------
@@ -391,6 +482,9 @@ class SidecarConfig:
     default_valid_seconds: int = 300
     max_valid_seconds: int = 3600
     hybrid: bool = False
+    # Where the ML-DSA-44 key comes from: "saved" with the identity, "per-run"
+    # (generated for this process, as --dev does), or "none".
+    post_quantum: str = PQ_PER_RUN
     loopback_only: bool = True
     verbose: bool = False
 
@@ -441,10 +535,18 @@ class Sidecar:
         self._last_signed_at: Optional[str] = None
         self._public_multikey = signer.get_public_key_multikey()
         self._pq_multikey: Optional[str] = None
-        if config.hybrid:
-            # Create the ML-DSA-44 key now, so a missing package stops startup
-            # instead of failing the first request.
+        if config.post_quantum not in (PQ_SAVED, PQ_PER_RUN, PQ_NONE):
+            raise SidecarError("post_quantum must be saved, per-run or none")
+        if config.hybrid and config.post_quantum == PQ_NONE:
+            raise SidecarError(_NO_SAVED_PQ_KEY)
+        if config.post_quantum == PQ_SAVED or config.hybrid:
+            # Have the ML-DSA-44 key ready now. With --hybrid, a missing
+            # package stops startup instead of failing every request.
             try:
+                if config.hybrid:
+                    from vouch import data_integrity_hybrid
+
+                    data_integrity_hybrid._import_pqcrypto()
                 self._pq_multikey = signer.public_key_mldsa44_multikey()
             except ImportError:
                 raise SidecarError(
@@ -574,9 +676,9 @@ class Sidecar:
             raise _Refusal(400, "this sidecar signs an intent; the payload form is not served here")
         if not isinstance(intent, dict):
             raise _Refusal(400, "the request needs an intent with action, target and resource")
-        for field in ("action", "target", "resource"):
-            if not isinstance(intent.get(field), str) or not intent[field]:
-                raise _Refusal(400, f"intent.{field} is required and must be a string")
+        for name in ("action", "target", "resource"):
+            if not isinstance(intent.get(name), str) or not intent[name]:
+                raise _Refusal(400, f"intent.{name} is required and must be a string")
         info["action"] = _clip(intent["action"])
         allowed = self._cfg.allowed_actions
         if allowed is not None and intent["action"] not in allowed:
@@ -601,6 +703,8 @@ class Sidecar:
             if post_quantum:
                 raise _Refusal(400, "credentialStatus is not available with the proof set here")
             options["credential_status"] = status
+        if post_quantum and self._cfg.post_quantum == PQ_NONE:
+            raise _Refusal(409, _NO_SAVED_PQ_KEY)
 
         try:
             if post_quantum:
@@ -650,6 +754,7 @@ class Sidecar:
             "did": self._cfg.did,
             "key": self._cfg.key_source,
             "hybrid": self._cfg.hybrid,
+            "postQuantumKey": self._cfg.post_quantum,
             "defaultValiditySeconds": self._cfg.default_valid_seconds,
             "maxValiditySeconds": self._cfg.max_valid_seconds,
             "lastSignedAt": self._last_signed_at,
@@ -726,6 +831,7 @@ class Sidecar:
             key=self._cfg.key_source,
             public_key=self._public_multikey,
             hybrid=self._cfg.hybrid,
+            post_quantum_key=self._cfg.post_quantum,
             default_validity_seconds=self._cfg.default_valid_seconds,
             max_validity_seconds=self._cfg.max_valid_seconds,
         )
@@ -843,8 +949,22 @@ def build_sidecar(args: argparse.Namespace, log_stream: Optional[TextIO] = None)
     check_exposure(args.host, token)
     default_seconds, max_seconds = validity_window(args.default_validity, args.max_validity)
     identity = resolve_identity(
-        did=args.did, key_path=args.key, dev=args.dev, ask_passphrase=_ask_passphrase
+        did=args.did,
+        key_path=args.key,
+        dev=args.dev,
+        ask_passphrase=_ask_passphrase,
+        need_post_quantum=args.hybrid,
     )
+    if identity.mldsa44 is not None:
+        post_quantum = PQ_SAVED
+    elif identity.source == KEY_EPHEMERAL:
+        post_quantum = PQ_PER_RUN
+    else:
+        post_quantum = PQ_NONE
+    if args.hybrid and post_quantum == PQ_NONE:
+        raise SidecarError(
+            _no_pq_key_message(identity.source, identity.did, identity.file_names_identity)
+        )
     # The secrets have been read; drop them so nothing this process starts
     # later inherits them.
     for name in (SEED_ENV, PRIVATE_KEY_ENV, PASSPHRASE_ENV, TOKEN_ENV):
@@ -852,9 +972,12 @@ def build_sidecar(args: argparse.Namespace, log_stream: Optional[TextIO] = None)
 
     allowed = load_allowlist(args.allowlist, identity.did) if args.allowlist else None
     signer = Signer(
-        private_key=identity.private_jwk, did=identity.did, default_expiry_seconds=default_seconds
+        private_key=identity.private_jwk,
+        did=identity.did,
+        default_expiry_seconds=default_seconds,
+        mldsa44_keypair=identity.mldsa44,
     )
-    return Sidecar(
+    sidecar = Sidecar(
         signer,
         SidecarConfig(
             did=identity.did,
@@ -864,11 +987,20 @@ def build_sidecar(args: argparse.Namespace, log_stream: Optional[TextIO] = None)
             default_valid_seconds=default_seconds,
             max_valid_seconds=max_seconds,
             hybrid=args.hybrid,
+            post_quantum=post_quantum,
             loopback_only=is_loopback_host(args.host),
             verbose=args.verbose,
         ),
         log_stream=log_stream,
     )
+    if identity.added_post_quantum_key:
+        sidecar._log(
+            "INFO",
+            "added a post-quantum key to the saved identity",
+            did=identity.did,
+            public_key=sidecar._pq_multikey,
+        )
+    return sidecar
 
 
 def run(args: argparse.Namespace) -> int:

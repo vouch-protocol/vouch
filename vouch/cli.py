@@ -23,7 +23,13 @@ from cryptography.hazmat.primitives import serialization
 
 from vouch.signer import Signer
 from vouch.verifier import Verifier, verify as resolve_and_verify
-from vouch.keys import KeyManager, generate_identity
+from vouch.keys import (
+    MLDSA44,
+    IdentityExistsError,
+    IdentityLockedError,
+    KeyManager,
+    generate_identity,
+)
 import getpass
 
 # Constants
@@ -83,12 +89,68 @@ def _print_agent_quickstart(keys, file=None) -> None:
     )
 
 
+_PQ_PACKAGE_MISSING = (
+    "The post-quantum package (pqcrypto) is not installed, so no post-quantum key was "
+    "made. Install it with `pip install pqcrypto`, then run "
+    "`vouch init --did {did} --add-post-quantum-key`."
+)
+
+
+def _keep_existing_identity(did: str, args: argparse.Namespace) -> int:
+    """`vouch init` for an identity that already exists: keep its keys and add
+    the post-quantum key if it is missing.
+
+    With --add-post-quantum-key the exit code says whether the identity ends up
+    with the key; a plain rerun of `vouch init` succeeds either way.
+    """
+    km = KeyManager()
+    add_only = bool(getattr(args, "add_post_quantum_key", False))
+    if km.get_public_key(did) is None:
+        print(
+            f"❌ Error: {km._get_filename(did)} holds a different or damaged identity, so it "
+            "was left as it is.",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"An identity for {did} already exists. Its key is kept.")
+    # A passphrase in the environment is for a locked identity only.
+    passphrase = (os.environ.get("VOUCH_KEY_PASSPHRASE") or None) if km.is_locked(did) else None
+    try:
+        try:
+            had_key = km.load_identity(did, passphrase).key_for(MLDSA44) is not None
+        except IdentityLockedError:
+            if getattr(args, "yes", False) or not sys.stdin.isatty():
+                print(
+                    "It is locked with a passphrase. Run this in a terminal, or set "
+                    "VOUCH_KEY_PASSPHRASE, to add its post-quantum key."
+                )
+                return 1 if add_only else 0
+            passphrase = getpass.getpass(f"Enter passphrase for {did}: ")
+            had_key = km.load_identity(did, passphrase).key_for(MLDSA44) is not None
+        if not had_key:
+            km.ensure_post_quantum_key(did, passphrase)
+    except ImportError:
+        print(_PQ_PACKAGE_MISSING.format(did=did), file=sys.stderr)
+        return 1 if add_only else 0
+    except Exception as e:
+        print(f"❌ Error reading identity: {e}", file=sys.stderr)
+        return 1
+    if had_key:
+        print("It already has a post-quantum key.")
+    else:
+        print("✅ Added a post-quantum key (ML-DSA-44) and saved it with the identity.")
+    print(f"Saved at: {km._get_filename(did)}")
+    return 0
+
+
 def cmd_init(args: argparse.Namespace) -> int:
-    """Generate a new Ed25519 keypair for agent identity."""
+    """Generate a new agent identity: an Ed25519 key and an ML-DSA-44 key."""
     try:
         # Build DID
         if args.domain:
             domain = args.domain
+        elif getattr(args, "did", None):
+            domain = ""
         else:
             domain = "example.com"
             print(
@@ -97,8 +159,54 @@ def cmd_init(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
 
-        # Generate keys
-        keys = generate_identity(domain)
+        did = f"did:web:{domain}"
+        add_only = getattr(args, "add_post_quantum_key", False)
+        given_did = getattr(args, "did", None)
+        if given_did and args.domain:
+            print("❌ Error: give either --domain or --did, not both", file=sys.stderr)
+            return 1
+        if given_did and not add_only:
+            print("❌ Error: --did goes with --add-post-quantum-key", file=sys.stderr)
+            return 1
+        if given_did:
+            did = given_did
+        if add_only and args.env:
+            print(
+                "❌ Error: --add-post-quantum-key works on a saved identity, not --env",
+                file=sys.stderr,
+            )
+            return 1
+
+        if not args.env:
+            # An identity that already exists for this domain is kept. Creating
+            # a new one would replace its private key. It gains a post-quantum
+            # key if it has none yet.
+            km = KeyManager()
+            path = km._get_filename(did)
+            if km.get_public_key(did) is not None:
+                return _keep_existing_identity(did, args)
+            if os.path.exists(path):
+                print(
+                    f"❌ Error: {path} already holds a different or damaged identity, so it was "
+                    "left as it is. Move it aside to create a new one.",
+                    file=sys.stderr,
+                )
+                return 1
+            if add_only:
+                print(
+                    f"❌ Error: no identity is saved for {did}, so there is nothing to add a "
+                    "key to.",
+                    file=sys.stderr,
+                )
+                return 1
+
+        # Generate keys: the Ed25519 key and, saved beside it, the ML-DSA-44 key.
+        pq_missing = False
+        try:
+            keys = generate_identity(domain, post_quantum=not args.env)
+        except ImportError:
+            keys = generate_identity(domain)
+            pq_missing = True
 
         if args.env:
             # Output as environment variable format
@@ -106,42 +214,43 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(f"export VOUCH_PRIVATE_KEY='{keys.private_key_jwk}'")
             print(f"# Public Key (for vouch.json): {keys.public_key_jwk}", file=sys.stderr)
             _print_agent_quickstart(keys, file=sys.stderr)
+            return 0
+
+        # Non-interactive when --yes is passed or stdin is not a TTY (CI,
+        # pipes), so `vouch init` never hangs waiting for a passphrase.
+        non_interactive = args.yes or not sys.stdin.isatty()
+        if non_interactive:
+            passphrase = None
         else:
-            print("🔑 NEW AGENT IDENTITY GENERATED\n")
-            print(f"DID: {keys.did}")
-
-            # Key Storage
-            km = KeyManager()
-
-            # Non-interactive when --yes is passed or stdin is not a TTY (CI,
-            # pipes), so `vouch init` never hangs waiting for a passphrase.
-            non_interactive = args.yes or not sys.stdin.isatty()
-
-            if non_interactive:
-                passphrase = None
-            else:
-                print("\n🔐 Secure Storage")
-                passphrase = getpass.getpass(
-                    f"Enter passphrase for {keys.did} (leave empty for no encryption): "
-                )
-                confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
-                if passphrase != confirm:
-                    print("❌ Error: Passphrases do not match", file=sys.stderr)
-                    return 1
-
-            try:
-                km.save_identity(keys, passphrase if passphrase else None)
-                print(f"✅ Identity saved to: {km._get_filename(keys.did)}")
-                if not passphrase:
-                    print("⚠️  Warning: Key saved in PLAIN TEXT. Use a passphrase for security.")
-            except Exception as e:
-                print(f"❌ Error saving identity: {e}", file=sys.stderr)
+            print("\n🔐 Secure Storage")
+            passphrase = getpass.getpass(
+                f"Enter passphrase for {keys.did} (leave empty for no encryption): "
+            )
+            confirm = getpass.getpass("Confirm passphrase: ") if passphrase else ""
+            if passphrase != confirm:
+                print("❌ Error: Passphrases do not match", file=sys.stderr)
                 return 1
 
-            print("\n--- PUBLIC KEY (Put this in vouch.json) ---")
-            print(keys.public_key_jwk)
-            _print_agent_quickstart(keys)
+        try:
+            km.create_identity(keys, passphrase if passphrase else None)
+        except IdentityExistsError:
+            # Another program created it a moment ago. Keep that one.
+            return _keep_existing_identity(did, args)
+        except Exception as e:
+            print(f"❌ Error saving identity: {e}", file=sys.stderr)
+            return 1
 
+        print("🔑 NEW AGENT IDENTITY GENERATED\n")
+        print(f"DID: {keys.did}")
+        print(f"✅ Identity saved to: {path}")
+        if not passphrase:
+            print("⚠️  Warning: Key saved in PLAIN TEXT. Use a passphrase for security.")
+        if pq_missing:
+            print(_PQ_PACKAGE_MISSING.format(did=did))
+
+        print("\n--- PUBLIC KEY (Put this in vouch.json) ---")
+        print(keys.public_key_jwk)
+        _print_agent_quickstart(keys)
         return 0
 
     except Exception as e:
@@ -1910,6 +2019,16 @@ def main(argv: "list[str] | None" = None) -> int:
     p_init = subparsers.add_parser("init", help="Generate a new agent identity")
     p_init.add_argument("--domain", help="Domain for the DID (e.g., example.com)")
     p_init.add_argument("--env", action="store_true", help="Output as environment variables")
+    p_init.add_argument(
+        "--add-post-quantum-key",
+        dest="add_post_quantum_key",
+        action="store_true",
+        help="Add the post-quantum key to the identity already saved for --domain (or --did), and nothing else",
+    )
+    p_init.add_argument(
+        "--did",
+        help="With --add-post-quantum-key: the saved identity to add the key to, for any DID method",
+    )
     p_init.add_argument(
         "--yes",
         "-y",

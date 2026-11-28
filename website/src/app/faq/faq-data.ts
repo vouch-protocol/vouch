@@ -1402,7 +1402,7 @@ Verify on the receiving side with \`verify_tool_call\`. Identity is resolved aut
 
 **Identity and tokens**
 
-- \`vouch init\` generate an agent identity (DID + Ed25519 keypair)
+- \`vouch init\` generate an agent identity (a DID, an Ed25519 key, and an ML-DSA-44 key for post-quantum signing)
 - \`vouch sign "<message>"\` sign a message or JSON payload, prints a Vouch-Token. \`--valid-for 10m\` sets how long it stays valid
 - \`vouch verify <token>\` verify a Vouch-Token. The signature is always checked, against your keystore or the key published at the issuer's DID
 - \`vouch sidecar\` run the signing sidecar, which holds the key and signs for your agent

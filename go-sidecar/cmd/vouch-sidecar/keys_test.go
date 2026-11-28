@@ -334,12 +334,12 @@ func TestIdentityFileLayouts(t *testing.T) {
 	asObject := mustJSON(t, map[string]any{"id": testDID, "encrypted": false, "private_key": jwk})
 
 	for name, raw := range map[string][]byte{"string": identityFile(t, testDID, seed), "object": asObject} {
-		got, did, err := identityFromKeyFile(raw)
+		got, did, _, err := identityFromKeyFile(raw)
 		if err != nil || did != testDID || !bytes.Equal(got, seed) {
 			t.Fatalf("%s: did %q, err %v", name, did, err)
 		}
 	}
-	got, did, err := identityFromKeyFile(mustJSON(t, jwk))
+	got, did, _, err := identityFromKeyFile(mustJSON(t, jwk))
 	if err != nil || did != "" || !bytes.Equal(got, seed) {
 		t.Fatalf("bare JWK: did %q, err %v", did, err)
 	}
@@ -370,7 +370,7 @@ func TestBadKeyFilesAreRefused(t *testing.T) {
 		"empty object":      []byte("{}"),
 	}
 	for name, raw := range cases {
-		if _, _, err := identityFromKeyFile(raw); err == nil {
+		if _, _, _, err := identityFromKeyFile(raw); err == nil {
 			t.Fatalf("%s: accepted", name)
 		}
 	}

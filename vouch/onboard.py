@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from vouch import multikey
-from vouch.keys import KeyManager, generate_identity
+from vouch.keys import MLDSA44, IdentityExistsError, KeyManager, generate_identity
 
 # ---------------------------------------------------------------------------
 # State
@@ -322,6 +322,21 @@ def _ed25519_did_document(did: str, public_key_jwk: str) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _saved_post_quantum_public_key(km: KeyManager, did: str) -> Optional[str]:
+    """The identity's saved ML-DSA-44 public key (a Multikey), or None when the
+    identity has none, or is locked and VOUCH_KEY_PASSPHRASE is not set.
+
+    Raises:
+      IdentityDamagedError: the identity file is damaged.
+    """
+    try:
+        # A passphrase in the environment is for a locked identity only.
+        passphrase = os.environ.get("VOUCH_KEY_PASSPHRASE") if km.is_locked(did) else None
+        return km.post_quantum_public_key(did, passphrase or None)
+    except FileNotFoundError:
+        return None
+
+
 def step_identity(state: OnboardState, io: WizardIO) -> None:
     _step_header(1, "Identity (generate issuer DID)", io)
     domain = io.ask(
@@ -336,23 +351,76 @@ def step_identity(state: OnboardState, io: WizardIO) -> None:
     # one would replace its private key and orphan a published did.json.
     km = KeyManager()
     existing_key = km.get_public_key(state.did)
+    new_post_quantum_key: Optional[str] = None
+    created = False
+    if not existing_key and os.path.exists(km._get_filename(state.did)):
+        raise ValueError(
+            f"{km._get_filename(state.did)} already holds a different or damaged identity, "
+            "so it was left as it is. Move it aside to create a new one."
+        )
     if existing_key:
         state.public_key_jwk = existing_key
         io.out("  Using the identity already in your keystore for this domain")
     else:
-        kp = generate_identity(state.domain)
+        try:
+            kp = generate_identity(state.domain, post_quantum=True)
+        except ImportError:
+            kp = generate_identity(state.domain)
+            io.out("  No post-quantum key made: the pqcrypto package is not installed")
+        pq_row = kp.key_for(MLDSA44)
+        new_post_quantum_key = pq_row.public_key if pq_row else None
         state.public_key_jwk = kp.public_key_jwk
         if not io.dry_run:
-            km.save_identity(kp, password=None)
+            try:
+                km.create_identity(kp, password=None)
+                created = True
+            except IdentityExistsError:
+                # Another program created it a moment ago. Use that one, if it
+                # really is this identity.
+                existing = km.get_public_key(state.did)
+                if existing is None:
+                    raise ValueError(
+                        f"{km._get_filename(state.did)} holds a different identity, so it was "
+                        "left as it is."
+                    ) from None
+                state.public_key_jwk = existing
+                new_post_quantum_key = None
+                io.out("  Using the identity already in your keystore for this domain")
 
     did_doc = _ed25519_did_document(state.did, state.public_key_jwk)
+    post_quantum_key = (
+        new_post_quantum_key
+        if io.dry_run and new_post_quantum_key
+        else _saved_post_quantum_public_key(km, state.did)
+    )
+    if post_quantum_key:
+        # The post-quantum key sits in the "#key-2" slot beside the Ed25519 key.
+        method = f"{state.did}#key-2"
+        did_doc["verificationMethod"].append(
+            {
+                "id": method,
+                "type": "Multikey",
+                "controller": state.did,
+                "publicKeyMultibase": post_quantum_key,
+            }
+        )
+        did_doc["assertionMethod"].append(method)
+        did_doc["@context"].append("https://w3id.org/security/multikey/v1")
+    elif any(e["did"] == state.did and e.get("encrypted") for e in km.list_identities()):
+        io.out(
+            "  The post-quantum key (#key-2) is left out: the identity is locked. Set "
+            "VOUCH_KEY_PASSPHRASE and run the wizard again to list it"
+        )
     out_path = str(Path(state.out_dir) / "did.json")
     io.write(out_path, json.dumps(did_doc, indent=2))
 
     io.out(f"  DID:        {state.did}")
     io.out(f"  Publish at: https://{state.domain}/.well-known/did.json")
-    if not io.dry_run and not existing_key:
-        io.out("  Private key stored at ~/.vouch/keys/ (encrypt with passphrase via `vouch init`)")
+    if created:
+        io.out(
+            "  Private key stored at ~/.vouch/keys/ without a passphrase. To lock it with one, "
+            "create the identity with `vouch init` before running the wizard"
+        )
 
 
 def step_tier(state: OnboardState, io: WizardIO) -> None:

@@ -1792,7 +1792,7 @@ The \`vouch\` command ships with the \`vouch-protocol\` Python package. It group
 
 ### vouch init
 
-Generate a new agent identity (a did:vouch DID plus an Ed25519 keypair). By default it prompts for a passphrase, saves the encrypted identity to your local keystore, and prints the public key to put in your vouch.json.
+Generate a new agent identity: a DID, an Ed25519 key, and an ML-DSA-44 key for post-quantum signing. By default it prompts for a passphrase, saves the encrypted identity to your local keystore, and prints the public key to put in your vouch.json. Run it again for a domain that already has an identity and it keeps that identity's keys, adding the post-quantum key if it has none. \`--add-post-quantum-key\` does only that, and creates nothing new; pair it with \`--did <DID>\` for an identity of any DID method.
 
 - \`--domain <D>\` domain to base the DID on (defaults to example.com)
 - \`--env\` print the identity as export VOUCH_DID / VOUCH_PRIVATE_KEY instead of saving to the keystore

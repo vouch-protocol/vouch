@@ -43,7 +43,7 @@ Flags:
 | `--allowlist` | sign any action | Path to an allow-list JSON file such as the one `vouch onboard` writes. Only the actions it names are signed |
 | `--default-validity` | 5m | How long a credential lasts when the caller sends no `validSeconds`. Also `VOUCH_SIDECAR_DEFAULT_VALIDITY` |
 | `--max-validity` | 1h | Longest validity a caller may ask for. Also `VOUCH_SIDECAR_MAX_VALIDITY` |
-| `--hybrid` | off | Enable post-quantum signing (the default proof plus an ML-DSA-44 proof) |
+| `--hybrid` | off | Enable post-quantum signing (the default proof plus an ML-DSA-44 proof), with the ML-DSA-44 key saved in the identity by `vouch init`. A key from `VOUCH_ED25519_SEED` or a bare JWK file carries no post-quantum key, so `--hybrid` needs the saved identity or its file |
 | `--sensitive` / `-s` | off | Wrap responses in JWE so credentials are encrypted in flight |
 | `--otel-endpoint` | off | OpenTelemetry collector address, such as `http://localhost:4318`. Each signing request becomes a trace span |
 | `--verbose` | off | Log every request |
