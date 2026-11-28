@@ -18,12 +18,17 @@
 #
 # The image holds one static binary and runs as a non-root user.
 
-FROM golang:1.24 AS build
+# The build stage runs on the machine doing the build and cross-compiles for
+# the target, so an arm64 image needs no emulation.
+FROM --platform=$BUILDPLATFORM golang:1.24 AS build
+ARG TARGETOS
+ARG TARGETARCH
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/vouch-sidecar ./cmd/vouch-sidecar
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -trimpath -ldflags="-s -w" -o /out/vouch-sidecar ./cmd/vouch-sidecar
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/vouch-sidecar /vouch-sidecar
